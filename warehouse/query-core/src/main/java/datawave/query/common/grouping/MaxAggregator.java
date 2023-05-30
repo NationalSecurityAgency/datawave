@@ -13,9 +13,6 @@ import java.util.Set;
  */
 public class MaxAggregator extends AbstractAggregator<Attribute<?>> {
     
-    /**
-     * The current max attribute.
-     */
     private Attribute<?> max;
     
     public static MaxAggregator of(String field, Attribute<?> max) {
@@ -62,6 +59,11 @@ public class MaxAggregator extends AbstractAggregator<Attribute<?>> {
     @Override
     public Attribute<?> getAggregation() {
         return this.max;
+    }
+    
+    @Override
+    public boolean hasAggregation() {
+        return max != null;
     }
     
     /**

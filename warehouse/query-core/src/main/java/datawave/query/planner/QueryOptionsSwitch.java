@@ -4,12 +4,15 @@ import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
+import datawave.query.common.grouping.GroupAggregateFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.attributes.UniqueFields;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,7 +38,10 @@ public class QueryOptionsSwitch {
                 case QueryParameters.GROUP_FIELDS:
                     String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setGroupFields(Sets.newHashSet(groups));
-                    config.setProjectFields(Sets.newHashSet(groups));
+                    // Update the projection fields.
+                    addToProjectionFields(config, groups);
+                    // Update the group aggregate fields.
+                    getOrCreateGroupAggregateFields(config).addGroupFields(groups);
                     break;
                 case QueryParameters.GROUP_FIELDS_BATCH_SIZE:
                     try {
@@ -53,21 +59,59 @@ public class QueryOptionsSwitch {
                     config.setExcerptFields(excerptFields);
                     break;
                 case QueryParameters.SUM_FIELDS:
-                    config.setSumFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    // Update the projection fields.
+                    addToProjectionFields(config, sumFields);
+                    // Update the group aggregate fields.
+                    getOrCreateGroupAggregateFields(config).addSumFields(sumFields);
                     break;
                 case QueryParameters.MAX_FIELDS:
-                    config.setMaxFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    String[] maxFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    // Update the projection fields.
+                    addToProjectionFields(config, maxFields);
+                    // Update the group aggregate fields.
+                    getOrCreateGroupAggregateFields(config).addMaxFields(maxFields);
                     break;
                 case QueryParameters.MIN_FIELDS:
-                    config.setMinFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    String[] minFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    // Update the projection fields.
+                    addToProjectionFields(config, minFields);
+                    // Update the group aggregate fields.
+                    getOrCreateGroupAggregateFields(config).addMinFields(minFields);
                     break;
                 case QueryParameters.COUNT_FIELDS:
-                    config.setCountFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    String[] countFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    // Update the projection fields.
+                    addToProjectionFields(config, countFields);
+                    // Update the group aggregate fields.
+                    getOrCreateGroupAggregateFields(config).addCountFields(countFields);
                     break;
                 case QueryParameters.AVERAGE_FIELDS:
-                    config.setAverageFields(Sets.newHashSet(StringUtils.split(value, Constants.PARAM_VALUE_SEP)));
+                    String[] averageFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    // Update the projection fields.
+                    addToProjectionFields(config, averageFields);
+                    // Update the group aggregate fields.
+                    getOrCreateGroupAggregateFields(config).addAverageFields(averageFields);
                     break;
             }
         }
+    }
+    
+    public static void addToProjectionFields(ShardQueryConfiguration config, String[] fields) {
+        Set<String> projectFields = config.getProjectFields();
+        if (projectFields == null) {
+            projectFields = new HashSet<>();
+        }
+        projectFields.addAll(Arrays.asList(fields));
+        config.setProjectFields(projectFields);
+    }
+    
+    public static GroupAggregateFields getOrCreateGroupAggregateFields(ShardQueryConfiguration config) {
+        GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+        if (groupAggregateFields == null) {
+            groupAggregateFields = new GroupAggregateFields();
+            config.setGroupAggregateFields(groupAggregateFields);
+        }
+        return groupAggregateFields;
     }
 }

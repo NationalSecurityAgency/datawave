@@ -18,6 +18,7 @@ import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupAggregateFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -535,11 +536,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
-        addOption(cfg, QueryOptions.SUM_FIELDS, StringUtils.join(config.getSumFields(), ","), true);
-        addOption(cfg, QueryOptions.MAX_FIELDS, StringUtils.join(config.getMaxFields(), ","), true);
-        addOption(cfg, QueryOptions.MIN_FIELDS, StringUtils.join(config.getMinFields(), ","), true);
-        addOption(cfg, QueryOptions.COUNT_FIELDS, StringUtils.join(config.getCountFields(), ","), true);
-        addOption(cfg, QueryOptions.AVERAGE_FIELDS, StringUtils.join(config.getAverageFields(), ","), true);
+        addOption(cfg, QueryOptions.GROUP_AGGREGATE_FIELDS, config.getGroupAggregateFields().toString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
         addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
@@ -1750,63 +1747,19 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             // If grouping is set, we must make the projection fields match the group fields, as well as include any grouping aggregation fields.
             Set<String> newProjectFields = Sets.newHashSet(remappedGroupFields);
             
-            Collection<String> sumFields = config.getSumFields();
-            if (sumFields != null && !sumFields.isEmpty()) {
-                Collection<String> remappedFields = queryModel.remapParameter(sumFields, inverseReverseModel);
-                if (log.isTraceEnabled()) {
-                    log.trace("Updated sum set using query model to: " + remappedFields);
-                }
-                config.setSumFields(Sets.newHashSet(remappedFields));
-                // Include the sum fields in the projection fields.
-                newProjectFields.addAll(remappedFields);
-            }
-            
-            Collection<String> maxFields = config.getMaxFields();
-            if (maxFields != null && !maxFields.isEmpty()) {
-                Collection<String> remappedFields = queryModel.remapParameter(maxFields, inverseReverseModel);
-                if (log.isTraceEnabled()) {
-                    log.trace("Updated max set using query model to: " + remappedFields);
-                }
-                config.setMaxFields(Sets.newHashSet(remappedFields));
-                // Include the max fields in the projection fields.
-                newProjectFields.addAll(remappedFields);
-            }
-            
-            Collection<String> minFields = config.getMinFields();
-            if (minFields != null && !minFields.isEmpty()) {
-                Collection<String> remappedFields = queryModel.remapParameter(minFields, inverseReverseModel);
-                if (log.isTraceEnabled()) {
-                    log.trace("Updated min set using query model to: " + remappedFields);
-                }
-                config.setMinFields(Sets.newHashSet(remappedFields));
-                // Include the min fields in the projection fields.
-                newProjectFields.addAll(remappedFields);
-            }
-            
-            Collection<String> countFields = config.getCountFields();
-            if (countFields != null && !countFields.isEmpty()) {
-                Collection<String> remappedFields = queryModel.remapParameter(countFields, inverseReverseModel);
-                if (log.isTraceEnabled()) {
-                    log.trace("Updated count set using query model to: " + remappedFields);
-                }
-                config.setCountFields(Sets.newHashSet(remappedFields));
-                // Include the count fields in the projection fields.
-                newProjectFields.addAll(remappedFields);
-            }
-            
-            Collection<String> averageFields = config.getAverageFields();
-            if (averageFields != null && !averageFields.isEmpty()) {
-                Collection<String> remappedFields = queryModel.remapParameter(averageFields, inverseReverseModel);
-                if (log.isTraceEnabled()) {
-                    log.trace("Updated average set using query model to: " + remappedFields);
-                }
-                config.setAverageFields(Sets.newHashSet(remappedFields));
-                // Include the average fields in the projection fields.
-                newProjectFields.addAll(remappedFields);
-            }
-            
             // Update the projection fields.
             config.setProjectFields(newProjectFields);
+        }
+        
+        GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+        if (groupAggregateFields != null && groupAggregateFields.hasGroupFields()) {
+            groupAggregateFields.remapFields(inverseReverseModel);
+            if (log.isTraceEnabled()) {
+                log.trace("Updated groupAggregateFields using query model to " + groupAggregateFields);
+            }
+            config.setGroupAggregateFields(groupAggregateFields);
+            // Update the projection fields to include all group-by fields and all aggregation fields.
+            config.setProjectFields(groupAggregateFields.getDistinctFields());
         }
         
         UniqueFields uniqueFields = config.getUniqueFields();

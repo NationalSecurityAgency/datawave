@@ -31,6 +31,12 @@ public class Constants {
     
     public static final String FORWARD_SLASH = "/";
     
+    public static final String LEFT_PAREN = "(";
+    
+    public static final String RIGHT_PAREN = ")";
+    
+    public static final String PIPE = "|";
+    
     public static final Text TEXT_NULL = new Text(NULL);
     
     public static final Text FI_PREFIX = new Text("fi");

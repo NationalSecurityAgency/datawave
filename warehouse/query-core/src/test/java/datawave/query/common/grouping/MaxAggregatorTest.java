@@ -116,6 +116,7 @@ public class MaxAggregatorTest {
     }
     
     private void assertMax(Attribute<?> expected) {
+        
         assertEquals(expected, aggregator.getAggregation());
     }
 }

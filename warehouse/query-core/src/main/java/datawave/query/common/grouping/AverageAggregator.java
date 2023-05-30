@@ -84,6 +84,11 @@ public class AverageAggregator extends AbstractAggregator<BigDecimal> {
         return average;
     }
     
+    @Override
+    public boolean hasAggregation() {
+        return average != null;
+    }
+    
     /**
      * Return the current sum for the field values.
      * 

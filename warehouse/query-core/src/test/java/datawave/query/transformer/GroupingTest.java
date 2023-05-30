@@ -625,10 +625,11 @@ public abstract class GroupingTest {
         
         givenQueryParameter(QueryParameters.GROUP_FIELDS, "GENDER,RECORD");
         
-        expectGroup(Group.of("FEMALE", "2").withCount(1));
-        expectGroup(Group.of("MALE", "1").withCount(3));
-        expectGroup(Group.of("MALE", "2").withCount(2));
-        expectGroup(Group.of("MALE", "3").withCount(1));
+        expectGroup(Group.of("FEMALE", "1").withCount(2));
+        expectGroup(Group.of("FEMALE", "2").withCount(2));
+        expectGroup(Group.of("MALE", "1").withCount(10));
+        expectGroup(Group.of("MALE", "2").withCount(10));
+        expectGroup(Group.of("MALE", "3").withCount(4));
         
         // Run the test queries and collect their results.
         collectQueryResults();

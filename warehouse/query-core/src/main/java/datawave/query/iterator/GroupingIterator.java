@@ -1,41 +1,28 @@
 package datawave.query.iterator;
 
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import datawave.data.type.NumberType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
-import datawave.query.common.grouping.AggregatedFields;
-import datawave.query.common.grouping.Aggregator;
-import datawave.query.common.grouping.AverageAggregator;
-import datawave.query.common.grouping.CountAggregator;
 import datawave.query.common.grouping.DocumentGrouper;
 import datawave.query.common.grouping.Group;
-import datawave.query.common.grouping.GroupingAttribute;
+import datawave.query.common.grouping.GroupAggregateFields;
+import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
-import datawave.query.common.grouping.MaxAggregator;
-import datawave.query.common.grouping.MinAggregator;
-import datawave.query.common.grouping.SumAggregator;
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.slf4j.Logger;
 
-import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -48,14 +35,9 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     private static final Logger log = getLogger(GroupingIterator.class);
     
     /**
-     * The fields to group by.
+     * The fields to group and aggregate by.
      */
-    private final Set<String> groupFields;
-    
-    /**
-     * A factory that will provide aggregators for all fields that are targets for aggregation in each group-by result.
-     */
-    private final AggregatedFields.Factory aggregateFieldsFactory;
+    private final GroupAggregateFields groupAggregateFields;
     
     /**
      * The groups. This is updated each time
@@ -77,12 +59,11 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     
     Map.Entry<Key,Document> next;
     
-    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, Collection<String> groupFields,
-                    int groupFieldsBatchSize, YieldCallback<Key> yieldCallback, AggregatedFields.Factory aggregateFieldsFactory) {
+    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, GroupAggregateFields groupAggregateFields,
+                    int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
         this.previousIterators = previousIterators;
         this.markingFunctions = markingFunctions;
-        this.groupFields = groupFields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
-        this.aggregateFieldsFactory = aggregateFieldsFactory.deconstructIdentifiers();
+        this.groupAggregateFields = groupAggregateFields;
         this.groupFieldsBatchSize = groupFieldsBatchSize;
         this.yieldCallback = yieldCallback;
         this.groups = new Groups();
@@ -96,11 +77,11 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 if (entry != null) {
                     log.trace("t-server get list key counts for: {}", entry);
                     keys.add(entry.getKey());
-                    DocumentGrouper.group(entry, groupFields, aggregateFieldsFactory, groups);
+                    DocumentGrouper.group(entry, groupAggregateFields, groups);
                 }
             } else if (yieldCallback != null && yieldCallback.hasYielded()) {
                 log.trace("hasNext is false because yield was called");
-                if (groups != null && !groups.isEmpty()) {
+                if (!groups.isEmpty()) {
                     // reset the yield and use its key in the flattened document prepared below
                     keys.add(yieldCallback.getPositionAndReset());
                 }
@@ -115,9 +96,9 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         Document document = null;
         next = null;
         
-        if (groups != null && !groups.isEmpty()) {
+        if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
-                documents.add(createDocument(group));
+                documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
             }
             document = flatten(documents);
         }
@@ -137,110 +118,6 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         }
         
         return false;
-    }
-    
-    private Document createDocument(Group group) {
-        Preconditions.checkState(!keys.isEmpty(), "No available keys for grouping results");
-        
-        // Use the last (most recent) key so a new iterator will know where to start.
-        Key key = keys.get(keys.size() - 1);
-        Document document = new Document(key, true);
-        
-        // Set the visibility for the document to the combined visibility of each previous document in which this grouping was seen in.
-        document.setColumnVisibility(combineVisibilities(group.getDocumentVisibilities(), true));
-        
-        // Add each of the grouping attributes to the document.
-        for (GroupingAttribute<?> attribute : group.getAttributes()) {
-            // Update the visibility to the combined visibilities of each visibility seen for this attribute in a grouping.
-            attribute.setColumnVisibility(combineVisibilities(group.getVisibilitiesForAttribute(attribute), false));
-            document.put(attribute.getMetadata().getRow().toString(), attribute);
-        }
-        
-        // Add an attribute for the count.
-        NumberType type = new NumberType();
-        type.setDelegate(new BigDecimal(group.getCount()));
-        TypeAttribute<BigDecimal> attr = new TypeAttribute<>(type, new Key("count"), true);
-        document.put("COUNT", attr);
-        
-        // Add each aggregated field.
-        AggregatedFields aggregatedFields = group.getAggregatedFields();
-        if (aggregatedFields != null) {
-            Multimap<String,Aggregator<?>> aggregatorMap = group.getAggregatedFields().getAggregatorMap();
-            for (Map.Entry<String,Aggregator<?>> entry : aggregatorMap.entries()) {
-                String field = entry.getKey();
-                Aggregator<?> aggregator = entry.getValue();
-                // Do not include an entry for the aggregation if it is null (indicating that no entries were found to be aggregated). The exception to this is
-                // the
-                // #COUNT aggregation. This will return a non-null value of 0 if no entries were found to be aggregated, and can be included in the final
-                // output.
-                if (aggregator.getAggregation() != null) {
-                    switch (aggregator.getOperation()) {
-                        case SUM:
-                            addSumAggregation(document, field, ((SumAggregator) aggregator));
-                            break;
-                        case COUNT:
-                            addCountAggregation(document, field, ((CountAggregator) aggregator));
-                            break;
-                        case MIN:
-                            addMinAggregation(document, field, ((MinAggregator) aggregator));
-                            break;
-                        case MAX:
-                            addMaxAggregation(document, field, ((MaxAggregator) aggregator));
-                            break;
-                        case AVERAGE:
-                            addAverageAggregation(document, field, ((AverageAggregator) aggregator));
-                            break;
-                    }
-                }
-            }
-        }
-        
-        return document;
-    }
-    
-    private void addSumAggregation(Document document, String field, SumAggregator aggregator) {
-        NumberType type = new NumberType();
-        type.setDelegate(aggregator.getAggregation());
-        TypeAttribute<BigDecimal> sumAttribute = new TypeAttribute<>(type, new Key(field + "_sum"), true);
-        sumAttribute.setColumnVisibility(combineVisibilities(aggregator.getColumnVisibilities(), false));
-        document.put(field + DocumentGrouper.FIELD_SUM_SUFFIX, sumAttribute);
-    }
-    
-    private void addCountAggregation(Document document, String field, CountAggregator aggregator) {
-        NumberType type = new NumberType();
-        type.setDelegate(BigDecimal.valueOf(aggregator.getAggregation()));
-        TypeAttribute<BigDecimal> sumAttribute = new TypeAttribute<>(type, new Key(field + "_count"), true);
-        Set<ColumnVisibility> columnVisibilities = aggregator.getColumnVisibilities();
-        if (!columnVisibilities.isEmpty()) {
-            sumAttribute.setColumnVisibility(combineVisibilities(aggregator.getColumnVisibilities(), false));
-        }
-        document.put(field + DocumentGrouper.FIELD_COUNT_SUFFIX, sumAttribute);
-    }
-    
-    private void addMinAggregation(Document document, String field, MinAggregator aggregator) {
-        document.put(field + DocumentGrouper.FIELD_MIN_SUFFIX, aggregator.getAggregation());
-    }
-    
-    private void addMaxAggregation(Document document, String field, MaxAggregator aggregator) {
-        document.put(field + DocumentGrouper.FIELD_MAX_SUFFIX, aggregator.getAggregation());
-    }
-    
-    private void addAverageAggregation(Document document, String field, AverageAggregator aggregator) {
-        ColumnVisibility visibility = combineVisibilities(aggregator.getColumnVisibilities(), false);
-        
-        // Add an attribute for the average's numerator. This is required to properly combine additional aggregations in future groupings.
-        NumberType numeratorType = new NumberType();
-        numeratorType.setDelegate(aggregator.getNumerator());
-        TypeAttribute<BigDecimal> sumAttribute = new TypeAttribute<>(numeratorType, new Key(field + "_average_numerator"), true);
-        sumAttribute.setColumnVisibility(visibility);
-        document.put(field + DocumentGrouper.FIELD_AVERAGE_NUMERATOR_SUFFIX, sumAttribute);
-        
-        // Add an attribute for the average's divisor. This is required to properly combine additional aggregations in future groupings.
-        NumberType divisorType = new NumberType();
-        divisorType.setDelegate(aggregator.getDivisor());
-        TypeAttribute<BigDecimal> countAttribute = new TypeAttribute<>(divisorType, new Key(field + "_average_divisor"), true);
-        countAttribute.setColumnVisibility(visibility);
-        document.put(field + DocumentGrouper.FIELD_AVERAGE_DIVISOR_SUFFIX, countAttribute);
     }
     
     @Override
@@ -322,12 +199,8 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         }
         
         // Set the flattened document's visibility to the combined visibilities of each document.
-        flattened.setColumnVisibility(combineVisibilities(visibilities, false));
+        flattened.setColumnVisibility(GroupingUtils.combineVisibilities(visibilities, markingFunctions, false));
         log.trace("flattened document: {}", flattened);
         return flattened;
-    }
-    
-    private ColumnVisibility combineVisibilities(Collection<ColumnVisibility> visibilities, boolean failOnError) {
-        return DocumentGrouper.combine(visibilities, markingFunctions, failOnError);
     }
 }

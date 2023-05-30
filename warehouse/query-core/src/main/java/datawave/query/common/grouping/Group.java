@@ -39,7 +39,7 @@ public class Group {
     /**
      * The aggregated values for any specified fields to aggregate.
      */
-    private AggregatedFields aggregatedFields = new AggregatedFields();
+    private FieldAggregator fieldAggregator = new FieldAggregator();
     
     public Group(Collection<GroupingAttribute<?>> attributes) {
         this(attributes, 0);
@@ -53,7 +53,7 @@ public class Group {
     
     /**
      * Returns the distinct set of values that represent this grouping.
-     * 
+     *
      * @return the grouping
      */
     public Set<GroupingAttribute<?>> getAttributes() {
@@ -62,7 +62,7 @@ public class Group {
     
     /**
      * Add the column visibilities from each of the given attributes to the set of attribute visibilities for this group.
-     * 
+     *
      * @param attributes
      *            the attributes to add visibilities from
      */
@@ -74,7 +74,7 @@ public class Group {
     
     /**
      * Return the set of column visibilities seen for the given attribute.
-     * 
+     *
      * @param attribute
      *            the attribute
      * @return the column visibilities seen for the given attributes
@@ -85,7 +85,7 @@ public class Group {
     
     /**
      * Add the column visibility to the set of visibilities of documents for which we have seen the grouping of this group in.
-     * 
+     *
      * @param columnVisibility
      *            the visibility to add
      */
@@ -95,7 +95,7 @@ public class Group {
     
     /**
      * Return the set of all distinct column visibilities from documents that we have seen this group in.
-     * 
+     *
      * @return the document column visibilities
      */
     public Set<ColumnVisibility> getDocumentVisibilities() {
@@ -111,7 +111,7 @@ public class Group {
     
     /**
      * Returns the number of times we have seen this grouping.
-     * 
+     *
      * @return the number of times we've seen this group.
      */
     public int getCount() {
@@ -120,28 +120,32 @@ public class Group {
     
     /**
      * Returns the aggregated fields for this group.
-     * 
+     *
      * @return the aggregated fields.
      */
-    public AggregatedFields getAggregatedFields() {
-        return aggregatedFields;
+    public FieldAggregator getFieldAggregator() {
+        return fieldAggregator;
     }
     
     /**
      * Set the aggregated fields for this group.
-     * 
-     * @param aggregatedFields
+     *
+     * @param fieldAggregator
      *            the aggregated fields to set
      */
-    public void setAggregatedFields(AggregatedFields aggregatedFields) {
-        this.aggregatedFields = aggregatedFields;
+    public void setFieldAggregator(FieldAggregator fieldAggregator) {
+        this.fieldAggregator = fieldAggregator;
+    }
+    
+    public void aggregateAll(Collection<Field> fields) {
+        fieldAggregator.aggregateAll(fields);
     }
     
     /**
      * Merge the given group into this group. The attribute visibilities and document visibilities from the other group will be added into this group. The count
      * for this group will be incremented by the count of the other group. The aggregated fields of the other group will be merged into the aggregated fields of
      * this group.
-     * 
+     *
      * @param other
      *            the group to merge
      */
@@ -149,12 +153,12 @@ public class Group {
         this.attributeVisibilities.putAll(other.attributeVisibilities);
         this.documentVisibilities.addAll(other.documentVisibilities);
         this.count += other.count;
-        this.aggregatedFields.merge(other.aggregatedFields);
+        this.fieldAggregator.merge(other.fieldAggregator);
     }
     
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("attributes", attributes).append("attributeVisibilities", attributeVisibilities)
-                        .append("documentVisibilities", documentVisibilities).append("count", count).append("aggregatedFields", aggregatedFields).toString();
+                        .append("documentVisibilities", documentVisibilities).append("count", count).append("aggregatedFields", fieldAggregator).toString();
     }
 }

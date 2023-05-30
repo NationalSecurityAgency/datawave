@@ -16,7 +16,8 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
-import datawave.query.common.grouping.AggregatedFields;
+import datawave.query.common.grouping.FieldAggregator;
+import datawave.query.common.grouping.GroupAggregateFields;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
@@ -630,21 +631,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 }
             }
             
-            if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
+            if (getConfig().getGroupAggregateFields() != null && !getConfig().getGroupAggregateFields().hasGroupFields()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
-                // @formatter:off
-                AggregatedFields.Factory aggregateFieldsFactory = new AggregatedFields.Factory()
-                                .withSumFields(getConfig().getSumFields())
-                                .withMaxFields(getConfig().getMaxFields())
-                                .withMinFields(getConfig().getMinFields())
-                                .withCountFields(getConfig().getCountFields())
-                                .withAverageFields(getConfig().getAverageFields());
-                // @formatter:on
                 if (alreadyExists != null) {
-                    ((GroupingTransform) alreadyExists).updateConfig(getConfig().getGroupFields(), getQueryModel(), aggregateFieldsFactory);
+                    ((GroupingTransform) alreadyExists).updateConfig(getConfig().getGroupAggregateFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), getConfig().getGroupFields(),
-                                    this.markingFunctions, this.getQueryExecutionForPageTimeout(), aggregateFieldsFactory));
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), getConfig().getGroupAggregateFields(),
+                                    this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
         }
@@ -789,11 +782,24 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(groupFields)) {
             List<String> groupFieldsList = Arrays.asList(StringUtils.split(groupFields, Constants.PARAM_VALUE_SEP));
             
-            // Only set the group fields if we were actually given some
+            // Only set the group fields if we were actually given some.
             if (!groupFieldsList.isEmpty()) {
                 this.setGroupFields(new HashSet<>(groupFieldsList));
                 config.setGroupFields(new HashSet<>(groupFieldsList));
-                config.setProjectFields(new HashSet<>(groupFieldsList));
+                
+                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+                if (groupAggregateFields == null) {
+                    groupAggregateFields = new GroupAggregateFields();
+                }
+                groupAggregateFields.addGroupFields(groupFieldsList);
+                config.setGroupAggregateFields(groupAggregateFields);
+                
+                Set<String> newProjectFields = new HashSet<>(groupFieldsList);
+                Set<String> oldProjectFields = config.getProjectFields();
+                if (oldProjectFields != null) {
+                    newProjectFields.addAll(oldProjectFields);
+                }
+                config.setProjectFields(newProjectFields);
             }
         }
         
@@ -809,7 +815,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(sumFields)) {
             Set<String> fields = Sets.newHashSet(StringUtils.split(sumFields, Constants.PARAM_VALUE_SEP));
             if (!fields.isEmpty()) {
-                this.setSumFields(fields);
+                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+                if (groupAggregateFields == null) {
+                    groupAggregateFields = new GroupAggregateFields();
+                }
+                groupAggregateFields.addSumFields(fields);
+                config.setGroupAggregateFields(groupAggregateFields);
+                
+                Set<String> newProjectFields = new HashSet<>(fields);
+                Set<String> oldProjectFields = config.getProjectFields();
+                if (oldProjectFields != null) {
+                    newProjectFields.addAll(oldProjectFields);
+                }
+                config.setProjectFields(newProjectFields);
             }
         }
         
@@ -818,7 +836,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(maxFields)) {
             Set<String> fields = Sets.newHashSet(StringUtils.split(maxFields, Constants.PARAM_VALUE_SEP));
             if (!fields.isEmpty()) {
-                this.setMaxFields(fields);
+                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+                if (groupAggregateFields == null) {
+                    groupAggregateFields = new GroupAggregateFields();
+                }
+                groupAggregateFields.addMaxFields(fields);
+                config.setGroupAggregateFields(groupAggregateFields);
+                
+                Set<String> newProjectFields = new HashSet<>(fields);
+                Set<String> oldProjectFields = config.getProjectFields();
+                if (oldProjectFields != null) {
+                    newProjectFields.addAll(oldProjectFields);
+                }
+                config.setProjectFields(newProjectFields);
             }
         }
         
@@ -827,7 +857,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(minFields)) {
             Set<String> fields = Sets.newHashSet(StringUtils.split(minFields, Constants.PARAM_VALUE_SEP));
             if (!fields.isEmpty()) {
-                this.setMinFields(fields);
+                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+                if (groupAggregateFields == null) {
+                    groupAggregateFields = new GroupAggregateFields();
+                }
+                groupAggregateFields.addMinFields(fields);
+                config.setGroupAggregateFields(groupAggregateFields);
+                
+                Set<String> newProjectFields = new HashSet<>(fields);
+                Set<String> oldProjectFields = config.getProjectFields();
+                if (oldProjectFields != null) {
+                    newProjectFields.addAll(oldProjectFields);
+                }
+                config.setProjectFields(newProjectFields);
             }
         }
         
@@ -836,7 +878,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(countFields)) {
             Set<String> fields = Sets.newHashSet(StringUtils.split(countFields, Constants.PARAM_VALUE_SEP));
             if (!fields.isEmpty()) {
-                this.setCountFields(fields);
+                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+                if (groupAggregateFields == null) {
+                    groupAggregateFields = new GroupAggregateFields();
+                }
+                groupAggregateFields.addCountFields(fields);
+                config.setGroupAggregateFields(groupAggregateFields);
+                
+                Set<String> newProjectFields = new HashSet<>(fields);
+                Set<String> oldProjectFields = config.getProjectFields();
+                if (oldProjectFields != null) {
+                    newProjectFields.addAll(oldProjectFields);
+                }
+                config.setProjectFields(newProjectFields);
             }
         }
         
@@ -845,7 +899,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang.StringUtils.isNotBlank(averageFields)) {
             Set<String> fields = Sets.newHashSet(StringUtils.split(averageFields, Constants.PARAM_VALUE_SEP));
             if (!fields.isEmpty()) {
-                this.setAverageFields(fields);
+                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
+                if (groupAggregateFields == null) {
+                    groupAggregateFields = new GroupAggregateFields();
+                }
+                groupAggregateFields.addAverageFields(fields);
+                config.setGroupAggregateFields(groupAggregateFields);
+                
+                Set<String> newProjectFields = new HashSet<>(fields);
+                Set<String> oldProjectFields = config.getProjectFields();
+                if (oldProjectFields != null) {
+                    newProjectFields.addAll(oldProjectFields);
+                }
+                config.setProjectFields(newProjectFields);
             }
         }
         
@@ -1344,44 +1410,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return getConfig().getGroupFieldsBatchSize();
     }
     
-    public Set<String> getSumFields() {
-        return getConfig().getSumFields();
+    public GroupAggregateFields getGroupAggregateFields() {
+        return getConfig().getGroupAggregateFields();
     }
     
-    public void setSumFields(Set<String> fields) {
-        getConfig().setSumFields(fields);
-    }
-    
-    public Set<String> getMaxFields() {
-        return getConfig().getMaxFields();
-    }
-    
-    public void setMaxFields(Set<String> fields) {
-        getConfig().setMaxFields(fields);
-    }
-    
-    public Set<String> getMinFields() {
-        return getConfig().getMinFields();
-    }
-    
-    public void setMinFields(Set<String> fields) {
-        getConfig().setMinFields(fields);
-    }
-    
-    public Set<String> getCountFields() {
-        return getConfig().getCountFields();
-    }
-    
-    public void setCountFields(Set<String> fields) {
-        getConfig().setCountFields(fields);
-    }
-    
-    public Set<String> getAverageFields() {
-        return getConfig().getAverageFields();
-    }
-    
-    public void setAverageFields(Set<String> fields) {
-        getConfig().setAverageFields(fields);
+    public void setGroupAggregateFields(GroupAggregateFields groupAggregateFields) {
+        getConfig().setGroupAggregateFields(groupAggregateFields);
     }
     
     public UniqueFields getUniqueFields() {

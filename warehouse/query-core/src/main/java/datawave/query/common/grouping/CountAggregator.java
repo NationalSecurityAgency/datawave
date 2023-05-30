@@ -13,12 +13,12 @@ import java.util.Set;
 /**
  * Determines the total count of aggregated field values. This supports values of all {@link Attribute} types.
  */
-public class CountAggregator extends AbstractAggregator<Integer> {
+public class CountAggregator extends AbstractAggregator<Long> {
     
     /**
      * The total number of times the field was seen.
      */
-    private int count;
+    private long count;
     
     /**
      * The column visibilities of all attributes aggregated.
@@ -26,7 +26,7 @@ public class CountAggregator extends AbstractAggregator<Integer> {
     private final Set<ColumnVisibility> columnVisibilities;
     
     public static CountAggregator of(String field, TypeAttribute<BigDecimal> attribute) {
-        return new CountAggregator(field, attribute.getType().getDelegate().intValue(), attribute.getColumnVisibility());
+        return new CountAggregator(field, attribute.getType().getDelegate().longValue(), attribute.getColumnVisibility());
     }
     
     public CountAggregator(String field) {
@@ -34,7 +34,7 @@ public class CountAggregator extends AbstractAggregator<Integer> {
         this.columnVisibilities = new HashSet<>();
     }
     
-    private CountAggregator(String field, int count, ColumnVisibility visibility) {
+    private CountAggregator(String field, long count, ColumnVisibility visibility) {
         this(field);
         this.count = count;
         if (visibility != null) {
@@ -63,8 +63,13 @@ public class CountAggregator extends AbstractAggregator<Integer> {
      * @return the total count
      */
     @Override
-    public Integer getAggregation() {
+    public Long getAggregation() {
         return count;
+    }
+    
+    @Override
+    public boolean hasAggregation() {
+        return count > 0L;
     }
     
     /**

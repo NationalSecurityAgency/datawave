@@ -46,7 +46,7 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
     
     /**
      * Returns {@link AggregateOperation#SUM}.
-     * 
+     *
      * @return {@link AggregateOperation#SUM}
      */
     @Override
@@ -61,7 +61,7 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
     
     /**
      * Return the sum of all values seen for the field.
-     * 
+     *
      * @return the sum, or null if no values were aggregated
      */
     @Override
@@ -69,9 +69,14 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
         return sum;
     }
     
+    @Override
+    public boolean hasAggregation() {
+        return sum != null;
+    }
+    
     /**
      * Adds the value into the current sum.
-     * 
+     *
      * @param value
      *            the value to aggregate
      * @throws IllegalArgumentException

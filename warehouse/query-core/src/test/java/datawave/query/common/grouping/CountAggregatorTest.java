@@ -25,7 +25,7 @@ public class CountAggregatorTest {
      */
     @Test
     public void testInitialCount() {
-        assertCount(0);
+        assertCount(0L);
     }
     
     /**
@@ -34,17 +34,17 @@ public class CountAggregatorTest {
     @Test
     public void testIncrementingCount() {
         aggregator.aggregate(value);
-        assertCount(1);
+        assertCount(1L);
         
         aggregator.aggregate(value);
-        assertCount(2);
+        assertCount(2L);
         
         aggregator.aggregate(value);
         aggregator.aggregate(value);
-        assertCount(4);
+        assertCount(4L);
     }
     
-    private void assertCount(Integer count) {
+    private void assertCount(Long count) {
         assertEquals(count, aggregator.getAggregation());
     }
     

@@ -43,6 +43,13 @@ public interface Aggregator<AGGREGATE> {
     AGGREGATE getAggregation();
     
     /**
+     * Return true if this aggregator has aggregated at least one attribute.
+     * 
+     * @return true if this aggregator has at least one attribute aggregated to it, or false otherwise
+     */
+    boolean hasAggregation();
+    
+    /**
      * Aggregate the given value into this aggregator.
      *
      * @param value

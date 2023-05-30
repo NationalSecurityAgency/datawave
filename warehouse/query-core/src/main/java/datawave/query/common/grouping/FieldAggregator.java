@@ -1,16 +1,14 @@
 package datawave.query.common.grouping;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import datawave.query.attributes.Attribute;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -18,15 +16,15 @@ import java.util.stream.Collectors;
 /**
  * This class provides functionality to aggregate values for specified target fields using specified aggregation operations.
  */
-public class AggregatedFields {
+public class FieldAggregator {
     
-    private final Multimap<String,Aggregator<?>> aggregatorMap;
+    private final Map<String,Map<AggregateOperation,Aggregator<?>>> aggregatorMap;
     
-    public AggregatedFields() {
-        aggregatorMap = HashMultimap.create();
+    public FieldAggregator() {
+        aggregatorMap = new HashMap<>();
     }
     
-    public AggregatedFields(Set<String> sumFields, Set<String> maxFields, Set<String> minFields, Set<String> countFields, Set<String> averageFields) {
+    public FieldAggregator(Set<String> sumFields, Set<String> maxFields, Set<String> minFields, Set<String> countFields, Set<String> averageFields) {
         this();
         populateAggregators(sumFields, SumAggregator::new);
         populateAggregators(maxFields, MaxAggregator::new);
@@ -45,41 +43,46 @@ public class AggregatedFields {
      */
     private void populateAggregators(Set<String> fields, Function<String,Aggregator<?>> constructor) {
         if (fields != null) {
-            fields.forEach(field -> aggregatorMap.put(field, constructor.apply(field)));
-        }
-    }
-    
-    /**
-     * Aggregate each of the given attributes into the aggregators for the given field.
-     * 
-     * @param field
-     *            the target aggregation field
-     * @param values
-     *            the values to aggregate
-     */
-    public void aggregateAll(String field, Collection<Attribute<?>> values) {
-        if (aggregatorMap.containsKey(field)) {
-            Collection<Aggregator<?>> aggregators = this.aggregatorMap.get(field);
-            for (Attribute<?> value : values) {
-                // Handle multi-value attributes.
-                if (value.getData() instanceof Collection<?>) {
-                    @SuppressWarnings("unchecked")
-                    Collection<Attribute<?>> collection = (Collection<Attribute<?>>) value;
-                    aggregators.forEach(aggregator -> aggregator.aggregateAll(collection));
-                } else {
-                    aggregators.forEach(aggregator -> aggregator.aggregate(value));
+            for (String field : fields) {
+                Aggregator<?> aggregator = constructor.apply(field);
+                Map<AggregateOperation,Aggregator<?>> map = aggregatorMap.get(field);
+                if (map == null) {
+                    map = new HashMap<>();
+                    this.aggregatorMap.put(field, map);
                 }
+                map.put(aggregator.getOperation(), aggregator);
             }
         }
     }
     
+    public void aggregate(Field field) {
+        if (aggregatorMap.containsKey(field.getBase())) {
+            Collection<Aggregator<?>> aggregators = this.aggregatorMap.get(field.getBase()).values();
+            for (Attribute<?> attribute : field.getAttributes()) {
+                aggregators.forEach(aggregator -> aggregator.aggregate(attribute));
+            }
+        }
+    }
+    
+    public void aggregateAll(Collection<Field> fields) {
+        fields.forEach(this::aggregate);
+    }
+    
     /**
      * Return the map of fields to their aggregators.
-     * 
+     *
      * @return the aggregator map.
      */
-    public Multimap<String,Aggregator<?>> getAggregatorMap() {
+    public Map<String,Map<AggregateOperation,Aggregator<?>>> getAggregatorMap() {
         return aggregatorMap;
+    }
+    
+    public Aggregator<?> getAggregator(String field, AggregateOperation operation) {
+        Map<AggregateOperation,Aggregator<?>> map = aggregatorMap.get(field);
+        if (map != null) {
+            return map.get(operation);
+        }
+        return null;
     }
     
     /**
@@ -92,38 +95,26 @@ public class AggregatedFields {
     }
     
     /**
-     * Returns an unmodifiable set of all column visibilities for all aggregators in this {@link AggregatedFields}. Possibly empty, but never null.
-     * 
-     * @return the column visibilities
-     */
-    public Set<ColumnVisibility> getColumnVisibilities() {
-        // @formatter:off
-        return aggregatorMap.entries().stream()
-                        .map(Map.Entry::getValue)
-                        .map(Aggregator::getColumnVisibilities)
-                        .flatMap(Set::stream)
-                        .collect(Collectors.toSet());
-        // @formatter:on
-    }
-    
-    /**
      * Merge the given aggregator into this aggregated fields.
      * 
      * @param aggregator
      *            the aggregator to merge.
      */
     public void mergeAggregator(Aggregator<?> aggregator) {
-        if (aggregatorMap.containsKey(aggregator.getField())) {
-            Optional<Aggregator<?>> optional = aggregatorMap.get(aggregator.getField()).stream()
-                            .filter(a -> a.getOperation().equals(aggregator.getOperation())).findFirst();
-            if (optional.isPresent()) {
-                optional.get().merge(aggregator);
+        if (aggregator.hasAggregation()) {
+            Map<AggregateOperation,Aggregator<?>> map = aggregatorMap.computeIfAbsent(aggregator.getField(), k -> new HashMap<>());
+            if (map.containsKey(aggregator.getOperation())) {
+                Aggregator<?> currentAggregator = map.get(aggregator.getOperation());
+                if (currentAggregator.hasAggregation()) {
+                    currentAggregator.merge(aggregator);
+                } else {
+                    map.put(aggregator.getOperation(), aggregator);
+                }
             } else {
-                aggregatorMap.put(aggregator.getField(), aggregator);
+                map.put(aggregator.getOperation(), aggregator);
             }
-        } else {
-            aggregatorMap.put(aggregator.getField(), aggregator);
         }
+        
     }
     
     /**
@@ -132,28 +123,28 @@ public class AggregatedFields {
      * @param other
      *            the aggregated fields to merge in
      */
-    public void merge(AggregatedFields other) {
+    public void merge(FieldAggregator other) {
         for (String field : other.aggregatorMap.keySet()) {
             // If we already have aggregators for this field, merge the aggregators for the current field from the other aggregated fields into this one.
             if (this.aggregatorMap.containsKey(field)) {
-                for (Aggregator<?> otherAggregator : other.aggregatorMap.get(field)) {
-                    boolean matchFound = false;
-                    // If a match is found for the current aggregation operation, merge the aggregators.
-                    for (Aggregator<?> aggregator : this.aggregatorMap.get(field)) {
-                        if (aggregator.getOperation().equals(otherAggregator.getOperation())) {
-                            aggregator.merge(otherAggregator);
-                            matchFound = true;
-                            break;
+                Map<AggregateOperation,Aggregator<?>> thisMap = this.aggregatorMap.get(field);
+                Map<AggregateOperation,Aggregator<?>> otherMap = other.aggregatorMap.get(field);
+                for (AggregateOperation operation : otherMap.keySet()) {
+                    if (thisMap.containsKey(operation)) {
+                        Aggregator<?> currentAggregator = thisMap.get(operation);
+                        Aggregator<?> otherAggregator = otherMap.get(operation);
+                        if (currentAggregator.hasAggregation() && otherAggregator.hasAggregation()) {
+                            currentAggregator.merge(otherAggregator);
+                        } else if (otherAggregator.hasAggregation()) {
+                            thisMap.put(operation, otherAggregator);
                         }
-                    }
-                    // Otherwise simply add the aggregator to the aggregator map.
-                    if (!matchFound) {
-                        this.aggregatorMap.put(field, otherAggregator);
+                    } else {
+                        thisMap.put(operation, otherMap.get(operation));
                     }
                 }
             } else {
                 // If no aggregators exist in this aggregated fields for the current field, add all aggregators for it.
-                this.aggregatorMap.putAll(field, other.aggregatorMap.get(field));
+                this.aggregatorMap.put(field, new HashMap<>(other.aggregatorMap.get(field)));
             }
         }
     }
@@ -164,7 +155,7 @@ public class AggregatedFields {
     }
     
     /**
-     * A factory that will generate new {@link AggregatedFields} with the designated sum, max, min, count, and average aggregation field targets.
+     * A factory that will generate new {@link FieldAggregator} with the designated sum, max, min, count, and average aggregation field targets.
      */
     public static class Factory {
         
@@ -192,7 +183,19 @@ public class AggregatedFields {
          * @return this factory
          */
         public Factory withSumFields(Set<String> fields) {
-            addFields(fields, this.sumFields);
+            addFields(this.sumFields, fields);
+            return this;
+        }
+        
+        /**
+         * Set the fields for which to find the aggregated sum.
+         *
+         * @param fields
+         *            the fields
+         * @return this factory
+         */
+        public Factory withSumFields(String... fields) {
+            addFields(this.sumFields, fields);
             return this;
         }
         
@@ -204,7 +207,19 @@ public class AggregatedFields {
          * @return this factory
          */
         public Factory withMaxFields(Set<String> fields) {
-            addFields(fields, this.maxFields);
+            addFields(this.maxFields, fields);
+            return this;
+        }
+        
+        /**
+         * Set the fields for which to find the aggregated max.
+         *
+         * @param fields
+         *            the fields
+         * @return this factory
+         */
+        public Factory withMaxFields(String... fields) {
+            addFields(this.maxFields, fields);
             return this;
         }
         
@@ -216,7 +231,19 @@ public class AggregatedFields {
          * @return this factory
          */
         public Factory withMinFields(Set<String> fields) {
-            addFields(fields, this.minFields);
+            addFields(this.minFields, fields);
+            return this;
+        }
+        
+        /**
+         * Set the fields for which to find the aggregated min.
+         *
+         * @param fields
+         *            the fields
+         * @return this factory
+         */
+        public Factory withMinFields(String... fields) {
+            addFields(this.minFields, fields);
             return this;
         }
         
@@ -228,7 +255,19 @@ public class AggregatedFields {
          * @return this factory
          */
         public Factory withCountFields(Set<String> fields) {
-            addFields(fields, this.countFields);
+            addFields(this.countFields, fields);
+            return this;
+        }
+        
+        /**
+         * Set the fields for which to find the aggregated count.
+         *
+         * @param fields
+         *            the fields
+         * @return this factory
+         */
+        public Factory withCountFields(String... fields) {
+            addFields(this.countFields, fields);
             return this;
         }
         
@@ -240,32 +279,48 @@ public class AggregatedFields {
          * @return this factory
          */
         public Factory withAverageFields(Set<String> fields) {
-            addFields(fields, this.averageFields);
+            addFields(this.averageFields, fields);
+            return this;
+        }
+        
+        /**
+         * Set the fields for which to find the aggregated average.
+         *
+         * @param fields
+         *            the fields
+         * @return this factory
+         */
+        public Factory withAverageFields(String... fields) {
+            addFields(this.averageFields, fields);
             return this;
         }
         
         /**
          * Add the given fields into the given set.
-         * 
-         * @param fields
-         *            the fields to add
+         *
          * @param set
          *            the set to add the fields to
+         * @param fields
+         *            the fields to add
          */
-        private void addFields(Set<String> fields, Set<String> set) {
+        private void addFields(Set<String> set, Collection<String> fields) {
             if (fields != null) {
                 set.addAll(fields);
-                allFields.addAll(set);
+                allFields.addAll(fields);
             }
         }
         
+        private void addFields(Set<String> set, String... fields) {
+            addFields(set, Arrays.asList(fields));
+        }
+        
         /**
-         * Return a new {@link AggregatedFields} with the configured target aggregation fields.
+         * Return a new {@link FieldAggregator} with the configured target aggregation fields.
          * 
-         * @return a new {@link AggregatedFields} instance
+         * @return a new {@link FieldAggregator} instance
          */
-        public AggregatedFields newInstance() {
-            return hasFieldsToAggregate() ? new AggregatedFields(sumFields, maxFields, minFields, countFields, averageFields) : new AggregatedFields();
+        public FieldAggregator newInstance() {
+            return hasFieldsToAggregate() ? new FieldAggregator(sumFields, maxFields, minFields, countFields, averageFields) : new FieldAggregator();
         }
         
         /**
@@ -286,21 +341,6 @@ public class AggregatedFields {
          */
         public boolean isFieldToAggregate(String field) {
             return allFields.contains(field);
-        }
-        
-        /**
-         * Returns a new {@link Factory} instance with all target aggregation fields of this factory after their identifiers are deconstructed.
-         * 
-         * @return a new {@link Factory} instance with deconstructed fields
-         */
-        public Factory deconstructIdentifiers() {
-            Set<String> sumFields = this.sumFields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
-            Set<String> maxFields = this.maxFields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
-            Set<String> minFields = this.minFields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
-            Set<String> countFields = this.countFields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
-            Set<String> averageFields = this.averageFields.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
-            return new Factory().withSumFields(sumFields).withMaxFields(maxFields).withMinFields(minFields).withCountFields(countFields)
-                            .withAverageFields(averageFields);
         }
         
         @Override

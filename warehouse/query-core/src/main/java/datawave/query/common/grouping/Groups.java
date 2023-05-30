@@ -24,6 +24,10 @@ public class Groups {
         return groups.values();
     }
     
+    public int totalGroups() {
+        return groups.size();
+    }
+    
     /**
      * Return whether this {@link Groups} contains a {@link Group} for the given grouping values.
      * 
@@ -59,7 +63,7 @@ public class Groups {
     /**
      * If this {@link Groups} already contains a {@link Group} with the grouping values of the given group, the given group will be merged into the existing
      * group. Otherwise, the given group will be put into this {@link Groups}.
-     * 
+     *
      * @param group
      *            the group to merge or put
      */
@@ -72,9 +76,13 @@ public class Groups {
         }
     }
     
+    public void mergeAll(Groups currentGroups) {
+        currentGroups.groups.values().forEach(this::mergeOrPutGroup);
+    }
+    
     /**
      * Return whether this {@link Groups} contains any groups.
-     * 
+     *
      * @return true if this {@link Groups} does not contain any groups, or false otherwise
      */
     public boolean isEmpty() {
@@ -91,5 +99,11 @@ public class Groups {
     @Override
     public String toString() {
         return groups.toString();
+    }
+    
+    public void aggregateToAllGroups(Collection<Field> fields) {
+        for (Group group : groups.values()) {
+            group.aggregateAll(fields);
+        }
     }
 }

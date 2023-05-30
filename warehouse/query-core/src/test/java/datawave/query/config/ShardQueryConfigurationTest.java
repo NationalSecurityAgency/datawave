@@ -214,12 +214,6 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(-1, config.getEventNextSeek());
         Assert.assertEquals(-1, config.getTfFieldSeek());
         Assert.assertEquals(-1, config.getTfNextSeek());
-        
-        Assert.assertEquals(Collections.emptySet(), config.getSumFields());
-        Assert.assertEquals(Collections.emptySet(), config.getMaxFields());
-        Assert.assertEquals(Collections.emptySet(), config.getMinFields());
-        Assert.assertEquals(Collections.emptySet(), config.getAverageFields());
-        Assert.assertEquals(Collections.emptySet(), config.getCountFields());
     }
     
     /**
@@ -512,7 +506,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 202;
+        int expectedObjectCount = 198;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

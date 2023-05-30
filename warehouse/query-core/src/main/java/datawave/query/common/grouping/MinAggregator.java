@@ -64,6 +64,11 @@ public class MinAggregator extends AbstractAggregator<Attribute<?>> {
         return min;
     }
     
+    @Override
+    public boolean hasAggregation() {
+        return min != null;
+    }
+    
     /**
      * Compares the given value to the current min in this aggregator. If no min has been established yet, or if the given value is less than the current min,
      * the given value will be retained as the new min. Otherwise, the current min will remain the same.
