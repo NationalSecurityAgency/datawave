@@ -2,11 +2,14 @@ package datawave.query.predicate;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -63,9 +66,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     
     private Set<String> nonEventFields;
     
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
-                    long maxKeysBeforeSeek) {
-        this(script, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null, Collections.EMPTY_SET);
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
+                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        this(script, queryFields, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null,
+                        Collections.EMPTY_SET);
     }
     
     /**
@@ -77,9 +81,28 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
+     *            - script
+     * @param attributeFactory
+     *            - attributeFactory
+     * @param blacklist
+     *            - blacklist
+     * @param limitFieldsField
+     *            - limitFieldsField
+     * @param limitFieldsMap
+     *            - limitFieldsMap
+     * @param maxFieldsBeforeSeek
+     *            - maxFieldsBeforeSeek
+     * @param maxKeysBeforeSeek
+     *            - maxFieldsBeforeSeek
+     * @param nonEventFields
+     *            - nonEventFields
+     * @param queryFields
+     *            - queryFields
+     * @param whitelist
+     *            - whitelist
      */
-    public TLDEventDataFilter(ASTJexlScript script, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist, long maxFieldsBeforeSeek,
-                    long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
+                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
         super(script, attributeFactory, nonEventFields);
         
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
@@ -91,7 +114,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         // set the anyFieldLimit once if specified otherwise set to -1
         anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
         
-        extractQueryFieldsFromScript(script);
+        setQueryFields(queryFields, script);
         updateLists(whitelist, blacklist);
         setSortedLists(whitelist, blacklist);
     }
@@ -131,6 +154,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
      * 
      * @param input
+     *            an input
      * @return true if Key should be added to context, false otherwise
      */
     @Override
@@ -168,17 +192,6 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
     
     /**
-     * Define the end key given the from condition.
-     * 
-     * @param from
-     * @return
-     */
-    @Override
-    public Key getStopKey(Key from) {
-        return new Key(from.getRow().toString(), from.getColumnFamily().toString() + '\uffff');
-    }
-    
-    /**
      * Determine if a Key should be kept. If a Key is a part of the TLD it will always be kept as long as we have not exceeded the key count limit for that
      * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
      * for query evaluation (apply()==true)
@@ -186,6 +199,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @see datawave.query.predicate.Filter#keep(Key)
      *
      * @param k
+     *            a key
      * @return true to keep, false otherwise
      */
     @Override
@@ -336,7 +350,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            the current range endKey
      * @param endKeyInclusive
      *            the endKeyInclusive flag from the current range
-     * @return
+     * @return the new range or null if a seek should not be performed
      */
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
@@ -532,7 +546,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      *
      * @param end
+     *            the end key
      * @param endInclusive
+     *            end inclusive flag
      * @return return an empty range based to be seeked
      */
     protected Range getEmptyRange(Key end, boolean endInclusive) {
@@ -606,19 +622,34 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Extract the query fields from the script and sort them
      *
      * @param script
+     *            the query script
+     * @return a set of identifiers
      */
-    private void extractQueryFieldsFromScript(ASTJexlScript script) {
-        queryFields = new ArrayList<>();
+    private Set<String> extractIdentifiersFromScript(ASTJexlScript script) {
+        Set<String> ids = new HashSet<>();
         String field;
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(script);
         for (ASTIdentifier identifier : identifiers) {
             field = JexlASTHelper.deconstructIdentifier(identifier);
-            if (!queryFields.contains(field)) {
-                queryFields.add(field);
-            }
+            ids.add(field);
         }
+        return ids;
+    }
+    
+    /**
+     * Intersect the fields serialized along with the query iterator with the identifiers in the query
+     *
+     * @param fields
+     *            the serialized fields
+     * @param script
+     *            the query script
+     */
+    private void setQueryFields(Set<String> fields, ASTJexlScript script) {
         
-        // sort the queryFields
+        Set<String> identifiers = extractIdentifiersFromScript(script);
+        fields = Sets.intersection(fields, identifiers);
+        
+        queryFields = Lists.newArrayList(fields);
         Collections.sort(queryFields);
         queryFields = Collections.unmodifiableList(queryFields);
     }
@@ -749,7 +780,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Parse the field from a key. The field will always be stripped of grouping notation since that is how they have been parsed from the original query
      * 
      * @param current
-     * @return
+     *            the current key
+     * @return the field string
      */
     protected String getCurrentField(Key current) {
         ByteSequence cf = current.getColumnFamilyData();

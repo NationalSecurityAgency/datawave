@@ -10,6 +10,7 @@ import datawave.security.authorization.UserOperations;
 import datawave.security.util.AuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.AbstractRunningQuery;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -35,6 +36,7 @@ import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -130,7 +132,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
-        this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -146,7 +147,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         if (null != connection) {
             setConnection(connection);
         }
-        this.maxResults = this.logic.getResultLimit(this.settings.getDnList());
+        
+        this.maxResults = this.logic.getResultLimit(this.settings);
         if (this.maxResults != this.logic.getMaxResults()) {
             log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
                             + " has a DN configured with a different limit");
@@ -190,6 +192,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
+            this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
             // the configuration query string should now hold the planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
@@ -290,8 +293,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
      * 
      * @param pageStartTime
+     *            the page start time
      * @return true if hasNext()
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -331,8 +336,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * the page short circuit timeout has been reached.
      * 
      * @param pageStartTime
+     *            the page start time
      * @return the next object (could be null)
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private Object getNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -385,6 +392,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      * 
      * @return a results page.
      * @throws Exception
+     *             if there are issues
      */
     public ResultsPage next() throws Exception {
         // update AbstractRunningQuery.lastUsed
@@ -699,6 +707,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     /**
      * Sets {@link TInfo} for this query as an indication that the query is being traced. This trace info is also used to continue a trace across different
      * thread boundaries.
+     * 
+     * @param traceInfo
+     *            the traceinfo
      */
     public void setTraceInfo(TInfo traceInfo) {
         this.traceInfo = traceInfo;

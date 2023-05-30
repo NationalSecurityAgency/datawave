@@ -22,10 +22,14 @@ public interface PushDownPlanner {
      * Returns a re-written tree that reflects pushed down Predicates
      * 
      * @param queryTree
+     *            the query tree
      * @param scannerFactory
+     *            the scanner factory
      * @param metadataHelper
+     *            the metadata helper
      * @param config
-     * @return
+     *            the shard configuration
+     * @return an adjusted query tree
      */
     ASTJexlScript applyRules(ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config);
 }

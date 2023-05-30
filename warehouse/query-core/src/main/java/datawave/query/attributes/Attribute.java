@@ -308,6 +308,8 @@ public abstract class Attribute<T extends Comparable<T>> implements WritableComp
     
     /**
      * Reduce the attribute to those to keep
+     * 
+     * @return the attribute
      */
     public Attribute<?> reduceToKeep() {
         // noop for most attributes. Only override for attributes representing sets of other attributes

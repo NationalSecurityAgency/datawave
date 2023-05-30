@@ -17,6 +17,7 @@ public interface EventDataQueryFilter extends PeekingPredicate<Map.Entry<Key,Str
      * This method is used to denote the start of processing a new document.
      *
      * @param documentKey
+     *            the document key
      */
     void startNewDocument(Key documentKey);
     
@@ -29,6 +30,7 @@ public interface EventDataQueryFilter extends PeekingPredicate<Map.Entry<Key,Str
      * @see com.google.common.base.Predicate#apply(Object)
      * 
      * @param var1
+     *            a map entry
      * @return true if keeping this field for the jexl context
      */
     @Override
@@ -41,40 +43,17 @@ public interface EventDataQueryFilter extends PeekingPredicate<Map.Entry<Key,Str
      * The keep method is used to filter out those fields returned from the apply method above that will be returned to the user.
      * 
      * @see datawave.query.predicate.Filter#keep(org.apache.accumulo.core.data.Key)
-     *
+     * @param k
+     *            the key
      * @return true if keeping this field
      */
     @Override
     boolean keep(Key k);
     
     /**
-     * Define the start key given the from condition.
-     *
-     * @param from
-     * @return
-     */
-    Key getStartKey(Key from);
-    
-    /**
-     * Define the end key given the from condition.
-     *
-     * @param from
-     * @return
-     */
-    Key getStopKey(Key from);
-    
-    /**
-     * Get the key range that covers the complete document specified by the input key range
-     *
-     * @param from
-     * @return
-     */
-    Range getKeyRange(Map.Entry<Key,Document> from);
-    
-    /**
      * Clone the underlying EventDataQueryFilter
      * 
-     * @return
+     * @return cloned EventDataQueryFilter
      */
     EventDataQueryFilter clone();
 }

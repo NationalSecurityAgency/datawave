@@ -33,6 +33,10 @@ public class TokenMgrError extends Error {
     
     /**
      * Replaces unprintable characters by their espaced (or unicode escaped) equivalents in the given string
+     * 
+     * @param str
+     *            a string
+     * @return string with escapes
      */
     protected static final String addEscapes(String str) {
         StringBuilder retval = new StringBuilder();
@@ -83,6 +87,20 @@ public class TokenMgrError extends Error {
      * caused the lexicl error curLexState : lexical state in which this error occured errorLine : line number when the error occured errorColumn : column
      * number when the error occured errorAfter : prefix that was seen before this error occured curchar : the offending character Note: You can customize the
      * lexical error message by modifying this method.
+     * 
+     * @param curChar
+     *            the current char
+     * @param EOFSeen
+     *            indicates if EOF caused the lexicl error
+     * @param errorAfter
+     *            prefix that was seen before this error
+     * @param errorColumn
+     *            column number when the error occured
+     * @param errorLine
+     *            line number when the error occured
+     * @param lexState
+     *            state in which this error
+     * @return a detailed message for the Error when it is thrown by the token manager to indicate a lexical error
      */
     protected static String LexicalError(boolean EOFSeen, int lexState, int errorLine, int errorColumn, String errorAfter, char curChar) {
         return ("Lexical error at line " + errorLine + ", column " + errorColumn + ".  Encountered: "

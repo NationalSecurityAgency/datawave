@@ -59,9 +59,12 @@ public class GeoFunctions {
      * be normalized.
      * 
      * @param field
+     *            the field
      * @param lowerLeft
+     *            the lower left bound
      * @param upperRight
-     * @return
+     *            the upper right bound
+     * @return if we're in the box
      */
     public static boolean within_bounding_box(Object field, String lowerLeft, String upperRight) {
         if (field != null) {
@@ -136,9 +139,12 @@ public class GeoFunctions {
      * test should already be normalized.
      * 
      * @param field
+     *            the field
      * @param center
+     *            the center of the circle
      * @param radius
-     * @return
+     *            radius of the circle
+     * @return if we're within the circle
      */
     public static boolean within_circle(Object field, String center, double radius) {
         if (field != null) {

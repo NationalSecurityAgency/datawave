@@ -55,6 +55,8 @@ public class MockStatusReporter extends StatusReporter {
     
     /**
      * Get the counters
+     * 
+     * @return counters
      */
     public Counters getCounters() {
         return counters;

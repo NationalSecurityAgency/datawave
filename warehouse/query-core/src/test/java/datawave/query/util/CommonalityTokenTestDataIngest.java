@@ -37,11 +37,6 @@ public class CommonalityTokenTestDataIngest {
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
     
-    /**
-     *
-     * 
-     * @return
-     */
     public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
@@ -413,7 +408,7 @@ public class CommonalityTokenTestDataIngest {
     /**
      * forces a shard range
      * 
-     * @return
+     * @return a value
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();

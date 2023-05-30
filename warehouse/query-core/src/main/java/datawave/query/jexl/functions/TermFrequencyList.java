@@ -86,6 +86,7 @@ public class TermFrequencyList {
      * 
      * @param key
      *            a TermFrequency key
+     * @return an event id
      */
     public static String getEventId(Key key) {
         StringBuilder eventId = new StringBuilder();
@@ -192,6 +193,8 @@ public class TermFrequencyList {
     
     /**
      * Let clients ask what fields we are currently tracking.
+     * 
+     * @return a set of fields
      */
     public Set<String> fields() {
         if (this.offsetsPerField.isEmpty()) {
@@ -207,6 +210,8 @@ public class TermFrequencyList {
     
     /**
      * Let clients ask what event ids we are currently tracking.
+     * 
+     * @return a set of ids
      */
     public Set<String> eventIds() {
         if (this.offsetsPerField.isEmpty()) {
@@ -222,6 +227,8 @@ public class TermFrequencyList {
     
     /**
      * Let clients ask what zones we are currently tracking.
+     * 
+     * @return a set of zones
      */
     public Set<Zone> zones() {
         return this.offsetsPerField.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(this.offsetsPerField.keySet());

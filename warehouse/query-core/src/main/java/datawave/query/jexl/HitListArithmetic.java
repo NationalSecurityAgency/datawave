@@ -507,7 +507,9 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
      * Convert the left hand object if required to the same numberic class as the right hand side.
      * 
      * @param left
+     *            the left
      * @param right
+     *            the right
      * @return the fixed left hand object
      */
     protected Object fixLeft(Object left, Object right) {

@@ -94,7 +94,7 @@ public class TermOffsetMap {
     /**
      * Return the underlying {@link PhraseIndexes} object
      * 
-     * @return
+     * @return a phraseindexes object
      */
     public PhraseIndexes getPhraseIndexes() {
         return phraseIndexes;

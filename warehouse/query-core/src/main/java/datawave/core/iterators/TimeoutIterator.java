@@ -77,7 +77,7 @@ public class TimeoutIterator extends WrappingIterator {
     /**
      * identifies if we have exceeded the time prescribed by max.session.time
      * 
-     * @return
+     * @return whether the time has been exceeded
      */
     protected boolean isUnfairExecution() {
         return ((System.currentTimeMillis() - currentSession) >= maxSessionTime);

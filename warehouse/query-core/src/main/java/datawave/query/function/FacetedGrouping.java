@@ -151,8 +151,10 @@ public class FacetedGrouping implements Function<Entry<Key,Document>,Entry<Key,D
     
     /**
      * @param cardList
+     *            list of cardinalities
      * @param attributes
-     * @return
+     *            set of attributes
+     * @return the list of cardinalities
      */
     private List<FieldValueCardinality> adjustAttributeGrouping(Collection<FieldValueCardinality> cardList, Set<Attribute<? extends Comparable<?>>> attributes) {
         

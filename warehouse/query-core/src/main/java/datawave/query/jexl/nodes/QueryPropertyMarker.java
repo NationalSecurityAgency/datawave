@@ -193,6 +193,8 @@ public abstract class QueryPropertyMarker extends ASTReference {
      *
      * @param node
      *            a JexlNode
+     * @param markerClass
+     *            the marker class
      * @return true
      */
     public static boolean isAncestorMarked(JexlNode node, Class<? extends QueryPropertyMarker> markerClass) {
@@ -214,6 +216,8 @@ public abstract class QueryPropertyMarker extends ASTReference {
      *
      * @param node
      *            an arbitrary jexl node
+     * @param marker
+     *            the property marker
      * @return the source node, or the original node if the source node is not marked
      */
     public static JexlNode unwrapFully(JexlNode node, Class<? extends QueryPropertyMarker> marker) {

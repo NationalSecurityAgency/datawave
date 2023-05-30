@@ -93,6 +93,9 @@ public class EdgeFilterIterator extends Filter {
      *
      *
      * @param ctx
+     *            the context
+     * @param keyComponents
+     *            mapping of key components
      */
     private void setupContext(JexlContext ctx, Map<FieldKey,String> keyComponents) {
         
@@ -137,6 +140,7 @@ public class EdgeFilterIterator extends Filter {
      * Method to setup the jexl query expression from the iterator options for evaulation.
      *
      * @param options
+     *            mapping of options
      */
     private void initOptions(Map<String,String> options) {
         String jexl = options.get(JEXL_OPTION);
@@ -188,7 +192,8 @@ public class EdgeFilterIterator extends Filter {
      * Method to perform prefilter against a whitelist to see if we can quickly ignore the key
      *
      * @param keyComponents
-     * @return
+     *            mapping of key components
+     * @return if we can ignore the key
      */
     private boolean prefilter(Map<FieldKey,String> keyComponents) {
         boolean retVal = true;
@@ -223,8 +228,11 @@ public class EdgeFilterIterator extends Filter {
      * For testing purposes only. Does nothing with super.
      *
      * @param source
+     *            a source
      * @param options
+     *            map of options
      * @throws java.io.IOException
+     *             for issues with read/write
      */
     public void init(org.apache.accumulo.core.iterators.SortedKeyValueIterator<org.apache.accumulo.core.data.Key,org.apache.accumulo.core.data.Value> source,
                     java.util.Map<java.lang.String,java.lang.String> options) throws java.io.IOException {
@@ -235,7 +243,9 @@ public class EdgeFilterIterator extends Filter {
      * Determines if the edge key satisfies the conditions expressed in the supplied JEXL query string.
      *
      * @param k
+     *            a key
      * @param V
+     *            a value
      * @return boolean - true if it is a match.
      */
     @Override

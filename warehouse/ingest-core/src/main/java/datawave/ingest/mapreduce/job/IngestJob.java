@@ -4,6 +4,7 @@ import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import datawave.ingest.mapreduce.EventMapper;
@@ -99,6 +100,7 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -537,16 +539,29 @@ public class IngestJob implements Tool {
     }
     
     private void setupHandlers(Configuration conf) {
-        for (Type t : TypeRegistry.getTypes()) {
-            for (String handler : t.getDefaultDataTypeHandlers()) {
-                try {
-                    Object o = Class.forName(handler).newInstance();
-                    if (o instanceof JobSetupHandler) {
-                        JobSetupHandler setupHandler = (JobSetupHandler) o;
-                        setupHandler.setup(conf);
+        // default to all types
+        Collection<Type> types = TypeRegistry.getTypes();
+        
+        // when an override is specified only load handlers associated with that data type
+        String override = conf.get(DataTypeHelper.Properties.DATA_NAME_OVERRIDE);
+        if (override != null) {
+            types = Collections.singleton(TypeRegistry.getType(override));
+        }
+        
+        for (Type t : types) {
+            String[] handlers = t.getDefaultDataTypeHandlers();
+            if (handlers != null) {
+                for (String handler : handlers) {
+                    try {
+                        Object o = Class.forName(handler).newInstance();
+                        if (o instanceof JobSetupHandler) {
+                            JobSetupHandler setupHandler = (JobSetupHandler) o;
+                            conf.set(DataTypeHelper.Properties.DATA_NAME, t.typeName());
+                            setupHandler.setup(conf);
+                        }
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                        log.warn("Could not setup handler: " + handler, e);
                     }
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-                    log.warn("Could not setup handler: " + handler, e);
                 }
             }
         }

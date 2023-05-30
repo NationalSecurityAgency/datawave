@@ -114,7 +114,8 @@ public class GeoWaveFunctionsDescriptorTest {
      * Traverse the node graph to find the first function node in the iteration and returns it. Null is returned if no function node is found.
      *
      * @param root
-     * @return
+     *            root node
+     * @return an AST function node
      */
     public static ASTFunctionNode find(JexlNode root) {
         if (root instanceof ASTFunctionNode) {

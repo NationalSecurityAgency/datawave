@@ -10,20 +10,19 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.function.PrefixEquality;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
 import datawave.query.iterator.errors.UnindexedException;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.Constants;
 import datawave.query.function.LogTiming;
 import datawave.query.iterator.profile.EvaluationTrackingFunction;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.util.StringUtils;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.Document;
@@ -38,7 +37,6 @@ import datawave.query.predicate.TimeFilter;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -131,7 +129,6 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
         }
         
-        this.equality = new PrefixEquality(PartialKey.ROW_COLFAM);
         this.getDocumentKey = GetStartKey.instance();
         this.mustUseFieldIndex = true;
         
@@ -151,9 +148,8 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             if (filterCsv != null && !filterCsv.isEmpty()) {
                 HashSet<String> set = Sets.newHashSet(StringUtils.split(filterCsv, ','));
                 Iterable<Text> tformed = Iterables.transform(set, new StringToText());
-                if (options.containsKey(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)) {
-                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, Integer.parseInt(options
-                                    .get(SeekingQueryPlanner.MAX_KEYS_BEFORE_DATATYPE_SEEK)));
+                if (options.containsKey(FI_NEXT_SEEK)) {
+                    this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed, getFiNextSeek());
                 } else {
                     this.fieldIndexKeyDataTypeFilter = new FieldIndexKeyDataTypeFilter(tformed);
                 }
@@ -236,8 +232,6 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         } else {
             this.source = source;
         }
-        
-        this.fiAggregator = new IdentityAggregator(null, null);
         
         this.sourceForDeepCopies = this.source.deepCopy(this.myEnvironment);
         
@@ -381,4 +375,16 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
     }
     
+    /**
+     * Get a FieldIndexAggregator
+     *
+     * @return a {@link IdentityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new IdentityAggregator(null, null);
+        }
+        return fiAggregator;
+    }
 }

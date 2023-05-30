@@ -8,6 +8,7 @@ import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -41,6 +42,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - should unfielded terms be expanded
      * @param expandValues
      *            - should regex/ranges be expanded into discrete values
+     * @return the normalized query
+     * @throws Exception
+     *             if there are issues
      */
     String getPlan(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception;
@@ -54,7 +58,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            - query settings (query, begin date, end date, etc.)
      * @param runtimeQueryAuthorizations
      *            - authorizations that have been calculated for this query based on the caller and server.
+     * @return a configuration
      * @throws Exception
+     *             if there are issues
      */
     GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
     
@@ -73,11 +79,15 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * 
      * @param configuration
      *            Encapsulates all information needed to run a query (whether the query is a BatchScanner, a MapReduce job, etc)
+     * @throws Exception
+     *             if there are issues
      */
     void setupQuery(GenericQueryConfiguration configuration) throws Exception;
     
     /**
      * @return a copy of this instance
+     * @throws CloneNotSupportedException
+     *             if the clone is not supported
      */
     Object clone() throws CloneNotSupportedException;
     
@@ -87,6 +97,8 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     AccumuloConnectionFactory.Priority getConnectionPriority();
     
     /**
+     * @param settings
+     *            query settings
      * @return Transformer that will convert Key,Value to a Result object
      */
     QueryLogicTransformer getTransformer(Query settings);
@@ -231,6 +243,8 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     void setLogicDescription(String logicDescription);
     
     /**
+     * @param query
+     *            the query
      * @return the audit level for this logic
      */
     AuditType getAuditType(Query query);
@@ -286,6 +300,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * Check that the user has one of the required roles principal my be null when there is no intent to control access to QueryLogic
      * 
      * @param principal
+     *            the principal
      * @return true/false
      */
     boolean canRunQuery(Principal principal);
@@ -365,21 +380,49 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
     Map<String,Long> getDnResultLimits();
     
     /**
-     * Return the maximum number of results to include for the query for any DN present in the specified collection. If limits are found for multiple DNs in the
-     * collection, the smallest value will be returned. If the provided collection is null or empty, or if no limits are found for any DN, the value of
-     * {@link #getMaxResults()} will be returned.
+     * Set the map of DNs to query result limits. This should override the default limit returned by {@link #getMaxResults()} for any included DNs.
      *
-     * @param dns
-     *            the DNs to determine the maximum number of results to include for the query. It's expected that this list represents all the DNs in the DN
-     *            chain for an individual user.
+     * @param systemFromResultLimits
+     *            the map of system from values to query result limits
+     */
+    void setSystemFromResultLimits(Map<String,Long> systemFromResultLimits);
+    
+    /**
+     * Return a map of System From values to results limits.
+     *
+     * @return the map of system from values to query result limits.
+     */
+    Map<String,Long> getSystemFromResultLimits();
+    
+    /**
+     * Return the maximum number of results to include for the query based on criteria including the DN or systemFrom stored in the query setting object that is
+     * provided. If limits are found for multiple criteria in the collection, the smallest value will be returned. If no limits are found for any criteria, the
+     * value of {@link #getMaxResults()} will be returned. If both the DN and systemFrom rules match the request, the DN result will take precedence over the
+     * systemFrom rules.
+     *
+     * @param settings
+     *            the query settings used to determine the maximum number of results to include for the query. It's expected that this includes the list of all
+     *            DNs for a user and any systemFrom parameter values.
      * @return the maximum number of results to include
      */
-    default long getResultLimit(Collection<String> dns) {
-        Map<String,Long> dnResultLimits = getDnResultLimits();
-        if (dnResultLimits == null || dns == null) {
-            return getMaxResults();
+    default long getResultLimit(Query settings) {
+        long maxResults = getMaxResults();
+        
+        Map<String,Long> systemFromLimits = getSystemFromResultLimits();
+        QueryImpl.Parameter systemFromParam = settings.findParameter("systemFrom");
+        if (systemFromLimits != null && systemFromParam != null) {
+            // this findParameter implementation never returns null, it will return a parameter with an empty string
+            // as the value if the parameter is not present.
+            maxResults = systemFromLimits.getOrDefault(systemFromParam.getParameterValue(), maxResults);
         }
-        return dns.stream().filter(dnResultLimits::containsKey).map(dnResultLimits::get).min(Long::compareTo).orElseGet(this::getMaxResults);
+        
+        Map<String,Long> dnResultLimits = getDnResultLimits();
+        Collection<String> dns = settings.getDnList();
+        if (dnResultLimits != null && dns != null) {
+            maxResults = dns.stream().filter(dnResultLimits::containsKey).map(dnResultLimits::get).min(Long::compareTo).orElse(maxResults);
+        }
+        
+        return maxResults;
     }
     
     /**
@@ -387,6 +430,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * logics shouldn't store this property.
      *
      * @param pageProcessingStartTime
+     *            the processing start time
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
     

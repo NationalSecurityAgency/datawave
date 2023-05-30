@@ -18,6 +18,11 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
      * Initialize the query field filter with all of the fields required to evaluation this query
      * 
      * @param script
+     *            a script
+     * @param nonEventFields
+     *            set of non event fields
+     * @param metadata
+     *            type metadata
      */
     public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
         super(script, metadata, nonEventFields);
@@ -60,16 +65,6 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
     public boolean keep(Key k) {
         // only keep the data for the document of interest
         return (docUid == null || docUid.equals(getUid(k)));
-    }
-    
-    /**
-     * We need to remap the start key to the begining of the TLD so that we can get all of the necessary fields when scanning the shard table.
-     * 
-     * @param from
-     */
-    @Override
-    public Key getStartKey(Key from) {
-        return new Key(from.getRow().toString(), TLD.parseRootPointerFromId(from.getColumnFamily().toString()));
     }
     
     protected String getUid(Key k) {

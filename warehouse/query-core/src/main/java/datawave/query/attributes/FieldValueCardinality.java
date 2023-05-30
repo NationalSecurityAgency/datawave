@@ -129,7 +129,8 @@ public class FieldValueCardinality implements Comparable<FieldValueCardinality> 
      * Return whether the other field value cardinality is within this one.
      * 
      * @param other
-     * @return
+     *            the other field value cardinality
+     * @return if the cardinality is within this
      */
     public boolean isWithin(FieldValueCardinality other) {
         if (fieldName != null && !fieldName.equals(other.fieldName)) {

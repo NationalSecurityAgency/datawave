@@ -74,10 +74,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     }
     
     private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        init();
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final List<NameValuePair> nameValuePairs = new ArrayList<>();
         queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> nameValuePairs.add(new BasicNameValuePair(e.getKey(), v))));
@@ -112,10 +110,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     @Override
     public BaseQueryResponse next(String id, Object callerObject) {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        init();
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final String suffix = String.format(NEXT, id);
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {}, httpGet -> {
@@ -129,10 +125,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     @Override
     public VoidResponse close(String id, Object callerObject) {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        init();
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final String suffix = String.format(CLOSE, id);
         return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
@@ -146,10 +140,8 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
     
     @Override
     public GenericResponse<String> planQuery(String id, Object callerObject) {
-        if (!(callerObject instanceof DatawavePrincipal)) {
-            throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
-        }
-        final DatawavePrincipal principal = (DatawavePrincipal) callerObject;
+        init();
+        final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
         
         final String suffix = String.format(PLAN, id);
         return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
@@ -171,6 +163,13 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             throw new RuntimeException(e);
         }
         
+    }
+    
+    private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
+        if (callerObject instanceof DatawavePrincipal) {
+            return (DatawavePrincipal) callerObject;
+        }
+        throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
     
 }

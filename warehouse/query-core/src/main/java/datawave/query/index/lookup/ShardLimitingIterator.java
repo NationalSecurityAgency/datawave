@@ -89,7 +89,8 @@ public class ShardLimitingIterator implements Iterator<Entry<Key,Value>> {
      * Get the day from the key
      * 
      * @param key
-     * @return
+     *            a key
+     * @return the day string
      */
     protected String getDay(final Key key) {
         String myDay = null;

@@ -158,6 +158,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * Get an IteratorSetting given a hadoop configuration
      * 
      * @param conf
+     *            a configuration
      * @return the iterator setting
      */
     public static IteratorSetting getIteratorSetting(Configuration conf) {
@@ -333,8 +334,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     
     /**
      * Given a Key to consume, update any necessary counters etc.
-     *
+     * 
      * @param key
+     *            a key
      */
     private void consume(Key key) {
         
@@ -500,6 +502,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      *
      * @return true if we have a new key to return, false if the count is empty. This also resets current counters etc.
      * @throws java.io.IOException
+     *             for issues with read/write
      */
     private boolean wrapUpCurrent() throws IOException {
         if (log.isTraceEnabled()) {
@@ -526,7 +529,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     /**
      * Row : shardId Fam : fieldName Qual: fieldValue \x00 datatype
      *
-     * @return
+     * @return a map of the keys and values
      */
     private Map<Key,Value> buildReturnKeys() {
         if (log.isTraceEnabled()) {
@@ -588,6 +591,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
      * Basic method to find our topKey which matches our given FieldName,FieldValue.
      *
      * @throws java.io.IOException
+     *             for issues with read/write
      */
     protected void updateCache() throws IOException {
         resetCurrent();

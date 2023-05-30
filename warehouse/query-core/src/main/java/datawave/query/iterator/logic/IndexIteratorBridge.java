@@ -126,8 +126,11 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
      * <code>initialize</code> but are not <code>seek</code>'d until called by a higher level iterator.
      * 
      * @param range
+     *            a range
      * @param columnFamilies
+     *            set of column families
      * @param includeCFs
+     *            check to include cfs
      */
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean includeCFs) {

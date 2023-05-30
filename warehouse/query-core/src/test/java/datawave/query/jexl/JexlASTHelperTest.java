@@ -2,7 +2,6 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
@@ -708,6 +707,12 @@ public class JexlASTHelperTest {
         // original full query
         query = "(AGE > '+bE1' || ETA > '+bE1') && (AGE < '+cE1' || ETA < '+cE1') && ((_Eval_ = true) && ((AGE || ETA).getValuesForGroups(grouping:getGroupsForMatchesInGroup((NOME || NAME), 'MEADOW', (GENERE || GENDER), 'FEMALE')) == MAGIC))";
         testIdentifierParse(query, Sets.newHashSet("AGE", "ETA", "GENDER", "GENERE", "MAGIC", "NAME", "NOME"));
+        
+        query = "content:phrase(termOffsetMap, 'bar', 'baz')";
+        testIdentifierParse(query, Collections.singleton("termOffsetMap"));
+        
+        query = "content:phrase(FOO, termOffsetMap, 'bar', 'baz')";
+        testIdentifierParse(query, Sets.newHashSet("FOO", "termOffsetMap"));
     }
     
     private void testIdentifierParse(String query, Set<String> expectedIdentifiers) {
@@ -719,4 +724,63 @@ public class JexlASTHelperTest {
             e.printStackTrace();
         }
     }
+    
+    @Test
+    public void testIdentifierDeconstructionWithGroupings() {
+        // no prefix or grouping
+        testDeconstructionGroupingTrue("FIELD", "FIELD");
+        
+        // has a simple grouping, does not have a prefix
+        testDeconstructionGroupingTrue("FIELD.1", "FIELD.1");
+        
+        // has a complex grouping, does not have a prefix
+        testDeconstructionGroupingTrue("FIELD.1.2", "FIELD.1.2");
+        
+        // has a prefix, does not have a grouping
+        testDeconstructionGroupingTrue("FIELD", "$FIELD");
+        
+        // has a prefix, has a simple grouping
+        testDeconstructionGroupingTrue("FIELD.1", "$FIELD.1");
+        
+        // has a prefix, has a complex grouping
+        testDeconstructionGroupingTrue("FIELD.1.2", "$FIELD.1.2");
+        
+        // empty string should return untouched
+        testDeconstructionGroupingTrue("", "");
+    }
+    
+    @Test
+    public void testIdentifierDeconstructionWithoutGroupings() {
+        // no prefix or grouping
+        testDeconstructionGroupingFalse("FIELD", "FIELD");
+        
+        // has a simple grouping, does not have a prefix
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1");
+        
+        // has a complex grouping, does not have a prefix
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1.2");
+        
+        // has a prefix, does not have a grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD");
+        
+        // has a prefix, has a simple grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1");
+        
+        // has a prefix, has a complex grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1.2");
+        
+        // empty string should remain untouched
+        testDeconstructionGroupingFalse("", "");
+    }
+    
+    private void testDeconstructionGroupingTrue(String expected, String input) {
+        String actual = JexlASTHelper.deconstructIdentifier(input, true);
+        assertEquals(expected, actual);
+    }
+    
+    private void testDeconstructionGroupingFalse(String expected, String input) {
+        String actual = JexlASTHelper.deconstructIdentifier(input, false);
+        assertEquals(expected, actual);
+    }
+    
 }
