@@ -10,7 +10,9 @@ import java.util.Iterator;
 import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.TreeSet;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -163,13 +165,13 @@ public class FileSortedSetTest {
     public void testToArray() throws Exception {
         Object[] a = set.toArray();
         Object[] d = data.toArray();
-        assertTrue(Arrays.equals(d,a));
+        assertArrayEquals(d, a);
         set.persist();
         a = set.toArray();
-        assertTrue(Arrays.equals(d,a));
+        assertArrayEquals(d, a);
         set.load();
         a = set.toArray();
-        assertTrue(Arrays.equals(d,a));
+        assertArrayEquals(d, a);
     }
 
     @Test
@@ -177,32 +179,32 @@ public class FileSortedSetTest {
         Integer[] d = data.toArray(new Integer[set.size()]);
 
         Integer[] a = set.toArray(new Integer[set.size()]);
-        assertTrue(Arrays.equals(d,a));
+        assertArrayEquals(d, a);
         set.persist();
         a = set.toArray(new Integer[set.size()]);
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
         set.load();
         a = set.toArray(new Integer[set.size()]);
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
 
         a = set.toArray(new Integer[set.size()]);
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
         set.persist();
         a = set.toArray(new Integer[set.size()]);
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
         set.load();
         a = set.toArray(new Integer[set.size()]);
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
 
         d = data.toArray(new Integer[set.size() * 2]);
         a = set.toArray((new Integer[set.size() * 2]));
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
         set.persist();
         a = set.toArray(new Integer[set.size() * 2]);
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
         set.load();
         a =  set.toArray(new Integer[set.size() * 2]);
-        assertTrue(Arrays.equals(d, a));
+        assertArrayEquals(d, a);
     }
 
     @Test

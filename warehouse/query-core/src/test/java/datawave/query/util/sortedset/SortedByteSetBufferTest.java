@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -140,7 +141,7 @@ public class SortedByteSetBufferTest {
         for (Iterator<byte[]> it = set.iterator(); it.hasNext();) {
             byte[] value = it.next();
             byte[] expected = data[sortedOrder[index++]];
-            assertTrue(Arrays.equals(expected, value));
+            assertArrayEquals(expected, value);
         }
         set.clear();
         for (@SuppressWarnings("unused")
@@ -177,7 +178,7 @@ public class SortedByteSetBufferTest {
         int index = 0;
         for (byte[] value : set) {
             byte[] expected = data[sortedOrder[index++]];
-            assertTrue(Arrays.equals(expected, value));
+            assertArrayEquals(expected, value);
         }
     }
 
@@ -201,12 +202,12 @@ public class SortedByteSetBufferTest {
         }
 
         // verify order
-        assertTrue(Arrays.equals(data[sortedOrder[start]], subSet.first()));
+        assertArrayEquals(data[sortedOrder[start]], subSet.first());
         int index = start;
         for (byte[] value : subSet) {
-            assertTrue(Arrays.equals(data[sortedOrder[index++]], value));
+            assertArrayEquals(data[sortedOrder[index++]], value);
         }
-        assertTrue(Arrays.equals(data[sortedOrder[end - 1]], subSet.last()));
+        assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
         // verify add
         assertFalse(subSet.add(data[sortedOrder[start]]));
@@ -327,7 +328,7 @@ public class SortedByteSetBufferTest {
         // verify contents
         assertEquals(end - start, subSet.size());
         for (int i = 0; i < data.length; i++) {
-            if (i >= start && i < end) {
+            if (i < end) {
                 assertTrue(subSet.contains(data[sortedOrder[i]]));
             } else {
                 assertFalse(subSet.contains(data[sortedOrder[i]]));
@@ -335,12 +336,12 @@ public class SortedByteSetBufferTest {
         }
 
         // verify order
-        assertTrue(Arrays.equals(data[sortedOrder[start]], subSet.first()));
+        assertArrayEquals(data[sortedOrder[start]], subSet.first());
         int index = start;
         for (byte[] value : subSet) {
-            assertTrue(Arrays.equals(data[sortedOrder[index++]], value));
+            assertArrayEquals(data[sortedOrder[index++]], value);
         }
-        assertTrue(Arrays.equals(data[sortedOrder[end - 1]], subSet.last()));
+        assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
         // verify add
         assertFalse(subSet.add(data[sortedOrder[start]]));
@@ -359,7 +360,7 @@ public class SortedByteSetBufferTest {
         assertTrue(subSet.contains(value));
         assertTrue(set.contains(value));
         for (int i = 0; i < data.length; i++) {
-            if (i >= start && i < end) {
+            if (i < end) {
                 assertTrue(subSet.contains(data[sortedOrder[i]]));
             } else {
                 assertFalse(subSet.contains(data[sortedOrder[i]]));
@@ -373,7 +374,7 @@ public class SortedByteSetBufferTest {
         assertEquals(data.length, set.size());
         assertFalse(subSet.contains(value));
         for (int i = 0; i < data.length; i++) {
-            if (i >= start && i < end) {
+            if (i < end) {
                 assertTrue(subSet.contains(data[sortedOrder[i]]));
             } else {
                 assertFalse(subSet.contains(data[sortedOrder[i]]));
@@ -420,7 +421,7 @@ public class SortedByteSetBufferTest {
         SortedSet<byte[]> subHeadSet = subSet.headSet(data[sortedOrder[end - 1]]);
         assertEquals(end - start - 1, subHeadSet.size());
         for (int i = 0; i < data.length; i++) {
-            if (i >= start && i < (end - 1)) {
+            if (i < (end - 1)) {
                 assertTrue(subHeadSet.contains(data[sortedOrder[i]]));
             } else {
                 assertFalse(subHeadSet.contains(data[sortedOrder[i]]));
@@ -448,12 +449,12 @@ public class SortedByteSetBufferTest {
         }
 
         // verify order
-        assertTrue(Arrays.equals(data[sortedOrder[start]], subSet.first()));
+        assertArrayEquals(data[sortedOrder[start]], subSet.first());
         int index = start;
         for (byte[] value : subSet) {
-            assertTrue(Arrays.equals(data[sortedOrder[index++]], value));
+            assertArrayEquals(data[sortedOrder[index++]], value);
         }
-        assertTrue(Arrays.equals(data[sortedOrder[end - 1]], subSet.last()));
+        assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
         // verify add
         assertFalse(subSet.add(data[sortedOrder[start]]));
@@ -549,7 +550,7 @@ public class SortedByteSetBufferTest {
         for (int i = 0; i < data.length; i++) {
             byte[] expected = data[sortedOrder[i]];
             byte[] value = set.get(i);
-            assertTrue(Arrays.equals(expected, value));
+            assertArrayEquals(expected, value);
         }
     }
 
@@ -560,7 +561,7 @@ public class SortedByteSetBufferTest {
     public void testLast() {
         byte[] expected = data[sortedOrder[data.length - 1]];
         byte[] value = set.last();
-        assertTrue(Arrays.equals(expected, value));
+        assertArrayEquals(expected, value);
     }
 
     /**
@@ -570,6 +571,6 @@ public class SortedByteSetBufferTest {
     public void testFirst() {
         byte[] expected = data[sortedOrder[0]];
         byte[] value = set.first();
-        assertTrue(Arrays.equals(expected, value));
+        assertArrayEquals(expected, value);
     }
 }

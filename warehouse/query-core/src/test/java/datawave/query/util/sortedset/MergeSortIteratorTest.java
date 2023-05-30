@@ -132,7 +132,7 @@ public class MergeSortIteratorTest {
             } catch (Exception e) {
                 // expected
             }
-            Integer next = null;
+            Integer next;
             try {
                 next = it.next();
             } catch (NoSuchElementException nsee) {
@@ -162,7 +162,6 @@ public class MergeSortIteratorTest {
                     return (o2 == null ? 0 : -1);
                 }else{
                     return (o2 ==null ? 1 : o1.compareTo(o2));
-
                 }
             }
         };
