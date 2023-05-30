@@ -3,7 +3,6 @@ package datawave.query.common.grouping;
 import datawave.query.attributes.Attribute;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
-import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -39,11 +38,6 @@ public abstract class AbstractAggregator<AGGREGATE> implements Aggregator<AGGREG
     
     @Override
     public abstract void aggregate(Attribute<?> value);
-    
-    @Override
-    public void aggregateAll(Collection<Attribute<?>> values) {
-        values.forEach(this::aggregate);
-    }
     
     @Override
     public abstract void merge(Aggregator<?> other);

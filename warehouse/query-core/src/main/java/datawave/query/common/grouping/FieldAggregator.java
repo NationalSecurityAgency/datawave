@@ -1,7 +1,6 @@
 package datawave.query.common.grouping;
 
 import datawave.query.attributes.Attribute;
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
 import java.util.Arrays;
@@ -11,7 +10,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * This class provides functionality to aggregate values for specified target fields using specified aggregation operations.

@@ -58,14 +58,6 @@ public interface Aggregator<AGGREGATE> {
     void aggregate(Attribute<?> value);
     
     /**
-     * Aggregate each value in the given collection into this aggregator.
-     *
-     * @param values
-     *            the values to aggregate
-     */
-    void aggregateAll(Collection<Attribute<?>> values);
-    
-    /**
      * Merges the given aggregator into this aggregator
      *
      * @param other

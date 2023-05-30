@@ -1,7 +1,6 @@
 package datawave.query.common.grouping;
 
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Multimap;
 import datawave.data.type.NumberType;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;

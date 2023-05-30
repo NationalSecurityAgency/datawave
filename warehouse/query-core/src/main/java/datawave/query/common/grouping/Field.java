@@ -15,20 +15,13 @@ import java.util.Set;
  */
 class Field {
     
-    private static final Joiner joiner = Joiner.on(".").skipNulls();
-    
     private final String base;
     private final String groupingContext;
     private final String instance;
     private final Attribute<?> attribute;
     private final Set<Attribute<?>> attributes;
     
-    private final String fullField;
-    private final String fieldAndGroup;
-    
     public Field(String base, String groupingContext, String instance, Attribute<?> attribute) {
-        this.fullField = joiner.join(base, groupingContext, instance);
-        this.fieldAndGroup = joiner.join(base, groupingContext);
         this.base = base;
         this.groupingContext = groupingContext;
         this.instance = instance;
@@ -39,19 +32,6 @@ class Field {
         } else {
             this.attributes = Collections.singleton(attribute);
         }
-    }
-    
-    /**
-     * Return the full field with the field base, group (if present), and instance (if present) in the format {@code <BASE>.<GROUP>.<INSTANCE>}.
-     *
-     * @return the full field name.
-     */
-    public String getFullField() {
-        return fullField;
-    }
-    
-    public String getFieldAndGroup() {
-        return fieldAndGroup;
     }
     
     /**
@@ -132,7 +112,7 @@ class Field {
     
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("fieldName", base).append("group", groupingContext).append("instance", instance)
+        return new ToStringBuilder(this).append("base", base).append("groupingContext", groupingContext).append("instance", instance)
                         .append("attributes", attributes).toString();
     }
 }
