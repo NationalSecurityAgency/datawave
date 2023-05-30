@@ -1,11 +1,9 @@
 package datawave.query.common.grouping;
 
-import com.google.common.base.Joiner;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import org.apache.commons.lang.builder.ToStringBuilder;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -88,6 +86,13 @@ class Field {
         return attribute;
     }
     
+    /**
+     * A convenience method for retrieving all attributes for this {@link Field}, particularly useful when dealing with a {@link Field} that was created with a
+     * multi-value attribute. If the originating attribute was not multi-value, then the set will consist only of the same attribute returned by
+     * {@link #getAttribute()}.
+     *
+     * @return all attributes, or same attribute as returned by {@link #getAttribute()} if the originating attribute was not multi-value
+     */
     public Set<Attribute<?>> getAttributes() {
         return attributes;
     }
