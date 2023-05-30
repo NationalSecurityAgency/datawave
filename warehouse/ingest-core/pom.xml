@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-balancers</artifactId>
+            <artifactId>datawave-accumulo-extensions</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
