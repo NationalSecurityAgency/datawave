@@ -1,5 +1,6 @@
 package datawave.query.util.cache;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -8,7 +9,7 @@ import datawave.data.ColumnFamilyConstants;
 import datawave.data.type.Type;
 import datawave.query.Constants;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -29,8 +30,8 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
     private static final Logger log = Logger.getLogger(IndexedFieldLoader.class);
     
     /**
-     * @param connector
-     *            a connector
+     * @param client
+     *            a client
      * @param tableName
      *            string table name
      * @param auths
@@ -40,9 +41,9 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
      * @param dataTypeFilters
      *            the data type filters
      */
-    public IndexedFieldLoader(Connector connector, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
+    public IndexedFieldLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {
-        super(connector, tableName, auths, columnFamilyList);
+        super(client, tableName, auths, columnFamilyList);
         
         if (null != dataTypeFilters)
             this.dataTypeFilters = new ArrayList<>(dataTypeFilters);
@@ -142,7 +143,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
                     @SuppressWarnings("unchecked")
                     Class<? extends Type<?>> clazz = (Class<? extends Type<?>>) Class.forName(colq.substring(idx + 1));
                     
-                    Type<?> normalizer = clazz.newInstance();
+                    Type<?> normalizer = clazz.getDeclaredConstructor().newInstance();
                     
                     typedNormalizers.add(type);
                     
@@ -166,7 +167,8 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
                     
                     return true;
                     
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                         NoSuchMethodException | InvocationTargetException e) {
                     log.error("Unable to find normalizer on class path: " + colq.substring(idx + 1), e);
                 }
                 

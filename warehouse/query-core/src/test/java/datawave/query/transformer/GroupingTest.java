@@ -29,7 +29,9 @@ import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.DefaultEventQueryResponse;
-import org.apache.accumulo.core.client.Connector;
+import datawave.webservice.result.EventQueryResponseBase;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.log4j.Logger;
@@ -256,7 +258,7 @@ public abstract class GroupingTest {
     private String query;
     private Date startDate;
     private Date endDate;
-    private BiConsumer<Connector,String> dataWriter;
+    private BiConsumer<AccumuloClient,String> dataWriter;
     
     @Deployment
     public static JavaArchive createDeployment() {
@@ -323,9 +325,9 @@ public abstract class GroupingTest {
     }
     
     private void givenNonModelData() {
-        dataWriter = (connector, range) -> {
+        dataWriter = (client, range) -> {
             try {
-                VisibilityWiseGuysIngest.writeItAll(connector, range);
+                VisibilityWiseGuysIngest.writeItAll(client, range);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -333,9 +335,9 @@ public abstract class GroupingTest {
     }
     
     private void givenModelData() {
-        dataWriter = (connector, range) -> {
+        dataWriter = (client, range) -> {
             try {
-                VisibilityWiseGuysIngestWithModel.writeItAll(connector, range);
+                VisibilityWiseGuysIngestWithModel.writeItAll(client, range);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -436,8 +438,8 @@ public abstract class GroupingTest {
         log.debug("queryLogicName: " + settings.getQueryLogicName());
         
         // Initialize the query logic.
-        Connector connector = createConnector(teardown, interrupt);
-        GenericQueryConfiguration config = logic.initialize(connector, settings, authSet);
+        AccumuloClient client = createClient(teardown, interrupt);
+        GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         
         // Run the query and retrieve the response.
@@ -449,13 +451,13 @@ public abstract class GroupingTest {
         return new QueryResult(teardown, interrupt, response);
     }
     
-    private Connector createConnector(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
-        Connector connector = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).connector;
-        dataWriter.accept(connector, getRange());
-        PrintUtility.printTable(connector, auths, TableName.SHARD);
-        PrintUtility.printTable(connector, auths, TableName.SHARD_INDEX);
-        PrintUtility.printTable(connector, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
-        return connector;
+    private AccumuloClient createClient(RebuildingScannerTestHelper.TEARDOWN teardown, RebuildingScannerTestHelper.INTERRUPT interrupt) throws Exception {
+        AccumuloClient client = new QueryTestTableHelper(getClass().toString(), log, teardown, interrupt).client;
+        dataWriter.accept(client, getRange());
+        PrintUtility.printTable(client, auths, TableName.SHARD);
+        PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
+        PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
+        return client;
     }
     
     @Test

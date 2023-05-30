@@ -2,8 +2,8 @@ package datawave.mr.bulk;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -14,10 +14,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.mr.bulk.split.DefaultLocationStrategy;
 import datawave.mr.bulk.split.DefaultSplitStrategy;
@@ -25,13 +29,12 @@ import datawave.mr.bulk.split.LocationStrategy;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.SplitStrategy;
 
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.ClientSideIteratorScanner;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IsolatedScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.RowIterator;
@@ -40,32 +43,31 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.impl.ClientContext;
-import org.apache.accumulo.core.client.impl.Credentials;
-import org.apache.accumulo.core.client.impl.Tables;
-import org.apache.accumulo.core.client.impl.TabletLocator;
-import org.apache.accumulo.core.client.mapreduce.InputFormatBase;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import org.apache.accumulo.core.clientImpl.ClientConfConverter;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+import org.apache.accumulo.core.clientImpl.ClientInfo;
+import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.impl.KeyExtent;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.iterators.user.VersioningIterator;
-import org.apache.accumulo.core.master.state.tables.TableState;
+import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.TablePermission;
 import datawave.common.util.ArgumentChecker;
+import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.TextUtil;
-import org.apache.accumulo.fate.util.UtilWaitThread;
+import org.apache.accumulo.core.util.threads.Threads;
+import org.apache.accumulo.core.util.UtilWaitThread;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -90,7 +92,7 @@ import com.google.common.collect.Multimap;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
     
-    protected static final Logger log = Logger.getLogger(InputFormatBase.class);
+    protected static final Logger log = Logger.getLogger(BulkInputFormat.class);
     
     protected static final String PREFIX = BulkInputFormat.class.getSimpleName();
     protected static final String INPUT_INFO_HAS_BEEN_SET = PREFIX + ".configured";
@@ -509,18 +511,32 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     }
     
     /**
-     * Initializes an Accumulo {@link Instance} based on the configuration.
-     * 
+     * Creates an {@link AccumuloClient} based on the supplied configuration.
+     *
      * @param conf
      *            the Hadoop configuration object
-     * @return an accumulo instance
-     * @see #setZooKeeperInstance(Configuration, String, String)
-     * @see #setInMemoryInstance(Configuration, String)
+     * @return an {@link AccumuloClient}
+     * @throws AccumuloException
+     *             if there is any problem contacting Accumulo
+     * @throws AccumuloSecurityException
+     *             if there is any problem authenticating to Accumulo
+     * @throws IOException
+     *             if there is any problem communicating with Accumulo
      */
-    protected static Instance getInstance(Configuration conf) {
-        if (conf.getBoolean(MOCK, false))
-            return new InMemoryInstance(conf.get(INSTANCE_NAME));
-        return new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(conf.get(INSTANCE_NAME)).withZkHosts(conf.get(ZOOKEEPERS)));
+    protected static AccumuloClient getClient(Configuration conf) throws AccumuloException, AccumuloSecurityException, IOException {
+        log.debug("Creating connector with user: " + getUsername(conf));
+        if (conf.getBoolean(MOCK, false)) {
+            InMemoryAccumuloClient client = new InMemoryAccumuloClient(getUsername(conf), new InMemoryInstance(conf.get(INSTANCE_NAME)));
+            client.securityOperations().changeLocalUserPassword(client.whoami(), new PasswordToken(getPassword(conf)));
+            return client;
+        } else {
+            // @formatter:off
+            return Accumulo.newClient()
+                    .to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
+                    .as(getUsername(conf), new PasswordToken(getPassword(conf)))
+                    .build();
+            // @formatter:on
+        }
     }
     
     /**
@@ -613,8 +629,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
          * if (conf.get(RACKSTRATEGY) == null) { throw new IOException("Rack strategy must be set."); }
          */
         // validate that we can connect as configured
-        try {
-            Connector c = getInstance(conf).getConnector(getUsername(conf), new PasswordToken(getPassword(conf)));
+        try (AccumuloClient c = getClient(conf)) {
             if (!c.securityOperations().authenticateUser(getUsername(conf), new PasswordToken(getPassword(conf))))
                 throw new IOException("Unable to authenticate user");
             if (!c.securityOperations().hasTablePermission(getUsername(conf), getTablename(conf), TablePermission.READ))
@@ -751,6 +766,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         protected long numKeysRead;
         protected Iterator<Entry<Key,Value>> scannerIterator;
         protected RangeSplit split;
+        private AccumuloClient client = null;
         private BatchScanner scanner = null;
         protected float progress = 0.0f;
         
@@ -860,18 +876,14 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
             if (log.isDebugEnabled())
                 log.debug("Initializing input split: " + split.getRanges());
             Configuration conf = attempt.getConfiguration();
-            Instance instance = getInstance(conf);
-            String user = getUsername(conf);
-            byte[] password = getPassword(conf);
             Authorizations authorizations = getAuthorizations(conf);
             
             try {
-                log.debug("Creating connector with user: " + user);
-                Connector conn = instance.getConnector(user, new PasswordToken(password));
+                client = getClient(conf);
                 log.debug("Creating scanner for table: " + getTablename(conf));
                 log.debug("Authorizations are: " + authorizations);
                 
-                scanner = conn.createBatchScanner(getTablename(conf), authorizations, 2);
+                scanner = client.createBatchScanner(getTablename(conf), authorizations, 2);
                 
                 setupMaxVersions(conf, scanner);
                 IteratorSetting is = new IteratorSetting(50, RegExFilter.class);
@@ -903,6 +915,7 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         
         public void close() {
             scanner.close();
+            client.close();
         }
         
         @Override
@@ -926,12 +939,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         protected Value currentValue = null;
         
         @Override
-        public K getCurrentKey() throws IOException, InterruptedException {
+        public K getCurrentKey() {
             return currentK;
         }
         
         @Override
-        public V getCurrentValue() throws IOException, InterruptedException {
+        public V getCurrentValue() {
             return currentV;
         }
     }
@@ -941,97 +954,89 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
         
-        Instance instance = getInstance(job.getConfiguration());
-        Connector conn = instance.getConnector(getUsername(job.getConfiguration()), new PasswordToken(getPassword(job.getConfiguration())));
-        String tableId = Tables.getTableId(instance, tableName);
-        
-        if (Tables.getTableState(instance, tableId) != TableState.OFFLINE) {
-            Tables.clearCache(instance);
-            if (Tables.getTableState(instance, tableId) != TableState.OFFLINE) {
-                throw new AccumuloException("Table is online " + tableName + "(" + tableId + ") cannot scan table in offline mode ");
-            }
-        }
-        
-        for (Range range : ranges) {
-            Text startRow;
+        try (AccumuloClient client = getClient(job.getConfiguration())) {
+            String tableId = client.tableOperations().tableIdMap().get(tableName);
             
-            if (range.getStartKey() != null)
-                startRow = range.getStartKey().getRow();
-            else
-                startRow = new Text();
-            
-            Range metadataRange = new Range(new KeyExtent(tableId, startRow, null).getMetadataEntry(), true, null, false);
-            Scanner scanner = conn.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
-            MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
-            scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
-            scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
-            scanner.fetchColumnFamily(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME);
-            scanner.setRange(metadataRange);
-            
-            RowIterator rowIter = new RowIterator(scanner);
-            
-            KeyExtent lastExtent = null;
-            
-            while (rowIter.hasNext()) {
-                Iterator<Entry<Key,Value>> row = rowIter.next();
-                String last = "";
-                KeyExtent extent = null;
-                String location = null;
+            for (Range range : ranges) {
+                Text startRow;
                 
-                while (row.hasNext()) {
-                    Entry<Key,Value> entry = row.next();
-                    Key key = entry.getKey();
+                if (range.getStartKey() != null)
+                    startRow = range.getStartKey().getRow();
+                else
+                    startRow = new Text();
+                
+                Range metadataRange = new Range(new KeyExtent(TableId.of(tableId), startRow, null).toMetaRow(), true, null, false);
+                Scanner scanner = client.createScanner(MetadataTable.NAME, Authorizations.EMPTY);
+                MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.fetch(scanner);
+                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME);
+                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME);
+                scanner.fetchColumnFamily(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME);
+                scanner.setRange(metadataRange);
+                
+                RowIterator rowIter = new RowIterator(scanner);
+                
+                KeyExtent lastExtent = null;
+                
+                while (rowIter.hasNext()) {
+                    Iterator<Entry<Key,Value>> row = rowIter.next();
+                    String last = "";
+                    KeyExtent extent = null;
+                    String location = null;
                     
-                    if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME)) {
-                        last = entry.getValue().toString();
+                    while (row.hasNext()) {
+                        Entry<Key,Value> entry = row.next();
+                        Key key = entry.getKey();
+                        
+                        if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.LastLocationColumnFamily.NAME)) {
+                            last = entry.getValue().toString();
+                        }
+                        
+                        if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME)
+                                        || key.getColumnFamily().equals(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME)) {
+                            location = entry.getValue().toString();
+                        }
+                        
+                        if (MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.hasColumns(key)) {
+                            extent = KeyExtent.fromMetaPrevRow(entry);
+                        }
                     }
                     
-                    if (key.getColumnFamily().equals(MetadataSchema.TabletsSection.CurrentLocationColumnFamily.NAME)
-                                    || key.getColumnFamily().equals(MetadataSchema.TabletsSection.FutureLocationColumnFamily.NAME)) {
-                        location = entry.getValue().toString();
+                    if (location != null)
+                        return null;
+                    
+                    if (!extent.tableId().canonical().equals(tableId)) {
+                        throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
                     }
                     
-                    if (MetadataSchema.TabletsSection.TabletColumnFamily.PREV_ROW_COLUMN.hasColumns(key)) {
-                        extent = new KeyExtent(key.getRow(), entry.getValue());
+                    if (lastExtent != null && !extent.isPreviousExtent(lastExtent)) {
+                        throw new AccumuloException(" " + lastExtent + " is not previous extent " + extent);
                     }
                     
+                    Map<KeyExtent,List<Range>> tabletRanges = binnedRanges.get(last);
+                    if (tabletRanges == null) {
+                        tabletRanges = new HashMap<>();
+                        binnedRanges.put(last, tabletRanges);
+                    }
+                    
+                    List<Range> rangeList = tabletRanges.get(extent);
+                    if (rangeList == null) {
+                        rangeList = new ArrayList<>();
+                        tabletRanges.put(extent, rangeList);
+                    }
+                    
+                    rangeList.add(range);
+                    
+                    if (extent.endRow() == null || range.afterEndKey(new Key(extent.endRow()).followingKey(PartialKey.ROW))) {
+                        break;
+                    }
+                    
+                    lastExtent = extent;
                 }
                 
-                if (location != null)
-                    return null;
-                
-                if (!extent.getTableId().equals(tableId)) {
-                    throw new AccumuloException("Saw unexpected table Id " + tableId + " " + extent);
-                }
-                
-                if (lastExtent != null && !extent.isPreviousExtent(lastExtent)) {
-                    throw new AccumuloException(" " + lastExtent + " is not previous extent " + extent);
-                }
-                
-                Map<KeyExtent,List<Range>> tabletRanges = binnedRanges.get(last);
-                if (tabletRanges == null) {
-                    tabletRanges = new HashMap<>();
-                    binnedRanges.put(last, tabletRanges);
-                }
-                
-                List<Range> rangeList = tabletRanges.get(extent);
-                if (rangeList == null) {
-                    rangeList = new ArrayList<>();
-                    tabletRanges.put(extent, rangeList);
-                }
-                
-                rangeList.add(range);
-                
-                if (extent.getEndRow() == null || range.afterEndKey(new Key(extent.getEndRow()).followingKey(PartialKey.ROW))) {
-                    break;
-                }
-                
-                lastExtent = extent;
             }
             
+            return binnedRanges;
         }
-        
-        return binnedRanges;
     }
     
     protected static SplitStrategy getSplitStrategy(Configuration conf) {
@@ -1039,8 +1044,9 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         try {
             Class<? extends SplitStrategy> clazz = Class.forName(conf.get(RANGESPLITSTRATEGY, DefaultSplitStrategy.class.getCanonicalName())).asSubclass(
                             SplitStrategy.class);
-            return clazz.newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            return clazz.getDeclaredConstructor().newInstance();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
+                 InvocationTargetException e) {
             log.error(e);
         }
         return new DefaultSplitStrategy();
@@ -1071,11 +1077,12 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static TabletLocator getTabletLocator(Configuration conf) throws TableNotFoundException, IOException {
         if (conf.getBoolean(MOCK, false))
             return new InMemoryTabletLocator();
-        Instance instance = getInstance(conf);
         String tableName = getTablename(conf);
-        Credentials credentials = new Credentials(getUsername(conf), new PasswordToken(getPassword(conf)));
-        return TabletLocator.getLocator(new ClientContext(instance, credentials, AccumuloConfiguration.getDefaultConfiguration()),
-                        Tables.getTableId(instance, tableName));
+        Properties props = Accumulo.newClientProperties().to(conf.get(INSTANCE_NAME), conf.get(ZOOKEEPERS))
+                        .as(getUsername(conf), new PasswordToken(getPassword(conf))).build();
+        ClientInfo info = ClientInfo.from(props);
+        ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+        return TabletLocator.getLocator(context, context.getTableId(tableName));
     }
     
     /**
@@ -1109,28 +1116,31 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     binnedRanges = binOfflineTable(job, tableName, ranges);
                 }
             } else {
-                Instance instance = getInstance(job.getConfiguration());
-                String tableId = null;
-                tl = getTabletLocator(job.getConfiguration());
-                // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
-                tl.invalidateCache();
-                while (!tl.binRanges(new ClientContext(instance, cbHelper.getCredentials(), AccumuloConfiguration.getDefaultConfiguration()), ranges,
-                                binnedRanges).isEmpty()) {
-                    if (!(instance instanceof InMemoryInstance)) {
-                        if (tableId == null)
-                            tableId = Tables.getTableId(instance, tableName);
-                        if (!Tables.exists(instance, tableId))
-                            throw new TableDeletedException(tableId);
-                        if (Tables.getTableState(instance, tableId) == TableState.OFFLINE)
-                            throw new TableOfflineException(instance, tableId);
-                    }
-                    binnedRanges.clear();
-                    log.warn("Unable to locate bins for specified ranges. Retrying.");
-                    UtilWaitThread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
-                    tl.invalidateCache();
-                }
                 
-                clipRanges(binnedRanges);
+                try (AccumuloClient client = getClient(job.getConfiguration())) {
+                    TableId tableId = null;
+                    tl = getTabletLocator(job.getConfiguration());
+                    // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
+                    tl.invalidateCache();
+                    ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
+                    ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+                    while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
+                        if (!(client instanceof InMemoryAccumuloClient)) {
+                            if (tableId == null)
+                                tableId = context.getTableId(tableName);
+                            if (!context.tableNodeExists(tableId))
+                                throw new TableDeletedException(tableId.canonical());
+                            if (context.getTableState(tableId) == TableState.OFFLINE)
+                                throw new TableOfflineException("Table (" + tableId.canonical() + ") is offline");
+                        }
+                        binnedRanges.clear();
+                        log.warn("Unable to locate bins for specified ranges. Retrying.");
+                        UtilWaitThread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                        tl.invalidateCache();
+                    }
+                    
+                    clipRanges(binnedRanges);
+                }
             }
         } catch (Exception e) {
             throw new IOException(e);

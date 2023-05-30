@@ -9,10 +9,8 @@ import datawave.microservice.querymetric.QueryMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.accumulo.core.trace.Span;
-import org.apache.accumulo.core.trace.Trace;
-import org.apache.accumulo.core.trace.thrift.TInfo;
 import org.apache.deltaspike.core.api.exclude.Exclude;
+
 import org.apache.log4j.Logger;
 
 import javax.annotation.PostConstruct;
@@ -27,7 +25,6 @@ import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
-import java.util.Date;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -145,20 +142,6 @@ public class QueryExpirationBean {
                 if (log.isDebugEnabled()) {
                     log.debug("Entry evicted, connection returned.");
                 }
-                
-                TInfo traceInfo = query.getTraceInfo();
-                if (traceInfo != null) {
-                    Span span = Trace.trace(traceInfo, "query:expiration");
-                    span.data("expiredAt", new Date().toString());
-                    // Spans aren't recorded if they take no time, so sleep for a
-                    // couple milliseconds just to ensure we get something saved.
-                    try {
-                        Thread.sleep(2);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    span.stop();
-                }
             }
         }
         if (count > 0 && log.isDebugEnabled()) {
@@ -170,7 +153,9 @@ public class QueryExpirationBean {
      * Method to determine if a query has been idle too long based on configured values.
      *
      * @param query
+     *            a query
      * @param currentTime
+     *            the current time
      * @return true if query has been idle too long, false otherwise
      */
     private boolean isIdleTooLong(RunningQuery query, long currentTime) {
@@ -187,7 +172,9 @@ public class QueryExpirationBean {
      * Method to determine if a query next call has been running too long based on configured values.
      *
      * @param query
+     *            a query
      * @param currentTime
+     *            the current time
      * @return true if query next has been running too long, false otherwise
      */
     private boolean isNextTooLong(RunningQuery query, long currentTime) {

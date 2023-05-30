@@ -35,6 +35,10 @@ public class QueryOptionsSwitch {
                     String[] lf = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setLimitFields(Sets.newHashSet(lf));
                     break;
+                case QueryParameters.MATCHING_FIELD_SETS:
+                    String[] mfs = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    config.setMatchingFieldSets(Sets.newHashSet(mfs));
+                    break;
                 case QueryParameters.GROUP_FIELDS:
                     String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setGroupFields(Sets.newHashSet(groups));

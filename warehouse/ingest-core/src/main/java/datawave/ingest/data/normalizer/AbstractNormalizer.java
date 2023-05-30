@@ -42,7 +42,7 @@ public abstract class AbstractNormalizer implements TextNormalizer {
         }
         Object o;
         try {
-            o = c.newInstance();
+            o = c.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             log.warn("Error creating Normalizer: {}", e);
             throw new IllegalArgumentException("Error creating instance of class " + normalizerClass + ':' + e.getLocalizedMessage(), e);

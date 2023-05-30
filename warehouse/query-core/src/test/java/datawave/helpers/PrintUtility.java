@@ -4,7 +4,7 @@ import com.google.protobuf.InvalidProtocolBufferException;
 import datawave.edge.util.EdgeValue;
 import datawave.edge.util.ExtendedHyperLogLogPlus;
 import datawave.ingest.protobuf.Uid;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -36,7 +36,7 @@ public class PrintUtility {
     /**
      * Utility class to print all the entries in a table
      *
-     * @param conn
+     * @param client
      *            Connector to mock accumulo
      * @param authorizations
      *            Authorizations to run scanner with
@@ -45,7 +45,7 @@ public class PrintUtility {
      * @throws TableNotFoundException
      *             Invalid table name
      */
-    public static void printTable(final Connector conn, final Authorizations authorizations, final String tableName) throws TableNotFoundException {
+    public static void printTable(final AccumuloClient client, final Authorizations authorizations, final String tableName) throws TableNotFoundException {
         if (logger.isDebugEnabled()) {
             final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
             
@@ -53,7 +53,7 @@ public class PrintUtility {
             
             sb.append("\n");
             
-            final Scanner scanner = conn.createScanner(tableName, authorizations);
+            final Scanner scanner = client.createScanner(tableName, authorizations);
             for (final Entry<Key,Value> e : scanner) {
                 sb.append(e.getKey().toStringNoTime());
                 sb.append(' ');
@@ -69,7 +69,7 @@ public class PrintUtility {
         }
     }
     
-    public static void printTable(final Connector conn, final Authorizations authorizations, final String tableName, final PrintStream out)
+    public static void printTable(final AccumuloClient client, final Authorizations authorizations, final String tableName, final PrintStream out)
                     throws TableNotFoundException {
         final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd HHmmss");
         
@@ -77,7 +77,7 @@ public class PrintUtility {
         
         sb.append("\n");
         
-        final Scanner scanner = conn.createScanner(tableName, authorizations);
+        final Scanner scanner = client.createScanner(tableName, authorizations);
         for (final Entry<Key,Value> e : scanner) {
             sb.append(e.getKey().toStringNoTime());
             sb.append(' ');
@@ -95,13 +95,13 @@ public class PrintUtility {
     /**
      * List all the mock tables
      *
-     * @param conn
+     * @param client
      *            Connector to mock accumulo
      */
-    public static void listTables(final Connector conn) {
+    public static void listTables(final AccumuloClient client) {
         final StringBuilder sb = new StringBuilder("--Begin tables list--\n");
         
-        for (final String tableName : conn.tableOperations().list()) {
+        for (final String tableName : client.tableOperations().list()) {
             sb.append(tableName).append('\n');
         }
         

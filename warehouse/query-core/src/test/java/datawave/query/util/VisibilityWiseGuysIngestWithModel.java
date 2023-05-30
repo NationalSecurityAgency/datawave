@@ -10,9 +10,9 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -66,11 +66,11 @@ public class VisibilityWiseGuysIngestWithModel {
         }
     }
     
-    public static void writeItAll(Connector con, String range) throws Exception {
-        writeItAll(con, WhatKindaRange.valueOf(range));
+    public static void writeItAll(AccumuloClient client, String range) throws Exception {
+        writeItAll(client, WhatKindaRange.valueOf(range));
     }
     
-    public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
+    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -78,7 +78,7 @@ public class VisibilityWiseGuysIngestWithModel {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + corleoneUID, "NOME.FOO.0" + "\u0000" + "SANTINO", columnVisibilityItalian, timeStamp, emptyValue);
@@ -162,7 +162,7 @@ public class VisibilityWiseGuysIngestWithModel {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             // corleones
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("CORLEONE"));
@@ -337,7 +337,7 @@ public class VisibilityWiseGuysIngestWithModel {
         
         try {
             
-            bw = con.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD_RINDEX, bwConfig);
             // write the reverse index table:
             // corleones
             mutation = new Mutation(new StringBuilder(lcNoDiacriticsType.normalize("CORLEONE")).reverse());
@@ -533,7 +533,7 @@ public class VisibilityWiseGuysIngestWithModel {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             // corleones
@@ -640,7 +640,7 @@ public class VisibilityWiseGuysIngestWithModel {
         
         try {
             // write metadata table:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("NAME");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
@@ -781,7 +781,7 @@ public class VisibilityWiseGuysIngestWithModel {
         
         try {
             // write forward model:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("NAM");
             mutation.put("DATAWAVE", "NAME" + "\u0000" + "forward", columnVisibility, timeStamp, emptyValue);
@@ -827,7 +827,7 @@ public class VisibilityWiseGuysIngestWithModel {
         
         try {
             // write reverse model:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("NOME");
             mutation.put("DATAWAVE", "NAM" + "\u0000" + "reverse", columnVisibility, timeStamp, emptyValue);
@@ -887,7 +887,7 @@ public class VisibilityWiseGuysIngestWithModel {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-    
+
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

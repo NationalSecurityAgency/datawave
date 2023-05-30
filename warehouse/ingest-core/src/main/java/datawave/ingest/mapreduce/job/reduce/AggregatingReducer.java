@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job.reduce;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,8 +27,8 @@ import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.conf.ColumnSet;
-import org.apache.accumulo.core.iterators.conf.ColumnToClassMapping;
+import org.apache.accumulo.core.iteratorsImpl.conf.ColumnSet;
+import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.hadoop.conf.Configuration;
@@ -188,7 +189,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                         
                         list.add(mapping);
                         
-                    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException e) {
+                    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException |
+                             NoSuchMethodException | InvocationTargetException e) {
                         throw new RuntimeException("Unable to instantiate aggregator class for one of " + options + "for " + table + ": " + e.getMessage(), e);
                     }
                     
@@ -392,9 +394,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
                     log.info("configuring iterator (aggregator) " + clazz);
                     
-                    agg = clazz.newInstance();
+                    agg = clazz.getDeclaredConstructor().newInstance();
                     
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                         NoSuchMethodException | InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
                 
@@ -449,12 +452,12 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             this.priority = priority;
         }
         
-        public CustomColumnToClassMapping(Integer priority, String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        public CustomColumnToClassMapping(Integer priority, String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
             super();
             
             Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
             
-            addObject(ALL_CF_KEY.getColumnFamily(), clazz.newInstance());
+            addObject(ALL_CF_KEY.getColumnFamily(), clazz.getDeclaredConstructor().newInstance());
             
             this.priority = priority;
         }
@@ -477,6 +480,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         }
         
         private static class StubbedIteratorEnvironment implements IteratorEnvironment {
+
+            // Need this ctor for testing, to overcome javassist.CannotCompileException issue on Java 11
+            StubbedIteratorEnvironment() {}
+
             @Override
             public AccumuloConfiguration getConfig() {
                 return null;

@@ -16,9 +16,9 @@ import datawave.webservice.model.ModelList;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.VoidResponse;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
@@ -47,7 +47,6 @@ import javax.inject.Inject;
 import javax.interceptor.Interceptors;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -144,12 +143,12 @@ public class ModelBean {
         }
         log.trace(user + " has authorizations " + cbAuths);
         
-        Connector connector = null;
+        AccumuloClient client = null;
         HashSet<String> modelNames = new HashSet<>();
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            try (Scanner scanner = ScannerHelper.createScanner(connector, this.checkModelTableName(modelTableName), cbAuths)) {
+            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
                 for (Entry<Key,Value> entry : scanner) {
                     String colf = entry.getKey().getColumnFamily().toString();
                     if (!RESERVED_COLF_VALUES.contains(colf) && !modelNames.contains(colf)) {
@@ -168,9 +167,9 @@ public class ModelBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
-            if (null != connector) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }
@@ -184,6 +183,7 @@ public class ModelBean {
      * <strong>Administrator credentials required.</strong> Insert a new model
      *
      * @param model
+     *            the model
      * @param modelTableName
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
@@ -347,11 +347,11 @@ public class ModelBean {
         }
         log.trace(user + " has authorizations " + cbAuths);
         
-        Connector connector = null;
+        AccumuloClient client = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            try (Scanner scanner = ScannerHelper.createScanner(connector, this.checkModelTableName(modelTableName), cbAuths)) {
+            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            try (Scanner scanner = ScannerHelper.createScanner(client, this.checkModelTableName(modelTableName), cbAuths)) {
                 IteratorSetting cfg = new IteratorSetting(21, "colfRegex", RegExFilter.class.getName());
                 cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
                 scanner.addScanIterator(cfg);
@@ -366,9 +366,9 @@ public class ModelBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         } finally {
-            if (null != connector) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }
@@ -413,14 +413,15 @@ public class ModelBean {
         
         VoidResponse response = new VoidResponse();
         
-        Connector connector = null;
+        AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
-                            .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
+            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            writer = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS).setMaxMemory(BATCH_WRITER_MAX_MEMORY)
+                                            .setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
                 Mutation m = ModelKeyParser.createMutation(mapping, model.getName());
                 writer.addMutation(m);
@@ -441,9 +442,9 @@ public class ModelBean {
                     throw new DatawaveWebApplicationException(qe, response);
                 }
             }
-            if (null != connector) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }
@@ -486,14 +487,15 @@ public class ModelBean {
     private VoidResponse deleteMapping(datawave.webservice.model.Model model, String modelTableName, boolean reloadCache) {
         VoidResponse response = new VoidResponse();
         
-        Connector connector = null;
+        AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = connectionFactory.getConnection(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            writer = connector.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
-                            .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
+            client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
+            writer = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS).setMaxMemory(BATCH_WRITER_MAX_MEMORY)
+                                            .setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
                 Mutation m = ModelKeyParser.createDeleteMutation(mapping, model.getName());
                 writer.addMutation(m);
@@ -514,9 +516,9 @@ public class ModelBean {
                     throw new DatawaveWebApplicationException(qe, response);
                 }
             }
-            if (null != connector) {
+            if (null != client) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to factory", e);
                 }
@@ -530,6 +532,7 @@ public class ModelBean {
     /**
      * 
      * @param tableName
+     *            the table name
      * @return default table name if param is null or empty, else return the input.
      */
     private String checkModelTableName(String tableName) {

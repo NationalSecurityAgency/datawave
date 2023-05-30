@@ -16,6 +16,7 @@ import datawave.query.iterator.errors.UnindexedException;
 import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
 import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.Constants;
 import datawave.query.function.LogTiming;
@@ -232,8 +233,6 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
             this.source = source;
         }
         
-        this.fiAggregator = new IdentityAggregator(null, null);
-        
         this.sourceForDeepCopies = this.source.deepCopy(this.myEnvironment);
         
     }
@@ -376,4 +375,16 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
         }
     }
     
+    /**
+     * Get a FieldIndexAggregator
+     *
+     * @return a {@link IdentityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new IdentityAggregator(null, null);
+        }
+        return fiAggregator;
+    }
 }

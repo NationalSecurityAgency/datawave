@@ -17,15 +17,14 @@ import datawave.common.cl.OptionBuilder;
 import datawave.security.util.ScannerHelper;
 import datawave.util.cli.PasswordConverter;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
@@ -73,7 +72,7 @@ public class CardinalityScanner {
         Options opts = getConfigurationOptions();
         CommandLine cl = null;
         try {
-            cl = new BasicParser().parse(opts, args);
+            cl = new DefaultParser().parse(opts, args);
             if (cl.hasOption(HELP_OPT)) {
                 new HelpFormatter().printHelp(CardinalityScanner.class.getName() + ":", opts, true);
                 return;
@@ -206,36 +205,30 @@ public class CardinalityScanner {
                     DatatypeAggregationType datatypeAggregationType) throws Exception {
         
         Map<CardinalityIntersectionRecord,HyperLogLogPlus> cardinalityMap = new TreeMap<>();
-        Scanner scanner = null;
-        try {
-            ZooKeeperInstance instance = new ZooKeeperInstance(config.getInstanceName(), config.getZookeepers());
-            Connector connector = instance.getConnector(config.getUsername(), new PasswordToken(config.getPassword()));
+        try (AccumuloClient client = Accumulo.newClient().to(config.getInstanceName(), config.getZookeepers()).as(config.getUsername(), config.getPassword())
+                        .build()) {
             Collection<Authorizations> authCollection = Collections.singleton(new Authorizations(config.getAuths().split(",")));
-            if (!connector.tableOperations().exists(config.getTableName())) {
+            if (!client.tableOperations().exists(config.getTableName())) {
                 throw new IllegalArgumentException("Table " + config.getTableName() + " does not exist");
             }
-            scanner = ScannerHelper.createScanner(connector, config.getTableName(), authCollection);
-            Range r = new Range(config.getBeginDate(), config.getEndDate() + "\0");
-            scanner.setRange(r);
-            
-            Iterator<Map.Entry<Key,Value>> itr = scanner.iterator();
-            while (itr.hasNext()) {
-                Map.Entry<Key,Value> nextEntry = itr.next();
-                Key key = nextEntry.getKey();
-                String field = key.getColumnFamily().toString();
-                if (fields != null && !fields.isEmpty() && !fields.contains(field)) {
-                    continue;
-                } else {
-                    addEntry(cardinalityMap, nextEntry, dateAggregationType, datatypeAggregationType);
+            try (Scanner scanner = ScannerHelper.createScanner(client, config.getTableName(), authCollection)) {
+                Range r = new Range(config.getBeginDate(), config.getEndDate() + "\0");
+                scanner.setRange(r);
+                
+                Iterator<Map.Entry<Key,Value>> itr = scanner.iterator();
+                while (itr.hasNext()) {
+                    Map.Entry<Key,Value> nextEntry = itr.next();
+                    Key key = nextEntry.getKey();
+                    String field = key.getColumnFamily().toString();
+                    if (fields != null && !fields.isEmpty() && !fields.contains(field)) {
+                        continue;
+                    } else {
+                        addEntry(cardinalityMap, nextEntry, dateAggregationType, datatypeAggregationType);
+                    }
                 }
             }
         } catch (Exception e) {
             log.error(e);
-        } finally {
-            if (scanner != null) {
-                scanner.close();
-                
-            }
         }
         return cardinalityMap.keySet();
     }

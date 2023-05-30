@@ -250,6 +250,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean termFrequenciesRequired = false;
     // Limit count of returned values for arbitrary fields.
     private Set<String> limitFields = Collections.emptySet();
+    private Set<String> matchingFieldSets = Collections.emptySet();
     /**
      * should limit fields be applied early
      */
@@ -415,6 +416,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * If true, the LAZY_SET mechanism will be enabled for non-event and index-only fields.
      */
     private boolean lazySetMechanismEnabled = false;
+    /**
+     * Document aggregations that exceed this threshold in milliseconds are logged as a warning
+     */
+    private int docAggregationThresholdMs = -1;
+    /**
+     * Term Frequency aggregations that exceed this threshold in milliseconds are logged as a warning
+     */
+    private int tfAggregationThresholdMs = -1;
     
     /**
      * The fields to group-by and aggregate.
@@ -523,6 +532,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
         this.setLimitFields(null == other.getLimitFields() ? null : Sets.newHashSet(other.getLimitFields()));
+        this.setMatchingFieldSets(null == other.getMatchingFieldSets() ? null : Sets.newHashSet(other.getMatchingFieldSets()));
         this.setLimitFieldsPreQueryEvaluation(other.isLimitFieldsPreQueryEvaluation());
         this.setLimitFieldsField(other.getLimitFieldsField());
         this.setHitList(other.isHitList());
@@ -617,6 +627,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setVisitorFunctionMaxWeight(other.getVisitorFunctionMaxWeight());
         this.setQueryExecutionForPageTimeout(other.getQueryExecutionForPageTimeout());
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
+        this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
+        this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
         this.setGroupAggregateFields(other.getGroupAggregateFields() == null ? null : GroupAggregateFields.copyOf(other.groupAggregateFields));
     }
     
@@ -1563,6 +1575,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
     
+    public Set<String> getMatchingFieldSets() {
+        return matchingFieldSets;
+    }
+    
+    public void setMatchingFieldSets(Set<String> matchingFieldSets) {
+        this.matchingFieldSets = matchingFieldSets;
+    }
+    
+    public String getMatchingFieldSetsAsString() {
+        return StringUtils.join(this.getMatchingFieldSets(), Constants.PARAM_VALUE_SEP);
+    }
+    
     public boolean isLimitFieldsPreQueryEvaluation() {
         return limitFieldsPreQueryEvaluation;
     }
@@ -2387,6 +2411,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     
     public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
         this.lazySetMechanismEnabled = lazySetMechanismEnabled;
+    }
+
+    public int getDocAggregationThresholdMs(){
+        return docAggregationThresholdMs;
+    }
+
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+        this.docAggregationThresholdMs = docAggregationThresholdMs;
+    }
+
+    public int getTfAggregationThresholdMs(){
+        return tfAggregationThresholdMs;
+    }
+
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+        this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
     
     public GroupAggregateFields getGroupAggregateFields() {

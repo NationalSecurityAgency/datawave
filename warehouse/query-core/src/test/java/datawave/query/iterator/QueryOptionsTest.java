@@ -12,11 +12,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+import static datawave.query.iterator.QueryOptions.DOC_AGGREGATION_THRESHOLD_MS;
 import static datawave.query.iterator.QueryOptions.EVENT_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.EVENT_NEXT_SEEK;
 import static datawave.query.iterator.QueryOptions.FI_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.FI_NEXT_SEEK;
 import static datawave.query.iterator.QueryOptions.QUERY;
+import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS;
 import static datawave.query.iterator.QueryOptions.TF_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
 import static org.junit.Assert.assertEquals;
@@ -133,6 +135,26 @@ public class QueryOptionsTest {
         assertEquals(13, options.getEventNextSeek());
         assertEquals(14, options.getTfFieldSeek());
         assertEquals(15, options.getTfNextSeek());
+    }
+
+    @Test
+    public void testDocumentAndTermOffsetAggregationThresholds(){
+        Map<String,String> optionsMap = new HashMap<>();
+        optionsMap.put(QUERY, "query option required to validate");
+        optionsMap.put(DOC_AGGREGATION_THRESHOLD_MS, "15000");
+        optionsMap.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "10000");
+
+        QueryOptions options = new QueryOptions();
+
+        //  initial state
+        assertEquals(-1, options.getDocAggregationThresholdMs());
+        assertEquals(-1, options.getTfAggregationThresholdMs());
+
+        options.validateOptions(optionsMap);
+
+        //  expected state
+        assertEquals(15000, options.getDocAggregationThresholdMs());
+        assertEquals(10000, options.getTfAggregationThresholdMs());
     }
     
     @Test

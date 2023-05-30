@@ -51,7 +51,6 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
-import datawave.util.StringUtils;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -64,8 +63,8 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.WritesQueryMetrics;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -74,6 +73,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
@@ -187,7 +187,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-    
+
     private CardinalityConfiguration cardinalityConfiguration = null;
     
     /**
@@ -257,7 +257,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
@@ -265,12 +265,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(true);
         this.config.setExpandValues(true);
-        initialize(config, connection, settings, auths);
+        initialize(config, client, settings, auths);
         return config;
     }
     
     @Override
-    public String getPlan(Connector connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
+    public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
         
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
@@ -282,7 +282,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (!expandFields || !expandValues) {
             this.config.setGeneratePlanOnly(true);
         }
-        initialize(config, connection, settings, auths);
+        initialize(config, client, settings, auths);
         return config.getQueryString();
     }
     
@@ -306,7 +306,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // enforce mandatoryQuerySyntax if set
         if (null != this.mandatoryQuerySyntax) {
-            if (org.apache.commons.lang.StringUtils.isEmpty(querySyntax)) {
+            if (StringUtils.isEmpty(querySyntax)) {
                 throw new IllegalStateException("Must specify one of the following syntax options: " + this.mandatoryQuerySyntax);
             } else {
                 if (!this.mandatoryQuerySyntax.contains(querySyntax)) {
@@ -318,7 +318,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         QueryParser querySyntaxParser = getParser();
         
-        if (org.apache.commons.lang.StringUtils.isBlank(querySyntax)) {
+        if (StringUtils.isBlank(querySyntax)) {
             // Default to the class's query parser when one is not provided
             // Falling back to Jexl when one is not set on this class
             if (null == querySyntaxParser) {
@@ -358,9 +358,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         return queryString;
     }
     
-    public void initialize(ShardQueryConfiguration config, Connector connection, Query settings, Set<Authorizations> auths) throws Exception {
+    public void initialize(ShardQueryConfiguration config, AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         // Set the connector and the authorizations into the config object
-        config.setConnector(connection);
+        config.setClient(client);
         config.setAuthorizations(auths);
         config.setMaxScannerBatchSize(getMaxScannerBatchSize());
         config.setMaxIndexBatchSize(getMaxIndexBatchSize());
@@ -392,9 +392,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setEndDate(endDate);
         }
         
-        MetadataHelper metadataHelper = prepareMetadataHelper(connection, this.getMetadataTableName(), auths, config.isRawTypes());
+        MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
         
-        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(connection, this.getDateIndexTableName(), auths);
+        DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
@@ -463,7 +463,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     /**
      * Validate that the configuration is in a consistent state
-     * 
+     *
      * @param config
      *            the config
      * @throws IllegalArgumentException
@@ -476,14 +476,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
     }
     
-    protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths) {
-        return prepareMetadataHelper(connection, metadataTableName, auths, false);
+    protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
+        return prepareMetadataHelper(client, metadataTableName, auths, false);
     }
     
-    protected MetadataHelper prepareMetadataHelper(Connector connection, String metadataTableName, Set<Authorizations> auths, boolean rawTypes) {
+    protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths, boolean rawTypes) {
         if (log.isTraceEnabled())
-            log.trace("prepareMetadataHelper with " + connection);
-        MetadataHelper helper = metadataHelperFactory.createMetadataHelper(connection, metadataTableName, auths, rawTypes);
+            log.trace("prepareMetadataHelper with " + client);
+        MetadataHelper helper = metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths, rawTypes);
         helper.setEvaluationOnlyFields(config.getEvaluationOnlyFields());
         return helper;
     }
@@ -507,9 +507,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.dateIndexHelperFactory = dateIndexHelperFactory;
     }
     
-    private DateIndexHelper prepareDateIndexHelper(Connector connection, String dateIndexTableName, Set<Authorizations> auths) {
+    private DateIndexHelper prepareDateIndexHelper(AccumuloClient client, String dateIndexTableName, Set<Authorizations> auths) {
         DateIndexHelper dateIndexHelper = this.dateIndexHelperFactory.createDateIndexHelper();
-        return dateIndexHelper.initialize(connection, dateIndexTableName, auths, getDateIndexThreads(), getCollapseDatePercentThreshold());
+        return dateIndexHelper.initialize(client, dateIndexTableName, auths, getDateIndexThreads(), getCollapseDatePercentThreshold());
     }
     
     @Override
@@ -587,13 +587,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             addConfigBasedTransformers();
             return this.transformerInstance;
         }
-        
+
         MarkingFunctions markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
         
         boolean reducedInSettings = false;
         String reducedResponseStr = settings.findParameter(QueryOptions.REDUCED_RESPONSE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(reducedResponseStr)) {
+        if (StringUtils.isNotBlank(reducedResponseStr)) {
             reducedInSettings = Boolean.parseBoolean(reducedResponseStr);
         }
         boolean reduced = (this.isReducedResponse() || reducedInSettings);
@@ -609,11 +609,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         return this.transformerInstance;
     }
-    
+
     public boolean isLongRunningQuery() {
         return !getConfig().getGroupFields().isEmpty();
     }
-    
+
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
@@ -621,7 +621,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
-            
+
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
                 if (alreadyExists != null) {
@@ -645,7 +645,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
         }
     }
-    
+
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
         // we only care about setting the start time if we have an instance already
         if (this.transformerInstance != null) {
@@ -657,7 +657,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Parse query parameters");
         boolean rawDataOnly = false;
         String rawDataOnlyStr = settings.findParameter(QueryParameters.RAW_DATA_ONLY).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(rawDataOnlyStr)) {
+        if (StringUtils.isNotBlank(rawDataOnlyStr)) {
             rawDataOnly = Boolean.valueOf(rawDataOnlyStr);
             // if the master option raw.data.only is set, then set all of the transforming options appropriately.
             // note that if any of these other options are set, then it overrides the settings here
@@ -696,7 +696,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // Get the datatype set if specified
         String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim();
         
-        if (org.apache.commons.lang.StringUtils.isNotBlank(typeList)) {
+        if (StringUtils.isNotBlank(typeList)) {
             HashSet<String> typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
             
@@ -709,7 +709,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the list of fields to project up the stack. May be null.
         String projectFields = settings.findParameter(QueryParameters.RETURN_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(projectFields)) {
+        if (StringUtils.isNotBlank(projectFields)) {
             List<String> projectFieldsList = Arrays.asList(StringUtils.split(projectFields, Constants.PARAM_VALUE_SEP));
             
             // Only set the projection fields if we were actually given some
@@ -728,7 +728,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         // if the TRANSFORM_CONTENT_TO_UID is false, then unset the list of content field names preventing the DocumentTransformer from
         // transforming them.
         String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(transformContentStr)) {
+        if (StringUtils.isNotBlank(transformContentStr)) {
             if (!Boolean.valueOf(transformContentStr)) {
                 setContentFieldNames(Collections.EMPTY_LIST);
             }
@@ -736,7 +736,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the list of blacklisted fields. May be null.
         String tBlacklistedFields = settings.findParameter(QueryParameters.BLACKLISTED_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(tBlacklistedFields)) {
+        if (StringUtils.isNotBlank(tBlacklistedFields)) {
             List<String> blacklistedFieldsList = Arrays.asList(StringUtils.split(tBlacklistedFields, Constants.PARAM_VALUE_SEP));
             
             // Only set the blacklisted fields if we were actually given some
@@ -755,7 +755,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the LIMIT_FIELDS parameter if given
         String limitFields = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFields)) {
+        if (StringUtils.isNotBlank(limitFields)) {
             List<String> limitFieldsList = Arrays.asList(StringUtils.split(limitFields, Constants.PARAM_VALUE_SEP));
             
             // Only set the limit fields if we were actually given some
@@ -764,22 +764,33 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         
+        // Get the MATCHING_FIELD_SETS parameter if given
+        String matchingFieldSets = settings.findParameter(QueryParameters.MATCHING_FIELD_SETS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(matchingFieldSets)) {
+            List<String> matchingFieldSetsList = Arrays.asList(StringUtils.split(matchingFieldSets, Constants.PARAM_VALUE_SEP));
+            
+            // Only set the limit fields if we were actually given some
+            if (!matchingFieldSetsList.isEmpty()) {
+                config.setMatchingFieldSets(new HashSet<>(matchingFieldSetsList));
+            }
+        }
+        
         String limitFieldsPreQueryEvaluation = settings.findParameter(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsPreQueryEvaluation)) {
+        if (StringUtils.isNotBlank(limitFieldsPreQueryEvaluation)) {
             Boolean limitFieldsPreQueryEvaluationValue = Boolean.parseBoolean(limitFieldsPreQueryEvaluation);
             this.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
             config.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
         }
         
         String limitFieldsField = settings.findParameter(QueryOptions.LIMIT_FIELDS_FIELD).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(limitFieldsField)) {
+        if (StringUtils.isNotBlank(limitFieldsField)) {
             this.setLimitFieldsField(limitFieldsField);
             config.setLimitFieldsField(limitFieldsField);
         }
         
         // Get the GROUP_FIELDS parameter if given
         String groupFields = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(groupFields)) {
+        if (StringUtils.isNotBlank(groupFields)) {
             List<String> groupFieldsList = Arrays.asList(StringUtils.split(groupFields, Constants.PARAM_VALUE_SEP));
             
             // Only set the group fields if we were actually given some.
@@ -804,7 +815,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         String groupFieldsBatchSizeString = settings.findParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(groupFieldsBatchSizeString)) {
+        if (StringUtils.isNotBlank(groupFieldsBatchSizeString)) {
             int groupFieldsBatchSize = Integer.parseInt(groupFieldsBatchSizeString);
             this.setGroupFieldsBatchSize(groupFieldsBatchSize);
             config.setGroupFieldsBatchSize(groupFieldsBatchSize);
@@ -917,7 +928,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the UNIQUE_FIELDS parameter if given
         String uniqueFieldsParam = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(uniqueFieldsParam)) {
+        if (StringUtils.isNotBlank(uniqueFieldsParam)) {
             UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
             if (!uniqueFields.isEmpty()) {
@@ -928,7 +939,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the EXCERPT_FIELDS parameter if given
         String excerptFieldsParam = settings.findParameter(QueryParameters.EXCERPT_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(excerptFieldsParam)) {
+        if (StringUtils.isNotBlank(excerptFieldsParam)) {
             ExcerptFields excerptFields = ExcerptFields.from(excerptFieldsParam);
             // Only set the excerpt fields if we were actually given some
             if (!excerptFieldsParam.isEmpty()) {
@@ -936,38 +947,38 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setExcerptFields(excerptFields);
             }
         }
-        
+
         // Get the HIT_LIST parameter if given
         String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(hitListString)) {
+        if (StringUtils.isNotBlank(hitListString)) {
             Boolean hitListBool = Boolean.parseBoolean(hitListString);
             config.setHitList(hitListBool);
         }
         
         // Get the BYPASS_ACCUMULO parameter if given
         String bypassAccumuloString = settings.findParameter(BYPASS_ACCUMULO).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(bypassAccumuloString)) {
+        if (StringUtils.isNotBlank(bypassAccumuloString)) {
             Boolean bypassAccumuloBool = Boolean.parseBoolean(bypassAccumuloString);
             config.setBypassAccumulo(bypassAccumuloBool);
         }
         
         // Get the DATE_INDEX_TIME_TRAVEL parameter if given
         String dateIndexTimeTravelString = settings.findParameter(QueryOptions.DATE_INDEX_TIME_TRAVEL).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(dateIndexTimeTravelString)) {
+        if (StringUtils.isNotBlank(dateIndexTimeTravelString)) {
             Boolean dateIndexTimeTravel = Boolean.parseBoolean(dateIndexTimeTravelString);
             config.setDateIndexTimeTravel(dateIndexTimeTravel);
         }
         
         // get the RAW_TYPES parameter if given
         String rawTypesString = settings.findParameter(QueryParameters.RAW_TYPES).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(rawTypesString)) {
+        if (StringUtils.isNotBlank(rawTypesString)) {
             Boolean rawTypesBool = Boolean.parseBoolean(rawTypesString);
             config.setRawTypes(rawTypesBool);
         }
         
         // Get the FILTER_MASKED_VALUES spring setting
         String filterMaskedValuesStr = settings.findParameter(QueryParameters.FILTER_MASKED_VALUES).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(filterMaskedValuesStr)) {
+        if (StringUtils.isNotBlank(filterMaskedValuesStr)) {
             Boolean filterMaskedValuesBool = Boolean.parseBoolean(filterMaskedValuesStr);
             this.setFilterMaskedValues(filterMaskedValuesBool);
             config.setFilterMaskedValues(filterMaskedValuesBool);
@@ -975,14 +986,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the INCLUDE_DATATYPE_AS_FIELD spring setting
         String includeDatatypeAsFieldStr = settings.findParameter(QueryParameters.INCLUDE_DATATYPE_AS_FIELD).getParameterValue().trim();
-        if (((org.apache.commons.lang.StringUtils.isNotBlank(includeDatatypeAsFieldStr) && Boolean.valueOf(includeDatatypeAsFieldStr)))
+        if (((StringUtils.isNotBlank(includeDatatypeAsFieldStr) && Boolean.valueOf(includeDatatypeAsFieldStr)))
                         || (this.getIncludeDataTypeAsField() && !rawDataOnly)) {
             config.setIncludeDataTypeAsField(true);
         }
         
         // Get the INCLUDE_RECORD_ID spring setting
         String includeRecordIdStr = settings.findParameter(QueryParameters.INCLUDE_RECORD_ID).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(includeRecordIdStr)) {
+        if (StringUtils.isNotBlank(includeRecordIdStr)) {
             boolean includeRecordIdBool = Boolean.parseBoolean(includeRecordIdStr) && !rawDataOnly;
             this.setIncludeRecordId(includeRecordIdBool);
             config.setIncludeRecordId(includeRecordIdBool);
@@ -990,7 +1001,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the INCLUDE_HIERARCHY_FIELDS spring setting
         String includeHierarchyFieldsStr = settings.findParameter(QueryParameters.INCLUDE_HIERARCHY_FIELDS).getParameterValue().trim();
-        if (((org.apache.commons.lang.StringUtils.isNotBlank(includeHierarchyFieldsStr) && Boolean.valueOf(includeHierarchyFieldsStr)))
+        if (((StringUtils.isNotBlank(includeHierarchyFieldsStr) && Boolean.valueOf(includeHierarchyFieldsStr)))
                         || (this.getIncludeHierarchyFields() && !rawDataOnly)) {
             config.setIncludeHierarchyFields(true);
             
@@ -1000,7 +1011,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the query profile to allow us to select the tune profile of the query
         String queryProfile = settings.findParameter(QueryParameters.QUERY_PROFILE).getParameterValue().trim();
-        if ((org.apache.commons.lang.StringUtils.isNotBlank(queryProfile))) {
+        if ((StringUtils.isNotBlank(queryProfile))) {
             
             selectedProfile = configuredProfiles.get(queryProfile);
             
@@ -1012,21 +1023,21 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         // Get the include.grouping.context = true/false spring setting
         String includeGroupingContextStr = settings.findParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT).getParameterValue().trim();
-        if (((org.apache.commons.lang.StringUtils.isNotBlank(includeGroupingContextStr) && Boolean.valueOf(includeGroupingContextStr)))
+        if (((StringUtils.isNotBlank(includeGroupingContextStr) && Boolean.valueOf(includeGroupingContextStr)))
                         || (this.getIncludeGroupingContext() && !rawDataOnly)) {
             config.setIncludeGroupingContext(true);
         }
         
         // Check if the default modelName and modelTableNames have been overridden by custom parameters.
         String parameterModelName = settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(parameterModelName)) {
+        if (StringUtils.isNotBlank(parameterModelName)) {
             this.setModelName(parameterModelName);
         }
         
         config.setModelName(this.getModelName());
         
         String parameterModelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(parameterModelTableName)) {
+        if (StringUtils.isNotBlank(parameterModelTableName)) {
             this.setModelTableName(parameterModelTableName);
         }
         
@@ -1041,13 +1052,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setNoExpansionFields(noExpansionFields);
             setNoExpansionFields(noExpansionFields);
         }
-        
+
         configureDocumentAggregation(settings);
         
         config.setLimitTermExpansionToModel(this.isExpansionLimitedToModelContents());
         
         String reducedResponseStr = settings.findParameter(QueryOptions.REDUCED_RESPONSE).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(reducedResponseStr)) {
+        if (StringUtils.isNotBlank(reducedResponseStr)) {
             Boolean reducedResponseValue = Boolean.parseBoolean(reducedResponseStr);
             this.setReducedResponse(reducedResponseValue);
             config.setReducedResponse(reducedResponseValue);
@@ -1058,14 +1069,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         final String postProcessingOptions = settings.findParameter(QueryOptions.POSTPROCESSING_OPTIONS).getParameterValue().trim();
         
         // build the post p
-        if (org.apache.commons.lang.StringUtils.isNotBlank(postProcessingClasses)) {
+        if (StringUtils.isNotBlank(postProcessingClasses)) {
             
             List<String> filterClasses = config.getFilterClassNames();
             if (null == filterClasses) {
                 filterClasses = new ArrayList<>();
             }
             
-            for (String fClassName : StringUtils.splitIterable(postProcessingClasses, ',', true)) {
+            for (String fClassName : new datawave.util.StringUtils.SplitIterable(postProcessingClasses, ',', true)) {
                 filterClasses.add(fClassName);
             }
             config.setFilterClassNames(filterClasses);
@@ -1075,11 +1086,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.putFilterOptions(options);
             }
             
-            if (org.apache.commons.lang.StringUtils.isNotBlank(postProcessingOptions)) {
-                for (String filterOptionStr : StringUtils.splitIterable(postProcessingOptions, ',', true)) {
-                    if (org.apache.commons.lang.StringUtils.isNotBlank(filterOptionStr)) {
+            if (StringUtils.isNotBlank(postProcessingOptions)) {
+                for (String filterOptionStr : new datawave.util.StringUtils.SplitIterable(postProcessingOptions, ',', true)) {
+                    if (StringUtils.isNotBlank(filterOptionStr)) {
                         final String filterValueString = settings.findParameter(filterOptionStr).getParameterValue().trim();
-                        if (org.apache.commons.lang.StringUtils.isNotBlank(filterValueString)) {
+                        if (StringUtils.isNotBlank(filterValueString)) {
                             config.putFilterOptions(filterOptionStr, filterValueString);
                         }
                     }
@@ -1088,7 +1099,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         String tCompressServerSideResults = settings.findParameter(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(tCompressServerSideResults)) {
+        if (StringUtils.isNotBlank(tCompressServerSideResults)) {
             boolean compress = Boolean.parseBoolean(tCompressServerSideResults);
             config.setCompressServerSideResults(compress);
         }
@@ -1109,7 +1120,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         QueryLogicTransformer transformer = getTransformer(settings);
         if (transformer instanceof WritesQueryMetrics) {
             String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
-            if (org.apache.commons.lang.StringUtils.isNotBlank(logTimingDetailsStr)) {
+            if (StringUtils.isNotBlank(logTimingDetailsStr)) {
                 setLogTimingDetails(Boolean.valueOf(logTimingDetailsStr));
             }
             if (getLogTimingDetails()) {
@@ -1118,7 +1129,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             } else {
                 
                 String collectTimingDetailsStr = settings.findParameter(QueryOptions.COLLECT_TIMING_DETAILS).getParameterValue().trim();
-                if (org.apache.commons.lang.StringUtils.isNotBlank(collectTimingDetailsStr)) {
+                if (StringUtils.isNotBlank(collectTimingDetailsStr)) {
                     setCollectTimingDetails(Boolean.valueOf(collectTimingDetailsStr));
                 }
             }
@@ -1135,7 +1146,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         Parameter disabledIndexOnlyDocument = settings.findParameter(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS);
         if (null != disabledIndexOnlyDocument) {
             final String disabledIndexOnlyDocumentStr = disabledIndexOnlyDocument.getParameterValue().trim();
-            if (org.apache.commons.lang.StringUtils.isNotBlank(disabledIndexOnlyDocumentStr)) {
+            if (StringUtils.isNotBlank(disabledIndexOnlyDocumentStr)) {
                 Boolean disabledIndexOnlyDocuments = Boolean.parseBoolean(disabledIndexOnlyDocumentStr);
                 setDisableIndexOnlyDocuments(disabledIndexOnlyDocuments);
             }
@@ -1333,19 +1344,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public boolean getEnforceUniqueConjunctionsWithinExpression() {
         return getConfig().getEnforceUniqueConjunctionsWithinExpression();
     }
-    
+
     public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
         getConfig().setEnforceUniqueConjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
     }
-    
+
     public boolean getEnforceUniqueDisjunctionsWithinExpression() {
         return getConfig().getEnforceUniqueDisjunctionsWithinExpression();
     }
-    
+
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
         getConfig().setEnforceUniqueDisjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
     }
-    
+
     public List<String> getDocumentPermutations() {
         return getConfig().getDocumentPermutations();
     }
@@ -1376,6 +1387,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public void setLimitFields(Set<String> limitFields) {
         getConfig().setLimitFields(limitFields);
+    }
+    
+    public Set<String> getMatchingFieldSets() {
+        return getConfig().getMatchingFieldSets();
+    }
+    
+    public void setMatchingFieldSets(Set<String> matchingFieldSets) {
+        getConfig().setMatchingFieldSets(matchingFieldSets);
     }
     
     public boolean isLimitFieldsPreQueryEvaluation() {
@@ -1429,23 +1448,23 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public Set<String> getNoExpansionFields() {
         return getConfig().getNoExpansionFields();
     }
-    
+
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         getConfig().setNoExpansionFields(noExpansionFields);
     }
-    
+
     public ExcerptFields getExcerptFields() {
         return getConfig().getExcerptFields();
     }
-    
+
     public void setExcerptFields(ExcerptFields excerptFields) {
         getConfig().setExcerptFields(excerptFields);
     }
-    
+
     public String getExcerptIterator() {
         return getConfig().getExcerptIterator().getName();
     }
-    
+
     public void setExcerptIterator(String iteratorClass) {
         try {
             getConfig().setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
@@ -1453,55 +1472,55 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
         }
     }
-    
+
     public int getFiFieldSeek() {
         return getConfig().getFiFieldSeek();
     }
-    
+
     public void setFiFieldSeek(int fiFieldSeek) {
         getConfig().setFiFieldSeek(fiFieldSeek);
     }
-    
+
     public int getFiNextSeek() {
         return getConfig().getFiNextSeek();
     }
-    
+
     public void setFiNextSeek(int fiNextSeek) {
         getConfig().setFiNextSeek(fiNextSeek);
     }
-    
+
     public int getEventFieldSeek() {
         return getConfig().getEventFieldSeek();
     }
-    
+
     public void setEventFieldSeek(int eventFieldSeek) {
         getConfig().setEventFieldSeek(eventFieldSeek);
     }
-    
+
     public int getEventNextSeek() {
         return getConfig().getEventNextSeek();
     }
-    
+
     public void setEventNextSeek(int eventNextSeek) {
         getConfig().setEventNextSeek(eventNextSeek);
     }
-    
+
     public int getTfFieldSeek() {
         return getConfig().getTfFieldSeek();
     }
-    
+
     public void setTfFieldSeek(int tfFieldSeek) {
         getConfig().setTfFieldSeek(tfFieldSeek);
     }
-    
+
     public int getTfNextSeek() {
         return getConfig().getTfNextSeek();
     }
-    
+
     public void setTfNextSeek(int tfNextSeek) {
         getConfig().setTfNextSeek(tfNextSeek);
     }
-    
+
     public String getBlacklistedFieldsString() {
         return getConfig().getBlacklistedFieldsAsString();
     }
@@ -1565,11 +1584,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public int getInitialMaxTermThreshold() {
         return getConfig().getInitialMaxTermThreshold();
     }
-    
+
     public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
         getConfig().setInitialMaxTermThreshold(initialMaxTermThreshold);
     }
-    
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
@@ -2002,11 +2021,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
         getConfig().setQueryExecutionForPageTimeout(queryExecutionForPageTimeout);
     }
-    
+
     public long getQueryExecutionForPageTimeout() {
         return getConfig().getQueryExecutionForPageTimeout();
     }
-    
+
     public double getMinimumSelectivity() {
         return getConfig().getMinSelectivity();
     }
@@ -2171,6 +2190,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryOptions.HIT_LIST);
         optionalParams.add(QueryOptions.DATE_INDEX_TIME_TRAVEL);
         optionalParams.add(QueryParameters.LIMIT_FIELDS);
+        optionalParams.add(QueryParameters.MATCHING_FIELD_SETS);
         optionalParams.add(QueryParameters.GROUP_FIELDS);
         optionalParams.add(QueryParameters.UNIQUE_FIELDS);
         optionalParams.add(QueryOptions.LOG_TIMING_DETAILS);
@@ -2218,7 +2238,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
-    
+
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }
@@ -2634,20 +2654,36 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
     }
-    
+
     public boolean isLazySetMechanismEnabled() {
         return getConfig().isLazySetMechanismEnabled();
     }
-    
+
     public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
         getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
-    
+
     public long getVisitorFunctionMaxWeight() {
         return getConfig().getVisitorFunctionMaxWeight();
     }
-    
+
     public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
         getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
+    }
+
+    public int getDocAggregationThresholdMs(){
+        return getConfig().getDocAggregationThresholdMs();
+    }
+
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+        getConfig().setDocAggregationThresholdMs(docAggregationThresholdMs);
+    }
+
+    public int getTfAggregationThresholdMs(){
+        return getConfig().getTfAggregationThresholdMs();
+    }
+
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+        getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
     }
 }
