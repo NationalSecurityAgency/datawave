@@ -550,7 +550,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setOwner(datawavePrincipal.getShortName());
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            query.setParameters(ImmutableMap.of(QueryParameters.BLACKLISTED_FIELDS, "subplans")); // might be subplan without s
+            query.setParameters(ImmutableMap.of(QueryParameters.BLACKLISTED_FIELDS, "SUBPLAN"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             
             response.setResult(queryMetrics);
@@ -573,7 +573,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             
             QueryImpl query = new QueryImpl();
-            query.setParameters(ImmutableMap.of(QueryParameters.RETURN_FIELDS, "subplans"));
+            query.setParameters(ImmutableMap.of(QueryParameters.RETURN_FIELDS, "SUBPLAN"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             
             response.setResult(queryMetrics);
