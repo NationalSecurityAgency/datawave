@@ -64,19 +64,11 @@ public class DocumentGrouper {
     private final Map<String,String> reverseModelMappings;
     private final FieldAggregator.Factory fieldAggregatorFactory;
     
-    /**
-     * The groups.
-     */
     private final Groups groups;
-    
     private final Groups currentGroups = new Groups();
-    
     private final FieldIndex groupFieldsIndex = new FieldIndex();
-    
     private final FieldIndex aggregateFieldsIndex = new FieldIndex();
-    
     private final Multimap<Pair<String,String>,Set<GroupingAttribute<?>>> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
-    
     private final int requiredGroupSize;
     
     private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupAggregateFields groupAggregateFields, Groups groups) {
