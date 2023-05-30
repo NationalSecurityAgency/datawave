@@ -439,7 +439,12 @@ public class GroupAggregateFields {
         Multimap<String,String> newMap = TreeMultimap.create();
         for (String field : map.keySet()) {
             String primaryKey = reverseModel.get(field);
-            newMap.putAll(primaryKey, inverseReverseModel.get(primaryKey));
+            // Retain the original field if there is no reverse mapping.
+            if (primaryKey == null) {
+                newMap.put(field, field);
+            } else {
+                newMap.putAll(primaryKey, inverseReverseModel.get(primaryKey));
+            }
         }
         return newMap;
     }

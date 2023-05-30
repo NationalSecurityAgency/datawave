@@ -54,11 +54,7 @@ public class DocumentGrouper {
      *            the {@link Groups} instance to merge newly found groups into
      */
     public static void group(Map.Entry<Key,Document> entry, GroupAggregateFields groupAggregateFields, Groups groups) {
-        group(entry, groupAggregateFields, groups, null);
-    }
-    
-    public static void group(Map.Entry<Key,Document> entry, GroupAggregateFields groupAggregateFields, Groups groups, Map<String,String> reverseModelMappings) {
-        DocumentGrouper documentGrouper = new DocumentGrouper(entry, groupAggregateFields, reverseModelMappings, groups);
+        DocumentGrouper documentGrouper = new DocumentGrouper(entry, groupAggregateFields, groups);
         documentGrouper.group();
     }
     
@@ -84,18 +80,13 @@ public class DocumentGrouper {
     
     private final int requiredGroupSize;
     
-    private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupAggregateFields groupAggregateFields, Map<String,String> reverseModelMappings,
-                    Groups groups) {
+    private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupAggregateFields groupAggregateFields, Groups groups) {
         this.documentKey = documentEntry.getKey();
         this.document = documentEntry.getValue();
         this.groupAggregateFields = groupAggregateFields;
         this.groupFields = groupAggregateFields.getGroupFields();
         this.fieldAggregatorFactory = groupAggregateFields.getFieldAggregatorFactory();
-        if (reverseModelMappings != null) {
-            this.reverseModelMappings.putAll(reverseModelMappings);
-        } else {
-            this.reverseModelMappings.putAll(groupAggregateFields.getReverseModelMapping());
-        }
+        this.reverseModelMappings.putAll(groupAggregateFields.getReverseModelMapping());
         this.allGroups = groups;
         this.requiredGroupSize = groupAggregateFields.requiredGroupSize();
     }
@@ -114,7 +105,7 @@ public class DocumentGrouper {
             // Aggregate fields only if there were aggregation fields specified and if any entries for aggregation were found.
             if (!currentGroups.isEmpty() && fieldAggregatorFactory.hasFieldsToAggregate() && !aggregateFieldsIndex.isEmpty()) {
                 aggregateEntries();
-            } else {}
+            }
             this.allGroups.mergeAll(currentGroups);
         }
     }

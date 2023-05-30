@@ -129,6 +129,22 @@ public class GroupAggregateFieldsTest {
     }
     
     @Test
+    public void testRemapWithEmptyModelMap() {
+        GroupAggregateFields groupAggregateFields = new GroupAggregateFields();
+        groupAggregateFields.addGroupFields("GENDER");
+        groupAggregateFields.addSumFields("AGE");
+        groupAggregateFields.addCountFields("GENDER");
+        groupAggregateFields.addAverageFields("AGE");
+        groupAggregateFields.addMaxFields("GENDER");
+        groupAggregateFields.addMinFields("NAME");
+    
+        groupAggregateFields.remapFields(HashMultimap.create());
+    
+        Assertions.assertThat(groupAggregateFields.toString()).isEqualTo(
+                        "GROUP(GENDER[GENDER]):SUM(AGE[AGE]):COUNT(GENDER[GENDER]):AVERAGE(AGE[AGE]):MIN(NAME[NAME]):MAX(GENDER[GENDER])");
+    }
+    
+    @Test
     public void testParsingFromNullString() {
         Assertions.assertThat(GroupAggregateFields.from(null)).isNull();
     }

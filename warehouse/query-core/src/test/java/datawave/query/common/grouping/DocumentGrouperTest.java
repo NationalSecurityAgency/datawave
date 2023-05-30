@@ -1,5 +1,7 @@
 package datawave.query.common.grouping;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -12,12 +14,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,23 +31,28 @@ public class DocumentGrouperTest {
     private static final ColumnVisibility COLVIS_I = new ColumnVisibility("I");
     private static final ColumnVisibility COLVIS_ALL_E_I = new ColumnVisibility("ALL&E&I");
     private static final Key key = new Key("test_key");
-    
-    private final Map<String,String> reverseModelMappings = new HashMap<>();
+    private static final Multimap<String,String> inverseReverseMap = HashMultimap.create();
     
     private GroupAggregateFields groupAggregateFields = new GroupAggregateFields();
     private Document document;
     private Groups groups;
+    
+    @BeforeClass
+    public static void beforeClass() {
+        inverseReverseMap.put("GEN", "GENERE");
+        inverseReverseMap.put("GEN", "GENDER");
+        inverseReverseMap.put("AG", "AGE");
+        inverseReverseMap.put("AG", "ETA");
+        inverseReverseMap.put("LOC", "BUILDING");
+        inverseReverseMap.put("LOC", "LOCATION");
+        inverseReverseMap.put("PEAK", "HEIGHT");
+    }
     
     @Before
     public void setUp() throws Exception {
         groups = new Groups();
         document = new Document();
         groupAggregateFields = new GroupAggregateFields();
-    }
-    
-    @After
-    public void tearDown() {
-        reverseModelMappings.clear();
     }
     
     /**
@@ -745,6 +752,143 @@ public class DocumentGrouperTest {
         // @formatter:on
     }
     
+    @Test
+    public void testAggregatingFieldsWithMixedFormatsWithModelMapping() {
+        givenGroupFields("GENDER", "AGE");
+        givenSumFields("HEIGHT");
+        givenMaxFields("HEIGHT", "BUILDING");
+        givenMinFields("BUILDING");
+        givenCountFields("HEIGHT", "BUILDING");
+        givenAverageFields("HEIGHT");
+        
+        givenRemappedFields();
+        
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.3").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.4").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.5").withLcNoDiacritics("FEMALE"));
+        
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.3").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.4").withNumberType("30"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.5").withNumberType("5"));
+        
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("50"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("65"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("60"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.4").withNumberType("55"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.5").withNumberType("48"));
+        
+        givenDocumentEntry(DocumentEntry.of("LOCATION.1").withLcNoDiacritics("West"));
+        givenDocumentEntry(DocumentEntry.of("LOCATION.2").withLcNoDiacritics("North").withLcNoDiacritics("East"));
+        
+        executeGrouping();
+        
+        // We should see each field mapped to their root model name.
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(3);
+        
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "30")).hasCount(1)
+                        .hasAggregatedMax("LOC", new LcNoDiacriticsType("West"))
+                        .hasAggregatedMin("LOC", new LcNoDiacriticsType("East"))
+                        .hasAggregatedCount("LOC", 3L)
+                        .hasAggregatedMax("PEAK", new NumberType("55"))
+                        .hasAggregatedCount("PEAK", 1L)
+                        .hasAggregatedSum("PEAK", new BigDecimal("55"))
+                        .hasAggregatedAverage("PEAK", new BigDecimal("55"));
+        
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "5")).hasCount(2)
+                        .hasAggregatedMax("LOC", new LcNoDiacriticsType("West"))
+                        .hasAggregatedMin("LOC", new LcNoDiacriticsType("East"))
+                        .hasAggregatedCount("LOC", 3L)
+                        .hasAggregatedMax("PEAK", new NumberType("65"))
+                        .hasAggregatedCount("PEAK", 2L)
+                        .hasAggregatedSum("PEAK", new BigDecimal("113"))
+                        .hasAggregatedAverage("PEAK", new BigDecimal("56.5"));
+        
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "20")).hasCount(2)
+                        .hasAggregatedMax("LOC", new LcNoDiacriticsType("West"))
+                        .hasAggregatedMin("LOC", new LcNoDiacriticsType("East"))
+                        .hasAggregatedCount("LOC", 3L)
+                        .hasAggregatedMax("PEAK", new NumberType("60"))
+                        .hasAggregatedCount("PEAK", 2L)
+                        .hasAggregatedSum("PEAK", new BigDecimal("110"))
+                        .hasAggregatedAverage("PEAK", new BigDecimal("55"));
+        // @formatter:on
+    }
+    
+    @Test
+    public void testAggregationAcrossMultipleDocumentsWithModelMapping() {
+        givenGroupFields("GENDER", "AGE");
+        givenSumFields("HEIGHT");
+        
+        givenRemappedFields();
+    
+        // We should see groups being counted and aggregation for HEIGHT occurring.
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AGE.FOO.2").withNumberType("15"));
+        // Should aggregate to FOO.1 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        // Should aggregate to FOO.2 grouping.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        // Should not aggregate to anything since there is no direct match for this HEIGHT entry but there are direct matches for other HEIGHT entries.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+    
+        executeGrouping();
+    
+        // We should see groups being counted, but no aggregation should occur since there are no HEIGHT entries.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENERE.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("ETA.FOO.2").withNumberType("15"));
+    
+        executeGrouping();
+    
+        // We should not see any groups being counted or any aggregation since there are no proper groups.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+    
+        executeGrouping();
+    
+        // We should see groups being counted and aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("GEN.FOO.1").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("GEN.FOO.2").withLcNoDiacritics("MALE"));
+        givenDocumentEntry(DocumentEntry.of("AG.FOO.1").withNumberType("20"));
+        givenDocumentEntry(DocumentEntry.of("AG.FOO.2").withNumberType("15"));
+        // Should aggregate to FOO.1 grouping.
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.1").withNumberType("5"));
+        // Should aggregate to FOO.2 grouping.
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.2").withNumberType("5"));
+    
+        executeGrouping();
+    
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(3);
+    
+        // We should see each field mapped to the root model mapping name, e.g. GENDER -> GEN, AGE -> AG, HEIGHT -> PEAK, etc.
+        // @formatter:off
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "15")).hasCount(1)
+                        .hasAggregatedSum("PEAK", new BigDecimal("5"));
+    
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE"), numericKey("AG", "15")).hasCount(2)
+                        .hasAggregatedSum("PEAK", new BigDecimal("5"));
+    
+        groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "20")).hasCount(3)
+                        .hasAggregatedSum("PEAK", new BigDecimal("10"));
+        // @formatter:on
+    }
+    
     private void givenGroupFields(String... fields) {
         groupAggregateFields.addGroupFields(fields);
     }
@@ -769,6 +913,10 @@ public class DocumentGrouperTest {
         groupAggregateFields.addMaxFields(fields);
     }
     
+    private void givenRemappedFields() {
+        this.groupAggregateFields.remapFields(inverseReverseMap);
+    }
+    
     private void resetDocument() {
         this.document = new Document();
     }
@@ -783,7 +931,7 @@ public class DocumentGrouperTest {
     
     private void executeGrouping() {
         Map.Entry<Key,Document> keyDocumentEntry = new AbstractMap.SimpleEntry<>(key, this.document);
-        DocumentGrouper.group(keyDocumentEntry, this.groupAggregateFields, this.groups, this.reverseModelMappings);
+        DocumentGrouper.group(keyDocumentEntry, this.groupAggregateFields, this.groups);
     }
     
     private GroupingAttribute<?> numericKey(String key, String value) {

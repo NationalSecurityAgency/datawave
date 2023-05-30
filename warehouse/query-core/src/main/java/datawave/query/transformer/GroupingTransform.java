@@ -3,27 +3,22 @@ package datawave.query.transformer;
 import com.google.common.collect.Maps;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
-import datawave.query.common.grouping.FieldAggregator;
 import datawave.query.common.grouping.DocumentGrouper;
 import datawave.query.common.grouping.GroupAggregateFields;
 import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
 import datawave.query.common.grouping.Group;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import org.apache.accumulo.core.data.Key;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -108,7 +103,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
-            DocumentGrouper.group(keyDocumentEntry, groupAggregateFields, groups, reverseModelMapping);
+            DocumentGrouper.group(keyDocumentEntry, groupAggregateFields, groups);
         }
         
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
