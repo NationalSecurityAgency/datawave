@@ -15,7 +15,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
 
 public class JexlNodeSetTest {
     
