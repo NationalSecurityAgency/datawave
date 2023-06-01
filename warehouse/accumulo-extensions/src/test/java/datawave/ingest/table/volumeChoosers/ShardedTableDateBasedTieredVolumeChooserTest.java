@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static junit.framework.TestCase.assertTrue;
 
 @RunWith(EasyMockRunner.class)
 public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSupport {

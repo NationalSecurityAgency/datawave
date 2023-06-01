@@ -1,8 +1,10 @@
 package datawave.iterators;
 
 import datawave.ingest.table.aggregator.PropogatingCombiner;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.data.*;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
@@ -25,7 +27,7 @@ public class PropogatingIteratorSeekTest {
     public static final String FIELD2_NO_AGGREGATION = "c";
     public static final String COL_QUAL = "colQual1";
     private PropogatingIterator iterator;
-    private TreeMap<Key,Value> expected;
+    private TreeMap<Key, Value> expected;
     
     @Before
     public void before() throws IOException {
