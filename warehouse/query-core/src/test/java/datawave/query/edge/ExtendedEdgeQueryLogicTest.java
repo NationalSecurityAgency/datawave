@@ -70,6 +70,22 @@ public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
         compareResults(logic, expected);
     }
     
+    @Test(expected = IllegalArgumentException.class)
+    public void testUnfieldedJexlEdgeQuery() throws Exception {
+        QueryImpl q = configQuery("('M.*') && (VERTEXB == 'JUPITER') && (RELATION == 'FROM-TO' || 'TO-FROM')", auths);
+        q.addParameter("stats", "true");
+        q.addParameter("query.syntax", "JEXL");
+        runLogic(q, auths);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testUnfieldedLuceneEdgeQuery() throws Exception {
+        QueryImpl q = configQuery("(M*) AND (JUPITER) AND (RELATION:FROM-TO OR RELATION:TO-FROM)", auths);
+        q.addParameter("stats", "true");
+        q.addParameter("query.syntax", "LUCENE");
+        runLogic(q, auths);
+    }
+    
     @Test
     public void testEdgeQuerySyntaxLuceneWithQueryModel() throws Exception {
         QueryImpl q = configQuery("(VERTEXA:M*) AND (VERTEXB:JUPITER) AND (RELATION:FROM-TO OR RELATION:TO-FROM)", auths);

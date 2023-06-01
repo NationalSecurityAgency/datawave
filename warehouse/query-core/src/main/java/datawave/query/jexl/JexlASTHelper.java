@@ -1757,6 +1757,34 @@ public class JexlASTHelper {
         }
     }
     
+    public static void addUnfieldedQueriesToList(List<String> unfieldedQueries, JexlNode node) {
+        if (node.jjtGetNumChildren() > 0) {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                addUnfieldedQueriesToList(unfieldedQueries, node.jjtGetChild(i));
+            }
+        } else if (node instanceof ASTStringLiteral) {
+            // Go to grandparent and check grandchildren for "Identifiers"
+            JexlNode grandparent = node.jjtGetParent().jjtGetParent();
+            
+            boolean isFielded = false;
+            for (int i = 0; i < grandparent.jjtGetNumChildren(); i++) {
+                JexlNode parent = grandparent.jjtGetChild(i);
+                if (parent instanceof ASTReference) {
+                    for (int j = 0; j < parent.jjtGetNumChildren(); j++) {
+                        JexlNode child = parent.jjtGetChild(j);
+                        if (child instanceof ASTIdentifier && !Constants.ANY_FIELD.equals(child.image)) {
+                            isFielded = true;
+                        }
+                    }
+                }
+            }
+            
+            if (!isFielded) {
+                unfieldedQueries.add(node.image);
+            }
+        }
+    }
+    
     /**
      * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
      *

@@ -55,6 +55,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -197,6 +198,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
         if (querySyntax.equals("JEXL")) {
+            validateQuery(originalQuery, querySyntax);
             return originalQuery;
         }
         
@@ -206,6 +208,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         if (querySyntaxParsers.containsKey(querySyntax) && querySyntaxParsers.get(querySyntax) == null) {
             // The querySyntax does not need to be parsed
+            validateQuery(originalQuery, querySyntax);
             return originalQuery;
         }
         
@@ -227,7 +230,24 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             log.trace(querySyntax + originalQuery + " --> jexlQueryString: " + queryString);
         }
         
+        validateQuery(queryString, querySyntax);
+        
         return queryString;
+    }
+    
+    private void validateQuery(String queryString, String querySyntax) {
+        // Validate that the query is fielded
+        if (querySyntax.equalsIgnoreCase("jexl") || querySyntax.equalsIgnoreCase("lucene")) {
+            ArrayList<String> unfieldedQueries = new ArrayList<>();
+            try {
+                JexlASTHelper.addUnfieldedQueriesToList(unfieldedQueries, JexlASTHelper.parseJexlQuery(queryString));
+            } catch (ParseException e) {
+                throw new IllegalArgumentException("Unable to load query: " + queryString);
+            }
+            if (unfieldedQueries.size() > 0) {
+                throw new IllegalArgumentException("Query cannot be contain unfielded terms: " + unfieldedQueries);
+            }
+        }
     }
     
     protected String expandQueryMacros(String query) throws datawave.query.language.parser.ParseException {
