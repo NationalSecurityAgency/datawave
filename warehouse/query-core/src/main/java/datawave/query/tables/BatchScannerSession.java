@@ -48,8 +48,6 @@ import datawave.webservice.query.Query;
 
 public class BatchScannerSession extends ScannerSession implements Iterator<Entry<Key,Value>>, FutureCallback<Scan>, SessionArbiter, UncaughtExceptionHandler {
     
-    private static final int THIRTY_MINUTES = 108000000;
-    
     private static final double RANGE_MULTIPLIER = 5;
     
     private static final double QUEUE_MULTIPLIER = 25;
@@ -74,8 +72,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     protected BlockingQueue<ScannerChunk> currentBatch;
     
     protected ExecutorService service = null;
-    
-    ExecutorService listenerService = null;
     
     protected StringBuilder threadId = new StringBuilder();
     
@@ -166,10 +162,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         currentBatch = Queues.newLinkedBlockingDeque();
         
         setThreads(1);
-        
-        listenerService = Executors.newFixedThreadPool(1);
-        
-        addListener(new BatchScannerListener(), listenerService);
+
+        addListener(new BatchScannerListener(), MoreExecutors.newDirectExecutorService());
         
         serverFailureMap = Maps.newConcurrentMap();
         
@@ -370,26 +364,26 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 
                 chunk.setQueryId(settings.getId().toString());
                 
-                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
                 
                 scan.setVisitors(visitorFunctions);
                 
                 Scan childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
-                                ((SpeculativeScan) scan).getQueue(), listenerService);
+                                ((SpeculativeScan) scan).getQueue(), service);
                 
                 childScan.setVisitors(visitorFunctions);
                 
                 ((SpeculativeScan) scan).addScan(childScan);
                 
                 childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
-                                ((SpeculativeScan) scan).getQueue(), listenerService);
+                                ((SpeculativeScan) scan).getQueue(), service);
                 
                 childScan.setVisitors(visitorFunctions);
                 
                 ((SpeculativeScan) scan).addScan(childScan);
                 
             } else {
-                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
             }
             
             if (backoffEnabled) {
@@ -430,16 +424,16 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 if (log.isTraceEnabled()) {
                     log.trace("Using speculative execution");
                 }
-                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
                 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
-                                ((SpeculativeScan) scan).getQueue(), listenerService));
+                                ((SpeculativeScan) scan).getQueue(), service));
                 
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference,
-                                delegatedResourceInitializer, ((SpeculativeScan) scan).getQueue(), listenerService));
+                                delegatedResourceInitializer, ((SpeculativeScan) scan).getQueue(), service));
                 
             } else {
-                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, listenerService);
+                scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
             }
             
             if (backoffEnabled) {
@@ -645,7 +639,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
          */
         protected void shutdownServices() {
             service.shutdownNow();
-            listenerService.shutdownNow();
             int count = 0;
             try {
                 while (!service.awaitTermination(250, TimeUnit.MILLISECONDS) && count < MAX_WAIT) {
@@ -665,7 +658,6 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
     public void close() {
         stopAsync();
         service.shutdownNow();
-        listenerService.shutdownNow();
     }
     
     public void addVisitor(Function<ScannerChunk,ScannerChunk> visitorFunction) {
