@@ -181,7 +181,10 @@ public abstract class UniqueTest {
         TransformIterator iter = new DatawaveTransformIterator(logic.iterator(), transformer);
         List<Object> eventList = new ArrayList<>();
         while (iter.hasNext()) {
-            eventList.add(iter.next());
+            Object o = iter.next();
+            if (o != null) {
+                eventList.add(o);
+            }
         }
 
         BaseQueryResponse response = transformer.createResponse(eventList);
@@ -354,4 +357,34 @@ public abstract class UniqueTest {
         String queryString = "UUID:/^[CS].*/ AND #UNIQUE(BOTH_NULL)";
         runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
     }
+
+    @Test
+    public void testMostRecentUniqueness() throws Exception {
+        Map<String,String> extraParameters = new HashMap<>();
+        extraParameters.put("include.grouping.context", "true");
+        extraParameters.put(QueryParameters.MOST_RECENT_UNIQUE, "true");
+
+        Date startDate = format.parse("20091231");
+        Date endDate = format.parse("20150101");
+
+        String queryString = "UUID =~ '^[CS].*'";
+
+        Set<Set<String>> expected = new HashSet<>();
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "DEATH_DATE,$MAGIC");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "$DEATH_DATE,BIRTH_DATE");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+
+        expected.add(Sets.newHashSet(WiseGuysIngest.sopranoUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.corleoneUID));
+        expected.add(Sets.newHashSet(WiseGuysIngest.caponeUID));
+        extraParameters.put("unique.fields", "death_date,birth_date");
+        runTestQueryWithUniqueness(expected, queryString, startDate, endDate, extraParameters);
+    }
+
 }

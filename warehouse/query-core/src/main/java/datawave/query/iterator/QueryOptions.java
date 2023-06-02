@@ -140,6 +140,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String MOST_RECENT_UNIQUE = "most.recent.unique";
+    public static final String UNIQUE_CACHE_BUFFER_SIZE = "unique.cache.buffer.size";
+
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -291,6 +294,7 @@ public class QueryOptions implements OptionDescriber {
     protected Set<String> groupFields = Sets.newHashSet();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
+    protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
@@ -477,6 +481,7 @@ public class QueryOptions implements OptionDescriber {
         this.ivaratorCacheDirConfigs = (other.ivaratorCacheDirConfigs == null) ? null : new ArrayList<>(other.ivaratorCacheDirConfigs);
         this.hdfsSiteConfigURLs = other.hdfsSiteConfigURLs;
         this.ivaratorCacheBufferSize = other.ivaratorCacheBufferSize;
+        this.uniqueCacheBufferSize = other.uniqueCacheBufferSize;
         this.ivaratorCacheScanPersistThreshold = other.ivaratorCacheScanPersistThreshold;
         this.ivaratorCacheScanTimeout = other.ivaratorCacheScanTimeout;
         this.hdfsFileCompressionCodec = other.hdfsFileCompressionCodec;
@@ -851,7 +856,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public FileSystemCache getFileSystemCache() throws MalformedURLException {
-        if (this.fsCache == null && this.hdfsSiteConfigURLs != null) {
+        if (this.fsCache == null) {
             this.fsCache = new FileSystemCache(this.hdfsSiteConfigURLs);
         }
         return this.fsCache;
@@ -893,6 +898,14 @@ public class QueryOptions implements OptionDescriber {
 
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
+    }
+
+    public int getUniqueCacheBufferSize() {
+        return uniqueCacheBufferSize;
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        this.uniqueCacheBufferSize = uniqueCacheBufferSize;
     }
 
     public long getIvaratorCacheScanPersistThreshold() {
@@ -1493,6 +1506,12 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(UNIQUE_FIELDS)) {
             this.setUniqueFields(UniqueFields.from(options.get(UNIQUE_FIELDS)));
+            if (options.containsKey(MOST_RECENT_UNIQUE)) {
+                this.getUniqueFields().setMostRecent(Boolean.valueOf(options.get(MOST_RECENT_UNIQUE)));
+                if (options.containsKey(UNIQUE_CACHE_BUFFER_SIZE)) {
+                    this.setUniqueCacheBufferSize(Integer.parseInt(options.get(UNIQUE_CACHE_BUFFER_SIZE)));
+                }
+            }
         }
 
         if (options.containsKey(HIT_LIST)) {

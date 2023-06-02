@@ -28,6 +28,7 @@ import datawave.query.jexl.JexlASTHelper;
 public class UniqueFields implements Serializable {
 
     private Multimap<String,UniqueGranularity> fieldMap;
+    private boolean mostRecent = false;
 
     /**
      * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
@@ -311,6 +312,14 @@ public class UniqueFields implements Serializable {
             }
         }
         return sb.toString();
+    }
+
+    public boolean isMostRecent() {
+        return mostRecent;
+    }
+
+    public void setMostRecent(boolean mostRecent) {
+        this.mostRecent = mostRecent;
     }
 
     @Override

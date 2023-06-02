@@ -22,7 +22,7 @@ import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
  * @param <E>
  *            type of the set
  */
-public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
+public class BufferedFileBackedSortedSet<E> implements RewritableSortedSet<E>, SortedSet<E> {
     private static final Logger log = Logger.getLogger(BufferedFileBackedSortedSet.class);
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;
@@ -32,7 +32,8 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     protected int maxOpenFiles = 10000;
     protected FileSortedSet<E> buffer = null;
     protected FileSortedSet.FileSortedSetFactory<E> setFactory = null;
-    protected Comparator<? super E> comparator = null;
+    protected final Comparator<E> comparator;
+    protected final RewriteStrategy<E> rewriteStrategy;
     protected boolean sizeModified = false;
     protected int size = 0;
     protected int numRetries;
@@ -53,7 +54,8 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     }
 
     public BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
-        this(other.comparator, other.bufferPersistThreshold, other.maxOpenFiles, other.numRetries, new ArrayList<>(other.handlerFactories), other.setFactory);
+        this(other.comparator, other.rewriteStrategy, other.bufferPersistThreshold, other.maxOpenFiles, other.numRetries,
+                        new ArrayList<>(other.handlerFactories), other.setFactory);
         for (SortedSet<E> subSet : other.set.getSets()) {
             FileSortedSet<E> clone = ((FileSortedSet<E>) subSet).clone();
             this.set.addSet(clone);
@@ -73,23 +75,24 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
         this(null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
     }
 
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories) {
+    public BufferedFileBackedSortedSet(Comparator<E> comparator, List<SortedSetFileHandlerFactory> handlerFactories) {
         this(comparator, handlerFactories, new FileSerializableSortedSet.Factory());
     }
 
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, List<SortedSetFileHandlerFactory> handlerFactories,
+    public BufferedFileBackedSortedSet(Comparator<E> comparator, List<SortedSetFileHandlerFactory> handlerFactories,
                     FileSortedSet.FileSortedSetFactory<E> setFactory) {
-        this(comparator, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories);
+        this(comparator, null, DEFAULT_BUFFER_PERSIST_THRESHOLD, DEFAULT_MAX_OPEN_FILES, DEFAULT_NUM_RETRIES, handlerFactories, setFactory);
     }
 
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
+    public BufferedFileBackedSortedSet(Comparator<E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
                     List<SortedSetFileHandlerFactory> handlerFactories) {
-        this(comparator, bufferPersistThreshold, maxOpenFiles, numRetries, handlerFactories, new FileSerializableSortedSet.Factory());
+        this(comparator, null, bufferPersistThreshold, maxOpenFiles, numRetries, handlerFactories, new FileSerializableSortedSet.Factory());
     }
 
-    public BufferedFileBackedSortedSet(Comparator<? super E> comparator, int bufferPersistThreshold, int maxOpenFiles, int numRetries,
-                    List<SortedSetFileHandlerFactory> handlerFactories, FileSortedSet.FileSortedSetFactory<E> setFactory) {
+    public BufferedFileBackedSortedSet(Comparator<E> comparator, RewriteStrategy<E> rewriteStrategy, int bufferPersistThreshold, int maxOpenFiles,
+                    int numRetries, List<SortedSetFileHandlerFactory> handlerFactories, FileSortedSet.FileSortedSetFactory<E> setFactory) {
         this.comparator = comparator;
+        this.rewriteStrategy = rewriteStrategy;
         this.handlerFactories = handlerFactories;
         this.setFactory = setFactory;
         this.bufferPersistThreshold = bufferPersistThreshold;
@@ -354,7 +357,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     public boolean add(E e) {
         if (buffer == null) {
             try {
-                buffer = setFactory.newInstance(comparator, null, false);
+                buffer = setFactory.newInstance(comparator, rewriteStrategy, null, false);
             } catch (Exception ex) {
                 throw new IllegalStateException("Unable to create an underlying FileSortedSet", ex);
             }
@@ -379,7 +382,7 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     public boolean addAll(Collection<? extends E> c) {
         if (buffer == null) {
             try {
-                buffer = setFactory.newInstance(comparator, null, false);
+                buffer = setFactory.newInstance(comparator, rewriteStrategy, null, false);
             } catch (Exception ex) {
                 throw new IllegalStateException("Unable to create an underlying FileSortedSet", ex);
             }
@@ -539,17 +542,27 @@ public class BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     }
 
     @Override
-    public SortedSet<E> subSet(E fromElement, E toElement) {
+    public RewriteStrategy getRewriteStrategy() {
+        return rewriteStrategy;
+    }
+
+    @Override
+    public E get(E e) {
+        return null;
+    }
+
+    @Override
+    public RewritableSortedSet<E> subSet(E fromElement, E toElement) {
         return set.subSet(fromElement, toElement);
     }
 
     @Override
-    public SortedSet<E> headSet(E toElement) {
+    public RewritableSortedSet<E> headSet(E toElement) {
         return set.headSet(toElement);
     }
 
     @Override
-    public SortedSet<E> tailSet(E fromElement) {
+    public RewritableSortedSet<E> tailSet(E fromElement) {
         return set.tailSet(fromElement);
     }
 

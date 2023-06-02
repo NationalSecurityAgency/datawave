@@ -465,8 +465,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             // now apply the unique iterator if requested
             UniqueTransform uniquify = getUniqueTransform();
             if (uniquify != null) {
-                // pipelineDocuments = uniquify;
-                pipelineDocuments = Iterators.filter(pipelineDocuments, uniquify.getUniquePredicate());
+                pipelineDocuments = uniquify.getIterator(pipelineDocuments);
             }
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
@@ -1563,11 +1562,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return new ValueComparator(from.second().getMetadata());
     }
 
-    protected UniqueTransform getUniqueTransform() {
+    protected UniqueTransform getUniqueTransform() throws IOException {
         if (uniqueTransform == null && getUniqueFields() != null && !getUniqueFields().isEmpty()) {
             synchronized (getUniqueFields()) {
                 if (uniqueTransform == null) {
-                    uniqueTransform = new UniqueTransform(getUniqueFields());
+                    uniqueTransform = new UniqueTransform(this, getUniqueFields());
                 }
             }
         }

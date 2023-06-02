@@ -1,4 +1,4 @@
-package datawave.query.util.sortedset;
+package datawave.query.util.sortedset.rfile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 
-public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<Key> {
+public class RFileKeyValueInputStreamBase {
     private final InputStream inputStream;
     private final long length;
     private Key start;
@@ -22,18 +22,24 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
     private int size = -1;
     private static final Range ALL = new Range();
 
-    public RFileKeyInputStream(InputStream inputStream, long length) throws IOException {
+    public RFileKeyValueInputStreamBase(InputStream inputStream, long length) throws IOException {
         this.inputStream = inputStream;
         this.length = length;
     }
 
-    public RFileKeyInputStream(InputStream inputStream, long length, Key start, Key end) throws IOException {
+    public RFileKeyValueInputStreamBase(InputStream inputStream, long length, Key start, Key end) throws IOException {
         this(inputStream, length);
         this.start = start;
         this.end = end;
     }
 
-    private Iterator<Map.Entry<Key,Value>> iterator() {
+    public RFileKeyValueInputStreamBase(InputStream inputStream, long length, Map.Entry<Key,Value> start, Map.Entry<Key,Value> end) throws IOException {
+        this(inputStream, length);
+        this.start = (start == null ? null : start.getKey());
+        this.end = (end == null ? null : end.getKey());
+    }
+
+    private Iterator<Map.Entry<Key,Value>> keyValueIterator() {
         if (iterator == null) {
             Range r = ALL;
             if (start != null || end != null) {
@@ -45,12 +51,11 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
         return iterator;
     }
 
-    @Override
-    public Key readObject() throws IOException {
-        if (iterator().hasNext()) {
-            Key next = iterator().next().getKey();
-            if (RFileKeyOutputStream.SizeKeyUtil.isSizeKey(next)) {
-                size = RFileKeyOutputStream.SizeKeyUtil.getSize(next);
+    public Map.Entry<Key,Value> readKeyValue() throws IOException {
+        if (keyValueIterator().hasNext()) {
+            Map.Entry<Key,Value> next = keyValueIterator().next();
+            if (RFileKeyOutputStream.SizeKeyUtil.isSizeKey(next.getKey())) {
+                size = RFileKeyOutputStream.SizeKeyUtil.getSize(next.getKey());
                 next = null;
             }
             return next;
@@ -58,7 +63,6 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
         return null;
     }
 
-    @Override
     public int readSize() throws IOException {
         if (size < 0) {
             if (iterator != null) {
@@ -71,7 +75,6 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
         return size;
     }
 
-    @Override
     public void close() {
         if (reader != null) {
             reader.close();

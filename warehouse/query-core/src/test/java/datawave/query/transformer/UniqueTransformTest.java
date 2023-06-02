@@ -43,21 +43,23 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.DiacriticContent;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.TimingMetadata;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.LogTiming;
+import datawave.query.iterator.QueryIterator;
 import datawave.query.jexl.JexlASTHelper;
 
 public class UniqueTransformTest {
 
-    private static final Random random = new Random(1000);
-    private static final List<String> randomValues = new ArrayList<>();
+    protected static final Random random = new Random(1000);
+    protected static final List<String> randomValues = new ArrayList<>();
 
-    private final List<Document> inputDocuments = new ArrayList<>();
-    private final List<Document> expectedUniqueDocuments = new ArrayList<>();
-    private byte[] expectedOrderedFieldValues = null;
-    private UniqueFields uniqueFields = new UniqueFields();
+    protected final List<Document> inputDocuments = new ArrayList<>();
+    protected final List<Document> expectedUniqueDocuments = new ArrayList<>();
+    protected byte[] expectedOrderedFieldValues = null;
+    protected UniqueFields uniqueFields = new UniqueFields();
 
     @BeforeClass
     public static void setup() {
@@ -108,7 +110,7 @@ public class UniqueTransformTest {
         assertEquals(expectedUniqueDocuments, uniqueDocuments.size());
     }
 
-    private int countUniqueness(List<Document> input, Set<String> fields) {
+    protected int countUniqueness(List<Document> input, Set<String> fields) {
         Set<String> uniqueValues = new HashSet<>();
         for (Document document : input) {
             Multimap<String,String> fieldValues = getFieldValues(document, fields);
@@ -117,7 +119,7 @@ public class UniqueTransformTest {
         return uniqueValues.size();
     }
 
-    private Multimap<String,String> getFieldValues(Document document, Set<String> fields) {
+    protected Multimap<String,String> getFieldValues(Document document, Set<String> fields) {
         Multimap<String,String> values = HashMultimap.create();
         for (String docField : document.getDictionary().keySet()) {
             for (String field : fields) {
@@ -134,7 +136,7 @@ public class UniqueTransformTest {
         return values;
     }
 
-    private String getString(Multimap<String,String> fieldValues) {
+    protected String getString(Multimap<String,String> fieldValues) {
         StringBuilder sb = new StringBuilder();
         fieldValues.keySet().stream().sorted().forEach((field) -> {
             if (sb.length() > 0) {
@@ -477,27 +479,27 @@ public class UniqueTransformTest {
         assertOrderedFieldValues();
     }
 
-    private void assertUniqueDocuments() {
+    protected void assertUniqueDocuments() {
         List<Document> actual = getUniqueDocumentsWithUpdateConfigCalls(inputDocuments);
         Collections.sort(expectedUniqueDocuments);
         Collections.sort(actual);
         assertEquals("Unique documents do not match expected", expectedUniqueDocuments, actual);
     }
 
-    private List<Document> getUniqueDocuments(List<Document> documents) {
+    protected List<Document> getUniqueDocuments(List<Document> documents) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
         return StreamSupport.stream(Spliterators.spliteratorUnknownSize(resultIterator, Spliterator.ORDERED), false).filter(Objects::nonNull)
                         .map(Map.Entry::getValue).collect(Collectors.toList());
     }
 
-    private List<Document> getUniqueDocumentsWithUpdateConfigCalls(List<Document> documents) {
+    protected List<Document> getUniqueDocumentsWithUpdateConfigCalls(List<Document> documents) {
         Transformer<Document,Map.Entry<Key,Document>> docToEntry = document -> Maps.immutableEntry(document.getMetadata(), document);
         TransformIterator<Document,Map.Entry<Key,Document>> inputIterator = new TransformIterator<>(documents.iterator(), docToEntry);
         UniqueTransform uniqueTransform = getUniqueTransform();
-        Iterator<Map.Entry<Key,Document>> resultIterator = Iterators.transform(inputIterator, uniqueTransform);
+        Iterator<Map.Entry<Key,Document>> resultIterator = uniqueTransform.getIterator(inputIterator);
         ArrayList<Document> docs = new ArrayList<>();
         while (resultIterator.hasNext()) {
             Map.Entry<Key,Document> next = resultIterator.next();
@@ -509,7 +511,7 @@ public class UniqueTransformTest {
         return docs;
     }
 
-    private void assertOrderedFieldValues() {
+    protected void assertOrderedFieldValues() {
         try {
             UniqueTransform uniqueTransform = getUniqueTransform();
             for (Document d : inputDocuments) {
@@ -521,53 +523,57 @@ public class UniqueTransformTest {
         }
     }
 
-    private void givenValueTransformerForFields(UniqueGranularity transformer, String... fields) {
+    protected void givenValueTransformerForFields(UniqueGranularity transformer, String... fields) {
         Arrays.stream(fields).forEach((field) -> uniqueFields.put(field, transformer));
     }
 
-    private void givenValueTransformersForField(String field, UniqueGranularity... transformers) {
+    protected void givenValueTransformersForField(String field, UniqueGranularity... transformers) {
         Arrays.stream(transformers).forEach((transformer) -> uniqueFields.put(field, transformer));
     }
 
-    private UniqueTransform getUniqueTransform() {
-        return new UniqueTransform(uniqueFields);
+    protected UniqueTransform getUniqueTransform() {
+        try {
+            return new UniqueTransform((QueryIterator) null, uniqueFields);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void updateUniqueTransform(UniqueTransform uniqueTransform) {
+    protected void updateUniqueTransform(UniqueTransform uniqueTransform) {
         uniqueTransform.updateConfig(uniqueFields, null);
     }
 
-    private InputDocumentBuilder givenInputDocument() {
-        return new InputDocumentBuilder();
+    protected InputDocumentBuilder givenInputDocument() {
+        return new InputDocumentBuilder("", 0);
     }
 
-    private InputDocumentBuilder givenInputDocument(String docKey) {
-        return new InputDocumentBuilder(docKey);
+    protected InputDocumentBuilder givenInputDocument(String docKey) {
+        return new InputDocumentBuilder(docKey, 0);
     }
 
-    private ExpectedOrderedFieldValuesBuilder givenExpectedOrderedFieldValues() {
+    protected InputDocumentBuilder givenInputDocument(long ts) {
+        return new InputDocumentBuilder("", ts);
+    }
+
+    protected InputDocumentBuilder givenInputDocument(String docKey, long ts) {
+        return new InputDocumentBuilder(docKey, ts);
+    }
+
+    protected ExpectedOrderedFieldValuesBuilder givenExpectedOrderedFieldValues() {
         return new ExpectedOrderedFieldValuesBuilder();
     }
 
-    private class InputDocumentBuilder {
+    protected class InputDocumentBuilder {
 
         private final Document document;
 
-        InputDocumentBuilder() {
-            this.document = new Document();
-            inputDocuments.add(document);
-        }
-
-        @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
-        InputDocumentBuilder(String docKey) {
-
-            Text MARKER_TEXT = new Text(docKey);
-            ByteSequence MARKER_SEQUENCE = new ArrayByteSequence(MARKER_TEXT.getBytes(), 0, MARKER_TEXT.getLength());
-            byte EMPTY_BYTES[] = new byte[0];
-            Key key = new Key(EMPTY_BYTES, EMPTY_BYTES, MARKER_SEQUENCE.subSequence(0, MARKER_SEQUENCE.length()).toArray());
+        InputDocumentBuilder(String docKey, long ts) {
+            Key key = new Key("shardid", "datatype\u0000uid", docKey, ts);
             this.document = new Document(key, true);
             inputDocuments.add(document);
             this.document.getMetadata().set(key);
+            Attribute<?> docKeyAttributes = new DocumentKey(key, true);
+            this.document.put(Document.DOCKEY_FIELD_NAME, docKeyAttributes);
         }
 
         @SuppressWarnings({"UnusedReturnValue", "SameParameterValue"})
@@ -609,7 +615,7 @@ public class UniqueTransformTest {
         }
     }
 
-    private class ExpectedOrderedFieldValuesBuilder {
+    protected class ExpectedOrderedFieldValuesBuilder {
 
         private Multimap<String,String> fieldValues = TreeMultimap.create();
 
