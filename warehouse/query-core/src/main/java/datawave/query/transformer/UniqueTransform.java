@@ -4,39 +4,59 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
 
 import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
+import org.apache.commons.collections4.keyvalue.UnmodifiableMapEntry;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
 
+import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.query.util.sortedset.ByteArrayComparator;
+import datawave.query.util.sortedset.FileByteDocumentSortedSet;
+import datawave.query.util.sortedset.FileSortedSet;
+import datawave.query.util.sortedset.HdfsBackedSortedSet;
+import datawave.query.util.sortedset.RewritableSortedSet;
+import datawave.query.util.sortedset.RewritableSortedSetImpl;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
- * fields will be returned. This transform is thread safe.
+ * fields will be returned unless mostRecentUnique is specified in which case the most recent instance of an event will be returned. This transform is thread
+ * safe.
+ *
+ * 1) FileByteKeySortedSet: ability to keep the most recent key for the same byte array done: setRewriteStrategy(rewriteStrategy) 2) MultiSetBackedSortedSet:
+ * ability to keep the mote recent key for the same value when doing a merge sort done 3) Buffer all values in the file backed sorted set until we flush done 4)
+ * Update the ShardQueryLogic to use the MostRecentUniqueTransform done 5) Create a MostRecentUniqueIterator akin to the GroupingIterator done 6) Update the
+ * QueryIterator to apply the MostRecentUniqueIterator done 7) Create most recent test cases
+ *
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
 
@@ -45,13 +65,24 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private BloomFilter<byte[]> bloom;
     private UniqueFields uniqueFields;
     private Multimap<String,String> modelMapping;
+    private HdfsBackedSortedSet<Entry<byte[],Document>> set;
+    private Iterator<Entry<byte[],Document>> setIterator;
 
-    public UniqueTransform(UniqueFields uniqueFields) {
+    private UniqueTransform(UniqueFields uniqueFields) {
         this.uniqueFields = uniqueFields;
         this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
+        }
+    }
+
+    public UniqueTransform(QueryIterator queryIterator, UniqueFields uniqueFields) throws IOException {
+        this(uniqueFields);
+        if (uniqueFields.isMostRecent()) {
+            this.set = new HdfsBackedSortedSet<>(keyComparator, keyValueComparator, queryIterator.getUniqueCacheBufferSize(),
+                            getIvaratorCacheDirs(queryIterator), "MostRecentUniqueSet", queryIterator.getIvaratorMaxOpenFiles(),
+                            queryIterator.getIvaratorNumRetries(), queryIterator.getIvaratorPersistOptions(), new FileByteDocumentSortedSet.Factory());
         }
     }
 
@@ -63,15 +94,66 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * @param uniqueFields
      *            the set of fields to find unique values for
      */
-    public UniqueTransform(BaseQueryLogic<Entry<Key,Value>> logic, UniqueFields uniqueFields) {
+    public UniqueTransform(ShardQueryLogic logic, UniqueFields uniqueFields) throws IOException {
         this(uniqueFields);
-        QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
-        if (model != null) {
-            modelMapping = HashMultimap.create();
-            // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
-            for (Map.Entry<String,String> entry : model.getReverseQueryMapping().entrySet()) {
-                modelMapping.put(entry.getValue(), entry.getKey());
+        if (logic != null) {
+            setModelMappings(logic.getQueryModel());
+        }
+        if (uniqueFields.isMostRecent()) {
+            this.set = new HdfsBackedSortedSet<>(keyComparator, keyValueComparator, logic.getUniqueCacheBufferSize(), getIvaratorCacheDirs(logic),
+                            "FinalMostRecentUniqueSet", logic.getIvaratorMaxOpenFiles(), logic.getIvaratorNumRetries(),
+                            new FileSortedSet.PersistOptions(logic.isIvaratorPersistVerify(), logic.isIvaratorPersistVerify(),
+                                            logic.getIvaratorPersistVerifyCount()),
+                            new FileByteDocumentSortedSet.Factory());
+        }
+    }
+
+    private List<IvaratorCacheDir> getIvaratorCacheDirs(ShardQueryLogic logic) throws IOException {
+        return getIvaratorCacheDirs(logic.getIvaratorCacheDirConfigs(), logic.getHdfsSiteConfigURLs(), logic.getConfig().getQuery().getId().toString());
+    }
+
+    private List<IvaratorCacheDir> getIvaratorCacheDirs(QueryIterator queryIterator) throws IOException {
+        return getIvaratorCacheDirs(queryIterator.getIvaratorCacheDirConfigs(), queryIterator.getHdfsSiteConfigURLs(),
+                        queryIterator.getQueryId() + '-' + queryIterator.getScanId());
+    }
+
+    /**
+     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
+     *
+     * @param ivaratorCacheDirConfigs
+     * @param hdfsSiteConfigURLs
+     * @param subdirectory
+     * @return A path
+     * @throws IOException
+     *             for issues with read/write
+     */
+    private List<IvaratorCacheDir> getIvaratorCacheDirs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs, String hdfsSiteConfigURLs, String subdirectory)
+                    throws IOException {
+        // build a list of ivarator cache dirs from the configs
+        List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
+        if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
+            for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
+
+                // first, make sure the cache configuration is valid
+                if (config.isValid()) {
+                    Path path = new Path(config.getBasePathURI(), subdirectory);
+                    URI uri = path.toUri();
+                    FileSystem fs = new FileSystemCache(hdfsSiteConfigURLs).getFileSystem(uri);
+                    pathAndFs.add(new IvaratorCacheDir(config, fs, uri.toString()));
+                }
             }
+        }
+
+        if (pathAndFs.isEmpty())
+            throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirConfigs);
+
+        return pathAndFs;
+    }
+
+    public static class MostRecentTimeStampStrategy implements RewritableSortedSet.RewriteStrategy<Map.Entry<byte[],Document>> {
+        @Override
+        public boolean rewrite(Map.Entry<byte[],Document> original, Map.Entry<byte[],Document> update) {
+            return (update.getValue().getTimestamp() > original.getValue().getTimestamp());
         }
     }
 
@@ -87,6 +169,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                 }
             }
         }
+        setModelMappings(model);
+    }
+
+    private void setModelMappings(QueryModel model) {
         if (model != null) {
             modelMapping = HashMultimap.create();
             // reverse the reverse query mapping which will give us a mapping from the final field name to the original field name(s)
@@ -97,12 +183,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
-     * Get a predicate that will apply this transform.
+     * Add phrase excerpts to the documents from the given iterator.
      *
-     * @return A unique transform predicate
+     * @param in
+     *            the iterator source
+     * @return an iterator that will supply the enriched documents
      */
-    public Predicate<Entry<Key,Document>> getUniquePredicate() {
-        return input -> UniqueTransform.this.apply(input) != null;
+    public Iterator<Entry<Key,Document>> getIterator(final Iterator<Entry<Key,Document>> in) {
+        return new UniqueTransformIterator(in);
     }
 
     /**
@@ -121,7 +209,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
 
             try {
-                if (isDuplicate(keyDocumentEntry.getValue())) {
+                if (set != null) {
+                    byte[] signature = getBytes(keyDocumentEntry.getValue());
+                    this.set.add(new UnmodifiableMapEntry(signature, keyDocumentEntry.getValue()));
+                    keyDocumentEntry = null;
+                } else if (isDuplicate(keyDocumentEntry.getValue())) {
                     keyDocumentEntry = null;
                 }
             } catch (IOException ioe) {
@@ -129,6 +221,21 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             }
         }
         return keyDocumentEntry;
+    }
+
+    @Override
+    public Map.Entry<Key,Document> flush() {
+        if (set != null) {
+            if (setIterator == null) {
+                setIterator = set.iterator();
+            }
+            if (setIterator.hasNext()) {
+                Map.Entry<byte[],Document> next = setIterator.next();
+                Document document = next.getValue();
+                return new UnmodifiableMapEntry(getDocKey(document), document);
+            }
+        }
+        return null;
     }
 
     /**
@@ -270,4 +377,81 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             into.putBytes(from);
         }
     }
+
+    public class UniqueTransformIterator implements Iterator<Map.Entry<Key,Document>> {
+        private final Iterator<Map.Entry<Key,Document>> iterator;
+        private Map.Entry<Key,Document> next = null;
+
+        public UniqueTransformIterator(Iterator<Map.Entry<Key,Document>> iterator) {
+            this.iterator = iterator;
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (next == null) {
+                next = getNext();
+            }
+            return (next != null);
+        }
+
+        @Override
+        public Map.Entry<Key,Document> next() {
+            Map.Entry<Key,Document> o = null;
+            if (next == null) {
+                o = getNext();
+            } else {
+                o = next;
+                next = null;
+            }
+            return o;
+        }
+
+        private Map.Entry<Key,Document> getNext() {
+            Map.Entry<Key,Document> o = null;
+            while (o == null && iterator.hasNext()) {
+                o = apply(iterator.next());
+            }
+            // see if there are any results cached by the transform
+            if (o == null) {
+                o = flush();
+            }
+            return o;
+        }
+
+    }
+
+    private Comparator<Entry<byte[],Document>> keyComparator = new Comparator<>() {
+        private Comparator<byte[]> comparator = new ByteArrayComparator();
+
+        @Override
+        public int compare(Map.Entry<byte[],Document> o1, Map.Entry<byte[],Document> o2) {
+            return comparator.compare(o1.getKey(), o2.getKey());
+        }
+    };
+
+    private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Document>> keyValueComparator = new RewritableSortedSetImpl.RewriteStrategy<>() {
+        @Override
+        public boolean rewrite(Map.Entry<byte[],Document> original, Map.Entry<byte[],Document> update) {
+            int comparison = keyComparator.compare(original, update);
+            if (comparison == 0) {
+                long ts1 = getTimestamp(original.getValue());
+                long ts2 = getTimestamp(update.getValue());
+                return (ts2 > ts1);
+            }
+            return comparison < 0;
+        }
+    };
+
+    private DocumentKey getDocKeyAttr(Document doc) {
+        return (DocumentKey) (doc.get(Document.DOCKEY_FIELD_NAME));
+    }
+
+    private long getTimestamp(Document doc) {
+        return getDocKeyAttr(doc).getTimestamp();
+    }
+
+    private Key getDocKey(Document doc) {
+        return getDocKeyAttr(doc).getDocKey();
+    }
+
 }

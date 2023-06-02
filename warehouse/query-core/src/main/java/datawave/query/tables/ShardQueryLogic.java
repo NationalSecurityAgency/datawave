@@ -258,6 +258,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
+        // whenever we reinitialize, ensure we have a fresh transformer
+        this.transformerInstance = null;
 
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
@@ -584,7 +586,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
-            addConfigBasedTransformers();
+            try {
+                addConfigBasedTransformers();
+            } catch (QueryException qe) {
+                throw new RuntimeException("Unable to configure transformers", qe);
+            }
             return this.transformerInstance;
         }
 
@@ -605,7 +611,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setPrimaryToSecondaryFieldMap(primaryToSecondaryFieldMap);
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
-        addConfigBasedTransformers();
+        try {
+            addConfigBasedTransformers();
+        } catch (QueryException qe) {
+            throw new RuntimeException("Unable to configure transformers", qe);
+        }
 
         return this.transformerInstance;
     }
@@ -617,7 +627,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
-    private void addConfigBasedTransformers() {
+    private void addConfigBasedTransformers() throws QueryException {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
@@ -627,7 +637,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (alreadyExists != null) {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                    try {
+                        ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                    } catch (IOException ioe) {
+                        throw new QueryException("Unable to create a unique transform", ioe);
+                    }
                 }
             }
 
@@ -814,6 +828,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             UniqueFields uniqueFields = UniqueFields.from(uniqueFieldsParam);
             // Only set the unique fields if we were actually given some
             if (!uniqueFields.isEmpty()) {
+                String mostRecentUnique = settings.findParameter(QueryParameters.MOST_RECENT_UNIQUE).getParameterValue().trim();
+                if (StringUtils.isNotBlank(mostRecentUnique)) {
+                    uniqueFields.setMostRecent(Boolean.valueOf(mostRecentUnique));
+                }
                 this.setUniqueFields(uniqueFields);
                 config.setUniqueFields(uniqueFields);
             }
@@ -1793,6 +1811,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
         getConfig().setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
+    }
+
+    public int getUniqueCacheBufferSize() {
+        return getConfig().getUniqueCacheBufferSize();
+    }
+
+    public void setUniqueCacheBufferSize(int uniqueCacheBufferSize) {
+        getConfig().setUniqueCacheBufferSize(uniqueCacheBufferSize);
     }
 
     public int getIvaratorCacheBufferSize() {

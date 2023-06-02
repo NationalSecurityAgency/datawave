@@ -395,7 +395,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
      *            an {@link IteratorSetting}
      */
     protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
-        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
+        if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script) && !settings.getOptions().containsKey(QueryOptions.MOST_RECENT_UNIQUE)) {
             settings.removeOption(QueryOptions.IVARATOR_CACHE_BUFFER_SIZE);
             settings.removeOption(QueryOptions.IVARATOR_CACHE_DIR_CONFIG);
             settings.removeOption(QueryOptions.IVARATOR_NUM_RETRIES);

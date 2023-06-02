@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -591,4 +593,5 @@ public class MultiSetBackedSortedSetTest {
         byte[] value = set.first();
         assertArrayEquals(expected, value);
     }
+
 }
