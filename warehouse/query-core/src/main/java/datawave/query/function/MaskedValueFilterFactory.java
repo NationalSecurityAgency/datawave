@@ -1,5 +1,6 @@
 package datawave.query.function;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 import org.apache.commons.vfs2.impl.VFSClassLoader;
@@ -39,28 +40,33 @@ public class MaskedValueFilterFactory {
             // It is a VFSClassLoader that has the accumulo lib/ext jars set as its resources.
             // After setting the classloader, then set the config locations and refresh the context.
             context.setClassLoader(thisClassLoader);
-            context.setConfigLocation("classpath:/MaskingFilterContext.xml");
+            context.setConfigLocation("classpath*:/MaskingFilterContext.xml");
             context.refresh();
             instance = context.getBean("maskedValueFilter", MaskedValueFilterInterface.class);
         } catch (Throwable t) {
             // got here because the VFSClassLoader on the tservers does not implement findResources
             // none of the spring wiring will work, so fall back to reflection:
-            log.warn("got {}", t);
+            log.warn("Failed to get maskedValueFilter bean from application context", t);
             String className = System.getProperty(MASKED_VALUE_FILTER_CLASSNAME);
-            log.debug("{}{}", MASKED_VALUE_FILTER_CLASSNAME, className);
             if (className != null) {
+                log.warn("Attempting to instantiate masked value filter from -D{}={}", MASKED_VALUE_FILTER_CLASSNAME, className);
                 try {
-                    instance = (MaskedValueFilterInterface) Class.forName(className).newInstance();
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-                    log.warn("unable to create MaskedValueFilterInterface", e);
+                    instance = (MaskedValueFilterInterface) Class.forName(className).getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
+                         NoSuchMethodException | InvocationTargetException e) {
+                    log.warn("Failed to create MaskedValueFilterInterface from {}", e);
                     throw new RuntimeException("Could not create MaskedValueFilterInterface object");
                 }
             } else {
-                log.warn("className was null, unable to create " + MASKED_VALUE_FILTER_CLASSNAME);
+                log.warn("className was null, unable to create {}", MASKED_VALUE_FILTER_CLASSNAME);
             }
             log.debug("{}: {}", MASKED_VALUE_FILTER_CLASSNAME, (null != instance ? instance : "null"));
         } finally {
-            context.close();
+            try {
+                context.close();
+            } catch (Exception e) {
+                log.warn("Failed to close application context", e);
+            }
         }
         return instance;
     }

@@ -238,6 +238,9 @@
         <property name="eventNextSeek" value="-1" />
         <property name="tfFieldSeek" value="-1" />
         <property name="tfNextSeek" value="-1" />
+        <!--    control when to log warnings for long aggregations    -->
+        <property name="docAggregationThresholdMs" value="-1" />
+        <property name="tfAggregationThresholdMs" value="-1" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

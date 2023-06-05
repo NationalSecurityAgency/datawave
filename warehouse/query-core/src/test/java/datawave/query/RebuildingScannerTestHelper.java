@@ -37,7 +37,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IterationInterruptedException;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.security.Authorizations;
@@ -74,7 +74,7 @@ public class RebuildingScannerTestHelper {
         
         public TeardownListener instance() {
             try {
-                return tclass.newInstance();
+                return tclass.getDeclaredConstructor().newInstance();
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -524,17 +524,17 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-        
+
         @Override
-        public void setTimeOut(int timeOut) {
-            ((InMemoryScanner) delegate).setTimeOut(timeOut);
+        public ConsistencyLevel getConsistencyLevel() {
+            return ConsistencyLevel.IMMEDIATE;
         }
-        
+
         @Override
-        public int getTimeOut() {
-            return ((InMemoryScanner) delegate).getTimeOut();
+        public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
         }
-        
+
         @Override
         public void setRange(Range range) {
             ((InMemoryScanner) delegate).setRange(range);
@@ -595,7 +595,17 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-        
+
+        @Override
+        public ConsistencyLevel getConsistencyLevel() {
+            return ConsistencyLevel.IMMEDIATE;
+        }
+
+        @Override
+        public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
+        }
+
         @Override
         public void setRanges(Collection<Range> ranges) {
             ((InMemoryBatchScanner) delegate).setRanges(ranges);
@@ -809,7 +819,17 @@ public class RebuildingScannerTestHelper {
         public String getClassLoaderContext() {
             return delegate.getClassLoaderContext();
         }
-        
+
+        @Override
+        public ConsistencyLevel getConsistencyLevel() {
+            return ConsistencyLevel.IMMEDIATE;
+        }
+
+        @Override
+        public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
+
+        }
+
         @Override
         public void forEach(Consumer<? super Map.Entry<Key,Value>> action) {
             delegate.forEach(action);

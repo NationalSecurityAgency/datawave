@@ -1,5 +1,6 @@
 package datawave.query.util.cache;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
@@ -9,7 +10,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.query.Constants;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -29,10 +30,10 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
     protected Collection<String> dataTypeFilters;
     
     private static final Logger log = Logger.getLogger(NormalizerLoader.class);
-    
-    public NormalizerLoader(Connector connector, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
+
+    public NormalizerLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {
-        super(connector, tableName, auths, columnFamilyList);
+        super(client, tableName, auths, columnFamilyList);
         
         if (null != dataTypeFilters)
             this.dataTypeFilters = new ArrayList<>(dataTypeFilters);
@@ -109,7 +110,7 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
                         entryCache.put("DATA_TYPES", dataNormalizer);
                     }
                     
-                    dataNormalizer.put(type, LcNoDiacriticsType.class.newInstance());
+                    dataNormalizer.put(type, LcNoDiacriticsType.class.getDeclaredConstructor().newInstance());
                     
                     if (!dataTypeFilters.isEmpty() && !dataTypeFilters.contains(type)) {
                         if (log.isTraceEnabled())
@@ -156,7 +157,8 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
                     
                     return true;
                     
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                         NoSuchMethodException | InvocationTargetException e) {
                     log.error("Unable to find normalizer on class path: " + colq.substring(idx + 1), e);
                 }
                 

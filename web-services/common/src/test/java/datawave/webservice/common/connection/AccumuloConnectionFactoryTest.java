@@ -16,7 +16,7 @@ import datawave.webservice.common.cache.AccumuloTableCache;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
 import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
@@ -44,22 +44,22 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     private InMemoryInstance instance = new InMemoryInstance();
     
     @Mock(type = STRICT)
-    private WrappedConnector warehouseConnection;
+    private WrappedAccumuloClient warehouseClient;
     
     @Mock(type = STRICT)
-    private WrappedConnector metricsConnection;
+    private WrappedAccumuloClient metricsClient;
     
     @Before
     public void setup() throws Exception {
         
-        MyAccumuloConnectionPoolFactory warehouseFactory = Whitebox.newInstance(MyAccumuloConnectionPoolFactory.class);
+        MyAccumuloClientPoolFactory warehouseFactory = Whitebox.newInstance(MyAccumuloClientPoolFactory.class);
         Whitebox.setInternalState(warehouseFactory, "username", "root");
         Whitebox.setInternalState(warehouseFactory, "password", "");
-        MyAccumuloConnectionPoolFactory metricsFactory = Whitebox.newInstance(MyAccumuloConnectionPoolFactory.class);
+        MyAccumuloClientPoolFactory metricsFactory = Whitebox.newInstance(MyAccumuloClientPoolFactory.class);
         Whitebox.setInternalState(metricsFactory, "username", "root");
         Whitebox.setInternalState(metricsFactory, "password", "");
-        warehouseFactory.setConnector(warehouseConnection);
-        metricsFactory.setConnector(metricsConnection);
+        warehouseFactory.setClient(warehouseClient);
+        metricsFactory.setClient(metricsClient);
         
         Map<String,ConnectionPoolConfiguration> configs = new HashMap<>();
         configs.put("WAREHOUSE", null);
@@ -70,11 +70,11 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         Whitebox.setInternalState(conf, "pools", configs);
         
         String defaultPoolName = conf.getDefaultPool();
-        HashMap<String,Map<Priority,AccumuloConnectionPool>> pools = new HashMap<>();
-        MyAccumuloConnectionPool warehousePool = new MyAccumuloConnectionPool(warehouseFactory);
-        MyAccumuloConnectionPool metricsPool = new MyAccumuloConnectionPool(metricsFactory);
+        HashMap<String,Map<Priority,AccumuloClientPool>> pools = new HashMap<>();
+        MyAccumuloClientPool warehousePool = new MyAccumuloClientPool(warehouseFactory);
+        MyAccumuloClientPool metricsPool = new MyAccumuloClientPool(metricsFactory);
         for (Entry<String,ConnectionPoolConfiguration> entry : conf.getPools().entrySet()) {
-            AccumuloConnectionPool acp = null;
+            AccumuloClientPool acp = null;
             switch (entry.getKey()) {
                 case "METRICS":
                     acp = metricsPool;
@@ -85,7 +85,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
                 default:
                     fail("Unknown pool name " + entry.getKey());
             }
-            Map<Priority,AccumuloConnectionPool> p = new HashMap<>();
+            Map<Priority,AccumuloClientPool> p = new HashMap<>();
             p.put(Priority.ADMIN, acp);
             p.put(Priority.HIGH, acp);
             p.put(Priority.NORMAL, acp);
@@ -98,7 +98,7 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     }
     
     @After
-    public void cleanup() throws Exception {
+    public void cleanup() {
         System.clearProperty("dw.accumulo.classLoader.context");
     }
     
@@ -109,10 +109,10 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection(Priority.HIGH, new HashMap<>());
+        AccumuloClient con = bean.getClient(Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
-        assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
+        assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
         assertNull("scannerClassLoaderContext was set when it shouldn't have been", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
     }
     
@@ -123,10 +123,10 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
+        AccumuloClient con = bean.getClient("WAREHOUSE", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
-        assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
+        assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
     }
     
     @Test
@@ -137,10 +137,10 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("WAREHOUSE", Priority.HIGH, new HashMap<>());
+        AccumuloClient con = bean.getClient("WAREHOUSE", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
-        assertEquals(warehouseConnection, ((WrappedConnector) con).getReal());
+        assertEquals(warehouseClient, ((WrappedAccumuloClient) con).getReal());
         assertEquals("alternateContext", Whitebox.getInternalState(con, "scannerClassLoaderContext"));
     }
     
@@ -151,51 +151,51 @@ public class AccumuloConnectionFactoryTest extends EasyMockSupport {
         EasyMock.expect(bean.getCurrentUserDN()).andReturn(null);
         EasyMock.expect(bean.getCurrentProxyServers()).andReturn(null);
         replayAll();
-        Connector con = bean.getConnection("METRICS", Priority.HIGH, new HashMap<>());
+        AccumuloClient con = bean.getClient("METRICS", Priority.HIGH, new HashMap<>());
         verifyAll();
         assertNotNull(con);
-        assertEquals(metricsConnection, ((WrappedConnector) con).getReal());
+        assertEquals(metricsClient, ((WrappedAccumuloClient) con).getReal());
     }
     
-    public static class MyAccumuloConnectionPoolFactory extends AccumuloConnectionPoolFactory {
+    public static class MyAccumuloClientPoolFactory extends AccumuloClientPoolFactory {
         
-        private Connector c = null;
+        private AccumuloClient c = null;
         
-        public MyAccumuloConnectionPoolFactory(String username, String password, String zookeepers, String instanceName) {
+        public MyAccumuloClientPoolFactory(String username, String password, String zookeepers, String instanceName) {
             super(username, password, zookeepers, instanceName);
         }
         
-        public void setConnector(Connector c) {
+        public void setClient(AccumuloClient c) {
             this.c = c;
         }
         
         @Override
-        public PooledObject<Connector> makeObject() throws Exception {
+        public PooledObject<AccumuloClient> makeObject() {
             return new DefaultPooledObject<>(c);
         }
         
         @Override
-        public boolean validateObject(PooledObject<Connector> arg0) {
+        public boolean validateObject(PooledObject<AccumuloClient> arg0) {
             return true;
         }
         
     }
     
-    public static class MyAccumuloConnectionPool extends AccumuloConnectionPool {
+    public static class MyAccumuloClientPool extends AccumuloClientPool {
         
-        private AccumuloConnectionPoolFactory factory = null;
+        private AccumuloClientPoolFactory factory;
         
-        public MyAccumuloConnectionPool(AccumuloConnectionPoolFactory factory) {
+        public MyAccumuloClientPool(AccumuloClientPoolFactory factory) {
             super(factory);
             this.factory = factory;
         }
         
         @Override
-        public Connector borrowObject() throws Exception {
+        public AccumuloClient borrowObject() throws Exception {
             return this.factory.makeObject().getObject();
         }
         
         @Override
-        public void returnObject(Connector connector) {}
+        public void returnObject(AccumuloClient connector) {}
     }
 }

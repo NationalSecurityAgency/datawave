@@ -136,6 +136,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String TERM_FREQUENCIES_REQUIRED = "term.frequencies.are.required";
     public static final String CONTENT_EXPANSION_FIELDS = "content.expansion.fields";
     public static final String LIMIT_FIELDS = "limit.fields";
+    public static final String MATCHING_FIELD_SETS = "matching.field.sets";
     public static final String LIMIT_FIELDS_PRE_QUERY_EVALUATION = "limit.fields.pre.query.evaluation";
     public static final String LIMIT_FIELDS_FIELD = "limit.fields.field";
     public static final String GROUP_FIELDS = "group.fields";
@@ -263,6 +264,10 @@ public class QueryOptions implements OptionDescriber {
     public static final String EVENT_NEXT_SEEK = "event.next.seek";
     public static final String TF_FIELD_SEEK = "tf.field.seek";
     public static final String TF_NEXT_SEEK = "tf.next.seek";
+
+    public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
+
+    public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
     
     protected Map<String,String> options;
     
@@ -288,6 +293,7 @@ public class QueryOptions implements OptionDescriber {
     protected boolean useBlackListedFields = false;
     protected Set<String> blackListedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
+    protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
     
@@ -420,6 +426,10 @@ public class QueryOptions implements OptionDescriber {
     private int eventNextSeek = -1;
     private int tfFieldSeek = -1;
     private int tfNextSeek = -1;
+
+    //  aggregation thresholds
+    private int docAggregationThresholdMs = -1;
+    private int tfAggregationThresholdMs = -1;
     
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
@@ -493,6 +503,7 @@ public class QueryOptions implements OptionDescriber {
         
         this.compressResults = other.compressResults;
         this.limitFieldsMap = other.limitFieldsMap;
+        this.matchingFieldSets = other.matchingFieldSets;
         this.limitFieldsPreQueryEvaluation = other.limitFieldsPreQueryEvaluation;
         this.limitFieldsField = other.limitFieldsField;
         this.groupFields = other.groupFields;
@@ -527,6 +538,9 @@ public class QueryOptions implements OptionDescriber {
         this.eventNextSeek = other.eventNextSeek;
         this.tfFieldSeek = other.tfFieldSeek;
         this.tfNextSeek = other.tfNextSeek;
+
+        this.docAggregationThresholdMs = other.docAggregationThresholdMs;
+        this.tfAggregationThresholdMs = other.tfAggregationThresholdMs;
     }
     
     public String getQuery() {
@@ -704,6 +718,18 @@ public class QueryOptions implements OptionDescriber {
     
     public void setArithmetic(JexlArithmetic arithmetic) {
         this.arithmetic = arithmetic;
+    }
+    
+    /**
+     * Gets a default implementation of a FieldIndexAggregator
+     *
+     * @return a FieldIndexAggregator
+     */
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
+        }
+        return fiAggregator;
     }
     
     public EventDataQueryFilter getEvaluationFilter() {
@@ -975,6 +1001,18 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsMap = limitFieldsMap;
     }
     
+    public Set<Set<String>> getMatchingFieldSets() {
+        return matchingFieldSets;
+    }
+
+    public List<String> getMatchingFieldList() {
+        return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
+    }
+    
+    public void setMatchingFieldSets(Set<Set<String>> matchingFieldSets) {
+        this.matchingFieldSets = matchingFieldSets;
+    }
+    
     public boolean isLimitFieldsPreQueryEvaluation() {
         return limitFieldsPreQueryEvaluation;
     }
@@ -1111,6 +1149,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(DOCUMENT_PERMUTATION_CLASSES,
                         "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
         options.put(LIMIT_FIELDS, "limit fields");
+        options.put(MATCHING_FIELD_SETS, "matching field sets (used along with limit fields)");
         options.put(GROUP_FIELDS, "group fields");
         options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
         options.put(UNIQUE_FIELDS, "unique fields");
@@ -1171,6 +1210,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(EVENT_NEXT_SEEK, "The number of next calls made by an Event data filter or aggregator before a seek is issued");
         options.put(TF_FIELD_SEEK, "The number of fields traversed by a Term Frequency data filter or aggregator before a seek is issued");
         options.put(TF_NEXT_SEEK, "The number of next calls made by a Term Frequency data filter or aggregator before a seek is issued");
+        options.put(DOC_AGGREGATION_THRESHOLD_MS, "Document aggregations that exceed this threshold are logged as a warning");
+        options.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "TermFrequency aggregations that exceed this threshold are logged as a warning");
         return new IteratorOptions(getClass().getSimpleName(), "Runs a query against the DATAWAVE tables", options, null);
     }
     
@@ -1359,6 +1400,14 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TF_NEXT_SEEK)) {
             this.tfNextSeek = Integer.parseInt(options.get(TF_NEXT_SEEK));
         }
+
+        if (options.containsKey(DOC_AGGREGATION_THRESHOLD_MS)) {
+            this.docAggregationThresholdMs = Integer.parseInt(options.get(DOC_AGGREGATION_THRESHOLD_MS));
+        }
+
+        if (options.containsKey(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS)) {
+            this.tfAggregationThresholdMs = Integer.parseInt(options.get(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS));
+        }
         
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
@@ -1392,8 +1441,6 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(INDEXED_FIELDS)) {
             this.indexedFields = buildFieldSetFromString(options.get(INDEXED_FIELDS));
         }
-        
-        this.fiAggregator = new IdentityAggregator(getNonEventFields(), getEvaluationFilter(), getEventNextSeek());
         
         if (options.containsKey(IGNORE_COLUMN_FAMILIES)) {
             this.ignoreColumnFamilies = buildIgnoredColumnFamilies(options.get(IGNORE_COLUMN_FAMILIES));
@@ -1434,6 +1481,16 @@ public class QueryOptions implements OptionDescriber {
                 String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
                 if (keyAndValue != null && keyAndValue.length > 1) {
                     this.getLimitFieldsMap().put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
+                }
+            }
+        }
+        
+        if (options.containsKey(MATCHING_FIELD_SETS)) {
+            String matchingFieldSets = options.get(MATCHING_FIELD_SETS);
+            for (String fieldSet : Splitter.on(',').omitEmptyStrings().trimResults().split(matchingFieldSets)) {
+                String[] fields = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(fieldSet), String.class);
+                if (fields.length != 0) {
+                    this.getMatchingFieldSets().add(new HashSet(Arrays.asList(fields)));
                 }
             }
         }
@@ -1922,7 +1979,7 @@ public class QueryOptions implements OptionDescriber {
                     }
                     Class<?> fClass = Class.forName(fClassName);
                     if (Function.class.isAssignableFrom(fClass)) {
-                        Function f = (Function) fClass.newInstance();
+                        Function f = (Function) fClass.getDeclaredConstructor().newInstance();
                         
                         if (f instanceof ConfiguredFunction) {
                             ((ConfiguredFunction) f).configure(options);
@@ -1930,7 +1987,7 @@ public class QueryOptions implements OptionDescriber {
                         
                         tforms = Iterators.transform(tforms, f);
                     } else if (Predicate.class.isAssignableFrom(fClass)) {
-                        Predicate p = (Predicate) fClass.newInstance();
+                        Predicate p = (Predicate) fClass.getDeclaredConstructor().newInstance();
                         
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
@@ -1943,7 +2000,8 @@ public class QueryOptions implements OptionDescriber {
                     }
                 }
                 return tforms;
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
+                     InvocationTargetException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
                 throw new RuntimeException("Could not instantiate postprocessing chain!", e);
             }
@@ -2120,7 +2178,23 @@ public class QueryOptions implements OptionDescriber {
     public void setTfNextSeek(int tfNextSeek) {
         this.tfNextSeek = tfNextSeek;
     }
-    
+
+    public int getDocAggregationThresholdMs(){
+        return docAggregationThresholdMs;
+    }
+
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+        this.docAggregationThresholdMs = docAggregationThresholdMs;
+    }
+
+    public int getTfAggregationThresholdMs(){
+        return tfAggregationThresholdMs;
+    }
+
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+        this.tfAggregationThresholdMs = tfAggregationThresholdMs;
+    }
+
     /**
      * Get an {@link Equality}
      *

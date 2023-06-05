@@ -15,21 +15,18 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.util.cli.PasswordConverter;
 
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.RegExFilter;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
@@ -117,7 +114,7 @@ public class QueryMetricsReporter {
         CommandLine cli;
         
         try {
-            cli = new BasicParser().parse(options, args);
+            cli = new DefaultParser().parse(options, args);
         } catch (ParseException e) {
             log.error("Could not parse command line arguments: " + e.getMessage(), e);
             log.error("Received command: " + Arrays.asList(args));
@@ -157,23 +154,9 @@ public class QueryMetricsReporter {
             return 2;
         }
         
-        // Connect to Accumulo
-        ZooKeeperInstance zkInstance = new ZooKeeperInstance(ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zookeepers));
-        Connector connector;
-        try {
-            connector = zkInstance.getConnector(username, new PasswordToken(password));
-        } catch (AccumuloException e) {
-            log.error("Could not obtain connector to Accumulo due to AccumuloException: " + e.getMessage(), e);
-            
-            return 1;
-        } catch (AccumuloSecurityException e) {
-            log.error("Could not obtain connector to Accumulo due to AccumuloSecurityException: " + e.getMessage(), e);
-            
-            return 1;
-        }
-        
         // Open up a BatchScanner to the QueryMetrics table
-        try (BatchScanner bs = connector.createBatchScanner(tableName, Authorizations.EMPTY, 8)) {
+        try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build();
+                        BatchScanner bs = client.createBatchScanner(tableName, Authorizations.EMPTY, 8)) {
             // Set a range for the entire table
             Range r = null;
             if (null == queryUser)
@@ -203,7 +186,12 @@ public class QueryMetricsReporter {
     /**
      * Given results from the QueryMetrics table, collect statistics on all queries falling in the date range.
      * 
+     * @param beginDate
+     *            the begin date
+     * @param endDate
+     *            the end date
      * @param iterator
+     *            an iterator
      */
     private void processResults(Date beginDate, Date endDate, Iterator<Entry<Key,Value>> iterator) {
         final Text holder = new Text();

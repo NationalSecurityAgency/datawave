@@ -1,5 +1,6 @@
 package datawave.query.enrich;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -71,7 +72,7 @@ public class EnrichingMaster {
                     continue;
                 }
                 
-                DataEnricher enricher = (DataEnricher) clz.newInstance();
+                DataEnricher enricher = (DataEnricher) clz.getDeclaredConstructor().newInstance();
                 try {
                     enricher.init(source.deepCopy(env), options, env);
                 } catch (ParseException e) {
@@ -83,7 +84,7 @@ public class EnrichingMaster {
             } catch (ClassNotFoundException e) {
                 log.error("ClassNotFoundException when trying to instantiate the enrichers.", e);
                 log.error("Ignoring provided enricher class name: " + className);
-            } catch (InstantiationException e) {
+            } catch (InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 log.error("InstantiationException when trying to instantiate the enrichers.", e);
                 log.error("Ignoring provided enricher class name: " + className);
             } catch (IllegalAccessException e) {

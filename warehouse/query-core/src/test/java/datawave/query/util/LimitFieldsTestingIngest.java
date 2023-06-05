@@ -8,9 +8,9 @@ import datawave.data.type.Type;
 import datawave.ingest.protobuf.Uid;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -38,8 +38,8 @@ public class LimitFieldsTestingIngest {
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
-    
-    public static void writeItAll(Connector con, WhatKindaRange range) throws Exception {
+
+    public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
@@ -49,7 +49,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write the shard table :
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
             
             mutation.put(datatype + "\u0000" + myUID, "FOO_1.FOO.1.0" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
@@ -76,7 +76,19 @@ public class LimitFieldsTestingIngest {
             mutation.put(datatype + "\u0000" + myUID, "FOO_3.FOO.3.3" + "\u0000" + "defg", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_3_BAR.FOO.3" + "\u0000" + "defg<cat>", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_1_BAR.FOO.3" + "\u0000" + "good<cat>", columnVisibility, timeStamp, emptyValue);
-            
+
+            mutation.put(datatype + "\u0000" + myUID, "BAR_1.BAR.1.1" + "\u0000" + "growl", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BAR_2.BAR.2.1" + "\u0000" + "big cat", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BAR_3.BAR.3.1" + "\u0000" + "fluffy", columnVisibility, timeStamp, emptyValue);
+
+            mutation.put(datatype + "\u0000" + myUID, "BAR_1.BAR.1.2" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BAR_2.BAR.2.2" + "\u0000" + "siberian", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BAR_3.BAR.3.2" + "\u0000" + "pink", columnVisibility, timeStamp, emptyValue);
+
+            mutation.put(datatype + "\u0000" + myUID, "BAR_1.BAR.1.3" + "\u0000" + "purr", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BAR_2.BAR.2.3" + "\u0000" + "tiger", columnVisibility, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + myUID, "BAR_3.BAR.3.3" + "\u0000" + "spotted", columnVisibility, timeStamp, emptyValue);
+
             bw.addMutation(mutation);
             
         } finally {
@@ -87,7 +99,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write shard index table:
-            bw = con.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
             
             mutation = new Mutation(lcNoDiacriticsType.normalize("abcd"));
             mutation.put("FOO_3".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
@@ -149,7 +161,7 @@ public class LimitFieldsTestingIngest {
             
             // write the field index table:
             
-            bw = con.createBatchWriter(TableName.SHARD, bwConfig);
+            bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             
             mutation = new Mutation(shard);
             
@@ -193,7 +205,7 @@ public class LimitFieldsTestingIngest {
         
         try {
             // write metadata table:
-            bw = con.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
+            bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
             
             mutation = new Mutation("FOO_3");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
@@ -248,7 +260,7 @@ public class LimitFieldsTestingIngest {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-    
+
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

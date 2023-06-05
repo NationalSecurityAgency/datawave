@@ -70,6 +70,7 @@ public class ParentQueryIterator extends QueryIterator {
         KeyToDocumentData k2d = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(), null,
                         this.includeHierarchyFields, this.includeHierarchyFields);
         k2d.withRangeProvider(getRangeProvider());
+        k2d.withAggregationThreshold(getDocAggregationThresholdMs());
         
         Iterator<Tuple2<Key,Document>> parentDocuments = Iterators.transform(documents, new GetParentDocument(k2d, aggregation));
         

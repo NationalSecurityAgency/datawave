@@ -12,6 +12,7 @@ import java.util.SortedSet;
 
 import javax.annotation.Nullable;
 
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.Projection;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -139,7 +140,6 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         configuration.setFacetedFields(facetedFields);
         
-        fiAggregator = new CardinalityAggregator(getAllIndexOnlyFields(), !merge);
         // assign the options for later use by the document iterator
         documenIteratorOptions = options;
         
@@ -175,7 +175,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         
         if (!configuration.hasFieldLimits() || projection != null) {
             keyToDoc = new KeyToDocumentData(source.deepCopy(myEnvironment), getEquality(), projection, this.includeHierarchyFields,
-                            this.includeHierarchyFields).withRangeProvider(getRangeProvider());
+                            this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
         }
         
         AccumuloTreeIterable<Key,DocumentData> doc = null;
@@ -294,4 +294,18 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         } else
             return fieldIndexDocuments;
     }
+    
+    /**
+     * Get a FieldIndexAggregator
+     *
+     * @return a {@link CardinalityAggregator}
+     */
+    @Override
+    public FieldIndexAggregator getFiAggregator() {
+        if (fiAggregator == null) {
+            fiAggregator = new CardinalityAggregator(getAllIndexOnlyFields(), !merge);
+        }
+        return fiAggregator;
+    }
+    
 }

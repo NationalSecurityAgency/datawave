@@ -121,7 +121,7 @@ public class JexlASTHelper {
     
     /**
      * Parses a query tree from a query string and also flattens the query (flattening ORs and ANDs).
-     *
+     * <p>
      * Note: Flattening does not remove reference nodes or reference expressions from the query tree. To do so requires explicit call to
      * {@link TreeFlatteningRebuildingVisitor#flattenAll(JexlNode)}.
      *
@@ -129,7 +129,6 @@ public class JexlASTHelper {
      *            string representation of a query
      * @return a fully parsed and flattened query tree
      * @throws ParseException
-     *             for issues parsing query
      */
     public static ASTJexlScript parseAndFlattenJexlQuery(String query) throws ParseException {
         ASTJexlScript script = parseJexlQuery(query);
@@ -144,7 +143,6 @@ public class JexlASTHelper {
      *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.
      * @throws ParseException
-     *             for issues parsing query
      */
     public static ASTJexlScript parseJexlQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
@@ -249,12 +247,10 @@ public class JexlASTHelper {
     
     /**
      * Fetch the literal off of the grandchild. Returns null if there is no literal
-     * 
+     *
      * @param node
-     *            a jexl node
-     * @return a jexl node
+     * @return
      * @throws NoSuchElementException
-     *             if no element is found
      */
     public static JexlNode getLiteral(JexlNode node) throws NoSuchElementException {
         node = dereference(node);
@@ -291,10 +287,9 @@ public class JexlASTHelper {
     
     /**
      * Helper method to determine if the child is a literal
-     * 
+     *
      * @param child
-     *            a jexl node
-     * @return if the node is a literal
+     * @return
      */
     public static boolean isLiteral(final JexlNode child) {
         //  @formatter:off
@@ -307,12 +302,10 @@ public class JexlASTHelper {
     
     /**
      * Fetch the literal off of the grandchild. Throws an exception if there is no literal
-     * 
+     *
      * @param node
-     *            a jexl node
-     * @return the literal value
+     * @return
      * @throws NoSuchElementException
-     *             if no element is found
      */
     @SuppressWarnings("rawtypes")
     public static Object getLiteralValue(JexlNode node) throws NoSuchElementException {
@@ -336,8 +329,7 @@ public class JexlASTHelper {
      * Fetch the literal off of the grandchild safely. Return null if there's an exception.
      *
      * @param node
-     *            a jexl node
-     * @return a literal object
+     * @return
      */
     @SuppressWarnings("rawtypes")
     public static Object getLiteralValueSafely(JexlNode node) {
@@ -351,12 +343,10 @@ public class JexlASTHelper {
     /**
      * Fetch the identifier off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no identifier This
      * identifier will be deconstructed
-     * 
+     *
      * @param node
-     *            a jexl node
      * @return the deconstructed identifier
      * @throws NoSuchElementException
-     *             if no element is found
      */
     public static String getIdentifier(JexlNode node) throws NoSuchElementException {
         return getIdentifier(node, true);
@@ -366,12 +356,9 @@ public class JexlASTHelper {
      * Fetch the identifier off of the grandchild, removing a leading {@link #IDENTIFIER_PREFIX} if present. Throws an exception if there is no identifier
      *
      * @param node
-     *            a jexl node
      * @param deconstruct
-     *            boolean flag to deconstruct
      * @return the identifier, deconstructed if requested
      * @throws NoSuchElementException
-     *             if no element is found
      */
     public static String getIdentifier(JexlNode node, boolean deconstruct) throws NoSuchElementException {
         if (null != node && 2 == node.jjtGetNumChildren()) {
@@ -404,15 +391,26 @@ public class JexlASTHelper {
     
     /**
      * Finds all the functions and returns a map indexed by function context name to the function.
-     * 
-     * @param query
-     *            the jexl node
-     * @return a map of functions
+     *
+     * @param node
+     *            a node in the query
+     * @return a multimap of namespaces to functions
      */
-    public static Multimap<String,Function> getFunctions(JexlNode query) {
-        FunctionReferenceVisitor visitor = new FunctionReferenceVisitor();
-        query.jjtAccept(visitor, null);
-        return visitor.functions();
+    public static Multimap<String,Function> getFunctions(JexlNode node) {
+        return FunctionReferenceVisitor.functions(node);
+    }
+    
+    /**
+     * Finds all the functions and returns a map indexed by function context name to the function.
+     *
+     * @param node
+     *            a node in the query
+     * @param namespaceFilter
+     *            a filter that limits the returned functions
+     * @return a multimap of namespaces to functions
+     */
+    public static Multimap<String,Function> getFunctions(JexlNode node, Set<String> namespaceFilter) {
+        return FunctionReferenceVisitor.functions(node, namespaceFilter);
     }
     
     public static List<ASTIdentifier> getFunctionIdentifiers(ASTFunctionNode node) {
@@ -497,7 +495,7 @@ public class JexlASTHelper {
     
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
-     * 
+     *
      * @param node
      *            a JexlNode
      * @return an unwrapped JexlNode
@@ -511,7 +509,7 @@ public class JexlASTHelper {
     
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
-     * 
+     *
      * @param node
      *            a JexlNode
      * @return an unwrapped JexlNode
@@ -529,9 +527,8 @@ public class JexlASTHelper {
     
     /**
      * This is the opposite of dereference in that this will climb back up reference and reference expression nodes that only contain one child.
-     * 
+     *
      * @param node
-     *            a JexlNode
      * @return the parent reference/referenceexpression or this node
      */
     public static JexlNode rereference(JexlNode node) {
@@ -600,32 +597,37 @@ public class JexlASTHelper {
     
     /**
      * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists
-     * 
+     *
      * @param fieldName
-     *            a field name
-     * @return the adjusted name
+     * @return
      */
     public static String deconstructIdentifier(String fieldName) {
         return deconstructIdentifier(fieldName, false);
     }
     
     /**
-     * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists
-     * 
+     * Remove the {@link #IDENTIFIER_PREFIX} from the beginning of a fieldName if it exists and remove the {@link #GROUPING_CHARACTER_SEPARATOR} from the end of
+     * a fieldName if it exists
+     *
      * @param fieldName
-     *            a field name
      * @param includeGroupingContext
-     *            whether to include the group context
-     * @return the adjusted name
+     * @return
      */
     public static String deconstructIdentifier(String fieldName, boolean includeGroupingContext) {
         if (fieldName != null && fieldName.length() > 1) {
+            boolean idPrefix = fieldName.charAt(0) == IDENTIFIER_PREFIX;
+            int startIndex = idPrefix ? 1 : 0;
+            int stopLength = idPrefix ? fieldName.length() - 1 : fieldName.length();
+            
             if (!includeGroupingContext) {
-                fieldName = removeGroupingContext(fieldName);
+                int groupingOffset = fieldName.indexOf(GROUPING_CHARACTER_SEPARATOR);
+                if (groupingOffset != -1) {
+                    stopLength = idPrefix ? groupingOffset - 1 : groupingOffset;
+                }
             }
             
-            if (fieldName.charAt(0) == IDENTIFIER_PREFIX) {
-                return fieldName.substring(1);
+            if (startIndex != 0 || stopLength != -1) {
+                fieldName = new String(fieldName.getBytes(), startIndex, stopLength);
             }
         }
         
@@ -634,10 +636,9 @@ public class JexlASTHelper {
     
     /**
      * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
-     * 
+     *
      * @param fieldName
-     *            a field name
-     * @return the adjusted identifier name
+     * @return
      */
     public static String rebuildIdentifier(String fieldName) {
         return rebuildIdentifier(fieldName, false);
@@ -645,12 +646,10 @@ public class JexlASTHelper {
     
     /**
      * Rebuild the identifier with the {@link #IDENTIFIER_PREFIX} if the identifier starts with an invalid character per the Jexl IDENTIFIER definition
-     * 
+     *
      * @param fieldName
-     *            a field name
      * @param includeGroupingContext
-     *            whether to include the group context
-     * @return the adjusted identifier name
+     * @return
      */
     public static String rebuildIdentifier(String fieldName, boolean includeGroupingContext) {
         // fieldName may be null if it is from a Function node
@@ -773,6 +772,12 @@ public class JexlASTHelper {
         }
     }
     
+    /**
+     * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTEQNode.
+     *
+     * @param node
+     * @return List of ASTEQNode nodes.
+     */
     public static List<ASTEQNode> getEQNodes(JexlNode node) {
         List<ASTEQNode> eqNodes = Lists.newArrayList();
         
@@ -781,6 +786,12 @@ public class JexlASTHelper {
         return eqNodes;
     }
     
+    /**
+     * Check if the provided node is an instance of ASTEQNode. If yes, then add the node to the provided list.
+     *
+     * @param node
+     * @param eqNodes
+     */
     private static void getEQNodes(JexlNode node, List<ASTEQNode> eqNodes) {
         if (node instanceof ASTEQNode) {
             eqNodes.add((ASTEQNode) node);
@@ -791,6 +802,12 @@ public class JexlASTHelper {
         }
     }
     
+    /**
+     * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTERNode.
+     *
+     * @param node
+     * @return List of ASTERNode nodes.
+     */
     public static List<ASTERNode> getERNodes(JexlNode node) {
         List<ASTERNode> erNodes = Lists.newArrayList();
         
@@ -799,12 +816,55 @@ public class JexlASTHelper {
         return erNodes;
     }
     
+    /**
+     * Check if the provided node is an instance of ASTERNode. If yes, then add the node to the provided list.
+     *
+     * @param node
+     * @param erNodes
+     */
     private static void getERNodes(JexlNode node, List<ASTERNode> erNodes) {
         if (node instanceof ASTERNode) {
             erNodes.add((ASTERNode) node);
         } else {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 getERNodes(node.jjtGetChild(i), erNodes);
+            }
+        }
+    }
+    
+    /**
+     * Iterate through provided node and its children, then return a list of nodes matching the provided class. The provided class must extend JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param typeKey
+     * @return List of nodes matching provided class.
+     */
+    public static <T extends JexlNode> List<T> getNodesOfType(JexlNode node, Class<T> typeKey) {
+        List<T> nodes = Lists.newArrayList();
+        
+        getNodesOfType(node, nodes, typeKey);
+        
+        return nodes;
+    }
+    
+    /**
+     * Check if the provided node is an instance of the provided class. If yes, then add the node to the provided list. The provided class must extend JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param nodes
+     * @param typeKey
+     */
+    @SuppressWarnings("unchecked")
+    private static <T extends JexlNode> void getNodesOfType(JexlNode node, List<T> nodes, Class<T> typeKey) {
+        if (typeKey.isInstance(node)) {
+            nodes.add((T) node);
+        } else {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                getNodesOfType(node.jjtGetChild(i), nodes, typeKey);
             }
         }
     }
@@ -850,8 +910,6 @@ public class JexlASTHelper {
     /**
      * Ranges: A range prior to being "tagged" must be of the form "(term1 &amp;&amp; term2)" where term1 and term2 refer to the same field and denote two sides
      * of the range ((LE or LT) and (GE or GT)). A tagged range is of the form "(BoundedRange=true) &amp;&amp; (term1 &amp;&amp; term2))"
-     * 
-     * @return a new rangefinder
      */
     public static RangeFinder findRange() {
         return new RangeFinder();
@@ -1210,7 +1268,15 @@ public class JexlASTHelper {
         return range;
     }
     
-    public static boolean isWithinOr(JexlNode node) {
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of ASTOrNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.ASTOrNode
+     *
+     * @param node
+     * @return True if any ancestor is an instance of ASTOrNode. If not, then False.
+     */
+    public static boolean isDescendantOfOr(JexlNode node) {
         if (null != node && null != node.jjtGetParent()) {
             JexlNode parent = node.jjtGetParent();
             
@@ -1218,35 +1284,100 @@ public class JexlASTHelper {
                 return true;
             }
             
-            return isWithinOr(parent);
+            return isDescendantOfOr(parent);
         }
         
         return false;
     }
     
-    public static boolean isWithinNot(JexlNode node) {
-        while (null != node && null != node.jjtGetParent()) {
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of ASTNotNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.ASTNotNode
+     *
+     * @param node
+     * @return True if any ancestor is an instance of ASTNotNode. If not, then False.
+     */
+    public static boolean isDescendantOfNot(JexlNode node) {
+        if (null != node && null != node.jjtGetParent()) {
             JexlNode parent = node.jjtGetParent();
             
             if (parent instanceof ASTNotNode) {
                 return true;
             }
             
-            return isWithinNot(parent);
+            return isDescendantOfNot(parent);
         }
         
         return false;
     }
     
-    public static boolean isWithinAnd(JexlNode node) {
-        while (null != node && null != node.jjtGetParent()) {
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of ASTAndNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.ASTAndNode
+     *
+     * @param node
+     * @return True if any ancestor is an instance of ASTAndNode. If not, then False.
+     */
+    public static boolean isDescendantOfAnd(JexlNode node) {
+        if (null != node && null != node.jjtGetParent()) {
             JexlNode parent = node.jjtGetParent();
             
             if (parent instanceof ASTAndNode) {
                 return true;
             }
             
-            return isWithinAnd(parent);
+            return isDescendantOfAnd(parent);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Iterate through provided node's ancestors and return true if any are an instance of the provided class. The provided class must extend JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param typeKey
+     * @return True if any ancestor is an instance of the provided class. If not, then False.
+     */
+    public static <T extends JexlNode> boolean isDescendantOfNodeType(JexlNode node, Class<T> typeKey) {
+        if (null != node && null != node.jjtGetParent()) {
+            JexlNode parent = node.jjtGetParent();
+            
+            if (typeKey.isInstance(parent)) {
+                return true;
+            }
+            
+            return isDescendantOfNodeType(parent, typeKey);
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Iterate through all descendants of the provided node and return true if any are an instance of the provided class. The provided class must extend
+     * JexlNode.
+     * 
+     * @see org.apache.commons.jexl2.parser.JexlNode
+     *
+     * @param node
+     * @param typeKey
+     * @return True if any descendant is an instance of the provided class. If not, then False.
+     */
+    public static <T extends JexlNode> boolean descendantsContainNodeType(JexlNode node, Class<T> typeKey) {
+        if (node != null) {
+            int numChildren = node.jjtGetNumChildren();
+            
+            for (int i = 0; i < numChildren; i++) {
+                JexlNode child = node.jjtGetChild(i);
+                
+                if (typeKey.isInstance(child) || descendantsContainNodeType(child, typeKey)) {
+                    return true;
+                }
+            }
         }
         
         return false;
@@ -1254,12 +1385,10 @@ public class JexlASTHelper {
     
     /**
      * Performs an order-dependent AST equality check
-     * 
+     *
      * @param one
-     *            first jexl node
      * @param two
-     *            second jexl node
-     * @return if theyre equal
+     * @return
      */
     public static boolean equals(JexlNode one, JexlNode two) {
         // If we have the same object or they're both null, they're equal
@@ -1327,18 +1456,15 @@ public class JexlASTHelper {
     /**
      * When at an operand, this method will find the first Identifier and replace its {image} value with the supplied {String}. This is intended to be used when
      * the query model is being supplied and we want to replace the field name in some expression.
-     * 
+     * <p>
      * This method returns a new operand node with an updated {Identifier}.
-     * 
+     * <p>
      * If neither of the operand's children are an {Identifier}, then an {IllegalArgumentException} is thrown.
-     * 
+     *
      * @param <T>
-     *            type of the node
      * @param operand
-     *            the operand
      * @param field
-     *            the field
-     * @return a new operand
+     * @return
      */
     public static <T extends JexlNode> T setField(T operand, String field) {
         ASTIdentifier identifier = findIdentifier(operand);
@@ -1407,10 +1533,9 @@ public class JexlASTHelper {
     /**
      * Jexl's Literal interface sucks and doesn't actually line up with things we would call "literals" (constants) notably, "true", "false", and "null"
      * keywords
-     * 
+     *
      * @param node
-     *            a jexl node
-     * @return if the node is a literal
+     * @return
      */
     public static boolean isLiteral(Object node) {
         if (null == node) {
@@ -1425,10 +1550,9 @@ public class JexlASTHelper {
     
     /**
      * Check if the provided JexlNode is an ASTEQNode and is of the form `identifier eq literal`
-     * 
+     *
      * @param node
-     *            a jexl node
-     * @return if the node is a literal equality
+     * @return
      */
     public static boolean isLiteralEquality(JexlNode node) {
         Preconditions.checkNotNull(node);
@@ -1444,12 +1568,10 @@ public class JexlASTHelper {
     
     /**
      * Determine if the given ASTEQNode is indexed based off of the Multimap of String fieldname to TextNormalizer.
-     * 
+     *
      * @param node
-     *            a jexl node
      * @param config
-     *            the shard configuration
-     * @return if the node is indexed
+     * @return
      */
     public static boolean isIndexed(JexlNode node, ShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
@@ -1473,14 +1595,11 @@ public class JexlASTHelper {
     
     /**
      * Return the selectivity of the node's identifier, or IndexStatsClient.DEFAULT_VALUE if there's an error getting the selectivity
-     * 
+     *
      * @param node
-     *            the node
      * @param config
-     *            the query config
      * @param stats
-     *            the stats
-     * @return the node selectivity
+     * @return
      */
     public static Double getNodeSelectivity(JexlNode node, ShardQueryConfiguration config, IndexStatsClient stats) {
         List<ASTIdentifier> idents = getIdentifiers(node);
@@ -1495,14 +1614,11 @@ public class JexlASTHelper {
     
     /**
      * Return the selectivity of the node's identifier, or IndexStatsClient.DEFAULT_VALUE if there's an error getting the selectivity
-     * 
+     *
      * @param fieldNames
-     *            a set of field names
      * @param config
-     *            the query config
      * @param stats
-     *            the stats
-     * @return the node selectivity
+     * @return
      */
     public static Double getNodeSelectivity(Set<String> fieldNames, ShardQueryConfiguration config, IndexStatsClient stats) {
         
@@ -1549,7 +1665,7 @@ public class JexlASTHelper {
     /**
      * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage, and returns a
      * {@link LineageValidation} with any identified violations.
-     * 
+     *
      * @param rootNode
      *            the tree to validate
      * @param failHard
@@ -1605,7 +1721,7 @@ public class JexlASTHelper {
         
         /**
          * Returns whether a valid lineage was confirmed.
-         * 
+         *
          * @return true if no violations were found, or false otherwise
          */
         public boolean isValid() {
@@ -1614,7 +1730,7 @@ public class JexlASTHelper {
         
         /**
          * Add a message describing an encountered violation.
-         * 
+         *
          * @param message
          *            the description message
          */
@@ -1624,7 +1740,7 @@ public class JexlASTHelper {
         
         /**
          * Return a string containing each violation message on a new line.
-         * 
+         *
          * @return the formatted string, or null if there are no violations.
          */
         public String getFormattedViolations() {
@@ -1654,7 +1770,7 @@ public class JexlASTHelper {
     
     /**
      * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
-     * 
+     *
      * @param node
      *            the tree to validate
      * @param failHard

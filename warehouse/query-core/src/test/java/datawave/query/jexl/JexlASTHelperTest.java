@@ -2,19 +2,25 @@ package datawave.query.jexl;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-
 import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
+import datawave.query.attributes.Document;
+import datawave.query.function.JexlEvaluation;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.util.MockMetadataHelper;
+import datawave.query.util.Tuple3;
+import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNotNode;
 import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -44,7 +50,7 @@ public class JexlASTHelperTest {
         List<ASTEQNode> eqNodes = JexlASTHelper.getEQNodes(query);
         
         for (JexlNode eqNode : eqNodes) {
-            assertFalse(JexlASTHelper.isWithinOr(eqNode));
+            assertFalse(JexlASTHelper.isDescendantOfOr(eqNode));
         }
     }
     
@@ -63,7 +69,7 @@ public class JexlASTHelperTest {
             String value = JexlASTHelper.getLiteralValue(eqNode).toString();
             assertTrue(expectations.containsKey(value));
             
-            assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(eqNode));
+            assertEquals(expectations.get(value), JexlASTHelper.isDescendantOfOr(eqNode));
         }
     }
     
@@ -82,7 +88,7 @@ public class JexlASTHelperTest {
             String value = JexlASTHelper.getLiteralValue(eqNode).toString();
             assertTrue(expectations.containsKey(value));
             
-            assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(eqNode));
+            assertEquals(expectations.get(value), JexlASTHelper.isDescendantOfOr(eqNode));
         }
     }
     
@@ -98,7 +104,7 @@ public class JexlASTHelperTest {
             String value = JexlASTHelper.getLiteralValue(eqNode).toString();
             assertTrue(expectations.containsKey(value));
             
-            assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(eqNode));
+            assertEquals(expectations.get(value), JexlASTHelper.isDescendantOfOr(eqNode));
         }
     }
     
@@ -116,7 +122,7 @@ public class JexlASTHelperTest {
             String value = JexlASTHelper.getLiteralValue(eqNode).toString();
             assertTrue(expectations.containsKey(value));
             
-            assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(eqNode));
+            assertEquals(expectations.get(value), JexlASTHelper.isDescendantOfOr(eqNode));
         }
         
         List<ASTERNode> erNodes = JexlASTHelper.getERNodes(query);
@@ -128,7 +134,7 @@ public class JexlASTHelperTest {
         for (JexlNode erNode : erNodes) {
             String value = JexlASTHelper.getLiteralValue(erNode).toString();
             assertTrue(expectations.containsKey(value));
-            assertEquals(expectations.get(value), JexlASTHelper.isWithinOr(erNode));
+            assertEquals(expectations.get(value), JexlASTHelper.isDescendantOfOr(erNode));
         }
     }
     
@@ -725,4 +731,269 @@ public class JexlASTHelperTest {
             e.printStackTrace();
         }
     }
+    
+    @Test
+    public void testIdentifierDeconstructionWithGroupings() {
+        // no prefix or grouping
+        testDeconstructionGroupingTrue("FIELD", "FIELD");
+        
+        // has a simple grouping, does not have a prefix
+        testDeconstructionGroupingTrue("FIELD.1", "FIELD.1");
+        
+        // has a complex grouping, does not have a prefix
+        testDeconstructionGroupingTrue("FIELD.1.2", "FIELD.1.2");
+        
+        // has a prefix, does not have a grouping
+        testDeconstructionGroupingTrue("FIELD", "$FIELD");
+        
+        // has a prefix, has a simple grouping
+        testDeconstructionGroupingTrue("FIELD.1", "$FIELD.1");
+        
+        // has a prefix, has a complex grouping
+        testDeconstructionGroupingTrue("FIELD.1.2", "$FIELD.1.2");
+        
+        // empty string should return untouched
+        testDeconstructionGroupingTrue("", "");
+    }
+    
+    @Test
+    public void testIdentifierDeconstructionWithoutGroupings() {
+        // no prefix or grouping
+        testDeconstructionGroupingFalse("FIELD", "FIELD");
+        
+        // has a simple grouping, does not have a prefix
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1");
+        
+        // has a complex grouping, does not have a prefix
+        testDeconstructionGroupingFalse("FIELD", "FIELD.1.2");
+        
+        // has a prefix, does not have a grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD");
+        
+        // has a prefix, has a simple grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1");
+        
+        // has a prefix, has a complex grouping
+        testDeconstructionGroupingFalse("FIELD", "$FIELD.1.2");
+        
+        // empty string should remain untouched
+        testDeconstructionGroupingFalse("", "");
+    }
+    
+    private void testDeconstructionGroupingTrue(String expected, String input) {
+        String actual = JexlASTHelper.deconstructIdentifier(input, true);
+        assertEquals(expected, actual);
+    }
+    
+    private void testDeconstructionGroupingFalse(String expected, String input) {
+        String actual = JexlASTHelper.deconstructIdentifier(input, false);
+        assertEquals(expected, actual);
+    }
+    
+    // Verify the nesting order between 'or' and 'and' in a Jexl query.
+    @Test
+    public void testArtificialParenthesisTreeOrAnd() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == '1' or FOO == '2' and BAR == '3'");
+        // Parenthesis artificially added in should be: "((FOO == '1') or ((FOO == '2') and (BAR == '3')))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTAndNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfOr(andNode));
+        }
+    }
+    
+    // Verify the nesting order between 'and' and 'not' in a Jexl query.
+    @Test
+    public void testArtificialParenthesisTreeAndNot() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("not (FOO == '1') and BAR == '3'");
+        // Parenthesis artificially added in should be: "((not (FOO == '1')) and (BAR == '3'))"
+        
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(andNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTAndNode.class));
+        }
+    }
+    
+    // Verify the nesting order between 'or' and 'not' in a Jexl query.
+    @Test
+    public void testArtificialParenthesisTreeOrNot() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("not (FOO == '1') or BAR == '3'");
+        // Parenthesis artificially added in should be: "((not (FOO == '1')) or (BAR == '3'))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTOrNode.class));
+        }
+    }
+    
+    // Verify the nesting order when 'or', 'and', and 'not' are all present in a Jexl query.
+    @Test
+    public void testArtificialParenthesisTreeOrAndNot() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("FOO == '1' or not (BAR == '3') and FOO == '2'");
+        // Parenthesis artificially added in should be: "((FOO == '1') or ((not (BAR == '3')) and (FOO == '2')))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTAndNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(andNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(andNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTAndNode.class));
+        }
+    }
+    
+    @Test
+    public void testChildrenContainNodeType() throws Exception {
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery("not FOO == '1' or (FOO == '2' and BAR == '3')");
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertFalse(JexlASTHelper.descendantsContainNodeType(orNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTAndNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTNotNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTEQNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertFalse(JexlASTHelper.descendantsContainNodeType(andNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(andNode, ASTEQNode.class));
+        }
+    }
+    
+    @Test
+    public void testArtificialParenthesisQueryMeaningChange() throws Exception {
+        // Query with parenthesis
+        String parenthesisQueryString = "(FOO == '1' or FOO == '2') and BAR == '3'";
+        
+        // Query without parenthesis
+        String noParenthesisQueryString = "FOO == '1' or FOO == '2' and BAR == '3'";
+        // Parenthesis artificially added in should be: "((FOO == '1') or ((FOO == '2') and (BAR == '3')))"
+        
+        DatawaveJexlContext djc = new DatawaveJexlContext();
+        djc.set("FOO", 1);
+        djc.set("BAR", 2);
+        
+        Tuple3<Key,Document,DatawaveJexlContext> evalArgs = new Tuple3<>(new Key(), new Document(), djc);
+        
+        JexlEvaluation eval = new JexlEvaluation(parenthesisQueryString);
+        assertFalse(eval.apply(evalArgs));
+        
+        JexlEvaluation evalBad = new JexlEvaluation(noParenthesisQueryString);
+        assertTrue(evalBad.apply(evalArgs));
+    }
+    
+    // Verify the nesting order between 'or' and 'and' in a Lucene query.
+    @Test
+    public void testLuceneArtificialParenthesisTreeOrAnd() throws Exception {
+        String queryString = "FOO:1 OR FOO:2 AND BAR:3";
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(queryString).toString());
+        // Parenthesis artificially added in should be: "((FOO:1) OR ((FOO:2) AND (BAR:3)))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTAndNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfOr(andNode));
+        }
+    }
+    
+    // Verify the nesting order between 'AND' and 'NOT' in a Lucene query. #EXCLUDE() utilizes ASTNotNode.
+    @Test
+    public void testLuceneArtificialParenthesisTreeAndNot() throws Exception {
+        String queryString = "#EXCLUDE(FOO) AND BAR:3";
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(queryString).toString());
+        // Parenthesis artificially added in should be: "((#EXCLUDE(FOO)) AND (BAR:3))"
+        
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(andNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTAndNode.class));
+        }
+    }
+    
+    // Verify the nesting order between 'OR' and 'NOT' in a Lucene query. #EXCLUDE() utilizes ASTNotNode.
+    @Test
+    public void testLuceneArtificialParenthesisTreeOrNot() throws Exception {
+        String queryString = "#EXCLUDE(FOO) OR BAR:3";
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(queryString).toString());
+        // Parenthesis artificially added in should be: "((#EXCLUDE(FOO)) OR (BAR:3))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTOrNode.class));
+        }
+    }
+    
+    // Verify the nesting order when 'OR', 'AND', and 'NOT' are all present in a Lucene query. 'NOT' becomes 'AND NOT'.
+    @Test
+    public void testLuceneArtificialParenthesisTreeOrAndNot() throws Exception {
+        String queryString = "BAR:3 OR FOO:1 NOT FOO:2";
+        ASTJexlScript query = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(queryString).toString());
+        // Parenthesis artificially added in should be: "((BAR:3) OR ((FOO:1) AND (NOT (FOO:2))))"
+        
+        List<ASTOrNode> orNodes = JexlASTHelper.getNodesOfType(query, ASTOrNode.class);
+        List<ASTAndNode> andNodes = JexlASTHelper.getNodesOfType(query, ASTAndNode.class);
+        List<ASTNotNode> notNodes = JexlASTHelper.getNodesOfType(query, ASTNotNode.class);
+        
+        for (JexlNode orNode : orNodes) {
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTAndNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(orNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode andNode : andNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(andNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.descendantsContainNodeType(andNode, ASTNotNode.class));
+        }
+        
+        for (JexlNode notNode : notNodes) {
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTOrNode.class));
+            assertTrue(JexlASTHelper.isDescendantOfNodeType(notNode, ASTAndNode.class));
+        }
+    }
+    
 }

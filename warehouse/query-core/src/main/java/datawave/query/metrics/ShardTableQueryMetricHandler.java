@@ -1,6 +1,7 @@
 package datawave.query.metrics;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -78,9 +79,9 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -120,7 +121,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
+
     @Inject
     @ConfigProperty(name = "dw.query.metrics.marking")
     protected String markingString;
@@ -171,11 +172,11 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     @PostConstruct
     private void initialize() {
-        Connector connector = null;
+        AccumuloClient client = null;
         
         try {
-            connector = connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
-            connectorAuthorizations = connector.securityOperations().getUserAuthorizations(connector.whoami()).toString();
+            client = connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
+            connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
             connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
             reload();
             
@@ -184,9 +185,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         } catch (Exception e) {
             log.error("Error setting connection factory", e);
         } finally {
-            if (connector != null) {
+            if (client != null) {
                 try {
-                    connectionFactory.returnConnection(connector);
+                    connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to connection factory", e);
                 }
@@ -206,18 +207,18 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     }
     
     private void verifyTables() {
-        Connector connector = null;
+        AccumuloClient client = null;
         
         try {
-            connector = this.connectionFactory.getConnection(Priority.ADMIN, new HashMap<>());
+            client = this.connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
             AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
-            createAndConfigureTablesIfNecessary(handler.getTableNames(conf), connector.tableOperations(), conf);
+            createAndConfigureTablesIfNecessary(handler.getTableNames(conf), client.tableOperations(), conf);
         } catch (Exception e) {
             log.error("Error verifying table configuration", e);
         } finally {
-            if (null != connector) {
+            if (null != client) {
                 try {
-                    this.connectionFactory.returnConnection(connector);
+                    this.connectionFactory.returnClient(client);
                 } catch (Exception e) {
                     log.error("Error returning connection to connection factory");
                 }
@@ -448,17 +449,16 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     private List<QueryMetric> getQueryMetrics(BaseResponse response, Query query, DatawavePrincipal datawavePrincipal) {
         List<QueryMetric> queryMetrics = new ArrayList<>();
         RunningQuery runningQuery = null;
-        Connector connector = null;
+        AccumuloClient client = null;
         
         try {
             Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            connector = this.connectionFactory.getConnection(Priority.ADMIN, trackingMap);
+            client = this.connectionFactory.getClient(Priority.ADMIN, trackingMap);
             QueryLogic<?> queryLogic = queryLogicFactory.getQueryLogic(query.getQueryLogicName(), datawavePrincipal);
             if (queryLogic instanceof QueryMetricQueryLogic) {
                 ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getPrimaryUser().getRoles());
             }
-            runningQuery = new RunningQuery(null, connector, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal,
-                            metricFactory);
+            runningQuery = new RunningQuery(null, client, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal, metricFactory);
             
             boolean done = false;
             List<Object> objectList = new ArrayList<>();
@@ -492,10 +492,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             
             EventQueryResponseBase eventQueryResponse = (EventQueryResponseBase) queryResponse;
             List<EventBase> eventList = eventQueryResponse.getEvents();
-            
-            for (EventBase<?,?> event : eventList) {
-                QueryMetric metric = (QueryMetric) toMetric(event);
-                queryMetrics.add(metric);
+
+            if (eventList != null) {
+                for (EventBase<?, ?> event : eventList) {
+                    QueryMetric metric = (QueryMetric) toMetric(event);
+                    queryMetrics.add(metric);
+                }
             }
         } catch (Exception e) {
             log.error(e.getMessage(), e);
@@ -504,15 +506,15 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         } finally {
             if (null != this.connectionFactory) {
-                if (null != runningQuery && null != connector) {
+                if (null != runningQuery && null != client) {
                     try {
                         runningQuery.closeConnection(this.connectionFactory);
                     } catch (Exception e) {
                         log.warn("Could not return connector to factory", e);
                     }
-                } else if (null != connector) {
+                } else if (null != client) {
                     try {
-                        this.connectionFactory.returnConnection(connector);
+                        this.connectionFactory.returnClient(client);
                     } catch (Exception e) {
                         log.warn("Could not return connector to factory", e);
                     }
@@ -762,11 +764,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             if (className != null) {
                 try {
                     Class<? extends TableConfigHelper> tableHelperClass = (Class<? extends TableConfigHelper>) Class.forName(className.trim());
-                    tableHelper = tableHelperClass.newInstance();
+                    tableHelper = tableHelperClass.getDeclaredConstructor().newInstance();
                     
                     if (tableHelper != null)
                         tableHelper.setup(table, conf, log);
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
+                         NoSuchMethodException | InvocationTargetException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
@@ -827,17 +830,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-    
+
     @Override
     public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-    
+
     @Override
     public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-    
+
     public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,
                     QueryMetricsSummaryResponse response) {
         

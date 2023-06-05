@@ -3,7 +3,6 @@ package datawave.query.tables.chained;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.query.QueryParameters;
 import datawave.query.tables.chained.strategy.ChainStrategy;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.Query;
@@ -11,7 +10,7 @@ import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
@@ -78,7 +77,7 @@ public abstract class ChainedQueryTable<T1,T2> extends BaseQueryLogic<T2> {
     }
     
     @Override
-    public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+    public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         
         ChainedQueryConfiguration config = new ChainedQueryConfiguration();
         
