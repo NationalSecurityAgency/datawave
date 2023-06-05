@@ -346,7 +346,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     }
                     for (Range range : newSettings.getRanges()) {
                         String rangeKey = getRangeKey(range);
-                        metric.addSubPlan(rangeKey, newQuery);
+                        if (metric != null) {
+                            metric.addSubPlan(rangeKey, newQuery);
+                        }
                     }
                 } catch (ParseException e) {
                     throw new DatawaveFatalQueryException(e);
