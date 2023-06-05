@@ -26,7 +26,11 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class TermFrequencyAggregatorTest {
     private TermFrequencyAggregator aggregator;
@@ -87,21 +91,21 @@ public class TermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
         // test result key
-        assertTrue(result != null);
+        assertNotNull(result);
         DatawaveKey parsedResult = new DatawaveKey(result);
-        assertTrue(parsedResult.getDataType().equals("dataType1"));
-        assertTrue(parsedResult.getUid().equals("123.345.456"));
-        assertTrue(parsedResult.getFieldName().equals("FIELD1"));
-        assertTrue(parsedResult.getFieldValue().equals("VALUE1"));
+        assertEquals("dataType1", parsedResult.getDataType());
+        assertEquals("123.345.456", parsedResult.getUid());
+        assertEquals("FIELD1", parsedResult.getFieldName());
+        assertEquals("VALUE1", parsedResult.getFieldValue());
         
         // test that the doc is empty
-        assertTrue(doc.size() == 2);
-        assertTrue(doc.get("RECORD_ID").getData().equals("123/dataType1/123.345.456"));
-        assertTrue(doc.get("FIELD1").getData().toString().equals("VALUE1"));
+        assertEquals(2, doc.size());
+        assertEquals("123/dataType1/123.345.456", doc.get("RECORD_ID").getData());
+        assertEquals("VALUE1", doc.get("FIELD1").getData().toString());
         
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
     
     @Test
@@ -124,14 +128,14 @@ public class TermFrequencyAggregatorTest {
         Key result = aggregator.apply(itr, doc, attributeFactory);
         
         // test result key
-        assertTrue(result == null);
+        assertNull(result);
         
         // test that the doc is empty
-        assertTrue(doc.size() == 0);
+        assertEquals(0, doc.size());
         
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
-        assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
+        assertEquals(itr.getTopKey(), getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10));
     }
     
     @Test

@@ -10,7 +10,6 @@ import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -88,22 +87,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     public boolean peek(@Nullable Map.Entry<Key,String> input) {
         return keyProjection.peek(input);
     }
-    
-    @Override
-    public Key getStartKey(Key from) {
-        return new Key(from.getRow(), from.getColumnFamily());
-    }
-    
-    @Override
-    public Key getStopKey(Key from) {
-        return from.followingKey(PartialKey.ROW_COLFAM);
-    }
-    
-    @Override
-    public Range getKeyRange(Map.Entry<Key,Document> from) {
-        return new Range(getStartKey(from.getKey()), true, getStopKey(from.getKey()), false);
-    }
-    
+
     /**
      * Not yet implemented for this filter. Not guaranteed to be called
      *

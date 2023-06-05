@@ -65,7 +65,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     
     FacetedConfiguration configuration;
     
-    Map<String,String> documenIteratorOptions;
+    Map<String,String> documentIteratorOptions;
     
     protected boolean merge = false;
     
@@ -141,7 +141,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         configuration.setFacetedFields(facetedFields);
         
         // assign the options for later use by the document iterator
-        documenIteratorOptions = options;
+        documentIteratorOptions = options;
         
         return res;
     }

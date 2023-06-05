@@ -15,7 +15,7 @@ import org.apache.accumulo.core.data.Key;
  */
 public final class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
     
-    protected Projection projection;
+    private final Projection projection;
     
     public KeyProjection(Set<String> projections, Projection.ProjectionType projectionType) {
         projection = new Projection(projections, projectionType);

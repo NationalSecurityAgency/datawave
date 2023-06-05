@@ -78,7 +78,7 @@ public class TermFrequencyAggregator extends IdentityAggregator {
      * If a document d has FIELD=b, this will in the TermFrequencyIndexIterator must scan against the entire range \0 to MAX for this document. This will cause
      * a document to be generated for our docKey b even though it doesn't match the entire regex (verified in the filter within the aggregation). If the
      * document were going all the way to evaluation this wouldn't matter, but it will be skipped when popping off the nestedIterators due to the way NOT is
-     * short circuited. Since in this case the Range must be overly broad to prevent missing a match, we have to rely on the aggregators which employ the filter
+     * short-circuited. Since in this case the Range must be overly broad to prevent missing a match, we have to rely on the aggregators which employ the filter
      * logic to protect us.
      * 
      * This check ensures that post aggregation (and application of the filter) there was actually something to get. Since the field is negated, the presence of

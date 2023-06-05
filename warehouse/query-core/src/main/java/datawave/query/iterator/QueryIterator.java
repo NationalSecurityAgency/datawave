@@ -1296,11 +1296,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     
     protected DocumentProjection getProjection() {
         
-        if (this.useWhiteListedFields) {
-            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.whiteListedFields,
+        if (this.useIncludeListedFields) {
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.includeListedFields,
                             Projection.ProjectionType.INCLUDES);
-        } else if (this.useBlackListedFields) {
-            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.blackListedFields,
+        } else if (this.useExcludeListedFields) {
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.excludeListedFields,
                             Projection.ProjectionType.EXCLUDES);
         } else {
             String msg = "Configured to use projection, but no includes or excludes were provided";
