@@ -355,16 +355,14 @@ public class MultiSetBackedSortedSetTest {
                 assertFalse(subSet.contains(data[sortedOrder[i]]));
             }
         }
-
         // verify order
-        //assertTrue(Arrays.equals(data[sortedOrder[start]], subSet.first()));
+        assertFalse(subSet.isEmpty());
+        assertArrayEquals(data[sortedOrder[0]], subSet.iterator().next());
         int index = start;
         for (byte[] value : subSet) {
             assertArrayEquals(data[sortedOrder[index++]], value);
         }
         subSet = set.headSet(data[sortedOrder[end]]);
-        //assertTrue(Arrays.equals(data[sortedOrder[end - 1]], subSet.last()));
-
 
         // verify add
         for (SortedSet<byte[]> subSubSet : ((MultiSetBackedSortedSet<byte[]>) subSet).getSets()) {
