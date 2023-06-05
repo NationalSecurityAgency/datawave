@@ -55,8 +55,10 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
     private static final String ALL = "\u10FFFF";
 
     private int queryThreads = 100;
-    private ScannerFactory scannerFactory;
-    private String viewName = null;
+
+    ScannerFactory scannerFactory;
+
+    String viewName = null;
 
     public ContentQueryTable() {
         super();
@@ -123,7 +125,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
 
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {
-        if (!genericConfig.getClass().getName().equals(ContentQueryConfiguration.class.getName())) {
+        if (!(genericConfig instanceof ContentQueryConfiguration)) {
             throw new QueryException("Did not receive a ContentQueryConfiguration instance!!");
         }
 
@@ -135,8 +137,8 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
             scanner.setRanges(config.getRanges());
 
             if (null != this.viewName) {
-                final IteratorSetting cfg = new IteratorSetting(50, RegExFilter.class);
-                cfg.addOption(RegExFilter.COLQ_REGEX, this.viewName);
+                final IteratorSetting cfg = new IteratorSetting(50, this.viewName, RegExFilter.class);
+                RegExFilter.setRegexs(cfg, null, null, this.viewName, null, false, true);
                 scanner.addScanIterator(cfg);
             }
 
