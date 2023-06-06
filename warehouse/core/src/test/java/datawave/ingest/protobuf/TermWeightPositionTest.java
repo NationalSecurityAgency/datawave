@@ -101,6 +101,24 @@ public class TermWeightPositionTest {
         Collections.sort(result);
         Assert.assertEquals(listExpected, result);
     }
+
+    @Test
+    public void testBuilderReset() {
+        TermWeightPosition.Builder builder = new TermWeightPosition.Builder();
+        TermWeightPosition expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        TermWeightPosition position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        Assert.assertEquals(expected, position);
+
+        expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        builder.reset();
+        position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(true).build();
+        Assert.assertEquals(expected, position);
+
+        expected = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
+        builder.reset();
+        position = builder.setOffset(1).setPrevSkips(0).setScore(0).setZeroOffsetMatch(false).build();
+        Assert.assertEquals(expected, position);
+    }
     
     @Test
     public void testPositionScoreToTermWeightScore() {
