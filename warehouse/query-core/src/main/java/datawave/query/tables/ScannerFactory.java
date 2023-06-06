@@ -34,7 +34,7 @@ public class ScannerFactory {
     
     protected int maxQueue = 1000;
     protected HashSet<ScannerBase> instances = new HashSet<>();
-    protected HashSet<ScannerSession> sessionInstances = new HashSet<>();
+    protected HashSet<BaseScannerSession<?>> sessionInstances = new HashSet<>();
     protected AccumuloClient cxn;
     protected boolean open = true;
     protected boolean accrueStats = false;
@@ -169,7 +169,7 @@ public class ScannerFactory {
      *             if there are issues
      *
      */
-    public synchronized <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
+    public synchronized <T extends BaseScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
                     final Query settings) throws Exception {
         Preconditions.checkNotNull(scanQueue);
         Preconditions.checkNotNull(wrapper);
@@ -247,10 +247,11 @@ public class ScannerFactory {
      * 
      * @return a NEW collection of scanner session instances
      */
-    public synchronized Collection<ScannerSession> currentSessions() {
-        return new ArrayList<>(sessionInstances);
+    public synchronized Collection<BaseScannerSession<?>> currentSessions() {
+        return Collections.unmodifiableSet(sessionInstances);
     }
-    
+
+
     public synchronized boolean lockdown() {
         log.debug("Locked scanner factory " + System.identityHashCode(this));
         if (log.isTraceEnabled()) {
@@ -261,7 +262,7 @@ public class ScannerFactory {
         return open;
     }
     
-    public synchronized void close(ScannerSession bs) {
+    public synchronized void close(BaseScannerSession bs) {
         try {
             log.debug("Closed session " + System.identityHashCode(bs));
             sessionInstances.remove(bs);
