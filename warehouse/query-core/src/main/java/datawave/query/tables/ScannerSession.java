@@ -40,7 +40,7 @@ import com.google.common.util.concurrent.MoreExecutors;
  * result queue is polled in the actual next() and hasNext() calls. Note that the uncaughtExceptionHandler from the Query is used to pass exceptions up which
  * will also fail the overall query if something happens. If this is not desired then a local handler should be set.
  */
-public class ScannerSession extends AbstractExecutionThreadService implements Iterator<Entry<Key,Value>> {
+public class ScannerSession extends BaseScannerSession<Entry<Key,Value>>  {
     
     /**
      * last seen key, used for moving across the sliding window of ranges.

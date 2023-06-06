@@ -21,7 +21,7 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-public class LookupUUIDTune implements Profile {
+public class LookupUUIDTune implements Profile<Entry<Key,Value>> {
     
     protected boolean bypassAccumulo = false;
     protected boolean enableCaching = false;
