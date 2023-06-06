@@ -42,8 +42,6 @@ public class QueryStopwatch {
 
         TraceStopwatch sw = new TraceStopwatch(header);
 
-        System.out.println("ohhh");
-
         return sw;
     }
 
