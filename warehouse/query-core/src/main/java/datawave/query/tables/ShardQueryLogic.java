@@ -236,9 +236,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
     }
-    
-//
-    
+
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         

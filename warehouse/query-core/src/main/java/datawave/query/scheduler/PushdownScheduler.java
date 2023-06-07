@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.mr.bulk.RfileResource;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -189,7 +188,7 @@ public class PushdownScheduler extends Scheduler {
      */
     @Override
     public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        return config.createBatchScanner(scannerFactory, qd);
+        return scannerFactory.newScanner(config, qd);
     }
     
     @Override
