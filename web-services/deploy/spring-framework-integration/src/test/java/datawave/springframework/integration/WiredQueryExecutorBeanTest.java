@@ -68,8 +68,7 @@ public class WiredQueryExecutorBeanTest {
             System.setProperties(systemProperties);
         }
         
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
                                         "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
                         .addClasses(DefaultResponseObjectFactory.class, QueryExpirationConfiguration.class, FacetedQueryPlanner.class, FacetedQueryLogic.class,
@@ -78,7 +77,8 @@ public class WiredQueryExecutorBeanTest {
                                         QueryMetricQueryLogic.class, TLDQueryLogic.class, ParentQueryLogic.class, DiscoveryLogic.class, IndexQueryLogic.class,
                                         QueryLogicFactoryImpl.class, DatawaveRoleManager.class, EasyRoleManager.class, CachedResultsConfiguration.class,
                                         DateIndexHelperFactory.class, EdgeDictionaryResponseTypeProducer.class, RemoteEdgeDictionary.class,
-                                        DefaultMapperDecorator.class).addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
+                                        DefaultMapperDecorator.class)
+                        .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
     
     @Test
