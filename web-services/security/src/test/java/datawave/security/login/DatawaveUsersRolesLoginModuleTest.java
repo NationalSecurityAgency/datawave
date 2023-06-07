@@ -60,8 +60,8 @@ public class DatawaveUsersRolesLoginModuleTest {
     @Test
     public void testSuccessfulLogin() throws Exception {
         String name = testUserCert.getSubjectDN().getName() + "<" + testUserCert.getIssuerDN().getName() + ">";
-        callbackHandler.setSecurityInfo(new SimplePrincipal(name), new DatawaveCredential(testUserCert.getSubjectDN().getName(), testUserCert.getIssuerDN()
-                        .getName(), null, null).toString());
+        callbackHandler.setSecurityInfo(new SimplePrincipal(name),
+                        new DatawaveCredential(testUserCert.getSubjectDN().getName(), testUserCert.getIssuerDN().getName(), null, null).toString());
         
         boolean success = loginModule.login();
         assertTrue("Login didn't succeed for alias in users/roles.properties", success);

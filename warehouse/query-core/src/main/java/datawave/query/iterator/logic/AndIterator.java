@@ -118,8 +118,8 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
      */
     private boolean applyContextRequired(T candidate) {
         if (contextIncludes.size() > 0) {
-            T highestContextInclude = NestedIteratorContextUtil
-                            .intersect(candidate, contextIncludes, contextIncludeHeads, contextIncludeNullHeads, transformer);
+            T highestContextInclude = NestedIteratorContextUtil.intersect(candidate, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
+                            transformer);
             // if there wasn't an intersection here move to the next one
             if (!candidate.equals(highestContextInclude)) {
                 if (highestContextInclude != null) {

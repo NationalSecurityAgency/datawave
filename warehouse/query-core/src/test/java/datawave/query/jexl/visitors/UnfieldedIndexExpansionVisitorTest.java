@@ -74,8 +74,8 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
     
     private static void writeShardIndexData() throws TableNotFoundException, MutationsRejectedException {
-        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
-                        .setMaxWriteThreads(1))) {
+        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_INDEX,
+                        new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1))) {
             
             Mutation m = new Mutation("taco");
             m.put(new Text("FIELD1"), new Text("20210101\0datatype"), timestamp, emptyValue);
@@ -126,8 +126,8 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
     
     private static void writeShardReverseIndexData() throws TableNotFoundException, MutationsRejectedException {
-        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_RINDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
-                        .setMaxWriteThreads(1))) {
+        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_RINDEX,
+                        new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1))) {
             
             Mutation m = new Mutation(StringUtils.reverse("beautifully"));
             m.put(new Text("FIELD7"), new Text("20210101\0datatype"), timestamp, emptyValue);

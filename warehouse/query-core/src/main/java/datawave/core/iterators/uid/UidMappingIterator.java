@@ -63,8 +63,8 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
             try {
                 uidMapperClass = Class.forName(options.get(UidMappingIterator.UID_MAPPER));
             } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException("Cannot find class for " + UidMappingIterator.UID_MAPPER + " option: "
-                                + options.get(UidMappingIterator.UID_MAPPER), e);
+                throw new IllegalArgumentException(
+                                "Cannot find class for " + UidMappingIterator.UID_MAPPER + " option: " + options.get(UidMappingIterator.UID_MAPPER), e);
             }
             if (!UidMapper.class.isAssignableFrom(uidMapperClass)) {
                 throw new IllegalArgumentException(UidMappingIterator.UID_MAPPER + " option does not implement " + UidMapper.class + ": " + uidMapperClass);
@@ -195,8 +195,8 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
      */
     protected Range mapRange(Range range) {
         if (range != null) {
-            range = new Range(mapUid(range.getStartKey(), true, range.isStartKeyInclusive(), false, false), range.isStartKeyInclusive(), mapUid(
-                            range.getEndKey(), false, false, true, range.isEndKeyInclusive()), range.isEndKeyInclusive());
+            range = new Range(mapUid(range.getStartKey(), true, range.isStartKeyInclusive(), false, false), range.isStartKeyInclusive(),
+                            mapUid(range.getEndKey(), false, false, true, range.isEndKeyInclusive()), range.isEndKeyInclusive());
         }
         return range;
     }
@@ -261,9 +261,8 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
                     if ((range.getStartKey() == null && params.range.getStartKey() == null)
                                     || (range.isStartKeyInclusive() && params.range.isStartKeyInclusive() && range.getStartKey() != null
                                                     && params.range.getStartKey() != null && range.getStartKey().compareTo(params.range.getStartKey()) <= 0)) {
-                        if ((range.getEndKey() == null && params.range.getEndKey() == null)
-                                        || (range.getEndKey() != null && params.range.getEndKey() != null && range.getEndKey().compareTo(
-                                                        params.range.getEndKey()) >= 0)) {
+                        if ((range.getEndKey() == null && params.range.getEndKey() == null) || (range.getEndKey() != null && params.range.getEndKey() != null
+                                        && range.getEndKey().compareTo(params.range.getEndKey()) >= 0)) {
                             return true;
                         }
                     }

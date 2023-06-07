@@ -197,9 +197,8 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             NavigableSet<EvaluateTermPosition> candidateSet = offsets.get(i).tailSet(offsets.get(i).first(), false);
             
             // if the candidate set has something in it, and it is within the constraints of the distance this is a valid alternative
-            if (!candidateSet.isEmpty()
-                            && (alternatives.get(i - 1).first().isWithIn(candidateSet.first(), distance) && !alternatives.get(i - 1).first()
-                                            .isSameTerm(candidateSet.first()))) {
+            if (!candidateSet.isEmpty() && (alternatives.get(i - 1).first().isWithIn(candidateSet.first(), distance)
+                            && !alternatives.get(i - 1).first().isSameTerm(candidateSet.first()))) {
                 alternatives.add(candidateSet);
                 
                 // once there is a new alternative, leave all other terms alone to test it fully
@@ -260,7 +259,8 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
                 // Record the phrase offsets to fetch excerpts later if desired.
                 termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
                 if (log.isTraceEnabled()) {
-                    log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " for event " + eventId + " to jexl context");
+                    log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " for event " + eventId
+                                    + " to jexl context");
                 }
                 return true;
             }
@@ -342,8 +342,8 @@ public class ContentOrderedEvaluator extends ContentFunctionEvaluator {
             }
             
             if (log.isTraceEnabled()) {
-                log.trace("EvaluateTermPosition.isWithIn: " + low + "<=" + eval.termWeightPosition.getOffset() + " && "
-                                + eval.termWeightPosition.getLowOffset() + "<=" + high);
+                log.trace("EvaluateTermPosition.isWithIn: " + low + "<=" + eval.termWeightPosition.getOffset() + " && " + eval.termWeightPosition.getLowOffset()
+                                + "<=" + high);
             }
             
             return (low <= eval.termWeightPosition.getOffset() && eval.termWeightPosition.getLowOffset() <= high);

@@ -132,8 +132,8 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         final ColumnVisibility visibility = key.getColumnVisibilityParsed();
                         long timestamp = key.getTimestamp();
                         boolean hasChildren = count.hasDescendants();
-                        final Key hasChildrenKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_HAS_CHILDREN_FIELDNAME + '\0'
-                                        + Boolean.toString(hasChildren)), visibility, timestamp);
+                        final Key hasChildrenKey = new Key(key.getRow(), key.getColumnFamily(),
+                                        new Text(QueryOptions.DEFAULT_HAS_CHILDREN_FIELDNAME + '\0' + Boolean.toString(hasChildren)), visibility, timestamp);
                         countKeys.add(hasChildrenKey);
                     }
                     
@@ -141,8 +141,8 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         final ColumnVisibility visibility = key.getColumnVisibilityParsed();
                         long timestamp = key.getTimestamp();
                         int numChildren = count.getFirstGenerationCount();
-                        final Key childCountKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_CHILD_COUNT_FIELDNAME + '\0'
-                                        + Integer.toString(numChildren)), visibility, timestamp);
+                        final Key childCountKey = new Key(key.getRow(), key.getColumnFamily(),
+                                        new Text(QueryOptions.DEFAULT_CHILD_COUNT_FIELDNAME + '\0' + Integer.toString(numChildren)), visibility, timestamp);
                         countKeys.add(childCountKey);
                     }
                     
@@ -526,8 +526,8 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
         this.inclusive = inclusive;
     }
     
-    private boolean skipExcessiveNumberOfDescendants(final String childSuffix, final Matcher matcher, final Text row, final String fiRootValue, final Key endKey)
-                    throws IOException {
+    private boolean skipExcessiveNumberOfDescendants(final String childSuffix, final Matcher matcher, final Text row, final String fiRootValue,
+                    final Key endKey) throws IOException {
         boolean skipped;
         if (matcher.find(0) && (matcher.start() < childSuffix.length())) {
             // Get the base matching child suffix

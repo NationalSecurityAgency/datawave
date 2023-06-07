@@ -345,13 +345,13 @@ public class SourceManagerTest {
     }
     
     public static class MockIteratorEnvironment implements IteratorEnvironment {
-
+        
         AccumuloConfiguration conf;
-
+        
         public MockIteratorEnvironment(AccumuloConfiguration conf) {
             this.conf = conf;
         }
-
+        
         public MockIteratorEnvironment() {
             this.conf = DefaultConfiguration.getInstance();
         }
@@ -360,7 +360,8 @@ public class SourceManagerTest {
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String mapFileName) throws IOException {
             Configuration conf = new Configuration();
             FileSystem fs = FileSystem.get(conf);
-            CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, DefaultConfiguration.getInstance().getAllCryptoProperties());
+            CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
+                            DefaultConfiguration.getInstance().getAllCryptoProperties());
             return RFileOperations.getInstance().newReaderBuilder().forFile(mapFileName, fs, conf, cs)
                             .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
         }

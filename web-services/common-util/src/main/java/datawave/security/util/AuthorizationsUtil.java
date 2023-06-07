@@ -320,9 +320,10 @@ public class AuthorizationsUtil {
                 Multimap<String,String> mergedRoleToAuth = HashMultimap.create(datawaveUser.getRoleToAuthMapping());
                 mergedRoleToAuth.putAll(user.getRoleToAuthMapping());
                 // create merged user
-                datawaveUser = new DatawaveUser(user.getDn(), user.getUserType(), Sets.union(new HashSet<>(user.getAuths()),
-                                new HashSet<>(datawaveUser.getAuths())), Sets.union(new HashSet<>(user.getRoles()), new HashSet<>(datawaveUser.getRoles())),
-                                mergedRoleToAuth, System.currentTimeMillis());
+                datawaveUser = new DatawaveUser(user.getDn(), user.getUserType(),
+                                Sets.union(new HashSet<>(user.getAuths()), new HashSet<>(datawaveUser.getAuths())),
+                                Sets.union(new HashSet<>(user.getRoles()), new HashSet<>(datawaveUser.getRoles())), mergedRoleToAuth,
+                                System.currentTimeMillis());
             }
         }
         return datawaveUser;

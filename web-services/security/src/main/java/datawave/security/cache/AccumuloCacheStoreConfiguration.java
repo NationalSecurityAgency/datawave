@@ -20,8 +20,8 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     public static final AttributeDefinition<String> USERNAME = AttributeDefinition.builder("username", null, String.class).immutable().build();
     public static final AttributeDefinition<String> PASSWORD = AttributeDefinition.builder("password", null, String.class).immutable().build();
     public static final AttributeDefinition<String> TABLE_NAME = AttributeDefinition.builder("tableName", "AuthorizationServiceCache").immutable().build();
-    public static final AttributeDefinition<List<String>> AUTHORIZATIONS = AttributeDefinition
-                    .builder("authorizations", (List<String>) new ArrayList<String>()).immutable().build();
+    public static final AttributeDefinition<List<String>> AUTHORIZATIONS = AttributeDefinition.builder("authorizations", (List<String>) new ArrayList<String>())
+                    .immutable().build();
     public static final AttributeDefinition<Integer> WRITE_THREADS = AttributeDefinition.builder("writeThreads", 4).immutable().build();
     public static final AttributeDefinition<Long> MAX_LATENCY = AttributeDefinition.builder("maxLatencySeconds", 5L).immutable().build();
     public static final AttributeDefinition<Long> MAX_MEMORY = AttributeDefinition.builder("maxMemoryBytes", 262144L).immutable().build();
@@ -29,8 +29,8 @@ public class AccumuloCacheStoreConfiguration extends AbstractStoreConfiguration 
     public static final AttributeDefinition<Integer> AGEOFF_PRIORITY = AttributeDefinition.builder("ageoffPriority", 19).immutable().build();
     
     public static AttributeSet attributeDefinitionSet() {
-        return new AttributeSet(AccumuloCacheStoreConfiguration.class, AbstractStoreConfiguration.attributeDefinitionSet(), INSTANCE_NAME, ZOOKEEPERS,
-                        USERNAME, PASSWORD, TABLE_NAME, AUTHORIZATIONS, WRITE_THREADS, MAX_LATENCY, MAX_MEMORY, AGEOFF_TTL, AGEOFF_PRIORITY);
+        return new AttributeSet(AccumuloCacheStoreConfiguration.class, AbstractStoreConfiguration.attributeDefinitionSet(), INSTANCE_NAME, ZOOKEEPERS, USERNAME,
+                        PASSWORD, TABLE_NAME, AUTHORIZATIONS, WRITE_THREADS, MAX_LATENCY, MAX_MEMORY, AGEOFF_TTL, AGEOFF_PRIORITY);
     }
     
     private Attribute<String> instanceName;

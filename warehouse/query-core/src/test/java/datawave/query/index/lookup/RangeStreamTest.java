@@ -70,8 +70,8 @@ public class RangeStreamTest {
         client = new InMemoryAccumuloClient("", new InMemoryInstance());
         client.tableOperations().create(SHARD_INDEX);
         
-        BatchWriter bw = client.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
-                        .setMaxWriteThreads(1));
+        BatchWriter bw = client.createBatchWriter(SHARD_INDEX,
+                        new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1));
         
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.addUID("123");
@@ -496,7 +496,7 @@ public class RangeStreamTest {
         for (String shard : Lists.newArrayList("20190314_0", "20190314_1", "20190314_9", "20190314_10", "20190314_100")) {
             expectedRanges.add(makeShardedRange(shard));
         }
-
+        
         for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script)) {
             for (Range range : queryPlan.getRanges()) {
                 assertTrue("Tried to remove unexpected range " + range.toString() + " from expected ranges: " + expectedRanges, expectedRanges.remove(range));
@@ -559,8 +559,8 @@ public class RangeStreamTest {
         for (QueryPlan queryPlan : new RangeStream(config, new ScannerFactory(config.getClient()), helper).streamPlans(script)) {
             // verify the query plan dropped no terms
             JexlNode queryTree = JexlASTHelper.parseJexlQuery(queryPlan.getQueryString());
-            JexlNode expectedTree = JexlASTHelper
-                            .parseJexlQuery("(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
+            JexlNode expectedTree = JexlASTHelper.parseJexlQuery(
+                            "(((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'tardy')) || ((SHARDS_AND_DAYS = '20190314') && filter:include(FOO, 'bardy'))) && FOO == 'oreo'");
             JexlNodeAssert.assertThat(queryTree).isEqualTo(expectedTree);
             
             // verify the range
@@ -1208,7 +1208,7 @@ public class RangeStreamTest {
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.setIndexedFields(dataTypes.keySet());
         helper.addFields(Arrays.asList("FOO", "LAUGH"));
-
+        
         Set<Range> expectedRanges = Sets.newHashSet();
         for (String shard : Arrays.asList("20190314_0", "20190314_1", "20190314_10", "20190314_100", "20190314_9")) {
             expectedRanges.add(makeShardedRange(shard));

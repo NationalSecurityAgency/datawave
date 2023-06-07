@@ -30,7 +30,7 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
     protected Collection<String> dataTypeFilters;
     
     private static final Logger log = Logger.getLogger(NormalizerLoader.class);
-
+    
     public NormalizerLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList,
                     Collection<String> dataTypeFilters) {
         super(client, tableName, auths, columnFamilyList);
@@ -157,8 +157,7 @@ public class NormalizerLoader extends AccumuloLoader<String,Multimap<String,Type
                     
                     return true;
                     
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
-                         NoSuchMethodException | InvocationTargetException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     log.error("Unable to find normalizer on class path: " + colq.substring(idx + 1), e);
                 }
                 

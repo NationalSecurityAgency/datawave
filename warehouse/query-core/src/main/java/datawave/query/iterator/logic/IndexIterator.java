@@ -313,8 +313,8 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
                     log.trace("Ignoring key due to not occuring within datatype filter: " + top);
                 }
                 Range newRange;
-                if (dataTypeSeekingFilter != null
-                                && (newRange = dataTypeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(), this.scanRange.isEndKeyInclusive())) != null) {
+                if (dataTypeSeekingFilter != null && (newRange = dataTypeSeekingFilter.getSeekRange(top, this.scanRange.getEndKey(),
+                                this.scanRange.isEndKeyInclusive())) != null) {
                     source.seek(newRange, seekColumnFamilies, true);
                 } else {
                     source.next();

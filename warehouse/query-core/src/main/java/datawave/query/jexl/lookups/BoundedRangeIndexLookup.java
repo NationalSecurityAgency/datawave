@@ -171,8 +171,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                 
                 timedScanFuture = execService.submit(createTimedCallable(bs.iterator()));
             } catch (TableNotFoundException e) {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e, MessageFormat.format("Table: {0}",
-                                config.getIndexTableName()));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.TABLE_NOT_FOUND, e,
+                                MessageFormat.format("Table: {0}", config.getIndexTableName()));
                 log.error(qe);
                 throw new DatawaveFatalQueryException(qe);
                 
@@ -278,8 +278,8 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                         indexLookupMap.put(field, uniqueTerm);
                         
                         // safety check...
-                        Preconditions.checkState(field.equals(literalRange.getFieldName()), "Got an unexpected field name when expanding range" + field + " "
-                                        + literalRange.getFieldName());
+                        Preconditions.checkState(field.equals(literalRange.getFieldName()),
+                                        "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
                         
                         // If this range expands into to many values, we can
                         // stop

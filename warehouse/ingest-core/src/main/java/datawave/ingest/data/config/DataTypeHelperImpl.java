@@ -51,8 +51,7 @@ public class DataTypeHelperImpl implements DataTypeHelper {
         
         try {
             ingestPolicyEnforcer = (IngestPolicyEnforcer) Class.forName(policyEnforcerClass).getDeclaredConstructor().newInstance();
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             logger.error(e.getLocalizedMessage());
             throw new RuntimeException(e.getLocalizedMessage());
         }

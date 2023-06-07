@@ -133,9 +133,9 @@ public class DashboardBean {
      *
      * @param accumuloClient
      *            the {@link AccumuloClient} to use when creating scanners
-     *
+     *           
      * @return a {@link Scanner} that will only scan over the last 60 minutes of logs
-     *
+     *           
      * @throws TableNotFoundException
      *             if the table is not found
      */

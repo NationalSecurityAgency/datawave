@@ -39,8 +39,8 @@ public interface JexlFunctionArgumentDescriptorFactory {
          */
         public static JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
             if (node == null)
-                throw new IllegalArgumentException("Calling " + JexlFunctionArgumentDescriptorFactory.class.getSimpleName()
-                                + ".getArgumentDescriptor with a null tree node");
+                throw new IllegalArgumentException(
+                                "Calling " + JexlFunctionArgumentDescriptorFactory.class.getSimpleName() + ".getArgumentDescriptor with a null tree node");
             
             Class<?> funcClass = extractFunctionClass(node);
             

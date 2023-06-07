@@ -40,7 +40,7 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
     public Iterator<Entry<T,Document>> iterator() {
         if (seenSeek) {
             tree.initialize();
-
+            
             Iterator<Entry<S,Document>> wrapper = TraceIterators.transform(tree, from -> {
                 return Maps.immutableEntry(from, tree.document());
             }, "Field Index");
@@ -50,7 +50,7 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
             throw new IllegalStateException("You have to seek this tree.");
         }
     }
-
+    
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         Iterable<? extends NestedIterator<?>> leaves = tree.leaves();
         for (NestedIterator<?> leaf : leaves) {

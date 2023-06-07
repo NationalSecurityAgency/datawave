@@ -98,7 +98,7 @@ public class RunningResource extends AccumuloResource {
      *            a table name
      * @throws TableNotFoundException
      *             if the table was not found
-     * 
+     *             
      */
     @Override
     protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {

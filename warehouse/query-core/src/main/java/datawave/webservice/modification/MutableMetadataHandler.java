@@ -314,8 +314,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         String fieldName = mr.getFieldName();
         MetadataHelper helper = getMetadataHelper(client);
         MODE mode = mr.getMode();
-        MultiTableBatchWriter writer = client.createMultiTableBatchWriter(new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1048576L)
-                        .setMaxWriteThreads(4));
+        MultiTableBatchWriter writer = client
+                        .createMultiTableBatchWriter(new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(1048576L).setMaxWriteThreads(4));
         try {
             for (EventIdentifier e : mr.getEvents()) {
                 String shardId = e.getShardId();
@@ -698,8 +698,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
                 Mutation m = new Mutation(key.getFieldName());
                 
                 // Decrement the frequency (metadata table)
-                m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)), new Value(
-                                SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
+                m.put(ColumnFamilyConstants.COLF_F, new Text(key.getDataType() + NULL_BYTE + DateHelper.format(currentEntryTimestamp)),
+                                new Value(SummingCombiner.VAR_LEN_ENCODER.encode(-1L)));
                 
                 // Remove the event field.
                 Mutation e = new Mutation(currentEntry.getFirst().getRow());
@@ -938,8 +938,8 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      * @throws ExecutionException
      *             for execution exceptions
      */
-    protected MetadataHelper getMetadataHelper(AccumuloClient client) throws AccumuloException, AccumuloSecurityException, TableNotFoundException,
-                    ExecutionException {
+    protected MetadataHelper getMetadataHelper(AccumuloClient client)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
         return metadataHelperFactory.createMetadataHelper(client, this.getMetadataTableName(), Collections.singleton(auths));
     }

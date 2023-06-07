@@ -29,34 +29,25 @@ public class CompareFunctionValidatorTest {
     
     @Test
     public void testValidateWithoutEnoughParameters() {
-        assertThrows(IllegalArgumentException.class,
-                        () -> {
-                            CompareFunctionValidator.validate(
-                                            "compare",
-                                            Arrays.asList(JexlNodeFactory.buildIdentifier("foo"), JexlNodeFactory.buildIdentifier("<"),
-                                                            JexlNodeFactory.buildIdentifier("bar")));
-                        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            CompareFunctionValidator.validate("compare", Arrays.asList(JexlNodeFactory.buildIdentifier("foo"), JexlNodeFactory.buildIdentifier("<"),
+                            JexlNodeFactory.buildIdentifier("bar")));
+        });
     }
     
     @Test
     public void testValidateWithWrongModeParameters() {
-        assertThrows(IllegalArgumentException.class,
-                        () -> {
-                            CompareFunctionValidator.validate(
-                                            "compare",
-                                            Arrays.asList(JexlNodeFactory.buildIdentifier("foo"), JexlNodeFactory.buildIdentifier("<"),
-                                                            JexlNodeFactory.buildIdentifier("WHAT"), JexlNodeFactory.buildIdentifier("bar")));
-                        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            CompareFunctionValidator.validate("compare", Arrays.asList(JexlNodeFactory.buildIdentifier("foo"), JexlNodeFactory.buildIdentifier("<"),
+                            JexlNodeFactory.buildIdentifier("WHAT"), JexlNodeFactory.buildIdentifier("bar")));
+        });
     }
     
     @Test
     public void testValidateWithWrongOperatorParameters() {
-        assertThrows(IllegalArgumentException.class,
-                        () -> {
-                            CompareFunctionValidator.validate(
-                                            "compare",
-                                            Arrays.asList(JexlNodeFactory.buildIdentifier("foo"), JexlNodeFactory.buildIdentifier("<>"),
-                                                            JexlNodeFactory.buildIdentifier("ANY"), JexlNodeFactory.buildIdentifier("bar")));
-                        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            CompareFunctionValidator.validate("compare", Arrays.asList(JexlNodeFactory.buildIdentifier("foo"), JexlNodeFactory.buildIdentifier("<>"),
+                            JexlNodeFactory.buildIdentifier("ANY"), JexlNodeFactory.buildIdentifier("bar")));
+        });
     }
 }

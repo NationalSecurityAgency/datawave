@@ -145,10 +145,8 @@ public class CachedRunningQueryTest {
     @Test
     public void testEscapingWithFunctions() throws Exception {
         String sql = crq.generateSql("v", "foo.bar, MIN(foo.bar), COUNT(foo.bar)", "COUNT(foo.bar) > 1", "MIN(foo.bar)", "COUNT(foo.bar)", "me", null);
-        Assert.assertEquals(
-                        "SELECT "
-                                        + fixedColumns
-                                        + ",`foo.bar`,MIN(`foo.bar`),COUNT(`foo.bar`) FROM v WHERE _user_ = 'me' AND (COUNT(`foo.bar`) > 1) GROUP BY MIN(`foo.bar`) ORDER BY COUNT(`foo.bar`)",
+        Assert.assertEquals("SELECT " + fixedColumns
+                        + ",`foo.bar`,MIN(`foo.bar`),COUNT(`foo.bar`) FROM v WHERE _user_ = 'me' AND (COUNT(`foo.bar`) > 1) GROUP BY MIN(`foo.bar`) ORDER BY COUNT(`foo.bar`)",
                         sql);
     }
     
@@ -199,10 +197,8 @@ public class CachedRunningQueryTest {
         
         String sql = crq.generateSql("v", "foo.bar", "((( FIELD1.10.1.0 = 'value.1' ) or ( FIELD2.30.5.1 = 'george' )) and  FIELD3.20.5.1 = 'someday' )", null,
                         null, "me", null);
-        Assert.assertEquals(
-                        "SELECT "
-                                        + fixedColumns
-                                        + ",`foo.bar` FROM v WHERE _user_ = 'me' AND (((( `FIELD1.10.1.0` = 'value.1' ) or ( `FIELD2.30.5.1` = 'george' )) and  `FIELD3.20.5.1` = 'someday' ))",
+        Assert.assertEquals("SELECT " + fixedColumns
+                        + ",`foo.bar` FROM v WHERE _user_ = 'me' AND (((( `FIELD1.10.1.0` = 'value.1' ) or ( `FIELD2.30.5.1` = 'george' )) and  `FIELD3.20.5.1` = 'someday' ))",
                         sql);
     }
     

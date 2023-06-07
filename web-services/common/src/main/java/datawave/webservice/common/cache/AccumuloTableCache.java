@@ -239,7 +239,7 @@ public class AccumuloTableCache {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *               
      * @HTTP 200 success
      * @HTTP 404 queries not found using {@code id}
      * @HTTP 500 internal server error
@@ -298,7 +298,7 @@ public class AccumuloTableCache {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *               
      * @HTTP 200 success
      */
     @GET

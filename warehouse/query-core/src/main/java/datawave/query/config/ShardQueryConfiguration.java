@@ -494,8 +494,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFstCount(other.getFstCount());
         this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
         this.setFullTableScanEnabled(other.getFullTableScanEnabled());
-        this.setRealmSuffixExclusionPatterns(null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other
-                        .getRealmSuffixExclusionPatterns()));
+        this.setRealmSuffixExclusionPatterns(
+                        null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other.getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
         this.setShardDateFormatter(null == other.getShardDateFormatter() ? null : new SimpleDateFormat(other.getShardDateFormatter().toPattern())); // TODO --
         // deep copy
@@ -2404,20 +2404,20 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
         this.lazySetMechanismEnabled = lazySetMechanismEnabled;
     }
-
-    public int getDocAggregationThresholdMs(){
+    
+    public int getDocAggregationThresholdMs() {
         return docAggregationThresholdMs;
     }
-
-    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+    
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs) {
         this.docAggregationThresholdMs = docAggregationThresholdMs;
     }
-
-    public int getTfAggregationThresholdMs(){
+    
+    public int getTfAggregationThresholdMs() {
         return tfAggregationThresholdMs;
     }
-
-    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+    
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
 }

@@ -70,7 +70,7 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
             try {
                 build(null);
                 return Futures.immediateFuture(load(key));
-
+                
             } catch (Exception e) {
                 log.error(e);
             }

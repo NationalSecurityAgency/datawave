@@ -162,8 +162,8 @@ public class TreeFlatteningRebuildingVisitorTest {
         for (int i = 2; i <= numTerms; i++) {
             sb.append(" OR ").append(i);
         }
-        assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringReader(";")).parse(
-                        new StringReader(new LuceneToJexlQueryParser().parse(sb.toString()).toString()), null)));
+        assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(
+                        new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser().parse(sb.toString()).toString()), null)));
     }
     
     @Test

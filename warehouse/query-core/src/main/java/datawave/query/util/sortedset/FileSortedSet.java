@@ -236,7 +236,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      *            the handler
      * @throws IOException
      *             for issues with read/write
-     *
+     *            
      */
     private void persist(SortedSet<E> set, TypedSortedSetFileHandler handler) throws IOException {
         if (log.isDebugEnabled()) {

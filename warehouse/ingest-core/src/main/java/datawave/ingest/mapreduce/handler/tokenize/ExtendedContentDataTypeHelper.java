@@ -179,8 +179,8 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         thresholdReplacement = conf.get(this.getType().typeName() + Properties.THRESHOLD_FIELD_REPLACEMENT, thresholdReplacement);
         truncateField = conf.get(this.getType().typeName() + Properties.TRUNCATE_FIELD, truncateField);
         dropField = conf.get(this.getType().typeName() + Properties.DROP_FIELD, dropField);
-        multiValuedThresholdAction = ThresholdAction.valueOf(conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_ACTION,
-                        multiValuedThresholdAction.name()).toUpperCase());
+        multiValuedThresholdAction = ThresholdAction.valueOf(
+                        conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_ACTION, multiValuedThresholdAction.name()).toUpperCase());
         multiValuedThresholdReplacement = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT,
                         multiValuedThresholdReplacement);
         multiValuedTruncateField = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_TRUNCATE_FIELD, multiValuedTruncateField);

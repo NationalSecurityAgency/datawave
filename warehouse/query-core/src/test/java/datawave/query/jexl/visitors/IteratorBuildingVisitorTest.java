@@ -217,8 +217,8 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "f" + Constants.NULL + "FOO"), new Value()));
         
@@ -245,8 +245,8 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "f" + Constants.NULL + "FOO"), new Value()));
         
@@ -273,8 +273,8 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -301,8 +301,8 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -329,8 +329,8 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "m" + Constants.NULL + "FOO"), new Value()));
         
@@ -357,8 +357,8 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "m" + Constants.NULL + "FOO"), new Value()));
         
@@ -384,10 +384,10 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "mn" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "mn" + Constants.NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -403,10 +403,10 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "mn" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "mn" + Constants.NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -422,10 +422,10 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -441,10 +441,10 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && ((_Value_ = true) && ((_Bounded_ = true) && (FOO >= 'e' && FOO <= 'm')))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -461,10 +461,10 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -481,10 +481,10 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
         
         Set<String> termFrequencyFields = new HashSet<>();
         termFrequencyFields.add("FOO");
@@ -501,12 +501,12 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -525,12 +525,12 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -549,14 +549,14 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -576,14 +576,14 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -603,16 +603,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -632,16 +632,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -661,16 +661,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -690,16 +690,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -719,16 +719,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -742,16 +742,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -764,16 +764,16 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -786,16 +786,16 @@ public class IteratorBuildingVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery("BAZ == 'woot' && !((_Value_ = true) && (FOO =~ '.*foo'))");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "ddfoo" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzzfoo" + Constants.NULL + "FOO"), new Value()));
         source.add(new AbstractMap.SimpleEntry(
                         new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "e" + Constants.NULL + "FOO"), new Value()));
         
@@ -809,16 +809,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzz" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzz" + Constants.NULL + "FOO"), new Value()));
         
         // empty document because it didn't find the pattern match (.*foo)
         // ultimately the non .*foo entries don't need to be built because the query only cares if they exist
@@ -832,16 +832,16 @@ public class IteratorBuildingVisitorTest {
         Key hit = new Key("row", "dataType" + Constants.NULL + "123.345.456");
         
         List<Map.Entry<Key,Value>> source = new ArrayList<>();
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL
-                        + "123.345.456"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL
-                        + "FOO"), new Value()));
-        source.add(new AbstractMap.SimpleEntry(new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzz" + Constants.NULL
-                        + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "fi" + Constants.NULL + "BAZ", "woot" + Constants.NULL + "dataType" + Constants.NULL + "123.345.456"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "cd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "de" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dd" + Constants.NULL + "FOO"), new Value()));
+        source.add(new AbstractMap.SimpleEntry(
+                        new Key("row", "tf", "dataType" + Constants.NULL + "123.345.456" + Constants.NULL + "dzzzz" + Constants.NULL + "FOO"), new Value()));
         
         // empty document because it didn't find the pattern match (.*foo)
         // ultimately the non .*foo entries don't need to be built because the query only cares if they exist
@@ -873,9 +873,8 @@ public class IteratorBuildingVisitorTest {
         eval(query, docRange, docKeyHit, source, buildDoc, docKeys, termFrequencyFields, aggregationFields, indexOnlyFields);
     }
     
-    private void eval(ASTJexlScript query, Range docRange, Key docKeyHit, List<Map.Entry<Key,Value>> source, boolean buildDoc,
-                    Map<String,List<String>> docKeys, Set<String> termFrequencyFields, Set<String> aggregationFields, Set<String> indexOnlyFields)
-                    throws IOException {
+    private void eval(ASTJexlScript query, Range docRange, Key docKeyHit, List<Map.Entry<Key,Value>> source, boolean buildDoc, Map<String,List<String>> docKeys,
+                    Set<String> termFrequencyFields, Set<String> aggregationFields, Set<String> indexOnlyFields) throws IOException {
         IteratorBuildingVisitor visitor = new IteratorBuildingVisitor();
         TypeMetadata typeMetadata = new TypeMetadata();
         

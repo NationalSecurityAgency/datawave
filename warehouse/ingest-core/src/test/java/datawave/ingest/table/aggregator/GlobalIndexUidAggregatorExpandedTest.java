@@ -1287,8 +1287,8 @@ public class GlobalIndexUidAggregatorExpandedTest {
         assertEquals("UID list size differs - " + label, expectation.getUIDList().size(), result.getUIDList().size());
         // The count and UID List sizes should match unless seenIgnore = true
         if (!expectation.getIGNORE()) {
-            assertEquals("Invalid test state: expected variable's Uid.List size and getCount differ - " + label, expectation.getCOUNT(), expectation
-                            .getUIDList().size());
+            assertEquals("Invalid test state: expected variable's Uid.List size and getCount differ - " + label, expectation.getCOUNT(),
+                            expectation.getUIDList().size());
         }
         
         for (String expectedRemovalUid : expectation.getREMOVEDUIDList()) {

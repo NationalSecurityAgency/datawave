@@ -415,11 +415,11 @@ public class LookupUUIDUtil {
         try {
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(logicName, principal);
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
-                            (DatawavePrincipal) principal);
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
+                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
-                            .getRemoteUser((DatawavePrincipal) principal);
+            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
+                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
             if (queryAuths != null) {
                 userAuths = AuthorizationsUtil.downgradeUserAuths(queryAuths, overallPrincipal, queryPrincipal);
             } else {
@@ -910,8 +910,8 @@ public class LookupUUIDUtil {
         } else {
             final EventQueryResponseBase er = responseObjectFactory.getEventQueryResponse();
             er.addMessage("Unhandled response type from Query/createQueryAndNext");
-            throw new DatawaveWebApplicationException(new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, "Expected EventQueryResponseBase but got "
-                            + response.getClass()), er);
+            throw new DatawaveWebApplicationException(
+                            new QueryException(DatawaveErrorCode.BAD_RESPONSE_CLASS, "Expected EventQueryResponseBase but got " + response.getClass()), er);
         }
         
         return pagedResponse;

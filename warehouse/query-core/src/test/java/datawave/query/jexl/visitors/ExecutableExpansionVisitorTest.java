@@ -89,8 +89,8 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
+                        throws ParseException, Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
@@ -114,8 +114,8 @@ public abstract class ExecutableExpansionVisitorTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
+                        throws ParseException, Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
@@ -141,17 +141,14 @@ public abstract class ExecutableExpansionVisitorTest {
         // we do not have a caller principal, and the io.astefunutti.metrics.cdi classes are not available to this test case.
         // Also we are adding the beans.xml to enable resolving some beans. The MockAlternative is a placeholder for any
         // mock bean alternatives we may use if annotated as such.
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @AfterClass
@@ -206,8 +203,8 @@ public abstract class ExecutableExpansionVisitorTest {
                 attr = d.get("UUID.0");
             
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
+                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
             
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
             
@@ -299,8 +296,8 @@ public abstract class ExecutableExpansionVisitorTest {
                 "&& !filter:includeRegex(ETA, 'blah') " +
                 "&& ( LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey' )";
         //  @formatter:on
-        String expandedQuery = JexlStringBuildingVisitor.buildQuery(FunctionIndexQueryExpansionVisitor.expandFunctions(logic.getConfig(), helper, null,
-                        JexlASTHelper.parseJexlQuery(query)));
+        String expandedQuery = JexlStringBuildingVisitor
+                        .buildQuery(FunctionIndexQueryExpansionVisitor.expandFunctions(logic.getConfig(), helper, null, JexlASTHelper.parseJexlQuery(query)));
         String[] queryStrings = {expandedQuery};
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {Arrays.asList(), Arrays.asList()};
@@ -313,8 +310,8 @@ public abstract class ExecutableExpansionVisitorTest {
                         "GENDER == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')",
                         finalQuery);
         
-        ASTJexlScript expectedQuery = JexlASTHelper
-                        .parseJexlQuery("((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && GENDER == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')");
+        ASTJexlScript expectedQuery = JexlASTHelper.parseJexlQuery(
+                        "((((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a')) || (((_Bounded_ = true) && (NUMBER >= '0' && NUMBER <= '1000')) && geowave:intersects(GEO, 'POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a') && (GEO == '00' || GEO == '0202' || GEO == '020b' || GEO == '1f202a02a02a02a02a' || GEO == '1f2088888888888888' || GEO == '1f200a80a80a80a80a'))) && GENDER == 'male' && (NOME == 'this' || NOME == 'that') && !filter:includeRegex(ETA, 'blah') && (LOCATION == 'chicago' || LOCATION == 'newyork' || LOCATION == 'newjersey')");
         Assert.assertTrue(TreeEqualityVisitor.isEqual(expectedQuery, logic.getConfig().getQueryTree()));
     }
     
@@ -566,8 +563,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testNestedExpansionWithFailures() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))");
+        ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery(
+                        "UUID == 'A' && (QUOTE == 'kind' || BIRTH_DATE == '234'|| (BIRTH_DATE == '123' && QUOTE == 'kind' && !(filter:includeRegex(QUOTE, '.*unkind.*') || BIRTH_DATE =='555' )))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -626,11 +623,8 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(
-                            JexlStringBuildingVisitor.buildQuery(queryTree),
-                            JexlStringBuildingVisitor
-                                            .buildQuery(queryTree)
-                                            .equals("((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                            "((_Value_ = true) && (UUID == 'capone')) && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || BIRTH_DATE == '123')"));
             
             // not executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -681,9 +675,10 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                            "UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
-                                            + "((_Value_ = true) && (BIRTH_DATE == '123')))"));
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree),
+                            JexlStringBuildingVisitor.buildQuery(queryTree)
+                                            .equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
+                                                            + "((_Value_ = true) && (BIRTH_DATE == '123')))"));
             
             // not executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -740,11 +735,8 @@ public abstract class ExecutableExpansionVisitorTest {
             String id = queryString.substring(queryString.indexOf("id = '") + 6, queryString.indexOf("') && (field"));
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(
-                            queryString,
-                            queryString.equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
-                                            + "((_List_ = true) && ((id = '" + id
-                                            + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))"));
+            Assert.assertTrue(queryString, queryString.equals("UUID == 'capone' && (filter:includeRegex(QUOTE, '.*kind.*') || QUOTE == 'kind' || "
+                            + "((_List_ = true) && ((id = '" + id + "') && (field = 'BIRTH_DATE') && (params = '{\"values\":[\"123\",\"234\",\"345\"]}'))))"));
             
             // not executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -766,8 +758,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testExceededOrThresholdCannotExpand() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = JexlASTHelper
-                        .parseJexlQuery("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))");
+        ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery(
+                        "UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -788,18 +780,12 @@ public abstract class ExecutableExpansionVisitorTest {
             
             if (queryTree == origQueryTree) {
                 // included ExceededValueThresholdMarker before
-                Assert.assertTrue(
-                                JexlStringBuildingVisitor.buildQuery(queryTree),
-                                JexlStringBuildingVisitor
-                                                .buildQuery(queryTree)
-                                                .equals("UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
+                Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                                "UUID == 'capone' && (((_List_ = true) && (((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))))"));
             } else {
                 // included ExceededValueThresholdMarker before
-                Assert.assertTrue(
-                                JexlStringBuildingVisitor.buildQuery(queryTree),
-                                JexlStringBuildingVisitor
-                                                .buildQuery(queryTree)
-                                                .equals("UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"));
+                Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
+                                "UUID == 'capone' && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'QUOTE') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}')))"));
             }
             
             // starts off executable
@@ -840,8 +826,8 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                            "UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree)
+                            .equals("UUID == 'capone' && (QUOTE == 'kind' || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
             
             // starts off executable
             Assert.assertFalse(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -856,8 +842,8 @@ public abstract class ExecutableExpansionVisitorTest {
     @Test
     public void testDelayedDoubleExpansion() throws Exception {
         // make sure this works when references/referenceExpressions are/aren't included
-        ASTJexlScript origQueryTree = JexlASTHelper.parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || "
-                        + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
+        ASTJexlScript origQueryTree = JexlASTHelper
+                        .parseJexlQuery("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))");
         ASTJexlScript derefQueryTree = (ASTJexlScript) DereferencingVisitor.dereference(origQueryTree);
         
         for (ASTJexlScript queryTree : Arrays.asList(origQueryTree, derefQueryTree)) {
@@ -883,8 +869,8 @@ public abstract class ExecutableExpansionVisitorTest {
             EasyMock.verify(config, helper);
             
             // included ExceededValueThresholdMarker before
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree).equals(
-                            "UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(queryTree), JexlStringBuildingVisitor.buildQuery(queryTree)
+                            .equals("UUID == 'capone' && (((_Delayed_ = true) && QUOTE == 'kind') || " + "((_Delayed_ = true) && BIRTH_DATE == '123'))"));
             
             // starts off executable
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(queryTree, config, helper));
@@ -1011,8 +997,8 @@ public abstract class ExecutableExpansionVisitorTest {
             // what came out is executable
             Assert.assertTrue(ExecutableDeterminationVisitor.isExecutable(newTree, config, helper));
             // the visitor changed nothing
-            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree), JexlStringBuildingVisitor.buildQuery(newTree).equals(
-                            "(QUOTE == 'kind' && UUID == 'capone') || "
+            Assert.assertTrue(JexlStringBuildingVisitor.buildQuery(newTree),
+                            JexlStringBuildingVisitor.buildQuery(newTree).equals("(QUOTE == 'kind' && UUID == 'capone') || "
                                             + "((filter:includeRegex(QUOTE, '.*kind.*') || BIRTH_DATE == '123') && UUID == 'capone')"));
         }
     }

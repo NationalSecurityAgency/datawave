@@ -27,8 +27,8 @@ public class GeoWaveUtilsTest {
         Geometry geom = new WKTReader().read(wktString);
         
         List<ByteArrayRange> byteArrayRanges = new ArrayList<>();
-        for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(geom.getEnvelopeInternal()).getIndexConstraints(
-                        PointNormalizer.getPointIndex())) {
+        for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(geom.getEnvelopeInternal())
+                        .getIndexConstraints(PointNormalizer.getPointIndex())) {
             byteArrayRanges.addAll(PointNormalizer.getPointIndexStrategy().getQueryRanges(range, 32).getCompositeQueryRanges());
         }
         
@@ -43,8 +43,8 @@ public class GeoWaveUtilsTest {
         Geometry geom = new WKTReader().read(wktString);
         
         List<ByteArrayRange> byteArrayRanges = new ArrayList<>();
-        for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(geom.getEnvelopeInternal()).getIndexConstraints(
-                        GeometryNormalizer.getGeometryIndex())) {
+        for (MultiDimensionalNumericData range : GeometryUtils.basicConstraintsFromEnvelope(geom.getEnvelopeInternal())
+                        .getIndexConstraints(GeometryNormalizer.getGeometryIndex())) {
             byteArrayRanges.addAll(GeometryNormalizer.getGeometryIndexStrategy().getQueryRanges(range, 8).getCompositeQueryRanges());
         }
         
@@ -61,13 +61,14 @@ public class GeoWaveUtilsTest {
         Assert.assertTrue(numOptimizedIndices < numUnoptimizedIndices);
         
         // check each tier to ensure that it covers the original geometry
-        Map<Integer,List<ByteArrayRange>> rangesByTier = optimizedByteArrayRanges.stream().collect(
-                        Collectors.groupingBy(x -> GeoWaveUtils.decodeTier(x.getStart())));
+        Map<Integer,List<ByteArrayRange>> rangesByTier = optimizedByteArrayRanges.stream()
+                        .collect(Collectors.groupingBy(x -> GeoWaveUtils.decodeTier(x.getStart())));
         for (Map.Entry<Integer,List<ByteArrayRange>> ranges : rangesByTier.entrySet()) {
             // union can introduce holes in the final geometry due to the level of precision used to
             // represent the geometries, so we need to ensure that we are only keeping the exterior ring
-            Geometry tierGeom = new GeometryFactory().createPolygon(((Polygon) ranges.getValue().stream().map(GeoWaveUtils::rangeToGeometry)
-                            .reduce(Geometry::union).get()).getExteriorRing().getCoordinates());
+            Geometry tierGeom = new GeometryFactory()
+                            .createPolygon(((Polygon) ranges.getValue().stream().map(GeoWaveUtils::rangeToGeometry).reduce(Geometry::union).get())
+                                            .getExteriorRing().getCoordinates());
             Assert.assertTrue(tierGeom.covers(geom));
         }
     }
@@ -94,8 +95,9 @@ public class GeoWaveUtilsTest {
         
         // union can introduce holes in the final geometry due to the level of precision used to
         // represent the geometries, so we need to ensure that we are only keeping the exterior ring
-        Geometry optimizedTierGeom = new GeometryFactory().createPolygon(((Polygon) optimizedByteArrayRanges.stream().map(GeoWaveUtils::rangeToGeometry)
-                        .reduce(Geometry::union).get()).getExteriorRing().getCoordinates());
+        Geometry optimizedTierGeom = new GeometryFactory()
+                        .createPolygon(((Polygon) optimizedByteArrayRanges.stream().map(GeoWaveUtils::rangeToGeometry).reduce(Geometry::union).get())
+                                        .getExteriorRing().getCoordinates());
         
         // ensure that the optimized range is covered by the unoptimized range
         Assert.assertTrue(tierGeom.covers(optimizedTierGeom));

@@ -38,9 +38,9 @@ public class DateIndexTableConfigHelper extends AbstractTableConfigHelper {
         }
         
         String localityGroupsConf = null;
-        localityGroupsConf = conf.get(LOCALITY_GROUPS, ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':'
-                        + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ',' + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
-                        + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
+        localityGroupsConf = conf.get(LOCALITY_GROUPS,
+                        ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':' + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ','
+                                        + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':' + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
         for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
             String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
             Set<Text> families = localityGroups.get(localityGroupDef[0]);

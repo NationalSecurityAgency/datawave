@@ -73,7 +73,7 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
             edges = new ArrayList<DefaultEdge>();
         edges.add((DefaultEdge) edge);
     }
-
+    
     @Override
     public void setEdges(List<EdgeBase> entries) {
         if (entries == null || entries.isEmpty()) {
@@ -86,7 +86,7 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
             this.edges = edges;
         }
     }
-
+    
     @Override
     public List<? extends EdgeBase> getEdges() {
         return Collections.unmodifiableList(edges);

@@ -30,7 +30,7 @@ public class JavaCharStream {
                 return 8;
             case '9':
                 return 9;
-                
+            
             case 'a':
             case 'A':
                 return 10;
@@ -392,7 +392,8 @@ public class JavaCharStream {
     
     public void ReInit(java.io.InputStream dstream, String encoding, int startline, int startcolumn, int buffersize)
                     throws java.io.UnsupportedEncodingException {
-        ReInit(encoding == null ? new java.io.InputStreamReader(dstream) : new java.io.InputStreamReader(dstream, encoding), startline, startcolumn, buffersize);
+        ReInit(encoding == null ? new java.io.InputStreamReader(dstream) : new java.io.InputStreamReader(dstream, encoding), startline, startcolumn,
+                        buffersize);
     }
     
     public void ReInit(java.io.InputStream dstream, int startline, int startcolumn, int buffersize) {

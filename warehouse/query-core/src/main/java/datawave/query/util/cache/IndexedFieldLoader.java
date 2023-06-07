@@ -167,8 +167,7 @@ public class IndexedFieldLoader extends AccumuloLoader<String,Set<String>> {
                     
                     return true;
                     
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
-                         NoSuchMethodException | InvocationTargetException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     log.error("Unable to find normalizer on class path: " + colq.substring(idx + 1), e);
                 }
                 

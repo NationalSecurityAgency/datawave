@@ -155,8 +155,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     
                     String clazz = options.get(TableConfigurationUtil.ITERATOR_CLASS_MARKER);
                     if (null == clazz) {
-                        throw new RuntimeException("Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + " "
-                                        + options.entrySet());
+                        throw new RuntimeException(
+                                        "Unable to instantiate combiner class. Config item 'iterclass' not present " + priority + " " + options.entrySet());
                     }
                     log.info("configuring iterator (combiner) " + clazz + " for table " + table);
                     
@@ -189,8 +189,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                         
                         list.add(mapping);
                         
-                    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException |
-                             NoSuchMethodException | InvocationTargetException e) {
+                    } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | IOException | NoSuchMethodException
+                                    | InvocationTargetException e) {
                         throw new RuntimeException("Unable to instantiate aggregator class for one of " + options + "for " + table + ": " + e.getMessage(), e);
                     }
                     
@@ -396,8 +396,7 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
                     
                     agg = clazz.getDeclaredConstructor().newInstance();
                     
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
-                         NoSuchMethodException | InvocationTargetException e) {
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
                     throw new RuntimeException(e);
                 }
                 
@@ -452,7 +451,8 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
             this.priority = priority;
         }
         
-        public CustomColumnToClassMapping(Integer priority, String className) throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
+        public CustomColumnToClassMapping(Integer priority, String className)
+                        throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
             super();
             
             Class<? extends Combiner> clazz = Class.forName(className).asSubclass(Combiner.class);
@@ -480,10 +480,10 @@ public abstract class AggregatingReducer<IK,IV,OK,OV> extends Reducer<IK,IV,OK,O
         }
         
         private static class StubbedIteratorEnvironment implements IteratorEnvironment {
-
+            
             // Need this ctor for testing, to overcome javassist.CannotCompileException issue on Java 11
             StubbedIteratorEnvironment() {}
-
+            
             @Override
             public AccumuloConfiguration getConfig() {
                 return null;

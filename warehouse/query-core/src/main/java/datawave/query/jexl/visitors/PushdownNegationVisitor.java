@@ -193,7 +193,7 @@ public class PushdownNegationVisitor extends BaseVisitor {
      *            the node to apply De Morgan's law to either an ASTAndNode or ASTOrNode, must not be null
      * @param negateRoot
      *            apply the negation of the parent here, or assume that will be done eventually elsewhere
-     *
+     *           
      * @return the replacement for root which was replaced, will always be an ASTNotNode
      */
     public static JexlNode applyDeMorgans(JexlNode root, boolean negateRoot) {

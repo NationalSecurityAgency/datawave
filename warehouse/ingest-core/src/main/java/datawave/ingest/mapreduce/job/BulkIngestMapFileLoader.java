@@ -294,8 +294,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             Observer o = (Observer) clazz.getDeclaredConstructor().newInstance();
                             jobObservers.add(o);
                         }
-                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
-                             InvocationTargetException e) {
+                    } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
                         log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
                         System.exit(-2);
                     } catch (ClassCastException e) {
@@ -372,8 +371,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
                     URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort) {
-        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf,
-                        shutdownPort, 1, Collections.emptyList());
+        this(workDir, jobDirPattern, instanceName, zooKeepers, user, passToken, seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, shutdownPort,
+                        1, Collections.emptyList());
     }
     
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
@@ -686,7 +685,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     
     private int getMajorCompactionCount() {
         int majC = 0;
-
+        
         ManagerClientService.Client client = null;
         ClientContext context = (ClientContext) accumuloClient;
         try {
@@ -1186,8 +1185,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
                             boolean flaggedExists = sourceFs.exists(new Path(file));
                             boolean loadedExists = sourceFs.exists(dst);
                             if (flaggedExists || !loadedExists) {
-                                throw new IOException("Unable to rename " + file + " (exists=" + flaggedExists + ") to " + dst + " (exists=" + loadedExists
-                                                + ")");
+                                throw new IOException(
+                                                "Unable to rename " + file + " (exists=" + flaggedExists + ") to " + dst + " (exists=" + loadedExists + ")");
                             } else {
                                 log.warn("File was already moved to loaded: " + dst);
                                 renamed = true;

@@ -92,7 +92,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
     }
     
     public Document(Key key, Set<Key> docKeys, boolean fromIndex, Iterator<Entry<Key,Value>> iter, TypeMetadata typeMetadata,
-                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter, boolean toKeep) {
+                    CompositeMetadata compositeMetadata, boolean includeGroupingContext, boolean keepRecordId, EventDataQueryFilter attrFilter,
+                    boolean toKeep) {
         this(key, docKeys, fromIndex, iter, typeMetadata, compositeMetadata, includeGroupingContext, keepRecordId, attrFilter, toKeep, true);
     }
     
@@ -165,8 +166,8 @@ public class Document extends AttributeBag<Document> implements Serializable {
         Iterator<Entry<Key,String>> extractedFieldNames = Iterators.transform(iter, new KeyToFieldName(includeGroupingContext));
         
         // Transform the remaining entries back into Attributes
-        Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames, new ValueToAttributes(
-                        compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
+        Iterator<Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> attributes = Iterators.transform(extractedFieldNames,
+                        new ValueToAttributes(compositeMetadata, typeMetadata, attrFilter, MarkingFunctions.Factory.createMarkingFunctions(), fromIndex));
         
         // Add all of the String=>Attribute pairs to this Document
         while (attributes.hasNext()) {

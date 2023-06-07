@@ -281,8 +281,8 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         }
         
         BulkInputFormat.setZooKeeperInstance(job.getConfiguration(), this.instanceName, this.zookeepers);
-        Iterator<Authorizations> authsIter = (runtimeQueryAuthorizations == null || runtimeQueryAuthorizations.isEmpty()) ? null : runtimeQueryAuthorizations
-                        .iterator();
+        Iterator<Authorizations> authsIter = (runtimeQueryAuthorizations == null || runtimeQueryAuthorizations.isEmpty()) ? null
+                        : runtimeQueryAuthorizations.iterator();
         Authorizations auths = (authsIter == null) ? null : authsIter.next();
         BulkInputFormat.setInputInfo(job, this.user, this.password.getBytes(), logic.getTableName(), auths);
         for (int priority = 10; authsIter != null && authsIter.hasNext(); ++priority) {
@@ -296,8 +296,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_IMPL_CLASS, queryImplClass.getName());
         job.getConfiguration().set(BulkResultsFileOutputMapper.QUERY_LOGIC_NAME, logic.getLogicName());
         
-        job.getConfiguration().set(
-                        BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
+        job.getConfiguration().set(BulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
                         "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml," + "classpath*:datawave/query/*QueryLogicFactory.xml,"
                                         + "classpath*:/MarkingFunctionsContext.xml," + "classpath*:/MetadataHelperContext.xml,"
                                         + "classpath*:/CacheContext.xml");
@@ -347,11 +346,11 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             
             // Merge user auths with the auths that they use in the Query
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
-                            (DatawavePrincipal) principal);
+            DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
+                            : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
-                            .getRemoteUser((DatawavePrincipal) principal);
+            DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
+                            : userOperations.getRemoteUser((DatawavePrincipal) principal);
             Set<Authorizations> runtimeQueryAuthorizations = AuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), overallPrincipal,
                             queryPrincipal);
             

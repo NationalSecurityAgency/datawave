@@ -124,7 +124,8 @@ public class StatsLinksEdgeCombiner extends WrappingIterator implements OptionDe
     }
     
     private static boolean startsWith(final Text workColumnFamily2, final Text statsLinks) {
-        return (WritableComparator.compareBytes(workColumnFamily2.getBytes(), 0, statsLinks.getLength(), statsLinks.getBytes(), 0, statsLinks.getLength()) == 0);
+        return (WritableComparator.compareBytes(workColumnFamily2.getBytes(), 0, statsLinks.getLength(), statsLinks.getBytes(), 0,
+                        statsLinks.getLength()) == 0);
     }
     
     @Override

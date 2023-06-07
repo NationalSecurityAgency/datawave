@@ -32,8 +32,8 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     }
     
     // add the EdgeMetadataCombiner to the edge column
-    private String setCombinerForEdgeMetadata(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException,
-                    TableNotFoundException {
+    private String setCombinerForEdgeMetadata(TableOperations tops, String scopeName)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "EdgeMetadataCombiner");
         setPropertyIfNecessary(tableName, stem, "19,datawave.iterators.EdgeMetadataCombiner", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_EDGE.toString(), tops, log);
@@ -41,8 +41,8 @@ public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
     }
     
     // add the CountMetadataCombiner to the count column
-    private String setCombinerForCountMetadata(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException,
-                    TableNotFoundException {
+    private String setCombinerForCountMetadata(TableOperations tops, String scopeName)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "CountMetadataCombiner");
         setPropertyIfNecessary(tableName, stem, "15,datawave.iterators.CountMetadataCombiner", tops, log);
         setPropertyIfNecessary(tableName, stem + ".opt.columns", ColumnFamilyConstants.COLF_COUNT.toString(), tops, log);

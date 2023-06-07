@@ -84,7 +84,7 @@ public class MetadataHelperUpdateHdfsListener {
     private String resolvePassword(String password) {
         return EnvProvider.resolve(password);
     }
-
+    
     private void registerCacheListener(final String metadataTableName) {
         if (log.isDebugEnabled())
             log.debug("table:" + metadataTableName + " created UpdateHdfs listener for table:" + metadataTableName);
@@ -161,10 +161,7 @@ public class MetadataHelperUpdateHdfsListener {
                         watcher.setTriState(triStateName, SharedTriState.STATE.UPDATED);
                     } else {
                         if (log.isDebugEnabled()) {
-                            log.debug("table:"
-                                            + metadataTableName
-                                            + " "
-                                            + this
+                            log.debug("table:" + metadataTableName + " " + this
                                             + "  STATE is not NEEDS_UPDATE! Someone else may be writing or has already written the TypeMetadata map, just release the lock");
                         }
                     }

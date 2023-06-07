@@ -56,8 +56,8 @@ public class FacetCheck extends AllTermsIndexedVisitor {
             fieldName = JexlASTHelper.getIdentifier(node);
         } catch (NoSuchElementException e) {
             // We only have literals
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.EQUALS_NODE_TWO_LITERALS, e, MessageFormat.format(
-                            "Node: {0}", PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.EQUALS_NODE_TWO_LITERALS, e,
+                            MessageFormat.format("Node: {0}", PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
         
@@ -66,8 +66,8 @@ public class FacetCheck extends AllTermsIndexedVisitor {
         }
         
         if (!facetMultimap.containsKey(fieldName)) {
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_NOT_INDEXED, MessageFormat.format(
-                            "Fieldname: {0}", fieldName));
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_NOT_INDEXED,
+                            MessageFormat.format("Fieldname: {0}", fieldName));
             throw new InvalidFieldIndexQueryFatalQueryException(qe);
         }
         

@@ -42,8 +42,8 @@ import org.slf4j.LoggerFactory;
  * Per the JSR-356 specification (section 2.1.1), since we have not configured the endpoint otherwise, there shall be one instance of this class per endpoint,
  * per peer.
  * <p>
- * <strong>NOTE: </strong> This uses vendor-specific security extensions to work around a websocket specification hole. See <a
- * href="https://java.net/jira/browse/WEBSOCKET_SPEC-238">WEBSOCKET_SPEC-238</a> for more details.
+ * <strong>NOTE: </strong> This uses vendor-specific security extensions to work around a websocket specification hole. See
+ * <a href="https://java.net/jira/browse/WEBSOCKET_SPEC-238">WEBSOCKET_SPEC-238</a> for more details.
  */
 @ServerEndpoint(value = "/{logic-name}", encoders = {QueryResponseMessageJsonEncoder.class}, decoders = {JsonQueryMessageDecoder.class},
                 configurator = WebsocketSecurityConfigurator.class // required to propagate security along to individual websocket notification calls

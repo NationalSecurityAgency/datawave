@@ -128,17 +128,14 @@ public abstract class ShardQueryLogicTest {
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @AfterClass
@@ -157,8 +154,8 @@ public abstract class ShardQueryLogicTest {
     protected abstract void runTestQuery(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                     throws Exception;
     
-    protected void runTestQuery(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient connector)
-                    throws Exception {
+    protected void runTestQuery(Set<Set<String>> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms,
+                    AccumuloClient connector) throws Exception {
         log.debug("runTestQuery");
         
         QueryImpl settings = new QueryImpl();

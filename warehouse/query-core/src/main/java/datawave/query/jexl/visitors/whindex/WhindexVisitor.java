@@ -298,7 +298,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         // this shouldn't ever really happen, but it could
         if (node.jjtGetNumChildren() == 1)
             return super.visit(node, data);
-        
+            
         // first, find all leaf nodes
         // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
         List<JexlNode> nonLeafNodes = new ArrayList<>();
@@ -359,8 +359,8 @@ public class WhindexVisitor extends RebuildingVisitor {
                         List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
                         
                         // remove all of the child leaf nodes converted to whindex nodes. they still belong to this AND node, and don't need to be distributed
-                        leafNodesToDistribute.removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode()))
-                                        .collect(Collectors.toList()));
+                        leafNodesToDistribute
+                                        .removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode())).collect(Collectors.toList()));
                         
                         rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap,
                                         fieldValueMappings);
@@ -531,8 +531,8 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(
-                        Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node)
+                        .isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -542,8 +542,8 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(
-                        Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node)
+                        .isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -773,8 +773,8 @@ public class WhindexVisitor extends RebuildingVisitor {
                     remainingAndedNodes.entries().stream().filter(x -> requiredFields.contains(x.getKey())).forEach(mappedFieldMatches::add);
                     
                     for (Map.Entry<String,JexlNode> mappedFieldMatch : mappedFieldMatches) {
-                        whindexTerms.add(new WhindexTerm(leafEntry.getValue(), mappedFieldMatch.getValue(), valueSpecificFieldMappings.get(value).get(
-                                        mappedFieldMatch.getKey())));
+                        whindexTerms.add(new WhindexTerm(leafEntry.getValue(), mappedFieldMatch.getValue(),
+                                        valueSpecificFieldMappings.get(value).get(mappedFieldMatch.getKey())));
                         
                         if (leafNodes.containsEntry(mappedFieldMatch.getKey(), mappedFieldMatch.getValue())) {
                             remainingLeafNodes.remove(mappedFieldMatch.getKey(), mappedFieldMatch.getValue());
@@ -802,8 +802,8 @@ public class WhindexVisitor extends RebuildingVisitor {
                     if (value != null) {
                         value = value.toLowerCase();
                         
-                        whindexTerms.add(new WhindexTerm(fieldValueMatch.getValue(), leafEntry.getValue(), valueSpecificFieldMappings.get(value).get(
-                                        leafEntry.getKey())));
+                        whindexTerms.add(new WhindexTerm(fieldValueMatch.getValue(), leafEntry.getValue(),
+                                        valueSpecificFieldMappings.get(value).get(leafEntry.getKey())));
                         
                         if (leafNodes.containsEntry(fieldValueMatch.getKey(), fieldValueMatch.getValue())) {
                             remainingLeafNodes.remove(fieldValueMatch.getKey(), fieldValueMatch.getValue());

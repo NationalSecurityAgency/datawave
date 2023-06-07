@@ -119,16 +119,14 @@ public abstract class RemoteHttpService {
         log.info("Executing " + request.getClass().getSimpleName() + " against " + request.getURI());
         try {
             activeExecutions.incrementAndGet();
-            return client.execute(
-                            request,
-                            r -> {
-                                if (r.getStatusLine().getStatusCode() >= 300) {
-                                    throw new ClientProtocolException("Unable to " + errorSupplier.get() + ": " + r.getStatusLine() + " "
-                                                    + EntityUtils.toString(r.getEntity()));
-                                } else {
-                                    return resultConverter.apply(r.getEntity());
-                                }
-                            });
+            return client.execute(request, r -> {
+                if (r.getStatusLine().getStatusCode() >= 300) {
+                    throw new ClientProtocolException(
+                                    "Unable to " + errorSupplier.get() + ": " + r.getStatusLine() + " " + EntityUtils.toString(r.getEntity()));
+                } else {
+                    return resultConverter.apply(r.getEntity());
+                }
+            });
         } finally {
             activeExecutions.decrementAndGet();
         }
@@ -271,8 +269,8 @@ public abstract class RemoteHttpService {
         return executePostMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
     }
     
-    protected <T> T executePostMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
-                    IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws URISyntaxException, IOException {
+    protected <T> T executePostMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer, IOFunction<T> resultConverter,
+                    Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         URIBuilder builder = buildURI();
         builder.setPath(serviceURI() + uriSuffix);
         uriCustomizer.accept(builder);
@@ -600,8 +598,8 @@ public abstract class RemoteHttpService {
         @Override
         public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
             // Note that a 404 can happen during service startup, so we want to retry.
-            boolean shouldRetry = executionCount <= maxRetries
-                            && (response.getStatusLine().getStatusCode() == HttpStatus.SC_SERVICE_UNAVAILABLE || response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND);
+            boolean shouldRetry = executionCount <= maxRetries && (response.getStatusLine().getStatusCode() == HttpStatus.SC_SERVICE_UNAVAILABLE
+                            || response.getStatusLine().getStatusCode() == HttpStatus.SC_NOT_FOUND);
             if (shouldRetry) {
                 retryCounter.inc();
             }

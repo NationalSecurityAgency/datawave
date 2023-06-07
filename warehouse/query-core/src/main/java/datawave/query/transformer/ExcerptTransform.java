@@ -146,8 +146,8 @@ public class ExcerptTransform extends DocumentTransform.DefaultDocumentTransform
         String eventId = keyToEventId(docKey);
         
         // get the key at which we would find the term frequencies
-        Key tfKey = new Key(docKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(), docKey.getColumnFamily().toString() + '\u0000'
-                        + hitTuple.getValue() + '\u0000' + hitTuple.getFieldName());
+        Key tfKey = new Key(docKey.getRow().toString(), Constants.TERM_FREQUENCY_COLUMN_FAMILY.toString(),
+                        docKey.getColumnFamily().toString() + '\u0000' + hitTuple.getValue() + '\u0000' + hitTuple.getFieldName());
         Range range = new Range(tfKey, tfKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL));
         try {
             // seek directly to that key

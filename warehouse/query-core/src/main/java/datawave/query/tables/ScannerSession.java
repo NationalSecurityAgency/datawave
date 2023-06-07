@@ -290,7 +290,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
             // until we've completed the start process
             if (null != stats)
                 initializeTimers();
-            
+                
             // these two guava methods replaced behavior of startAndWait() from version 15 but
             // will now throw an exception if another thread closes the session so catch and ignore
             startAsync();
@@ -417,7 +417,7 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
      * 
      * @throws Exception
      *             if there are issues
-     * 
+     *             
      */
     protected void findTop() throws Exception {
         if (ranges.isEmpty() && lastSeenKey == null) {
@@ -467,8 +467,8 @@ public class ScannerSession extends AbstractExecutionThreadService implements It
                 log.trace(lastSeenKey + ", using current range of " + currentRange);
             }
             
-            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange).setOptions(
-                            options);
+            delegatedResource = ResourceFactory.initializeResource(delegatedResourceInitializer, delegatedResource, tableName, auths, currentRange)
+                            .setOptions(options);
             
             Iterator<Entry<Key,Value>> iter = delegatedResource.iterator();
             

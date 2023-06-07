@@ -68,8 +68,8 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         String pass = conf.get(MetricsConfig.PASS);
         client = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).build();
         try {
-            writer = client.createBatchWriter(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE), new BatchWriterConfig()
-                            .setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L).setMaxWriteThreads(11));
+            writer = client.createBatchWriter(conf.get(MetricsConfig.METRICS_TABLE, MetricsConfig.DEFAULT_METRICS_TABLE),
+                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L).setMaxWriteThreads(11));
         } catch (TableNotFoundException e) {
             writer = null;
         }
@@ -81,8 +81,8 @@ public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
         warehouseClient = Accumulo.newClient().to(instance, zooKeepers).as(user, pass).build();
         try {
             
-            warehouseWriter = client.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE), new BatchWriterConfig()
-                            .setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L * 1024L).setMaxWriteThreads(11));
+            warehouseWriter = client.createBatchWriter(conf.get(MetricsConfig.ERRORS_TABLE, MetricsConfig.DEFAULT_ERRORS_TABLE),
+                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(128L * 1024L * 1024L).setMaxWriteThreads(11));
         } catch (TableNotFoundException e) {
             warehouseWriter = null;
         }

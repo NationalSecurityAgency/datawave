@@ -101,8 +101,8 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
         String[] parts = StringUtils.split(term, '/');
         
         if (parts.length != 3) {
-            throw new IllegalArgumentException("Query does not specify all necessary parts: " + settings.getQuery()
-                            + ". Should be of the form 'DOCUMENT:shardId/datatype/uid'.");
+            throw new IllegalArgumentException(
+                            "Query does not specify all necessary parts: " + settings.getQuery() + ". Should be of the form 'DOCUMENT:shardId/datatype/uid'.");
         } else {
             String shardId = parts[0];
             String datatype = parts[1];
@@ -138,8 +138,8 @@ public class TermFrequencyQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
         TermFrequencyQueryConfiguration tfConfig = (TermFrequencyQueryConfiguration) configuration;
         
         try {
-            Scanner scanner = QueryScannerHelper
-                            .createScanner(tfConfig.getClient(), tfConfig.getTableName(), tfConfig.getAuthorizations(), tfConfig.getQuery());
+            Scanner scanner = QueryScannerHelper.createScanner(tfConfig.getClient(), tfConfig.getTableName(), tfConfig.getAuthorizations(),
+                            tfConfig.getQuery());
             scanner.setRange(tfConfig.getRange());
             
             this.iterator = scanner.iterator();

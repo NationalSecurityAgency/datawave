@@ -102,8 +102,8 @@ public class ShardKeyFunctor implements KeyFunctor {
         byte[] cf = cbKey.getColumnFamilyData().getBackingArray();
         // if we have a column family with the field name and a column qualifier with the field value, then
         // we can use the bloom filter for this key
-        return (cf.length > 3 && cf[0] == FIELD_INDEX_PREFIX[0] && cf[1] == FIELD_INDEX_PREFIX[1] && cf[2] == FIELD_INDEX_PREFIX[2] && cbKey
-                        .getColumnQualifierData().length() > 0);
+        return (cf.length > 3 && cf[0] == FIELD_INDEX_PREFIX[0] && cf[1] == FIELD_INDEX_PREFIX[1] && cf[2] == FIELD_INDEX_PREFIX[2]
+                        && cbKey.getColumnQualifierData().length() > 0);
     }
     
     /**

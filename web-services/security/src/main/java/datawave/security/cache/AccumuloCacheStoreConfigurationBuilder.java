@@ -18,8 +18,8 @@ import org.infinispan.commons.configuration.Builder;
 import org.infinispan.configuration.cache.AbstractStoreConfigurationBuilder;
 import org.infinispan.configuration.cache.PersistenceConfigurationBuilder;
 
-public class AccumuloCacheStoreConfigurationBuilder extends
-                AbstractStoreConfigurationBuilder<AccumuloCacheStoreConfiguration,AccumuloCacheStoreConfigurationBuilder> {
+public class AccumuloCacheStoreConfigurationBuilder
+                extends AbstractStoreConfigurationBuilder<AccumuloCacheStoreConfiguration,AccumuloCacheStoreConfigurationBuilder> {
     
     public AccumuloCacheStoreConfigurationBuilder(PersistenceConfigurationBuilder builder) {
         super(builder, AccumuloCacheStoreConfiguration.attributeDefinitionSet());

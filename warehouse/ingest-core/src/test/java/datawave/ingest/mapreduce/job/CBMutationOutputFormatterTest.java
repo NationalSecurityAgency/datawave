@@ -32,12 +32,10 @@ public class CBMutationOutputFormatterTest {
     protected static final Logger logger = Logger.getLogger(CBMutationOutputFormatterTest.class);
     
     protected Level testDriverLevel;
-
+    
     @Rule
-    public TestLogCollector logCollector = new TestLogCollector.Builder()
-            .with(CBMutationOutputFormatter.class, Level.ALL)
-            .with(AccumuloOutputFormat.class, Level.ALL)
-            .with(AccumuloRecordWriter.class, Level.ALL).build();
+    public TestLogCollector logCollector = new TestLogCollector.Builder().with(CBMutationOutputFormatter.class, Level.ALL)
+                    .with(AccumuloOutputFormat.class, Level.ALL).with(AccumuloRecordWriter.class, Level.ALL).build();
     
     protected boolean processOutputContains(List<String> output, String message) {
         boolean results = false;

@@ -129,17 +129,14 @@ public abstract class HitsAreAlwaysIncludedTest {
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @AfterClass
@@ -634,7 +631,7 @@ public abstract class HitsAreAlwaysIncludedTest {
         
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
     }
-
+    
     @Test
     public void testGroupedHitsWithMatchingFields() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
@@ -644,9 +641,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         extraParameters.put("matching.field.sets", "FOO_4=BAR_1");
         logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
-
+        
         String queryString = "FOO_3_BAR == 'abcd<cat>'";
-
+        
         //@formatter:off
         Set<String> goodResults = Sets.newHashSet(
                 // the hit and associated fields in the same group
@@ -672,10 +669,10 @@ public abstract class HitsAreAlwaysIncludedTest {
                 "BAR_3.BAR.3.3:spotted");
         //@formatter:on
         Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.0:abcd<cat>");
-
+        
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
     }
-
+    
     @Test
     public void testGroupedHitsWithMoreMatchingFields() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
@@ -685,9 +682,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         extraParameters.put("matching.field.sets", "FOO_4=BAR_1=FOO_1");
         logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
-
+        
         String queryString = "FOO_3_BAR == 'abcd<cat>'";
-
+        
         //@formatter:off
         Set<String> goodResults = Sets.newHashSet(
                 // the hit and associated fields in the same group
@@ -716,10 +713,10 @@ public abstract class HitsAreAlwaysIncludedTest {
                 "BAR_3.BAR.3.3:spotted");
         //@formatter:on
         Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.0:abcd<cat>");
-
+        
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
     }
-
+    
     @Test
     public void testGroupedHitsWithMatchingFieldSets() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
@@ -729,9 +726,9 @@ public abstract class HitsAreAlwaysIncludedTest {
         extraParameters.put("matching.field.sets", "FOO_4=BAR_1,FOO_1=BAR_1");
         logic.setMaxOrExpansionThreshold(1);
         ivaratorConfig();
-
+        
         String queryString = "FOO_3_BAR == 'abcd<cat>'";
-
+        
         //@formatter:off
         Set<String> goodResults = Sets.newHashSet(
                 // the hit and associated fields in the same group
@@ -760,10 +757,10 @@ public abstract class HitsAreAlwaysIncludedTest {
                 "BAR_3.BAR.3.3:spotted");
         //@formatter:on
         Set<String> expectedHits = Sets.newHashSet("FOO_3_BAR.FOO.0:abcd<cat>");
-
+        
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, expectedHits, goodResults);
     }
-
+    
     protected void ivaratorConfig() throws IOException {
         final URL hdfsConfig = this.getClass().getResource("/testhadoop.config");
         Assert.assertNotNull(hdfsConfig);

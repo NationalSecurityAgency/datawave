@@ -416,7 +416,7 @@ public class VisibilityWiseGuysIngest {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-
+    
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

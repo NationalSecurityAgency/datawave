@@ -174,8 +174,8 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         Assert.assertEquals(3, countCacheEntries());
         
         // call with different auths, there should be one more map entry in the cache
-        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(new Authorizations("Z")),
-                        2, 0.9f);
+        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(new Authorizations("Z")), 2,
+                        0.9f);
         helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
         Assert.assertEquals(4, countCacheEntries());
         

@@ -41,16 +41,13 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     public EdgeQueryLogic runLogic(QueryImpl q, Set<Authorizations> auths) throws Exception {
@@ -450,8 +447,9 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     @Test
     public void testComplexQuery2() throws Exception {
         
-        QueryImpl q = configQuery("(SOURCE == 'EARTH' || SOURCE == 'SUN' || SOURCE == 'ASTEROID_BELT') &&"
-                        + " (SINK == 'MARS' || SINK == 'MOON' || SINK == 'JUPITER')", auths);
+        QueryImpl q = configQuery(
+                        "(SOURCE == 'EARTH' || SOURCE == 'SUN' || SOURCE == 'ASTEROID_BELT') &&" + " (SINK == 'MARS' || SINK == 'MOON' || SINK == 'JUPITER')",
+                        auths);
         
         EdgeQueryLogic logic = runLogic(q, auths);
         
@@ -485,7 +483,8 @@ public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {
     public void testComplexQuery4() throws Exception {
         QueryImpl q = configQuery(
                         "(SOURCE == 'MARS' && SINK == 'JUPITER' && ATTRIBUTE1 == 'COSMOS_DATA-COSMOS_DATA' && ((TYPE == 'AdjacentPlanets' && RELATION == 'FROM-TO') || "
-                                        + "(TYPE == 'AdjacentPlanets' && RELATION == 'TO-FROM' )))", auths);
+                                        + "(TYPE == 'AdjacentPlanets' && RELATION == 'TO-FROM' )))",
+                        auths);
         
         EdgeQueryLogic logic = runLogic(q, auths);
         

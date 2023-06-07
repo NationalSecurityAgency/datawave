@@ -61,7 +61,7 @@ public class CompositeQueryLogicTest {
     private final DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Other User Name ouser, OU=acme", "CN=ca, OU=acme"), UserType.USER,
                     Arrays.asList("auth1", "auth2"), Collections.singleton("TESTROLE"), HashMultimap.create(), 0L);
     private final DatawavePrincipal principal = new DatawavePrincipal(Collections.singletonList(user));
-
+    
     private Key key1 = new Key("one", "", "", "auth1");
     private Key key2 = new Key("two", "", "", "auth1");
     private Key key3 = new Key("three", "", "", "auth2");
@@ -83,7 +83,7 @@ public class CompositeQueryLogicTest {
     private Value value8 = new Value(key8.getRowData().getBackingArray());
     private Value valueFailure = new Value(keyFailure.getRowData().getBackingArray());
     private Value valueSpecial = new Value(keySpecial.getRowData().getBackingArray());
-
+    
     public static class TestQueryConfiguration extends GenericQueryConfiguration {
         
     }
@@ -121,12 +121,12 @@ public class CompositeQueryLogicTest {
         public void addEdge(EdgeBase edge) {
             edges.add(edge);
         }
-
+        
         @Override
         public void setEdges(List<EdgeBase> edges) {
             this.edges = new ArrayList<>(edges);
         }
-
+        
         @Override
         public List<? extends EdgeBase> getEdges() {
             return Collections.unmodifiableList(edges);
@@ -242,20 +242,20 @@ public class CompositeQueryLogicTest {
         
         private final UserOperations userOperations;
         private Set<Authorizations> auths;
-
+        
         public TestQueryLogic() {
             this(null);
         }
-
+        
         public TestQueryLogic(UserOperations userOperations) {
             this.userOperations = userOperations;
         }
-
+        
         @Override
         public UserOperations getUserOperations() {
             return userOperations;
         }
-
+        
         @Override
         public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             this.auths = runtimeQueryAuthorizations;
@@ -282,7 +282,7 @@ public class CompositeQueryLogicTest {
         public Iterator<Entry<Key,Value>> iterator() {
             return data.entrySet().stream().filter(e -> checkAuths(e.getKey().getColumnVisibilityParsed())).iterator();
         }
-
+        
         private boolean checkAuths(ColumnVisibility vis) {
             return auths.stream().allMatch(a -> {
                 try {
@@ -335,7 +335,7 @@ public class CompositeQueryLogicTest {
     }
     
     public static class TestUserOperations implements UserOperations {
-
+        
         @Override
         public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
             DatawavePrincipal p = (DatawavePrincipal) callerObject;
@@ -350,13 +350,13 @@ public class CompositeQueryLogicTest {
             }
             return authList;
         }
-
+        
         @Override
         public GenericResponse<String> flushCachedCredentials(Object callerObject) {
             return new GenericResponse<>();
         }
     }
-
+    
     public static class TestQueryLogic2 extends TestQueryLogic {
         private Map<Key,Value> data = new ConcurrentHashMap<>();
         
@@ -489,7 +489,7 @@ public class CompositeQueryLogicTest {
         c.setPrincipal(principal);
         c.initialize(null, settings, Collections.singleton(auths));
         c.getTransformer(settings);
-
+        
         Assert.assertEquals(2, c.getQueryLogics().size());
     }
     
@@ -524,7 +524,7 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
         
         c.getTransformer(settings);
-
+        
         Assert.assertEquals(2, c.getQueryLogics().size());
     }
     
@@ -549,7 +549,7 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
         
         c.getTransformer(settings);
-
+        
         Assert.assertEquals(2, c.getQueryLogics().size());
     }
     
@@ -560,18 +560,19 @@ public class CompositeQueryLogicTest {
         logics.put("TestQueryLogic", new TestQueryLogic());
         logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
-            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
                 throw new Exception("initialize failed");
             }
         });
-
+        
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
         settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
         
@@ -580,7 +581,7 @@ public class CompositeQueryLogicTest {
         
         Assert.assertEquals(1, c.getQueryLogics().size());
     }
-
+    
     @Test(expected = CompositeLogicException.class)
     public void testInitializeNotOKWithFailure() throws Exception {
         
@@ -588,93 +589,98 @@ public class CompositeQueryLogicTest {
         logics.put("TestQueryLogic", new TestQueryLogic());
         logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
-            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
                 throw new Exception("initialize failed");
             }
         });
-
+        
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
         settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
-
+        
         c.setPrincipal(principal);
         c.initialize(null, settings, Collections.singleton(auths));
     }
-
+    
     @Test(expected = CompositeLogicException.class)
     public void testInitializeAllFail() throws Exception {
         
         Map<String,QueryLogic<?>> logics = new HashMap<>();
         logics.put("TestQueryLogic", new TestQueryLogic() {
             @Override
-            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
                 throw new Exception("initialize failed");
             }
         });
         
         logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
-            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
                 throw new Exception("initialize failed");
             }
         });
-
+        
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
         settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
-
+        
         c.setPrincipal(principal);
         c.initialize(null, settings, Collections.singleton(auths));
     }
-
+    
     @Test(expected = CompositeLogicException.class)
     public void testInitializeAllFail2() throws Exception {
         
         Map<String,QueryLogic<?>> logics = new HashMap<>();
         logics.put("TestQueryLogic", new TestQueryLogic() {
             @Override
-            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
                 throw new Exception("initialize failed");
             }
         });
         
         logics.put("TestQueryLogic2", new TestQueryLogic2() {
             @Override
-            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
+            public GenericQueryConfiguration initialize(AccumuloClient connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations)
+                            throws Exception {
                 throw new Exception("initialize failed");
             }
         });
-
+        
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
         settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setAllMustInitialize(true);
         c.setQueryLogics(logics);
-
+        
         c.setPrincipal(principal);
         c.initialize(null, settings, Collections.singleton(auths));
-
+        
         c.getTransformer(settings);
     }
-
+    
     @Test(expected = RuntimeException.class)
     public void testInitializeWithDifferentResponseTypes() throws Exception {
         
@@ -691,10 +697,10 @@ public class CompositeQueryLogicTest {
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
-
+        
         c.setPrincipal(principal);
         c.initialize(null, settings, Collections.singleton(auths));
-
+        
         c.getTransformer(settings);
     }
     
@@ -714,12 +720,12 @@ public class CompositeQueryLogicTest {
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
-
+        
         c.setPrincipal(principal);
         c.initialize(null, settings, Collections.singleton(auths));
-
+        
         c.getTransformer(settings);
-
+        
         c.close();
     }
     
@@ -803,14 +809,14 @@ public class CompositeQueryLogicTest {
         logic1.getData().put(key6, value6);
         logic2.getData().put(keyFailure, new Value("Failure forced here"));
         logic2.getData().put(key8, value8);
-
+        
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
         settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         // max.results.override is set to -1 when it is not passed in as it is an optional paramter
         logic1.setMaxResults(-1);
@@ -823,7 +829,7 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
-
+        
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
@@ -836,7 +842,7 @@ public class CompositeQueryLogicTest {
             results.add((TestQueryResponse) o);
         }
     }
-
+    
     @Test
     // testQueryLogic with max.results.override is set
     public void testQueryLogicWithMaxResultsOverride() throws Exception {
@@ -1144,7 +1150,7 @@ public class CompositeQueryLogicTest {
         Assert.assertEquals(0, c.getQueryLogics().size());
         
     }
-
+    
     @Test
     public void testAuthorizationsUpdate() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();
@@ -1152,13 +1158,13 @@ public class CompositeQueryLogicTest {
         TestQueryLogic2 logic2 = new TestQueryLogic2();
         logics.put("TestQueryLogic", logic1);
         logics.put("TestQueryLogic2", logic2);
-
+        
         // logic 1 user opts only has the special auth returned by the TestUserOperations()
         logic1.getData().put(keySpecial, valueSpecial);
         // hence these 2 keys will not be returned
         logic1.getData().put(key1, value1);
         logic1.getData().put(key2, value2);
-
+        
         // logic 1 should return all of these
         logic2.getData().put(key3, value3);
         logic2.getData().put(key4, value4);
@@ -1166,14 +1172,14 @@ public class CompositeQueryLogicTest {
         logic2.getData().put(key6, value6);
         logic2.getData().put(key7, value7);
         logic2.getData().put(key8, value8);
-
+        
         QueryImpl settings = new QueryImpl();
         settings.setPagesize(100);
         settings.setQueryAuthorizations(auths.toString());
         settings.setQuery("FOO == 'BAR'");
         settings.setParameters(new HashSet<>());
         settings.setId(UUID.randomUUID());
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         // max.results.override is set to -1 when it is not passed in as it is an optional paramter
         logic1.setMaxResults(-1);
@@ -1186,7 +1192,7 @@ public class CompositeQueryLogicTest {
         c.initialize(null, settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator(settings);
-
+        
         /**
          * RunningQuery.next() - iterate over results coming from tablet server through the TransformIterator to turn them into the objects.
          */
@@ -1200,7 +1206,7 @@ public class CompositeQueryLogicTest {
         }
         Assert.assertEquals(7, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
-
+        
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
@@ -1209,8 +1215,8 @@ public class CompositeQueryLogicTest {
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
         }
-
+        
         c.close();
     }
-
+    
 }

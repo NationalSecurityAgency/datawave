@@ -83,8 +83,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
                 try {
                     return buildIndexLookup(node, true, false, () -> createLookup(range));
                 } catch (IllegalRangeArgumentException e) {
-                    log.error("Cannot expand ["
-                                    + JexlStringBuildingVisitor.buildQuery(node)
+                    log.error("Cannot expand [" + JexlStringBuildingVisitor.buildQuery(node)
                                     + "] because it creates an invalid Accumulo Range. This is likely due to bad user input or failed normalization. This range will be ignored.",
                                     e);
                 }
@@ -103,7 +102,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
         
-        futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode,
-                        fieldsToTerms, expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
+        futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
+                        expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
     }
 }

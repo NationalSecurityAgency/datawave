@@ -132,7 +132,7 @@ public abstract class AbstractNGramTokenizationStrategy {
      * @param maxNGramLength
      *            Maximum length of tokenized n-grams
      * @return The number of tokenized n-grams, or a negative integer indicating that tokenization did not occur
-     * 
+     *            
      * @throws TokenizationException
      *             for issues with tokenization
      */

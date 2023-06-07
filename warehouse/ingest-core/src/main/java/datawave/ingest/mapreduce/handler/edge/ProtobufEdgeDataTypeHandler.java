@@ -911,8 +911,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     protected void registerEventMetadata(Map<Key,Set<Metadata>> eventMetadataRegistry, String enrichmentFieldName, EdgeDataBundle edgeValue,
                     String jexlPrecondition) {
         // add to the eventMetadataRegistry map
-        Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(), edgeValue
-                        .getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
+        Key baseKey = createMetadataEdgeKey(edgeValue, edgeValue.getSource(), edgeValue.getSource().getIndexedFieldValue(), edgeValue.getSink(),
+                        edgeValue.getSink().getIndexedFieldValue(), this.getVisibility(edgeValue));
         
         Key fwdMetaKey = EdgeKey.getMetadataKey(baseKey);
         Key revMetaKey = EdgeKey.getMetadataKey(EdgeKey.swapSourceSink(EdgeKey.decode(baseKey)).encode());
@@ -957,8 +957,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     }
     
     protected void writeMetadataMap(TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
-                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, Map<Key,Set<Metadata>> metadataRegistry, String tableName) throws IOException,
-                    InterruptedException {
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, Map<Key,Set<Metadata>> metadataRegistry, String tableName)
+                    throws IOException, InterruptedException {
         for (Entry<Key,Set<Metadata>> entry : metadataRegistry.entrySet()) {
             Key metaKey = entry.getKey();
             MetadataValue.Builder valueBuilder = MetadataValue.newBuilder();
@@ -1015,8 +1015,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
      * This part makes the determination as to what type of edge key to build
      */
     protected long writeEdges(EdgeDataBundle value, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
-                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long eventDate) throws IOException,
-                    InterruptedException {
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, boolean validActivtyDate, boolean sameActivityDate, long eventDate)
+                    throws IOException, InterruptedException {
         
         long edgesCreated = 0;
         if (eventDate < newFormatStartDate) {
@@ -1094,14 +1094,14 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         if (value.requiresMasking()) {
             Text maskedVisibility = new Text(flatten(value.getMaskedVisibility()));
             
-            Key maskedKey = createEdgeKey(value, value.getSource(), value.getSource().getMaskedValue(ValueType.INDEXED), value.getSink(), value.getSink()
-                            .getMaskedValue(ValueType.INDEXED), maskedVisibility, date_type);
+            Key maskedKey = createEdgeKey(value, value.getSource(), value.getSource().getMaskedValue(ValueType.INDEXED), value.getSink(),
+                            value.getSink().getMaskedValue(ValueType.INDEXED), maskedVisibility, date_type);
             counter += writeKey(maskedKey, value.getEdgeValue(true, date_type), context, contextWriter);
             
             if (value.getSource().hasMaskedValue()) {
                 // source STATS/ACTIVITY row
-                Key maskedSourceActivityKey = createStatsKey(STATS_TYPE.ACTIVITY, value, value.getSource(),
-                                value.getSource().getMaskedValue(ValueType.INDEXED), maskedVisibility, date_type);
+                Key maskedSourceActivityKey = createStatsKey(STATS_TYPE.ACTIVITY, value, value.getSource(), value.getSource().getMaskedValue(ValueType.INDEXED),
+                                maskedVisibility, date_type);
                 counter += writeKey(maskedSourceActivityKey, value.getStatsActivityValue(true, date_type), context, contextWriter);
                 
                 // source STATS/DURATION row
@@ -1116,8 +1116,8 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
              * Masked Bidirectional Edge
              */
             if (value.getEdgeDirection() == EdgeDirection.BIDIRECTIONAL) {
-                Key maskedBiKey = createEdgeKey(value, value.getSink(), value.getSink().getMaskedValue(ValueType.INDEXED), value.getSource(), value.getSource()
-                                .getMaskedValue(ValueType.INDEXED), maskedVisibility, date_type);
+                Key maskedBiKey = createEdgeKey(value, value.getSink(), value.getSink().getMaskedValue(ValueType.INDEXED), value.getSource(),
+                                value.getSource().getMaskedValue(ValueType.INDEXED), maskedVisibility, date_type);
                 counter += writeKey(maskedBiKey, value.getEdgeValue(false, date_type), context, contextWriter);
                 
                 if (value.getSink().hasMaskedValue()) {
@@ -1156,14 +1156,15 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         builder.setSourceData(sourceValue).setSinkData(sinkValue).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))
                         .setSourceRelationship(source.getRelationshipType()).setSinkRelationship(sink.getRelationshipType())
                         .setSourceAttribute1(source.getCollectionType()).setSinkAttribute1(sink.getCollectionType())
-                        .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility)
-                        .setTimestamp(timestamp).setDateType(date_type);
+                        .setAttribute3(edgeValue.getEdgeAttribute3()).setAttribute2(edgeValue.getEdgeAttribute2()).setColvis(visibility).setTimestamp(timestamp)
+                        .setDateType(date_type);
         builder.setDeleted(edgeValue.isDeleting());
         
         return builder.build().encode();
     }
     
-    protected Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility, EdgeKey.DATE_TYPE date_type) {
+    protected Key createStatsKey(STATS_TYPE statsType, EdgeDataBundle edgeValue, VertexValue vertex, String value, Text visibility,
+                    EdgeKey.DATE_TYPE date_type) {
         String typeName = edgeValue.getDataTypeName();
         datawave.edge.util.EdgeKey.EdgeKeyBuilder builder = datawave.edge.util.EdgeKey.newBuilder(EDGE_FORMAT.STATS).escape();
         builder.setSourceData(value).setStatsType(statsType).setType(edgeValue.getEdgeType()).setYyyymmdd(edgeValue.getYyyyMMdd(date_type))

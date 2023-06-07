@@ -39,7 +39,7 @@ public class ColumnFamilyRangeIterator extends ColumnRangeIterator {
             Key topColumnFamily = new Key(getSource().getTopKey().getColumnFamily());
             
             if (getColumnRange().beforeStartKey(topColumnFamily)) { // top key's CF is before the desired range starts, need to skip some CFs...
-            
+                
                 if (count < limit) {
                     advanceSource();
                     ++count;

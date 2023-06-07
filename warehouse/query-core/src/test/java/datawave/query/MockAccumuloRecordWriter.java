@@ -25,11 +25,8 @@ public class MockAccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     public void write(Text key, Mutation value) throws IOException, InterruptedException {
         try {
             for (ColumnUpdate update : value.getUpdates()) {
-                log.debug("Table: "
-                                + key
-                                + ", Key: "
-                                + new Key(value.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(), update
-                                                .getTimestamp()));
+                log.debug("Table: " + key + ", Key: " + new Key(value.getRow(), update.getColumnFamily(), update.getColumnQualifier(),
+                                update.getColumnVisibility(), update.getTimestamp()));
             }
             if (writerMap.get(key) == null) {
                 throw new NullPointerException("Can't write mutation: No entry in writerMap for table '" + key + "'");

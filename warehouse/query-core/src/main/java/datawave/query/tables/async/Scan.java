@@ -242,8 +242,8 @@ public class Scan implements Callable<Scan> {
                     log.trace("Using " + initializer);
                 }
                 
-                delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, localTableName, localAuths, currentRange).setOptions(
-                                myScan.getOptions());
+                delegatedResource = ResourceFactory.initializeResource(initializer, delegatedResource, localTableName, localAuths, currentRange)
+                                .setOptions(myScan.getOptions());
                 
                 Iterator<Entry<Key,Value>> iter = delegatedResource.iterator();
                 

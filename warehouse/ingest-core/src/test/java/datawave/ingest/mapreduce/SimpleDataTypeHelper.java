@@ -45,8 +45,8 @@ public class SimpleDataTypeHelper implements InvocationHandler {
         if (method.getName().equals("getEventFields")) {
             return fields;
         } else {
-            throw new UnsupportedOperationException("Sorry, " + this.getClass() + " does not currently support the " + method.getName()
-                            + " method. Feel free to implement it!");
+            throw new UnsupportedOperationException(
+                            "Sorry, " + this.getClass() + " does not currently support the " + method.getName() + " method. Feel free to implement it!");
         }
     }
 }

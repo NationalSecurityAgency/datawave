@@ -110,8 +110,8 @@ public class ThreadedRangeBundlerTest {
         verify(iterator);
     }
     
-    private void setIterator(final ThreadedRangeBundler bundler, final ThreadedRangeBundlerIterator iterator) throws NoSuchFieldException,
-                    IllegalAccessException {
+    private void setIterator(final ThreadedRangeBundler bundler, final ThreadedRangeBundlerIterator iterator)
+                    throws NoSuchFieldException, IllegalAccessException {
         Field field = bundler.getClass().getDeclaredField("iterator");
         field.setAccessible(true);
         field.set(bundler, iterator);

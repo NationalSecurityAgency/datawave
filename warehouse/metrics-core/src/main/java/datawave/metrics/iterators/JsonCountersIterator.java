@@ -85,8 +85,8 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
     
     @Override
     public IteratorOptions describeOptions() {
-        IteratorOptions opts = new IteratorOptions("jsonCounters", getClass().getSimpleName()
-                        + " returns values that are Hadoop Counters objects serialized in Json form", null, null);
+        IteratorOptions opts = new IteratorOptions("jsonCounters",
+                        getClass().getSimpleName() + " returns values that are Hadoop Counters objects serialized in Json form", null, null);
         opts.addNamedOption(PRETTY_PRINT_OPT, "Indicates whether or not the json output should be formatted for human readability (default is false)");
         return opts;
     }

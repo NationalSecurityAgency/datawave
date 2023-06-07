@@ -16,7 +16,8 @@ public class GenerateEdgeKeyVersionCache {
     private static final Now now = Now.getInstance();
     
     private static void printUsageAndExit() {
-        System.out.println("Usage: datawave.ingest.util.GenerateEdgeKeyVersionCache [-init -version <integer>] [-update <cache dir>] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
+        System.out.println(
+                        "Usage: datawave.ingest.util.GenerateEdgeKeyVersionCache [-init -version <integer>] [-update <cache dir>] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
         System.exit(-1);
     }
     

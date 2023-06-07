@@ -589,10 +589,10 @@ public class TestLuceneToJexlQueryParser {
     public void testUniqueFunctions() throws ParseException {
         assertEquals("f:unique('field1','field2','field3')", parser.parse("#unique(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique('field1[ALL','DAY]','field2')", parser.parse("#unique(field1[ALL,DAY],field2)").getOriginalQuery());
-        assertEquals("f:unique('field1[ALL','DAY]','field2[MINUTE]','field3[HOUR]')", parser.parse("#unique(field1[ALL,DAY],field2[MINUTE],field3[HOUR])")
-                        .getOriginalQuery());
-        assertEquals("f:unique('field1[MONTH]','field2[MONTH]','field3[MONTH]')", parser.parse("#unique(field1[MONTH],field2[MONTH],field3[MONTH])")
-                        .getOriginalQuery());
+        assertEquals("f:unique('field1[ALL','DAY]','field2[MINUTE]','field3[HOUR]')",
+                        parser.parse("#unique(field1[ALL,DAY],field2[MINUTE],field3[HOUR])").getOriginalQuery());
+        assertEquals("f:unique('field1[MONTH]','field2[MONTH]','field3[MONTH]')",
+                        parser.parse("#unique(field1[MONTH],field2[MONTH],field3[MONTH])").getOriginalQuery());
         
         assertEquals("f:unique_by_day('field1','field2','field3')", parser.parse("#unique_by_day(field1,field2,field3)").getOriginalQuery());
         assertEquals("f:unique_by_hour('field1','field2','field3')", parser.parse("#unique_by_hour(field1,field2,field3)").getOriginalQuery());
@@ -600,16 +600,16 @@ public class TestLuceneToJexlQueryParser {
         assertEquals("f:unique_by_month('field1','field2','field3')", parser.parse("#unique_by_month(field1,field2,field3)").getOriginalQuery());
         
         Throwable exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_day('field[HOUR]')")).getCause();
-        assertTrue(exception.getMessage().contains(
-                        "unique_by_day does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
+        assertTrue(exception.getMessage()
+                        .contains("unique_by_day does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
         
         exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_hour('field[MINUTE>]')")).getCause();
-        assertTrue(exception.getMessage().contains(
-                        "unique_by_hour does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
+        assertTrue(exception.getMessage()
+                        .contains("unique_by_hour does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
         
         exception = assertThrows(ParseException.class, () -> parser.parse("#unique_by_minute('field[HOUR]')")).getCause();
-        assertTrue(exception.getMessage().contains(
-                        "unique_by_minute does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
+        assertTrue(exception.getMessage()
+                        .contains("unique_by_minute does not support the advanced unique syntax, only a simple comma-delimited list of fields is allowed"));
     }
     
     private static class TestQueryNodeProcessorFactory extends QueryNodeProcessorFactory {
@@ -642,8 +642,10 @@ public class TestLuceneToJexlQueryParser {
         parser.setAnalyzer(analyzer);
         // this isn't the most realistic test, but it does verify that we don't lose the rest of the token stream
         // when the first token emitted is the same as the input token.
-        Assert.assertEquals("(TOKFIELD == '/home/datawave/README.md' || "
-                        + "content:phrase(TOKFIELD, termOffsetMap, '/home/datawave/readme.md', 'home/datawave/readme.md', "
-                        + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))", parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
+        Assert.assertEquals(
+                        "(TOKFIELD == '/home/datawave/README.md' || "
+                                        + "content:phrase(TOKFIELD, termOffsetMap, '/home/datawave/readme.md', 'home/datawave/readme.md', "
+                                        + "'home', 'datawave/readme.md', 'datawave', 'readme.md', 'readme', 'md'))",
+                        parseQuery("TOKFIELD:\"/home/datawave/README.md\""));
     }
 }

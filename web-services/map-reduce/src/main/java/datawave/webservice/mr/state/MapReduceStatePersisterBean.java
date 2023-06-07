@@ -285,7 +285,8 @@ public class MapReduceStatePersisterBean {
                 Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
                 c = connectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
                 tableCheck(c);
-                writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
+                writer = c.createBatchWriter(TABLE_NAME,
+                                new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1));
                 writer.addMutation(m);
                 writer.flush();
             } catch (RuntimeException re) {

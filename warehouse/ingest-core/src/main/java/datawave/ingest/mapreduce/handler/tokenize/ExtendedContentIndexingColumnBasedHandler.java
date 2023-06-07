@@ -108,8 +108,8 @@ import com.google.common.collect.Multimap;
  * @param <VALUEOUT>
  *            type of the output value
  */
-public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN> implements
-                ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
+public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
+                implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
     /*
      * "Offline" mode allows for documents to be written to the context rather than directly to Accumulo. This allows content indexing to run without needing to
      * connect to an active Accumulo instance.
@@ -349,8 +349,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
             TermAndZone indexedTermAndZone = new TermAndZone(nfv.getIndexedFieldValue(), nfv.getIndexedFieldName());
             
             org.apache.hadoop.util.bloom.Key alreadySeen = null;
-            if ((alreadyIndexedTerms != null)
-                            && alreadyIndexedTerms.membershipTest(alreadySeen = new org.apache.hadoop.util.bloom.Key(indexedTermAndZone.getToken().getBytes()))) {
+            if ((alreadyIndexedTerms != null) && alreadyIndexedTerms
+                            .membershipTest(alreadySeen = new org.apache.hadoop.util.bloom.Key(indexedTermAndZone.getToken().getBytes()))) {
                 if (log.isDebugEnabled()) {
                     log.debug("Not creating index mutations for " + termAndZone + " as we've already created mutations for it.");
                 }

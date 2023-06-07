@@ -107,8 +107,8 @@ public class DatabaseUserService implements DatawaveUserService {
      *            the name of the table that contains mapping from roles to authorization (for populating {@link DatawaveUser}s)
      */
     @Inject
-    public DatabaseUserService(@ConfigProperty(name = "dw.databaseUsersService.usersTableName", defaultValue = "users") String usersTableName, @ConfigProperty(
-                    name = "dw.databaseUsersService.mappingTableName", defaultValue = "roleToAuthMapping") String mappingTableName) {
+    public DatabaseUserService(@ConfigProperty(name = "dw.databaseUsersService.usersTableName", defaultValue = "users") String usersTableName,
+                    @ConfigProperty(name = "dw.databaseUsersService.mappingTableName", defaultValue = "roleToAuthMapping") String mappingTableName) {
         this.usersTableName = usersTableName;
         this.mappingTableName = mappingTableName;
         this.roleToAuthorizationMap = HashMultimap.create();
@@ -116,7 +116,9 @@ public class DatabaseUserService implements DatawaveUserService {
     
     @PostConstruct
     public void setup() {
-        try (Connection c = ds.getConnection(); Statement s = c.createStatement(); ResultSet rs = s.executeQuery("SELECT role, auth FROM " + mappingTableName)) {
+        try (Connection c = ds.getConnection();
+                        Statement s = c.createStatement();
+                        ResultSet rs = s.executeQuery("SELECT role, auth FROM " + mappingTableName)) {
             while (rs.next()) {
                 roleToAuthorizationMap.put(rs.getString("role"), rs.getString("auth"));
             }

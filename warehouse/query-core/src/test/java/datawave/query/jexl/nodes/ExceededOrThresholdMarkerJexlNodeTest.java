@@ -180,16 +180,13 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @BeforeClass
@@ -284,8 +281,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
             final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
-                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
-                                .getTimestamp(), val);
+                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(),
+                                biKey.getKey().getTimestamp(), val);
                 writer.addMutation(mutation);
             }
             writer.close();
@@ -311,12 +308,8 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         Assert.assertEquals(1, queryRanges.size());
         String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
                         queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals(
-                        "((_List_ = true) && ((id = '"
-                                        + id
-                                        + "') && (field = '"
-                                        + GEO_QUERY_FIELD
-                                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
+        Assert.assertEquals("((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
+                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"],[\"[1f200364bda9c63d03\",\"1f35553ac3ffb0ebff]\"]]}')))",
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
@@ -360,16 +353,9 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         Assert.assertEquals(1, queryRanges.size());
         String id = queryRanges.get(0).substring(queryRanges.get(0).indexOf("id = '") + 6,
                         queryRanges.get(0).indexOf("') && (field = '" + GEO_QUERY_FIELD + "')"));
-        Assert.assertEquals(
-                        "((_Value_ = true) && ((_Bounded_ = true) && ("
-                                        + GEO_QUERY_FIELD
-                                        + " >= '1f200364bda9c63d03' && "
-                                        + GEO_QUERY_FIELD
-                                        + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '"
-                                        + id
-                                        + "') && (field = '"
-                                        + GEO_QUERY_FIELD
-                                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
+        Assert.assertEquals("((_Value_ = true) && ((_Bounded_ = true) && (" + GEO_QUERY_FIELD + " >= '1f200364bda9c63d03' && " + GEO_QUERY_FIELD
+                        + " <= '1f35553ac3ffb0ebff'))) || ((_List_ = true) && ((id = '" + id + "') && (field = '" + GEO_QUERY_FIELD
+                        + "') && (params = '{\"ranges\":[[\"[1f0aaaaaaaaaaaaaaa\",\"1f1fffb0ebff104155]\"],[\"[1f2000228a00228a00\",\"1f20008a28008a2800]\"]]}')))",
                         queryRanges.get(0));
         
         List<DefaultEvent> events = getQueryResults(query);
@@ -654,16 +640,14 @@ public class ExceededOrThresholdMarkerJexlNodeTest {
         
         logic.setupQuery(config);
         
-        return Iterators.transform(
-                        config.getQueries(),
-                        queryData -> {
-                            try {
-                                return JexlStringBuildingVisitor.buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config,
-                                                JexlASTHelper.parseJexlQuery(queryData.getQuery()), null, null));
-                            } catch (ParseException e) {
-                                return null;
-                            }
-                        });
+        return Iterators.transform(config.getQueries(), queryData -> {
+            try {
+                return JexlStringBuildingVisitor
+                                .buildQuery(PushdownLargeFieldedListsVisitor.pushdown(config, JexlASTHelper.parseJexlQuery(queryData.getQuery()), null, null));
+            } catch (ParseException e) {
+                return null;
+            }
+        });
     }
     
     private Iterator getResultsIterator(String queryString, ShardQueryLogic logic) throws Exception {

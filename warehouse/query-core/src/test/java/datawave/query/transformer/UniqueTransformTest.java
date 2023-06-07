@@ -511,8 +511,8 @@ public class UniqueTransformTest {
         try {
             UniqueTransform uniqueTransform = getUniqueTransform();
             for (Document d : inputDocuments) {
-                assertEquals("Ordered field sets do not match expected", new String(expectedOrderedFieldValues, StandardCharsets.UTF_8), new String(
-                                uniqueTransform.getBytes(d), StandardCharsets.UTF_8));
+                assertEquals("Ordered field sets do not match expected", new String(expectedOrderedFieldValues, StandardCharsets.UTF_8),
+                                new String(uniqueTransform.getBytes(d), StandardCharsets.UTF_8));
             }
         } catch (IOException e) {
             throw new RuntimeException(e);

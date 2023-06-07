@@ -22,7 +22,7 @@ public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
             auditParams.put(AuditParameters.QUERY_AUTHORIZATIONS, queryParameters.get(AuditParameters.QUERY_AUTHORIZATIONS));
         if (queryParameters.containsKey(QueryParameters.QUERY_STRING))
             auditParams.put(AuditParameters.QUERY_STRING, queryParameters.get(AuditParameters.QUERY_STRING));
-        
+            
         // Put additional values passed by the caller (because these values were computed programmatically and not
         // directly supplied in the query call) into the audit parameters.
         if (queryParameters.containsKey(PrivateAuditConstants.AUDIT_TYPE))

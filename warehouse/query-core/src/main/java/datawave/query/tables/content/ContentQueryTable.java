@@ -129,8 +129,8 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
         final ContentQueryConfiguration config = (ContentQueryConfiguration) genericConfig;
         
         try {
-            final BatchScanner scanner = this.scannerFactory
-                            .newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads, config.getQuery());
+            final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
+                            config.getQuery());
             scanner.setRanges(config.getRanges());
             
             if (null != this.viewName) {

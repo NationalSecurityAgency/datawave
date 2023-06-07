@@ -228,8 +228,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
         int childCount = node.jjtGetNumChildren();
         
         if (childCount != 2) {
-            QueryException qe = new QueryException(DatawaveErrorCode.BINARY_NODE_TOO_MANY_CHILDREN, MessageFormat.format("Node: {0}",
-                            PrintingVisitor.formattedQueryString(node)));
+            QueryException qe = new QueryException(DatawaveErrorCode.BINARY_NODE_TOO_MANY_CHILDREN,
+                            MessageFormat.format("Node: {0}", PrintingVisitor.formattedQueryString(node)));
             throw new DatawaveFatalQueryException(qe);
         }
         

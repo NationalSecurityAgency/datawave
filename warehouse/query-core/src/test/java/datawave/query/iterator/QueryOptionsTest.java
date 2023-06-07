@@ -136,23 +136,23 @@ public class QueryOptionsTest {
         assertEquals(14, options.getTfFieldSeek());
         assertEquals(15, options.getTfNextSeek());
     }
-
+    
     @Test
-    public void testDocumentAndTermOffsetAggregationThresholds(){
+    public void testDocumentAndTermOffsetAggregationThresholds() {
         Map<String,String> optionsMap = new HashMap<>();
         optionsMap.put(QUERY, "query option required to validate");
         optionsMap.put(DOC_AGGREGATION_THRESHOLD_MS, "15000");
         optionsMap.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "10000");
-
+        
         QueryOptions options = new QueryOptions();
-
-        //  initial state
+        
+        // initial state
         assertEquals(-1, options.getDocAggregationThresholdMs());
         assertEquals(-1, options.getTfAggregationThresholdMs());
-
+        
         options.validateOptions(optionsMap);
-
-        //  expected state
+        
+        // expected state
         assertEquals(15000, options.getDocAggregationThresholdMs());
         assertEquals(10000, options.getTfAggregationThresholdMs());
     }

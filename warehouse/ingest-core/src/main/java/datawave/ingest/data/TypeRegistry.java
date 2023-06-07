@@ -76,7 +76,7 @@ public class TypeRegistry extends HashMap<String,Type> {
      * Helps determine whether or not the registry instance has been instantiated.
      * 
      * @return true if the registry exists, false otherwise
-     * */
+     */
     public static boolean hasInstance() {
         return registry != null;
     }
@@ -203,8 +203,8 @@ public class TypeRegistry extends HashMap<String,Type> {
                 handlerClasses = StringUtils.deDupStringArray(handlerClasses);
                 handlerClassNames = expandVariables(handlerClasses);
                 
-                Collection<String> exclusions = Arrays.asList(StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config,
-                                EXCLUDED_HANDLER_CLASSES, String[].class)));
+                Collection<String> exclusions = Arrays
+                                .asList(StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config, EXCLUDED_HANDLER_CLASSES, String[].class)));
                 handlerClassNames = getClassnamesWithoutExclusions(handlerClassNames, exclusions);
             } catch (IllegalArgumentException e) {
                 log.debug("No handler classes defined for type: " + typeName);
@@ -213,8 +213,8 @@ public class TypeRegistry extends HashMap<String,Type> {
             String[] filterClassNames = null;
             int filterPriority = Integer.MAX_VALUE;
             try {
-                filterClassNames = expandVariables(StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config, typeName + FILTER_CLASSES,
-                                String[].class)));
+                filterClassNames = expandVariables(
+                                StringUtils.trimAndRemoveEmptyStrings(ConfigurationHelper.isNull(config, typeName + FILTER_CLASSES, String[].class)));
                 filterPriority = config.getInt(typeName + FILTER_PRIORITY, Integer.MAX_VALUE);
             } catch (IllegalArgumentException e) {
                 log.debug("No filter classes defined for type: " + typeName);
@@ -237,8 +237,8 @@ public class TypeRegistry extends HashMap<String,Type> {
                     // due to the manner than Hadoop Configurations operate.
                     if (typeName.indexOf('.') != -1) {
                         log.error("Datatypes ('" + INGEST_DATA_TYPES + "') cannot contain a period. Offending datatype: '" + typeName + "'");
-                        throw new IllegalArgumentException("Datatypes ('" + INGEST_DATA_TYPES + "') cannot contain a period. Offending datatype: '" + typeName
-                                        + "'");
+                        throw new IllegalArgumentException(
+                                        "Datatypes ('" + INGEST_DATA_TYPES + "') cannot contain a period. Offending datatype: '" + typeName + "'");
                     }
                     
                     Type t = new Type(typeName, outputName, helperClass, readerClass, handlerClassNames, filterPriority, filterClassNames);
@@ -306,7 +306,7 @@ public class TypeRegistry extends HashMap<String,Type> {
         names.remove("accumulo");
         names.remove("num");
         names.remove("yarn.timeline-service");
-
+        
         return names;
     }
     

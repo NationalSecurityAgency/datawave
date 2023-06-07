@@ -250,8 +250,8 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
             while (fd.hasNext(shouldOnlyCreateFullFlags(fc)) && running) {
                 Collection<InputFile> inFiles = fd.next(this);
                 if (null == inFiles || inFiles.isEmpty()) {
-                    throw new IllegalStateException(fd.getClass().getName()
-                                    + " has input files but returned zero candidates for flagging. Please validate configuration");
+                    throw new IllegalStateException(
+                                    fd.getClass().getName() + " has input files but returned zero candidates for flagging. Please validate configuration");
                 }
                 writeFlagFile(fc, inFiles);
             }

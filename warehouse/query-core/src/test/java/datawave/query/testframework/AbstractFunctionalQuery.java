@@ -117,16 +117,14 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     
     private boolean useRunningQuery = false;
     private QueryMetricFactory metricFactory;
-
+    
     /**
      * Contains a list of cities that are specified in the test data. Additional cities can be added to the test data and do not specifically need to be added
      * here. The purpose is to provide a location where the city names are specified without having to hard code these entries throughout the test cases.
      */
     public enum TestCities {
         // any city entries can be added; these exist in the current set of data
-        london,
-        paris,
-        rome
+        london, paris, rome
     }
     
     private static final SimpleDateFormat YMD_DateFormat = new SimpleDateFormat("yyyyMMdd");
@@ -393,7 +391,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
                     List<DocumentChecker> checkers) throws Exception {
         runTestQuery(expected, queryStr, startDate, endDate, options, checkers, this.authSet);
     }
-
+    
     /**
      * Executes the query and performs validation of the results.
      *
@@ -417,11 +415,11 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         if (log.isDebugEnabled()) {
             log.debug("  query[" + queryStr + "]  start(" + YMD_DateFormat.format(startDate) + ")  end(" + YMD_DateFormat.format(endDate) + ")");
         }
-
+        
         if (authSet == null || authSet.isEmpty()) {
             authSet = this.authSet;
         }
-
+        
         QueryImpl q = new QueryImpl();
         q.setBeginDate(startDate);
         q.setEndDate(endDate);
@@ -628,8 +626,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         }
     }
     
-    protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf) throws AccumuloSecurityException, AccumuloException,
-                    TableNotFoundException {
+    protected Multimap<String,Key> removeMetadataEntries(Set<String> fields, Text cf)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         Multimap<String,Key> metadataEntries = HashMultimap.create();
         MultiTableBatchWriter multiTableWriter = client.createMultiTableBatchWriter(new BatchWriterConfig());
         BatchWriter writer = multiTableWriter.getBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME);
@@ -676,7 +674,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected void useRunningQuery() {
         this.useRunningQuery = true;
     }
-
+    
     /**
      * When provided, the QueryMetric object will be used for running the query and so can be later inspected. Also see #useRunningQuery()
      *

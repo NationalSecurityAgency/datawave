@@ -202,8 +202,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
             Attribute<?> attr = d.get("UUID.0");
             
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
+                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
             
             TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
             
@@ -223,8 +223,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                     // make sure this hitString is in the map, and remove it
                     boolean result = expectedHitTerms.get(uuid).remove(hitString);
                     if (result == false) {
-                        log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms
-                                        + " from hitTerms:" + hitTerms);
+                        log.debug("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms + " from hitTerms:"
+                                        + hitTerms);
                         Assert.fail("failed to find hitString:" + hitString + " for uuid:" + uuid + " in expectedHitTerms:" + expectedHitTerms
                                         + " from hitTerms:" + hitTerms);
                     } else {
@@ -542,29 +542,29 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 mutation = new Mutation("NAME");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
                 mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
+                                emptyValue);
                 bw.addMutation(mutation);
                 
                 mutation = new Mutation("FOO");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
                 mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
+                                emptyValue);
                 bw.addMutation(mutation);
                 
                 mutation = new Mutation("BAR");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
                 mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
+                                emptyValue);
                 bw.addMutation(mutation);
                 
                 mutation = new Mutation("BAZ");
                 mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), columnVisibility, timeStamp, emptyValue);
                 mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
+                                emptyValue);
                 bw.addMutation(mutation);
                 
                 mutation = new Mutation("UUID");
@@ -572,8 +572,8 @@ public class IfThisTestFailsThenHitTermsAreBroken {
                 mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), columnVisibility, timeStamp, emptyValue);
                 mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), columnVisibility, timeStamp, emptyValue);
                 mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), columnVisibility, timeStamp, emptyValue);
-                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility,
-                                timeStamp, emptyValue);
+                mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), columnVisibility, timeStamp,
+                                emptyValue);
                 bw.addMutation(mutation);
             } finally {
                 if (null != bw) {

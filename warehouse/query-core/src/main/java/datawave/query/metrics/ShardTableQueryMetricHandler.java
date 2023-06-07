@@ -121,7 +121,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     
     @Inject
     private QueryLogicFactory queryLogicFactory;
-
+    
     @Inject
     @ConfigProperty(name = "dw.query.metrics.marking")
     protected String markingString;
@@ -492,9 +492,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             
             EventQueryResponseBase eventQueryResponse = (EventQueryResponseBase) queryResponse;
             List<EventBase> eventList = eventQueryResponse.getEvents();
-
+            
             if (eventList != null) {
-                for (EventBase<?, ?> event : eventList) {
+                for (EventBase<?,?> event : eventList) {
                     QueryMetric metric = (QueryMetric) toMetric(event);
                     queryMetrics.add(metric);
                 }
@@ -728,8 +728,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
     }
     
-    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf) throws AccumuloSecurityException,
-                    AccumuloException, TableNotFoundException {
+    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         for (String table : tableNames) {
             // If the tables don't exist, then create them.
             try {
@@ -768,8 +768,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     
                     if (tableHelper != null)
                         tableHelper.setup(table, conf, log);
-                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException |
-                         NoSuchMethodException | InvocationTargetException e) {
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
@@ -830,17 +829,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
     public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-
+    
     @Override
     public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-
+    
     @Override
     public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-
+    
     public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,
                     QueryMetricsSummaryResponse response) {
         

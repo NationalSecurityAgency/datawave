@@ -362,9 +362,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         
         try {
-            if (this.isIncludeGroupingContext() == false
-                            && (this.query.contains("grouping:") || this.query.contains("matchesInGroup") || this.query.contains("MatchesInGroup") || this.query
-                                            .contains("atomValuesMatch"))) {
+            if (this.isIncludeGroupingContext() == false && (this.query.contains("grouping:") || this.query.contains("matchesInGroup")
+                            || this.query.contains("MatchesInGroup") || this.query.contains("atomValuesMatch"))) {
                 this.setIncludeGroupingContext(true);
                 this.groupingContextAddedByMe = true;
             } else {
@@ -485,10 +484,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             pipelineDocuments = Iterators.filter(pipelineDocuments, keyDocumentEntry -> {
                 // last chance before the documents are serialized
-                            getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
-                            // Always return true since we just want to record data in the ActiveQueryLog
-                            return true;
-                        });
+                getActiveQueryLog().get(getQueryId()).recordStats(keyDocumentEntry.getValue(), querySpanCollector.getCombinedQuerySpan(null));
+                // Always return true since we just want to record data in the ActiveQueryLog
+                return true;
+            });
             
             if (this.getReturnType() == ReturnType.kryo) {
                 // Serialize the Document using Kryo
@@ -868,8 +867,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
             };
         } else {
-            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(),
-                            this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
+            docMapper = new KeyToDocumentData(deepSourceCopy, myEnvironment, documentOptions, getEquality(), getEvaluationFilter(), this.includeHierarchyFields,
+                            this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
         }
         
         Iterator<Entry<DocumentData,Document>> sourceIterator = Iterators.transform(documentSpecificSource, from -> {
@@ -892,8 +891,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Inject the data type as a field if the user requested it
         if (this.includeDatatype) {
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DataTypeAsField, trackingSpan, new DataTypeAsField(
-                                this.datatypeKey)));
+                documents = Iterators.transform(documents,
+                                new EvaluationTrackingFunction<>(QuerySpan.Stage.DataTypeAsField, trackingSpan, new DataTypeAsField(this.datatypeKey)));
             } else {
                 documents = Iterators.transform(documents, new DataTypeAsField(this.datatypeKey));
             }
@@ -946,8 +945,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         
         // now filter the attributes to those with the keep flag set true
         if (gatherTimingDetails()) {
-            documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan,
-                            new AttributeKeepFilter<>()));
+            documents = Iterators.transform(documents,
+                            new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan, new AttributeKeepFilter<>()));
         } else {
             documents = Iterators.transform(documents, new AttributeKeepFilter<>());
         }
@@ -967,10 +966,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Filter out any Documents which are empty (e.g. due to attribute
         // projection or visibility filtering)
         if (gatherTimingDetails()) {
-            documents = statelessFilter(documents, new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan,
-                            new EmptyDocumentFilter()));
-            documents = Iterators
-                            .transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
+            documents = statelessFilter(documents,
+                            new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()));
+            documents = Iterators.transform(documents,
+                            new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
         } else {
             documents = statelessFilter(documents, new EmptyDocumentFilter());
             documents = Iterators.transform(documents, new DocumentMetadata());
@@ -989,8 +988,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // do I need to remove the grouping context I added above?
         if (groupingContextAddedByMe) {
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.RemoveGroupingContext, trackingSpan,
-                                new RemoveGroupingContext()));
+                documents = Iterators.transform(documents,
+                                new EvaluationTrackingFunction<>(QuerySpan.Stage.RemoveGroupingContext, trackingSpan, new RemoveGroupingContext()));
             } else {
                 documents = Iterators.transform(documents, new RemoveGroupingContext());
             }
@@ -1190,13 +1189,14 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
         if (fieldIndexSatisfiesQuery) {
             final KeyToDocumentData docMapper = new KeyToDocumentData(deepSourceCopy, this.myEnvironment, this.documentOptions, getEquality(),
-                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider()).withAggregationThreshold(getDocAggregationThresholdMs());
+                            getEvaluationFilter(), this.includeHierarchyFields, this.includeHierarchyFields).withRangeProvider(getRangeProvider())
+                                            .withAggregationThreshold(getDocAggregationThresholdMs());
             
-            Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(
-                            documents,
-                            new GetDocument(docMapper, new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata, this
-                                            .isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(), getEvaluationFilter(),
-                                            isTrackSizes())));
+            Iterator<Tuple2<Key,Document>> mappedDocuments = Iterators.transform(documents,
+                            new GetDocument(docMapper,
+                                            new Aggregation(this.getTimeFilter(), typeMetadataWithNonIndexed, compositeMetadata,
+                                                            this.isIncludeGroupingContext(), this.includeRecordId, this.disableIndexOnlyDocuments(),
+                                                            getEvaluationFilter(), isTrackSizes())));
             
             Iterator<Entry<Key,Document>> retDocuments = Iterators.transform(mappedDocuments, new TupleToEntry<>());
             
@@ -1240,7 +1240,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             
             this.key = entry.getKey();
             this.value = entry.getValue();
-
+            
         } else {
             if (log.isTraceEnabled()) {
                 log.trace("Exhausted all keys");
@@ -1291,7 +1291,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             debugBooleanLogicIterator(child, prefix + "  ");
         }
     }
-
     
     protected DocumentProjection getProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
@@ -1412,8 +1411,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         return sb.toString();
     }
     
-    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript) throws IOException, ConfigException,
-                    IllegalAccessException, InstantiationException {
+    protected NestedIterator<Key> getOrSetKeySource(final Range documentRange, ASTJexlScript rangeScript)
+                    throws IOException, ConfigException, IllegalAccessException, InstantiationException {
         NestedIterator<Key> sourceIter = null;
         // If we're doing field index or a non-fulltable (aka a normal
         // query)
@@ -1495,8 +1494,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(Class<? extends IteratorBuildingVisitor> c, final Range documentRange,
-                    boolean isQueryFullySatisfied, boolean sortedUIDs) throws MalformedURLException, ConfigException, IllegalAccessException,
-                    InstantiationException {
+                    boolean isQueryFullySatisfied, boolean sortedUIDs)
+                    throws MalformedURLException, ConfigException, IllegalAccessException, InstantiationException {
         if (log.isTraceEnabled()) {
             log.trace(documentRange);
         }

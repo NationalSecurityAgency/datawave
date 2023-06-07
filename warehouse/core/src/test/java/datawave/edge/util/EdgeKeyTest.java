@@ -41,12 +41,13 @@ public class EdgeKeyTest {
         Text standardRow = new Text("SOURCE" + '\0' + "SINK");
         
         refStatsBase = new Key(statsRow, new Text("STATS/DURATION/TYPE/SOURCEREL/SOURCECATEGORY"), new Text("YYYYMMDD"), new Text("ALL"), 814l);
-        refStatsAttribute2 = new Key(statsRow, new Text("STATS/DURATION/TYPE/SOURCEREL/SOURCECATEGORY/ATTRIBUTE2"), new Text("YYYYMMDD"), new Text("ALL"), 814l);
+        refStatsAttribute2 = new Key(statsRow, new Text("STATS/DURATION/TYPE/SOURCEREL/SOURCECATEGORY/ATTRIBUTE2"), new Text("YYYYMMDD"), new Text("ALL"),
+                        814l);
         refBase = new Key(standardRow, new Text("TYPE/SOURCEREL-SINKREL/SOURCECATEGORY-SINKCATEGORY"), new Text("YYYYMMDD"), new Text("ALL"), 814l);
-        refBaseAttribute2 = new Key(standardRow, new Text("TYPE/SOURCEREL-SINKREL/SOURCECATEGORY-SINKCATEGORY/ATTRIBUTE2"), new Text("YYYYMMDD"), new Text(
-                        "ALL"), 814l);
-        refStatsProtobuf = new Key(statsRow, new Text("STATS/DURATION/TYPE/SOURCEREL"), new Text("YYYYMMDD/SOURCECATEGORY/ATTRIBUTE2/ATTRIBUTE3"), new Text(
-                        "ALL"), 814l);
+        refBaseAttribute2 = new Key(standardRow, new Text("TYPE/SOURCEREL-SINKREL/SOURCECATEGORY-SINKCATEGORY/ATTRIBUTE2"), new Text("YYYYMMDD"),
+                        new Text("ALL"), 814l);
+        refStatsProtobuf = new Key(statsRow, new Text("STATS/DURATION/TYPE/SOURCEREL"), new Text("YYYYMMDD/SOURCECATEGORY/ATTRIBUTE2/ATTRIBUTE3"),
+                        new Text("ALL"), 814l);
         refProtobuf = new Key(standardRow, new Text("TYPE/SOURCEREL-SINKREL"), new Text("YYYYMMDD/SOURCECATEGORY-SINKCATEGORY/ATTRIBUTE2/ATTRIBUTE3"),
                         new Text("ALL"), 814l);
         

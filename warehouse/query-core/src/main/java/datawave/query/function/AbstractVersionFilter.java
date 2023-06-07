@@ -597,10 +597,10 @@ public abstract class AbstractVersionFilter<A> {
             // Create the range, if applicable
             if (null != fieldName) {
                 final String normalizedStub = (normalizedStubLength > 0) ? normalizedVersion.substring(0, normalizedStubLength) : StringUtils.EMPTY;
-                final Key start = new Key(row, new Text(FIELD_INDEX_PREFIX + fieldName), new Text(normalizedVersion.toString() + '\0' + dataType + '\0'
-                                + baseUid));
-                final Key end = new Key(row, new Text(FIELD_INDEX_PREFIX + fieldName), new Text(normalizedStub + NUMBER_NORMALIZER_MAX_VALUE + '\0' + dataType
-                                + '\0' + baseUid));
+                final Key start = new Key(row, new Text(FIELD_INDEX_PREFIX + fieldName),
+                                new Text(normalizedVersion.toString() + '\0' + dataType + '\0' + baseUid));
+                final Key end = new Key(row, new Text(FIELD_INDEX_PREFIX + fieldName),
+                                new Text(normalizedStub + NUMBER_NORMALIZER_MAX_VALUE + '\0' + dataType + '\0' + baseUid));
                 range = new Range(start, true, end, false);
             } else {
                 range = null;

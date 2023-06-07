@@ -156,8 +156,8 @@ public class CreatedQueryLogicCacheBeanTest {
         boolean ret2 = qlCache.add(queryId2, userId, queryLogic, client);
         boolean ret3 = qlCache.add(queryId3, userId, queryLogic, client);
         
-        Map<String,Pair<QueryLogic<?>,AccumuloClient>> oldEntries = qlCache.entriesOlderThan(5l, 2l), olderEntries = qlCache.entriesOlderThan(5l, 3l), noEntries = qlCache
-                        .entriesOlderThan(5l, 4l);
+        Map<String,Pair<QueryLogic<?>,AccumuloClient>> oldEntries = qlCache.entriesOlderThan(5l, 2l), olderEntries = qlCache.entriesOlderThan(5l, 3l),
+                        noEntries = qlCache.entriesOlderThan(5l, 4l);
         
         PowerMock.verifyAll();
         

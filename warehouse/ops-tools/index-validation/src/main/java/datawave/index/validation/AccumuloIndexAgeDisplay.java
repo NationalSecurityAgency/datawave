@@ -218,8 +218,8 @@ public class AccumuloIndexAgeDisplay implements AutoCloseable {
     private Text createDeleteCmd(Map.Entry<Key,Value> entry) {
         Text cmd;
         if ((null != entry.getKey().getColumnVisibility()) && (!entry.getKey().getColumnVisibility().toString().equals(("")))) {
-            cmd = new Text("    delete " + entry.getKey().getRow() + " " + entry.getKey().getColumnFamily() + " " + entry.getKey().getColumnQualifier()
-                            + " -l " + entry.getKey().getColumnVisibility());
+            cmd = new Text("    delete " + entry.getKey().getRow() + " " + entry.getKey().getColumnFamily() + " " + entry.getKey().getColumnQualifier() + " -l "
+                            + entry.getKey().getColumnVisibility());
         } else {
             cmd = new Text("    delete " + entry.getKey().getRow() + " " + entry.getKey().getColumnFamily() + " " + entry.getKey().getColumnQualifier());
         }

@@ -86,8 +86,8 @@ public class SetMembershipVisitorTest {
                         "filter:includeRegex(INDEX_ONLY,'.*test.*', ONLY_INDEXED, '.*test.*') && filter:excludeRegex(BODY, '.*nottest.*') && FOO == 'bar'",
                         Sets.newHashSet("INDEX_ONLY", "ONLY_INDEXED", "BODY"));
         
-        ASTJexlScript queryTree = JexlASTHelper
-                        .parseJexlQuery("filter:includeRegex(INDEX_ONLY,'.*test.*', ONLY_INDEXED, '.*test.*') && filter:excludeRegex(BODY, '.*nottest.*') && FOO == 'bar'");
+        ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(
+                        "filter:includeRegex(INDEX_ONLY,'.*test.*', ONLY_INDEXED, '.*test.*') && filter:excludeRegex(BODY, '.*nottest.*') && FOO == 'bar'");
         SetMembershipVisitor.getMembers(indexOnly, config, queryTree, true);
         
         String queryString = JexlStringBuildingVisitor.buildQuery(queryTree);

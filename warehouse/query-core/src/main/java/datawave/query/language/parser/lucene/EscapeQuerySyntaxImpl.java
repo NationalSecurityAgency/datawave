@@ -177,7 +177,7 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
     public CharSequence escape(CharSequence text, Locale locale, Type type) {
         if (text == null || text.length() == 0)
             return text;
-        
+            
         // escape wildcards and the escape char (this has to be perform before
         // anything else)
         // since we need to preserve the UnescapedCharSequence and escape the
@@ -370,7 +370,7 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
      * @throws ParseException
      *             for issues parsing
      * @return numeric value of the hexadecimal character
-     * */
+     */
     private static final int hexToInt(char c) throws ParseException {
         if ('0' <= c && c <= '9') {
             return c - '0';

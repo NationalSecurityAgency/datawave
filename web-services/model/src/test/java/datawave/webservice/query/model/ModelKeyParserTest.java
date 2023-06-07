@@ -79,8 +79,9 @@ public class ModelKeyParserTest {
         FORWARD_DELETE_MUTATION = new Mutation(MODEL_FIELD_NAME);
         FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(),
                         new ColumnVisibility(COLVIZ), TIMESTAMP);
-        FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only"
-                        + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
+        FORWARD_DELETE_MUTATION.putDelete(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE,
+                        FIELD_NAME + ModelKeyParser.NULL_BYTE + "index_only" + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), new ColumnVisibility(COLVIZ),
+                        TIMESTAMP);
         
         REVERSE_MUTATION = new Mutation(FIELD_NAME);
         REVERSE_MUTATION.put(MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(),
@@ -241,8 +242,8 @@ public class ModelKeyParserTest {
         REVERSE_FIELD_MAPPING.setDatatype(null);
         PowerMock.replayAll();
         REVERSE_DELETE_MUTATION = new Mutation(FIELD_NAME);
-        REVERSE_DELETE_MUTATION
-                        .putDelete(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ), TIMESTAMP);
+        REVERSE_DELETE_MUTATION.putDelete(MODEL_NAME, MODEL_FIELD_NAME + ModelKeyParser.NULL_BYTE + REVERSE.getValue(), new ColumnVisibility(COLVIZ),
+                        TIMESTAMP);
         m = ModelKeyParser.createDeleteMutation(REVERSE_FIELD_MAPPING, MODEL_NAME);
         PowerMock.verifyAll();
         m.getUpdates();
@@ -266,8 +267,8 @@ public class ModelKeyParserTest {
         forwardMapping.setFieldName(FIELD_NAME);
         forwardMapping.setModelFieldName(MODEL_FIELD_NAME);
         
-        Key expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE, FIELD_NAME + ModelKeyParser.NULL_BYTE
-                        + FORWARD.getValue(), COLVIZ, TIMESTAMP);
+        Key expectedForwardKey = new Key(MODEL_FIELD_NAME, MODEL_NAME + ModelKeyParser.NULL_BYTE + DATATYPE,
+                        FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue(), COLVIZ, TIMESTAMP);
         
         EasyMock.expect(System.currentTimeMillis()).andReturn(TIMESTAMP);
         PowerMock.replayAll();
@@ -359,8 +360,8 @@ public class ModelKeyParserTest {
     @Test(expected = IllegalArgumentException.class)
     public void testKeyWithIncorrectlyPositionedIndexOnlyAndDirection() throws Exception {
         // Correct cq: field\x00
-        Key mismatchedParts = new Key(MODEL_FIELD_NAME, MODEL_NAME, FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue() + ModelKeyParser.NULL_BYTE
-                        + "index_only", COLVIZ, TIMESTAMP);
+        Key mismatchedParts = new Key(MODEL_FIELD_NAME, MODEL_NAME,
+                        FIELD_NAME + ModelKeyParser.NULL_BYTE + FORWARD.getValue() + ModelKeyParser.NULL_BYTE + "index_only", COLVIZ, TIMESTAMP);
         ModelKeyParser.parseKey(mismatchedParts, AUTHS);
         Assert.fail("Expected IllegalArgumentException on key with 'index_only' and 'forward' in wrong positions.");
     }

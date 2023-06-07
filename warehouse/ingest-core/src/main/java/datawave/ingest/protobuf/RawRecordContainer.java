@@ -301,9 +301,8 @@ public final class RawRecordContainer {
         }
         
         protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-            return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_fieldAccessorTable
-                            .ensureFieldAccessorsInitialized(datawave.ingest.protobuf.RawRecordContainer.Data.class,
-                                            datawave.ingest.protobuf.RawRecordContainer.Data.Builder.class);
+            return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_fieldAccessorTable.ensureFieldAccessorsInitialized(
+                            datawave.ingest.protobuf.RawRecordContainer.Data.class, datawave.ingest.protobuf.RawRecordContainer.Data.Builder.class);
         }
         
         public static com.google.protobuf.Parser<Data> PARSER = new com.google.protobuf.AbstractParser<Data>() {
@@ -813,8 +812,8 @@ public final class RawRecordContainer {
         /**
          * Protobuf type {@code datawave.ingest.protobuf.Data}
          */
-        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-                        datawave.ingest.protobuf.RawRecordContainer.DataOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder>
+                        implements datawave.ingest.protobuf.RawRecordContainer.DataOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_descriptor;
             }
@@ -1700,13 +1699,13 @@ public final class RawRecordContainer {
     
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {"\n\030RawRecordContainer.proto\022\030datawave.ing"
-                        + "est.protobuf\"\330\001\n\004Data\022\014\n\004date\030\001 \001(\004\022\020\n\010d"
-                        + "ataType\030\002 \001(\t\022\013\n\003uid\030\003 \001(\t\022\016\n\006errors\030\004 \003"
-                        + "(\t\022\022\n\nvisibility\030\005 \001(\014\022\023\n\013rawFileName\030\006 "
-                        + "\001(\t\022\027\n\017rawRecordNumber\030\007 \001(\004\022\r\n\005uuids\030\010 "
-                        + "\003(\t\022\017\n\007rawData\030\t \001(\014\022\027\n\017requiresMasking\030"
-                        + "\n \001(\010\022\030\n\020rawFileTimeStamp\030\013 \001(\004B\034\n\030dataw" + "ave.ingest.protobufH\001"};
+        java.lang.String[] descriptorData = {
+                "\n\030RawRecordContainer.proto\022\030datawave.ing" + "est.protobuf\"\330\001\n\004Data\022\014\n\004date\030\001 \001(\004\022\020\n\010d"
+                                + "ataType\030\002 \001(\t\022\013\n\003uid\030\003 \001(\t\022\016\n\006errors\030\004 \003"
+                                + "(\t\022\022\n\nvisibility\030\005 \001(\014\022\023\n\013rawFileName\030\006 "
+                                + "\001(\t\022\027\n\017rawRecordNumber\030\007 \001(\004\022\r\n\005uuids\030\010 "
+                                + "\003(\t\022\017\n\007rawData\030\t \001(\014\022\027\n\017requiresMasking\030"
+                                + "\n \001(\010\022\030\n\020rawFileTimeStamp\030\013 \001(\004B\034\n\030dataw" + "ave.ingest.protobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
