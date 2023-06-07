@@ -55,7 +55,7 @@ public class NegationPredicate implements Predicate<ASTJexlScript> {
         @Override
         public Object visit(ASTEQNode node, Object data) {
             
-            hasNot |= JexlASTHelper.isWithinNot(node);
+            hasNot |= JexlASTHelper.isDescendantOfNot(node);
             return super.visit(node, data);
         }
         
