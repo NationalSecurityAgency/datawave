@@ -189,7 +189,7 @@ public class PushdownScheduler extends Scheduler {
      */
     @Override
     public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
+        return config.createBatchScanner(scannerFactory, qd);
     }
     
     @Override

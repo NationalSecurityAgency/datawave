@@ -77,7 +77,7 @@ public class SequentialScheduler extends Scheduler {
      */
     @Override
     public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
+        return config.createBatchScanner(scannerFactory, qd);
     }
     
     public class SequentialSchedulerIterator implements Iterator<Entry<Key,Value>> {
@@ -142,7 +142,7 @@ public class SequentialScheduler extends Scheduler {
             if (null != newQueryData) {
                 
                 try {
-                    this.currentBS = createBatchScanner(this.config, this.scannerFactory, newQueryData);
+                    this.currentBS = this.config.createBatchScanner(this.scannerFactory, newQueryData);
                 } catch (TableNotFoundException e) {
                     throw new RuntimeException(e);
                 }
