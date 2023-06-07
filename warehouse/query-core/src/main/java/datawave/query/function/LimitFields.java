@@ -264,8 +264,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     int missesToSet = Math.min(limit - keepers, missesRemaining);
                     if (missesToSet > 0) {
                         log.error("Failed to limit fields correctly, " + missesToSet + " attributes failed to be included");
-                        throw new RuntimeException("Failed to limit fields correctly, " + missesToSet + ' ' + keyNoGrouping
-                                        + " attributes failed to be included");
+                        throw new RuntimeException(
+                                        "Failed to limit fields correctly, " + missesToSet + ' ' + keyNoGrouping + " attributes failed to be included");
                     }
                 }
             }

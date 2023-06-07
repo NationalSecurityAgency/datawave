@@ -76,8 +76,8 @@ public class IvaratorReloadTest {
         
         DatawaveFieldIndexRangeIteratorJexl secondRangeIvarator = createRangeIvarator(fs, uniqueDir);
         secondRangeIvarator.init(source, null, null);
-        Range range2 = new Range(new Key("20000105_0", "MixedGeo\0-2xav59.x0c0q3.-yac0vs", "POINT\0POINT (2 3)"), false, new Key("20000105_0"
-                        + Constants.MAX_UNICODE_STRING), false);
+        Range range2 = new Range(new Key("20000105_0", "MixedGeo\0-2xav59.x0c0q3.-yac0vs", "POINT\0POINT (2 3)"), false,
+                        new Key("20000105_0" + Constants.MAX_UNICODE_STRING), false);
         secondRangeIvarator.seek(range2, new HashSet<>(), false);
         
         IvaratorDirState state2 = getIvaratorDirState(shardDir);
@@ -162,8 +162,8 @@ public class IvaratorReloadTest {
         public boolean equals(Object other) {
             if (other instanceof IvaratorDirState) {
                 IvaratorDirState state = (IvaratorDirState) other;
-                EqualsBuilder builder = new EqualsBuilder().append(complete, state.complete).append(sortedSetBytes, state.sortedSetBytes)
-                                .append(sortedSetDates, state.sortedSetDates);
+                EqualsBuilder builder = new EqualsBuilder().append(complete, state.complete).append(sortedSetBytes, state.sortedSetBytes).append(sortedSetDates,
+                                state.sortedSetDates);
                 return builder.build();
             }
             return false;

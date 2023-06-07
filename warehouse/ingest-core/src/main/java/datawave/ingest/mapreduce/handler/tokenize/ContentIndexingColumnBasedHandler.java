@@ -544,8 +544,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             boolean counted = false;
             for (int i = 0; i < tokenizerThresholds.length; i++) {
                 if (tokenizerDeltaMsec < tokenizerThresholds[i]) {
-                    counters.incrementValue(ContentIndexCounters.TOKENIZER_TIME_GROUP_NAME, ContentIndexCounters.TOKENIZER_TIME_PREFIX + "<"
-                                    + tokenizerThresholdNames[i], 1, reporter);
+                    counters.incrementValue(ContentIndexCounters.TOKENIZER_TIME_GROUP_NAME,
+                                    ContentIndexCounters.TOKENIZER_TIME_PREFIX + "<" + tokenizerThresholdNames[i], 1, reporter);
                     counted = true;
                     break;
                 }
@@ -553,8 +553,8 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             
             // catch times outside of the max threshold if we're counting
             if (!counted && tokenizerThresholdNames.length > 0) {
-                counters.incrementValue(ContentIndexCounters.TOKENIZER_TIME_GROUP_NAME, ContentIndexCounters.TOKENIZER_TIME_PREFIX + ">="
-                                + tokenizerThresholdNames[tokenizerThresholdNames.length - 1], 1, reporter);
+                counters.incrementValue(ContentIndexCounters.TOKENIZER_TIME_GROUP_NAME,
+                                ContentIndexCounters.TOKENIZER_TIME_PREFIX + ">=" + tokenizerThresholdNames[tokenizerThresholdNames.length - 1], 1, reporter);
             }
         } finally {
             tokenizer.close();
@@ -595,9 +595,9 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                         .append(nfv.getIndexedFieldName());
         
-        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId,
-                        ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility, event.getDate(),
-                        helper.getDeleteMode()));
+        BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
+                        new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility,
+                                        event.getDate(), helper.getDeleteMode()));
         
         values.put(bKey, value);
     }
@@ -640,7 +640,7 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
      * @param configuration
      *            the Hadoop job configuration
      * @return a non-null factory instance
-     *
+     *            
      * @see ShardedDataTypeHandler
      * @see ContentIndexingColumnBasedHandler
      */

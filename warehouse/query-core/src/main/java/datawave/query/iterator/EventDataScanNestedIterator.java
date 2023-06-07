@@ -182,10 +182,8 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     
     boolean isEventKey(Key k) {
         Text cf = k.getColumnFamily();
-        return cf.getLength() > 0
-                        && cf.find("\u0000") != -1
-                        && !((cf.charAt(0) == 'f' && cf.charAt(1) == 'i' && cf.charAt(2) == 0) || (cf.getLength() == 1 && cf.charAt(0) == 'd') || (cf
-                                        .getLength() == 2 && cf.charAt(0) == 't' && cf.charAt(1) == 'f'));
+        return cf.getLength() > 0 && cf.find("\u0000") != -1 && !((cf.charAt(0) == 'f' && cf.charAt(1) == 'i' && cf.charAt(2) == 0)
+                        || (cf.getLength() == 1 && cf.charAt(0) == 'd') || (cf.getLength() == 2 && cf.charAt(0) == 't' && cf.charAt(1) == 'f'));
     }
     
     @Override

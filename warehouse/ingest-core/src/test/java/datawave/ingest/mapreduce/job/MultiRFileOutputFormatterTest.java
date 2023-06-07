@@ -52,7 +52,7 @@ public class MultiRFileOutputFormatterTest {
     protected Level uutLevel;
     private MultiRFileOutputFormatter formatter;
     private Configuration conf;
-
+    
     protected boolean checkProcessOutput(List<String> output, String message) {
         
         boolean results = false;
@@ -139,7 +139,7 @@ public class MultiRFileOutputFormatterTest {
         
         MultiRFileOutputFormatterTest.logger.setLevel(testDriverLevel);
         Logger.getLogger(MultiRFileOutputFormatter.class).setLevel(uutLevel);
-
+        
     }
     
     @Test(expected = IllegalArgumentException.class)

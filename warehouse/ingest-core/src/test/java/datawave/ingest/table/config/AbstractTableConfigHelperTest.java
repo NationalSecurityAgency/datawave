@@ -116,8 +116,8 @@ public class AbstractTableConfigHelperTest {
         @Override
         public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {}
         
-        public void exposeSetLocalityGroupConfigurationIfNecessary() throws AssertionError, AccumuloSecurityException, AccumuloException,
-                        TableNotFoundException {
+        public void exposeSetLocalityGroupConfigurationIfNecessary()
+                        throws AssertionError, AccumuloSecurityException, AccumuloException, TableNotFoundException {
             
             Assert.assertNotNull("Unit Under Test not configured correctly - Parent missing.", this.parent);
             
@@ -340,8 +340,8 @@ public class AbstractTableConfigHelperTest {
             }
         }
         
-        public void exposeSetCombinerConfigurationIfNecessaryForTest() throws AssertionError, AccumuloSecurityException, AccumuloException,
-                        TableNotFoundException {
+        public void exposeSetCombinerConfigurationIfNecessaryForTest()
+                        throws AssertionError, AccumuloSecurityException, AccumuloException, TableNotFoundException {
             
             Assert.assertNotNull("Unit Under Test not configured correctly - Parent missing", this.parent);
             
@@ -644,8 +644,7 @@ public class AbstractTableConfigHelperTest {
                             propertySize, tableProperties.size());
             Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
                             tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
+            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
                             tableProperties.containsValue(value));
             
         } finally {
@@ -692,8 +691,7 @@ public class AbstractTableConfigHelperTest {
                             propertySize, tableProperties.size());
             Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
                             tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
+            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
                             tableProperties.containsValue(value));
             
         } finally {
@@ -738,8 +736,7 @@ public class AbstractTableConfigHelperTest {
                             propertySize, tableProperties.size());
             Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
                             tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
+            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
                             tableProperties.containsValue(value));
             
         } finally {
@@ -784,8 +781,7 @@ public class AbstractTableConfigHelperTest {
                             propertySize, tableProperties.size());
             Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new key, 'name'.",
                             tableProperties.containsKey(name));
-            Assert.assertTrue(
-                            "AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
+            Assert.assertTrue("AbstractTableConfigHelper.setProperityIfNecessary() call to TableOperations.setProperties failed to add the new value, 'value'.",
                             tableProperties.containsValue(value));
             
         } finally {

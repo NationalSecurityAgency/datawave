@@ -182,8 +182,8 @@ public class NumShardsTest {
     }
     
     @Test
-    public void testUpdateCache() throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException,
-                    ParseException {
+    public void testUpdateCache()
+                    throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException, ParseException {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
         InMemoryInstance i = new InMemoryInstance("mock");
@@ -256,8 +256,8 @@ public class NumShardsTest {
     }
     
     @Test
-    public void testUpdateCacheWithoutEntries() throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException,
-                    ParseException {
+    public void testUpdateCacheWithoutEntries()
+                    throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException, IOException, ParseException {
         // configure mock accumulo instance and populate with a couple of multiple numshards entries
         PasswordToken noPasswordToken = new PasswordToken();
         InMemoryInstance i = new InMemoryInstance("mock2");

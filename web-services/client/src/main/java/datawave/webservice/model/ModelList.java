@@ -22,8 +22,7 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Model Names";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
-                    + "<script type=''text/javascript'' src=''{1}''></script>\n"
-                    + "<script type=''text/javascript''>\n"
+                    + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[0, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
     

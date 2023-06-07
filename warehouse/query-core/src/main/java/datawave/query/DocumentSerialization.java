@@ -124,8 +124,8 @@ public class DocumentSerialization {
     
     public static InputStream consumeHeader(byte[] data) throws InvalidDocumentHeader {
         if (null == data || 3 > data.length) {
-            QueryException qe = new QueryException(DatawaveErrorCode.DATA_INVALID_ERROR, MessageFormat.format("Length: {0}",
-                            (null != data ? data.length : null)));
+            QueryException qe = new QueryException(DatawaveErrorCode.DATA_INVALID_ERROR,
+                            MessageFormat.format("Length: {0}", (null != data ? data.length : null)));
             throw new InvalidDocumentHeader(qe);
         }
         

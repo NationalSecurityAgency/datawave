@@ -168,8 +168,8 @@ public class AuthorizationsUtilTest {
     
     @Test
     public void testMinimizeWithSubset() {
-        ArrayList<Authorizations> authSets = Lists.newArrayList(new Authorizations("A", "B", "C", "D"), new Authorizations("C", "B"), new Authorizations("A",
-                        "B", "C"), new Authorizations("B", "C", "D", "E"));
+        ArrayList<Authorizations> authSets = Lists.newArrayList(new Authorizations("A", "B", "C", "D"), new Authorizations("C", "B"),
+                        new Authorizations("A", "B", "C"), new Authorizations("B", "C", "D", "E"));
         Collection<Authorizations> expected = Collections.singleton(new Authorizations("B", "C"));
         
         assertEquals(expected, AuthorizationsUtil.minimize(authSets));
@@ -203,8 +203,8 @@ public class AuthorizationsUtilTest {
     
     @Test
     public void testMinimizeWithDupsButNoSubset() {
-        ArrayList<Authorizations> authSets = Lists.newArrayList(new Authorizations("A", "B", "C", "D"), new Authorizations("B", "C", "F"), new Authorizations(
-                        "A", "B", "C", "D"), new Authorizations("B", "C", "D", "E"));
+        ArrayList<Authorizations> authSets = Lists.newArrayList(new Authorizations("A", "B", "C", "D"), new Authorizations("B", "C", "F"),
+                        new Authorizations("A", "B", "C", "D"), new Authorizations("B", "C", "D", "E"));
         
         LinkedHashSet<Authorizations> expected = new LinkedHashSet<>();
         expected.add(new Authorizations("A", "B", "C", "D"));

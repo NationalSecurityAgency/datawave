@@ -145,8 +145,8 @@ public class EdgeFilterIterator extends Filter {
     private void initOptions(Map<String,String> options) {
         String jexl = options.get(JEXL_OPTION);
         if (null == jexl) {
-            throw new IllegalArgumentException("Edge filter not configured with query string! Please configure parameter: " + JEXL_OPTION
-                            + " with the JEXL query.");
+            throw new IllegalArgumentException(
+                            "Edge filter not configured with query string! Please configure parameter: " + JEXL_OPTION + " with the JEXL query.");
         }
         // to stay consistent with the rest of the query engine, support case-insensitive boolean operators.
         String caseFixQuery = jexl.toLowerCase();

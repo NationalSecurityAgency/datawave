@@ -349,17 +349,17 @@ public class TestSharedCacheCoordinator implements Serializable {
         evictionPathCache.getListenable().addListener((client, event) -> {
             if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
                 // Call our eviction handler to do local eviction
-                        String path = event.getData().getPath();
-                        String dn = ZKPaths.getNodeFromPath(path);
-                        callback.evict(dn);
-                        
-                        // Now register ourselves under the eviction node that that once
-                        // a child for each running web server appears, the eviction node
-                        // can be cleaned up.
-                        String responsePath = ZKPaths.makePath(path, localName);
-                        curatorClient.newNamespaceAwareEnsurePath(responsePath).ensure(curatorClient.getZookeeperClient());
-                    }
-                });
+                String path = event.getData().getPath();
+                String dn = ZKPaths.getNodeFromPath(path);
+                callback.evict(dn);
+                
+                // Now register ourselves under the eviction node that that once
+                // a child for each running web server appears, the eviction node
+                // can be cleaned up.
+                String responsePath = ZKPaths.makePath(path, localName);
+                curatorClient.newNamespaceAwareEnsurePath(responsePath).ensure(curatorClient.getZookeeperClient());
+            }
+        });
     }
     
     /**

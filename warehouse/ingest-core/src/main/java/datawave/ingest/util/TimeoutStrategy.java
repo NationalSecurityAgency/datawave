@@ -21,7 +21,7 @@ public class TimeoutStrategy extends AbstractNGramTokenizationStrategy {
      *            Start time of the overall tokenization operation
      * @param maxAllowedExecutionTime
      *            Maximum number of milliseconds elapsed from the specified start time before a TimeoutException is thrown
-     * 
+     *            
      */
     public TimeoutStrategy(long startTime, int maxAllowedExecutionTime) {
         this.startTimeMillis = startTime;

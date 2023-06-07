@@ -70,7 +70,7 @@ public final class FastCharStream implements CharStream {
         tokenStart = 0;
         
         int charsRead = // fill space in buffer
-        input.read(buffer, newPosition, buffer.length - newPosition);
+                        input.read(buffer, newPosition, buffer.length - newPosition);
         if (charsRead == -1)
             throw new IOException("read past eof");
         else

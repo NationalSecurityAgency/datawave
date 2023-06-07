@@ -139,7 +139,7 @@ public class StandardTokenizer extends Tokenizer {
     /**
      * @see #setMaxTokenLength
      * @return max token length
-     * */
+     */
     public int getMaxTokenLength() {
         return maxTokenLength;
     }
@@ -157,7 +157,7 @@ public class StandardTokenizer extends Tokenizer {
     /**
      * @see #setMaxTokenLength
      * @return token truncate length
-     * */
+     */
     public int getTokenTruncateLength() {
         return defaultTokenTruncateLength;
     }

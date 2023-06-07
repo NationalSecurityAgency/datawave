@@ -131,7 +131,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
                     if (log.isTraceEnabled())
                         log.trace(" has next " + rangeQueue.isEmpty() + " is stopped? " + rangeConsumer.isStopped() + " isalive "
                                         + rangeConsumerThread.isAlive());
-                    
+                        
                     // wait until we have a minimum number of ranges buffered OR the buffer is full OR the specified
                     // amount of time to wait has elapsed OR we have processed all of our ranges before continuing
                     while (this.rangeQueue.size() < numRangesToBuffer && this.rangeQueue.remainingCapacity() > 0
@@ -288,7 +288,7 @@ public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closea
             
             if (log.isTraceEnabled())
                 log.trace(" range queue " + rangeQueue.isEmpty() + " is stopped? " + rangeConsumer.isStopped() + " isalive " + rangeConsumerThread.isAlive());
-            
+                
             // next is still null due to the check at the beginning of
             // the synchronized block
             

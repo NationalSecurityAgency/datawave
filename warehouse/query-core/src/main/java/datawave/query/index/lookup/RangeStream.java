@@ -174,8 +174,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         // check the query depth (up to config.getMaxDepthThreshold() + 1)
         int depth = DepthVisitor.getDepth(node, config.getMaxDepthThreshold());
         if (depth > config.getMaxDepthThreshold()) {
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_THRESHOLD_EXCEEDED, MessageFormat.format(
-                            "{0} > {1}, last operation: {2}", depth, config.getMaxDepthThreshold(), "RangeStreamLookup"));
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_THRESHOLD_EXCEEDED,
+                            MessageFormat.format("{0} > {1}, last operation: {2}", depth, config.getMaxDepthThreshold(), "RangeStreamLookup"));
             throw new DatawaveFatalQueryException(qe);
         }
         

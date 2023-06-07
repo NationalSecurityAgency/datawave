@@ -289,7 +289,8 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         
         // Check if we are recovering from IterationInterruptedException
         if (null != pStartKey && null != pStartKey.getRow() && null != pStartKey.getColumnFamily() && !pStartKey.getColumnFamily().toString().isEmpty()
-                        && null != pStartKey.getColumnQualifier() && !pStartKey.getColumnQualifier().toString().isEmpty() && !parentRange.isStartKeyInclusive()) {
+                        && null != pStartKey.getColumnQualifier() && !pStartKey.getColumnQualifier().toString().isEmpty()
+                        && !parentRange.isStartKeyInclusive()) {
             
             Key startKey = new Key(pStartKey.getRow(), pStartKey.getColumnFamily(), new Text(pStartKey.getColumnQualifier() + ONE_BYTE_STRING));
             this.parentRange = new Range(startKey, true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
@@ -639,7 +640,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 throw new IllegalArgumentException("source iterator is behind us, how did this happen? OurRow: " + currentRow + " Source key- Row:"
                                 + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: " + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
             } else { // same row
-            
+                
                 // if not a field index key, then advance to the next field index
                 if (!isFieldIndexKey(key)) {
                     if (wrapUpCurrent()) {// sets top key/val and resets counters
@@ -667,7 +668,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                                     + currentFieldName + " Source key- Row:" + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: "
                                     + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
                 } else { // same field name
-                
+                    
                     // check FIELD VALUE, there are multiple conditions here
                     // 1. we were given a set of field values to look for
                     // 2. we are doing all field values.
@@ -713,7 +714,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                         continue;
                         
                     } else { // same field value
-                    
+                        
                         // see if we care about data type
                         if (this.uniqByDataTypeOption || this.dataTypeFilter != null) {
                             if (log.isTraceEnabled()) {

@@ -114,7 +114,7 @@ public class Files {
      *            The directory to check.
      * @param checkWrite
      *            Whether or not to check if the directory is writable.
-     *
+     *            
      * @return an error message if there are any problems, null otherwise.
      * @throws IllegalArgumentException
      *             if any of the parameters are null.
@@ -147,7 +147,7 @@ public class Files {
      *            The directory to check.
      * @param checkWrite
      *            Whether or not to check if the directory is writable.
-     *
+     *            
      * @return an error message if there are any problems, null otherwise.
      * @throws IllegalArgumentException
      *             if any of the parameters are null.

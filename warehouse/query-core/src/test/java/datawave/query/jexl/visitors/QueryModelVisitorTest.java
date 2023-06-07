@@ -121,9 +121,8 @@ public class QueryModelVisitorTest {
     public void testEmptyExpansion() throws Exception {
         this.model = new QueryModel();
         
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
-                                        + "((_Bounded_ = true) && (DATE <= '2013-04-10 12:01:24' && DATE >= '2013-04-10 03:01:24'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
+                        + "((_Bounded_ = true) && (DATE <= '2013-04-10 12:01:24' && DATE >= '2013-04-10 03:01:24'))");
         ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(script);
         ASTJexlScript result = QueryModelVisitor.applyModel(groomed, model, allFields);
         

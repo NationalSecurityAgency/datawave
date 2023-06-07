@@ -246,8 +246,8 @@ public class TermFrequencyIndexIteratorTest {
     
     @Test
     public void testEndingFieldMismatch() throws IOException, ParseException {
-        Range r = new Range(getFiKey("row", "type1", "123.345.456.3", "FOO", "alf"), true, getFiKey("row", "type1", "123.345.456.3",
-                        Constants.MAX_UNICODE_STRING, "buz"), false);
+        Range r = new Range(getFiKey("row", "type1", "123.345.456.3", "FOO", "alf"), true,
+                        getFiKey("row", "type1", "123.345.456.3", Constants.MAX_UNICODE_STRING, "buz"), false);
         filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
                         fieldsToKeep);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);

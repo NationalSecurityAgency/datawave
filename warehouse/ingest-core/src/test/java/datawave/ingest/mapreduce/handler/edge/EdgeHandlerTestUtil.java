@@ -83,9 +83,9 @@ public class EdgeHandlerTestUtil {
         // check edge keys
         for (Key k : edgeKeys) {
             edgeKeyResults.add(k.getRow().toString().replaceAll(NB, "%00;"));
-            keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;")
-                            + " ::: " + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: "
-                            + k.getTimestamp() + " ::: " + k.isDeleted() + "\n");
+            keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
+                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp()
+                            + " ::: " + k.isDeleted() + "\n");
         }
         
         try {
@@ -110,8 +110,8 @@ public class EdgeHandlerTestUtil {
         private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
         
         @Override
-        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                        InterruptedException {
+        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+                        throws IOException, InterruptedException {
             for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                 cache.put(entry.getKey(), entry.getValue());
             }

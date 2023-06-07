@@ -162,7 +162,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
         currentBatch = Queues.newLinkedBlockingDeque();
         
         setThreads(1);
-
+        
         addListener(new BatchScannerListener(), MoreExecutors.newDirectExecutorService());
         
         serverFailureMap = Maps.newConcurrentMap();
@@ -367,7 +367,7 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 scan = new SpeculativeScan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);
                 
                 scan.setVisitors(visitorFunctions);
-
+                
                 Scan childScan = new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
                                 ((SpeculativeScan) scan).getQueue(), service);
                 
@@ -429,8 +429,8 @@ public class BatchScannerSession extends ScannerSession implements Iterator<Entr
                 ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, BatchResource.class,
                                 ((SpeculativeScan) scan).getQueue(), service));
                 
-                ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference,
-                                delegatedResourceInitializer, ((SpeculativeScan) scan).getQueue(), service));
+                ((SpeculativeScan) scan).addScan(new Scan(localTableName, localAuths, new ScannerChunk(chunk), delegatorReference, delegatedResourceInitializer,
+                                ((SpeculativeScan) scan).getQueue(), service));
                 
             } else {
                 scan = new Scan(localTableName, localAuths, chunk, delegatorReference, delegatedResourceInitializer, resultQueue, service);

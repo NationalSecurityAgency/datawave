@@ -143,8 +143,8 @@ public class Geometry extends Attribute<Geometry> implements Serializable {
             return Collections.emptySet();
         }
         try {
-            return FunctionalSet.singleton(new ValueTuple(fieldNames, getData(), Normalizer.GEOMETRY_NORMALIZER
-                            .normalizeDelegateType(new datawave.data.type.util.Geometry(geometry)), this));
+            return FunctionalSet.singleton(new ValueTuple(fieldNames, getData(),
+                            Normalizer.GEOMETRY_NORMALIZER.normalizeDelegateType(new datawave.data.type.util.Geometry(geometry)), this));
         } catch (IllegalArgumentException ne) {
             throw new IllegalArgumentException("Cannot normalize the geometry");
         }

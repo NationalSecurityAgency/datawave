@@ -301,8 +301,8 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                         nodeToReturn = ASTEvaluationOnly.create(nodeToReturn);
                     }
                 } catch (Exception e) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e, MessageFormat.format("Node: {0}, Datatypes: {1}",
-                                    PrintingVisitor.formattedQueryString(node), dataTypes));
+                    QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e,
+                                    MessageFormat.format("Node: {0}, Datatypes: {1}", PrintingVisitor.formattedQueryString(node), dataTypes));
                     log.error(qe);
                     throw new DatawaveFatalQueryException(qe);
                 }

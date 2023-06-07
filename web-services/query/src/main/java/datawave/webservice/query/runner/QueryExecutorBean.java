@@ -244,7 +244,7 @@ public class QueryExecutorBean implements QueryExecutor {
     
     @Inject
     private UserOperationsBean userOperationsBean;
-
+    
     @Inject
     private QueryMetricFactory metricFactory;
     
@@ -261,7 +261,7 @@ public class QueryExecutorBean implements QueryExecutor {
     private final int PAGE_TIMEOUT_MAX = QueryExpirationConfiguration.PAGE_TIMEOUT_MIN_DEFAULT;
     private final String UUID_REGEX_RULE = "[a-fA-F\\d-]+";
     private final String INVALID_PAGESIZE = "page.size";
-
+    
     @Inject
     private QueryParameters qp;
     
@@ -412,7 +412,7 @@ public class QueryExecutorBean implements QueryExecutor {
         GenericResponse<String> response = new GenericResponse<>();
         throwBadRequest(DatawaveErrorCode.INVALID_PAGE_SIZE, response);
     }
-
+    
     /**
      * This method will provide some initial query validation for the define and create query calls.
      * 
@@ -452,12 +452,12 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
             }
         }
-
+        
         /* If the incorrect pagesize parameter comes through as a main parameter, return a similar error. */
         if (queryParameters.containsKey(INVALID_PAGESIZE)) {
             handleIncorrectPageSize();
         }
-
+        
         queryParameters.remove(AuditParameters.QUERY_SECURITY_MARKING_COLVIZ);
         queryParameters.remove(AuditParameters.USER_DN);
         queryParameters.remove(AuditParameters.QUERY_AUDIT_TYPE);
@@ -543,8 +543,8 @@ public class QueryExecutorBean implements QueryExecutor {
         // always check against the max
         if (qd.logic.getMaxPageSize() > 0 && qp.getPagesize() > qd.logic.getMaxPageSize()) {
             log.error("Invalid page size: " + qp.getPagesize() + " vs " + qd.logic.getMaxPageSize());
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE, MessageFormat.format("Max = {0}.",
-                            qd.logic.getMaxPageSize()));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.PAGE_SIZE_TOO_LARGE,
+                            MessageFormat.format("Max = {0}.", qd.logic.getMaxPageSize()));
             GenericResponse<String> response = new GenericResponse<>();
             response.addException(qe);
             throw new BadRequestException(qe, response);
@@ -608,12 +608,12 @@ public class QueryExecutorBean implements QueryExecutor {
             response.setResult(q.getId().toString());
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, false);
             if (shouldTraceQuery) {
-                //TODO: OTEL-based tracing setup here
+                // TODO: OTEL-based tracing setup here
             }
             AccumuloConnectionFactory.Priority priority = qd.logic.getConnectionPriority();
             
-            rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
+            rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p,
+                            new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             queryCache.put(q.getId().toString(), rq);
@@ -721,16 +721,16 @@ public class QueryExecutorBean implements QueryExecutor {
             } finally {
                 accumuloConnectionRequestBean.requestEnd(q.getId().toString());
             }
-
+            
             boolean shouldTraceQuery = shouldTraceQuery(qp.getQuery(), qd.userid, qp.isTrace());
             if (shouldTraceQuery) {
-                //TODO: OTEL-based tracing setup here
+                // TODO: OTEL-based tracing setup here
             }
-
+            
             // hold on to a reference of the query logic so we cancel it if need be.
             qlCache.add(q.getId().toString(), qd.userid, qd.logic, client);
-            rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p, new RunningQueryTimingImpl(queryExpirationConf,
-                            qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
+            rq = new RunningQuery(metrics, null, priority, qd.logic, q, qp.getAuths(), qd.p,
+                            new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             rq.setActiveCall(true);
             rq.getMetric().setProxyServers(qd.proxyServers);
             rq.setClient(client);
@@ -821,7 +821,8 @@ public class QueryExecutorBean implements QueryExecutor {
     @Path("/{logicName}/plan")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Timed(name = "dw.query.planQuery", absolute = true)
-    public GenericResponse<String> planQuery(@Required("logicName") @PathParam("logicName") String queryLogicName, MultivaluedMap<String,String> queryParameters) {
+    public GenericResponse<String> planQuery(@Required("logicName") @PathParam("logicName") String queryLogicName,
+                    MultivaluedMap<String,String> queryParameters) {
         QueryData qd = validateQuery(queryLogicName, queryParameters, null);
         
         GenericResponse<String> response = new GenericResponse<>();
@@ -894,8 +895,8 @@ public class QueryExecutorBean implements QueryExecutor {
             }
             
             // the query principal is our local principal unless the query logic has a different user operations
-            DatawavePrincipal queryPrincipal = (qd.logic.getUserOperations() == null) ? (DatawavePrincipal) qd.p : qd.logic.getUserOperations().getRemoteUser(
-                            (DatawavePrincipal) qd.p);
+            DatawavePrincipal queryPrincipal = (qd.logic.getUserOperations() == null) ? (DatawavePrincipal) qd.p
+                            : qd.logic.getUserOperations().getRemoteUser((DatawavePrincipal) qd.p);
             // the overall principal (the one with combined auths across remote user operations) is our own user operations bean
             DatawavePrincipal overallPrincipal = userOperationsBean.getRemoteUser((DatawavePrincipal) qd.p);
             Set<Authorizations> calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(qp.getAuths(), overallPrincipal, queryPrincipal);
@@ -1067,8 +1068,8 @@ public class QueryExecutorBean implements QueryExecutor {
             // will throw IllegalArgumentException if not defined
             QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), p);
             AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-            RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                            queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
+            RunningQuery query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
+                            new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
             results.add(query);
             // Put in the cache by id if its not already in the cache.
             if (!queryCache.containsKey(q.getId().toString()))
@@ -1104,16 +1105,17 @@ public class QueryExecutorBean implements QueryExecutor {
                 // will throw IllegalArgumentException if not defined
                 QueryLogic<?> logic = queryLogicFactory.getQueryLogic(q.getQueryLogicName(), principal);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal, new RunningQueryTimingImpl(
-                                queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean, this.metricFactory);
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), principal,
+                                new RunningQueryTimingImpl(queryExpirationConf, qp.getPageTimeout()), this.predictor, this.userOperationsBean,
+                                this.metricFactory);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 queryCache.put(q.getId().toString(), query);
             }
         } else {
             // Check to make sure that this query belongs to current user.
             if (!query.getSettings().getOwner().equals(userid)) {
-                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userid, query.getSettings()
-                                .getOwner()));
+                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                MessageFormat.format("{0} != {1}", userid, query.getSettings().getOwner()));
             }
         }
         return query;
@@ -1155,14 +1157,14 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param id
      *            the ID of the query to reload/reset
      * @return an empty response
-     *
+     *            
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 400 invalid or missing parameter
      * @HTTP 500 internal server error
@@ -1185,17 +1187,17 @@ public class QueryExecutorBean implements QueryExecutor {
         
         AccumuloClient client = null;
         RunningQuery query = null;
-
+        
         try {
             ctx.getUserTransaction().begin();
             
             query = getQueryById(id);
-
+            
             // Lock this so that this query cannot be used concurrently.
             // The lock should be released at the end of the method call.
             if (!queryCache.lock(id))
                 throw new QueryException(DatawaveErrorCode.QUERY_LOCKED_ERROR);
-            
+                
             // We did not allocate a connection when we looked up the query. If
             // there's a connection when we get here, then we know it can only be
             // because the query was alive and in use, so we need to close that
@@ -1380,7 +1382,7 @@ public class QueryExecutorBean implements QueryExecutor {
         response.setPageNumber(pageNum);
         response.setLogicName(query.getLogic().getLogicName());
         response.setQueryId(queryId);
-
+        
         query.getMetric().setProxyServers(proxyServers);
         
         testForUncaughtException(query.getSettings(), resultsPage);
@@ -1394,7 +1396,7 @@ public class QueryExecutorBean implements QueryExecutor {
         } else {
             return response;
         }
-
+        
     }
     
     /**
@@ -1414,7 +1416,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -1485,7 +1487,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -1552,7 +1554,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -1623,7 +1625,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -1681,7 +1683,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 404 if id not found
@@ -1730,8 +1732,8 @@ public class QueryExecutorBean implements QueryExecutor {
             } else {
                 // Validate the query belongs to the caller
                 if (!query.getSettings().getOwner().equals(userid)) {
-                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userid, query.getSettings()
-                                    .getOwner()));
+                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                    MessageFormat.format("{0} != {1}", userid, query.getSettings().getOwner()));
                 }
                 
                 // pull the plan out of the query metric
@@ -1766,7 +1768,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 404 if id not found
@@ -1815,8 +1817,8 @@ public class QueryExecutorBean implements QueryExecutor {
             } else {
                 // Validate the query belongs to the caller
                 if (!query.getSettings().getOwner().equals(userid)) {
-                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userid, query.getSettings()
-                                    .getOwner()));
+                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                    MessageFormat.format("{0} != {1}", userid, query.getSettings().getOwner()));
                 }
                 
                 // pull the predictions out of the query metric
@@ -1907,7 +1909,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @ResponseHeader X-query-page-number page number returned by this call
      * @ResponseHeader X-query-last-page if true then there are no more pages for this query, caller should call close()
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 404 if id not found
@@ -1940,7 +1942,7 @@ public class QueryExecutorBean implements QueryExecutor {
             userid = dp.getShortName();
             proxyServers = dp.getProxyServers();
         }
-
+        
         RunningQuery query = null;
         Query contentLookupSettings = null;
         try {
@@ -1949,7 +1951,7 @@ public class QueryExecutorBean implements QueryExecutor {
                 GenericResponse<String> genericResponse = new GenericResponse<>();
                 throwBadRequest(DatawaveErrorCode.INVALID_QUERY_ID, genericResponse);
             }
-
+            
             ctx.getUserTransaction().begin();
             
             // Not calling getQueryById() here. We don't want to pull the persisted definition.
@@ -1980,14 +1982,14 @@ public class QueryExecutorBean implements QueryExecutor {
             } else {
                 // Validate the query belongs to the caller
                 if (!query.getSettings().getOwner().equals(userid)) {
-                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", userid, query.getSettings()
-                                    .getOwner()));
+                    throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                    MessageFormat.format("{0} != {1}", userid, query.getSettings().getOwner()));
                 }
                 
                 // Set the active call and get next
                 query.setActiveCall(true);
                 response = _next(query, id, proxyServers);
-
+                
                 // Conditionally swap the standard response with content
                 if (checkForContentLookup) {
                     final Query settings = query.getSettings();
@@ -2125,7 +2127,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 404 queries not found using {@code id}
      * @HTTP 500 internal server error
@@ -2269,7 +2271,7 @@ public class QueryExecutorBean implements QueryExecutor {
         queryCache.remove(queryId);
         
         log.debug("Closed " + queryId);
-
+        
     }
     
     /**
@@ -2285,7 +2287,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 404 queries not found using {@code id}
      * @HTTP 500 internal server error
@@ -2458,12 +2460,12 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param id
      *            - the id of the query to locate (@Required)
      * @see datawave.webservice.query.runner.QueryExecutorBean#get(String) get(String) for the @Required definition
-     *
+     *            
      * @return datawave.webservice.result.QueryImplListResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 404 queries not found using {@code id}
      * @HTTP 500 internal server error
@@ -2502,12 +2504,12 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param name
      *            the name of the query to locate (@Required)
      * @see datawave.webservice.query.runner.QueryExecutorBean#list(String) list(String) for the @Required definition
-     *
+     *            
      * @return datawave.webservice.result.QueryImplListResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 404 if the query with {@code name} does not belong to caller, you will never see it
      * @HTTP 404 queries not found using {@code name}
@@ -2555,7 +2557,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 404 queries not found using {@code id}
      * @HTTP 500 internal server error
@@ -2640,12 +2642,12 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - optional (defaults to {@code false}) indication of whether or not the query should be traced using the distributed tracing mechanism
      * @see datawave.webservice.query.runner.QueryExecutorBean#duplicateQuery(String, String, String, String, String, Date, Date, String, Date, Integer,
      *      Integer, Long, QueryPersistence, String, boolean)
-     *
+     *      
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *      
      * @HTTP 200 success
      * @HTTP 400 if invalid params or missing queryName param
      * @HTTP 404 if query not found
@@ -2662,8 +2664,9 @@ public class QueryExecutorBean implements QueryExecutor {
     public GenericResponse<String> duplicateQuery(@PathParam("id") String id, @Required("queryName") @FormParam("queryName") String newQueryName,
                     @FormParam("logicName") String newQueryLogicName, @FormParam("query") String newQuery,
                     @FormParam("columnVisibility") String newColumnVisibility,
-                    @FormParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date newBeginDate, @FormParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date newEndDate, @FormParam("auths") String newQueryAuthorizations,
+                    @FormParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date newBeginDate,
+                    @FormParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date newEndDate,
+                    @FormParam("auths") String newQueryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date newExpirationDate,
                     @FormParam("pagesize") Integer newPagesize, @FormParam("pageTimeout") Integer newPageTimeout,
                     @FormParam("maxResultsOverride") Long newMaxResultsOverride, @FormParam("persistence") QueryPersistence newPersistenceMode,
@@ -2772,12 +2775,12 @@ public class QueryExecutorBean implements QueryExecutor {
      *            - optional parameters to the query, a semi-colon separated list name=value pairs (optional, auditing required if changed)
      * @see datawave.webservice.query.runner.QueryExecutorBean#updateQuery(String, String, String, String, java.util.Date, java.util.Date, String,
      *      java.util.Date, Integer, Integer, Long, datawave.webservice.query.QueryPersistence, String)
-     *
+     *      
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *      
      * @HTTP 200 success
      * @HTTP 400 if invalid param or no params
      * @HTTP 404 queries not found using {@code name}
@@ -2793,8 +2796,8 @@ public class QueryExecutorBean implements QueryExecutor {
     @Timed(name = "dw.query.updateQuery", absolute = true)
     public GenericResponse<String> updateQuery(@PathParam("id") String id, @FormParam("logicName") String queryLogicName, @FormParam("query") String query,
                     @FormParam("columnVisibility") String newColumnVisibility,
-                    @FormParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date beginDate, @FormParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date endDate, @FormParam("auths") String queryAuthorizations,
+                    @FormParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date beginDate,
+                    @FormParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date endDate, @FormParam("auths") String queryAuthorizations,
                     @FormParam("expiration") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date expirationDate,
                     @FormParam("pagesize") Integer pagesize, @FormParam("pageTimeout") Integer pageTimeout,
                     @FormParam("maxResultsOverride") Long maxResultsOverride, @FormParam("persistence") QueryPersistence persistenceMode,
@@ -2802,8 +2805,8 @@ public class QueryExecutorBean implements QueryExecutor {
         GenericResponse<String> response = new GenericResponse<>();
         try {
             RunningQuery rq = getQueryById(id);
-            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout,
-                            maxResultsOverride, persistenceMode, parameters);
+            updateQuery(response, rq, queryLogicName, query, beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride,
+                            persistenceMode, parameters);
             
             response.setResult(id);
             return response;
@@ -2959,7 +2962,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 204 no results for userid
      * @HTTP 401 if the user does not have Administrative credentials
@@ -3041,7 +3044,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 400 if neither queryRegex nor user are specified
      * @HTTP 401 if the user does not have Administrative credentials
@@ -3077,7 +3080,7 @@ public class QueryExecutorBean implements QueryExecutor {
      * @param user
      *            (optional) the user name for which to disable query tracing
      * @return datawave.webservice.result.VoidResponse
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 400 if neither queryRegex nor user are specified
      * @HTTP 401 if the user does not have Administrative credentials
@@ -3169,7 +3172,7 @@ public class QueryExecutorBean implements QueryExecutor {
     protected QueryCache getQueryCache() {
         return queryCache;
     }
-
+    
     /**
      * @param logicName
      *            the logic name
@@ -3183,7 +3186,7 @@ public class QueryExecutorBean implements QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -3497,8 +3500,8 @@ public class QueryExecutorBean implements QueryExecutor {
                 }
                 ObjectMapper jsonSerializer = new ObjectMapper();
                 jsonSerializer.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
-                jsonSerializer.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(
-                                jsonSerializer.getTypeFactory())));
+                jsonSerializer.setAnnotationIntrospector(AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(),
+                                new JaxbAnnotationIntrospector(jsonSerializer.getTypeFactory())));
                 // Don't close the output stream
                 jsonSerializer.configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
                 try (JsonGenerator jsonGenerator = jsonSerializer.getFactory().createGenerator(out, JsonEncoding.UTF8)) {

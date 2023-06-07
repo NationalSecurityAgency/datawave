@@ -215,8 +215,8 @@ public class JexlASTHelperTest {
     public void manualNestedJexlNodeOrderEquality() throws Exception {
         ASTJexlScript one = JexlASTHelper.parseJexlQuery("(FOO == '1' && (BAR == 'bar' || BAR == 'baz'))");
         
-        JexlNode or = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE), new ASTEQNode(
-                        ParserTreeConstants.JJTEQNODE), "BAR", Lists.newArrayList("bar", "baz"));
+        JexlNode or = JexlNodeFactory.createNodeTreeFromFieldValues(ContainerType.OR_NODE, new ASTEQNode(ParserTreeConstants.JJTEQNODE),
+                        new ASTEQNode(ParserTreeConstants.JJTEQNODE), "BAR", Lists.newArrayList("bar", "baz"));
         JexlNode and = JexlNodeFactory.createAndNode(Lists.newArrayList(JexlNodeFactory.buildEQNode("FOO", "1"), or));
         
         ASTJexlScript two = JexlNodeFactory.createScript(and);

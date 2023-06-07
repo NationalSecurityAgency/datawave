@@ -377,7 +377,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
             byte[] defaultSecurityLabel = cv.getExpression();
             
             SortedKeyValueIterator<Key,Value> visFilter = VisibilityFilter.wrap(topIter, auths, defaultSecurityLabel);
-            IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(), acuTableConf);
+            IteratorBuilder.IteratorBuilderEnv iterLoad = IteratorConfigUtil.loadIterConf(IteratorScope.scan, Collections.emptyList(), Collections.emptyMap(),
+                            acuTableConf);
             return IteratorConfigUtil.loadIterators(visFilter, iterLoad.env(iterEnv).build());
         }
         
@@ -399,8 +400,8 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
      * @throws IOException
      *             for read/write issues
      */
-    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf) throws ClassNotFoundException,
-                    InstantiationException, IllegalAccessException, IOException {
+    protected SortedKeyValueIterator<Key,Value> buildTopIterators(SortedKeyValueIterator<Key,Value> topIter, Configuration conf)
+                    throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         
         List<AccumuloIterator> iterators = BulkInputFormat.getIterators(conf);
         List<AccumuloIteratorOption> options = BulkInputFormat.getIteratorOptions(conf);
@@ -700,7 +701,7 @@ public class RecordIterator extends RangeSplit implements SortedKeyValueIterator
     /**
      * @throws IOException
      *             for issues with read/write
-     * 
+     *             
      */
     private void seekRange() throws IOException {
         

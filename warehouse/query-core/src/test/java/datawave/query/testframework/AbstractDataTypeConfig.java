@@ -111,8 +111,8 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
      * @throws URISyntaxException
      *             ingest file uri conversion error
      */
-    protected AbstractDataTypeConfig(final String dt, final String ingestFile, final FieldConfig config, final RawDataManager manager) throws IOException,
-                    URISyntaxException {
+    protected AbstractDataTypeConfig(final String dt, final String ingestFile, final FieldConfig config, final RawDataManager manager)
+                    throws IOException, URISyntaxException {
         this(dt, ingestFile, CSV, config, manager);
     }
     

@@ -106,7 +106,8 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
      * @param fullSeekOnApply
      *            If true, seek all applicable records when apply is called. Otherwise, initialize the instance for incremental seeks via the Iterator methods.
      */
-    public IndexOnlyKeyToDocumentData(final Range parentRange, final String fieldName, final SortedKeyValueIterator<Key,Value> source, boolean fullSeekOnApply) {
+    public IndexOnlyKeyToDocumentData(final Range parentRange, final String fieldName, final SortedKeyValueIterator<Key,Value> source,
+                    boolean fullSeekOnApply) {
         this(parentRange, fieldName, source, new PrefixEquality(PartialKey.ROW_COLFAM), null, fullSeekOnApply);
     }
     
@@ -157,8 +158,8 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             Key docKey = getDocKey(from.getKey());
             
             // Ensure that we have a non-empty colqual
-            final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString(), from.getKey().getColumnQualifier()
-                            .toString() + '\u0000' + '\uffff');
+            final Key stopKey = new Key(from.getKey().getRow().toString(), from.getKey().getColumnFamily().toString(),
+                            from.getKey().getColumnQualifier().toString() + '\u0000' + '\uffff');
             
             // Create the primary range
             final Range keyRange = new Range(from.getKey(), true, stopKey, true);
@@ -483,8 +484,8 @@ public class IndexOnlyKeyToDocumentData extends KeyToDocumentData implements Ite
             final DocumentData documentData = new DocumentData(this.iteratorDocumentKey, Collections.singleton(docKey), keyValues, true);
             entry = Maps.immutableEntry(documentData, this.iteratorDocument);
         } else if (next == ITERATOR_COMPLETE_KEY) {
-            QueryException qe = new QueryException(DatawaveErrorCode.FETCH_NEXT_ELEMENT_ERROR, MessageFormat.format("Fieldname: {0}, Range: {1}",
-                            this.fieldName, this.parent));
+            QueryException qe = new QueryException(DatawaveErrorCode.FETCH_NEXT_ELEMENT_ERROR,
+                            MessageFormat.format("Fieldname: {0}, Range: {1}", this.fieldName, this.parent));
             throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
         } else {
             entry = null;

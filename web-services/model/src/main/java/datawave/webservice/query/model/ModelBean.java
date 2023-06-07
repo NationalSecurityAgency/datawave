@@ -112,7 +112,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.model.ModelList
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -188,7 +188,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 412 if model already exists with this name, delete it first
      * @HTTP 500 internal server error
@@ -230,7 +230,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -279,7 +279,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 204 model not found
      * @HTTP 500 internal server error
@@ -315,7 +315,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.model.Model
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -393,7 +393,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -419,9 +419,8 @@ public class ModelBean {
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            writer = client.createBatchWriter(tableName,
-                            new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS).setMaxMemory(BATCH_WRITER_MAX_MEMORY)
-                                            .setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
+            writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
+                            .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
                 Mutation m = ModelKeyParser.createMutation(mapping, model.getName());
                 writer.addMutation(m);
@@ -463,7 +462,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -493,9 +492,8 @@ public class ModelBean {
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);
-            writer = client.createBatchWriter(tableName,
-                            new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS).setMaxMemory(BATCH_WRITER_MAX_MEMORY)
-                                            .setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
+            writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(BATCH_WRITER_MAX_LATENCY, TimeUnit.MILLISECONDS)
+                            .setMaxMemory(BATCH_WRITER_MAX_MEMORY).setMaxWriteThreads(BATCH_WRITER_MAX_THREADS));
             for (FieldMapping mapping : model.getFields()) {
                 Mutation m = ModelKeyParser.createDeleteMutation(mapping, model.getName());
                 writer.addMutation(m);

@@ -21,10 +21,10 @@ public class CountMetadataCombiner extends Combiner {
      *
      * @param key
      *            The most recent version of the Key being reduced.
-     *
+     *            
      * @param iter
      *            An iterator over the Values for different versions of the key.
-     *
+     *            
      * @return The combined Value.
      */
     @Override

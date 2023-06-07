@@ -34,7 +34,7 @@ import java.util.TimeZone;
  * Test the function index query expansion
  */
 public class DateIndexQueryExpansionVisitorTest {
-
+    
     Authorizations auths = new Authorizations("HUSH");
     
     private static AccumuloClient client = null;
@@ -57,10 +57,9 @@ public class DateIndexQueryExpansionVisitorTest {
         this.deleteAndCreateTable();
         DateIndexTestIngest.writeItAll(client);
         PrintUtility.printTable(client, auths, TableName.DATE_INDEX);
-        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
-                        0.9f);
+        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2, 0.9f);
     }
-
+    
     private void deleteAndCreateTable() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, TableExistsException {
         TableOperations tops = client.tableOperations();
         if (tops.exists(TableName.DATE_INDEX)) {
@@ -73,7 +72,7 @@ public class DateIndexQueryExpansionVisitorTest {
     public void testDateIndexExpansion() throws Exception {
         givenStartDate("20100701");
         givenEndDate("20100710");
-
+        
         String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100703_0,20100704_0,20100704_2,20100705_1'))";
         
@@ -85,7 +84,7 @@ public class DateIndexQueryExpansionVisitorTest {
         givenStartDate("20100701");
         givenEndDate("20100710");
         dateIndexHelper.setTimeTravel(true);
-
+        
         String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100702_0,20100703_0,20100704_0,20100704_2,20100705_1'))";
         
@@ -96,7 +95,7 @@ public class DateIndexQueryExpansionVisitorTest {
     public void testDateIndexExpansion1() throws Exception {
         givenStartDate("20100101");
         givenEndDate("20100102");
-
+        
         String originalQuery = "filter:betweenDates(UPTIME, '20100101', '20100101')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100101', '20100101') && (SHARDS_AND_DAYS = '20100101_1,20100102_2,20100102_4,20100102_5'))";
         
@@ -107,21 +106,21 @@ public class DateIndexQueryExpansionVisitorTest {
     public void testDateIndexExpansion2() throws Exception {
         givenStartDate("20100101_200000");
         givenEndDate("20100102_210000");
-
+        
         String originalQuery = "filter:betweenDates(UPTIME, '20100101_200000', '20100101_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100101_200000', '20100101_210000') && (SHARDS_AND_DAYS = '20100101_1,20100102_2,20100102_4,20100102_5'))";
-
+        
         assertExpansion(originalQuery, expectedQuery);
     }
-
+    
     private void givenStartDate(String startDate) {
         this.startDate = DateHelper.parse(startDate);
     }
-
+    
     private void givenEndDate(String endDate) {
         this.endDate = DateHelper.parse(endDate);
     }
-
+    
     private void assertExpansion(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         
@@ -134,5 +133,5 @@ public class DateIndexQueryExpansionVisitorTest {
         JexlNodeAssert.assertThat(result).isEqualTo(expected).hasValidLineage();
         JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
     }
-
+    
 }

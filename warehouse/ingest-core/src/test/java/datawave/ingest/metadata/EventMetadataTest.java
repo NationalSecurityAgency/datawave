@@ -298,8 +298,8 @@ public class EventMetadataTest {
     }
     
     private BulkIngestKey createExpectedBulkIngestKey(Text columnFamily, String fieldName) {
-        return createExpectedBulkIngestKey(columnFamily, LOADDATES_TABLE_NAME, fieldName, new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER
-                        + DATA_TYPE));
+        return createExpectedBulkIngestKey(columnFamily, LOADDATES_TABLE_NAME, fieldName,
+                        new Text(VALUE_FOR_LOAD_DATE + RawRecordMetadata.DELIMITER + DATA_TYPE));
     }
     
     private BulkIngestKey createExpectedBulkIngestKey(Text columnFamily, Text tableName, String fieldName, Text columnQualifier) {

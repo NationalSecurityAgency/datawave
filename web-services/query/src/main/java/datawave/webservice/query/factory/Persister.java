@@ -145,8 +145,8 @@ public class Persister {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             c = connectionFactory.getClient(Priority.ADMIN, trackingMap);
             tableCheck(c);
-            try (BatchWriter writer = c.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L)
-                            .setMaxWriteThreads(1))) {
+            try (BatchWriter writer = c.createBatchWriter(TABLE_NAME,
+                            new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(10240L).setMaxWriteThreads(1))) {
                 writer.addMutation(QueryUtil.toMutation(query, new ColumnVisibility(query.getColumnVisibility())));
             }
             

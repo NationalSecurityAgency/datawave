@@ -290,8 +290,8 @@ public class FlagMakerConfig {
         }
         
         if (this.distributorType == null || !this.distributorType.matches("(simple|date|folderdate)")) {
-            throw new IllegalArgumentException("Invalid Distributor type provided: " + this.distributorType
-                            + ". Must be one of the following: simple|date|folderdate");
+            throw new IllegalArgumentException(
+                            "Invalid Distributor type provided: " + this.distributorType + ". Must be one of the following: simple|date|folderdate");
         }
         
         for (FlagDataTypeConfig cfg : this.flagCfg) {

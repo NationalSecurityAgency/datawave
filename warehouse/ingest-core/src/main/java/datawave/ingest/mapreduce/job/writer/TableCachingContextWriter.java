@@ -100,8 +100,8 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
     }
     
     @Override
-    protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                    InterruptedException {
+    protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+                    throws IOException, InterruptedException {
         Multimap<BulkIngestKey,Value> residual = HashMultimap.create();
         for (BulkIngestKey key : entries.keySet()) {
             Collection<Value> values = entries.get(key);
@@ -141,8 +141,8 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
         aggregatedCache.clear();
     }
     
-    private void cache(BulkIngestKey key, Collection<Value> values, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                    InterruptedException {
+    private void cache(BulkIngestKey key, Collection<Value> values, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+                    throws IOException, InterruptedException {
         List<Value> valueList = new ArrayList<>();
         valueList.addAll(values);
         
@@ -226,8 +226,8 @@ public class TableCachingContextWriter extends AbstractContextWriter<BulkIngestK
         }
         
         @Override
-        public void write(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                        InterruptedException {
+        public void write(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+                        throws IOException, InterruptedException {
             reduced.putAll(entries);
         }
         

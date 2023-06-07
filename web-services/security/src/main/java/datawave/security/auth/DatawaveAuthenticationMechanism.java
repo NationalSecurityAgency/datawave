@@ -100,8 +100,8 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             proxiedIssuers = getSingleHeader(exchange.getRequestHeaders(), PROXIED_ISSUERS_HEADER);
             logger.trace("Authenticating with proxiedEntities={} and proxiedIssuers={}", proxiedEntities, proxiedIssuers);
             if (proxiedEntities != null && proxiedIssuers == null) {
-                return notAuthenticated(exchange, securityContext, PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER
-                                + " is missing!");
+                return notAuthenticated(exchange, securityContext,
+                                PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER + " is missing!");
             }
         } catch (MultipleHeaderException e) {
             return notAuthenticated(exchange, securityContext, e.getMessage());
@@ -144,8 +144,8 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
                 }
                 // If one of subject or issuer is missing, then report authentication failure.
                 if (subjectDN == null || issuerDN == null) {
-                    return notAuthenticated(exchange, securityContext, "Missing trusted subject DN (" + subjectDN + ") or issuer DN (" + issuerDN
-                                    + ") for trusted header authentication.");
+                    return notAuthenticated(exchange, securityContext,
+                                    "Missing trusted subject DN (" + subjectDN + ") or issuer DN (" + issuerDN + ") for trusted header authentication.");
                 }
                 credential = new DatawaveCredential(subjectDN, issuerDN, proxiedEntities, proxiedIssuers);
             } catch (MultipleHeaderException e) {

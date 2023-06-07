@@ -53,7 +53,7 @@ public class ParseException extends QueryNodeParseException {
      * 
      * @param message
      *            the message
-     * */
+     */
     public ParseException(Message message) {
         super(message);
     }

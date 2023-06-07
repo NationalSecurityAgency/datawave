@@ -186,8 +186,8 @@ public class TreeFlatteningRebuilder {
             // if this node has children, create copies of them
             if (poppedNode.jjtGetNumChildren() > 0) {
                 List<JexlNode> copiedChildren = new ArrayList<>();
-                List<JexlNode> children = (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) ? getAndOrLeaves(poppedNode) : Arrays
-                                .asList(children(poppedNode));
+                List<JexlNode> children = (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) ? getAndOrLeaves(poppedNode)
+                                : Arrays.asList(children(poppedNode));
                 
                 for (JexlNode child : children) {
                     if (child != null) {

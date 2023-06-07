@@ -108,11 +108,11 @@ public class ProtobufEdgePreconditionTest {
         Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
         
     }
-
+    
     @Test
     public void testUnawarePreconDifferentGroup() {
         // FELINE == 'tabby'
-
+        
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
         fields.put("FELINE", new NormalizedFieldAndValue("FELINE", "tabby", "PET", "0"));
@@ -120,36 +120,34 @@ public class ProtobufEdgePreconditionTest {
         fields.put("FISH", new NormalizedFieldAndValue("FISH", "salmon", "WILD", "0"));
         fields.put("FISH", new NormalizedFieldAndValue("FISH", "guppy", "WILD", "1"));
         fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "fetch", "THING", "0"));
-
+        
         ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         edgeHandler.setup(context);
-
+        
         Set<String> expectedKeys = new HashSet<>();
         expectedKeys.add("guppy");
         expectedKeys.add("guppy%00;siamese");
         expectedKeys.add("guppy%00;tabby");
-
+        
         expectedKeys.add("salmon");
         expectedKeys.add("salmon%00;tabby");
         expectedKeys.add("salmon%00;siamese");
-
+        
         expectedKeys.add("siamese");
         expectedKeys.add("siamese%00;guppy");
         expectedKeys.add("siamese%00;salmon");
-
+        
         expectedKeys.add("tabby");
         expectedKeys.add("tabby%00;salmon");
         expectedKeys.add("tabby%00;guppy");
-
-
+        
         RawRecordContainer myEvent = getEvent(conf);
-
+        
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, false);
         Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
-
+        
     }
-
     
     @Test
     public void testAwarePreconSameGroup() {

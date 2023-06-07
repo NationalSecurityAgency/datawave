@@ -34,7 +34,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     public static final int MAX_MIGRATIONS_DEFAULT = 10000;
     
     private static final Logger log = Logger.getLogger(ShardedTableTabletBalancer.class);
-    private Map<TabletId, TabletServerId> tabletLocationCache;
+    private Map<TabletId,TabletServerId> tabletLocationCache;
     private Function<TabletId,String> partitioner;
     private TableId tableId;
     
@@ -71,7 +71,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     }
     
     @Override
-    protected Map<TabletId, TabletServerId> getLocationProvider() {
+    protected Map<TabletId,TabletServerId> getLocationProvider() {
         // Cache metadata locations so we only scan the metadata table once per balancer pass
         if (tabletLocationCache == null) {
             tabletLocationCache = Collections.unmodifiableMap(getRawLocationProvider());
@@ -88,7 +88,8 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
                 try {
                     maxMigrations = Integer.parseInt(maxMigrationsProp);
                 } catch (Exception e) {
-                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to " + maxMigrations);
+                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to "
+                                    + maxMigrations);
                 }
             }
         } catch (Exception e) {
@@ -107,7 +108,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
      * 
      * @return iterable location provider
      */
-    protected Map<TabletId, TabletServerId> getRawLocationProvider() {
+    protected Map<TabletId,TabletServerId> getRawLocationProvider() {
         return super.getLocationProvider();
     }
     
@@ -149,18 +150,18 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
          * @param tabletLocations
          *            the sorted list of tablet and current/previous location pairs
          */
-        public ShardGroupPartitioner(int numTservers, Map<TabletId, TabletServerId> tabletLocations) {
+        public ShardGroupPartitioner(int numTservers, Map<TabletId,TabletServerId> tabletLocations) {
             int groupSize = Math.round(numTservers * 0.95f);
             int numInGroup = 0;
             int groupNumber = 1;
             
             String groupID = String.format("g%04d", groupNumber);
             TabletId groupStartExtent = tabletLocations.keySet().iterator().next();
-
+            
             int groupStartNumber = numInGroup;
             byte[] prevDate = retrieveDate(groupStartExtent);
             groupIDs.put(groupStartExtent, groupID);
-            for (Entry<TabletId, TabletServerId> pair : tabletLocations.entrySet()) {
+            for (Entry<TabletId,TabletServerId> pair : tabletLocations.entrySet()) {
                 TabletId extent = pair.getKey();
                 
                 // The date changed, so save this extent as a (potential) new group start extent

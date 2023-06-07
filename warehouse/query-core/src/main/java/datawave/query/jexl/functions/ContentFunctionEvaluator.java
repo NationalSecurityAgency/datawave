@@ -245,8 +245,8 @@ public abstract class ContentFunctionEvaluator {
     
     @Override
     public String toString() {
-        return "ContentFunctionEvaluator{fields=" + fields + ", distance=" + distance + ", terms=" + Arrays.toString(terms) + ", termOffsetMap="
-                        + termOffsetMap + ", canProcess=" + canProcess + ", eventIds=" + eventIds + '}';
+        return "ContentFunctionEvaluator{fields=" + fields + ", distance=" + distance + ", terms=" + Arrays.toString(terms) + ", termOffsetMap=" + termOffsetMap
+                        + ", canProcess=" + canProcess + ", eventIds=" + eventIds + '}';
     }
     
 }

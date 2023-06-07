@@ -111,14 +111,11 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
                 for (JexlNode range : exceededValueRangeNodes.removeAll(field)) {
                     
                     // filter out functions which disallow ivarator filtering
-                    Collection<JexlNode> filterableFunctions = functionNodesByField
-                                    .get(field)
-                                    .stream()
-                                    .filter(functionNode -> {
-                                        JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
-                                                        .getArgumentDescriptor((ASTFunctionNode) JexlASTHelper.dereference(functionNode));
-                                        return argDesc != null && argDesc.allowIvaratorFiltering();
-                                    }).collect(Collectors.toList());
+                    Collection<JexlNode> filterableFunctions = functionNodesByField.get(field).stream().filter(functionNode -> {
+                        JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
+                                        .getArgumentDescriptor((ASTFunctionNode) JexlASTHelper.dereference(functionNode));
+                        return argDesc != null && argDesc.allowIvaratorFiltering();
+                    }).collect(Collectors.toList());
                     
                     functionNodes.removeAll(filterableFunctions);
                     if (copyFunction) {

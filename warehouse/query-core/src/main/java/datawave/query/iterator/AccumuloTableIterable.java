@@ -51,7 +51,8 @@ public class AccumuloTableIterable extends AccumuloTreeIterable<Key,DocumentData
         this(source, null, null, filter, new PrefixEquality(PartialKey.ROW_COLFAM), null, includeChildCount, includeParent);
     }
     
-    public AccumuloTableIterable(SortedKeyValueIterator<Key,Value> source, Predicate<Key> filter, Equality eq, boolean includeChildCount, boolean includeParent) {
+    public AccumuloTableIterable(SortedKeyValueIterator<Key,Value> source, Predicate<Key> filter, Equality eq, boolean includeChildCount,
+                    boolean includeParent) {
         this(source, null, null, filter, eq, null, includeChildCount, includeParent);
     }
     

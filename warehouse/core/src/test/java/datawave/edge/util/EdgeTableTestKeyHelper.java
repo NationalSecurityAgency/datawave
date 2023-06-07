@@ -46,17 +46,17 @@ public class EdgeTableTestKeyHelper {
         refBaseAttribute2 = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1 + SEP + ATTR_2),
                         new Text(DATE), COL_VIS, 814l);
         
-        refStatsProtobuf = new Key(statsRow, new Text("STATS/DURATION/TYPE/" + SOURCEREL),
-                        new Text(DATE + SEP + SOURCE_ATTR_1 + SEP + "ATTRIBUTE2/ATTRIBUTE3"), COL_VIS, 814l);
+        refStatsProtobuf = new Key(statsRow, new Text("STATS/DURATION/TYPE/" + SOURCEREL), new Text(DATE + SEP + SOURCE_ATTR_1 + SEP + "ATTRIBUTE2/ATTRIBUTE3"),
+                        COL_VIS, 814l);
         
-        refProtobuf = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL), new Text(DATE + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1 + SEP
-                        + "ATTRIBUTE2/ATTRIBUTE3"), COL_VIS, 814l);
+        refProtobuf = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL),
+                        new Text(DATE + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1 + SEP + "ATTRIBUTE2/ATTRIBUTE3"), COL_VIS, 814l);
         
-        refStatsDateProtobuf = new Key(statsRow, new Text("STATS/DURATION/" + TYPE + SEP + SOURCEREL), new Text(DATE + SEP + SOURCE_ATTR_1 + SEP
-                        + "ATTRIBUTE2/ATTRIBUTE3/A"), COL_VIS, 814l);
+        refStatsDateProtobuf = new Key(statsRow, new Text("STATS/DURATION/" + TYPE + SEP + SOURCEREL),
+                        new Text(DATE + SEP + SOURCE_ATTR_1 + SEP + "ATTRIBUTE2/ATTRIBUTE3/A"), COL_VIS, 814l);
         
-        refDateProtobuf = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL), new Text(DATE + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1 + SEP
-                        + "ATTRIBUTE2/ATTRIBUTE3/A"), COL_VIS, 814l);
+        refDateProtobuf = new Key(standardRow, new Text(TYPE + SEP + SOURCEREL + "-" + SINKREL),
+                        new Text(DATE + SEP + SOURCE_ATTR_1 + "-" + SINK_ATTR_1 + SEP + "ATTRIBUTE2/ATTRIBUTE3/A"), COL_VIS, 814l);
     }
     
     public void verifyEdgeKey(EdgeKey edgeKey, boolean isStat) {

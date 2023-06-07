@@ -173,8 +173,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY);
                 } else {
                     // otherwise start at the first document specified
-                    startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(this.columnFamilies.first()
-                                    + Constants.NULL));
+                    startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY,
+                                    new Text(this.columnFamilies.first() + Constants.NULL));
                 }
             } else {
                 // we had a start document specified in the start key, so start there
@@ -198,8 +198,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(Constants.MAX_UNICODE_STRING));
                 } else {
                     // othersize end at the last document specified
-                    endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(this.columnFamilies.last() + Constants.NULL
-                                    + Constants.MAX_UNICODE_STRING));
+                    endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY,
+                                    new Text(this.columnFamilies.last() + Constants.NULL + Constants.MAX_UNICODE_STRING));
                 }
             } else {
                 // we had an end document specified in the end key, so end there

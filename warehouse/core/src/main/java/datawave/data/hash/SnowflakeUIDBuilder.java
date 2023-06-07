@@ -347,8 +347,8 @@ public class SnowflakeUIDBuilder extends AbstractUIDBuilder<SnowflakeUID> {
         }
         
         if ((processId < 0) || (processId > SnowflakeUID.MAX_PROCESS_ID)) {
-            throw new IllegalArgumentException("Process ID must be a value between 0 and " + SnowflakeUID.MAX_PROCESS_ID + ", inclusively, but was "
-                            + processId);
+            throw new IllegalArgumentException(
+                            "Process ID must be a value between 0 and " + SnowflakeUID.MAX_PROCESS_ID + ", inclusively, but was " + processId);
         }
         
         if ((threadId < 0) || (threadId > SnowflakeUID.MAX_THREAD_ID)) {

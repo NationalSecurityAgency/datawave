@@ -40,7 +40,7 @@ public class BatchResource extends RunningResource {
      *            the table name
      * @throws TableNotFoundException
      *             if the table was not found
-     * 
+     *             
      */
     @Override
     protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {

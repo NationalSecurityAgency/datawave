@@ -251,8 +251,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
-        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs)
-                        .withTableConfiguration(tableConf).build());
+        return new SizeTrackingWriter(
+                        FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs).withTableConfiguration(tableConf).build());
     }
     
     /**
@@ -392,12 +392,12 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
     }
     
     protected void setTableIdsAndConfigs() throws IOException {
-
+        
         tableConfigs = new HashMap<>();
         Iterable<String> localityGroupTables = Splitter.on(",").split(conf.get(CONFIGURE_LOCALITY_GROUPS, ""));
-
+        
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
-
+        
         tableIds = tcu.getJobOutputTableNames(conf);
         Set<String> compressionTableBlackList = getCompressionTableBlackList(conf);
         String compressionType = getCompressionType(conf);
@@ -407,9 +407,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                 log.error("No properties found for table " + tableName);
             } else {
                 ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
-                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableBlackList.contains(tableName) ? new NoCompression().getName()
-                                : compressionType));
-
+                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(),
+                                (compressionTableBlackList.contains(tableName) ? new NoCompression().getName() : compressionType));
+                
                 // the locality groups feature is broken and will be removed in a future MR
                 if (Iterables.contains(localityGroupTables, tableName)) {
                     Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
@@ -572,14 +572,15 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Va
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
+                                        context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
                         FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
                                         .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
                         openReader.close();
-                        log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: "
-                                        + (System.currentTimeMillis() - startWriteTime) + " ms.");
+                        log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: " + (System.currentTimeMillis() - startWriteTime)
+                                        + " ms.");
                     } catch (Exception ex) {
                         log.error("Verification of successful RFile completion failed!!! " + path, ex);
                         throw new IOException(ex);

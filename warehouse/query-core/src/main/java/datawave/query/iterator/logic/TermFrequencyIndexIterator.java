@@ -259,8 +259,8 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
             }
             
             // Aggregate the document. NOTE: This will advance the source iterator
-            tk = buildDocument ? aggregation.apply(source, document, attributeFactory) : aggregation.apply(source, scanRange, seekColumnFamilies,
-                            includeColumnFamilies);
+            tk = buildDocument ? aggregation.apply(source, document, attributeFactory)
+                            : aggregation.apply(source, scanRange, seekColumnFamilies, includeColumnFamilies);
             if (log.isTraceEnabled()) {
                 log.trace("Doc size: " + this.document.size());
                 log.trace("Returning pointer " + tk);

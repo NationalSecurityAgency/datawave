@@ -153,7 +153,7 @@ public class ExtendedRunningQueryTest {
         expect(this.query.getQuery()).andReturn(query).times(2);
         expect(this.query.getQueryLogicName()).andReturn(queryLogicName).times(2);
         expect(this.query.getQueryName()).andReturn(queryName).times(2);
-
+        
         expect(this.query.getBeginDate()).andReturn(beginDate).times(2);
         expect(this.query.getEndDate()).andReturn(endDate).times(2);
         expect(this.query.isMaxResultsOverridden()).andReturn(false).anyTimes();
@@ -184,7 +184,8 @@ public class ExtendedRunningQueryTest {
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal, new QueryMetricFactoryImpl());
+        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+                        new QueryMetricFactoryImpl());
         
         ResultsPage result1 = subject.next();
         String result2 = subject.toString();
@@ -274,7 +275,8 @@ public class ExtendedRunningQueryTest {
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal, new QueryMetricFactoryImpl());
+        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+                        new QueryMetricFactoryImpl());
         
         ResultsPage result1 = subject.next();
         
@@ -484,7 +486,8 @@ public class ExtendedRunningQueryTest {
         
         // Run the test
         PowerMock.replayAll();
-        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal, new QueryMetricFactoryImpl());
+        RunningQuery subject = new RunningQuery(this.client, Priority.NORMAL, this.queryLogic, this.query, methodAuths, principal,
+                        new QueryMetricFactoryImpl());
         
         ResultsPage result1 = subject.next();
         

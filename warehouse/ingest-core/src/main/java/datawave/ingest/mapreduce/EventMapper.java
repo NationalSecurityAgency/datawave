@@ -350,8 +350,7 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
                             typeMap.get(typeStr).add(h);
                         } catch (ClassNotFoundException e) {
                             log.error("Error finding DataTypeHandler " + handlerClassName, e);
-                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException |
-                                 InvocationTargetException e) {
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                             log.error("Error creating DataTypeHandler " + handlerClassName, e);
                         }
                     }

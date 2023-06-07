@@ -35,8 +35,8 @@ import org.powermock.reflect.Whitebox;
 public class AccumuloConnectionFactoryTest extends EasyMockSupport {
     
     @TestSubject
-    private AccumuloConnectionFactoryBean bean = createMockBuilder(AccumuloConnectionFactoryBean.class).addMockedMethods("getCurrentUserDN",
-                    "getCurrentProxyServers").createStrictMock();
+    private AccumuloConnectionFactoryBean bean = createMockBuilder(AccumuloConnectionFactoryBean.class)
+                    .addMockedMethods("getCurrentUserDN", "getCurrentProxyServers").createStrictMock();
     
     @Mock(type = STRICT)
     private AccumuloTableCache cache;

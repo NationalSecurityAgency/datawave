@@ -55,8 +55,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     }
     
     // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
-    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                    Map<String,IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
+    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap,
+                    String threadName) throws TableNotFoundException {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
@@ -75,8 +75,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     
     protected void setupExecutor() {
         int threads = Math.max(this.config.getNumIndexLookupThreads(), MIN_THREADS);
-        executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new IndexExpansionThreadFactory(this.config,
-                        this.threadName));
+        executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
+                        new IndexExpansionThreadFactory(this.config, this.threadName));
     }
     
     protected void shutdownExecutor() {

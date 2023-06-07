@@ -27,7 +27,7 @@ public class Connections {
      *             if there is a problem with accumulo authentication
      * @throws AccumuloException
      *             if there is a general issue with accumulo
-     * 
+     *             
      */
     public static void initTables(Configuration conf) throws AccumuloException, AccumuloSecurityException {
         LinkedList<String> tables = new LinkedList<>();
@@ -97,14 +97,14 @@ public class Connections {
     }
     
     public static AccumuloClient metricsClient(Configuration c) throws AccumuloException, AccumuloSecurityException {
-        final String mtxZk = c.get(MetricsConfig.ZOOKEEPERS), mtxInst = c.get(MetricsConfig.INSTANCE), mtxUser = c.get(MetricsConfig.USER), mtxPass = c
-                        .get(MetricsConfig.PASS);
+        final String mtxZk = c.get(MetricsConfig.ZOOKEEPERS), mtxInst = c.get(MetricsConfig.INSTANCE), mtxUser = c.get(MetricsConfig.USER),
+                        mtxPass = c.get(MetricsConfig.PASS);
         return Accumulo.newClient().to(mtxInst, mtxZk).as(mtxUser, mtxPass).build();
     }
     
     public static AccumuloClient warehouseClient(Configuration c) throws AccumuloException, AccumuloSecurityException {
-        final String whZk = c.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS), whInst = c.get(MetricsConfig.WAREHOUSE_INSTANCE), whUser = c
-                        .get(MetricsConfig.WAREHOUSE_USERNAME), whPass = c.get(MetricsConfig.WAREHOUSE_PASSWORD);
+        final String whZk = c.get(MetricsConfig.WAREHOUSE_ZOOKEEPERS), whInst = c.get(MetricsConfig.WAREHOUSE_INSTANCE),
+                        whUser = c.get(MetricsConfig.WAREHOUSE_USERNAME), whPass = c.get(MetricsConfig.WAREHOUSE_PASSWORD);
         return Accumulo.newClient().to(whInst, whZk).as(whUser, whPass).build();
     }
 }

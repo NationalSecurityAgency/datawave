@@ -134,8 +134,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         return chunks;
     }
     
-    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, TabletLocator tl, QueryPlan currentPlan) throws AccumuloException,
-                    AccumuloSecurityException, TableNotFoundException {
+    protected void redistributeQueries(Multimap<String,QueryPlan> serverPlan, TabletLocator tl, QueryPlan currentPlan)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         
         List<Range> ranges = Lists.newArrayList(currentPlan.getRanges());
         if (!ranges.isEmpty()) {
@@ -163,8 +163,8 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
         
     }
     
-    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, AccumuloClient client, List<Range> ranges) throws AccumuloException,
-                    AccumuloSecurityException, TableNotFoundException {
+    protected Map<String,Map<KeyExtent,List<Range>>> binRanges(TabletLocator tl, AccumuloClient client, List<Range> ranges)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
         
         int lastFailureSize = Integer.MAX_VALUE;
@@ -188,7 +188,7 @@ public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> 
                         throw new TableDeletedException(tableId.canonical());
                     else if (ctx.getTableState(tableId) == TableState.OFFLINE)
                         throw new TableOfflineException("Table " + tableId + " is offline");
-                
+                    
                 lastFailureSize = failures.size();
                 
                 if (log.isTraceEnabled())

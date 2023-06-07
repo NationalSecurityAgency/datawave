@@ -130,16 +130,13 @@ public class ContentFunctionQueryTest {
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @BeforeClass
@@ -229,8 +226,8 @@ public class ContentFunctionQueryTest {
             final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
-                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
-                                .getTimestamp(), val);
+                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(),
+                                biKey.getKey().getTimestamp(), val);
                 writer.addMutation(mutation);
             }
             writer.close();
@@ -415,20 +412,17 @@ public class ContentFunctionQueryTest {
             
             // Process test file
             // CSV file => position,skips,term,score\n
-            content.lines().forEach(
-                            line -> {
-                                String[] parts = line.split(",");
-                                TermWeight.Info info = TermWeight.Info.newBuilder().addTermOffset(Integer.parseInt(parts[0]))
-                                                .addPrevSkips(Integer.parseInt(parts[1]))
-                                                .addScore(TermWeightPosition.positionScoreToTermWeightScore(Float.parseFloat(parts[3])))
-                                                .setZeroOffsetMatch(true).build();
-                                
-                                NormalizedFieldAndValue nfv = new NormalizedFieldAndValue("BODY", parts[2]);
-                                getShardFIKey(nfv, event, values);
-                                getShardIndexFIKey(nfv, event, values);
-                                getTFKey(nfv, event, values, info);
-                                
-                            });
+            content.lines().forEach(line -> {
+                String[] parts = line.split(",");
+                TermWeight.Info info = TermWeight.Info.newBuilder().addTermOffset(Integer.parseInt(parts[0])).addPrevSkips(Integer.parseInt(parts[1]))
+                                .addScore(TermWeightPosition.positionScoreToTermWeightScore(Float.parseFloat(parts[3]))).setZeroOffsetMatch(true).build();
+                
+                NormalizedFieldAndValue nfv = new NormalizedFieldAndValue("BODY", parts[2]);
+                getShardFIKey(nfv, event, values);
+                getShardIndexFIKey(nfv, event, values);
+                getTFKey(nfv, event, values, info);
+                
+            });
             
             return values;
         }
@@ -440,8 +434,8 @@ public class ContentFunctionQueryTest {
         
         private void getShardIndexFIKey(final NormalizedFieldAndValue nfv, final RawRecordContainer event, final Multimap values) {
             Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID(this.eventUid).build();
-            Multimap<BulkIngestKey,Value> termIndex = createTermIndexColumn(event, nfv.getEventFieldName(), nfv.getEventFieldValue(),
-                            getVisibility(event, nfv), null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
+            Multimap<BulkIngestKey,Value> termIndex = createTermIndexColumn(event, nfv.getEventFieldName(), nfv.getEventFieldValue(), getVisibility(event, nfv),
+                            null, null, shardId, this.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
             values.putAll(termIndex);
         }
         
@@ -452,9 +446,9 @@ public class ContentFunctionQueryTest {
             colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
                             .append(nfv.getIndexedFieldName());
             
-            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId,
-                            ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), fieldVisibility, event.getDate(),
-                            helper.getDeleteMode()));
+            BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()),
+                            new Key(shardId, ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), fieldVisibility,
+                                            event.getDate(), helper.getDeleteMode()));
             values.put(bKey, new Value(info.toByteArray()));
         }
         

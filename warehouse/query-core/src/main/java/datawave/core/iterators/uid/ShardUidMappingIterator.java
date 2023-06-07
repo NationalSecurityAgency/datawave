@@ -282,7 +282,8 @@ public class ShardUidMappingIterator extends UidMappingIterator {
     }
     
     // Helper methods
-    private KeyValue replaceEventUidInCQ(KeyValue keyValue, int partIndex, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
+    private KeyValue replaceEventUidInCQ(KeyValue keyValue, int partIndex, boolean startKey, boolean startKeyInclusive, boolean endKey,
+                    boolean endKeyInclusive) {
         Key key = keyValue.getKey();
         String[] replacement = replaceUid(key.getColumnQualifier().toString(), partIndex, startKey, startKeyInclusive, endKey, endKeyInclusive);
         // if no change in the uid, then return the original key
@@ -294,7 +295,8 @@ public class ShardUidMappingIterator extends UidMappingIterator {
         return new KeyValue(newKey, replacement[ORG_UID_INDEX].getBytes());
     }
     
-    private KeyValue replaceEventUidInCF(KeyValue keyValue, int partIndex, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
+    private KeyValue replaceEventUidInCF(KeyValue keyValue, int partIndex, boolean startKey, boolean startKeyInclusive, boolean endKey,
+                    boolean endKeyInclusive) {
         Key key = keyValue.getKey();
         String[] replacement = replaceUid(key.getColumnFamily().toString(), partIndex, startKey, startKeyInclusive, endKey, endKeyInclusive);
         // if no change in the uid, then return the original key

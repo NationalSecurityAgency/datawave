@@ -31,7 +31,8 @@ public class MatchesAtLeastCountOf extends JexlQueryFunction {
         try {
             Integer.parseInt(shouldBeANumber);
         } catch (Exception ex) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", ex, this.name));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                            MessageFormat.format("{0}", ex, this.name));
             throw new IllegalArgumentException(qe);
         }
     }

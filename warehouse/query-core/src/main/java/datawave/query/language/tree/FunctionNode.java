@@ -14,7 +14,8 @@ public class FunctionNode extends QueryNode {
     private Term query;
     private LuceneQueryFunction function = null;
     
-    public FunctionNode(LuceneQueryFunction function, List<String> parameterList, int depth, org.apache.lucene.queryparser.flexible.core.nodes.QueryNode parent) {
+    public FunctionNode(LuceneQueryFunction function, List<String> parameterList, int depth,
+                    org.apache.lucene.queryparser.flexible.core.nodes.QueryNode parent) {
         
         this.function = function;
         this.function.initialize(parameterList, depth, parent);

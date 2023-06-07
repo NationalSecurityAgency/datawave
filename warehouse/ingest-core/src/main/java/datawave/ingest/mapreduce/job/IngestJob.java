@@ -260,7 +260,7 @@ public class IngestJob implements Tool {
     public int run(String[] args) throws Exception {
         
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
-
+        
         ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
         log.addAppender(ca);
@@ -568,8 +568,7 @@ public class IngestJob implements Tool {
                             conf.set(DataTypeHelper.Properties.DATA_NAME, t.typeName());
                             setupHandler.setup(conf);
                         }
-                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                             NoSuchMethodException | InvocationTargetException e) {
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                         log.warn("Could not setup handler: " + handler, e);
                     }
                 }
@@ -1384,8 +1383,7 @@ public class IngestJob implements Tool {
                 Thread daemonThread = new Thread(daemon);
                 daemonThread.setDaemon(true);
                 daemonThread.start();
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
-                     InvocationTargetException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 throw new IllegalArgumentException(e);
             }
         }
@@ -1535,8 +1533,8 @@ public class IngestJob implements Tool {
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, Text tableName, Mutation mutation) {
         for (KeyValue keyValue : getKeyValues(mutation)) {
-            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(), keyValue
-                            .getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
+            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(),
+                            keyValue.getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
         }
     }
     
@@ -1577,8 +1575,8 @@ public class IngestJob implements Tool {
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Value value) {
-        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(), key.getKey()
-                        .getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
+        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(),
+                        key.getKey().getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
     }
     
     /**
@@ -1625,8 +1623,8 @@ public class IngestJob implements Tool {
     public static List<KeyValue> getKeyValues(Mutation m) {
         List<KeyValue> values = new ArrayList<>();
         for (ColumnUpdate update : m.getUpdates()) {
-            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(), (update
-                            .hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
+            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(),
+                            (update.hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
         }
         return values;
     }

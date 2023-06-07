@@ -30,8 +30,8 @@ public class LiveContextWriter extends AbstractContextWriter<Text,Mutation> {
         }
     }
     
-    protected void writeToContext(TaskInputOutputContext<?,?,Text,Mutation> context, Map.Entry<BulkIngestKey,Value> entry) throws IOException,
-                    InterruptedException {
+    protected void writeToContext(TaskInputOutputContext<?,?,Text,Mutation> context, Map.Entry<BulkIngestKey,Value> entry)
+                    throws IOException, InterruptedException {
         context.write(entry.getKey().getTableName(), getMutation(entry.getKey().getKey(), entry.getValue()));
     }
     

@@ -204,10 +204,13 @@ public class RecordIteratorTest {
         TabletSplitSplit splits = new TabletSplitSplit(3);
         
         FileRangeSplit r1 = new FileRangeSplit(new Range(new Key("A", "cf3", "\0\0cq3123"), new Key("A", "cf3", "\0cq3123\0\0\0")), null, 0, 0, null);
-        FileRangeSplit r2 = new FileRangeSplit(new Range(new Key("A", "cf3", "\0\0\0\0cq212\0\1"), new Key("A", "cf3",
-                        "\0\0\0cq212\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1")), null, 0, 0, null);
-        FileRangeSplit r3 = new FileRangeSplit(new Range(new Key("A", "cf3", "\0\0\0cq11"), new Key("A", "cf3",
-                        "\uefff\0\0cq11\0\0\0\0\0\0\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff")), null, 0, 0, null);
+        FileRangeSplit r2 = new FileRangeSplit(
+                        new Range(new Key("A", "cf3", "\0\0\0\0cq212\0\1"), new Key("A", "cf3", "\0\0\0cq212\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\1")), null,
+                        0, 0, null);
+        FileRangeSplit r3 = new FileRangeSplit(
+                        new Range(new Key("A", "cf3", "\0\0\0cq11"),
+                                        new Key("A", "cf3", "\uefff\0\0cq11\0\0\0\0\0\0\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff\uefff")),
+                        null, 0, 0, null);
         
         splits.add(r1);
         splits.add(r2);

@@ -186,8 +186,8 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                             }
                         }
                     }
-                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException |
-                         NoSuchMethodException | InvocationTargetException e) {
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | IOException | NoSuchMethodException
+                                | InvocationTargetException e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.LARGE_FIELDED_LIST_ERROR, e);
                     throw new DatawaveFatalQueryException(qe);
                 }
@@ -326,7 +326,8 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         }
     }
     
-    protected URI createFst(SortedSet<String> values) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    protected URI createFst(SortedSet<String> values) throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException,
+                    NoSuchMethodException, InvocationTargetException {
         FST fst = DatawaveFieldIndexListIteratorJexl.getFST(values);
         
         // now serialize to our file system

@@ -65,12 +65,11 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     protected RangeProvider rangeProvider = new DocumentRangeProvider();
     
     private boolean includeParent = false;
-
-    //  track aggregation threshold and the time
+    
+    // track aggregation threshold and the time
     private long aggregationStart;
     private long aggregationStop;
     private int aggregationThreshold;
-
     
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
         this(source, new PrefixEquality(PartialKey.ROW_COLFAM), false, false);
@@ -120,13 +119,15 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         this.rangeProvider = rangeProvider;
         return this;
     }
-
+    
     /**
      * Builder-style method for setting the aggregation threshold
-     * @param aggregationThreshold a time in milliseconds
+     * 
+     * @param aggregationThreshold
+     *            a time in milliseconds
      * @return this object
      */
-    public KeyToDocumentData withAggregationThreshold(int aggregationThreshold){
+    public KeyToDocumentData withAggregationThreshold(int aggregationThreshold) {
         this.aggregationThreshold = aggregationThreshold;
         return this;
     }
@@ -154,7 +155,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         if (null == from || null == from.getKey() || null == from.getValue()) {
             return null;
         }
-
+        
         Range keyRange = rangeProvider.getRange(from.getKey());
         
         try {
@@ -173,7 +174,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             } else {
                 attrs = Collections.emptyList();
             }
-
+            
             logStop(keyRange.getStartKey());
             return Maps.immutableEntry(new DocumentData(from.getKey(), docKeys, attrs, false), from.getValue());
         } catch (IOException e) {
@@ -283,7 +284,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         final ByteSequence row = key.getRowData();
         final ByteSequence cf = key.getColumnFamilyData();
         final ByteSequence cv = key.getColumnVisibilityData();
-        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(), EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
+        return new Key(row.getBackingArray(), row.offset(), row.length(), cf.getBackingArray(), cf.offset(), cf.length(), EMPTY_BYTE_SEQUENCE.getBackingArray(),
+                        EMPTY_BYTE_SEQUENCE.offset(), EMPTY_BYTE_SEQUENCE.length(), cv.getBackingArray(), cv.offset(), cv.length(), key.getTimestamp());
     }
     
     private static List<Entry<Key,Value>> appendHierarchyFields(List<Entry<Key,Value>> documentAttributes, Key key, Range seekRange,
@@ -383,7 +385,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         
         return basicChildCount;
     }
-
+    
     /**
      * Mark the aggregation start time.
      */
@@ -393,23 +395,25 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
         aggregationStart = System.currentTimeMillis();
     }
-
+    
     /**
      * Mark the aggregation stop time.
      * <p>
      * Logs the total aggregation time if the {@link #aggregationThreshold} is exceeded.
      *
-     * @param k the aggregation range's start key
+     * @param k
+     *            the aggregation range's start key
      */
     private void logStop(Key k) {
         if (aggregationThreshold == -1) {
             return;
         }
-
+        
         aggregationStop = System.currentTimeMillis();
-
+        
         if (aggregationThreshold > 0 && (aggregationStop - aggregationStart) > aggregationThreshold) {
-            log.warn("time to aggregate document " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + (aggregationStop - aggregationStart));
+            log.warn("time to aggregate document " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was "
+                            + (aggregationStop - aggregationStart));
         }
     }
 }

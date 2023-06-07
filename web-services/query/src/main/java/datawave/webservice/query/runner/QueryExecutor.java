@@ -88,7 +88,7 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 202 if asynch is true - see Location response header for the job URI location
      * @HTTP 204 success and no results
@@ -112,7 +112,7 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -139,7 +139,7 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -162,7 +162,7 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *                 
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -335,7 +335,7 @@ public interface QueryExecutor {
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 400 if neither queryRegex nor user are specified
      * @HTTP 401 if the user does not have Administrative credentials
@@ -352,7 +352,7 @@ public interface QueryExecutor {
      * @param user
      *            (optional) the user name for which to disable query tracing
      * @return datawave.webservice.result.VoidResponse
-     *
+     *            
      * @HTTP 200 success
      * @HTTP 400 if neither queryRegex nor user are specified
      * @HTTP 401 if the user does not have Administrative credentials

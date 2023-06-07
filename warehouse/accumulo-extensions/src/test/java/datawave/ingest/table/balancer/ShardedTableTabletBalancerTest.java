@@ -89,7 +89,7 @@ public class ShardedTableTabletBalancerTest {
         unassigned.put(makeExtent(TNAME, "20100124_1", "20100123_3"), null);
         unassigned.put(makeExtent(TNAME, "20100124_2", "20100124_1"), null);
         unassigned.put(makeExtent(TNAME, "20100124_3", "20100124_2"), null);
-
+        
         Map<TabletId,TabletServerId> assignments = new HashMap<>();
         
         // Apply the assignments and make sure we're balanced.
@@ -576,33 +576,33 @@ public class ShardedTableTabletBalancerTest {
             migrated.add(m.getTablet());
         }
     }
-
+    
     private static class TestTServers {
         private final Set<TabletServerId> tservers = new HashSet<>();
         private final SortedMap<TabletId,TabletServerId> tabletLocs = new TreeMap<>();
         private int portNumber = 1000;
         private Random random;
-
+        
         public TestTServers(Random random) {
             this.random = random;
         }
-
+        
         public void addTServers(String... locations) {
             for (String location : locations) {
                 addTServer(location);
             }
         }
-
+        
         public TabletServerId addTServer(String location) {
             return addTServer(location, portNumber++);
         }
-
+        
         public TabletServerId addTServer(String location, int port) {
             TabletServerId tsi = new TabletServerIdImpl(new TServerInstance(location + ":" + port, 6));
             tservers.add(tsi);
             return tsi;
         }
-
+        
         public void addTablet(TabletId extent, String location) {
             TabletServerId tsi = null;
             for (TabletServerId candidate : tservers) {
@@ -615,11 +615,11 @@ public class ShardedTableTabletBalancerTest {
                 tsi = addTServer(location);
             addTablet(extent, tsi);
         }
-
+        
         public void addTablet(TabletId extent, TabletServerId tsi) {
             tabletLocs.put(extent, tsi);
         }
-
+        
         public void applyAssignments(Map<TabletId,TabletServerId> assignments) {
             for (Map.Entry<TabletId,TabletServerId> entry : assignments.entrySet()) {
                 TabletId extentToAssign = entry.getKey();
@@ -628,63 +628,63 @@ public class ShardedTableTabletBalancerTest {
                 tabletLocs.put(extentToAssign, assignedServer);
             }
         }
-
+        
         public void applyMigrations(List<TabletMigration> migrationsOut) {
             for (TabletMigration migration : migrationsOut) {
                 tabletLocs.put(migration.getTablet(), migration.getNewTabletServer());
             }
         }
-
+        
         public void checkBalance(Function<TabletId,String> partitioner) {
             checkPartitioning(partitioner);
-
+            
             MapCounter<String> groupCounts = new MapCounter<>();
             Map<TabletServerId,MapCounter<String>> tserverGroupCounts = new HashMap<>(tservers.size());
-
+            
             for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
                 String group = partitioner.apply(entry.getKey());
                 TabletServerId loc = entry.getValue();
-
+                
                 groupCounts.increment(group, 1);
                 MapCounter<String> tgc = tserverGroupCounts.get(loc);
                 if (tgc == null) {
                     tgc = new MapCounter<>();
                     tserverGroupCounts.put(loc, tgc);
                 }
-
+                
                 tgc.increment(group, 1);
             }
-
+            
             Map<String,Integer> expectedCounts = new HashMap<>();
-
+            
             int totalExtra = 0;
             for (String group : groupCounts.keySet()) {
                 long groupCount = groupCounts.get(group);
                 totalExtra += groupCount % tservers.size();
                 expectedCounts.put(group, (int) (groupCount / tservers.size()));
             }
-
+            
             // The number of extra tablets from all groups that each tserver must have.
             int expectedExtra = totalExtra / tservers.size();
             int maxExtraGroups = expectedExtra + ((totalExtra % tservers.size() > 0) ? 1 : 0);
-
+            
             for (Map.Entry<TabletServerId,MapCounter<String>> entry : tserverGroupCounts.entrySet()) {
                 MapCounter<String> tgc = entry.getValue();
                 int tserverExtra = 0;
                 for (String group : groupCounts.keySet()) {
                     assertTrue("Group " + group + " had " + tgc.get(group) + " tablets on " + entry.getKey() + ", which is less than the expected minimum of "
-                            + expectedCounts.get(group), tgc.get(group) >= expectedCounts.get(group));
+                                    + expectedCounts.get(group), tgc.get(group) >= expectedCounts.get(group));
                     assertTrue("Group " + group + " had " + tgc.get(group) + " tablets on " + entry.getKey()
                                     + ", which is greater than the expected maximum of " + (expectedCounts.get(group) + 1),
-                            tgc.get(group) <= expectedCounts.get(group) + 1);
+                                    tgc.get(group) <= expectedCounts.get(group) + 1);
                     tserverExtra += tgc.get(group) - expectedCounts.get(group);
                 }
-
+                
                 assertTrue("tserverExtra of " + tserverExtra + " is less than expected " + expectedExtra, tserverExtra >= expectedExtra);
                 assertTrue("tserverExtra of " + tserverExtra + " is greater than expected " + maxExtraGroups, tserverExtra <= maxExtraGroups);
             }
         }
-
+        
         public void checkPartitioning(Function<TabletId,String> partitioner) {
             Map<String,String> partitions = new HashMap<>();
             for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
@@ -696,18 +696,18 @@ public class ShardedTableTabletBalancerTest {
                     date = er.substring(0, idx);
                 }
                 String groupID = partitioner.apply(extent);
-
+                
                 if (!partitions.containsKey(date))
                     partitions.put(date, groupID);
-
+                
                 assertEquals("Extent " + extent + " is assigned to partition " + groupID + " but we expected " + partitions.get(date), groupID,
-                        partitions.get(date));
+                                partitions.get(date));
             }
         }
-
+        
         public void checkDateDistribution() {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
-
+            
             // Accumulate tservers per day, per week, per month
             HashMap<LocalDate,Set<TabletServerId>> dayCounts = new HashMap<>();
             HashMap<Integer,Set<TabletServerId>> weekCounts = new HashMap<>();
@@ -718,54 +718,54 @@ public class ShardedTableTabletBalancerTest {
             for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
                 String ds = entry.getKey().getEndRow().toString().substring(0, 8);
                 LocalDate date = LocalDate.parse(ds, formatter);
-
+                
                 Set<TabletServerId> set;
-
+                
                 set = dayCounts.computeIfAbsent(date, k -> new HashSet<>());
                 set.add(entry.getValue());
                 shardsPerDay.increment(date, 1);
-
+                
                 int week = date.get(WeekFields.ISO.weekOfWeekBasedYear());
                 set = weekCounts.computeIfAbsent(week, k -> new HashSet<>());
                 set.add(entry.getValue());
                 shardsPerWeek.increment(week, 1);
-
+                
                 int month = date.getMonthValue();
                 set = monthCounts.computeIfAbsent(month, k -> new HashSet<>());
                 set.add(entry.getValue());
                 shardsPerMonth.increment(month, 1);
             }
-
+            
             for (Integer month : monthCounts.keySet()) {
                 int count = monthCounts.get(month).size();
                 int shardsInMonth = (int) shardsPerMonth.get(month);
                 if (shardsInMonth < tservers.size()) {
                     float percent = count / (float) shardsInMonth;
                     assertTrue("Month " + month + " only has tablets on " + (percent * 100) + "% of the tservers per shard in month (" + count + "/"
-                            + shardsInMonth + ")", percent >= 0.9f);
+                                    + shardsInMonth + ")", percent >= 0.9f);
                 } else {
                     float percent = count / (float) tservers.size();
                     assertTrue("Month " + month + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")",
-                            percent >= 0.9f);
+                                    percent >= 0.9f);
                 }
             }
-
+            
             for (Integer week : weekCounts.keySet()) {
                 int count = weekCounts.get(week).size();
                 int shardsInWeek = (int) shardsPerWeek.get(week);
                 if (shardsInWeek < tservers.size()) {
                     float percent = count / (float) shardsInWeek;
                     assertTrue("Week " + week + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")",
-                            percent >= 0.9f);
+                                    percent >= 0.9f);
                 } else {
                     // Given the way we partition data, a week could easily be split across multiple groups and then the two pieces of the week
                     // that span groups might get stacked on the same tservers a little bit more, so we check a lower coverage percentage here.
                     float percent = count / (float) tservers.size();
                     assertTrue("Week " + week + " only has tablets on " + (percent * 100) + "% of the tservers (" + count + "/" + tservers.size() + ")",
-                            percent >= 0.7f);
+                                    percent >= 0.7f);
                 }
             }
-
+            
             for (LocalDate date : dayCounts.keySet()) {
                 int count = dayCounts.get(date).size();
                 int shardsInDay = (int) shardsPerDay.get(date);
@@ -773,7 +773,7 @@ public class ShardedTableTabletBalancerTest {
                 assertEquals("Expected day " + date + " to be on " + shardsInDay + " tservers, but only found on " + count, shardsInDay, count);
             }
         }
-
+        
         public void checkShardsPerDay(int evenMin, int evenMax) {
             Map<TabletServerId,Multiset<String>> shardsPerServer = new HashMap<>();
             for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
@@ -786,7 +786,7 @@ public class ShardedTableTabletBalancerTest {
                 String group = entry.getKey().getEndRow().toString().substring(0, 8);
                 set.add(group);
             }
-
+            
             for (Map.Entry<TabletServerId,Multiset<String>> entry : shardsPerServer.entrySet()) {
                 Multiset<String> entries = entry.getValue();
                 for (String date : entries.elementSet()) {
@@ -795,13 +795,13 @@ public class ShardedTableTabletBalancerTest {
                 }
             }
         }
-
+        
         public void peturbBalance() {
             Multimap<TabletServerId,TabletId> serverTablets = HashMultimap.create();
             for (Map.Entry<TabletId,TabletServerId> entry : tabletLocs.entrySet()) {
                 serverTablets.put(entry.getValue(), entry.getKey());
             }
-
+            
             ArrayList<TabletServerId> serversArray = new ArrayList<>(tservers);
             for (int i = 0; i < 101; i++) {
                 // Find a random source server that has at least some tablets assigned to it.
@@ -814,7 +814,7 @@ public class ShardedTableTabletBalancerTest {
                 do {
                     toServer = serversArray.get(random.nextInt(serversArray.size()));
                 } while (fromServer.equals(toServer));
-
+                
                 ArrayList<TabletId> fromExtents = new ArrayList<>(serverTablets.get(fromServer));
                 int migrationsToMove = random.nextInt(fromExtents.size());
                 for (int j = 0; j < migrationsToMove; j++) {
@@ -826,16 +826,16 @@ public class ShardedTableTabletBalancerTest {
                 }
             }
         }
-
-        public SortedMap<TabletServerId, TServerStatus> getCurrent() {
+        
+        public SortedMap<TabletServerId,TServerStatus> getCurrent() {
             SortedMap<TabletServerId,TServerStatus> current = new TreeMap<>();
             for (TabletServerId tserver : tservers) {
                 current.put(tserver, new TServerStatusImpl(new TabletServerStatus()));
             }
             return current;
         }
-
-        public Map<TabletId, TabletServerId> getLocationProvider() {
+        
+        public Map<TabletId,TabletServerId> getLocationProvider() {
             return tabletLocs;
         }
     }
@@ -849,7 +849,7 @@ public class ShardedTableTabletBalancerTest {
         }
         
         @Override
-        protected Map<TabletId, TabletServerId> getRawLocationProvider() {
+        protected Map<TabletId,TabletServerId> getRawLocationProvider() {
             return testTServers.getLocationProvider();
         }
         

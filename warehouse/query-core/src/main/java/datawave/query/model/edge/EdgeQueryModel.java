@@ -116,12 +116,14 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
                 throw new InvalidModelException(String.format("The model has no field mapping for alias '%s'", modelEntry.getKey()));
             }
             if (aliasedFieldNames.size() > 1) {
-                throw new InvalidModelException("An alias cannot be associated with more than one internal field name. Offending alias: " + modelEntry.getKey());
+                throw new InvalidModelException(
+                                "An alias cannot be associated with more than one internal field name. Offending alias: " + modelEntry.getKey());
             }
             for (String aliasedFieldName : aliasedFieldNames) {
                 if (!model.getAllInternalFieldNames().contains(aliasedFieldName)) {
-                    String msg = String.format("The model contains a 'nameOnDisk' field that isn't recognized by the internal model. "
-                                    + "Alias: '%s' Invalid Field: '%s'", modelEntry.getKey(), aliasedFieldName);
+                    String msg = String.format(
+                                    "The model contains a 'nameOnDisk' field that isn't recognized by the internal model. " + "Alias: '%s' Invalid Field: '%s'",
+                                    modelEntry.getKey(), aliasedFieldName);
                     throw new InvalidModelException(msg);
                 }
             }

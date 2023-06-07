@@ -40,8 +40,8 @@ public abstract class MockTableTest {
     }
     
     protected BatchWriter createBatchWriter() throws TableNotFoundException {
-        return client.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxMemory(10000L).setMaxLatency(1000L, TimeUnit.MILLISECONDS)
-                        .setMaxWriteThreads(4));
+        return client.createBatchWriter(TABLE_NAME,
+                        new BatchWriterConfig().setMaxMemory(10000L).setMaxLatency(1000L, TimeUnit.MILLISECONDS).setMaxWriteThreads(4));
     }
     
     protected BatchWriter getWriter() {

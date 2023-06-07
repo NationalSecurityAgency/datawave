@@ -640,7 +640,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 for (AccumuloIterator iter : getIterators(conf)) {
                     if (!c.tableOperations().testClassLoad(getTablename(conf), iter.getIteratorClass(), SortedKeyValueIterator.class.getName())
                                     && !c.instanceOperations().testClassLoad(iter.getIteratorClass(), SortedKeyValueIterator.class.getName()))
-                        throw new AccumuloException("Servers are unable to load " + iter.getIteratorClass() + " as a " + SortedKeyValueIterator.class.getName());
+                        throw new AccumuloException(
+                                        "Servers are unable to load " + iter.getIteratorClass() + " as a " + SortedKeyValueIterator.class.getName());
                 }
             }
             
@@ -949,8 +950,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
         }
     }
     
-    Map<String,Map<KeyExtent,List<Range>>> binOfflineTable(JobContext job, String tableName, List<Range> ranges) throws TableNotFoundException,
-                    AccumuloException, AccumuloSecurityException, IOException {
+    Map<String,Map<KeyExtent,List<Range>>> binOfflineTable(JobContext job, String tableName, List<Range> ranges)
+                    throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException {
         
         Map<String,Map<KeyExtent,List<Range>>> binnedRanges = new HashMap<>();
         
@@ -1042,11 +1043,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     protected static SplitStrategy getSplitStrategy(Configuration conf) {
         
         try {
-            Class<? extends SplitStrategy> clazz = Class.forName(conf.get(RANGESPLITSTRATEGY, DefaultSplitStrategy.class.getCanonicalName())).asSubclass(
-                            SplitStrategy.class);
+            Class<? extends SplitStrategy> clazz = Class.forName(conf.get(RANGESPLITSTRATEGY, DefaultSplitStrategy.class.getCanonicalName()))
+                            .asSubclass(SplitStrategy.class);
             return clazz.getDeclaredConstructor().newInstance();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
         return new DefaultSplitStrategy();
@@ -1054,8 +1054,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
     
     protected static LocationStrategy getLocationStrategy(Configuration conf) {
         try {
-            Class<? extends LocationStrategy> clazz = Class.forName(conf.get(RACKSTRATEGY, DefaultLocationStrategy.class.getCanonicalName())).asSubclass(
-                            LocationStrategy.class);
+            Class<? extends LocationStrategy> clazz = Class.forName(conf.get(RACKSTRATEGY, DefaultLocationStrategy.class.getCanonicalName()))
+                            .asSubclass(LocationStrategy.class);
             return clazz.newInstance();
         } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
             log.error(e);
@@ -1123,7 +1123,8 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                     // its possible that the cache could contain complete, but old information about a tables tablets... so clear it
                     tl.invalidateCache();
                     ClientInfo info = ClientInfo.from(cbHelper.newClientProperties());
-                    ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()), Threads.UEH);
+                    ClientContext context = new ClientContext(SingletonReservation.noop(), info, ClientConfConverter.toAccumuloConf(info.getProperties()),
+                                    Threads.UEH);
                     while (!tl.binRanges(context, ranges, binnedRanges).isEmpty()) {
                         if (!(client instanceof InMemoryAccumuloClient)) {
                             if (tableId == null)

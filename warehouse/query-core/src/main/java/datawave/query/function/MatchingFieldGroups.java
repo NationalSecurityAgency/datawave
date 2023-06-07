@@ -12,7 +12,7 @@ import java.util.Set;
 
 public class MatchingFieldGroups {
     
-    private final Multimap<String, MatchingFieldHits> matchingFieldGroups;
+    private final Multimap<String,MatchingFieldHits> matchingFieldGroups;
     private final Set<String> matchingGroups;
     private final Multimap<String,String[]> potentialMatches;
     

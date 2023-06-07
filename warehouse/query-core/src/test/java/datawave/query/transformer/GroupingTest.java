@@ -85,7 +85,7 @@ public abstract class GroupingTest {
     
     private static final String COLVIS_MARKING = "columnVisibility";
     private static final String EXPECTED_COLVIS = "ALL&E&I";
-
+    
     private static Authorizations auths = new Authorizations("ALL", "E", "I");
     
     // @formatter:off
@@ -151,15 +151,13 @@ public abstract class GroupingTest {
     @Deployment
     public static JavaArchive createDeployment() {
         
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @AfterClass
@@ -370,28 +368,28 @@ public abstract class GroupingTest {
     @Test
     public void testGroupingWithReducedResponse() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
-
+        
         Date startDate = format.parse("20091231");
         Date endDate = format.parse("20150101");
-
+        
         String queryString = "UUID =~ '^[CS].*'";
-
+        
         Map<String,Integer> expectedMap = ImmutableMap.of("MALE", 10, "FEMALE", 2);
-
+        
         extraParameters.put("reduced.response", "true");
         extraParameters.put("group.fields", "GENDER");
         extraParameters.put("group.fields.batch.size", "0");
-
+        
         for (RebuildingScannerTestHelper.TEARDOWN teardown : TEARDOWNS) {
             for (RebuildingScannerTestHelper.INTERRUPT interrupt : INTERRUPTS) {
                 EventQueryResponseBase response = (EventQueryResponseBase) runTestQueryWithGrouping(expectedMap, queryString, startDate, endDate,
                                 extraParameters, teardown, interrupt);
-
+                
                 for (EventBase event : response.getEvents()) {
                     // The event should have a collapsed columnVisibility
                     String actualCV = event.getMarkings().get(COLVIS_MARKING).toString();
                     Assert.assertEquals(EXPECTED_COLVIS, actualCV);
-
+                    
                     // The fields should have no columnVisibility
                     for (Object f : event.getFields()) {
                         FieldBase<?> field = (FieldBase<?>) f;
@@ -401,7 +399,7 @@ public abstract class GroupingTest {
             }
         }
     }
-
+    
     @Test
     public void testGrouping4() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();

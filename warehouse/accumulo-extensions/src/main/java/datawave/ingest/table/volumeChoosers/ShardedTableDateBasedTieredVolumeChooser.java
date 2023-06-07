@@ -21,26 +21,23 @@ import java.util.stream.Collectors;
 import static java.time.temporal.ChronoUnit.DAYS;
 
 /**
- * This class is used to configure a date based volume chooser for sharded tables. To configure, this relies on a few
- * accumulo properties being set on the table. Those properties are:
+ * This class is used to configure a date based volume chooser for sharded tables. To configure, this relies on a few accumulo properties being set on the
+ * table. Those properties are:
  *
- * 1.{@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX}
- * 2. Some number of properties following the pattern {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value VOLUME_SUFFIX}
- * 3. The same number of properties following the pattern {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value DAYS_BACK_SUFFIX}
+ * 1.{@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX} 2. Some number of properties following the pattern
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value VOLUME_SUFFIX} 3. The same number of properties following the
+ * pattern {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.&lt;tierName&gt;.{@value DAYS_BACK_SUFFIX}
  *
  * The volume chooser will compute the number of days back for the current endRow and choose from the volumes with the next highest daysBack setting.
  *
- * EG:
- * Properties Set:
- *  1. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX} = new,old
- *  2. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value VOLUME_SUFFIX} = newData
- *  2. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value DAYS_BACK_SUFFIX} = 0
- *  3. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value VOLUME_SUFFIX} = oldData
- *  4. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value DAYS_BACK_SUFFIX} = 125
+ * EG: Properties Set: 1. {@link Property#TABLE_ARBITRARY_PROP_PREFIX}.{@value TIER_NAMES_SUFFIX} = new,old 2.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value VOLUME_SUFFIX} = newData 2.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.new.{@value DAYS_BACK_SUFFIX} = 0 3.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value VOLUME_SUFFIX} = oldData 4.
+ * {@link Property#TABLE_ARBITRARY_PROP_PREFIX}{@value PROPERTY_PREFIX}.old.{@value DAYS_BACK_SUFFIX} = 125
  *
- *  Data dated in the future will be treated as newData
- *  Data that is 124 days old or newer will be written to newData
- *  Data that is 125 days or older will be written to oldData
+ * Data dated in the future will be treated as newData Data that is 124 days old or newer will be written to newData Data that is 125 days or older will be
+ * written to oldData
  *
  */
 public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChooser {
@@ -51,12 +48,12 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
     private static final String DAYS_BACK_SUFFIX = ".days.back";
     private static final String DATE_PATTERN = "yyyyMMdd";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
-
+    
     private static Pattern SHARD_PATTERN = Pattern.compile("\\d{8}_\\d+");
     
     @Override
     public String choose(VolumeChooserEnvironment env, Set<String> options) {
-
+        
         if (!env.getTable().isPresent() || !env.getChooserScope().equals(VolumeChooserEnvironment.Scope.TABLE))
             return super.choose(env, options);
         else {
@@ -65,17 +62,16 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
             // Get variables
             log.trace("Determining tier names using property {} for Table id: {}", Property.TABLE_ARBITRARY_PROP_PREFIX + TIER_NAMES_SUFFIX, tableId);
             String configuredTiers = tableConfig.getTableCustom(TIER_NAMES_SUFFIX);
-            TreeMap<Long, Set<String>> daysToVolumes = getTiers(tableId, tableConfig, options, configuredTiers);
-
+            TreeMap<Long,Set<String>> daysToVolumes = getTiers(tableId, tableConfig, options, configuredTiers);
+            
             Text endRow = env.getEndRow();
-
-            Long floorKey= daysToVolumes.ceilingKey(0L);
-            if(endRow == null)
-            {
-                //this is the default tablet. No shard means this is new data
+            
+            Long floorKey = daysToVolumes.ceilingKey(0L);
+            if (endRow == null) {
+                // this is the default tablet. No shard means this is new data
                 options = floorKey == null ? options : daysToVolumes.get(floorKey);
-
-            }else {
+                
+            } else {
                 String endRowString = endRow.toString();
                 if (SHARD_PATTERN.matcher(endRowString).matches()) {
                     String date = endRowString.substring(0, 8);
@@ -96,12 +92,11 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
         TreeMap<Long,Set<String>> daysToVolumes = new TreeMap<>();
         daysToVolumes.put(Long.MAX_VALUE, options);
         for (String tier : StringUtils.split(configuredTiers, ',')) {
-            log.debug("Determining volumes for tier {} using property {} for Table id: {}", tier, Property.TABLE_ARBITRARY_PROP_PREFIX + PROPERTY_PREFIX + tier
-                            + VOLUME_SUFFIX, tableId);
-            Set<String> volumesForCurrentTier = Arrays.stream(StringUtils.split(
-                    tableConfig.getTableCustom(PROPERTY_PREFIX + tier + VOLUME_SUFFIX), ',')).collect(Collectors.toSet());
-            long daysBackForCurrentTier = Long.parseLong(tableConfig
-                            .getTableCustom(PROPERTY_PREFIX + tier + DAYS_BACK_SUFFIX));
+            log.debug("Determining volumes for tier {} using property {} for Table id: {}", tier,
+                            Property.TABLE_ARBITRARY_PROP_PREFIX + PROPERTY_PREFIX + tier + VOLUME_SUFFIX, tableId);
+            Set<String> volumesForCurrentTier = Arrays.stream(StringUtils.split(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + VOLUME_SUFFIX), ','))
+                            .collect(Collectors.toSet());
+            long daysBackForCurrentTier = Long.parseLong(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + DAYS_BACK_SUFFIX));
             if (daysBackForCurrentTier >= 0) {
                 if (volumesForCurrentTier.size() < 1) {
                     throw new IllegalStateException("Volumes list empty for tier " + tier + ". Ensure property " + Property.TABLE_ARBITRARY_PROP_PREFIX

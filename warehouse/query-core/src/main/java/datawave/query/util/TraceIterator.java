@@ -5,9 +5,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import java.util.Iterator;
 
 /**
- * TODO: The old htrace-based tracing code has been removed from here, as the htrace project is dead
- * and no longer used by accumulo. Leaving this class in place to make it easier to evolve the code
- * later, for OTEL-based tracing.
+ * TODO: The old htrace-based tracing code has been removed from here, as the htrace project is dead and no longer used by accumulo. Leaving this class in place
+ * to make it easier to evolve the code later, for OTEL-based tracing.
  */
 public abstract class TraceIterator<F,T> implements Iterator<T> {
     

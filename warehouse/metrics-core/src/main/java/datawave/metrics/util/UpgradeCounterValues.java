@@ -56,8 +56,8 @@ public class UpgradeCounterValues {
         
         try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).build()) {
             Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
-            try (BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory)
-                            .setMaxLatency(60, TimeUnit.SECONDS));
+            try (BatchWriter writer = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory).setMaxLatency(60, TimeUnit.SECONDS));
                             BatchScanner scanner = client.createBatchScanner(tableName, auths, bsThreads)) {
                 scanner.setRanges(ranges);
                 

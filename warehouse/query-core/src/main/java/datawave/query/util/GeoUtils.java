@@ -158,17 +158,17 @@ public class GeoUtils {
         
         TreeSet<RangeData> areaSortedRanges = new TreeSet<>((o1, o2) -> {
             // ranges which share the least overlap with the query geometry are sorted first
-                        int diff = Double.compare(o2.difference, o1.difference);
-                        if (diff == 0) {
-                            // next, sort by the length of the query range
-                            diff = Long.compare((o2.range[1] - o2.range[0]), (o1.range[1] - o1.range[0]));
-                            if (diff == 0) {
-                                // finally, sort by the minimum bound of the range
-                                diff = Long.compare(o1.range[0], o2.range[0]);
-                            }
-                        }
-                        return diff;
-                    });
+            int diff = Double.compare(o2.difference, o1.difference);
+            if (diff == 0) {
+                // next, sort by the length of the query range
+                diff = Long.compare((o2.range[1] - o2.range[0]), (o1.range[1] - o1.range[0]));
+                if (diff == 0) {
+                    // finally, sort by the minimum bound of the range
+                    diff = Long.compare(o1.range[0], o2.range[0]);
+                }
+            }
+            return diff;
+        });
         
         // these ranges are sorted by the minimum bound of the range so that we can
         // quickly merge contiguous segments into discrete ranges

@@ -72,8 +72,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     }
     
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
-    protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap)
-                    throws TableNotFoundException {
+    protected RegexIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
+                    Map<String,IndexLookup> lookupMap) throws TableNotFoundException {
         this(config, scannerFactory, helper, lookupMap, "RegexIndexExpansion");
     }
     

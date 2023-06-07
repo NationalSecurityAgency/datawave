@@ -252,7 +252,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!EvaluationPhaseFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException(
+                                "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
             FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
             fvis.visit(node, null);

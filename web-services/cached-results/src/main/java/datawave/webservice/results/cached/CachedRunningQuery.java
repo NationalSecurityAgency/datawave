@@ -844,8 +844,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         if (this.cacheableLogic == null) {
             return new ResultsPage();
         } else {
-            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList), (hitPageByteTrigger ? ResultsPage.Status.PARTIAL
-                            : ResultsPage.Status.COMPLETE));
+            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList),
+                            (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
         }
     }
     
@@ -874,8 +874,8 @@ public class CachedRunningQuery extends AbstractRunningQuery {
         if (this.cacheableLogic == null) {
             return new ResultsPage();
         } else {
-            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList), (hitPageByteTrigger ? ResultsPage.Status.PARTIAL
-                            : ResultsPage.Status.COMPLETE));
+            return new ResultsPage(this.cacheableLogic.readFromCache(cacheableQueryRowList),
+                            (hitPageByteTrigger ? ResultsPage.Status.PARTIAL : ResultsPage.Status.COMPLETE));
         }
     }
     

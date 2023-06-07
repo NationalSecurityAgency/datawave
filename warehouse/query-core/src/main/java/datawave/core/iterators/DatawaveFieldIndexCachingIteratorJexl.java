@@ -558,7 +558,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             int fieldnameIndex = cq.indexOf('\0');
             if (fieldnameIndex >= 0) {
                 String cf = startKey.getColumnFamily().toString();
-                lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex), cq.substring(fieldnameIndex + 1) + '\0' + cf + '\0');
+                lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex),
+                                cq.substring(fieldnameIndex + 1) + '\0' + cf + '\0');
             }
         }
         
@@ -580,8 +581,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 // seek our underlying source to the start of the incoming range
                 // expand the range as the underlying table may not actually contain the keys in this range as we are only returning keys
                 // as specified by the returnKeyType
-                Range seekRange = new Range(lastRangeSeeked.getStartKey(), lastRangeSeeked.isStartKeyInclusive(), (lastRangeSeeked.getEndKey() == null ? null
-                                : new Key(lastRangeSeeked.getEndKey().getRow()).followingKey(PartialKey.ROW)), false);
+                Range seekRange = new Range(lastRangeSeeked.getStartKey(), lastRangeSeeked.isStartKeyInclusive(),
+                                (lastRangeSeeked.getEndKey() == null ? null : new Key(lastRangeSeeked.getEndKey().getRow()).followingKey(PartialKey.ROW)),
+                                false);
                 source.seek(seekRange, EMPTY_CFS, false);
                 scannedKeys.incrementAndGet();
                 if (log.isTraceEnabled()) {
@@ -1056,7 +1058,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (log.isTraceEnabled()) {
             log.trace("addKey evaluating " + topFiKey);
         }
-        if ((timeFilter == null || timeFilter.apply(topFiKey)) && (datatypeFilter == null || datatypeFilter.apply(topFiKey)) && (matches(topFiKey) != negated)) {
+        if ((timeFilter == null || timeFilter.apply(topFiKey)) && (datatypeFilter == null || datatypeFilter.apply(topFiKey))
+                        && (matches(topFiKey) != negated)) {
             if (log.isTraceEnabled()) {
                 log.trace("addKey matched " + topFiKey);
             }
@@ -1115,8 +1118,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 DatawaveFieldIndexCachingIteratorJexl.this.scannedKeys.incrementAndGet();
                 
                 // if this is a range iterator, build the composite-safe Fi range
-                Range compositeSafeFiRange = (this instanceof DatawaveFieldIndexRangeIteratorJexl) ? ((DatawaveFieldIndexRangeIteratorJexl) this)
-                                .buildCompositeSafeFiRange(fiRow, fiName, fieldValue) : null;
+                Range compositeSafeFiRange = (this instanceof DatawaveFieldIndexRangeIteratorJexl)
+                                ? ((DatawaveFieldIndexRangeIteratorJexl) this).buildCompositeSafeFiRange(fiRow, fiName, fieldValue)
+                                : null;
                 
                 while (source.hasTop()) {
                     checkTiming();
@@ -1166,8 +1170,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                             }
                             
                             if (shouldSeek) {
-                                source.seek(new Range(nextSeekKey, boundingFiRange.isStartKeyInclusive(), boundingFiRange.getEndKey(), boundingFiRange
-                                                .isEndKeyInclusive()), EMPTY_CFS, false);
+                                source.seek(new Range(nextSeekKey, boundingFiRange.isStartKeyInclusive(), boundingFiRange.getEndKey(),
+                                                boundingFiRange.isEndKeyInclusive()), EMPTY_CFS, false);
                                 
                                 // reset next count and seek key
                                 nextSeekKey = null;

@@ -703,7 +703,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
+                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                                (updateWhitelist));
             }
             
             if (getEdgeAttribute2Values() != null) {
@@ -711,7 +712,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
+                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                                (updateWhitelist));
             }
             
             if (getEdgeAttribute3Values() != null) {
@@ -719,7 +721,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
+                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                                (updateWhitelist));
             }
             
             if (getExclusions() != null) {

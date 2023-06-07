@@ -193,8 +193,8 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
                     list.add(Double.parseDouble(value));
                 } catch (NumberFormatException nfe) {
                     ConfigProperty configProperty = getAnnotation(injectionPoint, ConfigProperty.class);
-                    throw new RuntimeException("Error while converting Double property '" + configProperty.name() + "' value: " + value + " of "
-                                    + propertyValue + " happening in bean " + injectionPoint.getBean(), nfe);
+                    throw new RuntimeException("Error while converting Double property '" + configProperty.name() + "' value: " + value + " of " + propertyValue
+                                    + " happening in bean " + injectionPoint.getBean(), nfe);
                 }
                 
             }

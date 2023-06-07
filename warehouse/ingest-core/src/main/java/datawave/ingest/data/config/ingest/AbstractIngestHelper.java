@@ -167,7 +167,7 @@ public abstract class AbstractIngestHelper extends DataTypeHelperImpl implements
      * @return the normalized field values
      * @throws NormalizationException
      *             if there is an issue with the normalization process
-     *
+     *             
      */
     protected Set<String> normalizeFieldValue(final String fieldName, final String fieldValue) throws NormalizationException {
         final Collection<Type<?>> dataTypes = getDataTypes(fieldName);
