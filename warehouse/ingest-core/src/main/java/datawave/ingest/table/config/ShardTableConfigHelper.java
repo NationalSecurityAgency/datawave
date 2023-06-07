@@ -33,7 +33,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected static final String SHARDED_TABLET_BALANCER_CLASS = ShardedTableTabletBalancer.class.getName();
     
     public static final String KEEP_COUNT_ONLY_INDEX_ENTRIES = "index.tables.keep.count.only.entries";
-
+    
     public static final String KEEP_COUNT_ONLY_INDEX_NO_UIDS = "index.tables.keep.count.only.no.uids";
     
     public static final String SHARD_TABLE_BALANCER_CONFIG = "shard.table.balancer.class";
@@ -96,9 +96,10 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         
         String localityGroupsConf = null;
         if (tableName.equals(shardTableName)) {
-            localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS, ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':'
-                            + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ',' + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
-                            + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
+            localityGroupsConf = conf.get(shardTableName + LOCALITY_GROUPS,
+                            ExtendedDataTypeHandler.FULL_CONTENT_LOCALITY_NAME + ':' + ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY + ','
+                                            + ExtendedDataTypeHandler.TERM_FREQUENCY_LOCALITY_NAME + ':'
+                                            + ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY);
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
                 Set<Text> families = localityGroups.get(localityGroupDef[0]);
@@ -109,9 +110,9 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
                 families.add(new Text(localityGroupDef[1]));
             }
         } else if (tableName.equals(shardDictionaryTableName)) {
-            localityGroupsConf = conf.get(shardDictionaryTableName + LOCALITY_GROUPS, ShardedDataTypeHandler.SHARD_DINDX_FLABEL_LOCALITY_NAME + ':'
-                            + ShardedDataTypeHandler.SHARD_DINDX_FLABEL + ',' + ShardedDataTypeHandler.SHARD_DINDX_RLABEL_LOCALITY_NAME + ':'
-                            + ShardedDataTypeHandler.SHARD_DINDX_RLABEL);
+            localityGroupsConf = conf.get(shardDictionaryTableName + LOCALITY_GROUPS,
+                            ShardedDataTypeHandler.SHARD_DINDX_FLABEL_LOCALITY_NAME + ':' + ShardedDataTypeHandler.SHARD_DINDX_FLABEL + ','
+                                            + ShardedDataTypeHandler.SHARD_DINDX_RLABEL_LOCALITY_NAME + ':' + ShardedDataTypeHandler.SHARD_DINDX_RLABEL);
             
             for (String localityGroupDefConf : StringUtils.split(localityGroupsConf)) {
                 String[] localityGroupDef = StringUtils.split(localityGroupDefConf, '\\', ':');
@@ -168,8 +169,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     
     protected void configureShardTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         // Set a text index aggregator on the "tf" (Term Frequency) column family
-        CombinerConfiguration tfConf = new CombinerConfiguration(new Column("tf"), new IteratorSetting(10, "TF",
-                        datawave.ingest.table.aggregator.TextIndexAggregator.class.getName()));
+        CombinerConfiguration tfConf = new CombinerConfiguration(new Column("tf"),
+                        new IteratorSetting(10, "TF", datawave.ingest.table.aggregator.TextIndexAggregator.class.getName()));
         
         setAggregatorConfigurationIfNecessary(tableName, Collections.singletonList(tfConf), tops, log);
         
@@ -205,8 +206,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
             }
-
-            if(conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)){
+            
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)) {
                 aggClass = KeepCountOnlyNoUidAggregator.class.getName();
             }
             
@@ -238,8 +239,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
             }
-
-            if(conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)){
+            
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)) {
                 aggClass = KeepCountOnlyNoUidAggregator.class.getName();
             }
             

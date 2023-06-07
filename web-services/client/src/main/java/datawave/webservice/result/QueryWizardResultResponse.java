@@ -28,8 +28,7 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "DataWave Query Results", EMPTY = "";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
-                    + "<script type=''text/javascript'' src=''{1}''></script>\n"
-                    + "<script type=''text/javascript''>\n"
+                    + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[3, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
     

@@ -51,8 +51,7 @@ public class FlattenDataType extends AbstractDataTypeConfig {
      */
     public enum FlattenBaseFields {
         // base fields
-        STARTDATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        EVENTID(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
+        STARTDATE(Normalizer.LC_NO_DIACRITICS_NORMALIZER), EVENTID(Normalizer.LC_NO_DIACRITICS_NORMALIZER);
         
         private final Normalizer<?> normalizer;
         
@@ -126,8 +125,8 @@ public class FlattenDataType extends AbstractDataTypeConfig {
      * @throws URISyntaxException
      *             ingest file name error
      */
-    public FlattenDataType(final String datatype, final String ingestFile, final FieldConfig fieldConfig, final FlattenData flattenData) throws IOException,
-                    URISyntaxException {
+    public FlattenDataType(final String datatype, final String ingestFile, final FieldConfig fieldConfig, final FlattenData flattenData)
+                    throws IOException, URISyntaxException {
         super(datatype, ingestFile, FileType.JSON, fieldConfig, manager.get(flattenData.getMode()));
         
         this.flatData = flattenData;

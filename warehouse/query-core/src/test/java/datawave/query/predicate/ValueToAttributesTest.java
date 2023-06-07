@@ -97,8 +97,8 @@ public abstract class ValueToAttributesTest {
         }
         
         @Override
-        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws ParseException,
-                        Exception {
+        protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
+                        throws ParseException, Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
@@ -121,17 +121,14 @@ public abstract class ValueToAttributesTest {
     public static JavaArchive createDeployment() throws Exception {
         System.setProperty("cdi.bean.context", "queryBeanRefContext.xml");
         
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @AfterClass
@@ -185,8 +182,8 @@ public abstract class ValueToAttributesTest {
                 attr = d.get("UUID.0");
             
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
+            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
+                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
             
             TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
             
@@ -223,14 +220,14 @@ public abstract class ValueToAttributesTest {
             log.debug("testCompositeFunctions");
         }
         String[] queryStrings = { //
-        "COLOR == 'RED' && MAKE == 'FORD'", //
+                "COLOR == 'RED' && MAKE == 'FORD'", //
                 "COLOR == 'BLUE' && MAKE == 'CHEVY'", //
                 "COLOR == 'BLUE' && MAKE == 'FORD'", //
         };
         
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] { //
-        Arrays.asList("One"), //
+                Arrays.asList("One"), //
                 Arrays.asList("One"), //
                 Arrays.asList("One")//
         };

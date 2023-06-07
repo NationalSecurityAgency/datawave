@@ -96,8 +96,8 @@ class GroupingAccumuloWriter {
         PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
     }
     
-    private void writeMetaData(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException,
-                    TableNotFoundException {
+    private void writeMetaData(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data)
+                    throws MutationsRejectedException, TableNotFoundException {
         Text dtText = new Text(this.dataType);
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
         try (BatchWriter bw = this.client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, bwConfig)) {
@@ -130,8 +130,8 @@ class GroupingAccumuloWriter {
         }
     }
     
-    private void writeShardKeys(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException,
-                    TableNotFoundException {
+    private void writeShardKeys(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data)
+                    throws MutationsRejectedException, TableNotFoundException {
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
         try (BatchWriter bw = this.client.createBatchWriter(TableName.SHARD, bwConfig)) {
             for (Map.Entry<Multimap<String,String>,UID> entry : data) {
@@ -195,8 +195,8 @@ class GroupingAccumuloWriter {
                         builder.addUID(uid.toString());
                         builder.setCOUNT(1);
                         builder.setIGNORE(false);
-                        mut.put(entry.getKey().toUpperCase(), shardId + NULL_SEP + this.dataType, this.cfgData.getDefaultVisibility(), timestamp, new Value(
-                                        builder.build().toByteArray()));
+                        mut.put(entry.getKey().toUpperCase(), shardId + NULL_SEP + this.dataType, this.cfgData.getDefaultVisibility(), timestamp,
+                                        new Value(builder.build().toByteArray()));
                         bw.addMutation(mut);
                     }
                 }

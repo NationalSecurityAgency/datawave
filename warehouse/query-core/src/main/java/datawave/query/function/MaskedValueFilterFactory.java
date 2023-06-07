@@ -52,8 +52,7 @@ public class MaskedValueFilterFactory {
                 log.warn("Attempting to instantiate masked value filter from -D{}={}", MASKED_VALUE_FILTER_CLASSNAME, className);
                 try {
                     instance = (MaskedValueFilterInterface) Class.forName(className).getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException |
-                         NoSuchMethodException | InvocationTargetException e) {
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
                     log.warn("Failed to create MaskedValueFilterInterface from {}", e);
                     throw new RuntimeException("Could not create MaskedValueFilterInterface object");
                 }

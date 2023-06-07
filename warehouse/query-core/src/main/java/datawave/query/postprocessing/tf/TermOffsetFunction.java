@@ -42,7 +42,7 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         
         Set<Key> docKeys = getDocumentKeys(from);
         Set<String> fields = getFieldsToRemove(from.second(), tfPopulator.getTermFrequencyFieldValues());
-
+        
         logStart();
         Map<String,Object> map = new HashMap<>(tfPopulator.getContextMap(from.first(), docKeys, fields));
         logStop(docKeys.iterator().next());
@@ -74,7 +74,7 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         if (docKeyFunction != null) {
             docKeys = docKeyFunction.getDocKeys(from.second(), docKeys);
         }
-
+        
         return docKeys;
     }
     
@@ -91,23 +91,23 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         }
         return fieldsToRemove;
     }
-
-    private void logStart(){
+    
+    private void logStart() {
         aggregationStart = System.currentTimeMillis();
     }
-
-    private void logStop(Key k){
+    
+    private void logStop(Key k) {
         if (aggregationThreshold == -1) {
             return;
         }
-
+        
         long elapsed = System.currentTimeMillis() - aggregationStart;
         if (elapsed > aggregationThreshold) {
             log.warn("time to aggregate offsets " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + elapsed);
         }
     }
-
-    public void setAggregationThreshold(int aggregationThreshold){
+    
+    public void setAggregationThreshold(int aggregationThreshold) {
         this.aggregationThreshold = aggregationThreshold;
     }
 }

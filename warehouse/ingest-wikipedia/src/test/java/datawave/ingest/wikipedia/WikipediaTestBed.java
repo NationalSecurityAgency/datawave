@@ -96,9 +96,8 @@ public class WikipediaTestBed {
         expectedRawFieldsRecord1.put("REVISION_TIMESTAMP", "2010-08-26T22:38:36Z");
         expectedRawFieldsRecord1.put("CONTRIBUTOR_USERNAME", "OlEnglish");
         expectedRawFieldsRecord1.put("CONTRIBUTOR_ID", "7181920");
-        expectedRawFieldsRecord1
-                        .put("REVISION_COMMENT",
-                                        "[[Help:Reverting|Reverted]] edits by [[Special:Contributions/76.28.186.133|76.28.186.133]] ([[User talk:76.28.186.133|talk]]) to last version by Gurch");
+        expectedRawFieldsRecord1.put("REVISION_COMMENT",
+                        "[[Help:Reverting|Reverted]] edits by [[Special:Contributions/76.28.186.133|76.28.186.133]] ([[User talk:76.28.186.133|talk]]) to last version by Gurch");
         expectedRawFieldsRecord1.put("REVISION_TEXT_SPACE", "preserve");
         expectedRawFieldsRecord1.put("REVISION_SHA1", "lo15ponaybcg2sf49sstw9gdjmdetnk");
         expectedRawFieldsRecord1.put("REVISION_MODEL", "wikitext");
@@ -114,9 +113,8 @@ public class WikipediaTestBed {
         expectedNormalizedFieldsRecord1.put("REVISION_TIMESTAMP", "2010-08-26t22:38:36z");
         expectedNormalizedFieldsRecord1.put("CONTRIBUTOR_USERNAME", "olenglish");
         expectedNormalizedFieldsRecord1.put("CONTRIBUTOR_ID", "+gE7.18192");
-        expectedNormalizedFieldsRecord1
-                        .put("REVISION_COMMENT",
-                                        "[[help:reverting|reverted]] edits by [[special:contributions/76.28.186.133|76.28.186.133]] ([[user talk:76.28.186.133|talk]]) to last version by gurch");
+        expectedNormalizedFieldsRecord1.put("REVISION_COMMENT",
+                        "[[help:reverting|reverted]] edits by [[special:contributions/76.28.186.133|76.28.186.133]] ([[user talk:76.28.186.133|talk]]) to last version by gurch");
         expectedNormalizedFieldsRecord1.put("REVISION_TEXT_SPACE", "preserve");
         expectedNormalizedFieldsRecord1.put("REVISION_SHA1", "lo15ponaybcg2sf49sstw9gdjmdetnk");
         expectedNormalizedFieldsRecord1.put("REVISION_MODEL", "wikitext");

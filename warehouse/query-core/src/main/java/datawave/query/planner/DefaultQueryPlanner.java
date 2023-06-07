@@ -584,14 +584,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     private QueryLock getQueryLock(ShardQueryConfiguration config, Query settings) throws Exception {
-        return new QueryLock.Builder()
-                        .forQueryId(settings.getId() == null ? null : settings.getId().toString())
-                        .forZookeeper(config.getZookeeperConfig(), 0)
-                        .forHdfs(config.getHdfsSiteConfigURLs())
-                        .forFstDirs(config.getIvaratorFstHdfsBaseURIs())
-                        .forIvaratorDirs(
-                                        config.getIvaratorCacheDirConfigs().stream().map(IvaratorCacheDirConfig::getBasePathURI)
-                                                        .collect(Collectors.joining(","))).build();
+        return new QueryLock.Builder().forQueryId(settings.getId() == null ? null : settings.getId().toString()).forZookeeper(config.getZookeeperConfig(), 0)
+                        .forHdfs(config.getHdfsSiteConfigURLs()).forFstDirs(config.getIvaratorFstHdfsBaseURIs()).forIvaratorDirs(config
+                                        .getIvaratorCacheDirConfigs().stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
+                        .build();
     }
     
     private void markQueryStopped(ShardQueryConfiguration config, Query settings) throws Exception {
@@ -658,16 +654,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // check the query depth (up to config.getMaxDepthThreshold() + 1)
         int depth = DepthVisitor.getDepth(queryTree, maxDepthThreshold);
         if (depth > maxDepthThreshold) {
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_THRESHOLD_EXCEEDED, MessageFormat.format(
-                            "{0} > {1}, last operation: {2}", depth, maxDepthThreshold, lastOperation));
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_DEPTH_THRESHOLD_EXCEEDED,
+                            MessageFormat.format("{0} > {1}, last operation: {2}", depth, maxDepthThreshold, lastOperation));
             throw new DatawaveFatalQueryException(qe);
         }
         
         // count the terms
         int termCount = TermCountingVisitor.countTerms(queryTree);
         if (termCount > maxTermThreshold) {
-            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED, MessageFormat.format(
-                            "{0} > {1}, last operation: {2}", termCount, maxTermThreshold, lastOperation));
+            PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.QUERY_TERM_THRESHOLD_EXCEEDED,
+                            MessageFormat.format("{0} > {1}, last operation: {2}", termCount, maxTermThreshold, lastOperation));
             throw new DatawaveFatalQueryException(qe);
         }
         
@@ -919,7 +915,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 // Check if there is any regex to expand.
                 NodeTypeCount nodeCount = NodeTypeCountVisitor.countNodes(config.getQueryTree());
                 if (nodeCount.hasAny(ASTNRNode.class, ASTERNode.class)) {
-                    config.setQueryTree(timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), config, metadataHelper, scannerFactory, indexLookupMap));
+                    config.setQueryTree(
+                                    timedExpandRegex(timers, "Expand Regex", config.getQueryTree(), config, metadataHelper, scannerFactory, indexLookupMap));
                 }
                 
                 // Check if there are any bounded ranges to expand.
@@ -1026,7 +1023,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
             }
             
-        } catch (InstantiationException | IllegalAccessException | AccumuloException | AccumuloSecurityException | TableNotFoundException | ExecutionException e) {
+        } catch (InstantiationException | IllegalAccessException | AccumuloException | AccumuloSecurityException | TableNotFoundException
+                        | ExecutionException e) {
             throw new DatawaveFatalQueryException(e);
         } finally {
             stopwatch.stop();
@@ -1056,7 +1054,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         // Print the nice log message
         if (log.isDebugEnabled()) {
-            logQuery(config.getQueryTree(), "Computed that the query " + (containsComposites ? " contains " : " does not contain any ") + " composite field(s)");
+            logQuery(config.getQueryTree(),
+                            "Computed that the query " + (containsComposites ? " contains " : " does not contain any ") + " composite field(s)");
         }
         
         config.setContainsCompositeTerms(containsComposites);
@@ -1117,8 +1116,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             
             // Print the nice log message
             if (log.isDebugEnabled()) {
-                logQuery(config.getQueryTree(), "Computed that the query " + (contentFunctions.isEmpty() ? " does not require " : "requires")
-                                + " term frequency lookup");
+                logQuery(config.getQueryTree(),
+                                "Computed that the query " + (contentFunctions.isEmpty() ? " does not require " : "requires") + " term frequency lookup");
             }
         }
         
@@ -1135,8 +1134,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
     
     /*
-
-
+    
+    
      */
     
     protected Set<String> loadIndexedFields(ShardQueryConfiguration config) {
@@ -1439,8 +1438,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                         () -> (ExpandMultiNormalizedTerms.expandTerms(config, metadataHelper, script)));
     }
     
-    protected ASTJexlScript timedMarkIndexHoles(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper)
-                    throws DatawaveQueryException {
+    protected ASTJexlScript timedMarkIndexHoles(QueryStopwatch timers, final ASTJexlScript script, ShardQueryConfiguration config,
+                    MetadataHelper metadataHelper) throws DatawaveQueryException {
         return visitorManager.timedVisit(timers, "Mark Index Holes",
                         () -> (PushdownMissingIndexRangeNodesVisitor.pushdownPredicates(script, config, metadataHelper)));
     }
@@ -1726,8 +1725,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
         
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(), groupFields = config
-                        .getGroupFields();
+        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(),
+                        groupFields = config.getGroupFields();
         
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -2038,7 +2037,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * @see PushDownPlanner#rewriteQuery( org.apache .commons.jexl2.parser.ASTJexlScript)
      */
     @Override
-    public ASTJexlScript applyRules(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper, ShardQueryConfiguration config) {
+    public ASTJexlScript applyRules(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,
+                    ShardQueryConfiguration config) {
         
         // The PushDownVisitor will decide what nodes are "delayed" in that they
         // do NOT
@@ -2066,97 +2066,95 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         return builderThread.submit(() -> {
             // VersioningIterator is typically set at 20 on the table
-                        IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 40, "query", getQueryIteratorClass());
-                        
-                        addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
-                        addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
-                        
-                        if (sourceLimit > 0) {
-                            addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
-                        }
-                        if (config.getCollectTimingDetails()) {
-                            addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
-                        }
-                        if (config.getSendTimingToStatsd()) {
-                            addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
-                            addOption(cfg, QueryOptions.STATSD_MAX_QUEUE_SIZE, Integer.toString(config.getStatsdMaxQueueSize()), false);
-                        }
-                        if (config.getHdfsSiteConfigURLs() != null) {
-                            addOption(cfg, QueryOptions.HDFS_SITE_CONFIG_URLS, config.getHdfsSiteConfigURLs(), false);
-                        }
-                        if (config.getHdfsFileCompressionCodec() != null) {
-                            addOption(cfg, QueryOptions.HDFS_FILE_COMPRESSION_CODEC, config.getHdfsFileCompressionCodec(), false);
-                        }
-                        if (config.getZookeeperConfig() != null) {
-                            addOption(cfg, QueryOptions.ZOOKEEPER_CONFIG, config.getZookeeperConfig(), false);
-                        }
-                        if (config.getIvaratorCacheDirConfigs() != null && !config.getIvaratorCacheDirConfigs().isEmpty()) {
-                            addOption(cfg, QueryOptions.IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(getShuffledIvaratoCacheDirConfigs(config)),
-                                            false);
-                        }
-                        addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
-                        addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
-                        addOption(cfg, QueryOptions.IVARATOR_SCAN_TIMEOUT, Long.toString(config.getIvaratorCacheScanTimeout()), false);
-                        addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
-                        addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
-                        addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
-                        addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
-                        addOption(cfg, QueryOptions.IVARATOR_NUM_RETRIES, Integer.toString(config.getIvaratorNumRetries()), false);
-                        addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY, Boolean.toString(config.isIvaratorPersistVerify()), false);
-                        addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, Integer.toString(config.getIvaratorPersistVerifyCount()), false);
-                        addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
-                        addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
-                        addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
-                        
-                        if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
-                            addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
-                        }
-                        
-                        addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
-                        
-                        configureTypeMappings(config, cfg, metadataHelper, compressMappings);
-                        configureAdditionalOptions(config, cfg);
-                        
-                        loadFields(cfg, config, isPreload);
-                        configureSeekingOptions(cfg, config);
-                        
-                        try {
-                            CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
-                            if (compositeMetadata != null && !compositeMetadata.isEmpty()) {
-                                addOption(cfg, QueryOptions.COMPOSITE_METADATA,
-                                                java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)), false);
-                            }
-                        } catch (TableNotFoundException e) {
-                            QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
-                            throw new DatawaveQueryException(qe);
-                        }
-                        
-                        String datatypeFilter = config.getDatatypeFilterAsString();
-                        
-                        addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
-                        
-                        try {
-                            addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS,
-                                            Joiner.on(',').join(metadataHelper.getContentFields(config.getDatatypeFilter())), false);
-                        } catch (TableNotFoundException e) {
-                            QueryException qe = new QueryException(DatawaveErrorCode.CONTENT_FIELDS_RETRIEVAL_ERROR, e);
-                            throw new DatawaveQueryException(qe);
-                        }
-                        
-                        if (config.isDebugMultithreadedSources()) {
-                            addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
-                        }
-                        
-                        if (config.isLimitFieldsPreQueryEvaluation()) {
-                            addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
-                        }
-                        
-                        if (config.getLimitFieldsField() != null) {
-                            addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
-                        }
-                        
-                        return cfg;
-                    });
+            IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 40, "query", getQueryIteratorClass());
+            
+            addOption(cfg, Constants.RETURN_TYPE, config.getReturnType().toString(), false);
+            addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
+            
+            if (sourceLimit > 0) {
+                addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
+            }
+            if (config.getCollectTimingDetails()) {
+                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
+            }
+            if (config.getSendTimingToStatsd()) {
+                addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
+                addOption(cfg, QueryOptions.STATSD_MAX_QUEUE_SIZE, Integer.toString(config.getStatsdMaxQueueSize()), false);
+            }
+            if (config.getHdfsSiteConfigURLs() != null) {
+                addOption(cfg, QueryOptions.HDFS_SITE_CONFIG_URLS, config.getHdfsSiteConfigURLs(), false);
+            }
+            if (config.getHdfsFileCompressionCodec() != null) {
+                addOption(cfg, QueryOptions.HDFS_FILE_COMPRESSION_CODEC, config.getHdfsFileCompressionCodec(), false);
+            }
+            if (config.getZookeeperConfig() != null) {
+                addOption(cfg, QueryOptions.ZOOKEEPER_CONFIG, config.getZookeeperConfig(), false);
+            }
+            if (config.getIvaratorCacheDirConfigs() != null && !config.getIvaratorCacheDirConfigs().isEmpty()) {
+                addOption(cfg, QueryOptions.IVARATOR_CACHE_DIR_CONFIG, IvaratorCacheDirConfig.toJson(getShuffledIvaratoCacheDirConfigs(config)), false);
+            }
+            addOption(cfg, QueryOptions.IVARATOR_CACHE_BUFFER_SIZE, Integer.toString(config.getIvaratorCacheBufferSize()), false);
+            addOption(cfg, QueryOptions.IVARATOR_SCAN_PERSIST_THRESHOLD, Long.toString(config.getIvaratorCacheScanPersistThreshold()), false);
+            addOption(cfg, QueryOptions.IVARATOR_SCAN_TIMEOUT, Long.toString(config.getIvaratorCacheScanTimeout()), false);
+            addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(config.getCollectTimingDetails()), false);
+            addOption(cfg, QueryOptions.MAX_INDEX_RANGE_SPLIT, Integer.toString(config.getMaxFieldIndexRangeSplit()), false);
+            addOption(cfg, QueryOptions.MAX_IVARATOR_OPEN_FILES, Integer.toString(config.getIvaratorMaxOpenFiles()), false);
+            addOption(cfg, QueryOptions.MAX_IVARATOR_RESULTS, Long.toString(config.getMaxIvaratorResults()), false);
+            addOption(cfg, QueryOptions.IVARATOR_NUM_RETRIES, Integer.toString(config.getIvaratorNumRetries()), false);
+            addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY, Boolean.toString(config.isIvaratorPersistVerify()), false);
+            addOption(cfg, QueryOptions.IVARATOR_PERSIST_VERIFY_COUNT, Integer.toString(config.getIvaratorPersistVerifyCount()), false);
+            addOption(cfg, QueryOptions.MAX_EVALUATION_PIPELINES, Integer.toString(config.getMaxEvaluationPipelines()), false);
+            addOption(cfg, QueryOptions.MAX_PIPELINE_CACHED_RESULTS, Integer.toString(config.getMaxPipelineCachedResults()), false);
+            addOption(cfg, QueryOptions.MAX_IVARATOR_SOURCES, Integer.toString(config.getMaxIvaratorSources()), false);
+            
+            if (config.getYieldThresholdMs() != Long.MAX_VALUE && config.getYieldThresholdMs() > 0) {
+                addOption(cfg, QueryOptions.YIELD_THRESHOLD_MS, Long.toString(config.getYieldThresholdMs()), false);
+            }
+            
+            addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
+            
+            configureTypeMappings(config, cfg, metadataHelper, compressMappings);
+            configureAdditionalOptions(config, cfg);
+            
+            loadFields(cfg, config, isPreload);
+            configureSeekingOptions(cfg, config);
+            
+            try {
+                CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
+                if (compositeMetadata != null && !compositeMetadata.isEmpty()) {
+                    addOption(cfg, QueryOptions.COMPOSITE_METADATA, java.util.Base64.getEncoder().encodeToString(CompositeMetadata.toBytes(compositeMetadata)),
+                                    false);
+                }
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.COMPOSITE_METADATA_CONFIG_ERROR, e);
+                throw new DatawaveQueryException(qe);
+            }
+            
+            String datatypeFilter = config.getDatatypeFilterAsString();
+            
+            addOption(cfg, QueryOptions.DATATYPE_FILTER, datatypeFilter, false);
+            
+            try {
+                addOption(cfg, QueryOptions.CONTENT_EXPANSION_FIELDS, Joiner.on(',').join(metadataHelper.getContentFields(config.getDatatypeFilter())), false);
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.CONTENT_FIELDS_RETRIEVAL_ERROR, e);
+                throw new DatawaveQueryException(qe);
+            }
+            
+            if (config.isDebugMultithreadedSources()) {
+                addOption(cfg, QueryOptions.DEBUG_MULTITHREADED_SOURCES, Boolean.toString(config.isDebugMultithreadedSources()), false);
+            }
+            
+            if (config.isLimitFieldsPreQueryEvaluation()) {
+                addOption(cfg, QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION, Boolean.toString(config.isLimitFieldsPreQueryEvaluation()), false);
+            }
+            
+            if (config.getLimitFieldsField() != null) {
+                addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
+            }
+            
+            return cfg;
+        });
     }
     
     /**

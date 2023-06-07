@@ -32,8 +32,8 @@ public class IndexOnlyContextCreatorBuilder {
     private QueryOptions options;
     
     public IndexOnlyContextCreator build() {
-        return new IndexOnlyContextCreator(source, range, typeMetadata, compositeMetadata, options, variables, iteratorBuildingVisitor,
-                        delayedNonEventFieldMap, equality, columnFamilies, inclusive, comparatorFactory);
+        return new IndexOnlyContextCreator(source, range, typeMetadata, compositeMetadata, options, variables, iteratorBuildingVisitor, delayedNonEventFieldMap,
+                        equality, columnFamilies, inclusive, comparatorFactory);
     }
     
     public IndexOnlyContextCreatorBuilder setVariables(Collection<String> variables) {

@@ -537,8 +537,8 @@ public class CachedResultsBean {
                 qlCache.add(q.getId().toString(), owner, logic, client);
                 
                 try {
-                    query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(
-                                    queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
+                    query = new RunningQuery(null, null, logic.getConnectionPriority(), logic, q, q.getQueryAuthorizations(), p,
+                                    new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                     query.setActiveCall(true);
                     // queryMetric was duplicated from the original earlier
                     query.setMetric(queryMetric);
@@ -775,7 +775,7 @@ public class CachedResultsBean {
                 CachedResultsBean.loadingQueryMap.remove(queryId);
                 CachedResultsBean.loadingQueries.remove(queryId);
             }
-
+            
             if (null != query) {
                 query.setActiveCall(false);
                 try {
@@ -799,17 +799,17 @@ public class CachedResultsBean {
      * @param queryId
      *            a query id
      * @return List of attribute names that can be used in subsequent queries
-     *
+     *           
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *           
      * @HTTP 200 success
      * @HTTP 404 not found
      * @HTTP 412 not yet loaded
      * @HTTP 500 internal server error
-     *
+     *           
      */
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf"})
@@ -843,8 +843,8 @@ public class CachedResultsBean {
         }
         
         if (!crq.getUser().equals(owner)) {
-            UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}",
-                            crq.getUser(), owner));
+            UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                            MessageFormat.format("{0} != {1}", crq.getUser(), owner));
             response.addException(e);
             response.setResult("Current user does not match user that defined query.");
             throw new UnauthorizedException(e, response);
@@ -923,14 +923,14 @@ public class CachedResultsBean {
      * @param alias
      *            additional name that this query can be retrieved by
      * @return name of the view for this query, use it as the table name in the SQL query
-     *
+     *           
      * @return {@code datawave.webservice.result.GenericResponse<String>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
      *                 query-session-id header in the request in a Cookie header or as a query parameter
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -952,7 +952,8 @@ public class CachedResultsBean {
     @GenerateQuerySessionId(cookieBasePath = "/DataWave/CachedResults/")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     @Asynchronous
-    public void loadAsync(@QueryParam("queryId") @Required("queryId") String queryId, @QueryParam("alias") String alias, @Suspended AsyncResponse asyncResponse) {
+    public void loadAsync(@QueryParam("queryId") @Required("queryId") String queryId, @QueryParam("alias") String alias,
+                    @Suspended AsyncResponse asyncResponse) {
         
         String nameBase = UUID.randomUUID().toString().replaceAll("-", "");
         CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
@@ -976,10 +977,10 @@ public class CachedResultsBean {
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 500 internal server error
-     *
+     *                
      */
     @POST
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -1156,15 +1157,15 @@ public class CachedResultsBean {
      * @param id
      *            view, queryId, or alias
      * @return number of results, columns contained in the results
-     *
+     *           
      * @return {@code datawave.webservice.result.CachedResultsDescribeResponse<Description>}
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *           
      * @HTTP 200 success
      * @HTTP 500 internal server error
-     *
+     *           
      */
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf"})
@@ -1245,11 +1246,11 @@ public class CachedResultsBean {
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      *                 'view' is a required parameter, however the caller may not know the view name. In this case, the caller may substitute the alias name
      *                 they created for the view. the retrieve call may retrieve using the alias, however other calls that operate on the actual view may not
      *                 substitute the alias (it is not the name of the table/view!) see comments inline below
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -1291,8 +1292,8 @@ public class CachedResultsBean {
             
             int maxPageSize = cachedResultsConfiguration.getMaxPageSize();
             if (maxPageSize > 0 && cp.getPagesize() > maxPageSize) {
-                throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE, MessageFormat.format("{0} > {1}.",
-                                cp.getPagesize(), maxPageSize));
+                throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE,
+                                MessageFormat.format("{0} > {1}.", cp.getPagesize(), maxPageSize));
             }
             
             QueryLogic<?> queryLogic = loadCrq.getQueryLogic();
@@ -1414,7 +1415,7 @@ public class CachedResultsBean {
      *            comma separated list of fields for ordering
      * @param pagesize
      *            size of returned pages
-     *
+     *           
      * @return datawave.webservice.result.CachedResultsResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1423,7 +1424,7 @@ public class CachedResultsBean {
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
      *                 query-session-id header in the request in a Cookie header or as a query parameter
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 401 caller is not authorized to run the query
      * @HTTP 412 if the query is not active
@@ -1467,8 +1468,8 @@ public class CachedResultsBean {
                 
                 int maxPageSize = cachedResultsConfiguration.getMaxPageSize();
                 if (maxPageSize > 0 && pagesize > maxPageSize) {
-                    throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE, MessageFormat.format("{0} > {1}.", pagesize,
-                                    cachedResultsConfiguration.getMaxPageSize()));
+                    throw new PreConditionFailedQueryException(DatawaveErrorCode.REQUESTED_PAGE_SIZE_TOO_LARGE,
+                                    MessageFormat.format("{0} > {1}.", pagesize, cachedResultsConfiguration.getMaxPageSize()));
                 }
                 
                 synchronized (crq) {
@@ -1533,7 +1534,7 @@ public class CachedResultsBean {
      * @param queryId
      *            user defined id for this query
      * @return previous page of results
-     *
+     *           
      * @return datawave.webservice.result.BaseQueryResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1543,12 +1544,12 @@ public class CachedResultsBean {
      * @ResponseHeader X-query-page-number page number returned by this call
      * @ResponseHeader X-query-last-page if true then there are no more pages for this query, caller should call close()
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *               
      * @HTTP 200 success
      * @HTTP 401 caller is not authorized to run the query
      * @HTTP 412 if the query is not active
      * @HTTP 500 internal server error
-     *
+     *               
      */
     @GET
     @javax.ws.rs.Path("/{queryId}/previous")
@@ -1648,17 +1649,17 @@ public class CachedResultsBean {
      *
      * @param queryId
      *            user defined id for this query
-     *
+     *           
      * @return datawave.webservice.result.CachedResultsResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader query-session-id this header and value will be in the Set-Cookie header, subsequent calls for this session will need to supply the
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *                
      * @HTTP 200 success
      * @HTTP 500 internal server error
-     *
+     *                
      */
     @PUT
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -1741,7 +1742,7 @@ public class CachedResultsBean {
      * @param queryId
      *            user defined id for this query
      * @return a page of results
-     *
+     *           
      * @return datawave.webservice.result.BaseQueryResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
@@ -1751,12 +1752,12 @@ public class CachedResultsBean {
      * @ResponseHeader X-query-page-number page number returned by this call
      * @ResponseHeader X-query-last-page if true then there are no more pages for this query, caller should call close()
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *               
      * @HTTP 200 success
      * @HTTP 401 caller is not authorized to run the query
      * @HTTP 412 if the query is not active
      * @HTTP 500 internal server error
-     *
+     *               
      */
     @GET
     @javax.ws.rs.Path("/{queryId}/next")
@@ -1871,7 +1872,7 @@ public class CachedResultsBean {
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *
+     *               
      * @HTTP 200 success
      * @HTTP 401 caller is not authorized to run the query
      * @HTTP 412 if the query is not active
@@ -2005,14 +2006,14 @@ public class CachedResultsBean {
      *
      * @param originalQueryId
      *            the query id
-     *
+     *           
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *               
      * @HTTP 200 success
      * @HTTP 401 caller is not authorized to cancel the query
      */
@@ -2044,8 +2045,8 @@ public class CachedResultsBean {
                     query.cancel();
                     response.addMessage("CachedResults load canceled.");
                 } else {
-                    UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}",
-                                    query.getSettings().getOwner(), owner));
+                    UnauthorizedQueryException e = new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                    MessageFormat.format("{0} != {1}", query.getSettings().getOwner(), owner));
                     throw new UnauthorizedException(e, response);
                 }
             }
@@ -2066,14 +2067,14 @@ public class CachedResultsBean {
      *
      * @param originalQueryId
      *            the query id
-     *
+     *           
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for a user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *               
      * @HTTP 200 success
      */
     @PUT
@@ -2121,17 +2122,17 @@ public class CachedResultsBean {
      *
      * @param queryId
      *            use defined id for this query
-     *
+     *           
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *               
      * @HTTP 200 success
      * @HTTP 500 internal server error
-     *
+     *               
      */
     @DELETE
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
@@ -2210,8 +2211,8 @@ public class CachedResultsBean {
                 // will throw IllegalArgumentException if not defined
                 QueryLogic<?> logic = queryFactory.getQueryLogic(q.getQueryLogicName(), p);
                 AccumuloConnectionFactory.Priority priority = logic.getConnectionPriority();
-                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p, new RunningQueryTimingImpl(queryExpirationConf,
-                                q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
+                query = new RunningQuery(metrics, null, priority, logic, q, q.getQueryAuthorizations(), p,
+                                new RunningQueryTimingImpl(queryExpirationConf, q.getPageTimeout()), predictor, userOperationsBean, metricFactory);
                 query.setActiveCall(true);
                 // Put in the cache by id and name, we will have two copies that reference the same object
                 runningQueryCache.put(q.getId().toString(), query);
@@ -2219,8 +2220,8 @@ public class CachedResultsBean {
         } else {
             // Check to make sure that this query belongs to current user.
             if (!query.getSettings().getOwner().equals(owner)) {
-                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH, MessageFormat.format("{0} != {1}", owner, query.getSettings()
-                                .getOwner()));
+                throw new UnauthorizedQueryException(DatawaveErrorCode.QUERY_OWNER_MISMATCH,
+                                MessageFormat.format("{0} != {1}", owner, query.getSettings().getOwner()));
             }
         }
         query.setActiveCall(false);
@@ -2240,7 +2241,7 @@ public class CachedResultsBean {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *
+     *               
      * @HTTP 200 success
      * @HTTP 401 caller is not authorized to run the query
      * @HTTP 412 if the query is not active

@@ -25,8 +25,8 @@ import java.util.Set;
  */
 public class CompositeTerm extends Composite {
     
-    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTNENode.class, ASTGTNode.class,
-                    ASTGENode.class, ASTLTNode.class, ASTLENode.class, ASTAndNode.class));
+    public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Collections
+                    .unmodifiableSet(Sets.newHashSet(ASTNENode.class, ASTGTNode.class, ASTGENode.class, ASTLTNode.class, ASTLENode.class, ASTAndNode.class));
     public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTEQNode.class, ASTERNode.class));
     
     public CompositeTerm(String compositeName, String separator) {

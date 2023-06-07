@@ -124,8 +124,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
+                        new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -180,8 +180,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
+                        new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();
@@ -238,8 +238,8 @@ public class LongRunningQueryTest {
         GenericQueryConfiguration config = logic.initialize(client, query, Collections.singleton(auths));
         logic.setupQuery(config);
         
-        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null,
-                        null, new QueryMetricFactoryImpl());
+        RunningQuery runningQuery = new RunningQuery(null, client, AccumuloConnectionFactory.Priority.NORMAL, logic, query, "", datawavePrincipal, null, null,
+                        new QueryMetricFactoryImpl());
         List<ResultsPage> pages = new ArrayList<>();
         
         ResultsPage page = runningQuery.next();

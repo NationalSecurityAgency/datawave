@@ -80,10 +80,10 @@ public class EdgeDataBundle {
                     IngestHelperInterface helper) {
         this(event, edgeDef.getEdgeType().toString(), null, helper);
         
-        this.setSource(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSourceIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(), edgeDef
-                        .getSourceRelationship(), edgeDef.getSourceCollection(), ifaceSource));
-        this.setSink(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSinkIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(), edgeDef
-                        .getSinkRelationship(), edgeDef.getSinkCollection(), ifaceSink));
+        this.setSource(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSourceIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(),
+                        edgeDef.getSourceRelationship(), edgeDef.getSourceCollection(), ifaceSource));
+        this.setSink(new VertexValue(edgeDef.isUseRealm(), edgeDef.getSinkIndexedFieldRealm(), edgeDef.getSourceEventFieldRealm(),
+                        edgeDef.getSinkRelationship(), edgeDef.getSinkCollection(), ifaceSink));
         this.edgeDefinition = edgeDef;
         
         this.edgeDirection = edgeDef.getDirection();

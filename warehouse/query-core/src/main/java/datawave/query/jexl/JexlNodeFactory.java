@@ -67,8 +67,8 @@ import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
  */
 public class JexlNodeFactory {
     public static final Set<Class<?>> REAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(BigDecimal.class, Double.class, Float.class));
-    public static final Set<Class<?>> NATURAL_NUMBERS = Collections.unmodifiableSet(Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class,
-                    Short.class, Byte.class));
+    public static final Set<Class<?>> NATURAL_NUMBERS = Collections
+                    .unmodifiableSet(Sets.<Class<?>> newHashSet(Long.class, BigInteger.class, Integer.class, Short.class, Byte.class));
     
     public enum ContainerType {
         OR_NODE, AND_NODE
@@ -274,8 +274,8 @@ public class JexlNodeFactory {
             return buildUntypedBinaryNode(node, pair.get(0), pair.get(1));
         }
         
-        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                        ParserTreeConstants.JJTANDNODE));
+        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE)
+                        : new ASTAndNode(ParserTreeConstants.JJTANDNODE));
         
         int i = 0;
         JexlNodes.ensureCapacity(parentNode, pairs.size());
@@ -312,8 +312,8 @@ public class JexlNodeFactory {
             return buildUntypedNode(node, fieldNames.iterator().next(), literal);
         }
         
-        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                        ParserTreeConstants.JJTANDNODE));
+        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE)
+                        : new ASTAndNode(ParserTreeConstants.JJTANDNODE));
         int i = 0;
         JexlNodes.ensureCapacity(parentNode, fieldNames.size());
         for (String fieldName : fieldNames) {
@@ -366,8 +366,8 @@ public class JexlNodeFactory {
             return buildUntypedNode(node, fieldName, fieldValues.iterator().next());
         }
         
-        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                        ParserTreeConstants.JJTANDNODE));
+        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE)
+                        : new ASTAndNode(ParserTreeConstants.JJTANDNODE));
         JexlNodes.ensureCapacity(parentNode, fieldValues.size());
         
         int i = 0;
@@ -402,8 +402,8 @@ public class JexlNodeFactory {
             return buildUntypedNewLiteralNode(node, fieldName, fieldValues.iterator().next());
         }
         
-        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE) : new ASTAndNode(
-                        ParserTreeConstants.JJTANDNODE));
+        JexlNode parentNode = (containerType.equals(ContainerType.OR_NODE) ? new ASTOrNode(ParserTreeConstants.JJTORNODE)
+                        : new ASTAndNode(ParserTreeConstants.JJTANDNODE));
         JexlNodes.ensureCapacity(parentNode, fieldValues.size());
         
         int i = 0;
@@ -1585,8 +1585,8 @@ public class JexlNodeFactory {
      * @return a jexl node
      */
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, ASTIdentifier identifier, JexlNode literal) {
-        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE), identifierReference = new ASTReference(
-                        ParserTreeConstants.JJTREFERENCE);
+        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE),
+                        identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
         
         literalReference.jjtAddChild(literal, 0);
         literal.jjtSetParent(literalReference);
@@ -1604,8 +1604,8 @@ public class JexlNodeFactory {
     }
     
     protected static JexlNode buildUntypedNewNode(JexlNode newNode, JexlNode literal, ASTIdentifier identifier) {
-        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE), identifierReference = new ASTReference(
-                        ParserTreeConstants.JJTREFERENCE);
+        ASTReference literalReference = new ASTReference(ParserTreeConstants.JJTREFERENCE),
+                        identifierReference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
         
         literalReference.jjtAddChild(literal, 0);
         literal.jjtSetParent(literalReference);

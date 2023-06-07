@@ -129,7 +129,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                             new Exception("exception for debug purposes"));
         return new DateIndexHelper();
     }
-
+    
     /**
      * Initializes the instance with a provided update interval.
      * 
@@ -151,7 +151,7 @@ public class DateIndexHelper implements ApplicationContextAware {
             log.warn("Attempting to create a date index helper however the date index table name is empty");
             return null;
         }
-
+        
         this.client = client;
         this.dateIndexTableName = dateIndexTableName;
         this.auths = auths;
@@ -301,8 +301,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    @Cacheable(
-                    value = "getShardsAndDaysHint",
+    @Cacheable(value = "getShardsAndDaysHint",
                     key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
                     cacheManager = "dateIndexHelperCacheManager")
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)

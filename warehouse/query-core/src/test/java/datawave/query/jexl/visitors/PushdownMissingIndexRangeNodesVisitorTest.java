@@ -172,8 +172,8 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
     
     @Test
     public void testDelayRange1() throws Exception {
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(
+                        "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))");
         List<IndexHole> holes = new ArrayList<>();
         holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
         config.setIndexHoles(holes);
@@ -186,8 +186,8 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
     
     @Test
     public void testDelayRange2() throws Exception {
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca1' && FOO <= 'ca11')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca1' && UNINDEXED <= 'ca11'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(
+                        "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca1' && FOO <= 'ca11')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca1' && UNINDEXED <= 'ca11'))");
         List<IndexHole> holes = new ArrayList<>();
         holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
         config.setIndexHoles(holes);
@@ -200,8 +200,8 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
     
     @Test
     public void testDelayRange3() throws Exception {
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca11' && FOO <= 'ca111')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca11' && UNINDEXED <= 'ca111'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(
+                        "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca11' && FOO <= 'ca111')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca11' && UNINDEXED <= 'ca111'))");
         List<IndexHole> holes = new ArrayList<>();
         holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
         config.setIndexHoles(holes);
@@ -214,8 +214,8 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
     
     @Test
     public void testDelayRange4() throws Exception {
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca2' && FOO <= 'ca21')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca2' && UNINDEXED <= 'ca21'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(
+                        "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca2' && FOO <= 'ca21')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca2' && UNINDEXED <= 'ca21'))");
         List<IndexHole> holes = new ArrayList<>();
         holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
         config.setIndexHoles(holes);
@@ -228,8 +228,8 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
     
     @Test
     public void testDelayRange5() throws Exception {
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca21' && FOO <= 'ca211')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca21' && UNINDEXED <= 'ca211'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(
+                        "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca21' && FOO <= 'ca211')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca21' && UNINDEXED <= 'ca211'))");
         List<IndexHole> holes = new ArrayList<>();
         holes.add(new IndexHole(new String[] {"20100101", "20100102"}, new String[] {"ca1", "ca2"}));
         config.setIndexHoles(holes);
@@ -242,8 +242,8 @@ public class PushdownMissingIndexRangeNodesVisitorTest {
     
     @Test
     public void testDelayRange6() throws Exception {
-        ASTJexlScript script = JexlASTHelper
-                        .parseJexlQuery("FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))");
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(
+                        "FOO == 'jsub' && ((_Bounded_ = true) && (FOO >= 'ca' && FOO <= 'caz')) && ((_Bounded_ = true) && (UNINDEXED >= 'ca' && UNINDEXED <= 'caz'))");
         List<IndexHole> holes = new ArrayList<>();
         holes.add(new IndexHole(new String[] {"20100102", "20100103"}, new String[] {"ca1", "ca2"}));
         config.setIndexHoles(holes);

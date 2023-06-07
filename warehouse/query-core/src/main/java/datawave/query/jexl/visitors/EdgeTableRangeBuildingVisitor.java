@@ -553,8 +553,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 sb.append(node.jjtGetChild(i).image);
             } else if (1 == i) {
                 if (!allowedFunctions.contains(node.jjtGetChild(i).image.toLowerCase())) {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, node.jjtGetChild(i).image
-                                    + " not supported function for EdgeQuery");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                                    node.jjtGetChild(i).image + " not supported function for EdgeQuery");
                     throw new UnsupportedOperationException(qe);
                 }
                 sb.append(":");

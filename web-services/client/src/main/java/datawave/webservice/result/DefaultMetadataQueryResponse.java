@@ -24,8 +24,8 @@ import java.util.List;
 @XmlRootElement(name = "DefaultMetadataQueryResponse")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
-public class DefaultMetadataQueryResponse extends MetadataQueryResponseBase<DefaultMetadataQueryResponse> implements Serializable, TotalResultsAware,
-                Message<DefaultMetadataQueryResponse> {
+public class DefaultMetadataQueryResponse extends MetadataQueryResponseBase<DefaultMetadataQueryResponse>
+                implements Serializable, TotalResultsAware, Message<DefaultMetadataQueryResponse> {
     private static final long serialVersionUID = 7040643915602975506L;
     
     @XmlElementWrapper(name = "MetadataFields")

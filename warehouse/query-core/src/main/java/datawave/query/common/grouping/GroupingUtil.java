@@ -54,9 +54,12 @@ public class GroupingUtil {
      * is called that it is expecting the countingMap to be mutated) or the caller can reset the instance of countingMap by calling getCountingMap on the
      * GroupInfo object (clearer, but relies more on garbage collection)
      *
-     * @param entry the map entry
-     * @param groupFieldsSet group fields set
-     * @param countingMap the counting map
+     * @param entry
+     *            the map entry
+     * @param groupFieldsSet
+     *            group fields set
+     * @param countingMap
+     *            the counting map
      * @return grouping info
      */
     public GroupingInfo getGroupingInfo(Map.Entry<Key,Document> entry, Set<String> groupFieldsSet, GroupCountingHashMap countingMap) {
@@ -258,14 +261,13 @@ public class GroupingUtil {
             // the column visibility of the EXISTING map key to the new value.
             // Note that the hashCode and equals methods for the GroupingTypeAttribute will ignore the metadata (which contains the column visibility)
             incomingAttributes.forEach(incomingAttribute -> {
-                existingMapKeys.stream()
-                                .flatMap(Collection::stream)
+                existingMapKeys.stream().flatMap(Collection::stream)
                                 // if the existing and incoming attributes are equal (other than the metadata), the incoming attribute's visibility will be
                                 // considered for merging into the existing attribute unless the column visibilities are already equal
                                 .filter(existingAttribute -> existingAttribute.getData().equals(incomingAttribute.getData())
                                                 && !existingAttribute.getColumnVisibility().equals(incomingAttribute.getColumnVisibility()))
-                                .forEach(existingAttribute -> existingAttribute.setColumnVisibility(combine(Arrays.asList(
-                                                existingAttribute.getColumnVisibility(), incomingAttribute.getColumnVisibility()))));
+                                .forEach(existingAttribute -> existingAttribute.setColumnVisibility(
+                                                combine(Arrays.asList(existingAttribute.getColumnVisibility(), incomingAttribute.getColumnVisibility()))));
             });
         }
         

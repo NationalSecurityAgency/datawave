@@ -89,8 +89,8 @@ public class RangeStreamQueryTest {
         connector = new InMemoryAccumuloClient("root", instance);
         connector.tableOperations().create(SHARD_INDEX);
         
-        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
-                        .setMaxWriteThreads(1));
+        BatchWriter bw = connector.createBatchWriter(SHARD_INDEX,
+                        new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1));
         
         Value shardValue = buildShardRange();
         Value docValue = buildDocRange("a.b.c");
@@ -270,31 +270,21 @@ public class RangeStreamQueryTest {
     private void testIntersections(String append, TERM_CONTEXT termContext) throws Exception {
         String[] queries = {
                 // single terms
-                "FOO == 'shard'",
-                "FOO == 'uid'",
+                "FOO == 'shard'", "FOO == 'uid'",
                 // two terms: shard-shard, shard-uid, uid-shard, uid-uid
-                "FOO == 'shard' && FOO2 == 'shard'",
-                "FOO == 'shard' && FOO2 == 'uid'",
-                "FOO == 'uid' && FOO2 == 'shard'",
-                "FOO == 'uid' && FOO2 == 'uid'",
+                "FOO == 'shard' && FOO2 == 'shard'", "FOO == 'shard' && FOO2 == 'uid'", "FOO == 'uid' && FOO2 == 'shard'", "FOO == 'uid' && FOO2 == 'uid'",
                 // two terms, one side is a nested union
-                "FOO == 'shard' && (FOO2 == 'shard' || FOO3 == 'shard')",
-                "FOO == 'shard' && (FOO2 == 'shard' || FOO3 == 'uid')",
-                "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'shard')",
-                "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'uid')",
-                "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'shard')",
-                "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'uid')",
-                "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'shard')",
-                "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'uid')",
+                "FOO == 'shard' && (FOO2 == 'shard' || FOO3 == 'shard')", "FOO == 'shard' && (FOO2 == 'shard' || FOO3 == 'uid')",
+                "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'shard' && (FOO2 == 'uid' || FOO3 == 'uid')",
+                "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'shard' || FOO3 == 'uid')",
+                "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'uid' && (FOO2 == 'uid' || FOO3 == 'uid')",
                 // three terms, one term is a nested union
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'shard')",
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'shard' || FOO3 == 'uid')",
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'uid' || FOO3 == 'shard')",
                 "FOO == 'shard' && FOO2 == 'shard' && (FOO2 == 'uid' || FOO3 == 'uid')",
-                "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'shard' || FOO3 == 'shard')",
-                "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'shard' || FOO3 == 'uid')",
-                "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'uid' || FOO3 == 'shard')",
-                "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'uid' || FOO3 == 'uid')",
+                "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'shard' || FOO3 == 'shard')", "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'shard' || FOO3 == 'uid')",
+                "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'uid' || FOO3 == 'shard')", "FOO == 'uid' && FOO2 == 'uid' && (FOO2 == 'uid' || FOO3 == 'uid')",
                 // three terms, two terms are a nested union
                 "FOO == 'shard' && (FOO == 'shard' || FOO2 == 'shard') && (FOO2 == 'shard' || FOO3 == 'shard')",
                 "FOO == 'shard' && (FOO == 'shard' || FOO2 == 'shard') && (FOO2 == 'shard' || FOO3 == 'uid')",
@@ -334,31 +324,21 @@ public class RangeStreamQueryTest {
     private void testUnions(String append, TERM_CONTEXT termContext) throws Exception {
         String[] queries = {
                 // single terms
-                "FOO == 'shard'",
-                "FOO == 'uid'",
+                "FOO == 'shard'", "FOO == 'uid'",
                 // two terms: shard-shard, shard-uid, uid-shard, uid-uid
-                "FOO == 'shard' || FOO2 == 'shard'",
-                "FOO == 'shard' || FOO2 == 'uid'",
-                "FOO == 'uid' || FOO2 == 'shard'",
-                "FOO == 'uid' || FOO2 == 'uid'",
+                "FOO == 'shard' || FOO2 == 'shard'", "FOO == 'shard' || FOO2 == 'uid'", "FOO == 'uid' || FOO2 == 'shard'", "FOO == 'uid' || FOO2 == 'uid'",
                 // two terms, one side is a nested intersection
-                "FOO == 'shard' || (FOO2 == 'shard' && FOO3 == 'shard')",
-                "FOO == 'shard' || (FOO2 == 'shard' && FOO3 == 'uid')",
-                "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'shard')",
-                "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'uid')",
-                "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'shard')",
-                "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'uid')",
-                "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'shard')",
-                "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'uid')",
+                "FOO == 'shard' || (FOO2 == 'shard' && FOO3 == 'shard')", "FOO == 'shard' || (FOO2 == 'shard' && FOO3 == 'uid')",
+                "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'shard' || (FOO2 == 'uid' && FOO3 == 'uid')",
+                "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'shard' && FOO3 == 'uid')",
+                "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'uid' || (FOO2 == 'uid' && FOO3 == 'uid')",
                 // three terms, one term is a nested intersection
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'shard')",
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'shard' && FOO3 == 'uid')",
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'uid' && FOO3 == 'shard')",
                 "FOO == 'shard' || FOO2 == 'shard' || (FOO2 == 'uid' && FOO3 == 'uid')",
-                "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'shard' && FOO3 == 'shard')",
-                "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'shard' && FOO3 == 'uid')",
-                "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'uid' && FOO3 == 'shard')",
-                "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'uid' && FOO3 == 'uid')",
+                "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'shard' && FOO3 == 'shard')", "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'shard' && FOO3 == 'uid')",
+                "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'uid' && FOO3 == 'shard')", "FOO == 'uid' || FOO2 == 'uid' || (FOO2 == 'uid' && FOO3 == 'uid')",
                 // three terms, two terms are a nested intersection
                 "FOO == 'shard' || (FOO == 'shard' && FOO2 == 'shard') || (FOO2 == 'shard' && FOO3 == 'shard')",
                 "FOO == 'shard' || (FOO == 'shard' && FOO2 == 'shard') || (FOO2 == 'shard' && FOO3 == 'uid')",
@@ -412,7 +392,8 @@ public class RangeStreamQueryTest {
         Iterator<QueryPlan> queryPlanIter = queryPlans.iterator();
         
         // check for a top level union and a delayed term. These queries are not executable
-        if (queryContext == QUERY_CONTEXT.UNION && (termContext.equals(DELAYED) || termContext.equals(DELAYED_UNION) || termContext.equals(DELAYED_INTERSECT))) {
+        if (queryContext == QUERY_CONTEXT.UNION
+                        && (termContext.equals(DELAYED) || termContext.equals(DELAYED_UNION) || termContext.equals(DELAYED_INTERSECT))) {
             assertFalse("top level union and delayed term should have produced no query plans, but got one for query " + query, queryPlanIter.hasNext());
             queryPlans.close();
             rangeStream.close();

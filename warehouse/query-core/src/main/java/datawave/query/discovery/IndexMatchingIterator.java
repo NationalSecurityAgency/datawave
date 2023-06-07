@@ -45,8 +45,8 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
     public static final String REVERSE_INDEX = "reverse.index";
     public static final String RANGE = "term.range.";
     
-    private static final Pair<Boolean,Optional<ImmutableSortedSet<String>>> ALL_FIELDS = Pair
-                    .with(Boolean.TRUE, Optional.<ImmutableSortedSet<String>> absent());
+    private static final Pair<Boolean,Optional<ImmutableSortedSet<String>>> ALL_FIELDS = Pair.with(Boolean.TRUE,
+                    Optional.<ImmutableSortedSet<String>> absent());
     private static final Logger log = Logger.getLogger(IndexMatchingIterator.class);
     
     // configured options
@@ -360,9 +360,8 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
         
         @Override
         public String toString() {
-            return "Configuration [unfieldedLiterals=" + unfieldedLiterals + ", unfieldedPatterns=" + unfieldedPatterns + ", unfieldedRanges="
-                            + unfieldedRanges + ", fieldedLiterals=" + fieldedLiterals + ", fieldedPatterns=" + fieldedPatterns + ", fieldedRanges="
-                            + fieldedRanges + "]";
+            return "Configuration [unfieldedLiterals=" + unfieldedLiterals + ", unfieldedPatterns=" + unfieldedPatterns + ", unfieldedRanges=" + unfieldedRanges
+                            + ", fieldedLiterals=" + fieldedLiterals + ", fieldedPatterns=" + fieldedPatterns + ", fieldedRanges=" + fieldedRanges + "]";
         }
     }
     

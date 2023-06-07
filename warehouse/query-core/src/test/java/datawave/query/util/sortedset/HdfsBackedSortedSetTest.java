@@ -101,8 +101,8 @@ public class HdfsBackedSortedSetTest {
         List<IvaratorCacheDir> ivaratorCacheDirs = new ArrayList<>();
         for (File dir : dirs) {
             if (dir.getName().equalsIgnoreCase("second"))
-                ivaratorCacheDirs.add(new IvaratorCacheDir(new IvaratorCacheDirConfig(dir.toURI().toString(), 0, minRemainingPercent), fs, dir.toURI()
-                                .toString()));
+                ivaratorCacheDirs.add(
+                                new IvaratorCacheDir(new IvaratorCacheDirConfig(dir.toURI().toString(), 0, minRemainingPercent), fs, dir.toURI().toString()));
             else
                 ivaratorCacheDirs.add(new IvaratorCacheDir(new IvaratorCacheDirConfig(dir.toURI().toString(), 1), fs, dir.toURI().toString()));
         }

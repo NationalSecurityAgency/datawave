@@ -29,8 +29,8 @@ public class AtomMessageBodyWriter implements MessageBodyWriter<Object> {
     
     @Override
     public boolean isWriteable(Class<?> clazz, Type type, Annotation[] annotations, MediaType mediaType) {
-        return (Entry.class.isAssignableFrom(clazz) || Feed.class.isAssignableFrom(clazz) || Service.class.isAssignableFrom(clazz) || Categories.class
-                        .isAssignableFrom(clazz));
+        return (Entry.class.isAssignableFrom(clazz) || Feed.class.isAssignableFrom(clazz) || Service.class.isAssignableFrom(clazz)
+                        || Categories.class.isAssignableFrom(clazz));
     }
     
     @Override

@@ -146,8 +146,9 @@ public class AtomErrorDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AtomDataTyp
             try {
                 errorHelper.getPolicyEnforcer().validate(record);
             } catch (Throwable t) {
-                throw new RuntimeException("Error handling failed event validation on file: " + record.getRawFileName() + " record number: "
-                                + record.getRawRecordNumber(), t);
+                throw new RuntimeException(
+                                "Error handling failed event validation on file: " + record.getRawFileName() + " record number: " + record.getRawRecordNumber(),
+                                t);
             }
         }
         

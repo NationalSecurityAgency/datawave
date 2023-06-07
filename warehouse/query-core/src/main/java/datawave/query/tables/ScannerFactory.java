@@ -167,7 +167,7 @@ public class ScannerFactory {
      * @return a new scanner session
      * @throws Exception
      *             if there are issues
-     *
+     *            
      */
     public synchronized <T extends ScannerSession> T newLimitedScanner(Class<T> wrapper, final String tableName, final Set<Authorizations> auths,
                     final Query settings) throws Exception {
@@ -186,8 +186,8 @@ public class ScannerFactory {
         if (wrapper == ScannerSession.class) {
             session = (T) new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats);
         } else {
-            session = wrapper.getConstructor(ScannerSession.class).newInstance(
-                            new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
+            session = wrapper.getConstructor(ScannerSession.class)
+                            .newInstance(new ScannerSession(tableName, auths, scanQueue, maxQueue, settings).applyStats(stats));
         }
         
         log.debug("Created session " + System.identityHashCode(session));

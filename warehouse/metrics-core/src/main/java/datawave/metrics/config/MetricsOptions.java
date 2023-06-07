@@ -29,7 +29,8 @@ public class MetricsOptions extends Options {
         
         super.addOption(OptionBuilder.withArgName("HDFS directory").hasArg().withDescription("Source of input files to MR job").create("input"));
         
-        super.addOption(OptionBuilder.withArgName("Path to metrics.xml").hasArg().withDescription("Path to the metrics.xml configuration file.").create("conf"));
+        super.addOption(OptionBuilder.withArgName("Path to metrics.xml").hasArg().withDescription("Path to the metrics.xml configuration file.")
+                        .create("conf"));
         
         super.addOption(OptionBuilder.withArgName("Path to hdfs-site.xml").hasArg().withDescription("Path to the HDFS Configuration file").create("hdfsConf"));
         

@@ -392,7 +392,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
      * @param unescaped
      *            string value
      * @return unescaped string
-     * */
+     */
     private String toStringEscaped(UnescapedCharSequence unescaped) {
         // non efficient implementation
         final StringBuilder result = new StringBuilder();

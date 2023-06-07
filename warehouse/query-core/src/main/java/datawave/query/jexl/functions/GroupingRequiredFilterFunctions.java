@@ -315,7 +315,7 @@ public class GroupingRequiredFilterFunctions {
                 }
             }
         });
-        
+                    
         // if there was a match found at all levels, then the matches.size will be equal to the
         // number of field/regex pairs
         if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
@@ -345,7 +345,7 @@ public class GroupingRequiredFilterFunctions {
      * @param fields
      *            field names
      * @return a collection of matches
-     * */
+     */
     public static Collection<ValueTuple> atomValuesMatch(Object... fields) {
         List<Iterable<?>> iterableFields = new ArrayList<>();
         

@@ -160,8 +160,8 @@ class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
             
             // add value to proper data type
             String dataType = dwKey.getDataType();
-            DataTypeInfo typeInfo = this.dataTypeMapping.computeIfAbsent(dataType, k -> new DataTypeInfo(dwKey, this.sumUniqueCounts, this.normalPrecision,
-                            this.sparsePrecision));
+            DataTypeInfo typeInfo = this.dataTypeMapping.computeIfAbsent(dataType,
+                            k -> new DataTypeInfo(dwKey, this.sumUniqueCounts, this.normalPrecision, this.sparsePrecision));
             typeInfo.add(dwKey.getFieldValue());
         }
         

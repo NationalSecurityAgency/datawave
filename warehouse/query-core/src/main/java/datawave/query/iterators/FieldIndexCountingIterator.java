@@ -279,7 +279,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             }
             
         } else { // We have a valid start key and row
-        
+            
             // Check if we are recovering from IterationInterruptedException (verify that we have the right key parts
             // and that the start key is NOT inclusive).
             if (null != pStartKey.getColumnFamily() && !pStartKey.getColumnFamily().toString().trim().isEmpty() && null != pStartKey.getColumnQualifier()
@@ -398,8 +398,8 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             }
             
             // Seek to the first FieldName in our list
-            key = new Key(source.getTopKey().getRow(), new Text(Constants.FIELD_INDEX_PREFIX
-                            + ((null != fieldNameFilter && !fieldNameFilter.isEmpty()) ? fieldNameFilter.first() : "")));
+            key = new Key(source.getTopKey().getRow(),
+                            new Text(Constants.FIELD_INDEX_PREFIX + ((null != fieldNameFilter && !fieldNameFilter.isEmpty()) ? fieldNameFilter.first() : "")));
             if (parentRange.contains(key)) {
                 parentRange = new Range(key, true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
                 source.seek(parentRange, seekColumnFamilies, !seekColumnFamilies.isEmpty());
@@ -672,7 +672,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                                 + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: " + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
                 
             } else { // same row - Compare CQ
-            
+                
                 /**
                  * The only time we should trigger the following is if: 1. No field name was passed in (resulting in empty seekColumnFamilies) 2. Underlying
                  * iterator is NOT honoring seekColumnFamilies & inclusivity
@@ -711,7 +711,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                                     + currentFieldName + " Source key- Row:" + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: "
                                     + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
                 } else { // same field name
-                
+                    
                     // check FIELD VALUE, there are multiple conditions here
                     // 1. we were given a set of field values to look for
                     // 2. we are doing all field values.
@@ -754,7 +754,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                         }
                         continue;
                     } else { // same field value
-                    
+                        
                         // see if we care about data type
                         if (this.uniqByDataTypeOption || this.dataTypeFilter != null) {
                             if (log.isTraceEnabled()) {

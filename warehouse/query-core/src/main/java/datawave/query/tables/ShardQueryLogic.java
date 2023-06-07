@@ -185,7 +185,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-
+    
     private CardinalityConfiguration cardinalityConfiguration = null;
     
     /**
@@ -308,8 +308,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 throw new IllegalStateException("Must specify one of the following syntax options: " + this.mandatoryQuerySyntax);
             } else {
                 if (!this.mandatoryQuerySyntax.contains(querySyntax)) {
-                    throw new IllegalStateException("Syntax not supported, must be one of the following: " + this.mandatoryQuerySyntax + ", submitted: "
-                                    + querySyntax);
+                    throw new IllegalStateException(
+                                    "Syntax not supported, must be one of the following: " + this.mandatoryQuerySyntax + ", submitted: " + querySyntax);
                 }
             }
         }
@@ -585,7 +585,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             addConfigBasedTransformers();
             return this.transformerInstance;
         }
-
+        
         MarkingFunctions markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
         
@@ -607,11 +607,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         
         return this.transformerInstance;
     }
-
+    
     public boolean isLongRunningQuery() {
         return !getConfig().getGroupFields().isEmpty();
     }
-
+    
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
@@ -619,7 +619,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
-
+            
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
                 if (alreadyExists != null) {
@@ -628,7 +628,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
                 }
             }
-
+            
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
                 if (alreadyExists != null) {
@@ -643,7 +643,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
         }
     }
-
+    
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
         // we only care about setting the start time if we have an instance already
         if (this.transformerInstance != null) {
@@ -827,7 +827,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setExcerptFields(excerptFields);
             }
         }
-
+        
         // Get the HIT_LIST parameter if given
         String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
         if (StringUtils.isNotBlank(hitListString)) {
@@ -932,7 +932,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             config.setNoExpansionFields(noExpansionFields);
             setNoExpansionFields(noExpansionFields);
         }
-
+        
         configureDocumentAggregation(settings);
         
         config.setLimitTermExpansionToModel(this.isExpansionLimitedToModelContents());
@@ -1049,8 +1049,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      * @throws ExecutionException
      *             for execution exceptions
      */
-    protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config) throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException, ExecutionException {
+    protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config)
+                    throws InstantiationException, IllegalAccessException, TableNotFoundException, ExecutionException {
         TraceStopwatch modelWatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Loading the query model");
         
         int cacheKeyCode = new HashCodeBuilder().append(config.getDatatypeFilter()).append(config.getModelName()).hashCode();
@@ -1224,19 +1224,19 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public boolean getEnforceUniqueConjunctionsWithinExpression() {
         return getConfig().getEnforceUniqueConjunctionsWithinExpression();
     }
-
+    
     public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
         getConfig().setEnforceUniqueConjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
     }
-
+    
     public boolean getEnforceUniqueDisjunctionsWithinExpression() {
         return getConfig().getEnforceUniqueDisjunctionsWithinExpression();
     }
-
+    
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
         getConfig().setEnforceUniqueDisjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
     }
-
+    
     public List<String> getDocumentPermutations() {
         return getConfig().getDocumentPermutations();
     }
@@ -1320,23 +1320,23 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public Set<String> getNoExpansionFields() {
         return getConfig().getNoExpansionFields();
     }
-
+    
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         getConfig().setNoExpansionFields(noExpansionFields);
     }
-
+    
     public ExcerptFields getExcerptFields() {
         return getConfig().getExcerptFields();
     }
-
+    
     public void setExcerptFields(ExcerptFields excerptFields) {
         getConfig().setExcerptFields(excerptFields);
     }
-
+    
     public String getExcerptIterator() {
         return getConfig().getExcerptIterator().getName();
     }
-
+    
     public void setExcerptIterator(String iteratorClass) {
         try {
             getConfig().setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
@@ -1344,55 +1344,55 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
         }
     }
-
+    
     public int getFiFieldSeek() {
         return getConfig().getFiFieldSeek();
     }
-
+    
     public void setFiFieldSeek(int fiFieldSeek) {
         getConfig().setFiFieldSeek(fiFieldSeek);
     }
-
+    
     public int getFiNextSeek() {
         return getConfig().getFiNextSeek();
     }
-
+    
     public void setFiNextSeek(int fiNextSeek) {
         getConfig().setFiNextSeek(fiNextSeek);
     }
-
+    
     public int getEventFieldSeek() {
         return getConfig().getEventFieldSeek();
     }
-
+    
     public void setEventFieldSeek(int eventFieldSeek) {
         getConfig().setEventFieldSeek(eventFieldSeek);
     }
-
+    
     public int getEventNextSeek() {
         return getConfig().getEventNextSeek();
     }
-
+    
     public void setEventNextSeek(int eventNextSeek) {
         getConfig().setEventNextSeek(eventNextSeek);
     }
-
+    
     public int getTfFieldSeek() {
         return getConfig().getTfFieldSeek();
     }
-
+    
     public void setTfFieldSeek(int tfFieldSeek) {
         getConfig().setTfFieldSeek(tfFieldSeek);
     }
-
+    
     public int getTfNextSeek() {
         return getConfig().getTfNextSeek();
     }
-
+    
     public void setTfNextSeek(int tfNextSeek) {
         getConfig().setTfNextSeek(tfNextSeek);
     }
-
+    
     public String getBlacklistedFieldsString() {
         return getConfig().getBlacklistedFieldsAsString();
     }
@@ -1456,11 +1456,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public int getInitialMaxTermThreshold() {
         return getConfig().getInitialMaxTermThreshold();
     }
-
+    
     public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
         getConfig().setInitialMaxTermThreshold(initialMaxTermThreshold);
     }
-
+    
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
@@ -1893,11 +1893,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
         getConfig().setQueryExecutionForPageTimeout(queryExecutionForPageTimeout);
     }
-
+    
     public long getQueryExecutionForPageTimeout() {
         return getConfig().getQueryExecutionForPageTimeout();
     }
-
+    
     public double getMinimumSelectivity() {
         return getConfig().getMinSelectivity();
     }
@@ -2105,7 +2105,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
-
+    
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }
@@ -2521,36 +2521,36 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
     }
-
+    
     public boolean isLazySetMechanismEnabled() {
         return getConfig().isLazySetMechanismEnabled();
     }
-
+    
     public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
         getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
-
+    
     public long getVisitorFunctionMaxWeight() {
         return getConfig().getVisitorFunctionMaxWeight();
     }
-
+    
     public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
         getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
     }
-
-    public int getDocAggregationThresholdMs(){
+    
+    public int getDocAggregationThresholdMs() {
         return getConfig().getDocAggregationThresholdMs();
     }
-
-    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+    
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs) {
         getConfig().setDocAggregationThresholdMs(docAggregationThresholdMs);
     }
-
-    public int getTfAggregationThresholdMs(){
+    
+    public int getTfAggregationThresholdMs() {
         return getConfig().getTfAggregationThresholdMs();
     }
-
-    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+    
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
     }
 }

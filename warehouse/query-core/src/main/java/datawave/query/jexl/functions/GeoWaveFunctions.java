@@ -121,8 +121,8 @@ public class GeoWaveFunctions {
     private static Geometry parseGeometryFromGeoType(String geoTypeString) {
         Geometry geom = null;
         try {
-            geom = geoPointToGeometry(GeoNormalizer.isNormalized(geoTypeString) ? GeoNormalizer.GeoPoint.decodeZRef(geoTypeString) : GeoNormalizer.GeoPoint
-                            .decodeZRef(geoNormalizer.normalize(geoTypeString)));
+            geom = geoPointToGeometry(GeoNormalizer.isNormalized(geoTypeString) ? GeoNormalizer.GeoPoint.decodeZRef(geoTypeString)
+                            : GeoNormalizer.GeoPoint.decodeZRef(geoNormalizer.normalize(geoTypeString)));
         } catch (Exception e) {
             // do nothing
         }

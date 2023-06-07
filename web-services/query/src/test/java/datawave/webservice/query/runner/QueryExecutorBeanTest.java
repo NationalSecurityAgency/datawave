@@ -434,7 +434,7 @@ public class QueryExecutorBeanTest {
         
         QueryMetric testMetric = new QueryMetric((QueryMetric) metric) {
             public static final long serialVersionUID = 1L;
-
+            
             @Override
             public boolean equals(Object o) {
                 // test for equality except for the create date
@@ -636,9 +636,9 @@ public class QueryExecutorBeanTest {
                 bean.createQuery("EventQueryLogic", queryParameters);
             } catch (Exception e) {
                 // ok if we fail the call
-                        log.debug("createQuery terminated with " + e);
-                    }
-                });
+                log.debug("createQuery terminated with " + e);
+            }
+        });
         
         final Throwable[] createQueryException = {null};
         createQuery.setUncaughtExceptionHandler((t, e) -> createQueryException[0] = e);
@@ -696,7 +696,7 @@ public class QueryExecutorBeanTest {
         EasyMock.expect(logic.getResultLimit(eq(q))).andReturn(-1L).anyTimes();
         EasyMock.expect(logic.getMaxResults()).andReturn(-1L).anyTimes();
         EasyMock.expect(logic.getUserOperations()).andReturn(null);
-
+        
         EasyMock.expect(connectionRequestBean.cancelConnectionRequest(q.getId().toString(), principal)).andReturn(false).anyTimes();
         connectionFactory.returnClient(EasyMock.isA(AccumuloClient.class));
         

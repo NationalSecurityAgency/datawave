@@ -111,7 +111,8 @@ public class CachedResultsCleanupBean {
     
     private void removeCrqRow(String id) {
         
-        try (Connection con = ds.getConnection(); PreparedStatement ps = con.prepareStatement("DELETE FROM cachedResultsQuery WHERE tableName = ? OR view = ?")) {
+        try (Connection con = ds.getConnection();
+                        PreparedStatement ps = con.prepareStatement("DELETE FROM cachedResultsQuery WHERE tableName = ? OR view = ?")) {
             ps.setString(1, id);
             ps.setString(2, id);
             ps.execute();

@@ -34,8 +34,8 @@ public interface UserOperations {
         // create a mapped user for the primary user with the auths returned by listEffectiveAuthorizations
         SubjectIssuerDNPair primaryDn = SubjectIssuerDNPair.of(auths.getUserDn(), auths.getIssuerDn());
         DatawaveUser localUser = localUsers.get(primaryDn);
-        mappedUsers.add(new DatawaveUser(primaryDn, localUser.getUserType(), auths.getAllAuths(), auths.getAuthMapping().keySet(), toMultimap(auths
-                        .getAuthMapping()), System.currentTimeMillis()));
+        mappedUsers.add(new DatawaveUser(primaryDn, localUser.getUserType(), auths.getAllAuths(), auths.getAuthMapping().keySet(),
+                        toMultimap(auths.getAuthMapping()), System.currentTimeMillis()));
         
         // for each proxied user, create a new user with the auths returned by listEffectiveAuthorizations
         Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> authMap = auths.getAuths();

@@ -35,8 +35,8 @@ public class RegexReplacementTransformRule implements NodeTransformRule {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
             if (functionMetadata.namespace().equals(EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE)
-                            && EvaluationPhaseFilterFunctionsDescriptor.EvaluationPhaseFilterJexlArgumentDescriptor.regexFunctions.contains(functionMetadata
-                                            .name())) {
+                            && EvaluationPhaseFilterFunctionsDescriptor.EvaluationPhaseFilterJexlArgumentDescriptor.regexFunctions
+                                            .contains(functionMetadata.name())) {
                 JexlNode literal = JexlASTHelper.getLiteral(functionMetadata.args().get(1));
                 literal.image = processPattern(literal.image);
             }

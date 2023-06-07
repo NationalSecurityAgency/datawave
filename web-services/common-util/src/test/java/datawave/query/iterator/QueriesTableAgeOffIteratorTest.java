@@ -34,8 +34,8 @@ public class QueriesTableAgeOffIteratorTest {
         
         long now = System.currentTimeMillis();
         // Write in a couple of keys with varying timestamps
-        BatchWriter writer = client.createBatchWriter(TABLE_NAME, new BatchWriterConfig().setMaxLatency(30, TimeUnit.MILLISECONDS).setMaxMemory(1024L)
-                        .setMaxWriteThreads(1));
+        BatchWriter writer = client.createBatchWriter(TABLE_NAME,
+                        new BatchWriterConfig().setMaxLatency(30, TimeUnit.MILLISECONDS).setMaxMemory(1024L).setMaxWriteThreads(1));
         
         Mutation m1 = new Mutation("row1");
         m1.put("colf1", "colq1", now, "");

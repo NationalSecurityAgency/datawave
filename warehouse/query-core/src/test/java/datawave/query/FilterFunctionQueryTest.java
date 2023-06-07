@@ -66,8 +66,8 @@ public class FilterFunctionQueryTest extends AbstractFunctionalQuery {
         String state = "'ohio'";
         
         for (final TestCities city : TestCities.values()) {
-            String query = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + IncludeRegex + CityField.STATE.name() + ","
-                            + state + ")";
+            String query = CitiesDataType.CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + IncludeRegex + CityField.STATE.name() + "," + state
+                            + ")";
             String expectQuery = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + RE_OP + state;
             runTest(query, expectQuery);
         }

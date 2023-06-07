@@ -85,8 +85,8 @@ public class NumShards {
         shardCount++;
         
         this.conf = conf;
-        this.numShardsCachePath = new Path(conf.get(MULTIPLE_NUMSHARDS_CACHE_PATH, DEFAULT_NUM_SHARDS_CACHE_DIR), conf.get(MULTIPLE_NUMSHARDS_CACHE_FILENAME,
-                        DEFAULT_NUM_SHARDS_CACHE_FILENAME));
+        this.numShardsCachePath = new Path(conf.get(MULTIPLE_NUMSHARDS_CACHE_PATH, DEFAULT_NUM_SHARDS_CACHE_DIR),
+                        conf.get(MULTIPLE_NUMSHARDS_CACHE_FILENAME, DEFAULT_NUM_SHARDS_CACHE_FILENAME));
     }
     
     /**
@@ -94,7 +94,7 @@ public class NumShards {
      * 
      * @param multipleNumShardsConfiguration
      *            name of the numshards keys
-     *
+     *           
      */
     private void configureDyanmicNumShards(String multipleNumShardsConfiguration) {
         // this could happen if the feature is enabled, but not yet configured. treat it like it's not enabled.
@@ -107,8 +107,8 @@ public class NumShards {
             for (String multipleNumShardsConfigEntry : multipleNumShardsConfiguration.split(",")) {
                 String[] numShardsStringsSplit = multipleNumShardsConfigEntry.split("_");
                 if (numShardsStringsSplit.length != 2) {
-                    throw new IllegalArgumentException("Unable to configure multiple numshards cache with the specified config: ["
-                                    + multipleNumShardsConfiguration + "]");
+                    throw new IllegalArgumentException(
+                                    "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]");
                 }
                 
                 int numShardForDay = Integer.parseInt(numShardsStringsSplit[1]);
@@ -122,11 +122,11 @@ public class NumShards {
             }
             initialized = true;
         } catch (NumberFormatException nfe) {
-            throw new IllegalArgumentException("Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration
-                            + "]", nfe);
+            throw new IllegalArgumentException(
+                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", nfe);
         } catch (RuntimeException re) {
-            throw new IllegalArgumentException("Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration
-                            + "]", re);
+            throw new IllegalArgumentException(
+                            "Unable to configure multiple numshards cache with the specified config: [" + multipleNumShardsConfiguration + "]", re);
         }
     }
     
@@ -169,7 +169,8 @@ public class NumShards {
     public String readMultipleNumShardsConfig() {
         if (isCacheValid()) {
             log.info(String.format("Loading the numshards cache (@ '%s')...", this.numShardsCachePath.toUri().toString()));
-            try (BufferedReader in = new BufferedReader(new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
+            try (BufferedReader in = new BufferedReader(
+                            new InputStreamReader(this.numShardsCachePath.getFileSystem(this.conf).open(this.numShardsCachePath)))) {
                 return in.lines().collect(Collectors.joining(","));
             } catch (IOException ioe) {
                 throw new RuntimeException("Could not read numshards cache file. See documentation for using generateMultipleNumShardsCache.sh");
@@ -187,9 +188,8 @@ public class NumShards {
             log.warn("Clould not get the FileStatus of the multiple numShards file");
         }
         
-        return null != fileStatus
-                        && fileStatus.getModificationTime() >= System.currentTimeMillis()
-                                        - (conf.getLong(MULTIPLE_NUMSHARDS_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT));
+        return null != fileStatus && fileStatus.getModificationTime() >= System.currentTimeMillis()
+                        - (conf.getLong(MULTIPLE_NUMSHARDS_CACHE_TIMEOUT, DEFAULT_CACHE_TIMEOUT));
     }
     
     public int getMaxNumShards() {

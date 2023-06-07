@@ -166,9 +166,9 @@ public class TokenizationHelper {
         String[] tokenizerTimeThresholdStrings = conf.getStrings(threshProp, new String[0]);
         
         if (tokenizerTimeThresholdStrings.length != tokenizerTimeThresholdNames.length) {
-            throw new IllegalArgumentException("Tokenizer time threshold names [" + nameProp + "] must have the same number of entires ("
-                            + tokenizerTimeThresholdNames.length + ") as tokenizer time thresholds [" + threshProp + "], (" + tokenizerTimeThresholds.length
-                            + ")");
+            throw new IllegalArgumentException(
+                            "Tokenizer time threshold names [" + nameProp + "] must have the same number of entires (" + tokenizerTimeThresholdNames.length
+                                            + ") as tokenizer time thresholds [" + threshProp + "], (" + tokenizerTimeThresholds.length + ")");
         }
         
         int i = 0;
@@ -178,8 +178,8 @@ public class TokenizationHelper {
                 tokenizerTimeThresholds[i] = Long.parseLong(tokenizerTimeThresholdStrings[i]);
             }
         } catch (NumberFormatException ex) {
-            throw new IllegalArgumentException("Could not parse tokenizer time threshld string from [" + threshProp + "] into a long: ["
-                            + tokenizerTimeThresholdStrings[i] + "]");
+            throw new IllegalArgumentException(
+                            "Could not parse tokenizer time threshld string from [" + threshProp + "] into a long: [" + tokenizerTimeThresholdStrings[i] + "]");
         }
         
         stopWords = TokenizationHelper.getStopWords(helper, conf);

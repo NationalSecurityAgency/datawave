@@ -67,7 +67,7 @@ public class AccumuloSetup extends ExternalResource {
     private Set<String> shardIds;
     private FileType fileFormat;
     private Authorizations auths = AbstractDataTypeConfig.getTestAuths();
-
+    
     public AccumuloSetup() {
         this(false);
     }
@@ -143,7 +143,7 @@ public class AccumuloSetup extends ExternalResource {
     public void setAuthorizations(Authorizations auths) {
         this.auths = auths;
     }
-
+    
     /**
      * Creates the Accumulo shard ids and ingests the data into the tables. Uses a CSV file for loading test data.
      *

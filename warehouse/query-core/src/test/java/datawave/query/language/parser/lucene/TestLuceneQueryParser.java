@@ -147,16 +147,16 @@ public class TestLuceneQueryParser {
         
         Assert.assertEquals("[AND,a,b][posFilter: PROJECT:proj]", luceneParser.parse("PROJECT:proj a b").getContents());
         Assert.assertEquals("[OR,[AND,a,b],[AND,termx,PROJECT:A,PROJECT:B]]", luceneParser.parse("a b OR (termx PROJECT:A PROJECT:B)").getContents());
-        Assert.assertEquals("[NOT,[AND,termx],[AND,a,b]][posFilter: PROJECT:A,PROJECT:B]", luceneParser.parse("termx PROJECT:A PROJECT:B NOT (a and b)")
-                        .getContents());
+        Assert.assertEquals("[NOT,[AND,termx],[AND,a,b]][posFilter: PROJECT:A,PROJECT:B]",
+                        luceneParser.parse("termx PROJECT:A PROJECT:B NOT (a and b)").getContents());
         Assert.assertEquals("[NOT,termx,[AND,terma,PROJECT:A,PROJECT:B]]", luceneParser.parse("termx NOT (terma PROJECT:A PROJECT:B)").getContents());
-        Assert.assertEquals("[NOT,termx,[NOT,terma,[AND,test2,PROJECT:A,PROJECT:B]]]", luceneParser.parse("termx NOT (terma NOT test2 PROJECT:A PROJECT:B)")
-                        .getContents());
+        Assert.assertEquals("[NOT,termx,[NOT,terma,[AND,test2,PROJECT:A,PROJECT:B]]]",
+                        luceneParser.parse("termx NOT (terma NOT test2 PROJECT:A PROJECT:B)").getContents());
         Assert.assertEquals("[NOT,termx,PROJECT:A,PROJECT:B]", luceneParser.parse("termx NOT PROJECT:A NOT PROJECT:B").getContents());
         Assert.assertEquals("[NOT,termx,PROJECT:A,FIELDA:B]", luceneParser.parse("termx NOT PROJECT:A NOT FIELDA:B").getContents());
         Assert.assertEquals("[NOT,termx,FIELDA:B,PROJECT:A]", luceneParser.parse("termx NOT FIELDA:B NOT PROJECT:A").getContents());
-        Assert.assertEquals("[NOT,termx,[NOT,terma,[AND,test2,PROJECT:A,PROJECT:B]]]", luceneParser.parse("termx NOT (terma NOT test2 PROJECT:A PROJECT:B)")
-                        .getContents());
+        Assert.assertEquals("[NOT,termx,[NOT,terma,[AND,test2,PROJECT:A,PROJECT:B]]]",
+                        luceneParser.parse("termx NOT (terma NOT test2 PROJECT:A PROJECT:B)").getContents());
         Assert.assertEquals("[NOT,[AND,FIELD:VALUE],[AND,test2,PROJECT:A,PROJECT:B]][posFilter: PROJECT:A]",
                         luceneParser.parse("(PROJECT:A AND FIELD:VALUE) NOT (test2 PROJECT:A PROJECT:B)").getContents());
     }
@@ -198,8 +198,8 @@ public class TestLuceneQueryParser {
                         luceneParser.parse("fielda:selectora #include(field, test[abc]\\.*.*)").getContents());
         Assert.assertEquals("[AND,fielda:selectora][posFilter: filter(false, AND, field, test[abc]\\.*.*)]",
                         luceneParser.parse("fielda:selectora #exclude(field, test[abc]\\.*.*)").getContents());
-        Assert.assertEquals("[AND,fielda:selectora][posFilter: filter(false, AND, nullfield, .+)]", luceneParser.parse("fielda:selectora #isnull(nullfield)")
-                        .getContents());
+        Assert.assertEquals("[AND,fielda:selectora][posFilter: filter(false, AND, nullfield, .+)]",
+                        luceneParser.parse("fielda:selectora #isnull(nullfield)").getContents());
         Assert.assertEquals("[AND,field:selector][posFilter: filter(true, AND, field, testbade\\.scape)]",
                         luceneParser.parse("field:selector AND #include(field, testbade\\.scape)").getContents());
         Assert.assertEquals("[AND,field:selector][posFilter: filter(true, AND, field, testbade\\.scape)]",

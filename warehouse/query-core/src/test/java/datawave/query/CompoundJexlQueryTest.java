@@ -83,9 +83,9 @@ public class CompoundJexlQueryTest extends AbstractFunctionalQuery {
         String country = "'italy'";
         
         for (final TestCities city : TestCities.values()) {
-            String query = "(" + CityField.STATE.name() + EQ_OP + ohio + OR_OP + CityField.STATE.name() + EQ_OP + mizzo + OR_OP + "("
-                            + CityField.COUNTRY.name() + EQ_OP + country + AND_OP + CityField.CONTINENT.name() + EQ_OP + cont + "))" + AND_OP + "("
-                            + CityField.CITY.name() + NE_OP + "'" + city.name() + "')";
+            String query = "(" + CityField.STATE.name() + EQ_OP + ohio + OR_OP + CityField.STATE.name() + EQ_OP + mizzo + OR_OP + "(" + CityField.COUNTRY.name()
+                            + EQ_OP + country + AND_OP + CityField.CONTINENT.name() + EQ_OP + cont + "))" + AND_OP + "(" + CityField.CITY.name() + NE_OP + "'"
+                            + city.name() + "')";
             runTest(query, query);
         }
     }
@@ -171,9 +171,9 @@ public class CompoundJexlQueryTest extends AbstractFunctionalQuery {
     public void testMultiOr() throws Exception {
         log.info("------  testMulti  ------");
         for (final TestCities city : TestCities.values()) {
-            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "((" + CityField.NUM.name() + " == 100 or "
-                            + CityField.NUM.name() + EQ_OP + "110" + OR_OP + CityField.NUM.name() + EQ_OP + "120" + OR_OP + CityField.NUM.name() + " < 20)"
-                            + " or (" + CityField.COUNTRY.name() + EQ_OP + "'FrAnce'" + OR_OP + CityField.COUNTRY.name() + EQ_OP + "'iTaLy'" + OR_OP
+            String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "((" + CityField.NUM.name() + " == 100 or " + CityField.NUM.name()
+                            + EQ_OP + "110" + OR_OP + CityField.NUM.name() + EQ_OP + "120" + OR_OP + CityField.NUM.name() + " < 20)" + " or ("
+                            + CityField.COUNTRY.name() + EQ_OP + "'FrAnce'" + OR_OP + CityField.COUNTRY.name() + EQ_OP + "'iTaLy'" + OR_OP
                             + CityField.COUNTRY.name() + EQ_OP + "'UniTED kIngdom'" + "))";
             runTest(query, query);
         }

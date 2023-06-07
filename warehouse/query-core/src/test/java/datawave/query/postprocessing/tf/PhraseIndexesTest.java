@@ -77,8 +77,8 @@ public class PhraseIndexesTest {
         expected.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
         expected.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
         
-        PhraseIndexes actual = PhraseIndexes.from("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2
-                        + ",12,17");
+        PhraseIndexes actual = PhraseIndexes
+                        .from("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2 + ",12,17");
         assertEquals(expected, actual);
     }
     

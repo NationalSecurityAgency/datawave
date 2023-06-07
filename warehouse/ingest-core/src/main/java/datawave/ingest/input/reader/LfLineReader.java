@@ -109,9 +109,9 @@ public class LfLineReader implements LineReader {
      * @param maxBytesToConsume
      *            the maximum number of bytes to consume in this call. This is only a hint, because if the line cross this threshold, we allow it to happen. It
      *            can overshoot potentially by as much as one buffer length.
-     * 
+     *            
      * @return the number of bytes read including the (longest) newline found.
-     * 
+     *            
      * @throws IOException
      *             if the underlying stream throws
      */

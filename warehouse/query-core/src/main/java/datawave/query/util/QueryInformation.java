@@ -154,8 +154,8 @@ public class QueryInformation {
     
     public Map<String,String> toMap() {
         return ImmutableMap.<String,String> builder().put(QueryInformation.QUERY_ID, queryId).put(QueryInformation.QUERY_LOGIC_NAME, queryLogicName)
-                        .put(QueryInformation.QUERY_NAME, queryName).put(QueryInformation.QUERY_STRING, queryString)
-                        .put(QueryInformation.QUERY_USER, queryUser).put(QueryInformation.COMMENT, comment).build();
+                        .put(QueryInformation.QUERY_NAME, queryName).put(QueryInformation.QUERY_STRING, queryString).put(QueryInformation.QUERY_USER, queryUser)
+                        .put(QueryInformation.COMMENT, comment).build();
     }
     
     @Override

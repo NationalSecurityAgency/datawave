@@ -124,14 +124,14 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     }
     
     public enum UniqueFunction {
-        UNIQUE_BY_DAY(UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY), UNIQUE_BY_HOUR(
-                        UniqueFunction.UNIQUE_BY_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR), UNIQUE_BY_MILLISECOND(
-                        UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND), UNIQUE_BY_MINUTE(
-                        UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE), UNIQUE_BY_MONTH(
-                        UniqueFunction.UNIQUE_BY_MONTH_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH), UNIQUE_BY_SECOND(
-                        UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND), UNIQUE_BY_TENTH_OF_HOUR(
-                        UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR), UNIQUE_BY_YEAR(
-                        UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
+        UNIQUE_BY_DAY(UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY),
+        UNIQUE_BY_HOUR(UniqueFunction.UNIQUE_BY_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR),
+        UNIQUE_BY_MILLISECOND(UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND),
+        UNIQUE_BY_MINUTE(UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE),
+        UNIQUE_BY_MONTH(UniqueFunction.UNIQUE_BY_MONTH_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH),
+        UNIQUE_BY_SECOND(UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND),
+        UNIQUE_BY_TENTH_OF_HOUR(UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR),
+        UNIQUE_BY_YEAR(UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
         
         public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
         public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";

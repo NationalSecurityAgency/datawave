@@ -458,9 +458,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
         Assert.assertFalse(fiExecutable);
-        Assert.assertTrue(Arrays.asList(
-                        new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
-                                "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
+        Assert.assertTrue(Arrays.asList(new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
+                "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
         
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
@@ -470,9 +469,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
         Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
-        Assert.assertTrue(Arrays.asList(
-                        new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
-                                "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
+        Assert.assertTrue(Arrays.asList(new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
+                "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
         
         verifyAll();
     }

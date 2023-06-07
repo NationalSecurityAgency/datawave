@@ -106,8 +106,8 @@ public class TableSplitsCacheTest {
                 super.close();
             } catch (Throwable t) {
                 TableSplitsCacheTest.logger.debug(String.format(
-                                "DistributedFileSystem handled base class excpetion: %s with messge %s (caused by the missing DfsClient instance...)", t
-                                                .getClass().getName(), t.getMessage()));
+                                "DistributedFileSystem handled base class excpetion: %s with messge %s (caused by the missing DfsClient instance...)",
+                                t.getClass().getName(), t.getMessage()));
             }
         }
     }

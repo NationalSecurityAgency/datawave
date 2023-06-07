@@ -176,8 +176,8 @@ public class TableSplitsCache extends BaseHdfsFileCacheUtil {
         if (!currentSplitsPerTable.isEmpty()) {
             Set<String> currentTables = currentSplitsPerTable.keySet();
             for (String tableName : currentTables) {
-                if (currentSplitsPerTable.get(tableName) * (1 - conf.getDouble(MAX_SPLIT_PERCENTAGE_DECREASE, DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE)) > tmpSplitsPerTable
-                                .get(tableName)
+                if (currentSplitsPerTable.get(tableName)
+                                * (1 - conf.getDouble(MAX_SPLIT_PERCENTAGE_DECREASE, DEFAULT_MAX_SPLIT_PERCENTAGE_DECREASE)) > tmpSplitsPerTable.get(tableName)
                                 && currentSplitsPerTable.get(tableName) - tmpSplitsPerTable.get(tableName) > conf.getInt(MAX_SPLIT_DECREASE,
                                                 DEFAULT_MAX_SPLIT_DECREASE)) {
                     log.warn(tableName

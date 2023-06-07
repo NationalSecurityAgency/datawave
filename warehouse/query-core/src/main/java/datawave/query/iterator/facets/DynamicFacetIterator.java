@@ -155,8 +155,8 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
     
     @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
-    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException,
-                    ConfigException, InstantiationException, IllegalAccessException {
+    public Iterator<Entry<Key,Document>> getDocumentIterator(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive)
+                    throws IOException, ConfigException, InstantiationException, IllegalAccessException {
         // Otherwise, we have to use the field index
         // Seek() the boolean logic stuff
         createAndSeekIndexIterator(range, columnFamilies, inclusive);

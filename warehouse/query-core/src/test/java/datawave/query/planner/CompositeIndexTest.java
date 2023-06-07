@@ -192,16 +192,13 @@ public class CompositeIndexTest {
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     @BeforeClass
@@ -330,8 +327,8 @@ public class CompositeIndexTest {
             final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
-                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
-                                .getTimestamp(), val);
+                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(),
+                                biKey.getKey().getTimestamp(), val);
                 writer.addMutation(mutation);
             }
             writer.close();

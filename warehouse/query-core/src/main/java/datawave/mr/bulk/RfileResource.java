@@ -47,7 +47,7 @@ public class RfileResource extends BatchResource {
      *            a table name
      * @throws TableNotFoundException
      *             if the table was not found
-     * 
+     *             
      */
     @Override
     protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
@@ -113,8 +113,8 @@ public class RfileResource extends BatchResource {
                 log.debug("Setting and configuration");
             }
             AccumuloHelper.setPassword(conf, options.getConfiguration().getAccumuloPassword().getBytes());
-            BulkInputFormat.setMemoryInput(conf, getClient().whoami(), options.getConfiguration().getAccumuloPassword().getBytes(), tableName, auths.iterator()
-                            .next());
+            BulkInputFormat.setMemoryInput(conf, getClient().whoami(), options.getConfiguration().getAccumuloPassword().getBytes(), tableName,
+                            auths.iterator().next());
             ((RfileScanner) baseScanner).setConfiguration(conf);
         }
         return this;

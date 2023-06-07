@@ -25,7 +25,8 @@ public class LimitedKeyPartitionerTest {
     }
     
     @Test
-    public void testLimitedRangeSetViaTableSpecificConfig() throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+    public void testLimitedRangeSetViaTableSpecificConfig()
+                    throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
         Configuration conf = new Configuration();
         String tableName = "tableX";
         conf.setInt(tableName + "." + PartitionLimiter.MAX_PARTITIONS_PROPERTY, 6);

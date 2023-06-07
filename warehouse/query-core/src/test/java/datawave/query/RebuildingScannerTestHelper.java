@@ -62,9 +62,13 @@ import java.util.function.Consumer;
 public class RebuildingScannerTestHelper {
     
     public enum TEARDOWN {
-        NEVER(NeverTeardown.class), ALWAYS(AlwaysTeardown.class), RANDOM(RandomTeardown.class), EVERY_OTHER(EveryOtherTeardown.class), ALWAYS_SANS_CONSISTENCY(
-                        AlwaysTeardownWithoutConsistency.class), RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class), EVERY_OTHER_SANS_CONSISTENCY(
-                        EveryOtherTeardownWithoutConsistency.class);
+        NEVER(NeverTeardown.class),
+        ALWAYS(AlwaysTeardown.class),
+        RANDOM(RandomTeardown.class),
+        EVERY_OTHER(EveryOtherTeardown.class),
+        ALWAYS_SANS_CONSISTENCY(AlwaysTeardownWithoutConsistency.class),
+        RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class),
+        EVERY_OTHER_SANS_CONSISTENCY(EveryOtherTeardownWithoutConsistency.class);
         
         private Class<? extends TeardownListener> tclass;
         
@@ -255,18 +259,18 @@ public class RebuildingScannerTestHelper {
         }
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
-                    AccumuloSecurityException {
+    public static Connector getConnector(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException {
         return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, new PasswordToken(pass))), teardown, interrupt);
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
-                    AccumuloSecurityException {
+    public static Connector getConnector(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException {
         return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, ByteBufferUtil.toBytes(pass))), teardown, interrupt);
     }
     
-    public static Connector getConnector(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloException,
-                    AccumuloSecurityException {
+    public static Connector getConnector(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
+                    throws AccumuloException, AccumuloSecurityException {
         return new RebuildingConnector((InMemoryConnector) (i.getConnector(user, TextUtil.getBytes(new Text(pass.toString())))), teardown, interrupt);
     }
     
@@ -524,17 +528,17 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-
+        
         @Override
         public ConsistencyLevel getConsistencyLevel() {
             return ConsistencyLevel.IMMEDIATE;
         }
-
+        
         @Override
         public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
-
+            
         }
-
+        
         @Override
         public void setRange(Range range) {
             ((InMemoryScanner) delegate).setRange(range);
@@ -595,17 +599,17 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-
+        
         @Override
         public ConsistencyLevel getConsistencyLevel() {
             return ConsistencyLevel.IMMEDIATE;
         }
-
+        
         @Override
         public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
-
+            
         }
-
+        
         @Override
         public void setRanges(Collection<Range> ranges) {
             ((InMemoryBatchScanner) delegate).setRanges(ranges);
@@ -819,17 +823,17 @@ public class RebuildingScannerTestHelper {
         public String getClassLoaderContext() {
             return delegate.getClassLoaderContext();
         }
-
+        
         @Override
         public ConsistencyLevel getConsistencyLevel() {
             return ConsistencyLevel.IMMEDIATE;
         }
-
+        
         @Override
         public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
-
+            
         }
-
+        
         @Override
         public void forEach(Consumer<? super Map.Entry<Key,Value>> action) {
             delegate.forEach(action);

@@ -64,10 +64,9 @@ public class BulkIngestMapFileLoaderTest {
     
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
-
+    
     @Rule
-    public TestLogCollector logCollector = new TestLogCollector.Builder()
-            .with(BulkIngestMapFileLoader.class, Level.ALL).build();
+    public TestLogCollector logCollector = new TestLogCollector.Builder().with(BulkIngestMapFileLoader.class, Level.ALL).build();
     
     @Test
     public void testShutdownPortAlreadyInUse() throws IOException {
@@ -810,9 +809,8 @@ public class BulkIngestMapFileLoaderTest {
             
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
             
-            Assert.assertTrue(
-                            "BulkIngestMapLoader#main failed to generate the expected error message",
-                            processOutputContains(stdOut, "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
+            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
+                            "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
             
         } finally {
             
@@ -851,9 +849,8 @@ public class BulkIngestMapFileLoaderTest {
             
             List<String> stdOut = ProcessUtils.getStandardOutDumps(proc);
             
-            Assert.assertTrue(
-                            "BulkIngestMapLoader#main failed to generate the expected error message",
-                            processOutputContains(stdOut, "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
+            Assert.assertTrue("BulkIngestMapLoader#main failed to generate the expected error message", processOutputContains(stdOut,
+                            "-majcDelay must be followed by the minimum number of ms to elapse between bringing map files online"));
             
         } finally {
             

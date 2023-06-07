@@ -133,7 +133,7 @@ public class TokenSearchSynonymFilter extends TokenFilter {
      * 
      * @param position
      *            position in the buffer
-     * */
+     */
     protected void captureTuple(int position) {
         output.add(new OutputTuple(termAtt.toString(), position, offsetAtt.startOffset(), offsetAtt.endOffset() - offsetAtt.startOffset(), captureState()));
     }
@@ -144,7 +144,7 @@ public class TokenSearchSynonymFilter extends TokenFilter {
      * @param tuple
      *            tuple to restore
      * @return position of the tuple
-     * */
+     */
     protected int restoreTuple(OutputTuple tuple) {
         restoreState(tuple.state);
         return tuple.position;

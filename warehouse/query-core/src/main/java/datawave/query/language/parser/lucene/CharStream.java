@@ -68,7 +68,7 @@ public interface CharStream {
     /**
      * @return an array of characters that make up the suffix of length 'len' for the currently matched token. This is used to build up the matched string for
      *         use in actions in the case of MORE. A simple and inefficient implementation of this is as follows :
-     *
+     *        
      *         { String t = GetImage(); return t.substring(t.length() - len, t.length()).toCharArray(); }
      * @param len
      *            the length

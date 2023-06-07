@@ -190,8 +190,8 @@ public class MetricsIngester extends Configured implements Tool {
         return 0;
     }
     
-    protected int launchErrorsJob(Job job, Configuration conf) throws IOException, InterruptedException, ClassNotFoundException, AccumuloException,
-                    AccumuloSecurityException, TableNotFoundException {
+    protected int launchErrorsJob(Job job, Configuration conf)
+                    throws IOException, InterruptedException, ClassNotFoundException, AccumuloException, AccumuloSecurityException, TableNotFoundException {
         job.setJobName("ErrorMetricsIngest");
         
         job.setJarByClass(this.getClass());
@@ -279,8 +279,8 @@ public class MetricsIngester extends Configured implements Tool {
                         
                     }
                     
-                    ranges.add(new Range(new Key(new Text("IngestJob_" + outFormat.format(dateObj))), new Key(new Text("IngestJob_"
-                                    + outFormat.format(dateObjNext)))));
+                    ranges.add(new Range(new Key(new Text("IngestJob_" + outFormat.format(dateObj))),
+                                    new Key(new Text("IngestJob_" + outFormat.format(dateObjNext)))));
                     
                 } catch (DateTimeParseException e) {
                     log.error(e);

@@ -51,8 +51,8 @@ public class CounterToStatsDConfigurationTest {
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup1", "Counter1"));
         Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup1", new TestCounter("Counter1")));
-        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null), config.getAspect(
-                        CounterToStatsDConfiguration.StatsDOutputType.FINAL, new TestCounterGroup("CounterGroup1"), new TestCounter("Counter1")));
+        Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.GAUGE, "MyGroup1", null), config
+                        .getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, new TestCounterGroup("CounterGroup1"), new TestCounter("Counter1")));
         Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.COUNTER, "MyGroup2", null),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup2", "Counter1"));
         Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.TIME, "MyGroup3", "MyCounter2"),

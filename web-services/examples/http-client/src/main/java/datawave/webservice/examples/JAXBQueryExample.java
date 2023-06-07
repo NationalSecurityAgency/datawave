@@ -67,10 +67,7 @@ public class JAXBQueryExample {
         KeyStore ts = KeyStore.getInstance(System.getProperty("javax.net.ssl.trustStoreType"));
         ts.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
         
-        SSLContext sslContext = SSLContextBuilder
-                        .create()
-                        .setProtocol("TLSv1.2")
-                        .setKeyStoreType(System.getProperty("javax.net.ssl.keyStoreType"))
+        SSLContext sslContext = SSLContextBuilder.create().setProtocol("TLSv1.2").setKeyStoreType(System.getProperty("javax.net.ssl.keyStoreType"))
                         .loadKeyMaterial(new File(System.getProperty("javax.net.ssl.keyStore")),
                                         System.getProperty("javax.net.ssl.keyStorePassword").toCharArray(),
                                         System.getProperty("javax.net.ssl.keyStorePassword").toCharArray())

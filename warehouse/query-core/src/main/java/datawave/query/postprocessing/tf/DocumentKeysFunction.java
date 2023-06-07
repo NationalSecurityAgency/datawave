@@ -30,7 +30,7 @@ import java.util.Set;
 public class DocumentKeysFunction {
     
     private static final Logger log = Logger.getLogger(DocumentKeysFunction.class);
-
+    
     private final Set<String> negatedValues = new HashSet<>();
     private final Multimap<String,ContentFunction> contentFunctions = LinkedListMultimap.create();
     
@@ -68,25 +68,25 @@ public class DocumentKeysFunction {
                 if (fieldsAndTerms[0].size() != 1) {
                     throw new IllegalStateException("content function had more than one field");
                 }
-
+                
                 field = JexlASTHelper.deconstructIdentifier(fieldsAndTerms[0].iterator().next());
                 ContentFunction contentFunction = new ContentFunction(field, fieldsAndTerms[1]);
                 contentFunctions.put(contentFunction.getField(), contentFunction);
-
-                if(isFunctionNegated(f)){
+                
+                if (isFunctionNegated(f)) {
                     negatedValues.addAll(contentFunction.getValues());
                 }
             }
         }
     }
-
-    public boolean isFunctionNegated(Function f){
+    
+    public boolean isFunctionNegated(Function f) {
         JexlNode node = f.args().get(0);
         int numNegations = 0;
-        if(node != null){
-            while (node.jjtGetParent() != null){
+        if (node != null) {
+            while (node.jjtGetParent() != null) {
                 node = node.jjtGetParent();
-                if(node instanceof ASTNotNode){
+                if (node instanceof ASTNotNode) {
                     numNegations++;
                 }
             }
@@ -105,12 +105,12 @@ public class DocumentKeysFunction {
      */
     protected Set<Key> getDocKeys(Document d, Set<Key> docKeys) {
         Multimap<String,Key> valueToKeys = buildValueToKeys(d);
-
-        //  add all negated values
-        for(String value : negatedValues){
+        
+        // add all negated values
+        for (String value : negatedValues) {
             valueToKeys.putAll(value, docKeys);
         }
-
+        
         Set<Key> filterKeys = buildFilterKeys(valueToKeys);
         
         if (log.isDebugEnabled() && docKeys.size() != filterKeys.size()) {

@@ -130,7 +130,7 @@ public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWrit
         if (uidFields != null)
             for (final String field : uidFields)
                 uidOverrideFields.put(field, null);
-        
+            
         final String[] uuidFieldSet = conf.getStrings(helper.getType().typeName() + Properties.EVENT_UUID_FIELDS);
         if (uuidFieldSet != null)
             uuidFields = Sets.newHashSet(uuidFieldSet);

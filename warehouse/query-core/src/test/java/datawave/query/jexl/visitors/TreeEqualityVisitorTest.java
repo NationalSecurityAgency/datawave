@@ -35,17 +35,13 @@ public class TreeEqualityVisitorTest {
     
     @Test
     public void testNonEqualChildrenSize() throws ParseException {
-        assertNotEquivalent(
-                        "[1, 2, 3, 4]",
-                        "[1, 2]",
+        assertNotEquivalent("[1, 2, 3, 4]", "[1, 2]",
                         "Did not find a matching child for ArrayLiteral in [ArrayLiteral]: Num children differ: [NumberLiteral, NumberLiteral, NumberLiteral, NumberLiteral] vs [NumberLiteral, NumberLiteral]");
     }
     
     @Test
     public void testNonEqualChildren() throws ParseException {
-        assertNotEquivalent(
-                        "[1, 2]",
-                        "[1, 3]",
+        assertNotEquivalent("[1, 2]", "[1, 3]",
                         "Did not find a matching child for ArrayLiteral in [ArrayLiteral]: Did not find a matching child for NumberLiteral in [NumberLiteral]: Node images differ: 2 vs 3");
     }
     

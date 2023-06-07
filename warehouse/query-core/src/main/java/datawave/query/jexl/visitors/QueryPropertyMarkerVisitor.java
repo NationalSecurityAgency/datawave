@@ -53,8 +53,8 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
      * @throws IllegalAccessException
      *             if the marker's label() method cannot be accessed
      */
-    public static boolean registerMarker(Class<? extends QueryPropertyMarker> marker) throws NoSuchMethodException, InvocationTargetException,
-                    IllegalAccessException {
+    public static boolean registerMarker(Class<? extends QueryPropertyMarker> marker)
+                    throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Preconditions.checkNotNull(marker, "Marker class must not be null");
         
         // Check if this marker type has already been registered. This is a safeguard to avoid the reflection steps below if possible.

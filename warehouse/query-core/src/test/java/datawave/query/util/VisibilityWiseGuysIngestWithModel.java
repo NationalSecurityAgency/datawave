@@ -116,8 +116,10 @@ public class VisibilityWiseGuysIngestWithModel {
             mutation.put(datatype + "\u0000" + sopranoUID, "MAGIC.0" + "\u0000" + "18", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "UUID.0" + "\u0000" + "SOPRANO", columnVisibilityEnglish, timeStamp, emptyValue);
             // soprano date delta is 50 years
-            mutation.put(datatype + "\u0000" + sopranoUID, "BIRTH_DATE" + "\u0000" + "1950-12-28T00:00:05.000Z", columnVisibilityEnglish, timeStamp, emptyValue);
-            mutation.put(datatype + "\u0000" + sopranoUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibilityEnglish, timeStamp, emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "BIRTH_DATE" + "\u0000" + "1950-12-28T00:00:05.000Z", columnVisibilityEnglish, timeStamp,
+                            emptyValue);
+            mutation.put(datatype + "\u0000" + sopranoUID, "DEATH_DATE" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibilityEnglish, timeStamp,
+                            emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "QUOTE" + "\u0000" + "If you can quote the rules then you can obey them", columnVisibilityEnglish,
                             timeStamp, emptyValue);
             
@@ -144,9 +146,9 @@ public class VisibilityWiseGuysIngestWithModel {
                             emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "DEATH_DATE.0" + "\u0000" + "2000-12-28T00:00:05.000Z", columnVisibilityEnglish, timeStamp,
                             emptyValue);
-            mutation.put(datatype + "\u0000" + caponeUID, "QUOTE" + "\u0000"
-                            + "You can get much farther with a kind word and a gun than you can with a kind word alone", columnVisibilityEnglish, timeStamp,
-                            emptyValue);
+            mutation.put(datatype + "\u0000" + caponeUID,
+                            "QUOTE" + "\u0000" + "You can get much farther with a kind word and a gun than you can with a kind word alone",
+                            columnVisibilityEnglish, timeStamp, emptyValue);
             
             bw.addMutation(mutation);
             
@@ -883,7 +885,7 @@ public class VisibilityWiseGuysIngestWithModel {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-
+    
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

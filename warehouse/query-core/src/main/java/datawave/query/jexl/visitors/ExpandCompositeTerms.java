@@ -184,7 +184,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         // this shouldn't ever really happen, but it could
         if (node.jjtGetNumChildren() == 1)
             return super.visit(node, data);
-        
+            
         // first, find all leaf nodes
         // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
         List<JexlNode> nonLeafNodes = new ArrayList<>();
@@ -517,15 +517,15 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         if (finalNodes.size() > 1) {
             finalNode = createUnwrappedAndNode(finalNodes);
             if (composite.getJexlNodeList().size() > 1) {
-                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(composite.getJexlNodeList().stream()
-                                .map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
+                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(
+                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
                 finalNode = createUnwrappedAndNode(Arrays.asList(JexlNodeFactory.wrap(finalNode), delayedNode));
             }
         } else {
             finalNode = finalNodes.get(0);
             if (composite.getJexlNodeList().size() > 1 && !(finalNode instanceof ASTEQNode)) {
-                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(composite.getJexlNodeList().stream()
-                                .map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
+                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(
+                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
                 finalNode = createUnwrappedAndNode(Arrays.asList(finalNode, delayedNode));
             }
         }
@@ -580,7 +580,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         return resultNode;
     }
     
-    private List<Composite> findComposites(Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> andedNodes, Multimap<String,JexlNode> usedAndedNodes) {
+    private List<Composite> findComposites(Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> andedNodes,
+                    Multimap<String,JexlNode> usedAndedNodes) {
         return findComposites(leafNodes, andedNodes, null, usedAndedNodes);
     }
     
@@ -614,7 +615,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         for (String requiredField : leafNodes.keySet())
             if (CompositeIngest.isOverloadedCompositeField(config.getCompositeToFieldMap(), requiredField))
                 overloadedCompositeMap.put(requiredField, requiredField);
-        
+            
         // Add overloaded composite entries to the set of entries
         List<Entry<String,Collection<String>>> compositeFieldMapList = new ArrayList<>(filteredCompositeToFieldMap.asMap().entrySet());
         compositeFieldMapList.addAll(overloadedCompositeMap.asMap().entrySet());
@@ -1142,7 +1143,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             
             if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
                 initialNode = node;
-            
+                
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
             List<JexlNode> usedAndedNodes = usedAndedNodes(node);
@@ -1233,7 +1234,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             
             if (initialNode == null || initialNode instanceof ASTReference || initialNode instanceof ASTReferenceExpression)
                 initialNode = node;
-            
+                
             // if this node is one of the anded nodes, or a composite
             // comprised of one of the anded nodes, halt recursion
             List<JexlNode> usedAndedNodes = usedAndedNodes(node);

@@ -18,9 +18,9 @@ import java.util.Map;
 
 public class QueryParametersImpl implements QueryParameters {
     
-    private static final List<String> KNOWN_PARAMS = Arrays
-                    .asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT, QUERY_AUTHORIZATIONS, QUERY_EXPIRATION,
-                                    QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME, QUERY_MAX_RESULTS_OVERRIDE);
+    private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_STRING, QUERY_NAME, QUERY_PERSISTENCE, QUERY_PAGESIZE, QUERY_PAGETIMEOUT,
+                    QUERY_AUTHORIZATIONS, QUERY_EXPIRATION, QUERY_TRACE, QUERY_BEGIN, QUERY_END, QUERY_VISIBILITY, QUERY_LOGIC_NAME,
+                    QUERY_MAX_RESULTS_OVERRIDE);
     
     protected String query;
     protected String queryName;

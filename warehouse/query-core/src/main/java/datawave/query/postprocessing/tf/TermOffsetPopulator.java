@@ -119,11 +119,11 @@ public class TermOffsetPopulator {
      * @return TermOffset map
      */
     public Map<String,Object> getContextMap(Key docKey, Set<Key> keys, Set<String> fields) {
-
+        
         if (keys.isEmpty()) {
             return Collections.emptyMap();
         }
-
+        
         document = new Document();
         
         TermFrequencyIterator tfSource;
@@ -140,7 +140,6 @@ public class TermOffsetPopulator {
                 log.error("Created a TFIter with no field values. Orig fields: " + termFrequencyFieldValues.keySet() + " fields to remove: " + fields);
             }
         }
-
         
         Range range = getRange(keys);
         try {
@@ -154,18 +153,18 @@ public class TermOffsetPopulator {
         if (evaluationFilter != null) {
             evaluationFilter.startNewDocument(docKey);
         }
-
+        
         TermFrequencyKey parser = new TermFrequencyKey();
         TermWeightPosition.Builder position = new TermWeightPosition.Builder();
         Map<String,TermFrequencyList> termOffsetMap = Maps.newHashMap();
-
+        
         while (tfSource.hasTop()) {
             Key key = tfSource.getTopKey();
             parser.parse(key);
             
             // add the zone and term to our internal document.
             Content attr = new Content(parser.getValue(), source.getTopKey(), evaluationFilter == null || evaluationFilter.keep(key));
-
+            
             this.document.put(parser.getField(), attr);
             
             TreeMultimap<TermFrequencyList.Zone,TermWeightPosition> offsets = TreeMultimap.create();
@@ -173,9 +172,10 @@ public class TermOffsetPopulator {
                 TermWeight.Info twInfo = TermWeight.Info.parseFrom(tfSource.getTopValue().get());
                 
                 // if no content expansion fields then assume every field is permitted for unfielded content functions
-                boolean isContentExpansionField = contentExpansionFields == null || contentExpansionFields.isEmpty() || contentExpansionFields.contains(parser.getField());
+                boolean isContentExpansionField = contentExpansionFields == null || contentExpansionFields.isEmpty()
+                                || contentExpansionFields.contains(parser.getField());
                 TermFrequencyList.Zone twZone = new TermFrequencyList.Zone(parser.getField(), isContentExpansionField, TermFrequencyList.getEventId(key));
-
+                
                 for (int i = 0; i < twInfo.getTermOffsetCount(); i++) {
                     position.setTermWeightOffsetInfo(twInfo, i);
                     offsets.put(twZone, position.build());

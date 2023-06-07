@@ -63,8 +63,8 @@ public class MockMetadataHelper extends MetadataHelper {
     };
     
     public MockMetadataHelper() {
-        super(createAllFieldMetadataHelper(getClient()), Collections.emptySet(), getClient(), TableName.METADATA, Collections.emptySet(), Collections
-                        .emptySet());
+        super(createAllFieldMetadataHelper(getClient()), Collections.emptySet(), getClient(), TableName.METADATA, Collections.emptySet(),
+                        Collections.emptySet());
     }
     
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
@@ -100,8 +100,7 @@ public class MockMetadataHelper extends MetadataHelper {
         getMetadata().allFields.add(field);
         try {
             this.dataTypes.put(field, Class.forName(dt).asSubclass(Type.class).getDeclaredConstructor().newInstance());
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
     }
@@ -196,8 +195,8 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCountsWithRootAuths() throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException, AccumuloSecurityException, AccumuloException {
+    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCountsWithRootAuths()
+                    throws InstantiationException, IllegalAccessException, TableNotFoundException, AccumuloSecurityException, AccumuloException {
         return termCounts;
     }
     
@@ -217,8 +216,8 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Set<Type<?>> getDatatypesForField(String fieldName, Set<String> ingestTypeFilter) throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException {
+    public Set<Type<?>> getDatatypesForField(String fieldName, Set<String> ingestTypeFilter)
+                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
         // TODO: filter these?
         return new HashSet<>(dataTypes.get(fieldName));
     }
@@ -237,8 +236,8 @@ public class MockMetadataHelper extends MetadataHelper {
     }
     
     @Override
-    public Multimap<String,Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter) throws InstantiationException, IllegalAccessException,
-                    TableNotFoundException {
+    public Multimap<String,Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter)
+                    throws InstantiationException, IllegalAccessException, TableNotFoundException {
         Multimap<String,Type<?>> multimap = ArrayListMultimap.create();
         for (String field : dataTypes.keySet()) {
             multimap.putAll(field, getDatatypesForField(field, ingestTypeFilter));

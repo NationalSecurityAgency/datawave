@@ -239,8 +239,8 @@ public class JexlASTHelper {
         }
         
         if (numFound != numReplaced)
-            throw new ParseException("Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: "
-                            + numReplaced);
+            throw new ParseException(
+                            "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
         
         return jexlScript;
     }

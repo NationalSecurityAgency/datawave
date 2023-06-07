@@ -138,8 +138,8 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
         return containsFiles(fs, path, list, false);
     }
     
-    protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list, boolean ignoreEmptyFiles) throws FileNotFoundException,
-                    IOException {
+    protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list, boolean ignoreEmptyFiles)
+                    throws FileNotFoundException, IOException {
         RemoteIterator<Path> listing = listFiles(fs, path, ignoreEmptyFiles);
         while (listing.hasNext()) {
             list.add(listing.next());

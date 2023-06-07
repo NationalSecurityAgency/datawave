@@ -115,8 +115,8 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             }
             
             writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getRawFileTransformDuration(), "RAW_FILE_" + ingestLabel + "_ASRAW_LATENCY_MS");
-            writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getDelayRawFileTransformToIngest(), "RAW_FILE_" + ingestLabel
-                            + "_DELAY_ASRAW_INGEST_MS");
+            writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getDelayRawFileTransformToIngest(),
+                            "RAW_FILE_" + ingestLabel + "_DELAY_ASRAW_INGEST_MS");
             writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getIngestJobDuration(), "RAW_FILE_" + ingestLabel + "_INGEST_JOB_LATENCY_MS");
             if (fileLatency.hasLoaderPhase()) {
                 writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getDelayIngestToLoader(), "RAW_FILE_" + ingestLabel + "_DELAY_INGEST_LOADER_MS");
@@ -157,8 +157,8 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             context.write(makeKey(outRow, "EVENTS_LOADED", label), makeValue(eventCount));
         }
         
-        private void writeTimeDurationForStatsAnalysis(Context context, String outRow, long totalLatency, String totalLatencyCF) throws IOException,
-                        InterruptedException {
+        private void writeTimeDurationForStatsAnalysis(Context context, String outRow, long totalLatency, String totalLatencyCF)
+                        throws IOException, InterruptedException {
             WeightedPair valuePair = new WeightedPair(totalLatency, fileLatency.getEventCount());
             context.write(makeKey(outRow, totalLatencyCF, MetricsDailySummaryReducer.PERCENTILE_STATS_METRIC_VALUE), valuePair.toValue());
         }

@@ -103,7 +103,8 @@ public class SplitBasedHashPartitionerTest {
         }
     }
     
-    private SplitBasedHashPartitioner createPartitioner(Configuration conf) throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    private SplitBasedHashPartitioner createPartitioner(Configuration conf)
+                    throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         SplitBasedHashPartitioner partitioner = SplitBasedHashPartitioner.class.getDeclaredConstructor().newInstance();
         partitioner.setConf(conf);
         partitioner.configureWithPrefix(TABLE_NAME);

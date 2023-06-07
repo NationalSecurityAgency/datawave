@@ -81,7 +81,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
     private boolean allowShortCircuitTimeouts = false;
-
+    
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
     }
@@ -124,11 +124,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.connectionPriority = priority;
         this.settings = settings;
         // the query principal is our local principal unless the query logic has a different user operations
-        DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal : logic.getUserOperations().getRemoteUser(
-                        (DatawavePrincipal) principal);
+        DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
+                        : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
         // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
-        DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal : userOperations
-                        .getRemoteUser((DatawavePrincipal) principal);
+        DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
+                        : userOperations.getRemoteUser((DatawavePrincipal) principal);
         this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
@@ -256,7 +256,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                             gotNext.notifyAll();
                         }
                     }
-
+                    
                     // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
@@ -277,7 +277,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 throw new RuntimeException(e);
             }
         }
-
+        
         running.set(false);
         synchronized (hasNext) {
             hasNext.notifyAll();
@@ -285,10 +285,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         synchronized (gotNext) {
             gotNext.notifyAll();
         }
-
+        
         return running;
     }
-
+    
     /**
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
      *
@@ -330,7 +330,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
-
+    
     /**
      * This method will get the next object from the results thread queue. This presumes that hasNext has returned true. A timeout exception will be thrown if
      * the page short circuit timeout has been reached.
@@ -362,16 +362,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } else {
             Object o = iter.next();
             gotNext.incrementAndGet();
-
+            
             // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
             if (iter.getTransformer() instanceof WritesQueryMetrics) {
                 ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
             }
-
+            
             return o;
         }
     }
-
+    
     /**
      * terminate the results thread.
      */
@@ -386,7 +386,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
         executor.shutdown();
     }
-
+    
     /**
      * Get the next results page
      *
@@ -417,7 +417,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 running.set(true);
                 future = executor.submit(() -> getResultsThread());
             }
-
+            
             try {
                 while (!this.finished && hasNext(pageStartTime)) {
                     // if we are canceled, then break out
@@ -464,7 +464,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     // use the pagestart time for the time in call since we only care about the execution time of
                     // this page.
                     long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
-
+                    
                     int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                     if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                         log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
@@ -472,10 +472,10 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         hitPageTimeTrigger = true;
                         break;
                     }
-
+                    
                     // now get the next object
                     Object o = getNext(pageStartTime);
-
+                    
                     // now that we got the next object, acknowledge via the counters
                     hasNext.decrementAndGet();
                     gotNext.decrementAndGet();
@@ -486,21 +486,21 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         hitIntermediateResult = true;
                         break;
                     }
-
+                    
                     if (null == o) {
                         log.debug("Null result encountered, no more results");
                         this.finished = true;
                         terminateResultsThread();
                         break;
                     }
-
+                    
                     resultList.add(o);
                     if (this.logic.getPageByteTrigger() > 0) {
                         currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
                     }
                     currentPageCount++;
                     numResults++;
-
+                    
                     testForUncaughtException(resultList.size());
                 }
             } catch (TimeoutException te) {
@@ -545,17 +545,17 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
-
+        
         if (!resultList.isEmpty()) {
             log.info("Returning page of results");
             // we have results!
-            return new ResultsPage(
-                            resultList,
-                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL
+            return new ResultsPage(resultList,
+                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery)
+                                            ? ResultsPage.Status.PARTIAL
                                             : ResultsPage.Status.COMPLETE));
         } else {
             // we have no results. Let us determine whether we are done or not.
-
+            
             // if we have hit an intermediate result or a short circuit then check to see how many times we hit this
             if (hitIntermediateResult || hitShortCircuitForLongRunningQuery) {
                 currentTimeoutcount++;
@@ -564,8 +564,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     terminateResultsThread();
                     // this means that we have timed out waiting for a result too many times over the course of this query.
                     // In this case we need to fail the next call with a timeout
-                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for results for too many (" + currentTimeoutcount
-                                    + ") cycles.");
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT,
+                                    "Query timed out waiting for results for too many (" + currentTimeoutcount + ") cycles.");
                 } else {
                     log.info("Returning an empty partial results page");
                     // We are returning an empty page with a PARTIAL status to allow the query to continue running
@@ -582,7 +582,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     
     public void cancel() {
         this.canceled = true;
-
+        
         terminateResultsThread();
         
         // change status to cancelled
@@ -703,7 +703,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         .append((this.getTimeOfCurrentCall() == 0) ? 0 : System.currentTimeMillis() - this.getTimeOfCurrentCall()).toString();
         
     }
-
+    
     public QueryMetricsBean getQueryMetrics() {
         return queryMetrics;
     }
@@ -719,9 +719,9 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
      */
     public interface RunningQueryTiming {
         boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
-
+        
         int getMaxLongRunningTimeoutRetries();
-
+        
         long getPageShortCircuitTimeoutMs();
     }
     
@@ -732,11 +732,11 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         public boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
             return false;
         }
-
+        
         public int getMaxLongRunningTimeoutRetries() {
             return 0;
         }
-
+        
         // hardcoded because only used by upstream tests.
         public long getPageShortCircuitTimeoutMs() {
             return 300000000000000L;

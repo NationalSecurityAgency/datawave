@@ -117,8 +117,8 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testDelayedIndexOnly() throws Exception {
         log.info("------  testErrorIndexOnly  ------");
-        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
-                        + LT_OP + "104)";
+        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name() + LT_OP
+                        + "104)";
         ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
         runTest(query, query);
     }
@@ -158,8 +158,8 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testErrorIndexOnlyExpansion() throws Exception {
         log.info("------  testErrorIndexOnly  ------");
-        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name()
-                        + LT_OP + "104)";
+        String query = CityField.CITY.name() + EQ_OP + "'PARIS'" + AND_OP + "(" + CityField.CODE.name() + EQ_OP + "'usa'" + OR_OP + CityField.NUM.name() + LT_OP
+                        + "104)";
         runTest(query, query);
     }
     

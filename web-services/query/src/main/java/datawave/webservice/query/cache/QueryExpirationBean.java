@@ -106,8 +106,8 @@ public class QueryExpirationBean {
                 try {
                     if (clearAll) {
                         query.getMetric().setLifecycle(QueryMetric.Lifecycle.SHUTDOWN);
-                        query.getSettings().getUncaughtExceptionHandler()
-                                        .uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.SERVER_SHUTDOWN));
+                        query.getSettings().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(),
+                                        new QueryException(DatawaveErrorCode.SERVER_SHUTDOWN));
                     } else {
                         if (!query.getMetric().isLifecycleFinal() && !query.isFinished() && idleTooLong) {
                             query.getMetric().setLifecycle(QueryMetric.Lifecycle.TIMEOUT);
@@ -116,8 +116,8 @@ public class QueryExpirationBean {
                             query.getMetric().setLifecycle(QueryMetric.Lifecycle.NEXTTIMEOUT);
                         }
                         
-                        query.getSettings().getUncaughtExceptionHandler()
-                                        .uncaughtException(Thread.currentThread(), new QueryException(DatawaveErrorCode.QUERY_TIMEOUT));
+                        query.getSettings().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(),
+                                        new QueryException(DatawaveErrorCode.QUERY_TIMEOUT));
                     }
                 } finally {
                     if (query.getLogic().getCollectQueryMetrics()) {

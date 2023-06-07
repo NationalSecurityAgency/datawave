@@ -279,7 +279,7 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
      * @param patterns
      *            the patterns to check
      * @return whether any patterns were found or not
-     * */
+     */
     private boolean findMatchingPattern(String fieldName, Collection<Matcher> patterns) {
         for (Matcher m : patterns) {
             if (m.reset(fieldName).matches()) {
@@ -467,8 +467,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             if (name == null) {
                 throw new IllegalArgumentException("No field called 'name' specified");
             } else if (!this.fieldHelper.addKnownField(name)) {
-                throw new IllegalArgumentException("Field " + name
-                                + " was already seen, check configuration file for duplicate entries (among fieldPattern, field tags)");
+                throw new IllegalArgumentException(
+                                "Field " + name + " was already seen, check configuration file for duplicate entries (among fieldPattern, field tags)");
             }
             
             if (stored) {
@@ -542,8 +542,8 @@ public final class XMLFieldConfigHelper implements FieldConfigHelper {
             if (pattern == null) {
                 throw new IllegalArgumentException("No field called 'name' specified");
             } else if (!this.fieldHelper.addKnownField(pattern)) {
-                throw new IllegalArgumentException("Field pattern " + pattern
-                                + " is already known, check configuration file for duplicates (among fieldPattern, field tag)");
+                throw new IllegalArgumentException(
+                                "Field pattern " + pattern + " is already known, check configuration file for duplicates (among fieldPattern, field tag)");
             }
             
             if (stored) {

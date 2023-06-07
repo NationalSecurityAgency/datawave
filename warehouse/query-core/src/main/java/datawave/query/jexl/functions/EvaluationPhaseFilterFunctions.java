@@ -202,18 +202,15 @@ public class EvaluationPhaseFilterFunctions {
      *
      * Note: the {@code args} array must have the following elements in the indicated indices:
      * <ul>
-     * <li>
-     * {@code args[0]}: the minimum number of matches that are required to return a non-empty {@link FunctionalSet}</li>
-     * <li>
-     * {@code args[1]}: the field value to search for matches in. This may be a singular object that can be parsed as a {@link ValueTuple}, or an
+     * <li>{@code args[0]}: the minimum number of matches that are required to return a non-empty {@link FunctionalSet}</li>
+     * <li>{@code args[1]}: the field value to search for matches in. This may be a singular object that can be parsed as a {@link ValueTuple}, or an
      * {@link Iterable} with elements that can be parsed to {@link ValueTuple} instances</li>
-     * <li>
-     * {@code args[2,...]}: the regexes to use to find matches</li>
+     * <li>{@code args[2,...]}: the regexes to use to find matches</li>
      * </ul>
      *
      * @param args
      *            the arguments array
-     *
+     *           
      * @return the {@link FunctionalSet} of matches.
      */
     public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object[] args) {

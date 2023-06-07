@@ -23,11 +23,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class QueryPruningVisitorTest {
-
+    
     @Rule
-    public TestLogCollector logCollector = new TestLogCollector.Builder()
-            .with(QueryPruningVisitor.class, Level.DEBUG).build();
-
+    public TestLogCollector logCollector = new TestLogCollector.Builder().with(QueryPruningVisitor.class, Level.DEBUG).build();
+    
     private final ASTValidator validator = new ASTValidator();
     
     @Test
@@ -222,9 +221,10 @@ public class QueryPruningVisitorTest {
         
         assertEquals(3, logCollector.getMessages().size());
         assertEquals("Pruning _NOFIELD_ == 'y' && FIELD2 == 'z' to false", logCollector.getMessages().get(0));
-        assertEquals("Pruning (_NOFIELD_ == 'y' && FIELD2 == 'z') from FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')", logCollector.getMessages().get(1));
-        assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x'", logCollector.getMessages()
-                        .get(2));
+        assertEquals("Pruning (_NOFIELD_ == 'y' && FIELD2 == 'z') from FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')",
+                        logCollector.getMessages().get(1));
+        assertEquals("Query before prune: FIELD1 == 'x' || (_NOFIELD_ == 'y' && FIELD2 == 'z')\nQuery after prune: FIELD1 == 'x'",
+                        logCollector.getMessages().get(2));
     }
     
     @Test
@@ -256,8 +256,8 @@ public class QueryPruningVisitorTest {
         assertEquals("FIELD2 == 'z'", JexlStringBuildingVisitor.buildQuery(QueryPruningVisitor.reduce(script, false)));
         
         assertEquals(logCollector.getMessages().size() + "", 3, logCollector.getMessages().size());
-        assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z' to false", logCollector
-                        .getMessages().get(0));
+        assertEquals("Pruning (_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z' to false",
+                        logCollector.getMessages().get(0));
         assertEquals("Pruning ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') from ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'",
                         logCollector.getMessages().get(1));
         assertEquals("Query before prune: ((_NOFIELD_ == 'x' || _NOFIELD_ == 'y') && (_NOFIELD_ == 'a' || _NOFIELD_ == 'b') && _NOFIELD_ == 'z') || FIELD2 == 'z'\nQuery after prune: FIELD2 == 'z'",

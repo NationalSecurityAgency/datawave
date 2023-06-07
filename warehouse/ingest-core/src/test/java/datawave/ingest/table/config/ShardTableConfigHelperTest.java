@@ -409,7 +409,8 @@ public class ShardTableConfigHelperTest {
             
             uut.configure(tops);
             
-            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
             Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Locality Groups collection.", this.localityGroups.isEmpty());
             
             uut = new ShardTableConfigHelper();
@@ -429,7 +430,8 @@ public class ShardTableConfigHelperTest {
             
             uut.configure(tops);
             
-            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
             Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populae the Locality Groups collection.", this.localityGroups.isEmpty());
         } finally {
             
@@ -464,7 +466,8 @@ public class ShardTableConfigHelperTest {
             
             uut.configure(tops);
             
-            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
             Assert.assertTrue("ShardTableConfigHelper.configureShardTable caused the Locality Groups collection to be populated.",
                             this.localityGroups.isEmpty());
             
@@ -485,7 +488,8 @@ public class ShardTableConfigHelperTest {
             
             uut.configure(tops);
             
-            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
             Assert.assertTrue("ShardTableConfigHelper.configureShardTable caused the Locality Groups collection to be populated.",
                             this.localityGroups.isEmpty());
         } finally {
@@ -521,7 +525,8 @@ public class ShardTableConfigHelperTest {
             
             uut.configure(tops);
             
-            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
             Assert.assertTrue("ShardTableConfigHelper.configureShardTable caused the Locality Groups collection to be populated.",
                             this.localityGroups.isEmpty());
             
@@ -542,7 +547,8 @@ public class ShardTableConfigHelperTest {
             
             uut.configure(tops);
             
-            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.", this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
             Assert.assertTrue("ShardTableConfigHelper.configureShardTable caused the Locality Groups collection to be populated.",
                             this.localityGroups.isEmpty());
         } finally {

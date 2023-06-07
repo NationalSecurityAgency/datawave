@@ -91,7 +91,8 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      * @param updateWhitelist
      *            flag to update whitelist
      */
-    public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms, boolean updateWhitelist) {
+    public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms,
+                    boolean updateWhitelist) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
         int numTermsAdded = 0;

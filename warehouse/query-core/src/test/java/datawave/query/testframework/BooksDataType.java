@@ -106,8 +106,8 @@ public class BooksDataType extends AbstractDataTypeConfig {
     private final FieldConfig fieldConfig;
     private final ConfigData configData;
     
-    public BooksDataType(final String datatype, final String file, final FieldConfig fieldData, final ConfigData cfgData) throws IOException,
-                    URISyntaxException {
+    public BooksDataType(final String datatype, final String file, final FieldConfig fieldData, final ConfigData cfgData)
+                    throws IOException, URISyntaxException {
         super(datatype, file, FileType.GROUPING, fieldData, null);
         this.fieldConfig = fieldData;
         this.configData = cfgData;

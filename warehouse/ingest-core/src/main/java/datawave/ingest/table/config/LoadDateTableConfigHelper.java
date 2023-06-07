@@ -75,8 +75,8 @@ public class LoadDateTableConfigHelper extends AbstractTableConfigHelper {
         return conf.getInt(LOAD_DATES_TABLE_LOADER_PRIORITY_PROP, 40);
     }
     
-    private void setCombinerForLoadDateCounts(TableOperations tops, String scopeName) throws AccumuloException, AccumuloSecurityException,
-                    TableNotFoundException {
+    private void setCombinerForLoadDateCounts(TableOperations tops, String scopeName)
+                    throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "LoadDateMetadataCombiner");
         String tableName = LoadDateTableConfigHelper.getLoadDatesTableName(conf);
         setPropertyIfNecessary(tableName, stem, "18,org.apache.accumulo.core.iterators.user.SummingCombiner", tops, log);

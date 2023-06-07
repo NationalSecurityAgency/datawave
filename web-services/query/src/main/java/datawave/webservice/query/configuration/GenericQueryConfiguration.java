@@ -29,9 +29,9 @@ import org.apache.log4j.Logger;
  * 
  */
 public abstract class GenericQueryConfiguration {
-
+    
     private static final Logger log = ThreadConfigurableLogger.getLogger(GenericQueryConfiguration.class);
-
+    
     private AccumuloClient client = null;
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
     // Leave in a top-level query for backwards-compatibility purposes
@@ -54,7 +54,7 @@ public abstract class GenericQueryConfiguration {
     
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
-
+    
     /**
      * Empty default constructor
      */
@@ -183,7 +183,7 @@ public abstract class GenericQueryConfiguration {
     public String getAccumuloPassword() {
         return this.accumuloPassword;
     }
-
+    
     /**
      * Sets configured password for accumulo access
      *
@@ -193,7 +193,7 @@ public abstract class GenericQueryConfiguration {
     public void setAccumuloPassword(String password) {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
-
+    
     /**
      * Checks for non-null, sane values for the configured values
      * 

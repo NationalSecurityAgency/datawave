@@ -10,7 +10,7 @@ import datawave.query.tables.TLDQueryLogic;
  *
  * @param <A>
  *            type for the predicate
- * 
+ *            
  * @see AbstractVersionFilter
  * @see ShardQueryLogic
  * @see TLDQueryLogic

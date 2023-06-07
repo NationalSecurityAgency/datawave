@@ -71,8 +71,8 @@ public class PipelinePool {
                 NestedQueryIterator<Key> nq = pipeline.getDocumentSpecificSource();
                 if (null != nestedQuery) {
                     nq.setCurrentQuery(nestedQuery);
-                    pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive,
-                                    querySpanCollector));
+                    pipeline.setSourceIterator(
+                                    sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
                 }
             }
         } else if (checkedIn.size() + checkedOut.size() < maxPipelines) {
@@ -81,7 +81,8 @@ public class PipelinePool {
             if (null != nestedQuery) {
                 nq.setCurrentQuery(nestedQuery);
             }
-            pipeline.setSourceIterator(sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
+            pipeline.setSourceIterator(
+                            sourceIterator.createDocumentPipeline(sourceForDeepCopy.deepCopy(env), nq, columnFamilies, inclusive, querySpanCollector));
         }
         if (pipeline != null) {
             checkedOut.add(pipeline);

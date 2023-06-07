@@ -64,12 +64,12 @@ public class DocumentKeysFunctionTest {
     
     @Test
     public void testOnlyNegatedPhrase() throws Exception {
-        //  even though FOO:baz only hits in the TLD and child 2 and 4, still need to search all doc keys
+        // even though FOO:baz only hits in the TLD and child 2 and 4, still need to search all doc keys
         String query = "!(content:phrase(FOO, termOffsetMap, 'baz', 'baz') && FOO == 'baz')";
         Set<Key> expected = Sets.newHashSet(docKey, docKey1, docKey2, docKey3, docKey4, docKey5, docKey6, docKey7);
         test(query, expected);
     }
-
+    
     @Test
     public void testFieldAsIdentifier() throws Exception {
         // top level document + all event children

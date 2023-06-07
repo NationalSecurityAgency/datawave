@@ -31,8 +31,8 @@ public class QueryUtil {
         }
     }
     
-    public static <T extends Query> T deserialize(String queryImplClassName, Text columnVisibility, Value value) throws InvalidProtocolBufferException,
-                    ClassNotFoundException {
+    public static <T extends Query> T deserialize(String queryImplClassName, Text columnVisibility, Value value)
+                    throws InvalidProtocolBufferException, ClassNotFoundException {
         @SuppressWarnings("unchecked")
         Class<T> queryClass = (Class<T>) Class.forName(queryImplClassName);
         byte[] b = value.get();

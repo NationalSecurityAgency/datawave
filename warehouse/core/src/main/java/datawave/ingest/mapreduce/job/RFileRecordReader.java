@@ -40,9 +40,10 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         FileOperations ops = RFileOperations.getInstance();
         String file = fileSplit.getPath().toString();
         FileSystem fs = fileSplit.getPath().getFileSystem(context.getConfiguration());
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), cs)
-                        .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
+                        context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), cs).withTableConfiguration(DefaultConfiguration.getInstance())
+                        .seekToBeginning().build();
     }
     
     @Override

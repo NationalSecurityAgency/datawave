@@ -38,7 +38,7 @@ public class LimitFieldsTestingIngest {
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
-
+    
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
         
         BatchWriter bw = null;
@@ -76,19 +76,19 @@ public class LimitFieldsTestingIngest {
             mutation.put(datatype + "\u0000" + myUID, "FOO_3.FOO.3.3" + "\u0000" + "defg", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_3_BAR.FOO.3" + "\u0000" + "defg<cat>", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "FOO_1_BAR.FOO.3" + "\u0000" + "good<cat>", columnVisibility, timeStamp, emptyValue);
-
+            
             mutation.put(datatype + "\u0000" + myUID, "BAR_1.BAR.1.1" + "\u0000" + "growl", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BAR_2.BAR.2.1" + "\u0000" + "big cat", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BAR_3.BAR.3.1" + "\u0000" + "fluffy", columnVisibility, timeStamp, emptyValue);
-
+            
             mutation.put(datatype + "\u0000" + myUID, "BAR_1.BAR.1.2" + "\u0000" + "yawn", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BAR_2.BAR.2.2" + "\u0000" + "siberian", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BAR_3.BAR.3.2" + "\u0000" + "pink", columnVisibility, timeStamp, emptyValue);
-
+            
             mutation.put(datatype + "\u0000" + myUID, "BAR_1.BAR.1.3" + "\u0000" + "purr", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BAR_2.BAR.2.3" + "\u0000" + "tiger", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + myUID, "BAR_3.BAR.3.3" + "\u0000" + "spotted", columnVisibility, timeStamp, emptyValue);
-
+            
             bw.addMutation(mutation);
             
         } finally {
@@ -260,7 +260,7 @@ public class LimitFieldsTestingIngest {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-
+    
     private static Value getValueForNuthinAndYourHitsForFree() {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setCOUNT(50); // better not be zero!!!!

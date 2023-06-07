@@ -191,7 +191,7 @@ public class SetMembershipVisitor extends BaseVisitor {
      *
      * @param node
      *            an identifier node
-     *
+     *           
      * @return true, if the node is associated with a filter function
      */
     private boolean parentFilterFunction(final ASTIdentifier node) {

@@ -2223,7 +2223,7 @@ public class AccentFilter extends TokenFilter {
                     case '\u0618':
                     case '\u0619':
                     case '\u061a':
-                        
+                    
                     case '\u064b':
                     case '\u064c':
                     case '\u064d':
@@ -2244,9 +2244,9 @@ public class AccentFilter extends TokenFilter {
                     case '\u065c':
                     case '\u065d':
                     case '\u065e':
-                        
+                    
                     case '\u0670':
-                        
+                    
                     case '\u06d6':
                     case '\u06d7':
                     case '\u06d8':
@@ -2255,7 +2255,7 @@ public class AccentFilter extends TokenFilter {
                     case '\u06db':
                     case '\u06dc':
                     case '\u06dd':
-                        
+                    
                     case '\u06df':
                     case '\u06e0':
                     case '\u06e1':
@@ -2266,12 +2266,12 @@ public class AccentFilter extends TokenFilter {
                     case '\u06e6':
                     case '\u06e7':
                     case '\u06e8':
-                        
+                    
                     case '\u06ea':
                     case '\u06eb':
                     case '\u06ec':
                     case '\u06ed':
-                        
+                    
                     case '\ufd3e':
                     case '\ufd3f':
                         mod = true;

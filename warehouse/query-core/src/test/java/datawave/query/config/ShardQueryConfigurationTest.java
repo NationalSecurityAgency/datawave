@@ -413,7 +413,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Sets.newHashSet("NoExpansionFieldA"), config.getNoExpansionFields());
         Assert.assertEquals(15000, config.getDocAggregationThresholdMs());
         Assert.assertEquals(10000, config.getTfAggregationThresholdMs());
-
+        
         // assert seeks
         Assert.assertEquals(12, other.getFiFieldSeek());
         Assert.assertEquals(13, other.getFiNextSeek());
@@ -446,7 +446,7 @@ public class ShardQueryConfigurationTest {
         logic.setEnforceUniqueConjunctionsWithinExpression(true);
         Assert.assertEquals(expected, logic.getEnforceUniqueConjunctionsWithinExpression());
     }
-
+    
     @Test
     public void testGetSetDisjunctionsWithinExpression() {
         ShardQueryLogic logic = new ShardQueryLogic();
@@ -454,7 +454,7 @@ public class ShardQueryConfigurationTest {
         logic.setEnforceUniqueDisjunctionsWithinExpression(true);
         Assert.assertEquals(expected, logic.getEnforceUniqueDisjunctionsWithinExpression());
     }
-
+    
     @Test
     public void testGetSetBlacklistedFields() {
         String expected = "blacklistA,blacklistB";

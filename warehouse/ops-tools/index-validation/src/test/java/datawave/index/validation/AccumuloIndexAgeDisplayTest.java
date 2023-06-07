@@ -215,8 +215,8 @@ public class AccumuloIndexAgeDisplayTest {
      */
     private void loadAssortedData() {
         try {
-            BatchWriter bw = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
-                            .setMaxWriteThreads(4));
+            BatchWriter bw = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(4));
             
             long currentTime = System.currentTimeMillis();
             
@@ -274,8 +274,8 @@ public class AccumuloIndexAgeDisplayTest {
      */
     private void loadOneHourData() {
         try {
-            BatchWriter bw = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
-                            .setMaxWriteThreads(4));
+            BatchWriter bw = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(4));
             
             long currentTime = System.currentTimeMillis();
             
@@ -342,27 +342,26 @@ public class AccumuloIndexAgeDisplayTest {
     }
     
     public String getAssortedSimulatedFileOutput() {
-        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n"
-                        + "table DatawaveMetadata\n" + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n"
-                        + "# Indexes older than 60 days:\n" + "# Indexes older than 30 days:\n" + "    delete Row8 indx D31_NoVis_8\n"
-                        + "    delete Row9 indx D31_NoVis_9\n" + "# Indexes older than 14 days:\n" + "    delete Row6 indx D15_6 -l X\n"
-                        + "    delete Row7 indx D15_7 -l X\n" + "# Indexes older than 7 days:\n" + "    delete Row4 indx D08_4 -l X\n"
-                        + "    delete Row5 indx D08_5 -l X\n" + "# Indexes older than 2 days:\n" + "    delete Row2 indx D02_2 -l X\n"
-                        + "    delete Row3 indx D02_3 -l X\n" + "\n");
+        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n" + "table DatawaveMetadata\n"
+                        + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n" + "# Indexes older than 60 days:\n"
+                        + "# Indexes older than 30 days:\n" + "    delete Row8 indx D31_NoVis_8\n" + "    delete Row9 indx D31_NoVis_9\n"
+                        + "# Indexes older than 14 days:\n" + "    delete Row6 indx D15_6 -l X\n" + "    delete Row7 indx D15_7 -l X\n"
+                        + "# Indexes older than 7 days:\n" + "    delete Row4 indx D08_4 -l X\n" + "    delete Row5 indx D08_5 -l X\n"
+                        + "# Indexes older than 2 days:\n" + "    delete Row2 indx D02_2 -l X\n" + "    delete Row3 indx D02_3 -l X\n" + "\n");
     }
     
     private String getOneHourOldDataSimulatedFileOutput() {
-        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n"
-                        + "table DatawaveMetadata\n" + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n"
-                        + "# Indexes older than 60 days:\n" + "# Indexes older than 30 days:\n" + "# Indexes older than 14 days:\n"
-                        + "# Indexes older than 7 days:\n" + "# Indexes older than 2 days:\n" + "\n");
+        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n" + "table DatawaveMetadata\n"
+                        + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n" + "# Indexes older than 60 days:\n"
+                        + "# Indexes older than 30 days:\n" + "# Indexes older than 14 days:\n" + "# Indexes older than 7 days:\n"
+                        + "# Indexes older than 2 days:\n" + "\n");
     }
     
     public String getAssortedDataThreeDayBucketSimulatedFileOutput() {
-        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n"
-                        + "table DatawaveMetadata\n" + "# Indexes older than 3 days:\n" + "    delete Row4 indx D08_4 -l X\n"
-                        + "    delete Row5 indx D08_5 -l X\n" + "    delete Row6 indx D15_6 -l X\n" + "    delete Row7 indx D15_7 -l X\n"
-                        + "    delete Row8 indx D31_NoVis_8\n" + "    delete Row9 indx D31_NoVis_9\n" + "\n");
+        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n" + "table DatawaveMetadata\n"
+                        + "# Indexes older than 3 days:\n" + "    delete Row4 indx D08_4 -l X\n" + "    delete Row5 indx D08_5 -l X\n"
+                        + "    delete Row6 indx D15_6 -l X\n" + "    delete Row7 indx D15_7 -l X\n" + "    delete Row8 indx D31_NoVis_8\n"
+                        + "    delete Row9 indx D31_NoVis_9\n" + "\n");
     }
     
     private String getAssortedSimulatedLogOutput() {

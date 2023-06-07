@@ -133,8 +133,10 @@ public class MultiValueCompositeIndexTest {
         
         public static TestData fromString(String td) {
             String[] splitData = td.split("\\|\\|");
-            return new TestData((splitData.length >= 1) ? Arrays.asList(splitData[0].split("\\|")) : new ArrayList<>(), (splitData.length >= 2) ? Arrays
-                            .asList(splitData[1].split("\\|")).stream().map(x -> Integer.parseInt(x)).collect(Collectors.toList()) : new ArrayList<>());
+            return new TestData((splitData.length >= 1) ? Arrays.asList(splitData[0].split("\\|")) : new ArrayList<>(),
+                            (splitData.length >= 2)
+                                            ? Arrays.asList(splitData[1].split("\\|")).stream().map(x -> Integer.parseInt(x)).collect(Collectors.toList())
+                                            : new ArrayList<>());
         }
         
         @Override
@@ -173,16 +175,13 @@ public class MultiValueCompositeIndexTest {
     
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
     
     public static void createTestData() {
@@ -190,7 +189,8 @@ public class MultiValueCompositeIndexTest {
         testData.add(new TestData(Arrays.asList("POLYGON ((-120 20, -100 20, -100 60, -120 60, -120 20))", "POINT (45 -45)"), Arrays.asList(55, 15)));
         
         // Test Data with 2 wkt and 1 number
-        testData.add(new TestData(Arrays.asList("POLYGON ((-110 -15, -105 -15, -105 -10, -110 -10, -110 -15))", "POINT (45 45)"), Collections.singletonList(60)));
+        testData.add(new TestData(Arrays.asList("POLYGON ((-110 -15, -105 -15, -105 -10, -110 -10, -110 -15))", "POINT (45 45)"),
+                        Collections.singletonList(60)));
         
         // Test Data with 1 wkt and 2 numbers
         testData.add(new TestData(Collections.singletonList("POINT (0 0)"), Arrays.asList(11, 22)));
@@ -301,8 +301,8 @@ public class MultiValueCompositeIndexTest {
             final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
-                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), biKey.getKey()
-                                .getTimestamp(), val);
+                mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(),
+                                biKey.getKey().getTimestamp(), val);
                 writer.addMutation(mutation);
             }
             writer.close();

@@ -435,14 +435,14 @@ public class MapReduceBean {
             ((NeedAccumuloConnectionFactory) job).setAccumuloConnectionFactory(this.connectionFactory);
         }
         if (job instanceof NeedAccumuloDetails) {
-            ((NeedAccumuloDetails) job).setUsername(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getUsername());
-            ((NeedAccumuloDetails) job).setPassword(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getPassword());
-            ((NeedAccumuloDetails) job).setInstanceName(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getInstance());
-            ((NeedAccumuloDetails) job).setZookeepers(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getZookeepers());
+            ((NeedAccumuloDetails) job)
+                            .setUsername(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getUsername());
+            ((NeedAccumuloDetails) job)
+                            .setPassword(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getPassword());
+            ((NeedAccumuloDetails) job).setInstanceName(
+                            this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getInstance());
+            ((NeedAccumuloDetails) job).setZookeepers(
+                            this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getZookeepers());
         }
         if (job instanceof NeedQueryLogicFactory) {
             ((NeedQueryLogicFactory) job).setQueryLogicFactory(this.queryLogicFactory);
@@ -493,8 +493,8 @@ public class MapReduceBean {
                 throw new DatawaveWebApplicationException(qe, response);
             }
             if (!this.mapReduceConfiguration.getValidInputFormats().contains(ifClass)) {
-                IllegalArgumentException e = new IllegalArgumentException("Invalid input format class specified. Must use one of "
-                                + this.mapReduceConfiguration.getValidInputFormats());
+                IllegalArgumentException e = new IllegalArgumentException(
+                                "Invalid input format class specified. Must use one of " + this.mapReduceConfiguration.getValidInputFormats());
                 QueryException qe = new QueryException(DatawaveErrorCode.INVALID_FORMAT, e);
                 log.error(qe);
                 response.addException(qe.getBottomQueryException());
@@ -623,8 +623,8 @@ public class MapReduceBean {
                 }
                 // Delete the contents of the results directory
                 if (hdfs.exists(resultsDir) && !hdfs.delete(resultsDir, true)) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.MAPRED_RESULTS_DELETE_ERROR, MessageFormat.format("directory: {0}",
-                                    resultsDir.toString()));
+                    QueryException qe = new QueryException(DatawaveErrorCode.MAPRED_RESULTS_DELETE_ERROR,
+                                    MessageFormat.format("directory: {0}", resultsDir.toString()));
                     log.error(qe);
                     response.addException(qe);
                     throw new DatawaveWebApplicationException(qe, response);
@@ -632,8 +632,8 @@ public class MapReduceBean {
                 response.setResult(true);
                 return response;
             } catch (IOException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.JOBTRACKER_CONNECTION_ERROR, e, MessageFormat.format("JobTracker: {0}",
-                                thisJob.getJobTracker()));
+                QueryException qe = new QueryException(DatawaveErrorCode.JOBTRACKER_CONNECTION_ERROR, e,
+                                MessageFormat.format("JobTracker: {0}", thisJob.getJobTracker()));
                 log.error(qe);
                 response.addException(qe);
                 throw new DatawaveWebApplicationException(qe, response);
@@ -761,16 +761,16 @@ public class MapReduceBean {
         FSDataInputStream fis;
         try {
             if (!fs.exists(resultFile) || !fs.isFile(resultFile)) {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FILE_NOT_FOUND, MessageFormat.format("{0} at path {1}", fileName,
-                                resultsDir));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FILE_NOT_FOUND,
+                                MessageFormat.format("{0} at path {1}", fileName, resultsDir));
                 response.addException(qe);
                 throw new NotFoundException(qe, response);
             }
             
             fis = fs.open(resultFile);
         } catch (IOException e1) {
-            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_FILE_ACCESS_ERROR, e1, MessageFormat.format("{0}",
-                            resultFile.toString()));
+            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_FILE_ACCESS_ERROR, e1,
+                            MessageFormat.format("{0}", resultFile.toString()));
             log.error(qe);
             response.addException(qe);
             throw new NotFoundException(qe, response);
@@ -845,13 +845,14 @@ public class MapReduceBean {
         final int jobDirectoryPathLength = jobDirectory.toUri().getPath().length();
         try {
             if (!fs.exists(jobDirectory) || !fs.getFileStatus(jobDirectory).isDirectory()) {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JOB_DIRECTORY_NOT_FOUND, MessageFormat.format("{0} at path {1}",
-                                jobId, jobDirectory));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JOB_DIRECTORY_NOT_FOUND,
+                                MessageFormat.format("{0} at path {1}", jobId, jobDirectory));
                 response.addException(qe);
                 throw new NotFoundException(qe, response);
             }
         } catch (IOException e1) {
-            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_DIRECTORY_ACCESS_ERROR, e1, MessageFormat.format("{0}", resultsDir));
+            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_DIRECTORY_ACCESS_ERROR, e1,
+                            MessageFormat.format("{0}", resultsDir));
             log.error(qe);
             response.addException(qe);
             throw new NotFoundException(qe, response);
@@ -1041,8 +1042,8 @@ public class MapReduceBean {
         if (requiredRoles != null && !requiredRoles.isEmpty()) {
             Set<String> usersRoles = new HashSet<>(datawavePrincipal.getPrimaryUser().getRoles());
             if (!usersRoles.containsAll(requiredRoles)) {
-                throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format("Requires the following roles: {0}",
-                                requiredRoles));
+                throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED,
+                                MessageFormat.format("Requires the following roles: {0}", requiredRoles));
             }
         }
         
@@ -1051,8 +1052,8 @@ public class MapReduceBean {
                 String authsString = queryParameters.getFirst("auths");
                 List<String> authorizations = AuthorizationsUtil.splitAuths(authsString);
                 if (!authorizations.containsAll(requiredAuths)) {
-                    throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(
-                                    "Requires the following auths: {0}", requiredAuths));
+                    throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED,
+                                    MessageFormat.format("Requires the following auths: {0}", requiredAuths));
                 }
             }
         }

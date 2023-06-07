@@ -317,7 +317,8 @@ public final class ResponseMessages {
             return PARSER.parseFrom(data, extensionRegistry);
         }
         
-        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(byte[] data)
+                        throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
         
@@ -344,7 +345,8 @@ public final class ResponseMessages {
             return PARSER.parseDelimitedFrom(input, extensionRegistry);
         }
         
-        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
+        public static datawave.webservice.result.ResponseMessages.VoidResponse parseFrom(com.google.protobuf.CodedInputStream input)
+                        throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
         
@@ -372,9 +374,9 @@ public final class ResponseMessages {
         /**
          * Protobuf type {@code datawave.webservice.result.VoidResponse}
          */
-        public static final class Builder extends
-                        com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.result.ResponseMessages.VoidResponse,Builder> implements
-                        datawave.webservice.result.ResponseMessages.VoidResponseOrBuilder {
+        public static final class Builder
+                        extends com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.result.ResponseMessages.VoidResponse,Builder>
+                        implements datawave.webservice.result.ResponseMessages.VoidResponseOrBuilder {
             // Construct using datawave.webservice.result.ResponseMessages.VoidResponse.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
@@ -1252,9 +1254,9 @@ public final class ResponseMessages {
         /**
          * Protobuf type {@code datawave.webservice.result.QueryImplListResponse}
          */
-        public static final class Builder extends
-                        com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.result.ResponseMessages.QueryImplListResponse,Builder> implements
-                        datawave.webservice.result.ResponseMessages.QueryImplListResponseOrBuilder {
+        public static final class Builder
+                        extends com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.result.ResponseMessages.QueryImplListResponse,Builder>
+                        implements datawave.webservice.result.ResponseMessages.QueryImplListResponseOrBuilder {
             // Construct using datawave.webservice.result.ResponseMessages.QueryImplListResponse.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
@@ -2657,9 +2659,9 @@ public final class ResponseMessages {
         /**
          * Protobuf type {@code datawave.webservice.result.GenericResponse}
          */
-        public static final class Builder extends
-                        com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.result.ResponseMessages.GenericResponse,Builder> implements
-                        datawave.webservice.result.ResponseMessages.GenericResponseOrBuilder {
+        public static final class Builder
+                        extends com.google.protobuf.GeneratedMessageLite.Builder<datawave.webservice.result.ResponseMessages.GenericResponse,Builder>
+                        implements datawave.webservice.result.ResponseMessages.GenericResponseOrBuilder {
             // Construct using datawave.webservice.result.ResponseMessages.GenericResponse.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();

@@ -177,7 +177,7 @@ public class IngestFieldFilter {
             // else add this value to each of the value sets found recursively for the remaining fields
             else {
                 for (List<FieldValue> singleValueList : gatherValueLists(fieldValues, fieldsToGather, index - 1,
-                // restrict to the group already determined, or the group of this value if not yet determined
+                                // restrict to the group already determined, or the group of this value if not yet determined
                                 (group == null ? value.getGroup() : group))) {
                     singleValueList.add(value);
                     valueLists.add(singleValueList);
@@ -339,8 +339,8 @@ public class IngestFieldFilter {
                             }
                             super.add(new FieldFilter(left, right));
                         } else {
-                            throw new IllegalArgumentException("Expected a " + VALUE_DELIM + " delimited pair but received: " + pair
-                                            + ", ignoring this config.");
+                            throw new IllegalArgumentException(
+                                            "Expected a " + VALUE_DELIM + " delimited pair but received: " + pair + ", ignoring this config.");
                         }
                     }
                 }

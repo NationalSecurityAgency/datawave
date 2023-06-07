@@ -75,8 +75,8 @@ public class AccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private static final int DEFAULT_MAX_LATENCY = 120000; // 1 minute
     private static final int DEFAULT_NUM_WRITE_THREADS = 4;
     
-    public AccumuloRecordWriter(AccumuloConnectionFactory connectionFactory, Configuration conf) throws AccumuloException, AccumuloSecurityException,
-                    IOException {
+    public AccumuloRecordWriter(AccumuloConnectionFactory connectionFactory, Configuration conf)
+                    throws AccumuloException, AccumuloSecurityException, IOException {
         Level l = getLogLevel(conf);
         if (l != null) {
             log.setLevel(getLogLevel(conf));
