@@ -15,12 +15,6 @@ import static org.junit.Assert.assertEquals;
 
 public class FilesTest {
     
-    @Test
-    public void testConstructor() {
-        Files files = new Files();
-        assertNotNull(files);
-    }
-    
     @Test(expected = IllegalStateException.class)
     public void testEnsureDirException() throws Exception {
         File file = mock(File.class);
