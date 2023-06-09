@@ -132,9 +132,9 @@ public class CardinalityScanner {
         
         opt.addOption(builder.create(HELP_OPT, null, "show help"));
         
-        builder.args = 1;
+        builder.setArgs(1);
         builder.type = String.class;
-        builder.required = true;
+        builder.setRequired(true);
         
         opt.addOption(builder.create(ZOOKEEPERS, null, "list of Zookeepers host[:port],host[:port]"));
         opt.addOption(builder.create(INSTANCE, null, "accumulo instance name"));
@@ -145,12 +145,12 @@ public class CardinalityScanner {
         opt.addOption(builder.create(TABLE, null, "read records from this accumulo table"));
         opt.addOption(builder.create(D_OPT, null, "date or date range (yyyyMMdd, yyyyMMdd-yyyyMMdd)"));
         
-        builder.required = false;
+        builder.setRequired(false);
         opt.addOption(builder.create(F_OPT, null, "field(s)"));
         opt.addOption(builder.create(AGGREGATE, null, "aggregate cardinalities DAY|MONTH|ALL (default DAY)"));
         
         builder.type = Boolean.class;
-        builder.args = 0;
+        builder.setArgs(0);
         opt.addOption(builder.create(DATATYPES, null, "maintain datatypes when reading cardinalities"));
         opt.addOption(builder.create(INTERSECT, null, "intersect cardinalities"));
         opt.addOption(builder.create(SORTBYCARDINALITY, null, "sort by cardinality within pairs"));
