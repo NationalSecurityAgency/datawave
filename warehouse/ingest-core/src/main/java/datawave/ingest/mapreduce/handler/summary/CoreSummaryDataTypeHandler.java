@@ -20,41 +20,41 @@ import org.apache.log4j.Logger;
 
 public abstract class CoreSummaryDataTypeHandler<KEYIN> implements DataTypeHandler<KEYIN> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(CoreSummaryDataTypeHandler.class);
-    
+
     private Configuration mConf = null;
-    
+
     protected abstract Multimap<BulkIngestKey,Value> createEntries(RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
                     ColumnVisibility vis, long timestampe, IngestHelperInterface iHelper);
-    
+
     @Override
     public void setup(TaskAttemptContext context) {
         Configuration conf = context.getConfiguration();
         TypeRegistry.getInstance(conf);
         mConf = conf;
     }
-    
+
     @Override
     public Multimap<BulkIngestKey,Value> processBulk(KEYIN key, RawRecordContainer record, Multimap<String,NormalizedContentInterface> fields,
                     StatusReporter reporter) {
         IngestHelperInterface iHelper = this.getHelper(record.getDataType());
         return createEntries(record, fields, getVisibility(), System.currentTimeMillis(), iHelper);
     }
-    
+
     // Since this is a summary use null column visibility
     private ColumnVisibility getVisibility() {
         return null;
     }
-    
+
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
         return datatype.getIngestHelper(mConf);
     }
-    
+
     @Override
     public void close(TaskAttemptContext context) {
         // do nothing
     }
-    
+
     @Override
     public RawRecordMetadata getMetadata() {
         return null; // do nothing

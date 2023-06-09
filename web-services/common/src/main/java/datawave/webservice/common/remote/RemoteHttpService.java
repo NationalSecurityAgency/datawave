@@ -81,40 +81,40 @@ import java.util.stream.Collectors;
  */
 public abstract class RemoteHttpService {
     protected final Logger log = LoggerFactory.getLogger(getClass());
-    
+
     protected JWTTokenHandler jwtTokenHandler;
     protected DnsSrvResolver dnsSrvResolver;
     protected ObjectMapper objectMapper;
     private CloseableHttpClient client;
     private AtomicInteger activeExecutions = new AtomicInteger(0);
-    
+
     @Inject
     private JSSESecurityDomain jsseSecurityDomain;
-    
+
     @Resource
     private ManagedExecutorService executorService;
-    
+
     @Inject
     protected ObjectMapperDecorator objectMapperDecorator;
-    
+
     protected ResponseObjectFactory responseObjectFactory;
-    
+
     protected ObjectReader voidResponseReader;
-    
+
     private RemoteHttpServiceConfiguration config = new RemoteHttpServiceConfiguration();
-    
+
     public void setJsseSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
         this.jsseSecurityDomain = jsseSecurityDomain;
     }
-    
+
     public void setExecutorService(ManagedExecutorService executorService) {
         this.executorService = executorService;
     }
-    
+
     public void setObjectMapperDecorator(ObjectMapperDecorator objectMapperDecorator) {
         this.objectMapperDecorator = objectMapperDecorator;
     }
-    
+
     protected <T> T execute(HttpRequestBase request, IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws IOException {
         log.info("Executing " + request.getClass().getSimpleName() + " against " + request.getURI());
         try {
@@ -131,12 +131,12 @@ public abstract class RemoteHttpService {
             activeExecutions.decrementAndGet();
         }
     }
-    
+
     @PostConstruct
     protected void init() {
         objectMapper = objectMapperDecorator.decorate(new ObjectMapper());
         voidResponseReader = objectMapper.readerFor(VoidResponse.class);
-        
+
         if (useSrvDns()) {
             if (srvDnsServers() != null && !srvDnsServers().isEmpty()) {
                 try {
@@ -150,18 +150,18 @@ public abstract class RemoteHttpService {
             }
             dnsSrvResolver = DnsSrvResolvers.newBuilder().build();
         }
-        
+
         try {
             SSLContext ctx = SSLContext.getInstance("TLSv1.2");
             ctx.init(jsseSecurityDomain.getKeyManagers(), jsseSecurityDomain.getTrustManagers(), null);
-            
+
             String alias = jsseSecurityDomain.getKeyStore().aliases().nextElement();
             X509KeyManager keyManager = (X509KeyManager) jsseSecurityDomain.getKeyManagers()[0];
             X509Certificate[] certs = keyManager.getCertificateChain(alias);
             Key signingKey = keyManager.getPrivateKey(alias);
-            
+
             jwtTokenHandler = new JWTTokenHandler(certs[0], signingKey, 24, TimeUnit.HOURS, TtlMode.RELATIVE_TO_CURRENT_TIME, objectMapper);
-            
+
             ArrayList<Header> defaultHeaders = new ArrayList<>();
             defaultHeaders.add(new BasicHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType()));
             // If we're using HTTP, then add our cert in as a header so the authorization service knows who we are.
@@ -169,7 +169,7 @@ public abstract class RemoteHttpService {
                 defaultHeaders.add(new BasicHeader("X-SSL-clientcert-subject", DnUtils.normalizeDN(certs[0].getSubjectX500Principal().getName())));
                 defaultHeaders.add(new BasicHeader("X-SSL-clientcert-issuer", DnUtils.normalizeDN(certs[0].getIssuerX500Principal().getName())));
             }
-            
+
             // @formatter:off
             client = HttpClients.custom()
                     .setSSLContext(ctx)
@@ -189,7 +189,7 @@ public abstract class RemoteHttpService {
             throw new IllegalStateException(e);
         }
     }
-    
+
     @PreDestroy
     protected void shutdown() {
         executorService.submit(() -> {
@@ -208,10 +208,10 @@ public abstract class RemoteHttpService {
             } catch (IOException e) {
                 log.warn("Exception while shutting down HttpClient: " + e.getMessage(), e);
             }
-            
+
         });
     }
-    
+
     protected URIBuilder buildURI() throws TextParseException {
         final String host = serviceHost();
         final int port = servicePort();
@@ -242,18 +242,18 @@ public abstract class RemoteHttpService {
         }
         return builder;
     }
-    
+
     public URIBuilder buildURI(String suffix) throws TextParseException {
         if (suffix == null)
             suffix = "";
         return buildURI().setPath(serviceURI() + suffix);
     }
-    
+
     protected <T> T executeGetMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         return executeGetMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
     }
-    
+
     protected <T> T executeGetMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         URIBuilder builder = buildURI();
@@ -263,12 +263,12 @@ public abstract class RemoteHttpService {
         requestCustomizer.accept(getRequest);
         return execute(getRequest, resultConverter, errorSupplier);
     }
-    
+
     protected <T> T executePostMethod(Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         return executePostMethod("", uriCustomizer, requestCustomizer, resultConverter, errorSupplier);
     }
-    
+
     protected <T> T executePostMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         URIBuilder builder = buildURI();
@@ -278,7 +278,7 @@ public abstract class RemoteHttpService {
         requestCustomizer.accept(postRequest);
         return execute(postRequest, resultConverter, errorSupplier);
     }
-    
+
     protected <T> T executePutMethod(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPut> requestCustomizer, IOFunction<T> resultConverter,
                     Supplier<String> errorSupplier) throws URISyntaxException, IOException {
         URIBuilder builder = buildURI();
@@ -288,7 +288,7 @@ public abstract class RemoteHttpService {
         requestCustomizer.accept(putRequest);
         return execute(putRequest, resultConverter, errorSupplier);
     }
-    
+
     public <T> T readResponse(HttpEntity entity, ObjectReader reader) throws IOException {
         if (entity == null) {
             return null;
@@ -311,7 +311,7 @@ public abstract class RemoteHttpService {
             }
         }
     }
-    
+
     public static Exception getException(QueryExceptionType qet) {
         if (qet.getCode() != null) {
             if (qet.getCause() != null) {
@@ -323,7 +323,7 @@ public abstract class RemoteHttpService {
             return new RuntimeException(qet.getMessage());
         }
     }
-    
+
     public <T> T readResponse(HttpEntity entity, ObjectReader reader1, ObjectReader reader2) throws IOException {
         if (entity == null) {
             return null;
@@ -343,7 +343,7 @@ public abstract class RemoteHttpService {
             }
         }
     }
-    
+
     public String getContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
         InputStreamReader reader = new InputStreamReader(content, "UTF8");
@@ -355,7 +355,7 @@ public abstract class RemoteHttpService {
         }
         return builder.toString();
     }
-    
+
     public VoidResponse readVoidResponse(HttpEntity entity) throws IOException {
         if (entity == null) {
             return null;
@@ -368,7 +368,7 @@ public abstract class RemoteHttpService {
             }
         }
     }
-    
+
     public <T> T executePostMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPost> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
         try {
@@ -380,7 +380,7 @@ public abstract class RemoteHttpService {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
-    
+
     public <T> T executePutMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpPut> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
         try {
@@ -392,7 +392,7 @@ public abstract class RemoteHttpService {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
-    
+
     public <T> T executeGetMethodWithRuntimeException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) {
         try {
@@ -404,7 +404,7 @@ public abstract class RemoteHttpService {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
-    
+
     protected <T> T executeGetMethodWithAuthorizationException(String uriSuffix, Consumer<URIBuilder> uriCustomizer, Consumer<HttpGet> requestCustomizer,
                     IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws AuthorizationException {
         try {
@@ -416,10 +416,10 @@ public abstract class RemoteHttpService {
             throw new AuthorizationException(e.getMessage(), e);
         }
     }
-    
+
     /**
      * Useful for setting proxied entities header
-     * 
+     *
      * @param callerPrincipal
      *            the caller principal
      * @return proxied entities
@@ -428,10 +428,10 @@ public abstract class RemoteHttpService {
         return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().subjectDN()).append('>'))
                         .collect(Collectors.joining());
     }
-    
+
     /**
      * Useful for setting proxied issuers header
-     * 
+     *
      * @param callerPrincipal
      *            the caller principal
      * @return proxied entities
@@ -440,131 +440,131 @@ public abstract class RemoteHttpService {
         return callerPrincipal.getProxiedUsers().stream().map(u -> new StringBuilder().append('<').append(u.getDn().issuerDN()).append('>'))
                         .collect(Collectors.joining());
     }
-    
+
     protected String serviceHost() {
         return config.getServiceHost();
     }
-    
+
     protected int servicePort() {
         return config.getServicePort();
     }
-    
+
     protected String serviceURI() {
         return config.getServiceURI();
     }
-    
+
     protected boolean useSrvDns() {
         return config.isUseSrvDNS();
     }
-    
+
     protected List<String> srvDnsServers() {
         return config.getSrvDnsServers();
     }
-    
+
     protected int srvDnsPort() {
         return config.getSrvDnsPort();
     }
-    
+
     protected String serviceScheme() {
         return config.getServiceScheme();
     }
-    
+
     protected int maxConnections() {
         return config.getMaxConnections();
     }
-    
+
     protected int retryCount() {
         return config.getRetryCount();
     }
-    
+
     protected int unavailableRetryCount() {
         return config.getUnavailableRetryCount();
     }
-    
+
     protected int unavailableRetryDelay() {
         return config.getUnavailableRetryDelay();
     }
-    
+
     protected Counter retryCounter() {
         return config.getRetryCounter();
     }
-    
+
     protected Counter failureCounter() {
         return config.getFailureCounter();
     }
-    
+
     public void setUseSrvDNS(boolean useSrvDNS) {
         config.setUseSrvDNS(useSrvDNS);
     }
-    
+
     public void setSrvDnsServers(List<String> srvDnsServers) {
         config.setSrvDnsServers(srvDnsServers);
     }
-    
+
     public void setSrvDnsPort(int srvDnsPort) {
         config.setSrvDnsPort(srvDnsPort);
     }
-    
+
     public void setQueryServiceScheme(String queryServiceScheme) {
         config.setServiceScheme(queryServiceScheme);
     }
-    
+
     public void setQueryServiceHost(String queryServiceHost) {
         config.setServiceHost(queryServiceHost);
     }
-    
+
     public void setQueryServicePort(int queryServicePort) {
         config.setServicePort(queryServicePort);
     }
-    
+
     public void setQueryServiceURI(String queryServiceURI) {
         config.setServiceURI(queryServiceURI);
     }
-    
+
     public void setMaxConnections(int maxConnections) {
         config.setMaxConnections(maxConnections);
     }
-    
+
     public void setRetryCount(int retryCount) {
         config.setRetryCount(retryCount);
     }
-    
+
     public void setUnavailableRetryCount(int unavailableRetryCount) {
         config.setUnavailableRetryCount(unavailableRetryCount);
     }
-    
+
     public void setUnavailableRetryDelay(int unavailableRetryDelay) {
         config.setUnavailableRetryDelay(unavailableRetryDelay);
     }
-    
+
     public ResponseObjectFactory getResponseObjectFactory() {
         return responseObjectFactory;
     }
-    
+
     public void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
     }
-    
+
     public RemoteHttpServiceConfiguration getConfig() {
         return config;
     }
-    
+
     public void setConfig(RemoteHttpServiceConfiguration config) {
         this.config = config;
     }
-    
+
     private static class DatawaveRetryHandler extends DefaultHttpRequestRetryHandler {
         private final int unavailableRetryCount;
         private final int unavailableRetryDelay;
         private final Counter retryCounter;
-        
+
         public DatawaveRetryHandler(int retryCount, int unavailableRetryCount, int unavailableRetryDelay, Counter retryCounter) {
             super(retryCount, false, Arrays.asList(UnknownHostException.class, SSLException.class));
             this.unavailableRetryCount = unavailableRetryCount;
             this.unavailableRetryDelay = unavailableRetryDelay;
             this.retryCounter = retryCounter;
         }
-        
+
         @Override
         public boolean retryRequest(IOException exception, int executionCount, HttpContext context) {
             boolean shouldRetry = super.retryRequest(exception, executionCount, context);
@@ -584,17 +584,17 @@ public abstract class RemoteHttpService {
             return shouldRetry;
         }
     }
-    
+
     private static class DatawaveUnavailableRetryStrategy extends DefaultServiceUnavailableRetryStrategy {
         private final int maxRetries;
         private final Counter retryCounter;
-        
+
         private DatawaveUnavailableRetryStrategy(int maxRetries, int retryInterval, Counter retryCounter) {
             super(maxRetries, retryInterval);
             this.maxRetries = maxRetries;
             this.retryCounter = retryCounter;
         }
-        
+
         @Override
         public boolean retryRequest(HttpResponse response, int executionCount, HttpContext context) {
             // Note that a 404 can happen during service startup, so we want to retry.
@@ -606,9 +606,9 @@ public abstract class RemoteHttpService {
             return shouldRetry;
         }
     }
-    
+
     protected interface IOFunction<T> {
         T apply(HttpEntity entity) throws IOException;
     }
-    
+
 }

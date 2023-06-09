@@ -12,16 +12,16 @@ import java.util.function.Predicate;
  * can specify that only the first of the authorizations is matched (presumably the user).
  */
 public class AuthorizationsPredicate implements Predicate<Authorizations> {
-    
+
     // A visibility string to be matched against the auths being used for the query
     private ColumnVisibility visibility;
-    
+
     public AuthorizationsPredicate() {}
-    
+
     public AuthorizationsPredicate(String visibility) {
         setVisibility(visibility);
     }
-    
+
     @Override
     public boolean test(Authorizations auths) {
         // match the visibility against the auths.
@@ -33,15 +33,15 @@ public class AuthorizationsPredicate implements Predicate<Authorizations> {
             throw new RuntimeException(e);
         }
     }
-    
+
     public ColumnVisibility getVisibility() {
         return visibility;
     }
-    
+
     public void setVisibility(ColumnVisibility visibility) {
         this.visibility = visibility;
     }
-    
+
     public void setVisibility(String visibility) {
         setVisibility(new ColumnVisibility(visibility));
     }

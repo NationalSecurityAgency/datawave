@@ -25,78 +25,78 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
 public class RfileResource extends BatchResource {
-    
+
     private static final Logger log = Logger.getLogger(RfileResource.class);
-    
+
     Configuration conf;
-    
+
     protected RfileResource(AccumuloClient client) {
         super(client);
     }
-    
+
     public RfileResource(AccumuloResource copy) {
         super(copy);
     }
-    
+
     /**
      * Initializes the scanner resource
-     * 
+     *
      * @param auths
      *            the auths
      * @param tableName
      *            a table name
      * @throws TableNotFoundException
      *             if the table was not found
-     *             
+     *
      */
     @Override
     protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
         Preconditions.checkNotNull(tableName);
         Preconditions.checkArgument(null != currentRange && !currentRange.isEmpty());
-        
+
         // copy the appropriate variables.
         ranges = Lists.newArrayList(currentRange);
-        
+
         this.tableName = tableName;
-        
+
         this.auths = Sets.newHashSet(auths);
-        
+
         if (log.isTraceEnabled())
             log.trace("Creating scanner resource from " + tableName + " " + auths + " " + currentRange);
-        
+
         internalTimer = new StopWatch();
         internalTimer.start();
-        
+
         // let's pre-compute the hashcode.
         hashCode += new HashCodeBuilder().append(tableName).append(auths).append(ranges).toHashCode();
-        
+
         conf = new Configuration();
-        
+
         AccumuloClient client = getClient();
         if (client instanceof WrappedAccumuloClient) {
             client = ((WrappedAccumuloClient) client).getReal();
         }
-        
+
         Properties clientProperties = client.properties();
         final String instanceName = clientProperties.getProperty(ClientProperty.INSTANCE_NAME.getKey());
         final String zookeepers = clientProperties.getProperty(ClientProperty.INSTANCE_ZOOKEEPERS.getKey());
-        
+
         AccumuloHelper.setInstanceName(conf, instanceName);
         AccumuloHelper.setUsername(conf, client.whoami());
-        
+
         AccumuloHelper.setZooKeepers(conf, zookeepers);
         BulkInputFormat.setZooKeeperInstance(conf, instanceName, zookeepers);
-        
+
         conf.set(MultiRfileInputformat.CACHE_METADATA, "true");
-        
+
         baseScanner = new RfileScanner(client, conf, tableName, auths, 1);
         ((RfileScanner) baseScanner).setRanges(currentRange);
-        
+
     }
-    
+
     /**
      * Sets the option on this currently running resource.
-     * 
+     *
      * @param options
      *            the options to set
      * @return the current resource
@@ -104,7 +104,7 @@ public class RfileResource extends BatchResource {
     @Override
     public AccumuloResource setOptions(SessionOptions options) {
         super.setOptions(options);
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Setting Options");
         }
@@ -119,10 +119,10 @@ public class RfileResource extends BatchResource {
         }
         return this;
     }
-    
+
     @Override
     public String toString() {
-        
+
         //@formatter:off
         String builder = "RFileScanner" + " " +
                 "tableName=" + tableName + " " +
@@ -130,6 +130,6 @@ public class RfileResource extends BatchResource {
                 "ranges=" + ranges + " ";
         //@formatter:on
         return builder;
-        
+
     }
 }

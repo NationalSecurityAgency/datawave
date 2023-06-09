@@ -66,24 +66,24 @@ import org.apache.commons.jexl2.parser.TokenMgrError;
 
 /**
  * Does a pretty print out of a depth first traversal.
- * 
+ *
  */
 public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVisitor {
-    
+
     private interface Output {
         void writeLine(String line);
     }
-    
+
     private static class PrintStreamOutput implements Output {
         private final PrintStream ps;
-        
+
         public PrintStreamOutput(PrintStream ps) {
             this.ps = ps;
         }
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see PrintingVisitor.Output#writeLine(java.lang.String)
          */
         @Override
@@ -91,21 +91,21 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
             ps.println(line);
         }
     }
-    
+
     private static class StringListOutput implements Output {
         private final List<String> outputLines;
-        
+
         public StringListOutput() {
             outputLines = Lists.newArrayListWithCapacity(32);
         }
-        
+
         public List<String> getOutputLines() {
             return Collections.unmodifiableList(outputLines);
         }
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see PrintingVisitor.Output#writeLine(java.lang.String)
          */
         @Override
@@ -113,37 +113,37 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
             outputLines.add(line);
         }
     }
-    
+
     private static PrintStreamOutput newPrintStreamOutput(PrintStream ps) {
         return new PrintStreamOutput(ps);
     }
-    
+
     private static StringListOutput newStringListOutput() {
         return new StringListOutput();
-        
+
     }
-    
+
     private static final String PREFIX = "  ";
-    
+
     private int maxChildNodes;
     private Output output;
-    
+
     public PrintingVisitor() {
         this(0);
     }
-    
+
     public PrintingVisitor(int maxChildNodes) {
         this(maxChildNodes, new PrintStreamOutput(System.out));
     }
-    
+
     public PrintingVisitor(int maxChildNodes, Output output) {
         this.maxChildNodes = maxChildNodes;
         this.output = output;
     }
-    
+
     /**
      * Static method to run a depth-first traversal over the AST
-     * 
+     *
      * @param query
      *            JEXL query string
      * @throws ParseException
@@ -152,7 +152,7 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     public static void printQuery(String query) throws ParseException {
         // Instantiate a parser and visitor
         Parser parser = new Parser(new StringReader(";"));
-        
+
         // Parse the query
         try {
             printQuery(parser.parse(new StringReader(query), null));
@@ -160,17 +160,17 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
             throw new ParseException(e.getMessage());
         }
     }
-    
+
     /**
      * Print a representation of this AST
-     * 
+     *
      * @param query
      *            a node
      */
     public static void printQuery(JexlNode query) {
         printQuery(query, 0);
     }
-    
+
     /**
      * Print a representation of this AST
      *
@@ -181,11 +181,11 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      */
     public static void printQuery(JexlNode query, int maxChildNodes) {
         PrintingVisitor printer = new PrintingVisitor(maxChildNodes);
-        
+
         // visit() and get the root which is the root of a tree of Boolean Logic Iterator<Key>'s
         query.jjtAccept(printer, "");
     }
-    
+
     /**
      * Get a {@link java.lang.String} representation for this query string
      *
@@ -198,7 +198,7 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     public static String formattedQueryString(String query) throws ParseException {
         return formattedQueryString(query, 0);
     }
-    
+
     /**
      * Get a {@link java.lang.String} representation for this query string
      *
@@ -213,7 +213,7 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     public static String formattedQueryString(String query, int maxChildNodes) throws ParseException {
         // Instantiate a parser and visitor
         Parser parser = new Parser(new StringReader(";"));
-        
+
         // Parse the query
         try {
             return formattedQueryString(parser.parse(new StringReader(query), null), maxChildNodes);
@@ -221,7 +221,7 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
             throw new ParseException(e.getMessage());
         }
     }
-    
+
     /**
      * Get a {@link java.lang.String} representation for this AST
      *
@@ -232,7 +232,7 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     public static String formattedQueryString(JexlNode query) {
         return formattedQueryString(query, 0);
     }
-    
+
     /**
      * Get a {@link java.lang.String} representation for this AST
      *
@@ -248,14 +248,14 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         PrintStream output = new PrintStream(baos);
         output.println("");
-        
+
         PrintingVisitor printer = new PrintingVisitor(maxChildNodes, newPrintStreamOutput(output));
-        
+
         query.jjtAccept(printer, "");
-        
+
         return baos.toString();
     }
-    
+
     /**
      * Get a {@link java.util.List} of {@link java.lang.String} of each line that should be printed for this AST
      *
@@ -266,7 +266,7 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
     public static List<String> formattedQueryStringList(JexlNode query) {
         return formattedQueryStringList(query, 0);
     }
-    
+
     /**
      * Get a {@link java.util.List} of {@link java.lang.String} of each line that should be printed for this AST
      *
@@ -278,14 +278,14 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
      */
     public static List<String> formattedQueryStringList(JexlNode query, int maxChildNodes) {
         StringListOutput output = newStringListOutput();
-        
+
         PrintingVisitor printer = new PrintingVisitor(maxChildNodes, output);
-        
+
         query.jjtAccept(printer, "");
-        
+
         return output.getOutputLines();
     }
-    
+
     private void childrenAccept(SimpleNode node, ParserVisitor visitor, Object data) {
         if (maxChildNodes > 0 && node.jjtGetNumChildren() > maxChildNodes) {
             output.writeLine(data + "(Showing " + maxChildNodes + " of " + node.jjtGetNumChildren() + " child nodes)");
@@ -295,305 +295,305 @@ public class PrintingVisitor implements org.apache.commons.jexl2.parser.ParserVi
             node.childrenAccept(this, data);
         }
     }
-    
+
     public Object visit(SimpleNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTJexlScript node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTBlock node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTAmbiguous node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTIfStatement node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTWhileStatement node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTForeachStatement node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTAssignment node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTTernaryNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTOrNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTAndNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTBitwiseOrNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTBitwiseXorNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTBitwiseAndNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTEQNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTNENode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTLTNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTGTNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTLENode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTGENode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTERNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTNRNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTAdditiveNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTAdditiveOperator node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTMulNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTDivNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTModNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTUnaryMinusNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTBitwiseComplNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTNotNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTIdentifier node, Object data) {
         output.writeLine(data + node.toString() + ":" + node.image);
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTNullLiteral node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTTrueNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTFalseNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTStringLiteral node, Object data) {
         output.writeLine(data + node.toString() + ":" + node.image);
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTArrayLiteral node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTMapLiteral node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTMapEntry node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTEmptyFunction node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTSizeFunction node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTFunctionNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTMethodNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTSizeMethod node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTConstructorNode node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTArrayAccess node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTReference node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTReturnStatement node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTVar node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTNumberLiteral node, Object data) {
         output.writeLine(data + node.toString() + ":" + node.getLiteral());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
     public Object visit(ASTReferenceExpression node, Object data) {
         output.writeLine(data + node.toString());
         childrenAccept(node, this, data + PREFIX);
         return null;
     }
-    
+
 }

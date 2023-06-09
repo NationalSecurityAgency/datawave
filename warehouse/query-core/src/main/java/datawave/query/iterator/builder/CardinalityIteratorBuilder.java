@@ -5,7 +5,7 @@ import datawave.query.iterator.logic.IndexIteratorBridge;
 import org.apache.hadoop.io.Text;
 
 public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
-    
+
     @SuppressWarnings("unchecked")
     public IndexIteratorBridge build() {
         if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter)) {
@@ -36,5 +36,5 @@ public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
             throw new IllegalStateException(msg.toString());
         }
     }
-    
+
 }

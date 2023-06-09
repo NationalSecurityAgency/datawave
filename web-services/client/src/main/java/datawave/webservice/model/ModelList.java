@@ -14,80 +14,80 @@ import datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "ModelList")
 public class ModelList extends BaseResponse implements Serializable, HtmlProvider {
-    
+
     private String jqueryUri;
     private String dataTablesUri;
     private String modelTableName;
-    
+
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "Model Names";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[0, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
-    
+
     /**
      * Need empty constructor for serialization
      */
     public ModelList() {}
-    
+
     public ModelList(String jqueryUri, String datatablesUri, String modelTableName) {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
         this.modelTableName = modelTableName;
     }
-    
+
     @XmlElementWrapper(name = "ModelNames")
     @XmlElement(name = "ModelName")
     private HashSet<String> names = null;
-    
+
     public HashSet<String> getNames() {
         return names;
     }
-    
+
     public void setNames(HashSet<String> names) {
         this.names = names;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getTitle()
      */
     @Override
     public String getTitle() {
         return TITLE;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getPageHeader()
      */
     @Override
     public String getPageHeader() {
         return getTitle();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getHeadContent()
      */
     @Override
     public String getHeadContent() {
         return MessageFormat.format(DATA_TABLES_TEMPLATE, jqueryUri, dataTablesUri);
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getMainContent()
      */
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        
+
         if (this.getNames() == null || this.getNames().isEmpty()) {
             builder.append("No models available.");
         } else {
@@ -96,7 +96,7 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
             builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
             builder.append("<thead><tr><th>Model Name</th></tr></thead>");
             builder.append("<tbody>");
-            
+
             for (String name : this.getNames()) {
                 // highlight alternating rows
                 builder.append("<tr>");
@@ -112,5 +112,5 @@ public class ModelList extends BaseResponse implements Serializable, HtmlProvide
         }
         return builder.toString();
     }
-    
+
 }

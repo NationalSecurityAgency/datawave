@@ -13,11 +13,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 
 public class DateFunction extends JexlQueryFunction {
     private static final Set<String> COMMANDS = Sets.newHashSet("after", "before", "between");
-    
+
     public DateFunction() {
         super("date", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 2) {
@@ -47,7 +47,7 @@ public class DateFunction extends JexlQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         Iterator<String> param = getParameterList().iterator();
@@ -70,10 +70,10 @@ public class DateFunction extends JexlQueryFunction {
         f.append(')');
         return f.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new DateFunction();
     }
-    
+
 }

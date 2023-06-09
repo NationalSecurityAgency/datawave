@@ -8,12 +8,12 @@ import java.security.Principal;
 
 public interface ResponseEnricherBuilder {
     public ResponseEnricherBuilder withConfig(GenericQueryConfiguration config);
-    
+
     public ResponseEnricherBuilder withMarkingFunctions(MarkingFunctions functions);
-    
+
     public ResponseEnricherBuilder withResponseObjectFactory(ResponseObjectFactory factory);
-    
+
     public ResponseEnricherBuilder withPrincipal(Principal principal);
-    
+
     public ResponseEnricher build();
 }

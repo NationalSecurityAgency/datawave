@@ -54,22 +54,22 @@ public class QueryWebsocket {
     private static final String LOGIC_NAME = "logicName";
     private static final String ACTIVE_QUERY_FUTURE = "activeQueryFuture";
     private static final String ACTIVE_QUERY_ID = "activeQueryId";
-    
+
     private Logger log = LoggerFactory.getLogger(getClass());
-    
+
     @Inject
     private QueryExecutorBean queryExecutorBean;
-    
+
     @OnOpen
     public void openConnection(@PathParam("logic-name") String logicName, Session session) throws IOException {
         session.getUserProperties().put(LOGIC_NAME, logicName);
     }
-    
+
     @OnClose
     public void closeConnection(Session session) throws IOException {
         cancelActiveQuery(session);
     }
-    
+
     @OnMessage
     public void handleMessage(final Session session, QueryMessage message) {
         switch (message.getType()) {
@@ -81,7 +81,7 @@ public class QueryWebsocket {
                     CreateQueryMessage cqm = (CreateQueryMessage) message;
                     String logicName = (String) session.getUserProperties().get(LOGIC_NAME);
                     QueryObserver observer = new QueryObserver(log, session);
-                    
+
                     Long startTime = System.nanoTime();
                     Long loginTime = null;
                     try {
@@ -89,7 +89,7 @@ public class QueryWebsocket {
                     } catch (Exception e) {
                         // Ignore -- login time won't be available
                     }
-                    
+
                     Future<?> activeQuery = queryExecutorBean.executeAsync(logicName, cqm.getParameters(), startTime, loginTime, observer);
                     session.getUserProperties().put(ACTIVE_QUERY_FUTURE, activeQuery);
                 }
@@ -101,7 +101,7 @@ public class QueryWebsocket {
                 break;
         }
     }
-    
+
     protected void cancelActiveQuery(Session session) {
         Future<?> activeQuery = (Future<?>) session.getUserProperties().get(ACTIVE_QUERY_FUTURE);
         if (activeQuery != null && !activeQuery.isDone()) {
@@ -118,27 +118,27 @@ public class QueryWebsocket {
             }
         }
     }
-    
+
     private static class QueryObserver implements AsyncQueryStatusObserver {
         private Logger log;
         private Session session;
-        
+
         public QueryObserver(Logger log, Session session) {
             this.log = log;
             this.session = session;
         }
-        
+
         @Override
         public void queryCreated(GenericResponse<String> createQueryResponse) {
             session.getUserProperties().put(ACTIVE_QUERY_ID, createQueryResponse.getResult());
             session.getAsyncRemote().sendObject(new QueryResponseMessage(ResponseType.CREATED, createQueryResponse.getResult()));
         }
-        
+
         @Override
         public void queryResultsAvailable(BaseQueryResponse results) {
             session.getAsyncRemote().sendObject(new QueryResponseMessage(ResponseType.RESULTS, results));
         }
-        
+
         @Override
         public void queryCreateException(QueryException ex) {
             VoidResponse response = new VoidResponse();
@@ -151,22 +151,22 @@ public class QueryWebsocket {
                 throw new RuntimeException(e);
             }
         }
-        
+
         @Override
         public void queryException(QueryException ex) {
             session.getUserProperties().remove(ACTIVE_QUERY_ID);
             session.getUserProperties().remove(ACTIVE_QUERY_FUTURE);
-            
+
             VoidResponse response = new VoidResponse();
             response.addException(ex);
             session.getAsyncRemote().sendObject(new QueryResponseMessage(ResponseType.ERROR, response));
         }
-        
+
         @Override
         public void queryFinished(String queryId) {
             session.getUserProperties().remove(ACTIVE_QUERY_ID);
             session.getUserProperties().remove(ACTIVE_QUERY_FUTURE);
-            
+
             session.getAsyncRemote().sendObject(new QueryResponseMessage(ResponseType.COMPLETED));
             try {
                 session.close();

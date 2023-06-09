@@ -34,15 +34,15 @@ import org.apache.lucene.search.Query;
  */
 @Deprecated
 public class SlopQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         datawave.query.language.tree.QueryNode returnNode = null;
-        
+
         SlopQueryNode phraseSlopNode = (SlopQueryNode) queryNode;
-        
+
         datawave.query.language.tree.QueryNode node = (datawave.query.language.tree.QueryNode) phraseSlopNode.getChild()
                         .getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
         if (node instanceof AdjNode) {
             datawave.query.language.tree.QueryNode[] nodeArray = new datawave.query.language.tree.QueryNode[node.getChildren().size()];
             returnNode = new WithinNode(phraseSlopNode.getValue(), node.getChildren().toArray(nodeArray));
@@ -53,8 +53,8 @@ public class SlopQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new UnsupportedOperationException(node.getClass().getName() + " found as a child of a SlopQueryNode -- not implemented");
         }
-        
+
         return returnNode;
     }
-    
+
 }

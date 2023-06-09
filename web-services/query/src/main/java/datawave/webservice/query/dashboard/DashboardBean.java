@@ -48,7 +48,7 @@ import java.util.Set;
 @DeclareRoles("AuthorizedUser")
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DashboardBean {
-    
+
     private static final Logger log = Logger.getLogger(DashboardBean.class);
     private static final long MS_IN_12_HRS = 43_200_000;// timestamps seem to be about 11 hours behind
     private static final String TABLE_NAME_JMC = "DpsJmcLogs";
@@ -58,7 +58,7 @@ public class DashboardBean {
     private QueryExecutorBean queryExecutor;
     @Resource
     protected EJBContext ctx;
-    
+
     @Path("/dpsjmc/heartbeat")
     @GET
     public boolean getHeartbeat() throws Exception {
@@ -74,7 +74,7 @@ public class DashboardBean {
             }
         }
     }
-    
+
     @GET
     @Path("/stats")
     @Interceptors(ResponseInterceptor.class)
@@ -89,7 +89,7 @@ public class DashboardBean {
         } else {
             auths = AuthorizationsUtil.buildAuthorizationString(principal.getAuthorizations());
         }
-        
+
         ExtJsResponse<DashboardSummary> summary = null;
         try {
             summary = DashboardQuery.createQuery(queryExecutor, auths, Date.from(start), Date.from(end), Date.from(now));
@@ -101,41 +101,41 @@ public class DashboardBean {
                 queryExecutor.close(summary.getQueryId());
             }
         }
-        
+
         return summary;
     }
-    
+
     private DatawavePrincipal getPrincipal() {
         Principal p = ctx.getCallerPrincipal();
-        
+
         if (p instanceof DatawavePrincipal) {
             return (DatawavePrincipal) p;
         }
-        
+
         log.warn("Principal is not of the correct type");
-        
+
         return null;
     }
-    
+
     private Set<Authorizations> getAuths() {
         DatawavePrincipal dp = getPrincipal();
         Set<Authorizations> auths = new HashSet<>();
-        
+
         for (Collection<String> cbAuths : dp.getAuthorizations()) {
             auths.add(new Authorizations(cbAuths.toArray(new String[cbAuths.size()])));
         }
-        
+
         return auths;
     }
-    
+
     /**
      * Create scanner for last 60 minutes of logs.
      *
      * @param accumuloClient
      *            the {@link AccumuloClient} to use when creating scanners
-     *            
+     *
      * @return a {@link Scanner} that will only scan over the last 60 minutes of logs
-     *            
+     *
      * @throws TableNotFoundException
      *             if the table is not found
      */
@@ -149,7 +149,7 @@ public class DashboardBean {
         scanner.setRange(range);
         return scanner;
     }
-    
+
     private AccumuloClient createClient() throws Exception {
         Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
         return connectionFactory.getClient(AccumuloConnectionFactory.Priority.LOW, trackingMap);

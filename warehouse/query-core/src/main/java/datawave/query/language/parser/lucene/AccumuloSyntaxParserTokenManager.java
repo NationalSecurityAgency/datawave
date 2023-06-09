@@ -14,11 +14,11 @@ package datawave.query.language.parser.lucene;
 
 public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserConstants {
     public java.io.PrintStream debugStream = System.out;
-    
+
     public void setDebugStream(java.io.PrintStream ds) {
         debugStream = ds;
     }
-    
+
     private final int jjStopStringLiteralDfa_2(int pos, long active0) {
         switch (pos) {
             case 0:
@@ -42,17 +42,17 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 return -1;
         }
     }
-    
+
     private final int jjStartNfa_2(int pos, long active0) {
         return jjMoveNfa_2(jjStopStringLiteralDfa_2(pos, active0), pos + 1);
     }
-    
+
     private final int jjStopAtPos(int pos, int kind) {
         jjmatchedKind = kind;
         jjmatchedPos = pos;
         return pos + 1;
     }
-    
+
     private final int jjStartNfaWithStates_2(int pos, int kind, int state) {
         jjmatchedKind = kind;
         jjmatchedPos = pos;
@@ -63,7 +63,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
         }
         return jjMoveNfa_2(state, pos + 1);
     }
-    
+
     private final int jjMoveStringLiteralDfa0_2() {
         switch (curChar) {
             case 40:
@@ -91,7 +91,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 return jjMoveNfa_2(0, 0);
         }
     }
-    
+
     private final int jjMoveStringLiteralDfa1_2(long active0) {
         try {
             curChar = input_stream.readChar();
@@ -116,7 +116,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
         }
         return jjStartNfa_2(0, active0);
     }
-    
+
     private final int jjMoveStringLiteralDfa2_2(long old0, long active0) {
         if (((active0 &= old0)) == 0L)
             return jjStartNfa_2(0, old0);
@@ -142,41 +142,41 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
         }
         return jjStartNfa_2(1, active0);
     }
-    
+
     private final void jjCheckNAdd(int state) {
         if (jjrounds[state] != jjround) {
             jjstateSet[jjnewStateCnt++] = state;
             jjrounds[state] = jjround;
         }
     }
-    
+
     private final void jjAddStates(int start, int end) {
         do {
             jjstateSet[jjnewStateCnt++] = jjnextStates[start];
         } while (start++ != end);
     }
-    
+
     private final void jjCheckNAddTwoStates(int state1, int state2) {
         jjCheckNAdd(state1);
         jjCheckNAdd(state2);
     }
-    
+
     private final void jjCheckNAddStates(int start, int end) {
         do {
             jjCheckNAdd(jjnextStates[start]);
         } while (start++ != end);
     }
-    
+
     private final void jjCheckNAddStates(int start) {
         jjCheckNAdd(jjnextStates[start]);
         jjCheckNAdd(jjnextStates[start + 1]);
     }
-    
+
     static final long[] jjbitVec0 = {0x1L, 0x0L, 0x0L, 0x0L};
     static final long[] jjbitVec1 = {0xfffefffffffffffeL, 0xffffffffffffffffL, 0xffffffffffffffffL, 0xffffffffffffffffL};
     static final long[] jjbitVec3 = {0x0L, 0x0L, 0xffffffffffffffffL, 0xffffffffffffffffL};
     static final long[] jjbitVec4 = {0xfffffffffffffffeL, 0xffffffffffffffffL, 0xffffffffffffffffL, 0xffffffffffffffffL};
-    
+
     private final int jjMoveNfa_2(int startState, int curPos) {
         int[] nextStates;
         int startsAt = 0;
@@ -711,11 +711,11 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
             }
         }
     }
-    
+
     private final int jjMoveStringLiteralDfa0_0() {
         return jjMoveNfa_0(0, 0);
     }
-    
+
     private final int jjMoveNfa_0(int startState, int curPos) {
         int[] nextStates;
         int startsAt = 0;
@@ -788,7 +788,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
             }
         }
     }
-    
+
     private final int jjStopStringLiteralDfa_1(int pos, long active0) {
         switch (pos) {
             case 0:
@@ -801,11 +801,11 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 return -1;
         }
     }
-    
+
     private final int jjStartNfa_1(int pos, long active0) {
         return jjMoveNfa_1(jjStopStringLiteralDfa_1(pos, active0), pos + 1);
     }
-    
+
     private final int jjStartNfaWithStates_1(int pos, int kind, int state) {
         jjmatchedKind = kind;
         jjmatchedPos = pos;
@@ -816,7 +816,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
         }
         return jjMoveNfa_1(state, pos + 1);
     }
-    
+
     private final int jjMoveStringLiteralDfa0_1() {
         switch (curChar) {
             case 93:
@@ -830,7 +830,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 return jjMoveNfa_1(0, 0);
         }
     }
-    
+
     private final int jjMoveStringLiteralDfa1_1(long active0) {
         try {
             curChar = input_stream.readChar();
@@ -849,7 +849,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
         }
         return jjStartNfa_1(0, active0);
     }
-    
+
     private final int jjMoveNfa_1(int startState, int curPos) {
         int[] nextStates;
         int startsAt = 0;
@@ -976,11 +976,11 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
             }
         }
     }
-    
+
     static final int[] jjnextStates = {67, 69, 70, 54, 55, 57, 2, 3, 5, 6, 39, 43, 44, 8, 9, 10, 11, 20, 21, 12, 13, 17, 27, 28, 15, 16, 10, 11, 18, 19, 20, 21,
             24, 18, 19, 24, 22, 11, 23, 20, 29, 35, 36, 37, 30, 35, 36, 37, 40, 19, 11, 20, 21, 41, 40, 19, 41, 45, 50, 51, 52, 46, 50, 51, 52, 63, 64, 29, 30,
             31, 33, 45, 46, 47, 48, 0, 1, 2, 4, 5,};
-    
+
     private static final boolean jjCanMove_0(int hiByte, int i1, int i2, long l1, long l2) {
         switch (hiByte) {
             case 48:
@@ -989,7 +989,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 return false;
         }
     }
-    
+
     private static final boolean jjCanMove_1(int hiByte, int i1, int i2, long l1, long l2) {
         switch (hiByte) {
             case 0:
@@ -1002,7 +1002,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 return false;
         }
     }
-    
+
     private static final boolean jjCanMove_2(int hiByte, int i1, int i2, long l1, long l2) {
         switch (hiByte) {
             case 0:
@@ -1013,7 +1013,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 return false;
         }
     }
-    
+
     public static final String[] jjstrLiteralImages = {"", null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
             "\50", "\51", "\72", "\136", null, null, null, null, "\133", "\173", null, null, "\135", "\175", null, null,};
     public static final String[] lexStateNames = {"Boost", "Range", "DEFAULT",};
@@ -1025,42 +1025,42 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
     private final int[] jjrounds = new int[71];
     private final int[] jjstateSet = new int[142];
     protected char curChar;
-    
+
     public AccumuloSyntaxParserTokenManager(CharStream stream) {
         input_stream = stream;
     }
-    
+
     public AccumuloSyntaxParserTokenManager(CharStream stream, int lexState) {
         this(stream);
         SwitchTo(lexState);
     }
-    
+
     public void ReInit(CharStream stream) {
         jjmatchedPos = jjnewStateCnt = 0;
         curLexState = defaultLexState;
         input_stream = stream;
         ReInitRounds();
     }
-    
+
     private final void ReInitRounds() {
         int i;
         jjround = 0x80000001;
         for (i = 71; i-- > 0;)
             jjrounds[i] = 0x80000000;
     }
-    
+
     public void ReInit(CharStream stream, int lexState) {
         ReInit(stream);
         SwitchTo(lexState);
     }
-    
+
     public void SwitchTo(int lexState) {
         if (lexState >= 3 || lexState < 0)
             throw new TokenMgrError("Error: Ignoring invalid lexical state : " + lexState + ". State unchanged.", TokenMgrError.INVALID_LEXICAL_STATE);
         else
             curLexState = lexState;
     }
-    
+
     protected Token jjFillToken() {
         Token t = Token.newToken(jjmatchedKind);
         t.kind = jjmatchedKind;
@@ -1072,20 +1072,20 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
         t.endColumn = input_stream.getEndColumn();
         return t;
     }
-    
+
     int curLexState = 2;
     int defaultLexState = 2;
     int jjnewStateCnt;
     int jjround;
     int jjmatchedPos;
     int jjmatchedKind;
-    
+
     public Token getNextToken() {
         int kind;
         Token specialToken = null;
         Token matchedToken;
         int curPos = 0;
-        
+
         EOFLoop: for (;;) {
             try {
                 curChar = input_stream.BeginToken();
@@ -1094,7 +1094,7 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
                 matchedToken = jjFillToken();
                 return matchedToken;
             }
-            
+
             switch (curLexState) {
                 case 0:
                     jjmatchedKind = 0x7fffffff;
@@ -1149,5 +1149,5 @@ public class AccumuloSyntaxParserTokenManager implements AcumuloSyntaxParserCons
             throw new TokenMgrError(EOFSeen, curLexState, error_line, error_column, error_after, curChar, TokenMgrError.LEXICAL_ERROR);
         }
     }
-    
+
 }

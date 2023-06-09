@@ -9,14 +9,14 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 
 public class Options extends JexlQueryFunction {
-    
+
     public Options() {
         super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<>());
     }
-    
+
     /**
      * query options are pairs of key/value. Ensure that the number of args is even
-     * 
+     *
      * @throws IllegalArgumentException
      *             for illegal arguments
      */
@@ -27,11 +27,11 @@ public class Options extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(QueryFunctions.OPTIONS_FUNCTION);
         if (parameterList.isEmpty()) {
             sb.append("()");
@@ -43,10 +43,10 @@ public class Options extends JexlQueryFunction {
             }
             sb.append(')');
         }
-        
+
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Options();

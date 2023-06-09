@@ -25,42 +25,42 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private static final Logger log = Logger.getLogger(TypeAttribute.class);
-    
+
     private Type<T> datawaveType;
-    
+
     protected TypeAttribute() {
         super(null, true);
     }
-    
+
     public TypeAttribute(Type<T> datawaveType, Key docKey, boolean toKeep) {
         super(docKey, toKeep);
         this.datawaveType = datawaveType;
     }
-    
+
     @Override
     public long sizeInBytes() {
         return ObjectSizeOf.Sizer.getObjectSize(datawaveType) + super.sizeInBytes(4);
         // 4 for datawaveType reference
     }
-    
+
     public Type<T> getType() {
         return this.datawaveType;
     }
-    
+
     @Override
     public Object getData() {
         return getType();
     }
-    
+
     @Override
     public void write(DataOutput out) throws IOException {
         write(out, false);
     }
-    
+
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         WritableUtils.writeString(out, datawaveType.getClass().toString());
@@ -68,7 +68,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         WritableUtils.writeString(out, datawaveType.getDelegateAsString());
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
-    
+
     @Override
     public void readFields(DataInput in) throws IOException {
         try {
@@ -83,40 +83,40 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         this.datawaveType.setDelegateFromString(WritableUtils.readString(in));
         this.toKeep = WritableUtils.readVInt(in) != 0;
     }
-    
+
     @Override
     public int compareTo(TypeAttribute<T> other) {
         int cmp = datawaveType.compareTo(other.getType());
-        
+
         if (0 == cmp) {
             // Compare the ColumnVisibility as well
             return this.compareMetadata(other);
         }
-        
+
         return cmp;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (null == o) {
             return false;
         }
-        
+
         if (o instanceof TypeAttribute) {
             TypeAttribute other = (TypeAttribute) o;
             return this.getType().equals(other.getType()) && (0 == this.compareMetadata(other));
         }
-        
+
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
         hcb.append(datawaveType.getDelegateAsString()).append(super.hashCode());
         return hcb.toHashCode();
     }
-    
+
     @Override
     public Collection<ValueTuple> visit(Collection<String> fieldNames, DatawaveJexlContext context) {
         if (this.datawaveType instanceof OneToManyNormalizerType) {
@@ -128,12 +128,12 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
         return FunctionalSet.singleton(new ValueTuple(fieldNames, this.datawaveType, datawaveType.normalize(), this));
     }
-    
+
     @Override
     public void write(Kryo kryo, Output output) {
         write(kryo, output, false);
     }
-    
+
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         output.writeString(datawaveType.getClass().getName());
@@ -141,7 +141,7 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         output.writeString(this.datawaveType.getDelegateAsString());
         output.writeBoolean(this.toKeep);
     }
-    
+
     @Override
     public void read(Kryo kryo, Input input) {
         try {
@@ -164,22 +164,22 @@ public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttrib
         }
         this.toKeep = input.readBoolean();
     }
-    
+
     private void setDatawaveType(String datawaveTypeString)
                     throws InstantiationException, IllegalAccessException, ClassNotFoundException, NoSuchMethodException, InvocationTargetException {
         this.datawaveType = (Type<T>) Class.forName(datawaveTypeString).getDeclaredConstructor().newInstance();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see Attribute#deepCopy()
      */
     @Override
     public TypeAttribute copy() {
         return new TypeAttribute(this.getType(), this.getMetadata(), this.isToKeep());
     }
-    
+
     @Override
     public String toString() {
         if (datawaveType.getDelegate() != null) {

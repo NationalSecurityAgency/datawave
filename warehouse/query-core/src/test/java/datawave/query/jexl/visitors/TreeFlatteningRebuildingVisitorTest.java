@@ -25,51 +25,51 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class TreeFlatteningRebuildingVisitorTest {
-    
+
     private final ASTValidator validator = new ASTValidator();
-    
+
     @Test
     public void dontFlattenASTDelayedPredicateAndTest() throws Exception {
         String query = "((_Delayed_ = true) && (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) && GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' && GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
         String expectedAll = "((_Delayed_ = true) && GEO == '1f36c71c71c71c71c7' && WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8') && GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' && GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
         assertResult(query, expectedAll, query);
     }
-    
+
     @Test
     public void testSingleTermExtraParens() throws ParseException {
         String original = "(((a)))";
         String expected = "a";
         assertResult(original, expected, original);
     }
-    
+
     @Test
     public void testConjunctionExtraParens() throws ParseException {
         String original = "a && (((((b)))))";
         String expected = "a && b";
         assertResult(original, expected, original);
     }
-    
+
     @Test
     public void testDisjunctionExtraParens() throws ParseException {
         String original = "a || (((((b)))))";
         String expected = "a || b";
         assertResult(original, expected, original);
     }
-    
+
     @Test
     public void testConjunction() throws ParseException {
         String original = "a && (b && c)";
         String expected = "a && b && c";
         assertResult(expected, expected, original);
     }
-    
+
     @Test
     public void testDisjunction() throws ParseException {
         String original = "a || (b || c)";
         String expected = "a || b || c";
         assertResult(expected, expected, original);
     }
-    
+
     @Test
     public void testConjunctionWithNestedExtraParens() throws ParseException {
         String original = "a && ((b && c || d || e))";
@@ -77,55 +77,55 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expectedAll = "a && ((b && c) || d || e)";
         assertResult(expected, expectedAll, original);
     }
-    
+
     @Test
     public void testDisjunctionWithNestedExtraParens() throws ParseException {
         String original = "a || ((b && c || d || e))";
         String expected = "a || (b && c) || d || e";
         assertResult(expected, expected, original);
     }
-    
+
     @Test
     public void testRange() throws ParseException {
         String original = "(a > 1 && a < 5)";
         String expected = "a > 1 && a < 5";
         assertResult(original, expected, original);
     }
-    
+
     @Test
     public void testRangeWithExtraParens() throws ParseException {
         String original = "(((((a > 1 && a < 5)))))";
         String expected = "a > 1 && a < 5";
         assertResult(original, expected, original);
     }
-    
+
     @Test
     public void testDisjunctionOfTwoRanges() throws ParseException {
         String original = "(a > 1 && a < 5) || (b > 1 && b < 5)";
         assertResult(original, original, original);
     }
-    
+
     @Test
     public void testDisjunctionOfTwoRangesWithExtraParens() throws ParseException {
         String original = "(((((a > 1 && a < 5))))) || ((b > 1 && b < 5))";
         String expected = "(a > 1 && a < 5) || (b > 1 && b < 5)";
         assertResult(original, expected, original);
     }
-    
+
     @Test
     public void testNegation() throws ParseException {
         String original = "! ! ! ! a";
         String expected = "!!!!a";
         assertResult(expected, expected, original);
     }
-    
+
     @Test
     public void testNestedNegation() throws ParseException {
         String original = "a || !((b && c))";
         String expected = "a || !(b && c)";
         assertResult(original, expected, original);
     }
-    
+
     /*
      * Test cases where no change is expected
      */
@@ -133,19 +133,19 @@ public class TreeFlatteningRebuildingVisitorTest {
     public void testFlattenWithNoChange() throws ParseException {
         String original = "a && b && c && d && (e || f || g || h)";
         assertResult(original, original, original);
-        
+
         original = "a && b && c || d";
         String expected = "(a && b && c) || d";
         assertResult(expected, expected, original);
-        
+
         original = "a && b && (c || d)";
         assertResult(original, original, original);
-        
+
         original = "a && b && (b && a || (d && c && a))";
         expected = "a && b && ((b && a) || (d && c && a))";
         assertResult(expected, expected, original);
     }
-    
+
     @Test
     public void flattenASTDelayedPredicateOrTest() throws Exception {
         String query = "((_Delayed_ = true) || (GEO == '1f36c71c71c71c71c7' && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))) || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
@@ -153,7 +153,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expectedAll = "(_Delayed_ = true) || (GEO == '1f36c71c71c71c71c7' && WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8') || GEO >= '1f36c71c71c71c71c7\uDBFF\uDFFF+AE0' || GEO < '1f36c71c71c71c71c8\uDBFF\uDFFF+bE8'";
         assertResult(expected, expectedAll, query);
     }
-    
+
     @Test
     public void depthNoStackTraceOrTest() throws Exception {
         final int numTerms = 10000;
@@ -165,7 +165,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(
                         new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser().parse(sb.toString()).toString()), null)));
     }
-    
+
     @Test
     public void multipleNestingTest() throws Exception {
         String query = "((a && (b && (c && d))) || b || (c || d || e || (f || g || (h || i || (((j || k)))))))";
@@ -173,7 +173,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expectedAll = "(a && b && c && d) || b || c || d || e || f || g || h || i || j || k";
         assertResult(expected, expectedAll, query);
     }
-    
+
     @Test
     public void multipleNestingMixedOpsTest() throws Exception {
         String query = "((a && (b && ((c1 || (c2 || c3)) && d))) || b || (c || d || e || (f || g || ((h1 && (h2 && h3)) || i || (((j || k)))))))";
@@ -181,50 +181,50 @@ public class TreeFlatteningRebuildingVisitorTest {
         String expectedAll = "(a && b && (c1 || c2 || c3) && d) || b || c || d || e || f || g || (h1 && h2 && h3) || i || j || k";
         assertResult(expected, expectedAll, query);
     }
-    
+
     @Test
     public void singleChildAndOrTest() {
         JexlNode eqNode = JexlNodeFactory.buildEQNode("FIELD", "value");
         JexlNode and1 = JexlNodeFactory.createUnwrappedAndNode(Collections.singleton(eqNode));
         JexlNode or1 = JexlNodeFactory.createUnwrappedOrNode(Collections.singleton(and1));
-        
+
         JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(or1);
-        
+
         assertEquals(ASTEQNode.class, flattened.getClass());
         assertEquals(2, flattened.jjtGetNumChildren());
         assertEquals(JexlStringBuildingVisitor.buildQuery(eqNode), JexlStringBuildingVisitor.buildQuery(flattened));
     }
-    
+
     @Test
     public void testWrappedUnionWithSingleChild() throws ParseException {
         // have to build this up manually. Creating an Or node via JexlNodeFactory#createOrNode is smart enough
         // to not wrap single children
         JexlNode eq = JexlNodeFactory.buildEQNode("FIELD", "value");
-        
+
         JexlNode union = new ASTOrNode(ParserTreeConstants.JJTORNODE);
         JexlNodes.children(union, eq);
-        
+
         JexlNode refExpr = JexlNodes.wrap(union);
         JexlNode ref = JexlNodes.makeRef(refExpr);
         ASTJexlScript script = JexlNodeFactory.createScript(ref);
-        
+
         JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(script);
-        
+
         assertEquals("(FIELD == 'value')", JexlStringBuildingVisitor.buildQueryWithoutParse(flattened));
     }
-    
+
     @Test
     public void testMarker() throws ParseException {
         String query = "((_Bounded_ = true) && (STATE >= 'e' && STATE <= 'r'))";
         String expected = "((_Bounded_ = true) && (STATE >= 'e' && STATE <= 'r'))";
         String expectedAll = "((_Bounded_ = true) && STATE >= 'e' && STATE <= 'r')";
         assertResult(expected, expectedAll, query);
-        
+
         query = "(CITY == 'london' || CITY == 'london-extra') && ((_Bounded_ = true) && (STATE >= 'e' && STATE <= 'r'))";
         expected = "(CITY == 'london' || CITY == 'london-extra') && ((_Bounded_ = true) && STATE >= 'e' && STATE <= 'r')";
         assertResult(query, expected, query);
     }
-    
+
     /**
      * Entry point. Asserts the original query string using both the 'flatten' and 'flattenAll' methods.
      *
@@ -241,7 +241,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         assertFlatten(expectedFlatten, original);
         assertFlatten(expectedFlattenAll, original, true);
     }
-    
+
     /**
      * Delegates to {@link #assertFlatten(String, String, boolean)}, where the boolean arg is false by default
      *
@@ -255,7 +255,7 @@ public class TreeFlatteningRebuildingVisitorTest {
     private void assertFlatten(String expected, String original) throws ParseException {
         assertFlatten(expected, original, false);
     }
-    
+
     /**
      * Runs 'flatten' or 'flattenAll' and asserts the result against the expected result
      *
@@ -271,17 +271,17 @@ public class TreeFlatteningRebuildingVisitorTest {
     private void assertFlatten(String expected, String original, boolean flattenAll) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
-        
+
         ASTJexlScript flattened;
         if (flattenAll) {
             flattened = TreeFlatteningRebuildingVisitor.flattenAll(originalScript);
         } else {
             flattened = TreeFlatteningRebuildingVisitor.flatten(originalScript);
         }
-        
+
         JexlNodeAssert.assertThat(flattened).isEqualTo(expectedScript).hasValidLineage();
         JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
-        
+
         try {
             assertTrue(validator.isValid(flattened));
             assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(flattened));
@@ -289,5 +289,5 @@ public class TreeFlatteningRebuildingVisitorTest {
             fail("failed additional validation");
         }
     }
-    
+
 }

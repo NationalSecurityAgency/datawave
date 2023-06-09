@@ -17,9 +17,9 @@ import java.lang.reflect.Proxy;
  * This uses proxying b/c implementing the whole interface was overkill for the current use case.
  */
 public class SimpleDataTypeHelper implements InvocationHandler {
-    
+
     private static Multimap<String,NormalizedContentInterface> fields;
-    
+
     /**
      * Register a new set of fields for instances of SimpleDataTypeHelpers to return.
      *
@@ -29,7 +29,7 @@ public class SimpleDataTypeHelper implements InvocationHandler {
     public static void registerFields(Multimap<String,NormalizedContentInterface> f) {
         fields = f;
     }
-    
+
     /**
      * Creates a new ingest helper
      *
@@ -39,7 +39,7 @@ public class SimpleDataTypeHelper implements InvocationHandler {
         ClassLoader cl = SimpleDataTypeHelper.class.getClassLoader();
         return (IngestHelperInterface) Proxy.newProxyInstance(cl, new Class[] {IngestHelperInterface.class}, new SimpleDataTypeHelper());
     }
-    
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         if (method.getName().equals("getEventFields")) {

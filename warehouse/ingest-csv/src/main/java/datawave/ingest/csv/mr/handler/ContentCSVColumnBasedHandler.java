@@ -11,12 +11,12 @@ import java.util.Map;
 import java.util.Set;
 
 public class ContentCSVColumnBasedHandler<KEYIN> extends ContentIndexingColumnBasedHandler<KEYIN> {
-    
+
     @Override
     public void setup(TaskAttemptContext context) {
         super.setup(context);
     }
-    
+
     @Override
     public AbstractContentIngestHelper getContentIndexingDataTypeHelper() {
         return (ExtendedCSVIngestHelper) helper;

@@ -62,25 +62,25 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class RemoteEventQueryLogicHttpTest {
-    
+
     private static final int keysize = 2048;
-    
+
     private static final String commonName = "cn=www.test.us";
     private static final String alias = "tomcat";
     private static final char[] keyPass = "changeit".toCharArray();
     private static final String query = "Grinning\uD83D\uDE00Face";
-    
+
     private X500Name x500Name;
     RemoteEventQueryLogic logic = new RemoteEventQueryLogic();
-    
+
     private static final int PORT = 0;
-    
+
     private HttpServer server;
-    
+
     volatile int nextCalls = 0;
-    
+
     private volatile String content = null;
-    
+
     private void setContent(InputStream content) throws IOException {
         StringBuilder builder = new StringBuilder();
         InputStreamReader reader = new InputStreamReader(content, "UTF8");
@@ -98,7 +98,7 @@ public class RemoteEventQueryLogicHttpTest {
             }
         }
     }
-    
+
     @Before
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
@@ -117,17 +117,17 @@ public class RemoteEventQueryLogicHttpTest {
                         start, until, x500Name, subPubKeyInfo);
         ContentSigner signer = new JcaContentSignerBuilder("SHA256WithRSA").setProvider(new BouncyCastleProvider()).build(keypair.getPrivate());
         final X509CertificateHolder holder = builder.build(signer);
-        
+
         chain[0] = new JcaX509CertificateConverter().setProvider(new BouncyCastleProvider()).getCertificate(holder);
-        
+
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
         server.setExecutor(null);
         server.start();
-        
+
         UUID uuid = UUID.randomUUID();
         GenericResponse<String> createResponse = new GenericResponse<String>();
         createResponse.setResult(uuid.toString());
-        
+
         HttpHandler createHandler = new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
@@ -139,22 +139,22 @@ public class RemoteEventQueryLogicHttpTest {
                 exchange.close();
             }
         };
-        
+
         DefaultEventQueryResponse response1 = new DefaultEventQueryResponse();
         DefaultEvent event1 = new DefaultEvent();
         event1.setFields(Collections.singletonList(new DefaultField("FOO1", "FOO|BAR", new HashMap(), -1L, "FOOBAR1")));
         response1.setEvents(Collections.singletonList(event1));
         response1.setReturnedEvents(1L);
-        
+
         DefaultEventQueryResponse response2 = new DefaultEventQueryResponse();
         DefaultEvent event2 = new DefaultEvent();
         event1.setFields(Collections.singletonList(new DefaultField("FOO2", "FOO|BAR", new HashMap(), -1L, "FOOBAR2")));
         response2.setEvents(Collections.singletonList(event1));
         response2.setReturnedEvents(1L);
-        
+
         DefaultEventQueryResponse response3 = new DefaultEventQueryResponse();
         response3.setReturnedEvents(0L);
-        
+
         HttpHandler nextHandler = new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
@@ -168,10 +168,10 @@ public class RemoteEventQueryLogicHttpTest {
                 exchange.close();
             }
         };
-        
+
         VoidResponse closeResponse = new VoidResponse();
         closeResponse.addMessage(uuid.toString() + " closed.");
-        
+
         HttpHandler closeHandler = new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
@@ -182,11 +182,11 @@ public class RemoteEventQueryLogicHttpTest {
                 exchange.close();
             }
         };
-        
+
         server.createContext("/DataWave/Query/TestQuery/create", createHandler);
         server.createContext("/DataWave/Query/" + uuid.toString() + "/next", nextHandler);
         server.createContext("/DataWave/Query/" + uuid.toString() + "/close", closeHandler);
-        
+
         // create a remote event query logic that has our own server behind it
         RemoteQueryServiceImpl remote = new RemoteQueryServiceImpl();
         remote.setQueryServiceURI("/DataWave/Query/");
@@ -197,18 +197,18 @@ public class RemoteEventQueryLogicHttpTest {
         remote.setObjectMapperDecorator(new DefaultMapperDecorator());
         remote.setResponseObjectFactory(new DefaultResponseObjectFactory());
         remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privKey, keyPass, chain));
-        
+
         logic.setRemoteQueryService(remote);
         logic.setRemoteQueryLogic("TestQuery");
     }
-    
+
     @After
     public void after() {
         if (server != null) {
             server.stop(0);
         }
     }
-    
+
     @Test
     public void testRemoteQuery() throws Exception {
         logic.setPrincipal(new DatawavePrincipal(commonName));
@@ -216,7 +216,7 @@ public class RemoteEventQueryLogicHttpTest {
         settings.setQuery(query);
         GenericQueryConfiguration config = logic.initialize(null, settings, null);
         logic.setupQuery(config);
-        
+
         Iterator<EventBase> t = logic.iterator();
         List<EventBase> events = new ArrayList();
         while (t.hasNext()) {
@@ -226,5 +226,5 @@ public class RemoteEventQueryLogicHttpTest {
         assertNotNull(content);
         assertEquals(query, content);
     }
-    
+
 }

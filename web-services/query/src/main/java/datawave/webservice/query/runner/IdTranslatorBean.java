@@ -66,33 +66,33 @@ import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class IdTranslatorBean {
-    
+
     @Inject
     private QueryExecutorBean queryExecutor;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private IdTranslatorConfiguration idTranslatorConfiguration;
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     private String columnVisibility = null;
     private Date beginDate = null;
     private static final String ID_TRANS_LOGIC = "IdTranslationQuery";
     private static final String ID_TRANS_TLD_LOGIC = "IdTranslationTLDQuery";
-    
+
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
+
     private Map<String,UUIDType> uuidTypes = Collections.synchronizedMap(new HashMap<>());
-    
+
     @PostConstruct
     public void init() {
         this.columnVisibility = idTranslatorConfiguration.getColumnVisibility();
-        
+
         // Populate the UUIDType map
         final List<UUIDType> types = idTranslatorConfiguration.getUuidTypes();
         this.uuidTypes.clear();
@@ -103,7 +103,7 @@ public class IdTranslatorBean {
                 }
             }
         }
-        
+
         // Assign the begin date
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
         sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -113,7 +113,7 @@ public class IdTranslatorBean {
             this.log.error(e.getMessage(), e);
         }
     }
-    
+
     /**
      * Get one or more ID(s), if any, that correspond to the given ID. This method only returns the first page, so set pagesize appropriately. Since the
      * underlying query is automatically closed, callers are NOT expected to invoke the <b>/{id}/next</b> or <b>/{id}/close</b> endpoints.
@@ -141,7 +141,7 @@ public class IdTranslatorBean {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *                 
+     *
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -156,7 +156,7 @@ public class IdTranslatorBean {
                     @QueryParam("pageTimeout") @DefaultValue("-1") int pageTimeout, @QueryParam("systemFrom") String systemFrom,
                     @QueryParam("dataSetType") String dataSetType, @QueryParam("purpose") String purpose, @QueryParam("parentAuditId") String parentAuditId,
                     @QueryParam("TLDonly") @DefaultValue("true") String TLDonly) {
-        
+
         String queryId = null;
         BaseQueryResponse response;
         try {
@@ -169,12 +169,12 @@ public class IdTranslatorBean {
             }
         }
     }
-    
+
     /**
      * Get the ID(s), if any, associated with the specified ID list. Because this endpoint may return multiple pages, callers are expected to invoke the
      * <b>/{id}/next</b> endpoint until receiving an HTTP 204 status, and then invoke the <b>/{id}/close</b> endpoint. Failure to invoke such endpoints prevents
      * the system from cleaning up and releasing valuable resources in an efficient manner.
-     * 
+     *
      * @param idList
      *            - Comma separated list of IDs for which to return related IDs.
      *            "13383f57-45dc-4709-934a-363117e7c473,6ea02cb3-644c-4c2e-9739-76322dfb477b"(@Required)
@@ -191,7 +191,7 @@ public class IdTranslatorBean {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *                 
+     *
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
@@ -205,13 +205,13 @@ public class IdTranslatorBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public BaseQueryResponse translateIDs(@FormParam("idList") String idList, @FormParam("pagesize") @DefaultValue("100") int pagesize,
                     @FormParam("pageTimeout") @DefaultValue("-1") int pageTimeout, @FormParam("TLDonly") @DefaultValue("true") String TLDonly) {
-        
+
         return submitTranslationQuery(idList, pagesize, pageTimeout, TLDonly);
     }
-    
+
     private String buildQuery(String ids) {
         StringBuilder query = new StringBuilder();
-        
+
         String idArray[] = ids.split(",");
         for (String id : idArray) {
             // Build the query by explicitly searching for all the configured ID types
@@ -224,27 +224,27 @@ public class IdTranslatorBean {
         }
         return query.toString();
     }
-    
+
     private BaseQueryResponse submitTranslationQuery(String ids, int pagesize, int pageTimeout, String TLDonly) {
-        
+
         String queryName = UUID.randomUUID().toString();
         String parameters = "query.syntax:LUCENE";
         Date endDate = DateUtils.addDays(new Date(), 2);
         Date expirationDate = new Date(endDate.getTime() + 1000 * 60 * 60);
-        
+
         String query = buildQuery(ids);
-        
+
         String logicName = null;
         if (TLDonly.equalsIgnoreCase("true")) {
             logicName = ID_TRANS_TLD_LOGIC;
         } else {
             logicName = ID_TRANS_LOGIC;
         }
-        
+
         // Use the user's full authorizations when creating the query. Note that this will be ignored by the query logic, but we need
         // to pass a valid subset of the user's auths to even create the query.
         String auths = getAuths(logicName, ctx.getCallerPrincipal());
-        
+
         MultivaluedMap<String,String> p = new MultivaluedMapImpl<>();
         p.putAll(idTranslatorConfiguration.optionalParamsToMap());
         p.putSingle(QueryParameters.QUERY_LOGIC_NAME, logicName);
@@ -266,10 +266,10 @@ public class IdTranslatorBean {
         p.putSingle(QueryParameters.QUERY_TRACE, Boolean.toString(false));
         // Put the original parameter string into the map also
         p.putSingle(QueryParameters.QUERY_PARAMS, parameters);
-        
+
         return queryExecutor.createQueryAndNext(logicName, p);
     }
-    
+
     private String getAuths(String logicName, Principal principal) {
         String userAuths;
         try {
@@ -284,5 +284,5 @@ public class IdTranslatorBean {
         }
         return userAuths;
     }
-    
+
 }

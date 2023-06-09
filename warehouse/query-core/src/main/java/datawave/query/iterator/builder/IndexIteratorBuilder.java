@@ -18,71 +18,71 @@ import java.util.Set;
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
  * traversing a subtree in a query. This allows arbitrary ordering of the arguments.
- * 
+ *
  */
 public class IndexIteratorBuilder extends AbstractIteratorBuilder {
-    
+
     protected SortedKeyValueIterator<Key,Value> source;
     protected TypeMetadata typeMetadata;
     protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected FieldIndexAggregator keyTform;
     protected Set<String> fieldsToAggregate;
-    
+
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
     }
-    
+
     public TypeMetadata getTypeMetadata() {
         return typeMetadata;
     }
-    
+
     public void setTypeMetadata(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
     }
-    
+
     public Set<String> getFieldsToAggregate() {
         return fieldsToAggregate;
     }
-    
+
     public void setFieldsToAggregate(Set<String> fields) {
         fieldsToAggregate = fields;
     }
-    
+
     public Predicate<Key> getDatatypeFilter() {
         return datatypeFilter;
     }
-    
+
     public void setDatatypeFilter(Predicate<Key> datatypeFilter) {
         this.datatypeFilter = datatypeFilter;
     }
-    
+
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
-    
+
     public void setTimeFilter(TimeFilter timeFilter) {
         this.timeFilter = timeFilter;
     }
-    
+
     public FieldIndexAggregator getKeyTransform() {
         return keyTform;
     }
-    
+
     public void setKeyTransform(FieldIndexAggregator keyTform) {
         this.keyTform = keyTform;
     }
-    
+
     public IndexIterator newIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
         return IndexIterator.builder(field, value, source).withTimeFilter(timeFilter).withTypeMetadata(typeMetadata).shouldBuildDocument(buildDocument)
                         .withDatatypeFilter(datatypeFilter).withAggregation(aggregator).build();
     }
-    
+
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
         if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter, getField(), getNode())) {
-            
+
             boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
             if (forceDocumentBuild) {
                 canBuildDocument = true;
@@ -116,7 +116,7 @@ public class IndexIteratorBuilder extends AbstractIteratorBuilder {
             throw new IllegalStateException(msg.toString());
         }
     }
-    
+
     public static boolean notNull(Object... os) {
         for (Object o : os) {
             if (o == null) {

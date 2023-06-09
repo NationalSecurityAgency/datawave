@@ -36,55 +36,55 @@ import com.google.common.collect.HashMultimap;
  */
 public class EdgeFilterIterator extends Filter {
     public static final Logger log = Logger.getLogger(EdgeFilterIterator.class);
-    
+
     public static final String JEXL_OPTION = "jexlQuery";
     public static final String PROTOBUF_OPTION = "protobuffFormat";
     public static final String INCLUDE_STATS_OPTION = "includeStats";
     public static final String JEXL_STATS_OPTION = "jexlStatsQuery";
     public static final String PREFILTER_WHITELIST = "prefilter";
-    
+
     private static final JexlEngine jexlEngine = new JexlEngine();
-    
+
     private boolean protobuffFormat;
     private boolean includeStatsEdges;
     private Expression expression = null;
     private Expression statsExpression = null;
     private JexlContext ctx = new MapContext();
-    
+
     private HashMultimap<String,String> preFilterValues;
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         EdgeFilterIterator result = (EdgeFilterIterator) super.deepCopy(env);
         result.protobuffFormat = this.protobuffFormat;
         result.expression = this.expression;
         result.preFilterValues = this.preFilterValues;
-        
+
         return result;
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions io = super.describeOptions();
-        
+
         io.addNamedOption(JEXL_OPTION, "The JEXL query string to evaulate edges against.");
         io.setName("edgeJexlFilter");
         io.setDescription("EdgeFilterIterator evaluates arbitrary JEXL expressions against edge table keys.");
-        
+
         io.addNamedOption(PROTOBUF_OPTION, "Use protocol buffer edge table format?");
         io.setDescription("Determines which edge table format this iterator is supposed to be iterating over.");
-        
+
         io.addNamedOption(INCLUDE_STATS_OPTION, "Include stats edges in the query result?");
         io.setDescription("Will automatically return any stats edges");
-        
+
         io.addNamedOption(JEXL_STATS_OPTION, "Query string to evaluate stats edges against");
         io.setDescription("Evalueates arbitrary JEXL expressions agains stats edge table keys");
-        
+
         io.addNamedOption(PREFILTER_WHITELIST, "Serialized Hashmultimap of fieldname:fieldvalue for prefiltering.");
         io.setDescription("Used to filter keys prior to building a jexl context.");
         return io;
     }
-    
+
     /**
      * Sets up the jexl context with the terms to evaluate against.
      *
@@ -98,7 +98,7 @@ public class EdgeFilterIterator extends Filter {
      *            mapping of key components
      */
     private void setupContext(JexlContext ctx, Map<FieldKey,String> keyComponents) {
-        
+
         String source = keyComponents.get(FieldKey.EDGE_SOURCE);
         String sink = keyComponents.get(FieldKey.EDGE_SINK);
         String edgeType = keyComponents.get(FieldKey.EDGE_TYPE);
@@ -107,7 +107,7 @@ public class EdgeFilterIterator extends Filter {
         String edgeAttribute2 = keyComponents.get(FieldKey.EDGE_ATTRIBUTE2);
         String edgeAttribute3 = keyComponents.get(FieldKey.EDGE_ATTRIBUTE3);
         String edgeDate = keyComponents.get(FieldKey.DATE);
-        
+
         // Convert all values to lowercase.
         if (null != source)
             source = source.toLowerCase();
@@ -125,7 +125,7 @@ public class EdgeFilterIterator extends Filter {
             edgeAttribute3 = edgeAttribute3.toLowerCase();
         if (null != edgeDate)
             edgeDate = edgeDate.toLowerCase();
-        
+
         ctx.set(EdgeModelAware.EDGE_SOURCE.toLowerCase(), source);
         ctx.set(EdgeModelAware.EDGE_SINK.toLowerCase(), sink);
         ctx.set(EdgeModelAware.EDGE_TYPE.toLowerCase(), edgeType);
@@ -135,7 +135,7 @@ public class EdgeFilterIterator extends Filter {
         ctx.set(EdgeModelAware.EDGE_ATTRIBUTE3.toLowerCase(), edgeAttribute3);
         ctx.set(EdgeModelAware.DATE.toLowerCase(), edgeDate);
     }
-    
+
     /**
      * Method to setup the jexl query expression from the iterator options for evaulation.
      *
@@ -151,27 +151,27 @@ public class EdgeFilterIterator extends Filter {
         // to stay consistent with the rest of the query engine, support case-insensitive boolean operators.
         String caseFixQuery = jexl.toLowerCase();
         expression = jexlEngine.createExpression(caseFixQuery);
-        
+
         String protobuff = options.get(PROTOBUF_OPTION);
         if (null == protobuff) {
             throw new IllegalArgumentException("Must specify if this is a protocol buffer edge formatted table.");
         }
         protobuffFormat = Boolean.parseBoolean(protobuff);
-        
+
         String incldStats = options.get(INCLUDE_STATS_OPTION);
         if (null == incldStats) {
             throw new IllegalArgumentException("Must specify if stats edges should be returned.");
         }
         includeStatsEdges = Boolean.parseBoolean(incldStats);
-        
+
         String jexlStats = options.get(JEXL_STATS_OPTION);
-        
+
         if (jexlStats != null) {
             statsExpression = jexlEngine.createExpression(jexlStats.toLowerCase());
         }
-        
+
         String inPrefilter = options.get(PREFILTER_WHITELIST);
-        
+
         if (null != inPrefilter) {
             byte[] data = Base64.decodeBase64(inPrefilter);
             ObjectInputStream ois = null;
@@ -187,7 +187,7 @@ public class EdgeFilterIterator extends Filter {
             }
         }
     }
-    
+
     /**
      * Method to perform prefilter against a whitelist to see if we can quickly ignore the key
      *
@@ -212,10 +212,10 @@ public class EdgeFilterIterator extends Filter {
                 }
             }
         }
-        
+
         return retVal;
     }
-    
+
     @Override
     public void init(org.apache.accumulo.core.iterators.SortedKeyValueIterator<org.apache.accumulo.core.data.Key,org.apache.accumulo.core.data.Value> source,
                     java.util.Map<java.lang.String,java.lang.String> options, org.apache.accumulo.core.iterators.IteratorEnvironment env)
@@ -223,7 +223,7 @@ public class EdgeFilterIterator extends Filter {
         super.init(source, options, env);
         initOptions(options);
     }
-    
+
     /**
      * For testing purposes only. Does nothing with super.
      *
@@ -238,7 +238,7 @@ public class EdgeFilterIterator extends Filter {
                     java.util.Map<java.lang.String,java.lang.String> options) throws java.io.IOException {
         initOptions(options);
     }
-    
+
     /**
      * Determines if the edge key satisfies the conditions expressed in the supplied JEXL query string.
      *
@@ -251,9 +251,9 @@ public class EdgeFilterIterator extends Filter {
     @Override
     public boolean accept(Key k, Value V) {
         boolean value = false;
-        
+
         Map<FieldKey,String> keyComponents = EdgeKeyUtil.dissasembleKey(k, protobuffFormat);
-        
+
         if (!prefilter(keyComponents)) {
             value = false;
         } else if (keyComponents.containsKey(FieldKey.STATS_EDGE)) {
@@ -271,7 +271,7 @@ public class EdgeFilterIterator extends Filter {
             setupContext(ctx, keyComponents);
             value = (boolean) expression.evaluate(ctx);
         }
-        
+
         return value;
     }
 }

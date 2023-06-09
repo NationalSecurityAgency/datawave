@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 
 /**
- * 
+ *
  */
 public class ISO_639_Codes {
     public static final Multimap<String,String> ISO_639_1 = ImmutableMultimap.<String,String> builder().put("aa", "AFAR").put("ab", "ABKHAZIAN")

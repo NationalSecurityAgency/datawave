@@ -21,7 +21,7 @@ import javax.ws.rs.ext.Provider;
 @Produces(MediaType.APPLICATION_JSON)
 public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
     private ObjectMapper mapper;
-    
+
     public JacksonContextResolver() {
         mapper = new ObjectMapper();
         mapper.enable(MapperFeature.USE_WRAPPER_NAME_AS_PROPERTY_NAME);
@@ -29,7 +29,7 @@ public class JacksonContextResolver implements ContextResolver<ObjectMapper> {
                         AnnotationIntrospector.pair(new JacksonAnnotationIntrospector(), new JaxbAnnotationIntrospector(mapper.getTypeFactory())));
         mapper.setSerializationInclusion(Include.NON_NULL);
     }
-    
+
     @Override
     public ObjectMapper getContext(Class<?> type) {
         return mapper;

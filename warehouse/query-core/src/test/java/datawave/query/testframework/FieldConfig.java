@@ -17,40 +17,40 @@ import java.util.Set;
  * >
  */
 public interface FieldConfig {
-    
+
     Set<String> getIndexFields();
-    
+
     void addIndexField(String field);
-    
+
     void removeIndexField(String field);
-    
+
     Set<String> getIndexOnlyFields();
-    
+
     void addIndexOnlyField(String field);
-    
+
     void removeIndexOnlyField(String field);
-    
+
     Set<String> getReverseIndexFields();
-    
+
     void addReverseIndexField(String field);
-    
+
     void removeReverseIndexField(String field);
-    
+
     Collection<Set<String>> getCompositeFields();
-    
+
     void addCompositeField(Set<String> fields);
-    
+
     void removeCompositeField(Set<String> field);
-    
+
     Collection<Set<String>> getVirtualFields();
-    
+
     void addVirtualField(Set<String> fields);
-    
+
     void removeVirtualField(Set<String> field);
-    
+
     Set<String> getMultiValueFields();
-    
+
     void addMultiValueField(String field);
-    
+
     void removeMultiValueField(String field);
 }

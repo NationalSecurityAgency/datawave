@@ -47,13 +47,13 @@ import java.util.Set;
  * precision to 0 will only use the normal precision for all calculations. Setting the sparse precision to 0 has not been tested.
  * <p>
  * Higher precision values translate to more buckets and thus higher memory utilization. The number of buckets that are allocated is defined by the equation:
- * 
+ *
  * <pre>
  *         buckets = 2 ** N   where N is the precision
  * </pre>
- * 
+ *
  * As the precision is increased, the error percentage decreases and can be modeled by the equation:
- * 
+ *
  * <pre>
  *         error percentage = 1.04 / sqrt(M)   where M is the number of buckets
  * </pre>
@@ -70,83 +70,83 @@ import java.util.Set;
  * </p>
  */
 public class StatsJob extends IngestJob {
-    
+
     // default log level for all classes
     static final Level DEFAULT_LOG_LEVEL = Level.INFO;
-    
+
     // default values used by both mapper and reducer
     // constants for hyperloglogplus
     static final int HYPERLOG_SPARSE_DEFAULT_VALUE = 24;
     static final int HYPERLOG_NORMAL_DEFAULT_VALUE = 24;
     static final String HYPERLOG_NORMAL_OPTION = "shardStats.hyperlog.normal";
     static final String HYPERLOG_SPARSE_OPTION = "shardStats.hyperlog.sparse";
-    
+
     static final String OUTPUT_TABLE_NAME = "shardStats.table.name";
     static final String INPUT_TABLE_NAME = "shardStats.input.table";
     static final String STATS_JOB_LOG_LEVEL = "stats.job.log.level";
     static final String STATS_VISIBILITY = "shardStats.visibility";
-    
+
     // instance members
     private String inputTableName;
     private String outputTableName;
-    
+
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
         System.exit(ToolRunner.run(new Configuration(), new StatsJob(), args));
     }
-    
+
     @Override
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         Configuration parseConf = super.parseArguments(args, conf);
-        
+
         // force bulk job
         this.outputMutations = false;
         this.useMapOnly = false;
-        
+
         if (null != parseConf) {
             parseStatsOptions(args, parseConf);
-            
+
             parseConf.setStrings(MultiRFileOutputFormatter.CONFIGURED_TABLE_NAMES, this.outputTableName);
-            
+
             this.mapper = StatsHyperLogMapper.class;
             this.inputFormat = MultiRfileInputformat.class;
         }
-        
+
         return parseConf;
     }
-    
+
     @Override
     protected void configureInputFormat(Job job, AccumuloHelper cbHelper, Configuration conf) throws Exception {
         BulkInputFormat.setZooKeeperInstance(conf, cbHelper.getInstanceName(), cbHelper.getZooKeepers());
-        
+
         // add the versioning iterator
         IteratorSetting cfg = new IteratorSetting(100, VersioningIterator.class);
         BulkInputFormat.addIterator(conf, cfg);
-        
+
         // get authorizations
         Authorizations auths;
         try (AccumuloClient client = cbHelper.newClient()) {
             SecurityOperations secOps = client.securityOperations();
             auths = secOps.getUserAuthorizations(cbHelper.getUsername());
         }
-        
+
         BulkInputFormat.setInputInfo(job, cbHelper.getUsername(), cbHelper.getPassword(), this.inputTableName, auths);
         final Set<Range> scanShards = calculateRanges(conf);
         BulkInputFormat.setRanges(job, scanShards);
-        
+
         super.configureInputFormat(job, cbHelper, conf);
     }
-    
+
     @Override
     protected void configureJob(Job job, Configuration conf, Path workDirPath, FileSystem outputFs) throws Exception {
         super.configureJob(job, conf, workDirPath, outputFs);
-        
+
         job.setReducerClass(StatsHyperLogReducer.class);
     }
-    
+
     /**
      * Processes the options for the Stats job.
-     * 
+     *
      * @param inArgs
      *            input arguments to stats job
      * @param conf
@@ -170,32 +170,32 @@ public class StatsJob extends IngestJob {
                 }
             }
         }
-        
+
         // validate required entries
         String vis = conf.get(STATS_VISIBILITY);
         if (null == vis) {
             throw new IllegalStateException("column visibility property (" + STATS_VISIBILITY + ") is not set");
         }
         log.info("column visibility (" + vis + ")");
-        
+
         this.inputTableName = conf.get(INPUT_TABLE_NAME);
         if (null == this.inputTableName) {
             throw new IllegalStateException("input table property (" + INPUT_TABLE_NAME + ") is not set");
         }
         log.info("input table(" + this.inputTableName + ")");
-        
+
         this.outputTableName = conf.get(OUTPUT_TABLE_NAME);
         if (null == this.outputTableName) {
             throw new IllegalStateException("output table property (" + OUTPUT_TABLE_NAME + ") is not set");
         }
         log.info("output table(" + this.outputTableName + ")");
     }
-    
+
     private Set<Range> calculateRanges(Configuration conf) {
         final Set<Range> ranges = new HashSet<>();
         String[] shardsAndDays = StringUtils.split(this.inputPaths, ',');
         this.inputPaths = "";
-        
+
         // for each datatype of interest
         log.info("using the following ranges");
         for (String shard : shardsAndDays) {
@@ -206,13 +206,13 @@ public class StatsJob extends IngestJob {
                 if (numShards < 0) {
                     throw new IllegalArgumentException("Cannot determine the number of shards. See: " + NumShards.class.getName());
                 }
-                
+
                 // create a range for each shard
                 for (int n = 0; n < numShards; n++) {
                     String shardNum = shard + '_' + n;
                     Key firstKey = new Key(shardNum, "fi" + '\0');
                     Key endKey = new Key(shardNum, "fi" + '\0' + Constants.MAX_UNICODE_STRING);
-                    
+
                     Range r = new Range(firstKey, true, endKey, false);
                     ranges.add(r);
                     log.info(r.toString());
@@ -220,16 +220,16 @@ public class StatsJob extends IngestJob {
             } else {
                 Key firstKey = new Key(shard, "fi" + '\0');
                 Key endKey = new Key(shard, "fi" + '\0' + Constants.MAX_UNICODE_STRING);
-                
+
                 Range r = new Range(firstKey, true, endKey, false);
                 ranges.add(r);
                 log.info(r.toString());
             }
         }
-        
+
         return ranges;
     }
-    
+
     /**
      * Helper enum to manage options with default values.
      */
@@ -241,18 +241,18 @@ public class StatsJob extends IngestJob {
         JOB_LOG_LEVEL(STATS_JOB_LOG_LEVEL, DEFAULT_LOG_LEVEL),
         HYPERLOG_NORMAL_PRECISION(HYPERLOG_NORMAL_OPTION, HYPERLOG_NORMAL_DEFAULT_VALUE),
         HYPERLOG_SPARSE_PRECISION(HYPERLOG_SPARSE_OPTION, HYPERLOG_SPARSE_DEFAULT_VALUE),
-        
+
         // mapper specific options
         MAPPER_INPUT_INTERVAL(StatsHyperLogMapper.STATS_MAPPER_INPUT_INTERVAL, StatsHyperLogMapper.DEFAULT_INPUT_INTERVAL),
         MAPPER_OUTPUT_INTERVAL(StatsHyperLogMapper.STATS_MAPPER_OUTPUT_INTERVAL, StatsHyperLogMapper.DEFAULT_OUTPUT_INTERVAL),
         MAPPER_LOG_LEVEL(StatsHyperLogMapper.STATS_MAPPER_LOG_LEVEL, DEFAULT_LOG_LEVEL),
-        
+
         // reducer specific options
         MIN_COUNT(StatsHyperLogReducer.STATS_MIN_COUNT, StatsHyperLogReducer.DEFAULT_MIN_COUNT),
         REDUCER_COUNTS(StatsHyperLogReducer.STATS_REDUCER_COUNTS, false),
         REDUCER_VALUE_INTERVAL(StatsHyperLogReducer.STATS_REDUCER_VALUE_INTERVAL, StatsHyperLogReducer.DEFAULT_VALUE_INTERVAL),
         REDUCER_LOG_LEVEL(StatsHyperLogReducer.STATS_REDUCER_LOG_LEVEL, DEFAULT_LOG_LEVEL),;
-        
+
         static JobArg getOption(String option) {
             while (option.startsWith("-")) {
                 option = option.substring(1);
@@ -262,18 +262,18 @@ public class StatsJob extends IngestJob {
                     return opt;
                 }
             }
-            
+
             return null;
         }
-        
+
         private String key;
         private Object defaultValue;
-        
+
         JobArg(String kVal, Object dVal) {
             this.key = kVal;
             this.defaultValue = dVal;
         }
-        
+
         @Override
         public String toString() {
             // @formatter:off

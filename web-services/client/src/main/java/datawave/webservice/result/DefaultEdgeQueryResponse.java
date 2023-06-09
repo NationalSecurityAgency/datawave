@@ -32,48 +32,48 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements Serializable, TotalResultsAware, Message<DefaultEdgeQueryResponse> {
     private static final long serialVersionUID = -8080688956850811620L;
-    
+
     @XmlElement(name = "SecurityMarkings", nillable = false)
     private String securityMarkings;
-    
+
     @XmlElement(name = "TotalEvents")
     private Long totalEvents = null;
-    
+
     @XmlElementWrapper(name = "Edges")
     @XmlElement(name = "Edge")
     private List<DefaultEdge> edges = null;
-    
+
     public DefaultEdgeQueryResponse() {}
-    
+
     public DefaultEdgeQueryResponse(String securityMarkings, List<DefaultEdge> edges) {
         this.securityMarkings = securityMarkings;
         this.edges = new ArrayList<DefaultEdge>(edges);
     }
-    
+
     public String getSecurityMarkings() {
         return securityMarkings;
     }
-    
+
     public void setMarkings(Map<String,String> markings) {
         this.markings = markings;
         this.setSecurityMarkings(markings.get("security"));
     }
-    
+
     public Map<String,String> getMarkings() {
         return markings;
     }
-    
+
     public void setSecurityMarkings(String securityMarkings) {
         this.securityMarkings = securityMarkings;
     }
-    
+
     @Override
     public void addEdge(EdgeBase edge) {
         if (edges == null)
             edges = new ArrayList<DefaultEdge>();
         edges.add((DefaultEdge) edge);
     }
-    
+
     @Override
     public void setEdges(List<EdgeBase> entries) {
         if (entries == null || entries.isEmpty()) {
@@ -86,57 +86,57 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
             this.edges = edges;
         }
     }
-    
+
     @Override
     public List<? extends EdgeBase> getEdges() {
         return Collections.unmodifiableList(edges);
     }
-    
+
     public static Schema<DefaultEdgeQueryResponse> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<DefaultEdgeQueryResponse> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<DefaultEdgeQueryResponse> SCHEMA = new Schema<DefaultEdgeQueryResponse>() {
         // schema methods
-        
+
         public DefaultEdgeQueryResponse newMessage() {
             return new DefaultEdgeQueryResponse();
         }
-        
+
         public Class<DefaultEdgeQueryResponse> typeClass() {
             return DefaultEdgeQueryResponse.class;
         }
-        
+
         public String messageName() {
             return DefaultEdgeQueryResponse.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return DefaultEdgeQueryResponse.class.getName();
         }
-        
+
         public boolean isInitialized(DefaultEdgeQueryResponse message) {
             return true;
         }
-        
+
         public void writeTo(Output output, DefaultEdgeQueryResponse message) throws IOException {
-            
+
             if (message.getQueryId() != null) {
                 output.writeString(1, message.getQueryId(), false);
             }
-            
+
             if (message.getLogicName() != null) {
                 output.writeString(2, message.getLogicName(), false);
             }
-            
+
             output.writeUInt64(3, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -144,7 +144,7 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
                         output.writeString(4, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -152,10 +152,10 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
                         output.writeObject(5, exception, QueryExceptionType.getSchema(), true);
                 }
             }
-            
+
             if (message.securityMarkings != null)
                 output.writeString(6, message.securityMarkings, false);
-            
+
             if (message.edges != null) {
                 for (DefaultEdge edge : message.edges) {
                     if (edge != null)
@@ -163,7 +163,7 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, DefaultEdgeQueryResponse message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
             int number;
@@ -202,7 +202,7 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
             if (exceptions != null)
                 message.setExceptions(exceptions);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -223,12 +223,12 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("queryId", 1);
@@ -240,12 +240,12 @@ public class DefaultEdgeQueryResponse extends EdgeQueryResponseBase implements S
             fieldMap.put("edges", 7);
         }
     };
-    
+
     @Override
     public void setTotalResults(long totalResults) {
         this.totalEvents = totalResults;
     }
-    
+
     @Override
     public long getTotalResults() {
         return totalEvents == null ? -1 : totalEvents;

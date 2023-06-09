@@ -13,12 +13,12 @@ import com.google.common.collect.Multimap;
 
 /**
  * A simple context writer that simply passes the key and value directly to the context.
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class BulkContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
-    
+
     @Override
     protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
                     throws IOException, InterruptedException {
@@ -26,5 +26,5 @@ public class BulkContextWriter extends AbstractContextWriter<BulkIngestKey,Value
             context.write(entry.getKey(), entry.getValue());
         }
     }
-    
+
 }

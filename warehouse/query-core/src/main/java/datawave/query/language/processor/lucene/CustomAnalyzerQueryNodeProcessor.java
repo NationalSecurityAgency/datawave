@@ -76,44 +76,44 @@ import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
  * processor encounters such a field in a node, it will not tokenize the text of that node and will set that node's field to an empty string so that downstream
  * processors will treat the node as if it is un-fielded.
  * <p>
- * 
+ *
  * @see Analyzer
  * @see TokenStream
  */
 public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
-    
+
     private static final Logger logger = Logger.getLogger(CustomAnalyzerQueryNodeProcessor.class);
-    
+
     /**
      * A tag added to query nodes that indicates that they have been processed by the {@link CustomAnalyzerQueryNodeProcessor} and should not be processed if
      * visited a second time.
      */
     private static final String NODE_PROCESSED = CustomAnalyzerQueryNodeProcessor.class.getSimpleName() + "_PROCESSED";
-    
+
     /** Captures the original slop for a {@link SlopQueryNode} in cases where we tokenize the underlying {@link QuotedFieldQueryNode} */
     private static final String ORIGINAL_SLOP = CustomAnalyzerQueryNodeProcessor.class.getSimpleName() + "_ORIGINAL_SLOP";
-    
+
     /** use this Analyzer to tokenize query nodes */
     private Analyzer analyzer;
-    
+
     /** track positon increments when tokenizing, potentially used for handing stop words. */
     private boolean positionIncrementsEnabled;
-    
+
     /** determines whether nodes with empty fields should be tokenized */
     private boolean unfieldedTokenized = false;
-    
+
     /** the list of fields to tokenize */
     private final Set<String> tokenizedFields = new HashSet<>();
-    
+
     /**
      * special fields, don't tokenize these if <code>unfieldedTokenized</code> is true, and remove them from the query node so downstream processors treat the
      * node as un-fielded.
      */
     private final Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
-    
+
     /** treat tokenized test as a phrase (as opposed to a phrase-with-slop) */
     private boolean useSlopForTokenizedTerms = true;
-    
+
     /**
      * establish configuration from <code>QueryConfigHandler</code> and process the speicfied tree
      *
@@ -125,39 +125,39 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
      */
     @Override
     public QueryNode process(QueryNode queryTree) throws QueryNodeException {
-        
+
         if (getQueryConfigHandler().has(ConfigurationKeys.ANALYZER)) {
             this.analyzer = getQueryConfigHandler().get(ConfigurationKeys.ANALYZER);
         }
-        
+
         this.positionIncrementsEnabled = false;
-        
+
         if (getQueryConfigHandler().has(ConfigurationKeys.ENABLE_POSITION_INCREMENTS)) {
-            
+
             if (getQueryConfigHandler().get(ConfigurationKeys.ENABLE_POSITION_INCREMENTS)) {
                 this.positionIncrementsEnabled = true;
             }
         }
-        
+
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.TOKENIZED_FIELDS)) {
             getQueryConfigHandler().get(LuceneToJexlQueryParser.TOKENIZED_FIELDS).forEach(s -> tokenizedFields.add(s.toUpperCase()));
         }
-        
+
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS)) {
             skipTokenizeUnfieldedFields.clear();
             getQueryConfigHandler().get(LuceneToJexlQueryParser.SKIP_TOKENIZE_UNFIELDED_FIELDS).forEach(s -> skipTokenizeUnfieldedFields.add(s.toUpperCase()));
         }
-        
+
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.TOKENIZE_UNFIELDED_QUERIES)) {
             this.unfieldedTokenized = getQueryConfigHandler().get(LuceneToJexlQueryParser.TOKENIZE_UNFIELDED_QUERIES);
         }
-        
+
         if (getQueryConfigHandler().has(LuceneToJexlQueryParser.USE_SLOP_FOR_TOKENIZED_TERMS)) {
             this.useSlopForTokenizedTerms = getQueryConfigHandler().get(LuceneToJexlQueryParser.USE_SLOP_FOR_TOKENIZED_TERMS);
         }
-        
+
         QueryNode processedQueryTree = super.process(queryTree);
-        
+
         if (logger.isDebugEnabled()) {
             logger.debug("Analyzer: " + analyzer);
             logger.debug("Position Increments Enabled: " + positionIncrementsEnabled);
@@ -168,19 +168,19 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             logger.debug("Original QueryTree: " + queryTree);
             logger.debug("Processed QueryTree: " + queryTree);
         }
-        
+
         return processedQueryTree;
     }
-    
+
     @Override
     protected QueryNode preProcessNode(QueryNode node) throws QueryNodeException {
-        
+
         if (logger.isDebugEnabled()) {
             logger.debug("Incoming query node: " + node);
         }
-        
+
         final Class<?> nodeClazz = node.getClass();
-        
+
         if (SlopQueryNode.class.isAssignableFrom(nodeClazz)) {
             /*
              * SlopQueryNodes typically contain a QuotedFieldQueryNode, so simply call the preProcessNode method on that child immediately, so that preserve the
@@ -195,7 +195,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
             }
             return slopNode;
         } else if (TextableQueryNode.class.isAssignableFrom(nodeClazz)) {
-            
+
             if (WildcardQueryNode.class.isAssignableFrom(nodeClazz)) {
                 return node;
             } else if (FuzzyQueryNode.class.isAssignableFrom(nodeClazz)) {
@@ -204,112 +204,112 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 // Ignore children of TermReangeQueryNodes (for now)
                 return node;
             }
-            
+
             final TextableQueryNode textableNode = (TextableQueryNode) node;
             final String text = textableNode.getText().toString();
-            
+
             FieldQueryNode fieldNode;
             String field = "";
-            
+
             if (FieldQueryNode.class.isAssignableFrom(nodeClazz)) {
                 fieldNode = (FieldQueryNode) node;
                 field = fieldNode.getFieldAsString();
-                
+
                 // treat these fields as un-fielded and skip tokenization if enabled.
                 if (skipTokenizeUnfieldedFields.contains(field.toUpperCase())) {
                     fieldNode.setField("");
-                    
+
                     if (logger.isDebugEnabled()) {
                         logger.debug("Skipping tokenization of un-fielded query node: " + fieldNode);
                     }
-                    
+
                     return node;
                 }
             }
-            
+
             if ((tokenizedFields.contains(field.toUpperCase()) || (unfieldedTokenized && field.isEmpty()))) {
                 node = tokenizeNode(node, text, field);
             }
-            
+
             if (logger.isDebugEnabled()) {
                 logger.debug("Post-processed query node: " + node);
             }
         }
-        
+
         return node;
     }
-    
+
     @Override
     protected QueryNode postProcessNode(QueryNode node) throws QueryNodeException {
         return node; /* no-op */
     }
-    
+
     @Override
     protected List<QueryNode> setChildrenOrder(List<QueryNode> children) throws QueryNodeException {
         return children; /* no-op */
     }
-    
+
     private QueryNode tokenizeNode(QueryNode node, final String text, final String field) throws QueryNodeException {
         CachingTokenFilter buffer = null;
-        
+
         if (analyzer == null) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Skipping tokenization of node: '" + node + "'; no analyzer is set");
             }
             return node;
         }
-        
+
         // Skip nodes we've processed already.
         final Object processed = node.getTag(NODE_PROCESSED);
         if (processed != null && processed.equals(Boolean.TRUE)) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Skipping processed query node: " + node.toString());
             }
-            
+
             return node;
         } else {
             // mark the original node processed.
             node.setTag(NODE_PROCESSED, Boolean.TRUE);
         }
-        
+
         try {
             // Take a pass over the tokens and buffer them in the caching token filter.
             TokenStream source = this.analyzer.tokenStream(field, new StringReader(text));
             source.reset();
-            
+
             buffer = new CachingTokenFilter(source);
-            
+
             PositionIncrementAttribute posIncrAtt = null;
             int numTokens = 0;
-            
+
             if (buffer.hasAttribute(PositionIncrementAttribute.class)) {
                 posIncrAtt = buffer.getAttribute(PositionIncrementAttribute.class);
             }
-            
+
             while (buffer.incrementToken()) {
                 numTokens++;
             }
-            
+
             // rewind the buffer stream
             buffer.reset();
             // close original stream - all tokens buffered
             source.close();
-            
+
             if (!buffer.hasAttribute(CharTermAttribute.class) || numTokens == 0) {
                 // no terms found, return unmodified node.
                 return node;
             }
-            
+
             final CharTermAttribute termAtt = buffer.getAttribute(CharTermAttribute.class);
-            
+
             StringBuilder b = new StringBuilder();
             int slopRange = 0;
-            
+
             String term;
             while (buffer.incrementToken()) {
                 term = termAtt.toString();
                 b.append(term).append(" ");
-                
+
                 // increment the slop range for the tokenized text based on the
                 // positionIncrement attribute if available, otherwise one position
                 // per token.
@@ -319,12 +319,12 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                     slopRange++;
                 }
             }
-            
+
             b.setLength(b.length() - 1); // trim trailing whitespace
-            
+
             if (b.length() > 0) {
                 final String tokenizedText = b.toString();
-                
+
                 // Check to see that the tokenizer produced output that was different from the original query node.
                 // If so avoid creating an OR clause. We compare the 'escaped' string of the original query so that we
                 // do not mistreat things like spaces.
@@ -335,11 +335,11 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                         return node;
                     }
                 }
-                
+
                 QueryNode n = new QuotedFieldQueryNode(field, new UnescapedCharSequence(tokenizedText), -1, -1);
                 // mark the derived node processed so we don't process it again later.
                 n.setTag(NODE_PROCESSED, Boolean.TRUE);
-                
+
                 // Adjust the slop based on the difference between the original
                 // slop minus the original token count (based on whitespace)
                 int originalSlop = 0;
@@ -348,7 +348,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                     final int delta = originalSlop - text.split("\\s+").length;
                     slopRange += delta;
                 }
-                
+
                 // Only add slop if the original had slop, or the original was not a phrase and slop is enabled.
                 // Using slop for non-quoted terms is a workaround until the phrase function will accept multiple
                 // terms in the same position as a valid match.
@@ -356,7 +356,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 if ((useSlopForTokenizedTerms && !originalWasQuoted) || originalSlop > 0) {
                     n = new SlopQueryNode(n, slopRange);
                 }
-                
+
                 // The tokenizer produced output that was different from the original query node, wrap the original
                 // node and the tokenizer produced node in a OR query. To do this properly, we need to wrap the
                 // original node in a slop query node if it was originally in a slop query node.
@@ -364,11 +364,11 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                     // restore the original slop wrapper to the base node if it was present originally.
                     node = new SlopQueryNode(node, originalSlop);
                 }
-                
+
                 final List<QueryNode> clauses = new ArrayList<>();
                 clauses.add(node);
                 clauses.add(n);
-                
+
                 node = new GroupQueryNode(new OrQueryNode(clauses));
             }
         } catch (IOException e) {
@@ -382,13 +382,13 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 }
             }
         }
-        
+
         return node;
     }
-    
+
     /**
      * Work around a Lucene Bug in UnescapedCharSequence.toStringEscaped()
-     * 
+     *
      * @param unescaped
      *            string value
      * @return unescaped string
@@ -402,7 +402,7 @@ public class CustomAnalyzerQueryNodeProcessor extends QueryNodeProcessorImpl {
                 result.append('\\');
             } else if (unescaped.wasEscaped(i))
                 result.append('\\');
-            
+
             result.append(unescaped.charAt(i));
         }
         return result.toString();

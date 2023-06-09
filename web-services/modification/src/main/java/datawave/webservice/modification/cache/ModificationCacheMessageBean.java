@@ -33,14 +33,14 @@ import javax.jms.TextMessage;
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class ModificationCacheMessageBean implements MessageListener {
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private ModificationCacheBean modificationCacheBean;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private ModificationConfiguration modificationConfiguration;
-    
+
     @Override
     public void onMessage(Message message) {
         String tableName;

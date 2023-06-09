@@ -29,41 +29,41 @@ import java.util.concurrent.TimeUnit;
 
 public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilter, ContainerResponseFilter, WriterInterceptor {
     protected static final Logger log = Logger.getLogger(BaseMethodStatsInterceptor.class);
-    
+
     protected static class RequestMethodStats {
-        
+
         private String uri;
         private String method;
         private long loginTime = -1;
         private long callStartTime;
         private MultivaluedMap<String,String> requestHeaders = new CaseInsensitiveMap<>();
         private MultivaluedMap<String,String> formParameters = new CaseInsensitiveMap<>();
-        
+
         public String getUri() {
             return uri;
         }
-        
+
         public String getMethod() {
             return method;
         }
-        
+
         public long getLoginTime() {
             return loginTime;
         }
-        
+
         public long getCallStartTime() {
             return callStartTime;
         }
-        
+
         public MultivaluedMap<String,String> getRequestHeaders() {
             return requestHeaders;
         }
-        
+
         public MultivaluedMap<String,String> getFormParameters() {
             return formParameters;
         }
     }
-    
+
     protected static class ResponseMethodStats {
         private int statusCode = -1;
         private long loginTime = -1;
@@ -71,39 +71,39 @@ public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilt
         private long serializationTime = -1;
         private long bytesWritten = -1;
         private MultivaluedMap<String,Object> responseHeaders = new CaseInsensitiveMap<>();
-        
+
         public int getStatusCode() {
             return statusCode;
         }
-        
+
         public long getLoginTime() {
             return loginTime;
         }
-        
+
         public long getCallTime() {
             return callTime;
         }
-        
+
         public long getSerializationTime() {
             return serializationTime;
         }
-        
+
         public long getBytesWritten() {
             return bytesWritten;
         }
-        
+
         public MultivaluedMap<String,Object> getResponseHeaders() {
             return responseHeaders;
         }
-        
+
     }
-    
+
     @Context
     protected HttpHeaders httpHeaders;
-    
+
     private final String REQUEST_STATS_NAME = getClass().getName() + "." + RequestMethodStats.class.getName();
     private final String RESPONSE_STATS_NAME = getClass().getName() + "." + ResponseMethodStats.class.getName();
-    
+
     protected ResponseMethodStats doWrite(WriterInterceptorContext context) throws IOException, WebApplicationException {
         ResponseMethodStats stats;
         long start = System.nanoTime();
@@ -115,22 +115,22 @@ public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilt
         } finally {
             long stop = System.nanoTime();
             long time = TimeUnit.NANOSECONDS.toMillis(stop - start);
-            
+
             context.setOutputStream(originalOutputStream);
-            
+
             stats = (ResponseMethodStats) context.getProperty(RESPONSE_STATS_NAME);
             if (stats == null) {
                 log.warn("No response stats found for " + getClass() + ". Using default.");
                 stats = new ResponseMethodStats();
             }
-            
+
             RequestMethodStats requestStats = (RequestMethodStats) context.getProperty(REQUEST_STATS_NAME);
             if (requestStats == null) {
                 log.warn("No request method stats found for " + getClass() + ". Using default.");
                 requestStats = new RequestMethodStats();
                 requestStats.callStartTime = stop + TimeUnit.MILLISECONDS.toNanos(1);
             }
-            
+
             stats.serializationTime = time;
             stats.loginTime = requestStats.getLoginTime();
             stats.callTime = TimeUnit.NANOSECONDS.toMillis(stop - requestStats.getCallStartTime());
@@ -138,10 +138,10 @@ public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilt
             // Merge in the headers we saved in the postProcess call, if any.
             putNew(stats.responseHeaders, context.getHeaders());
         }
-        
+
         return stats;
     }
-    
+
     // Response filter interceptor
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
@@ -152,7 +152,7 @@ public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilt
         stats.statusCode = response.getStatus();
         request.setProperty(RESPONSE_STATS_NAME, stats);
     }
-    
+
     protected RequestMethodStats doPreProcess(PreMatchContainerRequestContext request) throws Failure, WebApplicationException {
         RequestMethodStats stats = new RequestMethodStats();
         stats.uri = request.getUriInfo().getRequestUri().toString();
@@ -178,10 +178,10 @@ public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilt
         request.setProperty(REQUEST_STATS_NAME, stats);
         return stats;
     }
-    
+
     /**
      * Puts all entries in {@code newMap} into {@code existingMap}, unless there is already an existing entry in {@code existingMap}.
-     * 
+     *
      * @param newMap
      *            - a newmap
      * @param existingMap

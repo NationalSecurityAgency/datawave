@@ -53,12 +53,12 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
     private static final String DAYS_BACK_SUFFIX = ".days.back";
     private static final String DATE_PATTERN = "yyyyMMdd";
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
-    
+
     private static Pattern SHARD_PATTERN = Pattern.compile("\\d{8}_\\d+");
-    
+
     @Override
     public String choose(VolumeChooserEnvironment env, Set<String> options) {
-        
+
         if (!env.getTable().isPresent() || !env.getChooserScope().equals(VolumeChooserEnvironment.Scope.TABLE))
             return super.choose(env, options);
         else {
@@ -68,14 +68,14 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
             log.trace("Determining tier names using property {} for Table id: {}", Property.TABLE_ARBITRARY_PROP_PREFIX + TIER_NAMES_SUFFIX, tableId);
             String configuredTiers = tableConfig.getTableCustom(TIER_NAMES_SUFFIX);
             TreeMap<Long,Set<String>> daysToVolumes = getTiers(tableId, tableConfig, options, configuredTiers);
-            
+
             Text endRow = env.getEndRow();
-            
+
             Long floorKey = daysToVolumes.ceilingKey(0L);
             if (endRow == null) {
                 // this is the default tablet. No shard means this is new data
                 options = floorKey == null ? options : daysToVolumes.get(floorKey);
-                
+
             } else {
                 String endRowString = endRow.toString();
                 if (SHARD_PATTERN.matcher(endRowString).matches()) {
@@ -92,7 +92,7 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
             return super.choose(env, options);
         }
     }
-    
+
     private TreeMap<Long,Set<String>> getTiers(TableId tableId, ServiceEnvironment.Configuration tableConfig, Set<String> options, String configuredTiers) {
         TreeMap<Long,Set<String>> daysToVolumes = new TreeMap<>();
         daysToVolumes.put(Long.MAX_VALUE, options);
@@ -113,5 +113,5 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
         }
         return daysToVolumes;
     }
-    
+
 }

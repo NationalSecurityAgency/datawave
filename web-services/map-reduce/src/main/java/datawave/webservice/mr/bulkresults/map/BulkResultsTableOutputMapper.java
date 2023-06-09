@@ -22,16 +22,16 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<Key,Value,Text,Mutation> {
-    
+
     public static final String TABLE_NAME = "bulk.results.output.table";
     public static final String QUERY_LOGIC_NAME = "query.logic.name";
-    
+
     private Text tableName = null;
     private QueryLogicTransformer t = null;
     private Map<Key,Value> entries = new HashMap<>();
     private Map<String,Class<? extends BaseQueryResponse>> responseClassMap = new HashMap<>();
     private SerializationFormat format = SerializationFormat.XML;
-    
+
     @Override
     protected void setup(org.apache.hadoop.mapreduce.Mapper<Key,Value,Text,Mutation>.Context context) throws IOException, InterruptedException {
         super.setup(context);
@@ -49,12 +49,12 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
         }
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(QUERY_LOGIC_NAME);
         t = logic.getEnrichedTransformer(query);
-        
+
         this.tableName = new Text(context.getConfiguration().get(TABLE_NAME));
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT));
-        
+
     }
-    
+
     @Override
     protected void map(Key key, Value value, org.apache.hadoop.mapreduce.Mapper<Key,Value,Text,Mutation>.Context context)
                     throws IOException, InterruptedException {
@@ -70,7 +70,7 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
                 } catch (ClassNotFoundException e) {
                     throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
                 }
-                
+
                 try {
                     Value val = BulkResultsFileOutputMapper.serializeResponse(responseClass, response, this.format);
                     // Write out the original key and the new value.
@@ -86,7 +86,7 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
             }
         }
     }
-    
+
     private Class<? extends BaseQueryResponse> getResponseClass(String className) throws ClassNotFoundException {
         if (responseClassMap.containsKey(className))
             return responseClassMap.get(className);
@@ -97,5 +97,5 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
             return clazz;
         }
     }
-    
+
 }

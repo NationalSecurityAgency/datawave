@@ -29,9 +29,9 @@ import org.apache.lucene.search.PhraseQuery;
  * Builds a {@link PhraseQuery} object from a {@link TokenizedPhraseQueryNode} object.
  */
 public class PhraseQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         throw new UnsupportedOperationException(getClass().getName() + " not implemented");
     }
-    
+
 }

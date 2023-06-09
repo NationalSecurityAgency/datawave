@@ -24,10 +24,10 @@ import java.net.URISyntaxException;
 @Stateless
 @PermitAll
 public class EdgeDictionaryBean {
-    
+
     @Inject
     private RemoteEdgeDictionary remoteEdgeDictionary;
-    
+
     /**
      * @param uriInfo
      *            uriInfo The edge dictionary only has one endpoint. Send redirects for any request to it.

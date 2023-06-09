@@ -24,65 +24,65 @@ import java.util.Objects;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryImplListResponse extends BaseResponse implements Message<QueryImplListResponse> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement
     private List<Query> query = null;
     @XmlElement
     private int numResults = 0;
-    
+
     public List<Query> getQuery() {
         return query;
     }
-    
+
     public int getNumResults() {
         return numResults;
     }
-    
+
     public void setQuery(List<Query> query) {
         this.query = query;
         this.numResults = this.query.size();
     }
-    
+
     public void setNumResults(int numResults) {
         this.numResults = numResults;
     }
-    
+
     @Override
     public Schema<QueryImplListResponse> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     public static final Schema<QueryImplListResponse> SCHEMA = new Schema<QueryImplListResponse>() {
         public QueryImplListResponse newMessage() {
             return new QueryImplListResponse();
         }
-        
+
         public Class<QueryImplListResponse> typeClass() {
             return QueryImplListResponse.class;
         }
-        
+
         public String messageName() {
             return QueryImplListResponse.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return QueryImplListResponse.class.getName();
         }
-        
+
         public boolean isInitialized(QueryImplListResponse message) {
             return true;
         }
-        
+
         public void writeTo(Output output, QueryImplListResponse message) throws IOException {
-            
+
             Class<? extends Query> clazz = null;
             Schema<Query> schema = null;
             if (message.numResults != 0)
                 output.writeUInt32(1, message.numResults, false);
-            
+
             if (message.query != null) {
                 for (Query query : message.query) {
                     if (query != null) {
@@ -98,9 +98,9 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                     }
                 }
             }
-            
+
             output.writeUInt64(3, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -108,7 +108,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                         output.writeString(4, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -117,7 +117,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, QueryImplListResponse message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
             int number;
@@ -168,7 +168,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
             if (exceptions != null)
                 message.setExceptions(exceptions);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -187,12 +187,12 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("numResults", 1);
@@ -203,7 +203,7 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
             fieldMap.put("queryClass", 6);
         }
     };
-    
+
     @Override
     public boolean equals(Object o) {
         if (null == o) {
@@ -218,14 +218,14 @@ public class QueryImplListResponse extends BaseResponse implements Message<Query
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         int result = query != null ? query.hashCode() : 0;
         result = 31 * result + numResults;
         return result;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();

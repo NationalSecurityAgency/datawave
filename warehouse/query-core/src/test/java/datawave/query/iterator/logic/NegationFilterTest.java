@@ -26,14 +26,14 @@ public class NegationFilterTest {
         TreeMultimap<String,NestedIterator<String>> mmap = TreeMultimap.create(Util.keyComparator(), Util.hashComparator());
         mmap.put(f1.next(), f1);
         mmap.put(f2.next(), f2);
-        
+
         assertTrue(NegationFilter.isFiltered("e", mmap, Util.keyTransformer()));
         assertEquals(2, mmap.keySet().size());
         assertNotEquals(null, mmap.get("e"));
         assertNotEquals(null, mmap.get("q"));
         assertEquals(2, mmap.values().size());
     }
-    
+
     @Test
     public void testDuplicateTerm() throws Throwable {
         List<String> filterSet1 = Lists.newArrayList("a", "b", "c", "q", "r", "s");
@@ -43,13 +43,13 @@ public class NegationFilterTest {
         TreeMultimap<String,NestedIterator<String>> mmap = TreeMultimap.create(Util.keyComparator(), Util.hashComparator());
         mmap.put(f1.next(), f1);
         mmap.put(f2.next(), f2);
-        
+
         assertTrue(NegationFilter.isFiltered("c", mmap, Util.keyTransformer()));
         assertEquals(1, mmap.keySet().size());
         assertEquals("c", mmap.keySet().iterator().next());
         assertEquals(2, mmap.values().size());
     }
-    
+
     @Test
     public void testExhausted() throws Throwable {
         List<String> filterSet1 = Lists.newArrayList("a", "b", "c");
@@ -59,13 +59,13 @@ public class NegationFilterTest {
         TreeMultimap<String,NestedIterator<String>> mmap = TreeMultimap.create(Util.keyComparator(), Util.hashComparator());
         mmap.put(f1.next(), f1);
         mmap.put(f2.next(), f2);
-        
+
         assertTrue(NegationFilter.isFiltered("c", mmap, Util.keyTransformer()));
         assertEquals(1, mmap.keySet().size());
         assertEquals("c", mmap.keySet().iterator().next());
         assertEquals(2, mmap.values().size());
     }
-    
+
     @Test
     public void testEmpty() throws Throwable {
         List<String> filterSet1 = Lists.newArrayList("a", "b");
@@ -75,13 +75,13 @@ public class NegationFilterTest {
         TreeMultimap<String,NestedIterator<String>> mmap = TreeMultimap.create(Util.keyComparator(), Util.hashComparator());
         mmap.put(f1.next(), f1);
         mmap.put(f2.next(), f2);
-        
+
         assertTrue(NegationFilter.isFiltered("c", mmap, Util.keyTransformer()));
         assertEquals(1, mmap.keySet().size());
         assertEquals("c", mmap.keySet().iterator().next());
         assertEquals(1, mmap.values().size());
     }
-    
+
     @Test
     public void testContains() throws Throwable {
         List<String> filterSet1 = Lists.newArrayList("a", "b");
@@ -91,7 +91,7 @@ public class NegationFilterTest {
         TreeMultimap<String,NestedIterator<String>> mmap = TreeMultimap.create(Util.keyComparator(), Util.hashComparator());
         mmap.put(f1.next(), f1);
         mmap.put("c", f2);
-        
+
         assertTrue(NegationFilter.isFiltered("c", mmap, Util.keyTransformer()));
         // even though filterSet1 is outside the bounds, the contains check doesn't move anything, this is expected and good
         assertEquals(2, mmap.keySet().size());
@@ -101,39 +101,39 @@ public class NegationFilterTest {
         assertFalse(i.hasNext());
         assertEquals(2, mmap.values().size());
     }
-    
+
     // A wrapper around a java.util.Iterator
     static class Itr<K extends Comparable<K>> implements NestedIterator<K> {
         private Iterator<K> i;
         private boolean contextRequired;
-        
+
         public Itr(Iterable<K> it, boolean contextRequired) {
             i = it.iterator();
             this.contextRequired = contextRequired;
         }
-        
+
         public Itr(Iterable<K> it) {
             this(it, false);
         }
-        
+
         @Override
         public boolean hasNext() {
             return i.hasNext();
         }
-        
+
         @Override
         public K next() {
             return i.next();
         }
-        
+
         @Override
         public void remove() {
             i.remove();
         }
-        
+
         @Override
         public void initialize() {}
-        
+
         @Override
         public K move(K minimum) {
             if (hasNext()) {
@@ -149,27 +149,27 @@ public class NegationFilterTest {
                 return null;
             }
         }
-        
+
         @Override
         public Collection<NestedIterator<K>> leaves() {
             return null;
         }
-        
+
         @Override
         public Collection<NestedIterator<K>> children() {
             return null;
         }
-        
+
         @Override
         public Document document() {
             return new Document();
         }
-        
+
         @Override
         public boolean isContextRequired() {
             return contextRequired;
         }
-        
+
         @Override
         public void setContext(K context) {
             // no-op

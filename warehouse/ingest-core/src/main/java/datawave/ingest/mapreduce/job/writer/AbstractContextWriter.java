@@ -29,23 +29,23 @@ import java.util.Set;
  *            The output value
  */
 public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implements ContextWriter<OK,OV> {
-    
+
     public static final String CONTEXT_WRITER_COUNTERS = "context.writer.counters";
     public static final String CONTEXT_WRITER_MAX_CACHE_SIZE = "context.writer.max.cache.size";
-    
+
     private BulkIngestCounters counters = null;
     // caching the simple class name as the calculation is actually a little expensive
     private String simpleClassName = null;
     private long count = 0;
-    
+
     // the cache
     private Multimap<BulkIngestKey,Value> cache = ArrayListMultimap.create();
-    
+
     // the maximum size of the cache. When the cache reaches this size, it will automatically be flushed
     private int maxSize = 2500;
-    
+
     private ConstraintChecker constraintChecker;
-    
+
     /**
      * Initialize this context writer.
      *
@@ -71,7 +71,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         maxSize = conf.getInt(CONTEXT_WRITER_MAX_CACHE_SIZE, maxSize);
         constraintChecker = ConstraintChecker.create(conf);
     }
-    
+
     /**
      * Write the key, value to the cache.
      */
@@ -80,7 +80,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         if (constraintChecker != null && constraintChecker.isConfigured()) {
             constraintChecker.check(key.getTableName(), key.getKey().getColumnVisibilityData().getBackingArray());
         }
-        
+
         cache.put(key, value);
         this.count++;
         if (counters != null) {
@@ -90,7 +90,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             commit(context);
         }
     }
-    
+
     /**
      * Write the keys, values to the cache.
      */
@@ -101,7 +101,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
                 constraintChecker.check(key.getTableName(), key.getKey().getColumnVisibilityData().getBackingArray());
             }
         }
-        
+
         cache.putAll(entries);
         this.count += entries.size();
         if (counters != null) {
@@ -113,7 +113,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
             commit(context);
         }
     }
-    
+
     /**
      * Flush the cache from the current thread to the context. This method is expected to be called periodically. If a thread has used the write methods, then
      * this method must be called before the thread terminates.
@@ -124,7 +124,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         // cache.clear() can be fairly expensive, so let's let garbage collection do that
         cache = ArrayListMultimap.create();
     }
-    
+
     /**
      * Rollback the context. This method will rollback to the last time this context was flushed in this thread.
      */
@@ -139,7 +139,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
         // cache.clear() can be fairly expensive, so let's let garbage collection do that
         cache = ArrayListMultimap.create();
     }
-    
+
     /**
      * The method that actually flushes the entries to the context.
      *
@@ -153,7 +153,7 @@ public abstract class AbstractContextWriter<OK,OV> extends StatsDHelper implemen
      *             if the thread is interrupted
      */
     protected abstract void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,OK,OV> context) throws IOException, InterruptedException;
-    
+
     /**
      * Clean up the context writer. Default implementation executes the flush method.
      *

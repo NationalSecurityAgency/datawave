@@ -26,36 +26,36 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public class EdgeHandlerTestUtil {
-    
+
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
-    
+
     public static Set<String> edgeKeyResults = new HashSet<>();
-    
+
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
-    
+
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
     }
-    
+
     public static boolean isShardKey(Key k) {
         return k.getRow().toString().matches("\\d{8}_\\d+");
     }
-    
+
     public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
                     RawRecordContainer event, int expectedEdgeKeys, boolean printKeysOnlyOnFail, boolean edgeDeleteMode) {
-        
+
         Assert.assertNotNull("Event was null.", event);
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
-        
+
         // Process edges
         countMap.put(edgeTableName, 0);
         if (null != edgeHandler) {
             EdgeHandlerTestUtil.MyCachingContextWriter contextWriter = new EdgeHandlerTestUtil.MyCachingContextWriter();
             StandaloneTaskAttemptContext<Text,RawRecordContainerImpl,BulkIngestKey,Value> ctx = new StandaloneTaskAttemptContext<>(
                             ((RawRecordContainerImpl) event).getConf(), new StandaloneStatusReporter());
-            
+
             try {
                 contextWriter.setup(ctx.getConfiguration(), false);
                 edgeHandler.process(null, event, eventFields, ctx, contextWriter);
@@ -77,9 +77,9 @@ public class EdgeHandlerTestUtil {
                 throw new RuntimeException(t);
             }
         }
-        
+
         Set<String> keyPrint = new TreeSet<>();
-        
+
         // check edge keys
         for (Key k : edgeKeys) {
             edgeKeyResults.add(k.getRow().toString().replaceAll(NB, "%00;"));
@@ -87,7 +87,7 @@ public class EdgeHandlerTestUtil {
                             + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp()
                             + " ::: " + k.isDeleted() + "\n");
         }
-        
+
         try {
             if (!printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
@@ -105,10 +105,10 @@ public class EdgeHandlerTestUtil {
             Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
         }
     }
-    
+
     private static class MyCachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
         private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
-        
+
         @Override
         protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
                         throws IOException, InterruptedException {
@@ -116,7 +116,7 @@ public class EdgeHandlerTestUtil {
                 cache.put(entry.getKey(), entry.getValue());
             }
         }
-        
+
         public Multimap<BulkIngestKey,Value> getCache() {
             return cache;
         }

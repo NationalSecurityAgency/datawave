@@ -39,56 +39,56 @@ import java.util.Map;
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.
  */
 public class FunctionQueryNodeBuilder implements QueryBuilder {
-    
+
     private Map<String,JexlQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
-    
+
     public FunctionQueryNodeBuilder(List<JexlQueryFunction> allowedFunctions) {
         setAllowedFunctions(allowedFunctions);
     }
-    
+
     public JexlNode build(QueryNode queryNode) {
         JexlNode returnNode = null;
-        
+
         int depth = 0;
         QueryNode parent = queryNode;
         while ((parent = parent.getParent()) != null) {
             depth++;
         }
-        
+
         if (queryNode instanceof FunctionQueryNode) {
             FunctionQueryNode functionQueryNode = (FunctionQueryNode) queryNode;
-            
+
             String functionName = functionQueryNode.getFunction();
             List<String> parameterList = functionQueryNode.getParameterList();
-            
+
             JexlQueryFunction referenceFunction = allowedFunctionMap.get(functionName.toUpperCase());
-            
+
             if (referenceFunction == null) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, MessageFormat.format("{0}", functionName));
                 throw new IllegalArgumentException(qe);
             }
             // if more than one term in quotes, use an AdjNode
             JexlQueryFunction function = (JexlQueryFunction) referenceFunction.duplicate();
-            
+
             returnNode = new JexlFunctionNode(function, parameterList, depth, queryNode.getParent());
         }
-        
+
         return returnNode;
     }
-    
+
     public List<JexlQueryFunction> getAllowedFunctions() {
         List<JexlQueryFunction> allowedFunctions = new ArrayList<>();
         allowedFunctions.addAll(allowedFunctionMap.values());
         return allowedFunctions;
     }
-    
+
     public void setAllowedFunctions(List<JexlQueryFunction> allowedFunctions) {
         allowedFunctionMap.clear();
         for (JexlQueryFunction f : allowedFunctions) {
             addFunction(f);
         }
     }
-    
+
     private void addFunction(JexlQueryFunction function) {
         allowedFunctionMap.put(function.getName().toUpperCase(), function);
     }

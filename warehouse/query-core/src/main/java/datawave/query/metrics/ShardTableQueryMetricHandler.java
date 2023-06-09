@@ -112,74 +112,74 @@ import org.apache.log4j.Logger;
 @SuppressWarnings("unused")
 public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
-    
+
     private static final String QUERY_METRICS_LOGIC_NAME = "QueryMetricsQuery";
     protected static final String DEFAULT_SECURITY_MARKING = "PUBLIC";
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
+
     @Inject
     @ConfigProperty(name = "dw.query.metrics.marking")
     protected String markingString;
-    
+
     @Inject
     @ConfigProperty(name = "dw.query.metrics.visibility")
     protected String visibilityString;
-    
+
     @Inject
     private QueryMetricFactory metricFactory;
-    
+
     @Inject
     @SpringBean(name = "LuceneToJexlQueryParser", refreshable = true)
     private LuceneToJexlQueryParser luceneToJexlQueryParser;
-    
+
     private Collection<String> connectorAuthorizationCollection = null;
     private String connectorAuthorizations = null;
     private MarkingFunctions markingFunctions = null;
-    
+
     @SuppressWarnings("FieldCanBeLocal")
     private final String JOB_ID = "job_201109071404_1";
     @SuppressWarnings("FieldCanBeLocal")
     private static final String NULL_BYTE = "\0";
     public static final String CONTEXT_WRITER_MAX_CACHE_SIZE = "context.writer.max.cache.size";
-    
+
     // static to share the cache across instances of this class held by QueryExecutorBean, CachedResultsBean, QueryMetricsEnrichmentInterceptor, etc
     @SuppressWarnings("unchecked")
     private static Map metricsCache = Collections.synchronizedMap(new LRUMap(5000));
-    
+
     private final Configuration conf = new Configuration();
     private final StatusReporter reporter = new MockStatusReporter();
     private final AtomicBoolean tablesChecked = new AtomicBoolean(false);
     private AccumuloRecordWriter recordWriter = null;
-    
+
     private UIDBuilder<UID> uidBuilder = UID.builder();
-    
+
     public ShardTableQueryMetricHandler() {
         URL queryMetricsUrl = Thread.currentThread().getContextClassLoader().getResource("datawave/query/QueryMetrics.xml");
         Preconditions.checkNotNull(queryMetricsUrl);
         conf.addResource(queryMetricsUrl);
-        
+
         // encode the password because that's how the AccumuloRecordWriter
         String accumuloPassword = conf.get("AccumuloRecordWriter.password");
         byte[] encodedAccumuloPassword = Base64.encodeBase64(accumuloPassword.getBytes());
         conf.set("AccumuloRecordWriter.password", new String(encodedAccumuloPassword));
         markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
     }
-    
+
     @PostConstruct
     private void initialize() {
         AccumuloClient client = null;
-        
+
         try {
             client = connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
             connectorAuthorizations = client.securityOperations().getUserAuthorizations(client.whoami()).toString();
             connectorAuthorizationCollection = Lists.newArrayList(StringUtils.split(connectorAuthorizations, ","));
             reload();
-            
+
             if (tablesChecked.compareAndSet(false, true))
                 verifyTables();
         } catch (Exception e) {
@@ -194,21 +194,21 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     @Override
     protected void finalize() throws Throwable {
         super.finalize();
         this.recordWriter.close(null);
     }
-    
+
     @Override
     public void flush() throws Exception {
         this.recordWriter.flush();
     }
-    
+
     private void verifyTables() {
         AccumuloClient client = null;
-        
+
         try {
             client = this.connectionFactory.getClient(Priority.ADMIN, new HashMap<>());
             AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
@@ -225,30 +225,30 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     private void writeMetrics(QueryMetric updatedQueryMetric, List<QueryMetric> storedQueryMetrics, Date lastUpdated, boolean delete) throws Exception {
         LiveContextWriter contextWriter = null;
-        
+
         MapContext<Text,RawRecordContainer,Text,Mutation> context = null;
-        
+
         try {
             contextWriter = new LiveContextWriter();
             contextWriter.setup(conf, false);
-            
+
             TaskAttemptID taskId = new TaskAttemptID(new TaskID(new JobID(JOB_ID, 1), TaskType.MAP, 1), 1);
             context = new MapContextImpl<>(conf, taskId, null, recordWriter, null, reporter, null);
-            
+
             for (QueryMetric storedQueryMetric : storedQueryMetrics) {
                 AbstractColumnBasedHandler<Key> handler = new ContentQueryMetricsHandler<>();
                 handler.setup(context);
-                
+
                 Multimap<BulkIngestKey,Value> r = getEntries(handler, updatedQueryMetric, storedQueryMetric, lastUpdated, delete);
-                
+
                 try {
                     if (r != null) {
                         contextWriter.write(r, context);
                     }
-                    
+
                     if (handler.getMetadata() != null) {
                         contextWriter.write(handler.getMetadata().getBulkMetadata(), context);
                     }
@@ -262,7 +262,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     public Map<String,String> getEventFields(BaseQueryMetric queryMetric) {
         // ignore duplicates as none are expected
         Map<String,String> eventFields = new HashMap<>();
@@ -274,14 +274,14 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
         return eventFields;
     }
-    
+
     private Multimap<BulkIngestKey,Value> getEntries(AbstractColumnBasedHandler<Key> handler, QueryMetric updatedQueryMetric, QueryMetric storedQueryMetric,
                     Date lastUpdated, boolean delete) {
         Type type = TypeRegistry.getType("querymetrics");
         ContentQueryMetricsIngestHelper ingestHelper = new ContentQueryMetricsIngestHelper(delete);
-        
+
         ingestHelper.setup(conf);
-        
+
         RawRecordContainerImpl event = new RawRecordContainerImpl();
         event.setConf(this.conf);
         event.setDataType(type);
@@ -301,23 +301,23 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         event.setAuxData(storedQueryMetric);
         event.setRawRecordNumber(1000L);
         event.addAltId(storedQueryMetric.getQueryId());
-        
+
         event.setId(uidBuilder.newId(storedQueryMetric.getQueryId().getBytes(), (Date) null));
-        
+
         final Multimap<String,NormalizedContentInterface> fields;
-        
+
         if (delete) {
             fields = ingestHelper.getEventFieldsToDelete(updatedQueryMetric, storedQueryMetric);
         } else {
             fields = ingestHelper.getEventFieldsToWrite(updatedQueryMetric);
         }
-        
+
         Key key = new Key();
-        
+
         if (handler.getMetadata() != null) {
             handler.getMetadata().addEventWithoutLoadDates(ingestHelper, event, fields);
         }
-        
+
         String eventTable = handler.getShardTableName().toString();
         String indexTable = handler.getShardIndexTableName().toString();
         String reverseIndexTable = handler.getShardReverseIndexTableName().toString();
@@ -325,13 +325,13 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         Multimap<BulkIngestKey,Value> r = handler.processBulk(key, event, fields, reporter);
         List<BulkIngestKey> keysToRemove = new ArrayList<>();
         Map<String,BulkIngestKey> tfFields = new HashMap<>();
-        
+
         // if an event has more than two entries for a given field, only keep the longest
         for (Entry<BulkIngestKey,Collection<Value>> entry : r.asMap().entrySet()) {
             String table = entry.getKey().getTableName().toString();
             BulkIngestKey bulkIngestKey = entry.getKey();
             Key currentKey = bulkIngestKey.getKey();
-            
+
             if (table.equals(indexTable) || table.equals(reverseIndexTable)) {
                 String value = currentKey.getRow().toString();
                 if (value.length() > fieldSizeThreshold) {
@@ -339,17 +339,17 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 }
             }
         }
-        
+
         // remove any keys from the index or reverseIndex where the value size exceeds the fieldSizeThreshold
         for (BulkIngestKey b : keysToRemove) {
             r.removeAll(b);
         }
-        
+
         // replace the longest of the keys from fields that get parsed as content
         for (Entry<String,BulkIngestKey> l : tfFields.entrySet()) {
             r.put(l.getValue(), new Value(new byte[0]));
         }
-        
+
         for (Entry<BulkIngestKey,Collection<Value>> entry : r.asMap().entrySet()) {
             if (delete) {
                 entry.getKey().getKey().setTimestamp(lastUpdated.getTime());
@@ -359,27 +359,27 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
             entry.getKey().getKey().setDeleted(delete);
         }
-        
+
         return r;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public void updateMetric(QueryMetric updatedQueryMetric, DatawavePrincipal datawavePrincipal) throws Exception {
         Date lastUpdated = updatedQueryMetric.getLastUpdated();
-        
+
         try {
             enableLogs(false);
             String sid = updatedQueryMetric.getUser();
             if (sid == null) {
                 sid = datawavePrincipal.getShortName();
             }
-            
+
             // find and remove previous entries
             BaseQueryMetricListResponse response = new QueryMetricListResponse();
             Date end = new Date();
             Date begin = DateUtils.setYears(end, 2000);
-            
+
             // user's DatawavePrincipal must have the Administrator role to use the Metrics query logic
             QueryMetric cachedQueryMetric;
             QueryMetric updatedQueryMetricCopy;
@@ -403,9 +403,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 updatedQueryMetric.setPageTimes(newPageMetrics);
                 metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
-            
+
             List<QueryMetric> queryMetrics = new ArrayList<>();
-            
+
             if (cachedQueryMetric == null) {
                 // if numPages > 0 or Lifecycle > DEFINED, then we should have a metric cached already
                 // if we don't, then query for the current stored metric
@@ -428,29 +428,29 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             } else {
                 queryMetrics = Collections.singletonList(cachedQueryMetric);
             }
-            
+
             if (!queryMetrics.isEmpty()) {
                 writeMetrics(updatedQueryMetric, queryMetrics, lastUpdated, true);
             }
-            
+
             populateMetricSelectors(updatedQueryMetric, this.luceneToJexlQueryParser);
             incrementNumUpdates(updatedQueryMetric, queryMetrics);
             synchronized (ShardTableQueryMetricHandler.class) {
                 metricsCache.put(updatedQueryMetric.getQueryId(), updatedQueryMetric);
             }
-            
+
             // write new entry
             writeMetrics(updatedQueryMetric, Collections.singletonList(updatedQueryMetric), lastUpdated, false);
         } finally {
             enableLogs(true);
         }
     }
-    
+
     private List<QueryMetric> getQueryMetrics(BaseResponse response, Query query, DatawavePrincipal datawavePrincipal) {
         List<QueryMetric> queryMetrics = new ArrayList<>();
         RunningQuery runningQuery = null;
         AccumuloClient client = null;
-        
+
         try {
             Map<String,String> trackingMap = this.connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = this.connectionFactory.getClient(Priority.ADMIN, trackingMap);
@@ -459,40 +459,40 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 ((QueryMetricQueryLogic) queryLogic).setRolesSets(datawavePrincipal.getPrimaryUser().getRoles());
             }
             runningQuery = new RunningQuery(null, client, Priority.ADMIN, queryLogic, query, query.getQueryAuthorizations(), datawavePrincipal, metricFactory);
-            
+
             boolean done = false;
             List<Object> objectList = new ArrayList<>();
-            
+
             while (!done) {
                 ResultsPage resultsPage = runningQuery.next();
-                
+
                 if (!resultsPage.getResults().isEmpty()) {
                     objectList.addAll(resultsPage.getResults());
                 } else {
                     done = true;
                 }
             }
-            
+
             BaseQueryResponse queryResponse = queryLogic.getEnrichedTransformer(query).createResponse(new ResultsPage(objectList));
             List<QueryExceptionType> exceptions = queryResponse.getExceptions();
-            
+
             if (queryResponse.getExceptions() != null && !queryResponse.getExceptions().isEmpty()) {
                 if (response != null) {
                     response.setExceptions(new LinkedList<>(exceptions));
                     response.setHasResults(false);
                 }
             }
-            
+
             if (!(queryResponse instanceof EventQueryResponseBase)) {
                 if (response != null) {
                     response.addException(new QueryException("incompatible response")); // TODO: Should this be an IllegalStateException?
                     response.setHasResults(false);
                 }
             }
-            
+
             EventQueryResponseBase eventQueryResponse = (EventQueryResponseBase) queryResponse;
             List<EventBase> eventList = eventQueryResponse.getEvents();
-            
+
             if (eventList != null) {
                 for (EventBase<?,?> event : eventList) {
                     QueryMetric metric = (QueryMetric) toMetric(event);
@@ -523,18 +523,18 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         }
         return JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics);
     }
-    
+
     @Override
     public QueryMetricsDetailListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
-        
+
         try {
             enableLogs(false);
-            
+
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             Date end = new Date();
             Date begin = DateUtils.setYears(end, 2000);
-            
+
             QueryImpl query = new QueryImpl();
             query.setBeginDate(begin);
             query.setEndDate(end);
@@ -551,30 +551,30 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            
+
             response.setResult(queryMetrics);
-            
+
             response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
         } finally {
             enableLogs(true);
         }
-        
+
         return response;
     }
-    
+
     public BaseQueryMetric toMetric(EventBase event) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time3 = new SimpleDateFormat("yyyyMMdd");
-        
+
         List<String> excludedFields = Arrays.asList("ELAPSED_TIME", "RECORD_ID", "NUM_PAGES", "NUM_RESULTS");
-        
+
         try {
             BaseQueryMetric m = metricFactory.createMetric(false);
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
-            
+
             boolean createDateSet = false;
             for (FieldBase f : field) {
                 String fieldName = f.getName();
@@ -681,7 +681,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                             try {
                                 Set<Parameter> parameters = QueryUtil.parseParameters(fieldValue);
                                 m.setParameters(parameters);
-                                
+
                             } catch (Exception e) {
                                 log.debug(e.getMessage());
                             }
@@ -717,7 +717,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     String dateStr = event.getMetadata().getRow().substring(0, 8);
                     m.setCreateDate(sdf_date_time3.parse(dateStr));
                 } catch (ParseException e) {
-                    
+
                 }
             }
             m.setPageTimes(new ArrayList<>(pageMetrics.values()));
@@ -727,7 +727,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             return null;
         }
     }
-    
+
     protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf)
                     throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         for (String table : tableNames) {
@@ -736,9 +736,9 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                 if (!tops.exists(table)) {
                     tops.create(table);
                     Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
-                    
+
                     TableConfigHelper tableHelper = tableConfigs.get(table);
-                    
+
                     if (tableHelper != null) {
                         tableHelper.configure(tops);
                     } else {
@@ -751,34 +751,34 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     private Map<String,TableConfigHelper> getTableConfigs(Logger log, Configuration conf, String[] tableNames) {
         Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.length);
-        
+
         for (String table : tableNames) {
             String prop = table + TableConfigHelper.TABLE_CONFIG_CLASS_SUFFIX;
             String className = conf.get(prop, null);
             TableConfigHelper tableHelper = null;
-            
+
             if (className != null) {
                 try {
                     Class<? extends TableConfigHelper> tableHelperClass = (Class<? extends TableConfigHelper>) Class.forName(className.trim());
                     tableHelper = tableHelperClass.getDeclaredConstructor().newInstance();
-                    
+
                     if (tableHelper != null)
                         tableHelper.setup(table, conf, log);
                 } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                     throw new IllegalArgumentException(e);
                 }
             }
-            
+
             helperMap.put(table, tableHelper);
         }
-        
+
         return helperMap;
     }
-    
+
     private void enableLogs(boolean enable) {
         if (enable) {
             ThreadConfigurableLogger.clearThreadLevels();
@@ -789,7 +789,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             // Logger log = Logger.getLogger(MyClass.class);
             // to
             // Logger log = ThreadConfigurableLogger.getLogger(MyClass.class);
-            
+
             ThreadConfigurableLogger.setLevelForThread("datawave.query.index.lookup.RangeStream", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.metrics.ShardTableQueryMetricHandler", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.planner.DefaultQueryPlanner", Level.ERROR);
@@ -801,7 +801,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.ExpandMultiNormalizedTerms", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.lookups.LookupBoundedRangeForTerms", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.query.jexl.visitors.RangeConjunctionRebuildingVisitor", Level.ERROR);
-            
+
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.TypeRegistry", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.config.ingest.BaseIngestHelper", Level.ERROR);
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler", Level.ERROR);
@@ -810,7 +810,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             ThreadConfigurableLogger.setLevelForThread("datawave.ingest.data.Event", Level.OFF);
         }
     }
-    
+
     @Override
     public void reload() {
         try {
@@ -824,28 +824,28 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             log.error(e.getMessage(), e);
         }
     }
-    
+
     @Override
     public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-    
+
     @Override
     public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, false, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-    
+
     @Override
     public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
         return (QueryMetricsSummaryResponse) getQueryMetricsSummary(begin, end, true, datawavePrincipal, new QueryMetricsSummaryResponse());
     }
-    
+
     public QueryMetricsSummaryResponse getQueryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser, DatawavePrincipal datawavePrincipal,
                     QueryMetricsSummaryResponse response) {
-        
+
         try {
             enableLogs(false);
-            
+
             Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
             QueryImpl query = new QueryImpl();
             query.setBeginDate(begin);
@@ -865,7 +865,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setUserDN(datawavePrincipal.getShortName());
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            
+
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             response = processQueryMetricsSummary(queryMetrics, end, response);
         } catch (IOException e) {
@@ -873,7 +873,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         } finally {
             enableLogs(true);
         }
-        
+
         return response;
     }
 }

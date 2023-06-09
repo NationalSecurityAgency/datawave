@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
-    
+
     private GenericQueryConfiguration baseConfig;
     private String logicName = "No logicName was set";
     private String logicDescription = "Not configured";
@@ -46,13 +46,13 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     protected ResponseObjectFactory responseObjectFactory;
     protected SelectorExtractor selectorExtractor;
     protected ResponseEnricherBuilder responseEnricherBuilder = null;
-    
+
     public static final String BYPASS_ACCUMULO = "rfile.debug";
-    
+
     public BaseQueryLogic() {
         getConfig().setBaseIteratorPriority(100);
     }
-    
+
     public BaseQueryLogic(BaseQueryLogic<T> other) {
         // Generic Query Config variables
         setTableName(other.getTableName());
@@ -61,7 +61,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setBaseIteratorPriority(other.getBaseIteratorPriority());
         setBypassAccumulo(other.getBypassAccumulo());
         setAccumuloPassword(other.getAccumuloPassword());
-        
+
         // Other variables
         setMaxResults(other.maxResults);
         setMarkingFunctions(other.getMarkingFunctions());
@@ -80,123 +80,123 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         setSelectorExtractor(other.getSelectorExtractor());
         setResponseEnricherBuilder(other.getResponseEnricherBuilder());
     }
-    
+
     public GenericQueryConfiguration getConfig() {
         if (baseConfig == null) {
             baseConfig = new GenericQueryConfiguration() {};
         }
-        
+
         return baseConfig;
     }
-    
+
     @Override
     public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
         // for many query logics, the query is what it is
         return settings.getQuery();
     }
-    
+
     public MarkingFunctions getMarkingFunctions() {
         return markingFunctions;
     }
-    
+
     public void setMarkingFunctions(MarkingFunctions markingFunctions) {
         this.markingFunctions = markingFunctions;
     }
-    
+
     public ResponseObjectFactory getResponseObjectFactory() {
         return responseObjectFactory;
     }
-    
+
     public void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
     }
-    
+
     public Principal getPrincipal() {
         return principal;
     }
-    
+
     public void setPrincipal(Principal principal) {
         this.principal = principal;
     }
-    
+
     @Override
     public String getTableName() {
         return getConfig().getTableName();
     }
-    
+
     @Override
     public long getMaxResults() {
         return this.maxResults;
     }
-    
+
     @Override
     @Deprecated
     public long getMaxRowsToScan() {
         return getMaxWork();
     }
-    
+
     @Override
     public long getMaxWork() {
         return getConfig().getMaxWork();
     }
-    
+
     @Override
     public void setTableName(String tableName) {
         getConfig().setTableName(tableName);
     }
-    
+
     @Override
     public void setMaxResults(long maxResults) {
         this.maxResults = maxResults;
     }
-    
+
     @Override
     @Deprecated
     public void setMaxRowsToScan(long maxRowsToScan) {
         setMaxWork(maxRowsToScan);
     }
-    
+
     @Override
     public void setMaxWork(long maxWork) {
         getConfig().setMaxWork(maxWork);
     }
-    
+
     @Override
     public int getMaxPageSize() {
         return maxPageSize;
     }
-    
+
     @Override
     public void setMaxPageSize(int maxPageSize) {
         this.maxPageSize = maxPageSize;
     }
-    
+
     @Override
     public long getPageByteTrigger() {
         return pageByteTrigger;
     }
-    
+
     @Override
     public void setPageByteTrigger(long pageByteTrigger) {
         this.pageByteTrigger = pageByteTrigger;
     }
-    
+
     @Override
     public int getBaseIteratorPriority() {
         return getConfig().getBaseIteratorPriority();
     }
-    
+
     @Override
     public void setBaseIteratorPriority(final int baseIteratorPriority) {
         getConfig().setBaseIteratorPriority(baseIteratorPriority);
     }
-    
+
     @Override
     public Iterator<T> iterator() {
         return iterator;
     }
-    
+
     @Override
     public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
         QueryLogicTransformer transformer = this.getTransformer(settings);
@@ -213,41 +213,41 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         }
         return transformer;
     }
-    
+
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         return new DatawaveTransformIterator(this.iterator(), this.getTransformer(settings));
     }
-    
+
     @Override
     public String getLogicName() {
         return logicName;
     }
-    
+
     @Override
     public void setLogicName(String logicName) {
         this.logicName = logicName;
     }
-    
+
     public boolean getBypassAccumulo() {
         return getConfig().getBypassAccumulo();
     }
-    
+
     public void setBypassAccumulo(boolean bypassAccumulo) {
         getConfig().setBypassAccumulo(bypassAccumulo);
     }
-    
+
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }
-    
+
     public void setAccumuloPassword(String accumuloPassword) {
         getConfig().setAccumuloPassword(accumuloPassword);
     }
-    
+
     @Override
     public abstract Object clone() throws CloneNotSupportedException;
-    
+
     public void close() {
         if (null == scanner)
             return;
@@ -255,7 +255,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
             scanner.close();
         }
     }
-    
+
     /*
      * Implementations must override if they want a query-specific value returned
      */
@@ -263,66 +263,66 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public AuditType getAuditType(Query query) {
         return auditType;
     }
-    
+
     @Override
     public AuditType getAuditType() {
         return auditType;
     }
-    
+
     @Override
     @Required
     // enforces that the unit tests will fail and the application will not deploy unless this property is set
     public void setAuditType(AuditType auditType) {
         this.auditType = auditType;
     }
-    
+
     @Override
     public void setLogicDescription(String logicDescription) {
         this.logicDescription = logicDescription;
     }
-    
+
     @Override
     public String getLogicDescription() {
         return logicDescription;
     }
-    
+
     public boolean getCollectQueryMetrics() {
         return collectQueryMetrics;
     }
-    
+
     public void setCollectQueryMetrics(boolean collectQueryMetrics) {
         this.collectQueryMetrics = collectQueryMetrics;
     }
-    
+
     public RoleManager getRoleManager() {
         return roleManager;
     }
-    
+
     public void setRoleManager(RoleManager roleManager) {
         this.roleManager = roleManager;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public String getConnPoolName() {
         return _connPoolName;
     }
-    
+
     /** {@inheritDoc} */
     @Override
     public void setConnPoolName(final String connPoolName) {
         _connPoolName = connPoolName;
     }
-    
+
     public boolean canRunQuery() {
         return this.canRunQuery(this.getPrincipal());
     }
-    
+
     /** {@inheritDoc} */
     public boolean canRunQuery(Principal principal) {
         return this.roleManager == null || this.roleManager.canRunQuery(this, principal);
     }
-    
+
     @Override
     public final void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         Set<String> requiredParams = getRequiredQueryParameters();
@@ -333,7 +333,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
             }
         }
     }
-    
+
     @Override
     public List<String> getSelectors(Query settings) throws IllegalArgumentException {
         List<String> selectorList = null;
@@ -346,50 +346,50 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
         }
         return selectorList;
     }
-    
+
     public void setSelectorExtractor(SelectorExtractor selectorExtractor) {
         this.selectorExtractor = selectorExtractor;
     }
-    
+
     public SelectorExtractor getSelectorExtractor() {
         return selectorExtractor;
     }
-    
+
     @Override
     public Set<String> getAuthorizedDNs() {
         return authorizedDNs;
     }
-    
+
     @Override
     public void setAuthorizedDNs(Set<String> authorizedDNs) {
         this.authorizedDNs = authorizedDNs;
     }
-    
+
     @Override
     public void setDnResultLimits(Map<String,Long> dnResultLimits) {
         this.dnResultLimits = dnResultLimits;
     }
-    
+
     @Override
     public Map<String,Long> getDnResultLimits() {
         return dnResultLimits;
     }
-    
+
     @Override
     public void setSystemFromResultLimits(Map<String,Long> systemFromLimits) {
         this.systemFromResultLimits = systemFromLimits;
     }
-    
+
     @Override
     public Map<String,Long> getSystemFromResultLimits() {
         return systemFromResultLimits;
     }
-    
+
     @Override
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
         // no op
     }
-    
+
     /**
      * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout). Default to false. Implementations should override
      * this if the default is not appropriate.
@@ -400,15 +400,15 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     public boolean isLongRunningQuery() {
         return false;
     }
-    
+
     public ResponseEnricherBuilder getResponseEnricherBuilder() {
         return responseEnricherBuilder;
     }
-    
+
     public void setResponseEnricherBuilder(ResponseEnricherBuilder responseEnricherBuilder) {
         this.responseEnricherBuilder = responseEnricherBuilder;
     }
-    
+
     @Override
     public UserOperations getUserOperations() {
         // null implies that the local user operations/principal is to be used for auths.

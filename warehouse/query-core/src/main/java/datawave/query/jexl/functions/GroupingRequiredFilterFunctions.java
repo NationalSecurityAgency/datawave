@@ -15,14 +15,14 @@ import java.util.stream.Stream;
 /**
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GroupingRequiredFilterFunctionsDescriptor. This is kept as a separate class to reduce
  * accumulo dependencies on other jars.
- * 
+ *
  **/
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.GroupingRequiredFilterFunctionsDescriptor")
 public class GroupingRequiredFilterFunctions {
     public static final String GROUPING_REQUIRED_FUNCTION_NAMESPACE = "grouping";
-    
+
     protected static final Logger log = Logger.getLogger(GroupingRequiredFilterFunctions.class);
-    
+
     /**
      * <pre>
      * 'args' will be either a matched set of field/regex pairs, or a matched set of field/regex pairs followed by an index integer,
@@ -30,7 +30,7 @@ public class GroupingRequiredFilterFunctions {
      * FOO.1 with a index of '0' will split off '1'
      * FOO.BLAH.ZIP.0 with an index of '2' will split off 'BLAH.ZIP.0'
      * If no index is supplied, the default is 0
-     * 
+     *
      * The return is a collection of 'groups' that matched: [0, 1, 5] for example.
      * This collection of groups may be passed as the argument to the method getValuesForGroups.
      * For example: AGE.getValuesForGroups(getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')
@@ -38,7 +38,7 @@ public class GroupingRequiredFilterFunctions {
      * the supplied parameters
      * If the return of the getGroupsForMatchesInGroup call was [0, 1, 5] then the values for AGE.0, AGE.1, AGE.5] will be returned
      * </pre>
-     * 
+     *
      * @param args
      *            set of arguments
      * @return a collection of the groups that matched.
@@ -58,7 +58,7 @@ public class GroupingRequiredFilterFunctions {
         } else {
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
-        
+
         leftSideMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
@@ -68,7 +68,7 @@ public class GroupingRequiredFilterFunctions {
                 groups.add(context);
             }
             for (int i = 2; i < args.length; i++) {
-                
+
                 if (args[i] instanceof Iterable) {
                     boolean contextHasMatch = false;
                     for (Object fieldValue : (Iterable) args[i]) {
@@ -87,7 +87,7 @@ public class GroupingRequiredFilterFunctions {
                 }
             }
         });
-        
+
         if (args.length != 2) { // if they passed in only 2 args, then get the groups for whatever was in the first (only) arg pair
             // if there was a match found at all levels, then the matches.size will be equal to the
             // number of field/regex pairs
@@ -100,10 +100,10 @@ public class GroupingRequiredFilterFunctions {
         }
         return groups;
     }
-    
+
     /**
      * helper function for getGroupsForMatchesInGroup.
-     * 
+     *
      * @param fieldValue
      *            the field value
      * @param regex
@@ -137,7 +137,7 @@ public class GroupingRequiredFilterFunctions {
             return false;
         }
     }
-    
+
     // move all these kinds of methods into a central utility once we refactor this
     private static String getSubgroup(String fieldName) {
         int index = fieldName.lastIndexOf('.');
@@ -145,9 +145,9 @@ public class GroupingRequiredFilterFunctions {
             return fieldName.substring(index + 1);
         }
         return null;
-        
+
     }
-    
+
     /**
      * <pre>
      * 'args' will be either a matched set of field/regex pairs, or a matched set of field/regex pairs followed by an index integer,
@@ -175,15 +175,15 @@ public class GroupingRequiredFilterFunctions {
         } else {
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatches(fieldValue1, regex).stream();
         }
-        
+
         leftSideMatches.forEach(currentMatch -> {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my fieldValue2 will be a collection that looks like [ AGE.FOO.7.1:1, GENDER.BAZ.7.2:2, NAME.FO.7.3:1 ]
             // I am only interested in a match on the one that ends with the 'tail' (.2) that I found above
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
-            
+
             for (int i = 2; i < args.length; i += 2) {
-                
+
                 if (args[i] instanceof Iterable) {
                     for (Object fv : (Iterable) args[i]) {
                         manageMatchesInGroupRemainingArgs(fv, args[i + 1].toString(), context, allMatches, currentMatch);
@@ -193,16 +193,16 @@ public class GroupingRequiredFilterFunctions {
                 }
             }
         });
-        
+
         // if there was a match found at all levels, then the matches.size will be equal to the
         // number of field/regex pairs
         if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
             allMatches.clear();
         }
         return Collections.unmodifiableCollection(allMatches);
-        
+
     }
-    
+
     /**
      * helper function for matchesInGroup
      *
@@ -231,7 +231,7 @@ public class GroupingRequiredFilterFunctions {
             }
         }
     }
-    
+
     /**
      * <pre>
      * 'args' will be either a matched set of field/regex pairs, or a matched set of field/regex pairs followed by an index integer,
@@ -269,9 +269,9 @@ public class GroupingRequiredFilterFunctions {
             String matchFieldName = ValueTuple.getFieldName(currentMatch);
             // my firstMatches will be a collection that looks like [NAME.grandparent_0.parent_0.child_0:SANTINO]
             String theFirstMatch = EvaluationPhaseFilterFunctions.getMatchToLeftOfPeriod(matchFieldName, positionFromLeft);
-            
+
             for (int i = 2; i < args.length; i += 2) {
-                
+
                 if (args[i] instanceof Iterable) {
                     // args[i] is a collection that looks like:
                     // [[NAME.grandparent_0.parent_1.child_0,LUCA,luca],
@@ -315,7 +315,7 @@ public class GroupingRequiredFilterFunctions {
                 }
             }
         });
-                    
+
         // if there was a match found at all levels, then the matches.size will be equal to the
         // number of field/regex pairs
         if (allMatches.size() < args.length / 2) { // truncated in case args.length was odd
@@ -326,10 +326,10 @@ public class GroupingRequiredFilterFunctions {
         }
         return Collections.unmodifiableCollection(allMatches);
     }
-    
+
     private static void manageMatchesInGroupLeftRemainingArgs(Object fieldValue, String regex, Collection<ValueTuple> allMatches, String theFirstMatch,
                     String theNextMatch, ValueTuple currentMatch) {
-        
+
         if (theNextMatch != null && theNextMatch.equals(theFirstMatch)) {
             if (log.isTraceEnabled()) {
                 log.trace("\tfirst match equals the second: " + theFirstMatch + " == " + theNextMatch);
@@ -338,17 +338,17 @@ public class GroupingRequiredFilterFunctions {
             allMatches.add(currentMatch);
         }
     }
-    
+
     /**
      * test that fields (field names) have values that match within the same grouping context.
-     * 
+     *
      * @param fields
      *            field names
      * @return a collection of matches
      */
     public static Collection<ValueTuple> atomValuesMatch(Object... fields) {
         List<Iterable<?>> iterableFields = new ArrayList<>();
-        
+
         for (Object field : fields) {
             if (field instanceof Iterable == false) {
                 field = Collections.singleton(field);
@@ -357,10 +357,10 @@ public class GroupingRequiredFilterFunctions {
         }
         return atomValuesMatch(iterableFields.toArray(new Iterable[iterableFields.size()]));
     }
-    
+
     /**
      * test that fields have values that match within the same grouping context.
-     * 
+     *
      * @param fields
      *            list of fields
      * @return a collection of matches
@@ -392,7 +392,7 @@ public class GroupingRequiredFilterFunctions {
             }
             matches.addAll(migMatches);
         }
-        
+
         if (log.isTraceEnabled()) {
             log.trace("matches:" + matches);
         }

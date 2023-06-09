@@ -24,45 +24,45 @@ import static datawave.query.testframework.RawDataManager.NOT_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(MaxExpansionRegexQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig max = new MaxExpandCityFields();
         max.addIndexOnlyField(CitiesDataType.CityField.CITY.name());
         max.addIndexOnlyField(CitiesDataType.CityField.STATE.name());
-        
+
         dataTypes.add(new CitiesDataType(CitiesDataType.CityEntry.maxExp, max));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public MaxExpansionIndexOnlyQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     // ===================================
     // test cases
-    
+
     @Test
     public void testMaxValueRegexIndexOnly() throws Exception {
         log.info("------  testMaxValueRegexIndexOnly  ------");
         // set regex to match multiple fields
         String city = EQ_OP + "'a-1'";
         String code = RE_OP + "'b.*'";
-        
+
         String query = CitiesDataType.CityField.CITY.name() + city + AND_OP + CitiesDataType.CityField.STATE.name() + code;
-        
+
         this.logic.setMaxValueExpansionThreshold(20);
         runTest(query, query);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
-        
+
         this.logic.setMaxValueExpansionThreshold(2);
         try {
             runTest(query, query);
@@ -70,12 +70,12 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         } catch (DatawaveFatalQueryException e) {
             // expected
         }
-        
+
         ivaratorConfig();
         runTest(query, query);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
-    
+
     @Test
     public void testMaxValueAnyField() throws Exception {
         log.info("------  testMaxValueAnyField  ------");
@@ -85,11 +85,11 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String anyT = this.dataManager.convertAnyField(regexT);
         String anyA = this.dataManager.convertAnyField(regexA);
         String expect = anyT + AND_OP + anyA;
-        
+
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
-        
+
         this.logic.setMaxValueExpansionThreshold(2);
         try {
             runTest(query, expect);
@@ -97,17 +97,17 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         } catch (RuntimeException re) {
             // expected
         }
-        
+
         ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
     }
-    
+
     @Test
     public void testMaxValueNegAnyField() throws Exception {
         log.info("------  testMaxValueNegAnyField  ------");
@@ -115,11 +115,11 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         String country = "'b-StaTe'";
         String query = Constants.ANY_FIELD + EQ_OP + country + AND_OP + NOT_OP + "(" + Constants.ANY_FIELD + regexPhrase + ")";
         String expect = CitiesDataType.CityField.STATE.name() + EQ_OP + "'bi-s'";
-        
+
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         try {
             runTest(query, expect);
@@ -127,12 +127,12 @@ public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
-        
+
         ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

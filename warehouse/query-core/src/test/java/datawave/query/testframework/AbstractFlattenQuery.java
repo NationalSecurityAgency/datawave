@@ -1,7 +1,7 @@
 package datawave.query.testframework;
 
 public abstract class AbstractFlattenQuery { // extends AbstractFunctionalQuery {
-    
+
     // private static final Logger log = Logger.getLogger(SimpleFlattenQueryTest.class);
     //
     // @BeforeClass
@@ -19,5 +19,5 @@ public abstract class AbstractFlattenQuery { // extends AbstractFunctionalQuery 
     //
     //
     // protected FieldConfig getFieldConfig();
-    
+
 }

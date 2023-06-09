@@ -65,32 +65,32 @@ import org.apache.log4j.Logger;
  * Assumes that each ASTReferenceExpression has a parent ASTReference node
  */
 public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
-    
+
     private static final Logger log = Logger.getLogger(MinimalReferenceExpressionsVisitor.class);
-    
+
     private boolean isValid = true;
-    
+
     private enum reason {
         // the reason a query tree failed validation
         DOUBLE_PAREN, WRAPPED_SINGLE_CHILD
     }
-    
+
     public static boolean validate(JexlNode node) {
         MinimalReferenceExpressionsVisitor visitor = new MinimalReferenceExpressionsVisitor();
         node.jjtAccept(visitor, null);
         return visitor.isValid();
     }
-    
+
     private MinimalReferenceExpressionsVisitor() {}
-    
+
     public boolean isValid() {
         return this.isValid;
     }
-    
+
     /*
      * Operations
      */
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         if (!isValid) {
@@ -105,7 +105,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
             return data;
         }
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         if (!isValid) {
@@ -120,14 +120,14 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
             return data;
         }
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         if (!isValid)
             return data;
-        
+
         QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getInstance(node);
-        
+
         if (instance.isAnyType()) {
             // descend into the marker's source node
             JexlNode source = instance.getSource();
@@ -143,21 +143,21 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
             return data;
         }
     }
-    
+
     /*
      * Helper methods
      */
-    
+
     // is this node a parentheses
     private boolean isParen(JexlNode node) {
         return node instanceof ASTReference && node.jjtGetNumChildren() == 1 && node.jjtGetChild(0) instanceof ASTReferenceExpression;
     }
-    
+
     // fetch the grandchild
     private JexlNode getLeftMostGrandchild(JexlNode node) {
         return node.jjtGetChild(0).jjtGetChild(0);
     }
-    
+
     private boolean isAnyChildAWrappedSingleTerm(JexlNode node) {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
@@ -167,19 +167,19 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         }
         return false;
     }
-    
+
     private boolean isWrappedSingleTerm(JexlNode node) {
         if (isParen(node)) {
             boolean isMarkerNode = QueryPropertyMarkerVisitor.getInstance(node).isAnyType();
             if (!isMarkerNode) {
                 JexlNode unwrapped = JexlASTHelper.dereference(node);
-                
+
                 return !(unwrapped instanceof ASTAndNode || unwrapped instanceof ASTOrNode || unwrapped instanceof ASTAssignment);
             }
         }
         return false;
     }
-    
+
     /**
      * Mark the tree as invalid, print the cause and the node that caused this
      *
@@ -192,13 +192,13 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         isValid = false;
         log.info("Invalid node (" + cause + "): " + JexlStringBuildingVisitor.buildQueryWithoutParse(node));
     }
-    
+
     /*
      * Pass through ASTJexlScript.
-     * 
+     *
      * Potential to short circuit on SimpleNode, ASTReferenceExpression and ASTNotNode methods
      */
-    
+
     @Override
     public Object visit(SimpleNode node, Object data) {
         if (isValid) {
@@ -206,7 +206,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         }
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         if (isValid) {
@@ -214,7 +214,7 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         }
         return data;
     }
-    
+
     // descend into negated branches of the query
     @Override
     public Object visit(ASTNotNode node, Object data) {
@@ -223,233 +223,233 @@ public class MinimalReferenceExpressionsVisitor extends BaseVisitor {
         }
         return data;
     }
-    
+
     /*
      * Short circuits, do not descend further into leaf nodes
      */
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAmbiguous node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAdditiveOperator node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return data;
     }
-    
+
     @Override
     @SuppressWarnings("deprecation")
     public Object visit(ASTIntegerLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     @SuppressWarnings("deprecation")
     public Object visit(ASTFloatLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return data;

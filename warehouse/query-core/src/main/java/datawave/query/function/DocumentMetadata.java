@@ -9,9 +9,9 @@ import javax.annotation.Nullable;
 import java.util.Map.Entry;
 
 public class DocumentMetadata implements DocumentPermutation {
-    
+
     private static final Logger log = Logger.getLogger(DocumentMetadata.class);
-    
+
     @Override
     @Nullable
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> input) {

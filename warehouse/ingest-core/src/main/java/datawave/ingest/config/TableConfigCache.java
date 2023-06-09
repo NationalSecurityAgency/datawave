@@ -14,23 +14,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class TableConfigCache extends BaseHdfsFileCacheUtil {
-    
+
     public static final String ACCUMULO_CONFIG_CACHE_PATH_PROPERTY = "accumulo.config.cache.path";
     public static final String DEFAULT_ACCUMULO_CONFIG_CACHE_PATH = "/data/accumuloConfigCache/accConfCache.txt";
     public static final String ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY = "accumulo.config.cache.enable";
     public static final String ACCUMULO_CONFIG_FILE_CACHE_REPICAS_PROPERTY = "accumulo.config.cache.replicas";
-    
+
     private Map<String,Map<String,String>> configMap = new HashMap<>();
     private static TableConfigCache cache;
-    
+
     private static final Object lock = new Object();
-    
+
     protected static final Logger log = Logger.getLogger("datawave.ingest");
-    
+
     private TableConfigCache(Configuration conf) {
         super(conf);
     }
-    
+
     public static TableConfigCache getCurrentCache(Configuration conf) {
         synchronized (lock) {
             if (null == cache) {
@@ -39,19 +39,19 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
         }
         return cache;
     }
-    
+
     public void setTableConfigs(Map<String,Map<String,String>> confMap) {
         configMap = confMap;
     }
-    
+
     public void clear() {
         configMap = new HashMap();
     }
-    
+
     public boolean isInitialized() {
         return !configMap.isEmpty();
     }
-    
+
     @Override
     public void writeCacheFile(FileSystem fs, Path tmpCacheFile) {
         try (PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(tmpCacheFile, this.cacheReplicas)), false, "UTF-8")) {
@@ -64,7 +64,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
             log.error("Unable to write cache file " + tmpCacheFile, e);
         }
     }
-    
+
     @Override
     protected void readCache(BufferedReader in) throws IOException {
         this.configMap = new HashMap<>();
@@ -88,25 +88,25 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
                 throw new IOException("Invalid Table Config Cache at " + this.cacheFilePath + " . Please verify its contents.");
             }
         }
-        
+
     }
-    
+
     @Override
     public void setCacheFilePath(Configuration conf) {
         this.cacheFilePath = new Path(conf.get(ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, DEFAULT_ACCUMULO_CONFIG_CACHE_PATH));
         this.cacheReplicas = (short) (conf.getInt(ACCUMULO_CONFIG_FILE_CACHE_REPICAS_PROPERTY, 3));
-        
+
     }
-    
+
     public Map<String,Map<String,String>> getAllTableProperties() throws IOException {
         if (this.configMap.isEmpty()) {
             read();
         }
-        
+
         return this.configMap;
-        
+
     }
-    
+
     public Map<String,String> getTableProperties(String tableName) throws IOException {
         if (this.configMap.isEmpty()) {
             read();
@@ -115,7 +115,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
             log.error("No accumulo config cache for " + tableName + ".  Please generate the accumulo config cache after ensuring the table exists.");
         }
         return this.configMap.get(tableName);
-        
+
     }
-    
+
 }

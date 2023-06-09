@@ -44,24 +44,24 @@ import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
  * </ul>
  */
 public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
-    
+
     private static final Joiner JOINER = Joiner.on(',').skipNulls();
-    
+
     private static final Set<String> RESERVED = ImmutableSet.of(QueryFunctions.QUERY_FUNCTION_NAMESPACE, QueryFunctions.OPTIONS_FUNCTION,
                     QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
                     QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
-    
+
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
         QueryOptionsFromQueryVisitor visitor = new QueryOptionsFromQueryVisitor();
         return (T) node.jjtAccept(visitor, data);
     }
-    
+
     /**
      * If the passed data is a {@link Map}, type cast and call the method to begin collection of the function arguments
-     * 
+     *
      * @param node
      *            potentially an f:options function node
      * @param data
@@ -77,7 +77,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     /**
      * If the passed OR node contains a f:options, descend the tree with a List in the passed userdata. The function args will be collected into the List when
      * visiting the child ASTStringLiteral nodes.
@@ -92,12 +92,12 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     public Object visit(ASTOrNode node, Object data) {
         return visitJunction(node, data, () -> new ASTOrNode(JJTORNODE));
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         return visitJunction(node, data, () -> new ASTAndNode(JJTANDNODE));
     }
-    
+
     private Object visitJunction(JexlNode node, Object data, Supplier<JexlNode> creator) {
         // Visit each child, and keep only the non-null ones.
         List<JexlNode> children = new ArrayList<>();
@@ -107,7 +107,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 children.add((JexlNode) copy);
             }
         }
-        
+
         // If there are no children, return null and effectively delete the junction.
         if (children.isEmpty()) {
             return null;
@@ -122,7 +122,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             return copy;
         }
     }
-    
+
     public enum UniqueFunction {
         UNIQUE_BY_DAY(UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY),
         UNIQUE_BY_HOUR(UniqueFunction.UNIQUE_BY_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR),
@@ -132,7 +132,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         UNIQUE_BY_SECOND(UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND),
         UNIQUE_BY_TENTH_OF_HOUR(UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR),
         UNIQUE_BY_YEAR(UniqueFunction.UNIQUE_BY_YEAR_FUNCTION, UniqueGranularity.TRUNCATE_TEMPORAL_TO_YEAR);
-        
+
         public static final String UNIQUE_BY_DAY_FUNCTION = "unique_by_day";
         public static final String UNIQUE_BY_HOUR_FUNCTION = "unique_by_hour";
         public static final String UNIQUE_BY_MINUTE_FUNCTION = "unique_by_minute";
@@ -141,33 +141,33 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         public static final String UNIQUE_BY_SECOND_FUNCTION = "unique_by_second";
         public static final String UNIQUE_BY_MILLISECOND_FUNCTION = "unique_by_millisecond";
         public static final String UNIQUE_BY_YEAR_FUNCTION = "unique_by_year";
-        
+
         public final String name;
         public final UniqueGranularity granularity;
-        
+
         UniqueFunction(String name, UniqueGranularity granularity) {
             this.name = name;
             this.granularity = granularity;
         }
-        
+
         public String getName() {
             return name;
         }
-        
+
         public static UniqueFunction findByName(String name) {
             return UniqueFunction.valueOf(name.toUpperCase());
         }
     }
-    
+
     private void updateUniqueFields(ASTFunctionNode node, UniqueFields uniqueFields, Map<String,String> optionsMap, UniqueFunction uniqueFunction) {
         putFieldsFromChildren(node, uniqueFields, uniqueFunction.granularity);
         updateUniqueFieldsOption(optionsMap, uniqueFields);
     }
-    
+
     /**
      * If this is a function that contains key/value options, descend the tree with a {@link List} as the data. The function args will be collected into the
      * list when visiting the child {@link ASTStringLiteral} nodes.
-     * 
+     *
      * @param node
      *            the {@link ASTFunctionNode} that potentially contains parsable function options
      * @param optionsMap
@@ -194,7 +194,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     List<String> fieldList = new ArrayList<>();
                     this.visit(node, fieldList);
                     String fieldString = JOINER.join(fieldList);
-                    
+
                     // Parse the unique fields.
                     UniqueFields uniqueFields = UniqueFields.from(fieldString);
                     updateUniqueFieldsOption(optionsMap, uniqueFields);
@@ -228,14 +228,14 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         }
         return super.visit(node, optionsMap);
     }
-    
+
     // Find all unique fields declared in the provided node and add them to the provided {@link UniqueFields} with the specified transformer.
     private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, UniqueGranularity transformer) {
         List<String> fields = new ArrayList<>();
         this.visit(node, fields);
         fields.forEach((field) -> uniqueFields.put(field, transformer));
     }
-    
+
     // Update the {@value QueryParameters#UNIQUE_FIELDS} option to include the given unique fields.
     private void updateUniqueFieldsOption(Map<String,String> optionsMap, UniqueFields uniqueFields) {
         // Combine with any previously found unique fields.
@@ -245,10 +245,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         }
         optionsMap.put(QueryParameters.UNIQUE_FIELDS, uniqueFields.toString());
     }
-    
+
     /**
      * If the passed data is a {@link List}, add the node's image to the list.
-     * 
+     *
      * @param node
      *            the {@link ASTStringLiteral} node
      * @param data
@@ -260,7 +260,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         addImageToListData(node, data);
         return super.visit(node, data);
     }
-    
+
     /**
      * If the passed data is a {@link List}, and the node's image is not in the {@link #RESERVED} set, add the node's image to the list.
      *
@@ -278,7 +278,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     // If the given data is a list, add the node's image to it.
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void addImageToListData(JexlNode node, Object data) {
@@ -287,11 +287,11 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             list.add(node.image);
         }
     }
-    
+
     /**
      * If the visit to the ASTFunction node returned null (because it was the options function) then there could be an empty ASTReference node. This would
      * generate a parseException in the jexl Parser unless the empty ASTReference node is also removed by returning null here.
-     * 
+     *
      * @param node
      *            the {@link ASTReference} node
      * @param data
@@ -305,7 +305,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             return null;
         return n;
     }
-    
+
     /**
      * If the visit to the ASTFunction node returned null (because it was the options function) then there could be an empty ASTReferenceExpression node. This
      * would generate a parseException in the jexl Parser unless the empty ASTReferenceExpression node is also removed by returning null here.
@@ -323,5 +323,5 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             return null;
         return n;
     }
-    
+
 }

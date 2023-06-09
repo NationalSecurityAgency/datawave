@@ -32,24 +32,24 @@ import org.apache.hadoop.io.Text;
  * SOURCE and SOURCE because an edge only has one SOURCE
  */
 public class QueryContext implements EdgeModelAware, EdgeContext {
-    
+
     private RowContext rowContext;
     private ColumnContext columnContext;
     private Set<QueryContext> otherContexts;
-    
+
     private boolean hasCompleteColumnFamilies = false;
-    
+
     public void packageIdentities(List<IdentityContext> identityContexts) {
         packageIdentities(identityContexts, true);
     }
-    
+
     public void packageIdentities(List<IdentityContext> identityContexts, boolean enforceRules) {
         if (!identityContexts.get(0).isEquivalence()) {
             buildColumnContexts(identityContexts, enforceRules);
             return;
         }
         String type = identityContexts.get(0).getIdentity();
-        
+
         if (type.equals(EDGE_SOURCE) || type.equals(EDGE_SINK)) {
             buildRowContexts(identityContexts, enforceRules);
         } else if (type.equals(EDGE_TYPE) || type.equals(EDGE_RELATIONSHIP) || type.equals(EDGE_ATTRIBUTE1) || type.equals(EDGE_ATTRIBUTE2)
@@ -59,12 +59,12 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             throw new RuntimeException("Invalid identifier: " + type);
         }
     }
-    
+
     /*
      * If no edge type+relationship is contained in this query context then return false
      */
     public boolean hasCompleteColumnFamily() {
-        
+
         if (columnContext != null) {
             if (columnContext.hasCompleteColumnFamily()) {
                 if (otherContexts == null) {
@@ -86,11 +86,11 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 return hasCompleteColumnFamilies;
             }
         }
-        
+
         return hasCompleteColumnFamilies;
-        
+
     }
-    
+
     private boolean allCompleteColumnFamily() {
         for (QueryContext queryContext : otherContexts) {
             if (queryContext.columnContext == null || !queryContext.columnContext.hasCompleteColumnFamily()) {
@@ -99,7 +99,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
         return true;
     }
-    
+
     private boolean allNoColumnFamily() {
         for (QueryContext queryContext : otherContexts) {
             if (queryContext.columnContext != null && !queryContext.columnContext.hasNoColumnFamily()) {
@@ -108,7 +108,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
         return true;
     }
-    
+
     /*
      * Should only be called if hasCompleteColumnFamily() == true
      */
@@ -116,9 +116,9 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         if (!hasCompleteColumnFamilies) {
             throw new IllegalStateException("Does not have complete column families");
         }
-        
+
         List<Text> columnFamilies = new ArrayList<>();
-        
+
         if (columnContext != null && columnContext.isCompleteColumnFamilies()) {
             columnFamilies.addAll(columnContext.computeColumnFamilyUnions(includeStats));
         }
@@ -127,12 +127,12 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 if (queryContext.columnContext.isCompleteColumnFamilies()) {
                     columnFamilies.addAll(queryContext.columnContext.computeColumnFamilyUnions(includeStats));
                 }
-                
+
             }
         }
         return columnFamilies;
     }
-    
+
     /**
      * Attempts to condense several query contexts that all share the same row sources. This current query context may or may not have row id info present (row
      * context). Depending on when this method is used that can be good or bad. (During an AND node this qruey context needs to have sources, during an OR node
@@ -146,7 +146,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
      *         may have partially combined)
      */
     public boolean combineQueryContexts(List<QueryContext> other, boolean optionalSourceInfo) {
-        
+
         if (optionalSourceInfo || (this.hasSourceList())) {
             // Initialize other contexts if needed
             if (otherContexts == null) {
@@ -154,15 +154,15 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             }
             boolean overlappingColumn = false;
             boolean overlappingSink = false;
-            
+
             // Loop over each query context to be combined into this one
             for (QueryContext oContext : other) {
-                
+
                 // Cannot have source list
                 if (oContext.hasSourceList()) {
                     return false;
                 }
-                
+
                 // Other contexts should not be maintaining lists of other contexts
                 // here we strip the otherContexts of the other Contexts and put them all in the same list
                 if (oContext.otherContexts != null) {
@@ -179,34 +179,34 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                                 overlappingSink = true;
                             }
                         }
-                        
+
                         otherContexts.add(qContext);
                     }
                     // clear the pointer so we don't accidentally stumble into them
                     oContext.otherContexts = null;
                 }
-                
+
                 if (oContext.rowContext != null) {
                     // May need to push this rowContext's list of sinks out into the other contexts
                     if (oContext.rowContext.getSinks() != null && this.rowContext.getSinks() != null) {
                         overlappingSink = true;
                     }
                 }
-                
+
                 if (oContext.columnContext != null) {
                     // May need to push this columns context out into the other context
                     if (overlappingColumnContext(oContext.columnContext)) {
                         overlappingColumn = true;
                     }
                 }
-                
+
                 // finally add the combining query context to the list of other context if it has either a non null row or
                 // column context. (it could be null if the query context's otherContexts was populated while its row and column
                 // context was null)
                 if (oContext.columnContext != null || oContext.rowContext != null) {
                     otherContexts.add(oContext);
                 }
-                
+
             }
             // If any parts of this queryContext needs to be moved out into the other context list do so here
             if (overlappingColumn || overlappingSink) {
@@ -218,7 +218,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                         tempContext.packageIdentities(this.rowContext.getSinks());
                         this.rowContext.sinks = null;
                     }
-                    
+
                 }
                 if (this.columnContext != null && (!this.hasSourceList() || overlappingColumn)) {
                     tempContext.setColumnContext(this.columnContext);
@@ -226,12 +226,12 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 }
                 otherContexts.add(tempContext);
             }
-            
+
             return true;
         }
         return false;
     }
-    
+
     /*
      * Helper method used when combining query contexts Checks to see if this column context has any of the same fields set that the other context has.
      */
@@ -258,28 +258,28 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             }
         }
     }
-    
+
     private void buildRowContexts(List<IdentityContext> identityContexts, boolean enforceRules) {
         if (rowContext == null) {
             rowContext = new RowContext();
         }
         rowContext.packageIdentities(identityContexts, enforceRules);
     }
-    
+
     private void buildColumnContexts(List<IdentityContext> identityContexts, boolean enforceRules) {
         if (columnContext == null) {
             columnContext = new ColumnContext();
         }
         columnContext.packageIdentities(identityContexts, enforceRules);
-        
+
     }
-    
+
     private void verifyNotSet(List<IdentityContext> contexts, boolean check) {
         if (check == true && contexts != null) {
             throw new IllegalArgumentException("Can't AND like identifiers: " + contexts.get(0).getIdentity());
         }
     }
-    
+
     /*
      * Takes two string builders to append the query string for this query context. The includStats boolean tells if we need to build the query stats string The
      * includeSource tells if we need to include sources in the query string(s) The includeSink tells if we need to include sinks in the query string(s) we can
@@ -289,21 +289,21 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     boolean includeSink, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms, boolean updateWhitelist) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
-        
+
         NormalizedQuery query = this.toString(includeStats, includeSource, includeSink, preFilterValues, includeColumnFamilyTerms, updateWhitelist);
-        
+
         trimmedQuery.append(query.getNormalizedQuery());
         if (includeStats) {
             trimmedStatsQuery.append(query.getNormalizedStatsQuery());
         }
-        
+
         if (this.otherContexts != null && !otherContexts.isEmpty()) {
             StringBuilder tempQueryString = new StringBuilder();
             StringBuilder tempQueryStatsString = new StringBuilder();
-            
+
             int i = 0;
             for (QueryContext oContext : this.otherContexts) {
-                
+
                 if (i > 0) {
                     if (tempQueryString.length() > 7) {
                         tempQueryString.append(OR);
@@ -323,14 +323,14 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 if (includeStats) {
                     tempQueryStatsString.append(query.getNormalizedStatsQuery());
                 }
-                
+
                 if (this.otherContexts.size() > 1) {
                     tempQueryString.append(")");
                     if (includeStats) {
                         tempQueryStatsString.append(")");
                     }
                 }
-                
+
                 i++;
             }
             if (trimmedQuery.length() > 7 && tempQueryString.length() > 7) {
@@ -351,23 +351,23 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             normalizedStatsQuery.append(trimmedStatsQuery);
         }
     }
-    
+
     private NormalizedQuery toString(boolean includeStats, boolean includeSource, boolean includeSink, HashMultimap<String,String> preFilterValues,
                     boolean includeColumnFamilyTerms, boolean updateWhitelist) {
-        
+
         NormalizedQuery rowString = null, colString = null;
-        
+
         if (this.getRowContext() != null) {
             rowString = this.getRowContext().toString(includeStats, includeSource, includeSink);
         }
         if (this.getColumnContext() != null) {
             colString = this.getColumnContext().toString(includeStats, preFilterValues, includeColumnFamilyTerms, updateWhitelist);
         }
-        
+
         NormalizedQuery ret = new NormalizedQuery();
         StringBuilder normalizedQuery = new StringBuilder();
         StringBuilder normalizedStatsQuery = new StringBuilder();
-        
+
         if (rowString != null) {
             normalizedQuery.append(rowString.getNormalizedQuery());
             if (includeStats) {
@@ -388,7 +388,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 normalizedStatsQuery.append(colString.getNormalizedStatsQuery());
             }
         }
-        
+
         ret.setNormalizedQuery(normalizedQuery.toString());
         if (includeStats) {
             ret.setNormalizedStatsQuery(normalizedStatsQuery.toString());
@@ -397,11 +397,11 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
         return ret;
     }
-    
+
     public RowContext getRowContext() {
         return rowContext;
     }
-    
+
     public boolean hasSourceList() {
         if (rowContext == null) {
             return false;
@@ -413,50 +413,50 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             }
         }
     }
-    
+
     public ColumnContext getColumnContext() {
         return columnContext;
     }
-    
+
     public Set<QueryContext> getOtherContexts() {
         return otherContexts;
     }
-    
+
     private void updateWhiteList(IdentityContext expression, HashMultimap<String,String> preFilterValues) {
         /*
          * A whitelist is a list of things that you allow, therefore, there is no reason to check for things that you do not allow. This means there is no
          * reason to check for NOT_EQUALS or NOT_EQUALS_REGEX, because they won't be allowed by default.
          */
-        
+
         if (expression.getOperation().equals(EQUALS)) {
             preFilterValues.put(expression.getIdentity(), expression.getLiteral());
         } else if (expression.getOperation().equals(EQUALS_REGEX)) {
             preFilterValues.put(expression.getIdentity(), EdgeQueryLogic.PRE_FILTER_DISABLE_KEYWORD);
         }
-        
+
     }
-    
+
     private int populateQuery(List<IdentityContext> terms, StringBuilder trimmedQuery, StringBuilder trimmedStatsQuery, String operator, boolean includeStats,
                     HashMultimap<String,String> preFilterValues, boolean addToPrefilter) {
         int numTermsAdded = 0;
         boolean createStats = includeStats;
         boolean expandStats = false;
         StringBuilder tempStatsStringBuilder = new StringBuilder();
-        
+
         trimmedQuery.append("(");
         if (createStats) {
             tempStatsStringBuilder.append("(");
         }
-        
+
         for (int i = 0; i < terms.size(); i++) {
             IdentityContext iContext = terms.get(i);
-            
+
             if (includeStats == false || iContext.getIdentity().equals(EDGE_SINK)) {
                 createStats = false;
             } else {
                 createStats = true;
             }
-            
+
             if (iContext.getIdentity().equals(EDGE_RELATIONSHIP) || iContext.getIdentity().equals(EDGE_ATTRIBUTE1)) {
                 expandStats = true;
             } else {
@@ -469,7 +469,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     tempStatsStringBuilder.append(operator);
                 }
             }
-            
+
             if (!iContext.getIdentity().equals(FUNCTION)) {
                 trimmedQuery.append(iContext.getIdentity() + " " + iContext.getOperation() + " " + "'" + iContext.getEscapedLiteral() + "'");
                 if (createStats) {
@@ -486,7 +486,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     tempStatsStringBuilder.append(iContext.getLiteral());
                 }
             }
-            
+
             if (addToPrefilter) {
                 updateWhiteList(iContext, preFilterValues);
             }
@@ -496,7 +496,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         if (createStats) {
             tempStatsStringBuilder.append(")");
         }
-        
+
         if (createStats && tempStatsStringBuilder.length() > 7) {
             if (trimmedStatsQuery.length() > 7) {
                 trimmedStatsQuery.append(AND);
@@ -505,33 +505,33 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
         return numTermsAdded;
     }
-    
+
     /*
      * Used for creating the stats query. Splits up EDGE_RELATIONSHIP=A-B into (EDGE_RELATIONSHIP=A)
      */
     private static StringBuilder splitCompoundValue(String name, String operator, String value, HashMultimap<String,String> preFilterValues,
                     boolean updateWhitelist) {
         StringBuilder sb = new StringBuilder();
-        
+
         String[] parts = value.split("-");
-        
+
         // parts should be length 1 or 2 if its not return nothing
         if (parts.length == 1) {
             sb.append(name).append(" " + operator + " '").append(parts[0]).append("'");
         } else if (parts.length == 2) {
             sb.append(name).append(" " + operator + " '").append(parts[0]).append("'");
             // don't need the second value since that would be the sink's relationship and we don't return stats edges for the sink
-            
+
             // If we do split then we need to add the two new values to the pre-filter white list
             if (updateWhitelist) {
                 preFilterValues.put(name, parts[0]);
             }
         }
-        
+
         return sb;
-        
+
     }
-    
+
     public class ColumnContext implements EdgeModelAware {
         // Each list (except exclusions and funtions) is expected to have identity contexts all with the same opperation
         private List<IdentityContext> edgeTypes;
@@ -541,16 +541,16 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         private List<IdentityContext> edgeAttribute3Values;
         private List<IdentityContext> exclusions;
         private List<IdentityContext> functions;
-        
+
         @Override
         public boolean equals(Object o) {
             if (this == o)
                 return true;
             if (!(o instanceof ColumnContext))
                 return false;
-            
+
             ColumnContext that = (ColumnContext) o;
-            
+
             if (completeColumnFamilies != that.completeColumnFamilies)
                 return false;
             if (edgeTypes != null ? !edgeTypes.equals(that.edgeTypes) : that.edgeTypes != null)
@@ -566,9 +566,9 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             if (exclusions != null ? !exclusions.equals(that.exclusions) : that.exclusions != null)
                 return false;
             return !(functions != null ? !functions.equals(that.functions) : that.functions != null);
-            
+
         }
-        
+
         @Override
         public int hashCode() {
             int result = edgeTypes != null ? edgeTypes.hashCode() : 0;
@@ -581,21 +581,21 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             result = 31 * result + (completeColumnFamilies ? 1 : 0);
             return result;
         }
-        
+
         private boolean completeColumnFamilies = false;
-        
+
         public void packageIdentities(List<IdentityContext> identityContexts) {
             packageIdentities(identityContexts, true);
         }
-        
+
         public void packageIdentities(List<IdentityContext> identityContexts, boolean enforceRules) {
             if (!identityContexts.get(0).isEquivalence()) {
                 addExclusion(identityContexts);
                 return;
             }
-            
+
             String type = identityContexts.get(0).getIdentity();
-            
+
             if (type.equals(EDGE_TYPE)) {
                 verifyNotSet(edgeTypes, enforceRules);
                 addEdgeTypes(identityContexts);
@@ -618,11 +618,11 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 throw new RuntimeException("Invalid identifier: " + type);
             }
         }
-        
+
         /*
          * Complete column family means has both a edge type list and edge relation list and all operations in both lists are == operations (if =~ it is not
          * complete)
-         * 
+         *
          * Used to determine if we can set a list of column families to the scanner and omit them from the normalized query string
          */
         public boolean hasCompleteColumnFamily() {
@@ -632,19 +632,19 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             } else if (edgeTypes.get(0).getOperation() != EQUALS) {
                 completeColumnFamilies = false;
             }
-            
+
             if (edgeRelationships == null) {
                 completeColumnFamilies = false;
             } else if (edgeRelationships.get(0).getOperation() != EQUALS) {
                 completeColumnFamilies = false;
             }
-            
+
             return completeColumnFamilies;
         }
-        
+
         /*
          * no column family mean no edge types and no edge relationships
-         * 
+         *
          * Used to help determine if we can add a list of column families to the scanner and omit them from the normalized query
          */
         public boolean hasNoColumnFamily() {
@@ -653,16 +653,16 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             } else {
                 return false;
             }
-            
+
         }
-        
+
         // This should only be called if hasCompleteColumnFamily() == true
         public List<Text> computeColumnFamilyUnions(boolean includeStats) {
             List<Text> columnFamilies = new ArrayList<>();
-            
+
             for (IdentityContext edgeType : edgeTypes) {
                 for (IdentityContext edgeRelationship : edgeRelationships) {
-                    
+
                     columnFamilies.add(new Text(edgeType.getLiteral() + "/" + edgeRelationship.getLiteral()));
                     if (includeStats) {
                         for (EdgeKey.STATS_TYPE stats_type : EdgeKey.STATS_TYPE.values()) {
@@ -672,16 +672,16 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     }
                 }
             }
-            
+
             return columnFamilies;
         }
-        
+
         public NormalizedQuery toString(boolean includeStats, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms,
                         boolean updateWhitelist) {
             StringBuilder trimmedQuery = new StringBuilder();
             StringBuilder trimmedStatsQuery = new StringBuilder();
             int numTermsAdded = 0;
-            
+
             if (includeColumnFamilyTerms && getEdgeTypes() != null) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -689,7 +689,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
                 numTermsAdded += populateQuery(getEdgeTypes(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
             }
-            
+
             if (includeColumnFamilyTerms && getEdgeRelationships() != null) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -697,7 +697,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
                 numTermsAdded += populateQuery(getEdgeRelationships(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateWhitelist));
             }
-            
+
             if (getEdgeAttribute1Values() != null) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -706,7 +706,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
                                 (updateWhitelist));
             }
-            
+
             if (getEdgeAttribute2Values() != null) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -715,7 +715,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
                                 (updateWhitelist));
             }
-            
+
             if (getEdgeAttribute3Values() != null) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -724,7 +724,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
                                 (updateWhitelist));
             }
-            
+
             if (getExclusions() != null) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -732,7 +732,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 // there could be sinks in this list of exclusions which would not get added do AND'ing in method
                 numTermsAdded += populateQuery(getExclusions(), trimmedQuery, trimmedStatsQuery, AND, includeStats, preFilterValues, false);
             }
-            
+
             if (getFunctions() != null) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -740,7 +740,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
                 numTermsAdded += populateQuery(getFunctions(), trimmedQuery, trimmedStatsQuery, AND, includeStats, preFilterValues, false);
             }
-            
+
             NormalizedQuery ret = new NormalizedQuery();
             if (trimmedQuery.length() > 7) {
                 ret.setNormalizedQuery(trimmedQuery.toString());
@@ -752,10 +752,10 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             } else {
                 ret.setNormalizedStatsQuery("");
             }
-            
+
             return ret;
         }
-        
+
         private void addEdgeTypes(List<IdentityContext> identityContexts) {
             if (edgeTypes == null) {
                 edgeTypes = identityContexts;
@@ -763,7 +763,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 edgeTypes.addAll(identityContexts);
             }
         }
-        
+
         private void addEdgeRelationships(List<IdentityContext> identityContexts) {
             if (edgeRelationships == null) {
                 edgeRelationships = identityContexts;
@@ -771,7 +771,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 edgeRelationships.addAll(identityContexts);
             }
         }
-        
+
         private void addEdgeAttribute1Values(List<IdentityContext> identityContexts) {
             if (edgeAttribute1Values == null) {
                 edgeAttribute1Values = identityContexts;
@@ -779,7 +779,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 edgeAttribute1Values.addAll(identityContexts);
             }
         }
-        
+
         private void addAttribute2Values(List<IdentityContext> identityContexts) {
             if (edgeAttribute2Values == null) {
                 edgeAttribute2Values = identityContexts;
@@ -787,7 +787,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 edgeAttribute2Values.addAll(identityContexts);
             }
         }
-        
+
         private void addAttribute3Values(List<IdentityContext> identityContexts) {
             if (edgeAttribute3Values == null) {
                 edgeAttribute3Values = identityContexts;
@@ -795,7 +795,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 edgeAttribute3Values.addAll(identityContexts);
             }
         }
-        
+
         /*
          * The list of exclusions is the only list that is allowed to be updated and is the only list that is allowed to have multiple identifier types.
          */
@@ -806,52 +806,52 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 exclusions.addAll(identityContexts);
             }
         }
-        
+
         public boolean isCompleteColumnFamilies() {
             return completeColumnFamilies;
         }
-        
+
         public List<IdentityContext> getEdgeTypes() {
             return edgeTypes;
         }
-        
+
         public List<IdentityContext> getEdgeRelationships() {
             return edgeRelationships;
         }
-        
+
         public List<IdentityContext> getEdgeAttribute1Values() {
             return edgeAttribute1Values;
         }
-        
+
         public List<IdentityContext> getEdgeAttribute2Values() {
             return edgeAttribute2Values;
         }
-        
+
         public List<IdentityContext> getEdgeAttribute3Values() {
             return edgeAttribute3Values;
         }
-        
+
         public List<IdentityContext> getExclusions() {
             return exclusions;
         }
-        
+
         public List<IdentityContext> getFunctions() {
             return functions;
         }
     }
-    
+
     public class RowContext implements EdgeModelAware {
-        
+
         private List<IdentityContext> sources;
         private List<IdentityContext> sinks;
-        
+
         public void packageIdentities(List<IdentityContext> identityContexts) {
             packageIdentities(identityContexts, true);
         }
-        
+
         public void packageIdentities(List<IdentityContext> identityContexts, boolean enforceRules) {
             String type = identityContexts.get(0).getIdentity();
-            
+
             if (type.equals(EDGE_SOURCE)) {
                 verifyNotSet(sources, enforceRules);
                 addSources(identityContexts);
@@ -862,15 +862,15 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 throw new RuntimeException("Invalid identifier: " + type);
             }
         }
-        
+
         public NormalizedQuery toString(boolean includeStats, boolean includingSources, boolean includingSinks) {
             StringBuilder trimmedQuery = new StringBuilder();
             StringBuilder trimmedStatsQuery = new StringBuilder();
-            
+
             if (includingSources) {
                 populateQuery(getSources(), trimmedQuery, trimmedStatsQuery, OR, includeStats, null, false);
             }
-            
+
             if (getSinks() != null && (includingSources || includingSinks)) {
                 if (trimmedQuery.length() > 7) {
                     trimmedQuery.append(AND);
@@ -878,7 +878,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 // never add target sources to stats query no need to append
                 populateQuery(getSinks(), trimmedQuery, trimmedStatsQuery, OR, includeStats, null, false);
             }
-            
+
             NormalizedQuery ret = new NormalizedQuery();
             if (trimmedQuery.length() > 7) {
                 ret.setNormalizedQuery(trimmedQuery.toString());
@@ -890,11 +890,11 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             } else {
                 ret.setNormalizedStatsQuery("");
             }
-            
+
             return ret;
-            
+
         }
-        
+
         private void addSources(List<IdentityContext> identityContexts) {
             if (sources == null) {
                 sources = identityContexts;
@@ -902,7 +902,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 sources.addAll(identityContexts);
             }
         }
-        
+
         private void addSinks(List<IdentityContext> identityContexts) {
             if (sinks == null) {
                 sinks = identityContexts;
@@ -910,45 +910,45 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 sinks.addAll(identityContexts);
             }
         }
-        
+
         public List<IdentityContext> getSources() {
             return sources;
         }
-        
+
         public List<IdentityContext> getSinks() {
             return sinks;
         }
     }
-    
+
     private class NormalizedQuery {
         String normalizedQuery;
         String normalizedStatsQuery;
-        
+
         public String getNormalizedQuery() {
             return normalizedQuery;
         }
-        
+
         public void setNormalizedQuery(String normalizedQuery) {
             this.normalizedQuery = normalizedQuery;
         }
-        
+
         public String getNormalizedStatsQuery() {
             return normalizedStatsQuery;
         }
-        
+
         public void setNormalizedStatsQuery(String normalizedStatsQuery) {
             this.normalizedStatsQuery = normalizedStatsQuery;
         }
     }
-    
+
     private void setRowContext(RowContext rowContext) {
         this.rowContext = rowContext;
     }
-    
+
     private void setColumnContext(ColumnContext columnContext) {
         this.columnContext = columnContext;
     }
-    
+
     private void setOtherContexts(Set<QueryContext> otherContexts) {
         this.otherContexts = otherContexts;
     }

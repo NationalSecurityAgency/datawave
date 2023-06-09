@@ -5,11 +5,11 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 public class TableCreator {
-    
+
     private static Configuration config = new Configuration();
-    
+
     private static Logger log = Logger.getLogger(TableCreator.class);
-    
+
     public static void main(String[] args) {
         Configuration conf = OptionsParser.parseArguments(args, config);
         try {
@@ -20,5 +20,5 @@ public class TableCreator {
             log.error("Unable to create tables", e);
         }
     }
-    
+
 }

@@ -68,53 +68,53 @@ import datawave.security.util.AuthorizationsUtil;
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class BasicQueryBean {
-    
+
     private static final String PRIVILEGED_USER = "PrivilegedUser";
-    
+
     /**
      * Used when getting a plan prior to creating a query
      */
     public static final String EXPAND_VALUES = "expand.values";
     public static final String EXPAND_FIELDS = "expand.fields";
-    
+
     static final List<String> NO_PLAN_REQUIRED = Arrays.asList("datawave.query.tables.content.ContentQueryTable");
-    
+
     private final Logger log = Logger.getLogger(BasicQueryBean.class);
-    
+
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
+
     @Inject
     private QueryExecutorBean queryExecutor;
-    
+
     @Inject
     @ConfigProperty(name = "dw.cdn.jquery.uri", defaultValue = "/jquery.min.js")
     private String jqueryUri;
-    
+
     @Inject
     @ConfigProperty(name = "dw.cdn.dataTables.uri", defaultValue = "/jquery.dataTables.min.js")
     private String dataTablesUri;
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     @Resource
     private SessionContext sessionContext;
-    
+
     @Inject
     @SpringBean(name = "ResponseObjectFactory")
     private ResponseObjectFactory responseObjectFactory;
-    
+
     @PostConstruct
     public void init() {
-        
+
     }
-    
+
     @PreDestroy
     public void close() {
-        
+
     }
-    
+
     /**
      * Display the first step for a simple query web UI in the quickstart
      *
@@ -133,20 +133,20 @@ public class BasicQueryBean {
         QueryWizardStep1Response response = new QueryWizardStep1Response();
         List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
         List<QueryLogicDescription> logicConfigurationList = new ArrayList<>();
-        
+
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
         Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        
+
         for (QueryLogic<?> l : logicList) {
             try {
                 QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                 d.setAuditType(l.getAuditType(null).toString());
                 d.setLogicDescription(l.getLogicDescription());
-                
+
                 Set<String> optionalQueryParameters = l.getOptionalQueryParameters();
                 if (optionalQueryParameters != null) {
                     d.setSupportedParams(new ArrayList<>(optionalQueryParameters));
@@ -165,7 +165,7 @@ public class BasicQueryBean {
                     requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
                     d.setRequiredRoles(requiredRolesList);
                 }
-                
+
                 try {
                     d.setResponseClass(l.getResponseClass(q));
                 } catch (QueryException e) {
@@ -173,7 +173,7 @@ public class BasicQueryBean {
                     response.addException(e);
                     d.setResponseClass("unknown");
                 }
-                
+
                 List<String> querySyntax = new ArrayList<>();
                 try {
                     Method m = l.getClass().getMethod("getQuerySyntaxParsers");
@@ -190,7 +190,7 @@ public class BasicQueryBean {
                     querySyntax.add("CUSTOM");
                 }
                 d.setQuerySyntax(querySyntax);
-                
+
                 logicConfigurationList.add(d);
             } catch (Exception e) {
                 log.error("Error setting query logic description", e);
@@ -198,13 +198,13 @@ public class BasicQueryBean {
         }
         Collections.sort(logicConfigurationList, Comparator.comparing(QueryLogicDescription::getName));
         response.setQueryLogicList(logicConfigurationList);
-        
+
         return response;
     }
-    
+
     /**
      * Display the second step for a simple query web UI in the quickstart
-     * 
+     *
      * @param queryParameters
      *            parameters
      * @param httpHeaders
@@ -225,27 +225,27 @@ public class BasicQueryBean {
         String queryType = queryParameters.getFirst("queryType");
         QueryLogicDescription theQld = null;
         List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
-        
+
         // reference query necessary to avoid NPEs in getting the Transformer and BaseResponse
         Query q = responseObjectFactory.getQueryImpl();
         Date now = new Date();
         q.setExpirationDate(now);
         q.setQuery("test");
         q.setQueryAuthorizations("ALL");
-        
+
         UserOperations userService = null;
-        
+
         for (QueryLogic<?> l : logicList) {
             try {
-                
+
                 if (l.getLogicName().equals(queryType)) {
-                    
+
                     QueryLogicDescription d = new QueryLogicDescription(l.getLogicName());
                     d.setAuditType(l.getAuditType(null).toString());
                     d.setLogicDescription(l.getLogicDescription());
                     userService = l.getUserOperations();
                     theQld = d;
-                    
+
                     Set<String> optionalQueryParameters = l.getOptionalQueryParameters();
                     if (optionalQueryParameters != null) {
                         d.setSupportedParams(new ArrayList<>(optionalQueryParameters));
@@ -264,7 +264,7 @@ public class BasicQueryBean {
                         requiredRolesList.addAll(l.getRoleManager().getRequiredRoles());
                         d.setRequiredRoles(requiredRolesList);
                     }
-                    
+
                     try {
                         d.setResponseClass(l.getResponseClass(q));
                     } catch (QueryException e) {
@@ -272,7 +272,7 @@ public class BasicQueryBean {
                         response.addException(e);
                         d.setResponseClass("unknown");
                     }
-                    
+
                     List<String> querySyntax = new ArrayList<>();
                     try {
                         Method m = l.getClass().getMethod("getQuerySyntaxParsers");
@@ -289,16 +289,16 @@ public class BasicQueryBean {
                         querySyntax.add("CUSTOM");
                     }
                     d.setQuerySyntax(querySyntax);
-                    
+
                     break;
-                    
+
                 }
             } catch (Exception e) {
                 log.error("Error setting query logic description", e);
                 throw new RuntimeException(e);
             }
         }
-        
+
         try {
             DatawavePrincipal queryPrincipal = (userService == null) ? (DatawavePrincipal) ctx.getCallerPrincipal()
                             : userService.getRemoteUser((DatawavePrincipal) ctx.getCallerPrincipal());
@@ -307,13 +307,13 @@ public class BasicQueryBean {
             throw new RuntimeException(e);
         }
         response.setTheQueryLogicDescription(theQld);
-        
+
         return response;
     }
-    
+
     /**
      * Display the query plan and link to basic query results for a simple query web UI in the quickstart
-     * 
+     *
      * @param queryParameters
      *            parameters
      * @param httpHeaders
@@ -346,7 +346,7 @@ public class BasicQueryBean {
         String queryId = createResponse.getResult();
         CreateQuerySessionIDFilter.QUERY_ID.set(queryId);
         queryWizardStep3Response.setQueryId(queryId);
-        
+
         BaseQueryLogic logic = getQueryLogic(logicName);
         if (logic != null && !(NO_PLAN_REQUIRED.contains(logic.getClass().getName()))) {
             GenericResponse<String> planResponse;
@@ -356,14 +356,14 @@ public class BasicQueryBean {
                 queryWizardStep3Response.setErrorMessage(e.getMessage());
                 return queryWizardStep3Response;
             }
-            
+
             queryWizardStep3Response.setQueryPlan(planResponse.getResult());
         } else
             queryWizardStep3Response.setQueryPlan("No plan required for this query");
-        
+
         return queryWizardStep3Response;
     }
-    
+
     /**
      * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this fail. The
      * response object type is dynamic, see the listQueryLogic operation to determine what the response type object will be.
@@ -381,7 +381,7 @@ public class BasicQueryBean {
      * @ResponseHeader X-query-page-number page number returned by this call
      * @ResponseHeader X-query-last-page if true then there are no more pages for this query, caller should call close()
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *                
+     *
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 404 if id not found
@@ -394,7 +394,7 @@ public class BasicQueryBean {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     @Timed(name = "dw.query.showQueryWizardResults", absolute = true)
     public QueryWizardResultResponse showQueryWizardResults(@Required("id") @PathParam("id") String id) {
-        
+
         QueryWizardResultResponse theResponse = new QueryWizardResultResponse(jqueryUri, dataTablesUri);
         theResponse.setQueryId(id);
         BaseQueryResponse theNextResults;
@@ -406,12 +406,12 @@ public class BasicQueryBean {
         theResponse.setResponse(theNextResults);
         return theResponse;
     }
-    
+
     private BaseQueryLogic getQueryLogic(String logicName) {
         BaseQueryLogic theLogic = null;
-        
+
         List<QueryLogic<?>> logicList = queryLogicFactory.getQueryLogicList();
-        
+
         for (QueryLogic<?> l : logicList) {
             try {
                 if (l.getLogicName().equals(logicName)) {
@@ -421,8 +421,8 @@ public class BasicQueryBean {
                 log.error("Error getting query logic name", e);
             }
         }
-        
+
         return theLogic;
     }
-    
+
 }

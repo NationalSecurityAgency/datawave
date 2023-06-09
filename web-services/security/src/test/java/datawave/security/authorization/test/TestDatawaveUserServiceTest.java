@@ -38,12 +38,12 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(Enclosed.class)
 public class TestDatawaveUserServiceTest {
-    
+
     @RunWith(Arquillian.class)
     public static class TestDatawaveUserServiceDisabled {
         @Inject
         private DatawaveUserService userService;
-        
+
         @Deployment
         public static JavaArchive createDeployment() throws Exception {
             System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
@@ -52,7 +52,7 @@ public class TestDatawaveUserServiceTest {
                             .addClasses(TestDatawaveUserService.class, DatawaveUserService1.class, AltDatawaveUserService1.class, AltDatawaveUserService2.class)
                             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         }
-        
+
         @Test
         public void testCorrectAlternative() throws Exception {
             // Alternate 2 is the highest priority alternate class that we added to our deployment, so it should be selected
@@ -60,14 +60,14 @@ public class TestDatawaveUserServiceTest {
             DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
             assertEquals("Alternative2", user.getRoles().iterator().next());
         }
-        
+
     }
-    
+
     @RunWith(Arquillian.class)
     public static class TestWithOnlyNonCachedAlternatives {
         @Inject
         private DatawaveUserService userService;
-        
+
         @Deployment
         public static JavaArchive createDeployment() throws Exception {
             System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
@@ -77,13 +77,13 @@ public class TestDatawaveUserServiceTest {
                                             MockAccumuloConnectionFactory.class)
                             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         }
-        
+
         @Test
         public void testCorrectAlternative() throws Exception {
             DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
             assertTrue(user.getRoles().contains("Alternative2"));
         }
-        
+
         @Test
         public void testCannedUser() throws Exception {
             DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair
@@ -92,14 +92,14 @@ public class TestDatawaveUserServiceTest {
             assertTrue(user.getAuths().contains("PUB"));
             assertTrue(user.getAuths().contains("PVT"));
         }
-        
+
     }
-    
+
     @RunWith(Arquillian.class)
     public static class TestWithOnlCachedAlternatives {
         @Inject
         private DatawaveUserService userService;
-        
+
         @Deployment
         public static JavaArchive createDeployment() throws Exception {
             System.setProperty("cdi.bean.context", "testAuthServiceBeanRefContext.xml");
@@ -110,13 +110,13 @@ public class TestDatawaveUserServiceTest {
                                             MockAccumuloConnectionFactory.class)
                             .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         }
-        
+
         @Test
         public void testCorrectAlternative() throws Exception {
             DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair.of("subject1", "issuer1"))).iterator().next();
             assertTrue(user.getRoles().contains("Alternative4"));
         }
-        
+
         @Test
         public void testCannedUser() throws Exception {
             DatawaveUser user = userService.lookup(Collections.singleton(SubjectIssuerDNPair
@@ -125,16 +125,16 @@ public class TestDatawaveUserServiceTest {
             assertTrue(user.getAuths().contains("PUB"));
             assertTrue(user.getAuths().contains("PVT"));
         }
-        
+
     }
-    
+
     protected static class DatawaveUserService1 extends DefaultDatawaveUserService {
         @Override
         String getName() {
             return "DefaultService";
         }
     }
-    
+
     @Alternative
     @Priority(1)
     protected static class AltDatawaveUserService1 extends DefaultDatawaveUserService {
@@ -143,7 +143,7 @@ public class TestDatawaveUserServiceTest {
             return "Alternative1";
         }
     }
-    
+
     @Alternative
     @Priority(2)
     protected static class AltDatawaveUserService2 extends DefaultDatawaveUserService {
@@ -152,7 +152,7 @@ public class TestDatawaveUserServiceTest {
             return "Alternative2";
         }
     }
-    
+
     @Alternative
     @Priority(3)
     protected static class AltDatawaveUserService3 extends DefaultCachedDatawaveUserService {
@@ -161,7 +161,7 @@ public class TestDatawaveUserServiceTest {
             return "Alternative3";
         }
     }
-    
+
     @Alternative
     @Priority(4)
     protected static class AltDatawaveUserService4 extends DefaultCachedDatawaveUserService {
@@ -170,7 +170,7 @@ public class TestDatawaveUserServiceTest {
             return "Alternative4";
         }
     }
-    
+
     @Alternative
     @Priority(5)
     protected static class AltDatawaveUserService5 extends DefaultDatawaveUserService {
@@ -179,58 +179,58 @@ public class TestDatawaveUserServiceTest {
             return "Alternative5";
         }
     }
-    
+
     protected abstract static class DefaultDatawaveUserService implements DatawaveUserService {
         abstract String getName();
-        
+
         @Override
         public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
             return dns.stream().map(dn -> new DatawaveUser(dn, UserType.USER, null, null, Collections.singleton(getName()), null, -1L, -1L))
                             .collect(Collectors.toList());
         }
     }
-    
+
     protected abstract static class DefaultCachedDatawaveUserService extends DefaultDatawaveUserService implements CachedDatawaveUserService {
-        
+
         @Override
         public Collection<DatawaveUser> reload(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
             return null;
         }
-        
+
         @Override
         public DatawaveUser list(String name) {
             return null;
         }
-        
+
         @Override
         public Collection<? extends DatawaveUserInfo> listAll() {
             return null;
         }
-        
+
         @Override
         public Collection<? extends DatawaveUserInfo> listMatching(String substring) {
             return null;
         }
-        
+
         @Override
         public String evict(String name) {
             return null;
         }
-        
+
         @Override
         public String evictMatching(String substring) {
             return null;
         }
-        
+
         @Override
         public String evictAll() {
             return null;
         }
     }
-    
+
     private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
         private InMemoryInstance inMemoryInstance = new InMemoryInstance();
-        
+
         public MockAccumuloConnectionFactory() {
             try {
                 inMemoryInstance.getConnector("root", "").securityOperations().changeUserAuthorizations("root", new Authorizations("PUB", "PVT"));
@@ -238,27 +238,27 @@ public class TestDatawaveUserServiceTest {
                 throw new RuntimeException(e);
             }
         }
-        
+
         @Override
         public String getConnectionUserName(String poolName) {
             return "test";
         }
-        
+
         @Override
         public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
             return new InMemoryAccumuloClient("root", inMemoryInstance);
         }
-        
+
         @Override
         public AccumuloClient getClient(String poolName, Priority priority, Map<String,String> trackingMap) throws Exception {
             return new InMemoryAccumuloClient("root", inMemoryInstance);
         }
-        
+
         @Override
         public void returnClient(AccumuloClient client) {
-            
+
         }
-        
+
         @Override
         public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
             return new HashMap<>();

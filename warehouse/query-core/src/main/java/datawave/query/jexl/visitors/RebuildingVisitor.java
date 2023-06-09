@@ -79,20 +79,20 @@ import com.google.common.base.Function;
  */
 @SuppressWarnings("deprecation")
 public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlScript,ASTJexlScript> {
-    
+
     protected QueryStopwatch timers = null;
     protected String description = "Configurable script";
     protected String scriptName = "";
-    
+
     public RebuildingVisitor(final QueryStopwatch timers, final String scriptName) {
         this.timers = timers;
         this.scriptName = scriptName;
     }
-    
+
     public RebuildingVisitor() {
-        
+
     }
-    
+
     /**
      * Helper method to return a copy of the tree denoted by the given root
      *
@@ -104,12 +104,12 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
         RebuildingVisitor visitor = new RebuildingVisitor();
         return (JexlNode) root.jjtAccept(visitor, null);
     }
-    
+
     public static JexlNode copyInto(JexlNode root, JexlNode target) {
         RebuildingVisitor visitor = new RebuildingVisitor();
-        
+
         JexlNode copyRoot = (JexlNode) root.jjtAccept(visitor, null);
-        
+
         if (null != copyRoot) {
             target.jjtSetParent(copyRoot.jjtGetParent());
             for (int i = 0; i < copyRoot.jjtGetNumChildren(); i++) {
@@ -118,10 +118,10 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
                 child.jjtSetParent(target);
             }
         }
-        
+
         return target;
     }
-    
+
     private <T extends JexlNode> T copy(T node, Object data) {
         T newNode = newInstanceOfType(node);
         newNode.image = node.image;
@@ -134,132 +134,132 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
         }
         return children(newNode, children.toArray(new JexlNode[children.size()]));
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIntegerLiteral node, Object data) {
         ASTNumberLiteral newNode = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
         newNode.setNatural(node.getLiteral().toString());
         newNode.jjtSetParent(node.jjtGetParent());
-        
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             newNode.jjtAddChild((Node) node.jjtGetChild(i).jjtAccept(this, data), i);
         }
-        
+
         return newNode;
     }
-    
+
     @Override
     public Object visit(ASTFloatLiteral node, Object data) {
         ASTNumberLiteral newNode = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
         newNode.setReal(node.getLiteral().toString());
         newNode.jjtSetParent(node.jjtGetParent());
-        
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             newNode.jjtAddChild((Node) node.jjtGetChild(i).jjtAccept(this, data), i);
         }
-        
+
         return newNode;
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         ASTNumberLiteral newNode = copy(node, data);
-        
+
         if (JexlNodeFactory.NATURAL_NUMBERS.contains(node.getLiteralClass())) {
             newNode.setNatural(node.image);
         } else if (JexlNodeFactory.REAL_NUMBERS.contains(node.getLiteralClass())) {
@@ -268,194 +268,194 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
             QueryException qe = new QueryException(DatawaveErrorCode.ASTNUMBERLITERAL_TYPE_ASCERTAIN_ERROR, MessageFormat.format("Node: {0}", node));
             throw new DatawaveFatalQueryException(qe);
         }
-        
+
         return newNode;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAmbiguous node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAdditiveNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAdditiveOperator node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTSizeMethod node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
-        
+
         return copy(node, data);
     }
-    
+
     public Object visit(ASTUnknownFieldERNode node, Object data) {
         return copy(node, data);
     }
-    
+
     public Object visit(ASTUnsatisfiableERNode node, Object data) {
         return copy(node, data);
     }
-    
+
     /**
      * Base setup so that we can eventually move to a more functional model
-     * 
+     *
      * @param input
      *            the input script
      * @return the script with applied models
@@ -471,10 +471,10 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
             stopwatch.stop();
         return script;
     }
-    
+
     public RebuildingVisitor setDescription(String description) {
         this.description = description;
         return this;
     }
-    
+
 }

@@ -25,10 +25,10 @@ import java.util.Map;
  */
 public class ColumnVisibilityLabeledFilter extends AppliedRule {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(ColumnVisibilityLabeledFilter.class);
-    
+
     private Map<String,Long> patternToTtl;
     private boolean filterRuleApplied;
-    
+
     /**
      * Used to initialize the {@code FilterRule} implementation
      *
@@ -43,7 +43,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
         if (options == null) {
             throw new IllegalArgumentException("options must be set for FilterRule implementation");
         }
-        
+
         if (options.getOption(AgeOffConfigParams.MATCHPATTERN) != null) {
             String[] lines = StringUtils.split(options.getOption(AgeOffConfigParams.MATCHPATTERN), '\n');
             patternToTtl = new HashMap(lines.length);
@@ -52,7 +52,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
             }
         }
     }
-    
+
     /**
      * @param map
      *            maps pattern to a time to live (in millis)
@@ -61,19 +61,19 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
      */
     private void populateMapWithTimeToLiveValue(Map<String,Long> map, String line) {
         String trimmedLine = line.trim();
-        
+
         int indexOfFirstSpace = trimmedLine.indexOf(' ');
         String descriptiveLabel = trimmedLine.substring(0, indexOfFirstSpace);
-        
+
         String remainder = trimmedLine.substring(indexOfFirstSpace).trim();
         String[] parts = remainder.split("=");
         String pattern = parts[0];
         String ttlString = parts[1];
-        
+
         map.put(pattern, convertTtlStringToMillis(ttlString));
         LOG.debug("Added {} -> {} to map for {}.", pattern, map.get(pattern), descriptiveLabel);
     }
-    
+
     private Long convertTtlStringToMillis(String ttlString) {
         if (ttlString.endsWith("ms")) {
             return Long.parseLong(ttlString.substring(0, ttlString.length() - 2));
@@ -84,12 +84,12 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
         }
         throw new IllegalStateException(ttlString + " does not conform to specified format.");
     }
-    
+
     @Override
     public boolean isFilterRuleApplied() {
         return this.filterRuleApplied;
     }
-    
+
     @Override
     public boolean accept(AgeOffPeriod ageOffPeriod, Key k, Value V) {
         // ignore default ageOffPeriod
@@ -102,7 +102,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
                 if (timeToLive > 0) {
                     // remove offset for default TTL
                     cutOff += ageOffPeriod.getTtl() * ageOffPeriod.getTtlUnitsFactor();
-                    
+
                     // deduct TTL for this key
                     cutOff -= timeToLive;
                 }

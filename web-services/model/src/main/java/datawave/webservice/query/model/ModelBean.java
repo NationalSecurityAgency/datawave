@@ -73,38 +73,38 @@ import java.util.concurrent.TimeUnit;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ModelBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     public static final String DEFAULT_MODEL_TABLE_NAME = "DatawaveMetadata";
-    
+
     private static final long BATCH_WRITER_MAX_LATENCY = 1000L;
     private static final long BATCH_WRITER_MAX_MEMORY = 10845760;
     private static final int BATCH_WRITER_MAX_THREADS = 2;
-    
+
     private static final HashSet<String> RESERVED_COLF_VALUES = Sets.newHashSet("e", "i", "ri", "f", "tf", "m", "desc", "edge", "t", "n", "h");
-    
+
     @Inject
     @ConfigProperty(name = "dw.model.defaultTableName", defaultValue = DEFAULT_MODEL_TABLE_NAME)
     private String defaultModelTableName;
-    
+
     @Inject
     @ConfigProperty(name = "dw.cdn.jquery.uri", defaultValue = "/jquery.min.js")
     private String jqueryUri;
-    
+
     @Inject
     @ConfigProperty(name = "dw.cdn.dataTables.uri", defaultValue = "/jquery.dataTables.min.js")
     private String dataTablesUri;
-    
+
     @EJB
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @EJB
     private AccumuloTableCache cache;
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     /**
      * Get the names of the models
      *
@@ -112,7 +112,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.model.ModelList
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -123,13 +123,13 @@ public class ModelBean {
     @GZIP
     @Interceptors(ResponseInterceptor.class)
     public ModelList listModelNames(@QueryParam("modelTableName") String modelTableName) {
-        
+
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
-        
+
         ModelList response = new ModelList(jqueryUri, dataTablesUri, modelTableName);
-        
+
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String user = p.getName();
@@ -142,7 +142,7 @@ public class ModelBean {
             }
         }
         log.trace(user + " has authorizations " + cbAuths);
-        
+
         AccumuloClient client = null;
         HashSet<String> modelNames = new HashSet<>();
         try {
@@ -160,7 +160,7 @@ public class ModelBean {
                     }
                 }
             }
-            
+
         } catch (Exception e) {
             QueryException qe = new QueryException(DatawaveErrorCode.MODEL_NAME_LIST_ERROR, e);
             log.error(qe);
@@ -178,7 +178,7 @@ public class ModelBean {
         response.setNames(modelNames);
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Insert a new model
      *
@@ -188,7 +188,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 412 if model already exists with this name, delete it first
      * @HTTP 500 internal server error
@@ -202,25 +202,25 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
     public VoidResponse importModel(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
-        
+
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
-        
+
         if (log.isDebugEnabled()) {
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
         VoidResponse response = new VoidResponse();
-        
+
         ModelList models = listModelNames(modelTableName);
         if (models.getNames().contains(model.getName()))
             throw new PreConditionFailedException(null, response);
-        
+
         insertMapping(model, modelTableName);
-        
+
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Delete a model with the supplied name
      *
@@ -230,7 +230,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -243,31 +243,31 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public VoidResponse deleteModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName) {
-        
+
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
-        
+
         return deleteModel(name, modelTableName, true);
     }
-    
+
     private VoidResponse deleteModel(@Required("name") String name, String modelTableName, boolean reloadCache) {
         if (log.isDebugEnabled()) {
             log.debug("model name: " + name);
             log.debug("modelTableName: " + (null == modelTableName ? "" : modelTableName));
         }
         VoidResponse response = new VoidResponse();
-        
+
         ModelList models = listModelNames(modelTableName);
         if (!models.getNames().contains(name))
             throw new NotFoundException(null, response);
-        
+
         datawave.webservice.model.Model model = getModel(name, modelTableName);
         deleteMapping(model, modelTableName, reloadCache);
-        
+
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Copy a model
      *
@@ -279,7 +279,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 204 model not found
      * @HTTP 500 internal server error
@@ -294,18 +294,18 @@ public class ModelBean {
     public VoidResponse cloneModel(@Required("name") @FormParam("name") String name, @Required("newName") @FormParam("newName") String newName,
                     @FormParam("modelTableName") String modelTableName) {
         VoidResponse response = new VoidResponse();
-        
+
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
-        
+
         datawave.webservice.model.Model model = getModel(name, modelTableName);
         // Set the new name
         model.setName(newName);
         importModel(model, modelTableName);
         return response;
     }
-    
+
     /**
      * Retrieve the model and all of its mappings
      *
@@ -315,7 +315,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.model.Model
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 404 model not found
      * @HTTP 500 internal server error
@@ -327,13 +327,13 @@ public class ModelBean {
     @GZIP
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public datawave.webservice.model.Model getModel(@Required("name") @PathParam("name") String name, @QueryParam("modelTableName") String modelTableName) {
-        
+
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
-        
+
         datawave.webservice.model.Model response = new datawave.webservice.model.Model(jqueryUri, dataTablesUri);
-        
+
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String user = p.getName();
@@ -346,7 +346,7 @@ public class ModelBean {
             }
         }
         log.trace(user + " has authorizations " + cbAuths);
-        
+
         AccumuloClient client = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -374,16 +374,16 @@ public class ModelBean {
                 }
             }
         }
-        
+
         // return 404 if model not found
         if (response.getFields().isEmpty()) {
             throw new NotFoundException(null, response);
         }
-        
+
         response.setName(name);
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Insert a new field mapping into an existing model
      *
@@ -393,7 +393,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -406,13 +406,13 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
     public VoidResponse insertMapping(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
-        
+
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
-        
+
         VoidResponse response = new VoidResponse();
-        
+
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
@@ -452,7 +452,7 @@ public class ModelBean {
         cache.reloadCache(tableName);
         return response;
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong> Delete field mappings from an existing model
      *
@@ -462,7 +462,7 @@ public class ModelBean {
      *            name of the table that contains the model
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 500 internal server error
      */
@@ -475,17 +475,17 @@ public class ModelBean {
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @Interceptors(ResponseInterceptor.class)
     public VoidResponse deleteMapping(datawave.webservice.model.Model model, @QueryParam("modelTableName") String modelTableName) {
-        
+
         if (modelTableName == null) {
             modelTableName = defaultModelTableName;
         }
-        
+
         return deleteMapping(model, modelTableName, true);
     }
-    
+
     private VoidResponse deleteMapping(datawave.webservice.model.Model model, String modelTableName, boolean reloadCache) {
         VoidResponse response = new VoidResponse();
-        
+
         AccumuloClient client = null;
         BatchWriter writer = null;
         String tableName = this.checkModelTableName(modelTableName);
@@ -526,9 +526,9 @@ public class ModelBean {
             cache.reloadCache(tableName);
         return response;
     }
-    
+
     /**
-     * 
+     *
      * @param tableName
      *            the table name
      * @return default table name if param is null or empty, else return the input.

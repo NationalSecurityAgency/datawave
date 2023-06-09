@@ -60,7 +60,7 @@ import java.util.Iterator;
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryMetricsBean {
-    
+
     private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
     @Inject
     private JMSContext jmsContext;
@@ -80,16 +80,16 @@ public class QueryMetricsBean {
     @Inject
     @SpringBean(name = "QueryMetricsWriterConfiguration", refreshable = true)
     private QueryMetricsWriterConfiguration queryMetricsWriterConfiguration;
-    
+
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
-     * 
+     *
      * @RunAs annotation is not being honored in the @PreDestroy hook
      */
     @PermitAll
     public void updateMetric(BaseQueryMetric metric) throws Exception {
         DatawavePrincipal dp = getPrincipal();
-        
+
         if (metric.getLastWrittenHash() != metric.hashCode()) {
             metric.setLastWrittenHash(metric.hashCode());
             try {
@@ -108,7 +108,7 @@ public class QueryMetricsBean {
             }
         }
     }
-    
+
     /**
      * Returns metrics for the current users queries that are identified by the id
      *
@@ -141,7 +141,7 @@ public class QueryMetricsBean {
             return queryHandler.query(user, id, dp);
         }
     }
-    
+
     @GET
     @POST
     @Path("/id/{id}/map")
@@ -163,7 +163,7 @@ public class QueryMetricsBean {
             return queryGeometryHandler.getQueryGeometryResponse(id, queryHandler.query(user, id, dp).getResult());
         }
     }
-    
+
     /**
      *
      * Returns a summary of the query metrics
@@ -192,7 +192,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, false);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the query metrics
@@ -223,7 +223,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, false);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the query metrics
@@ -254,7 +254,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, false);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the requesting user's query metrics
@@ -282,7 +282,7 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, true);
         }
     }
-    
+
     /**
      *
      * Returns a summary of the requesting user's query metrics
@@ -312,9 +312,9 @@ public class QueryMetricsBean {
             return queryMetricsSummary(begin, end, true);
         }
     }
-    
+
     private QueryMetricsSummaryResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
-        
+
         if (null == end) {
             end = new Date();
         } else {
@@ -344,7 +344,7 @@ public class QueryMetricsBean {
         }
         return response;
     }
-    
+
     /**
      * Find out who/what called this method
      *
@@ -358,12 +358,12 @@ public class QueryMetricsBean {
         }
         return dp;
     }
-    
+
     public void sendQueryMetric(DatawavePrincipal principal, BaseQueryMetric queryMetric) throws Exception {
-        
+
         QueryMetricHolder queryMetricHolder = new QueryMetricHolder(principal, queryMetric);
         QueryMetricMessage msg = new QueryMetricMessage(queryMetricHolder);
-        
+
         jmsContext.createProducer().send(dest, msg);
     }
 }

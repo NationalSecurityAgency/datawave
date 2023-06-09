@@ -11,7 +11,7 @@ import datawave.webservice.query.QueryParameters;
 import com.google.common.base.Preconditions;
 
 public class CachedResultsParameters implements ParameterValidator {
-    
+
     public static final String QUERY_ID = "queryId";
     public static final String ALIAS = "alias";
     public static final String VIEW = "view";
@@ -21,10 +21,10 @@ public class CachedResultsParameters implements ParameterValidator {
     public static final String ORDER = "order";
     public static final String FIXED_FIELDS_IN_EVENT = "fixedFields";
     public static final Pattern VALID_NAME_PATTERN = Pattern.compile("[\\w]+");
-    
+
     private static final List<String> KNOWN_PARAMS = Arrays.asList(QUERY_ID, ALIAS, VIEW, FIELDS, CONDITIONS, GROUPING, ORDER, FIXED_FIELDS_IN_EVENT,
                     QueryParameters.QUERY_PAGESIZE);
-    
+
     private String queryId = null;
     private String alias = null;
     private String view = null;
@@ -34,7 +34,7 @@ public class CachedResultsParameters implements ParameterValidator {
     private String order = null;
     private String fixedFields = null;
     private int pagesize = 10;
-    
+
     @Override
     public void validate(Map<String,List<String>> parameters) throws IllegalArgumentException {
         for (String param : KNOWN_PARAMS) {
@@ -71,90 +71,90 @@ public class CachedResultsParameters implements ParameterValidator {
         Preconditions.checkNotNull(this.view, "View cannot be null");
         Preconditions.checkNotNull(this.fields, "Fields cannot be null");
     }
-    
+
     public static String validate(String value) {
         return validate(value, false);
     }
-    
+
     public static String validate(String value, boolean skipNull) {
         if ((!skipNull || value != null) && !VALID_NAME_PATTERN.matcher(value).matches()) {
             throw new RuntimeException("Attempt to set invalid table/view name detected and thwarted:" + value);
         }
         return value; // for convenience
     }
-    
+
     public String getQueryId() {
         return queryId;
     }
-    
+
     public void setQueryId(String queryId) {
         this.queryId = queryId;
     }
-    
+
     public String getAlias() {
         return alias;
     }
-    
+
     public void setAlias(String alias) {
         this.alias = alias;
     }
-    
+
     public String getView() {
         return view;
     }
-    
+
     public void setView(String view) {
         this.view = view;
     }
-    
+
     public String getFields() {
         return fields;
     }
-    
+
     public void setFields(String fields) {
         this.fields = fields;
     }
-    
+
     public String getConditions() {
         return conditions;
     }
-    
+
     public void setConditions(String conditions) {
         this.conditions = conditions;
     }
-    
+
     public String getGrouping() {
         return grouping;
     }
-    
+
     public void setGrouping(String grouping) {
         this.grouping = grouping;
     }
-    
+
     public String getOrder() {
         return order;
     }
-    
+
     public void setOrder(String order) {
         this.order = order;
     }
-    
+
     public String getFixedFields() {
         return fixedFields;
     }
-    
+
     public void setFixedFields(String fixedFields) {
         this.fixedFields = fixedFields;
     }
-    
+
     public int getPagesize() {
         return pagesize;
     }
-    
+
     public void setPagesize(int pagesize) {
         this.pagesize = pagesize;
     }
-    
+
     public void clear() {
         this.queryId = null;
         this.alias = null;

@@ -24,90 +24,90 @@ import java.util.List;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class QueryWizardResultResponse extends BaseResponse implements HtmlProvider {
-    
+
     private static final long serialVersionUID = 1L;
     private static final String TITLE = "DataWave Query Results", EMPTY = "";
     private static final String DATA_TABLES_TEMPLATE = "<script type=''text/javascript'' src=''{0}''></script>\n"
                     + "<script type=''text/javascript'' src=''{1}''></script>\n" + "<script type=''text/javascript''>\n"
                     + "$(document).ready(function() '{' $(''#myTable'').dataTable('{'\"bPaginate\": false, \"aaSorting\": [[3, \"asc\"]], \"bStateSave\": true'}') '}')\n"
                     + "</script>\n";
-    
+
     private String jqueryUri;
     private String dataTablesUri;
-    
+
     public QueryWizardResultResponse(String jqueryUri, String datatablesUri) {
         this.jqueryUri = jqueryUri;
         this.dataTablesUri = datatablesUri;
-        
+
     }
-    
+
     @XmlElement(name = "queryId")
     private String queryId = "";
     @XmlElement
     private BaseQueryResponse response = null;
-    
+
     public void setResponse(BaseQueryResponse response) {
         this.response = response;
     }
-    
+
     public void setQueryId(String queryId) {
         this.queryId = queryId;
     }
-    
+
     @Override
     public String getTitle() {
         return TITLE;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getPageHeader()
      */
     @Override
     public String getPageHeader() {
         return getTitle();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getHeadContent()
      */
     @Override
     public String getHeadContent() {
         return MessageFormat.format(DATA_TABLES_TEMPLATE, jqueryUri, dataTablesUri);
     }
-    
+
     private void putTableCell(StringBuilder builder, String cellValue) {
         builder.append("<td style=\"border:solid\">\n");
         builder.append(cellValue);
         builder.append("</td>\n");
     }
-    
+
     @Override
     public String getMainContent() {
         StringBuilder builder = new StringBuilder();
-        
+
         builder.append("<br/><br/>");
         builder.append("<H2>Query ID : " + queryId + "</H2><br/><br/>");
         if (response == null || !response.getHasResults()) {
             builder.append("<H2>There aren't anymore results</H2>");
             return builder.toString();
         }
-        
+
         builder.append("<div>\n");
         builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
         builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
-        
+
         if (response instanceof EventQueryResponseBase) {
             EventQueryResponseBase tempResponse = (EventQueryResponseBase) response;
-            
+
             HashSet<String> fieldnameSet = buildTableColumnHeadings(builder, tempResponse);
             HashMap<String,String> fieldNameToValueMap = new HashMap<>();
-            
+
             builder.append("<tbody>");
-            
+
             String dataType = "";
             for (EventBase event : tempResponse.getEvents()) {
                 dataType = event.getMetadata().getDataType();
@@ -119,16 +119,16 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                         fieldNameToValueMap.put(defaultField.getName(), defaultField.getValueString());
                     }
                 }
-                
+
                 for (String fieldStr : fieldnameSet) {
                     String fieldValue = fieldNameToValueMap.get(fieldStr);
                     if (fieldValue != null && fieldValue.length() > 255)
                         putTableCell(builder, fieldValue.substring(0, 254));
                     else
                         putTableCell(builder, fieldValue == null ? "" : fieldValue);
-                    
+
                 }
-                
+
                 fieldNameToValueMap.clear();
                 builder.append("</tr>");
             }
@@ -172,25 +172,25 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
         } else {
             throw new RuntimeException("Cannot handle a " + response.getClass().getSimpleName() + " response type");
         }
-        
+
         builder.append("</tbody>");
-        
+
         builder.append("</table><br/><br/>");
         builder.append("  <div class=\"dataTables_info\" id=\"myTable_info\" role=\"status\" aria-live=\"polite\"></div>\n");
         builder.append("</div>\n");
         builder.append("</div>");
-        
+
         builder.append("<FORM id=\"queryform\" action=\"/DataWave/BasicQuery/" + queryId
                         + "/showQueryWizardResults\"  method=\"get\" target=\"_self\" enctype=\"application/x-www-form-urlencoded\">");
         builder.append("<center><input type=\"submit\" value=\"Next\" align=\"left\" width=\"50\" /></center>");
-        
+
         builder.append("</FORM>");
-        
+
         return builder.toString();
     }
-    
+
     private HashSet<String> buildTableColumnHeadings(StringBuilder builder, EventQueryResponseBase tempResponse) {
-        
+
         HashSet<String> fieldnameSet = new HashSet<>();
         builder.append("<thead><tr><th>DataType</th>");
         for (EventBase event : tempResponse.getEvents()) {
@@ -200,16 +200,16 @@ public class QueryWizardResultResponse extends BaseResponse implements HtmlProvi
                 }
             }
         }
-        
+
         for (String fieldname : fieldnameSet) {
             builder.append("<th>");
             builder.append(fieldname);
             builder.append("</th>");
         }
-        
+
         builder.append("</tr></thead>");
-        
+
         return fieldnameSet;
     }
-    
+
 }

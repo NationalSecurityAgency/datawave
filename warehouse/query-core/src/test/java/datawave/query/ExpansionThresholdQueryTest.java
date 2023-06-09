@@ -29,12 +29,12 @@ import static org.junit.Assert.fail;
  * here essentially create a query with the threshold marker already inserted.
  */
 public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(ExpansionThresholdQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -46,15 +46,15 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
             generic.addReverseIndexField(field);
         }
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public ExpansionThresholdQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testThresholdMarker() throws Exception {
         log.info("------  testThresholdMaker  ------");
@@ -63,7 +63,7 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         String countryQuery = CityField.COUNTRY.name() + RE_OP + country + AND_OP + CityField.COUNTRY.name() + RE_OP + country.toUpperCase();
         String query = "((_Value_ = true)" + AND_OP + CityField.STATE.name() + RE_OP + state + ") && " + countryQuery;
         String expect = "(" + CityField.STATE.name() + RE_OP + state + ")" + AND_OP + countryQuery;
-        
+
         this.logic.setMaxValueExpansionThreshold(6);
         try {
             runTest(query, expect);
@@ -71,7 +71,7 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         try {
             runTest(query, expect);
@@ -79,16 +79,16 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
-        
+
         ivaratorConfig();
-        
+
         this.logic.setMaxValueExpansionThreshold(6);
         runTest(query, expect);
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         runTest(query, expect);
     }
-    
+
     @Test
     public void testThresholdMarkerAnyField() throws Exception {
         log.info("------  testThresholdMarkerAnyField  ------");
@@ -101,17 +101,17 @@ public class ExpansionThresholdQueryTest extends AbstractFunctionalQuery {
         String anyCity = this.dataManager.convertAnyField(anyRegex);
         String anyCountry = this.dataManager.convertAnyField(country);
         String expect = "(" + anyCity + ")" + AND_OP + anyCountry;
-        
+
         ivaratorConfig();
-        
+
         this.logic.setQueryThreads(1);
         this.logic.setMaxValueExpansionThreshold(2);
         runTest(query, expect);
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         runTest(query, expect);
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

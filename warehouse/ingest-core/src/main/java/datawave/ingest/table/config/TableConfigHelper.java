@@ -9,13 +9,13 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 
 public interface TableConfigHelper {
-    
+
     String TABLE_CONFIG_CLASS_SUFFIX = ".table.config.class";
     String TABLE_CONFIG_PREFIX = ".table.config.prefix";
-    
+
     /**
      * Performs property validation and setup
-     * 
+     *
      * @param tableName
      *            the table name
      * @param log
@@ -26,21 +26,21 @@ public interface TableConfigHelper {
      *             if there is an issue with an argument
      */
     void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException;
-    
+
     /**
      * Configures table
-     * 
+     *
      * @param tops
      *            Accumulo TableOperations object to use to setup the configuration
-     *            
+     *
      * @throws AccumuloException
      *             for issues with accumulo
      * @throws AccumuloSecurityException
      *             for issues authenticating with accumulo
      * @throws TableNotFoundException
      *             if the table is not found
-     *             
+     *
      */
     void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException;
-    
+
 }

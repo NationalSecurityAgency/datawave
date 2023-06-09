@@ -21,30 +21,30 @@ import java.util.Map;
 public class TabletLocationNamePartitionerTest {
     Configuration conf = new Configuration();
     TabletLocationNamePartitioner partitioner = null;
-    
+
     @Before
     public void setUp() {
         conf = new Configuration();
         partitioner = new TabletLocationNamePartitioner();
         partitioner.setConf(conf);
     }
-    
+
     @After
     public void tearDown() {
         conf.clear();
         conf = null;
         partitioner = null;
     }
-    
+
     @Test
     public void testSequentialLocationScheme() throws Exception {
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         // setup the location partition sheme
         URL file = getClass().getResource("/datawave/ingest/mapreduce/partition/_shards.lst");
         shardedTableMapFiles.put("shard", new Path(file.toURI().toString()));
-        
+
         ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
-        
+
         // now read in a list of shards and display the distribution
         file = getClass().getResource("/datawave/ingest/mapreduce/partition/shards.list");
         BufferedReader reader = new BufferedReader(new InputStreamReader(file.openStream()));
@@ -75,6 +75,6 @@ public class TabletLocationNamePartitionerTest {
         if (errored) {
             Assert.fail("Failed to get expected distribution.  See console for unexpected entries");
         }
-        
+
     }
 }
