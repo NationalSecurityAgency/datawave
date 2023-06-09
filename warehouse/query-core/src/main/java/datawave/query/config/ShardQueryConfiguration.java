@@ -16,9 +16,8 @@ import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.common.grouping.GroupAggregateFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
-import datawave.query.function.GroupFields;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
@@ -355,10 +354,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
     private boolean compositeFilterFunctionsEnabled = false;
-    
+    /**
+     * The fields to group by and aggregate.
+     */
+    private GroupFields groupFields = new GroupFields();
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
-    private Set<String> groupFields = new HashSet<>(0);
     private UniqueFields uniqueFields = new UniqueFields();
     private boolean cacheModel = false;
     /**
@@ -424,11 +425,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Term Frequency aggregations that exceed this threshold in milliseconds are logged as a warning
      */
     private int tfAggregationThresholdMs = -1;
-    
-    /**
-     * The fields to group-by and aggregate.
-     */
-    private GroupAggregateFields groupAggregateFields = new GroupAggregateFields();
     
     /**
      * Default constructor
@@ -602,7 +598,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeFilterFunctionsEnabled(other.isCompositeFilterFunctionsEnabled());
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
-        this.setGroupFields(null == other.getGroupFields() ? null : Sets.newHashSet(other.getGroupFields()));
         this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
@@ -629,7 +624,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
-        this.setGroupAggregateFields(other.getGroupAggregateFields() == null ? null : GroupAggregateFields.copyOf(other.groupAggregateFields));
+        this.setGroupFields(GroupFields.copyOf(other.getGroupFields()));
     }
     
     /**
@@ -1627,18 +1622,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
     
-    public Set<String> getGroupFields() {
-        return groupFields;
-    }
-    
-    public void setGroupFields(Set<String> groupFields) {
-        this.groupFields = deconstruct(groupFields);
-    }
-    
-    public String getGroupFieldsAsString() {
-        return StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
-    }
-    
     public int getGroupFieldsBatchSize() {
         return groupFieldsBatchSize;
     }
@@ -2429,15 +2412,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
     
-    public GroupAggregateFields getGroupAggregateFields() {
-        return groupAggregateFields;
+    public GroupFields getGroupFields() {
+        return groupFields;
     }
     
-    public void setGroupAggregateFields(GroupAggregateFields groupAggregateFields) {
-        this.groupAggregateFields = groupAggregateFields;
-        if (this.groupAggregateFields != null) {
-            // Make sure the fields are deconstructed by this point.
-            this.groupAggregateFields.deconstructIdentifiers();
+    public void setGroupFields(GroupFields groupFields) {
+        this.groupFields = groupFields;
+        // Make sure the fields are deconstructed by this point.
+        if (this.groupFields != null) {
+            this.groupFields.deconstructIdentifiers();
         }
     }
 }

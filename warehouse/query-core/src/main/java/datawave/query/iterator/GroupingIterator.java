@@ -7,7 +7,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.common.grouping.DocumentGrouper;
 import datawave.query.common.grouping.Group;
-import datawave.query.common.grouping.GroupAggregateFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
 import org.apache.accumulo.core.data.Key;
@@ -37,7 +37,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     /**
      * The fields to group and aggregate by.
      */
-    private final GroupAggregateFields groupAggregateFields;
+    private final GroupFields groupFields;
     
     /**
      * The groups. This is updated each time
@@ -59,11 +59,11 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     
     Map.Entry<Key,Document> next;
     
-    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, GroupAggregateFields groupAggregateFields,
+    public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, GroupFields groupFields,
                     int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
         this.previousIterators = previousIterators;
         this.markingFunctions = markingFunctions;
-        this.groupAggregateFields = groupAggregateFields;
+        this.groupFields = groupFields;
         this.groupFieldsBatchSize = groupFieldsBatchSize;
         this.yieldCallback = yieldCallback;
         this.groups = new Groups();
@@ -77,7 +77,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 if (entry != null) {
                     log.trace("t-server get list key counts for: {}", entry);
                     keys.add(entry.getKey());
-                    DocumentGrouper.group(entry, groupAggregateFields, groups);
+                    DocumentGrouper.group(entry, groupFields, groups);
                 }
             } else if (yieldCallback != null && yieldCallback.hasYielded()) {
                 log.trace("hasNext is false because yield was called");

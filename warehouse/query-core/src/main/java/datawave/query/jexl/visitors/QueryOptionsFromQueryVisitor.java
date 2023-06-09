@@ -178,8 +178,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private Object visit(ASTFunctionNode node, Map<String,String> optionsMap) {
         // if this is the f:options function, create a List for the userData to be passed to the child nodes
         if (node.jjtGetChild(0).image.equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
-            String functionName = node.jjtGetChild(1).image;
-            switch (functionName) {
+            switch (node.jjtGetChild(1).image) {
                 case QueryFunctions.OPTIONS_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);

@@ -16,8 +16,7 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
-import datawave.query.common.grouping.FieldAggregator;
-import datawave.query.common.grouping.GroupAggregateFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
@@ -611,7 +610,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     }
 
     public boolean isLongRunningQuery() {
-        return !getConfig().getGroupFields().isEmpty();
+        return getConfig().getGroupFields().hasGroupByFields();
     }
 
     /**
@@ -630,13 +629,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
                 }
             }
-            
-            if (getConfig().getGroupAggregateFields() != null && !getConfig().getGroupAggregateFields().hasGroupFields()) {
+    
+            GroupFields groupFields = getGroupByFields();
+            if (groupFields != null && groupFields.hasGroupByFields()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
                 if (alreadyExists != null) {
-                    ((GroupingTransform) alreadyExists).updateConfig(getConfig().getGroupAggregateFields(), getQueryModel());
+                    ((GroupingTransform) alreadyExists).updateConfig(groupFields, getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), getConfig().getGroupAggregateFields(),
+                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), groupFields,
                                     this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
@@ -789,28 +789,49 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         
         // Get the GROUP_FIELDS parameter if given
-        String groupFields = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
-        if (StringUtils.isNotBlank(groupFields)) {
-            List<String> groupFieldsList = Arrays.asList(StringUtils.split(groupFields, Constants.PARAM_VALUE_SEP));
+        String groupFieldsParam = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(groupFieldsParam)) {
+            String[] groupFields = StringUtils.split(groupFieldsParam, Constants.PARAM_VALUE_SEP);
             
             // Only set the group fields if we were actually given some.
-            if (!groupFieldsList.isEmpty()) {
-                this.setGroupFields(new HashSet<>(groupFieldsList));
-                config.setGroupFields(new HashSet<>(groupFieldsList));
-                
-                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-                if (groupAggregateFields == null) {
-                    groupAggregateFields = new GroupAggregateFields();
+            if (groupFields.length > 0) {
+                GroupFields groupByFields = config.getGroupFields();
+                groupByFields.setGroupByFields(Sets.newHashSet(groupFields));
+    
+                // Update the sum fields if given.
+                String sumFieldsParam = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(sumFieldsParam)) {
+                    groupByFields.setSumFields(Sets.newHashSet(StringUtils.split(sumFieldsParam, Constants.PARAM_VALUE_SEP)));
                 }
-                groupAggregateFields.addGroupFields(groupFieldsList);
-                config.setGroupAggregateFields(groupAggregateFields);
-                
-                Set<String> newProjectFields = new HashSet<>(groupFieldsList);
-                Set<String> oldProjectFields = config.getProjectFields();
-                if (oldProjectFields != null) {
-                    newProjectFields.addAll(oldProjectFields);
+    
+                // Update the count fields if given.
+                String countFieldsParam = settings.findParameter(QueryParameters.COUNT_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(countFieldsParam)) {
+                    groupByFields.setCountFields(Sets.newHashSet(StringUtils.split(countFieldsParam, Constants.PARAM_VALUE_SEP)));
                 }
-                config.setProjectFields(newProjectFields);
+    
+                // Update the average fields if given.
+                String averageFieldsParam = settings.findParameter(QueryParameters.AVERAGE_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(averageFieldsParam)) {
+                    groupByFields.setAverageFields(Sets.newHashSet(StringUtils.split(averageFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+    
+                // Update the min fields if given.
+                String minFieldsParam = settings.findParameter(QueryParameters.MIN_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(averageFieldsParam)) {
+                    groupByFields.setMinFields(Sets.newHashSet(StringUtils.split(minFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+    
+                // Update the max fields if given.
+                String maxFieldsParam = settings.findParameter(QueryParameters.MAX_FIELDS).getParameterValue().trim();
+                if (StringUtils.isNotBlank(averageFieldsParam)) {
+                    groupByFields.setMaxFields(Sets.newHashSet(StringUtils.split(maxFieldsParam, Constants.PARAM_VALUE_SEP)));
+                }
+                
+                // Update the config and the projection fields.
+                this.setGroupByFields(groupByFields);
+                config.setGroupFields(groupByFields);
+                config.setProjectFields(groupByFields.getProjectionFields());
             }
         }
         
@@ -819,111 +840,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             int groupFieldsBatchSize = Integer.parseInt(groupFieldsBatchSizeString);
             this.setGroupFieldsBatchSize(groupFieldsBatchSize);
             config.setGroupFieldsBatchSize(groupFieldsBatchSize);
-        }
-        
-        // Get the SUM_FIELDS fields parameter if given.
-        String sumFields = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(sumFields)) {
-            Set<String> fields = Sets.newHashSet(StringUtils.split(sumFields, Constants.PARAM_VALUE_SEP));
-            if (!fields.isEmpty()) {
-                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-                if (groupAggregateFields == null) {
-                    groupAggregateFields = new GroupAggregateFields();
-                }
-                groupAggregateFields.addSumFields(fields);
-                config.setGroupAggregateFields(groupAggregateFields);
-                
-                Set<String> newProjectFields = new HashSet<>(fields);
-                Set<String> oldProjectFields = config.getProjectFields();
-                if (oldProjectFields != null) {
-                    newProjectFields.addAll(oldProjectFields);
-                }
-                config.setProjectFields(newProjectFields);
-            }
-        }
-        
-        // Get the MAX_FIELDS fields parameter if given.
-        String maxFields = settings.findParameter(QueryParameters.MAX_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(maxFields)) {
-            Set<String> fields = Sets.newHashSet(StringUtils.split(maxFields, Constants.PARAM_VALUE_SEP));
-            if (!fields.isEmpty()) {
-                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-                if (groupAggregateFields == null) {
-                    groupAggregateFields = new GroupAggregateFields();
-                }
-                groupAggregateFields.addMaxFields(fields);
-                config.setGroupAggregateFields(groupAggregateFields);
-                
-                Set<String> newProjectFields = new HashSet<>(fields);
-                Set<String> oldProjectFields = config.getProjectFields();
-                if (oldProjectFields != null) {
-                    newProjectFields.addAll(oldProjectFields);
-                }
-                config.setProjectFields(newProjectFields);
-            }
-        }
-        
-        // Get the MIN_FIELDS fields parameter if given.
-        String minFields = settings.findParameter(QueryParameters.MIN_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(minFields)) {
-            Set<String> fields = Sets.newHashSet(StringUtils.split(minFields, Constants.PARAM_VALUE_SEP));
-            if (!fields.isEmpty()) {
-                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-                if (groupAggregateFields == null) {
-                    groupAggregateFields = new GroupAggregateFields();
-                }
-                groupAggregateFields.addMinFields(fields);
-                config.setGroupAggregateFields(groupAggregateFields);
-                
-                Set<String> newProjectFields = new HashSet<>(fields);
-                Set<String> oldProjectFields = config.getProjectFields();
-                if (oldProjectFields != null) {
-                    newProjectFields.addAll(oldProjectFields);
-                }
-                config.setProjectFields(newProjectFields);
-            }
-        }
-        
-        // Get the COUNT_FIELDS fields parameter if given.
-        String countFields = settings.findParameter(QueryParameters.COUNT_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(countFields)) {
-            Set<String> fields = Sets.newHashSet(StringUtils.split(countFields, Constants.PARAM_VALUE_SEP));
-            if (!fields.isEmpty()) {
-                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-                if (groupAggregateFields == null) {
-                    groupAggregateFields = new GroupAggregateFields();
-                }
-                groupAggregateFields.addCountFields(fields);
-                config.setGroupAggregateFields(groupAggregateFields);
-                
-                Set<String> newProjectFields = new HashSet<>(fields);
-                Set<String> oldProjectFields = config.getProjectFields();
-                if (oldProjectFields != null) {
-                    newProjectFields.addAll(oldProjectFields);
-                }
-                config.setProjectFields(newProjectFields);
-            }
-        }
-        
-        // Get the AVERAGE_FIELDS fields parameter if given.
-        String averageFields = settings.findParameter(QueryParameters.AVERAGE_FIELDS).getParameterValue().trim();
-        if (org.apache.commons.lang.StringUtils.isNotBlank(averageFields)) {
-            Set<String> fields = Sets.newHashSet(StringUtils.split(averageFields, Constants.PARAM_VALUE_SEP));
-            if (!fields.isEmpty()) {
-                GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-                if (groupAggregateFields == null) {
-                    groupAggregateFields = new GroupAggregateFields();
-                }
-                groupAggregateFields.addAverageFields(fields);
-                config.setGroupAggregateFields(groupAggregateFields);
-                
-                Set<String> newProjectFields = new HashSet<>(fields);
-                Set<String> oldProjectFields = config.getProjectFields();
-                if (oldProjectFields != null) {
-                    newProjectFields.addAll(oldProjectFields);
-                }
-                config.setProjectFields(newProjectFields);
-            }
         }
         
         // Get the UNIQUE_FIELDS parameter if given
@@ -1413,11 +1329,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setLimitFieldsField(limitFieldsField);
     }
     
-    public Set<String> getGroupFields() {
+    public GroupFields getGroupByFields() {
         return getConfig().getGroupFields();
     }
     
-    public void setGroupFields(Set<String> groupFields) {
+    public void setGroupByFields(GroupFields groupFields) {
         getConfig().setGroupFields(groupFields);
     }
     
@@ -1427,14 +1343,6 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     
     public int getGroupFieldsBatchSize() {
         return getConfig().getGroupFieldsBatchSize();
-    }
-    
-    public GroupAggregateFields getGroupAggregateFields() {
-        return getConfig().getGroupAggregateFields();
-    }
-    
-    public void setGroupAggregateFields(GroupAggregateFields groupAggregateFields) {
-        getConfig().setGroupAggregateFields(groupAggregateFields);
     }
     
     public UniqueFields getUniqueFields() {

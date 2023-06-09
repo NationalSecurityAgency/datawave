@@ -4,23 +4,21 @@ import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.common.grouping.GroupAggregateFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.attributes.UniqueFields;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 public class QueryOptionsSwitch {
     
     private static final Logger log = ThreadConfigurableLogger.getLogger(QueryOptionsSwitch.class);
     
     public static void apply(Map<String,String> optionsMap, ShardQueryConfiguration config) {
+        GroupFields groupFields;
         for (Map.Entry<String,String> entry : optionsMap.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
@@ -41,11 +39,13 @@ public class QueryOptionsSwitch {
                     break;
                 case QueryParameters.GROUP_FIELDS:
                     String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    config.setGroupFields(Sets.newHashSet(groups));
-                    // Update the projection fields.
-                    addToProjectionFields(config, groups);
-                    // Update the group aggregate fields.
-                    getOrCreateGroupAggregateFields(config).addGroupFields(groups);
+                    groupFields = config.getGroupFields();
+                    groupFields.setGroupByFields(Sets.newHashSet(groups));
+                    config.setGroupFields(groupFields);
+                    // If there are any group-by fields, update the projection fields to include them.
+                    if (groupFields.hasGroupByFields()) {
+                        config.setProjectFields(groupFields.getProjectionFields());
+                    }
                     break;
                 case QueryParameters.GROUP_FIELDS_BATCH_SIZE:
                     try {
@@ -64,58 +64,55 @@ public class QueryOptionsSwitch {
                     break;
                 case QueryParameters.SUM_FIELDS:
                     String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    // Update the projection fields.
-                    addToProjectionFields(config, sumFields);
-                    // Update the group aggregate fields.
-                    getOrCreateGroupAggregateFields(config).addSumFields(sumFields);
+                    groupFields = config.getGroupFields();
+                    groupFields.setSumFields(Sets.newHashSet(sumFields));
+                    config.setGroupFields(groupFields);
+                    // Update the projection fields only if we have group-by fields specified.
+                    if (groupFields.hasGroupByFields()) {
+                        config.setProjectFields(groupFields.getProjectionFields());
+                    }
                     break;
                 case QueryParameters.MAX_FIELDS:
                     String[] maxFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    // Update the projection fields.
-                    addToProjectionFields(config, maxFields);
-                    // Update the group aggregate fields.
-                    getOrCreateGroupAggregateFields(config).addMaxFields(maxFields);
+                    groupFields = config.getGroupFields();
+                    groupFields.setMaxFields(Sets.newHashSet(maxFields));
+                    config.setGroupFields(groupFields);
+                    // Update the projection fields only if we have group-by fields specified.
+                    if (groupFields.hasGroupByFields()) {
+                        config.setProjectFields(groupFields.getProjectionFields());
+                    }
                     break;
                 case QueryParameters.MIN_FIELDS:
                     String[] minFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    // Update the projection fields.
-                    addToProjectionFields(config, minFields);
-                    // Update the group aggregate fields.
-                    getOrCreateGroupAggregateFields(config).addMinFields(minFields);
+                    groupFields = config.getGroupFields();
+                    groupFields.setMinFields(Sets.newHashSet(minFields));
+                    config.setGroupFields(groupFields);
+                    // Update the projection fields only if we have group-by fields specified.
+                    if (groupFields.hasGroupByFields()) {
+                        config.setProjectFields(groupFields.getProjectionFields());
+                    }
                     break;
                 case QueryParameters.COUNT_FIELDS:
                     String[] countFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    // Update the projection fields.
-                    addToProjectionFields(config, countFields);
-                    // Update the group aggregate fields.
-                    getOrCreateGroupAggregateFields(config).addCountFields(countFields);
+                    groupFields = config.getGroupFields();
+                    groupFields.setCountFields(Sets.newHashSet(countFields));
+                    config.setGroupFields(groupFields);
+                    // Update the projection fields only if we have group-by fields specified.
+                    if (groupFields.hasGroupByFields()) {
+                        config.setProjectFields(groupFields.getProjectionFields());
+                    }
                     break;
                 case QueryParameters.AVERAGE_FIELDS:
                     String[] averageFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    // Update the projection fields.
-                    addToProjectionFields(config, averageFields);
-                    // Update the group aggregate fields.
-                    getOrCreateGroupAggregateFields(config).addAverageFields(averageFields);
+                    groupFields = config.getGroupFields();
+                    groupFields.setAverageFields(Sets.newHashSet(averageFields));
+                    config.setGroupFields(groupFields);
+                    // Update the projection fields only if we have group-by fields specified.
+                    if (groupFields.hasGroupByFields()) {
+                        config.setProjectFields(groupFields.getProjectionFields());
+                    }
                     break;
             }
         }
-    }
-    
-    public static void addToProjectionFields(ShardQueryConfiguration config, String[] fields) {
-        Set<String> projectFields = config.getProjectFields();
-        if (projectFields == null) {
-            projectFields = new HashSet<>();
-        }
-        projectFields.addAll(Arrays.asList(fields));
-        config.setProjectFields(projectFields);
-    }
-    
-    public static GroupAggregateFields getOrCreateGroupAggregateFields(ShardQueryConfiguration config) {
-        GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-        if (groupAggregateFields == null) {
-            groupAggregateFields = new GroupAggregateFields();
-            config.setGroupAggregateFields(groupAggregateFields);
-        }
-        return groupAggregateFields;
     }
 }

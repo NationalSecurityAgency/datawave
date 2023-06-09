@@ -19,7 +19,6 @@ import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ValueTuple;
-import datawave.query.common.grouping.FieldAggregator;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.DataTypeAsField;
@@ -1668,10 +1667,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
     
     protected GroupingIterator getGroupingIteratorInstance(Iterator<Entry<Key,Document>> in) {
-        if (groupingIterator == null && getGroupAggregateFields() != null && getGroupAggregateFields().hasGroupFields()) {
-            synchronized (getGroupAggregateFields()) {
+        if (groupingIterator == null && getGroupFields() != null && getGroupFields().hasGroupByFields()) {
+            synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
-                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupAggregateFields(),
+                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(),
                                     this.groupFieldsBatchSize, this.yield);
                 }
             }

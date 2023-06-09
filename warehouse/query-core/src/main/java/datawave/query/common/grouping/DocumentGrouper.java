@@ -48,13 +48,13 @@ public class DocumentGrouper {
      * 
      * @param entry
      *            the document entry
-     * @param groupAggregateFields
+     * @param groupFields
      *            the fields to group and aggregate
      * @param groups
      *            the {@link Groups} instance to merge newly found groups into
      */
-    public static void group(Map.Entry<Key,Document> entry, GroupAggregateFields groupAggregateFields, Groups groups) {
-        DocumentGrouper documentGrouper = new DocumentGrouper(entry, groupAggregateFields, groups);
+    public static void group(Map.Entry<Key,Document> entry, GroupFields groupFields, Groups groups) {
+        DocumentGrouper documentGrouper = new DocumentGrouper(entry, groupFields, groups);
         documentGrouper.group();
     }
     
@@ -71,14 +71,22 @@ public class DocumentGrouper {
     private final Multimap<Pair<String,String>,Set<GroupingAttribute<?>>> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
     private final int requiredGroupSize;
     
-    private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupAggregateFields groupAggregateFields, Groups groups) {
+    private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupFields groupFields, Groups groups) {
         this.documentKey = documentEntry.getKey();
         this.document = documentEntry.getValue();
-        this.groupFields = groupAggregateFields.getGroupFields();
-        this.fieldAggregatorFactory = groupAggregateFields.getFieldAggregatorFactory();
-        this.reverseModelMappings = groupAggregateFields.getReverseModelMapping();
+        this.groupFields = groupFields.getGroupByFields();
+        this.fieldAggregatorFactory = groupFields.getFieldAggregatorFactory();
+        this.reverseModelMappings = groupFields.getReverseModelMap();
         this.groups = groups;
-        this.requiredGroupSize = groupAggregateFields.requiredGroupSize();
+        // If the fields were not remapped, the required size of groupings is equal to the number of group-by fields.
+        if (this.reverseModelMappings.isEmpty()) {
+            this.requiredGroupSize = this.groupFields.size();
+        } else {
+            // Otherwise, we must reverse-map the group fields to their display name and count the distinct fields.
+            this.requiredGroupSize = (int) this.groupFields.stream().map(reverseModelMappings::get)
+                            .distinct()
+                            .count();
+        }
     }
     
     /**

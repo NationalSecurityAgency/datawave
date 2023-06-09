@@ -4,7 +4,7 @@ import com.google.common.collect.Maps;
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.query.common.grouping.DocumentGrouper;
-import datawave.query.common.grouping.GroupAggregateFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.common.grouping.GroupingUtils;
 import datawave.query.common.grouping.Groups;
 import datawave.query.common.grouping.Group;
@@ -35,7 +35,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * the fields (user provided) to group by
      */
-    private GroupAggregateFields groupAggregateFields;
+    private GroupFields groupFields;
     
     private final Groups groups;
     
@@ -65,25 +65,25 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      *
      * @param model
      *            the query model (can be null)
-     * @param groupAggregateFields
+     * @param groupFields
      *            the fields (user provided) to group by and aggregate
      * @param queryExecutionForPageTimeout
      *            how long (in milliseconds) to let a page of results to collect before signaling to return a blank page to the client
      * @param markingFunctions
      *            the marking functions
      */
-    public GroupingTransform(QueryModel model, GroupAggregateFields groupAggregateFields, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
+    public GroupingTransform(QueryModel model, GroupFields groupFields, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
         super.initialize(settings, markingFunctions);
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();
-        this.groupAggregateFields = groupAggregateFields;
+        this.groupFields = groupFields;
         if (model != null) {
             this.reverseModelMapping = model.getReverseQueryMapping();
         }
     }
     
-    public void updateConfig(GroupAggregateFields groupAggregateFields, QueryModel model) {
-        this.groupAggregateFields = groupAggregateFields;
+    public void updateConfig(GroupFields groupFields, QueryModel model) {
+        this.groupFields = groupFields;
         if (model != null) {
             reverseModelMapping = model.getReverseQueryMapping();
         }
@@ -103,7 +103,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
-            DocumentGrouper.group(keyDocumentEntry, groupAggregateFields, groups);
+            DocumentGrouper.group(keyDocumentEntry, groupFields, groups);
         }
         
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;

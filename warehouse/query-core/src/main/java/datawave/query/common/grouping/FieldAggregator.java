@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -345,6 +346,25 @@ public class FieldAggregator {
         public String toString() {
             return new ToStringBuilder(this).append("sumFields", sumFields).append("maxFields", maxFields).append("minFields", minFields)
                             .append("countFields", countFields).append("averageFields", averageFields).append("allFields", allFields).toString();
+        }
+    
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            Factory factory = (Factory) o;
+            return Objects.equals(sumFields, factory.sumFields) && Objects.equals(maxFields, factory.maxFields) && Objects.equals(minFields, factory.minFields)
+                            && Objects.equals(countFields, factory.countFields) && Objects.equals(averageFields, factory.averageFields) && Objects.equals(
+                            allFields, factory.allFields);
+        }
+    
+        @Override
+        public int hashCode() {
+            return Objects.hash(sumFields, maxFields, minFields, countFields, averageFields, allFields);
         }
     }
 }

@@ -18,7 +18,7 @@ import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.common.grouping.GroupAggregateFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.composite.CompositeUtils;
 import datawave.query.config.ShardQueryConfiguration;
@@ -535,7 +535,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), true);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
-        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), true);
+        addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFields().toString(), true);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), true);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), true);
         addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), true);
@@ -548,7 +548,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
-        addOption(cfg, QueryOptions.GROUP_AGGREGATE_FIELDS, config.getGroupAggregateFields().toString(), true);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
     }
@@ -1726,10 +1725,9 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // reverse mapping
         // can be one to many
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
-        
+    
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(), groupFields = config
-                        .getGroupFields();
+        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields();
         
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
@@ -1738,29 +1736,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             config.setProjectFields(Sets.newHashSet(projectFields));
         }
-        
-        if (groupFields != null && !groupFields.isEmpty()) {
-            Collection<String> remappedGroupFields = queryModel.remapParameter(groupFields, inverseReverseModel);
+    
+        GroupFields groupFields = config.getGroupFields();
+        if (groupFields != null && groupFields.hasGroupByFields()) {
+            groupFields.remapFields(inverseReverseModel);
             if (log.isTraceEnabled()) {
-                log.trace("Updated grouping set using query model to: " + remappedGroupFields);
+                log.trace("Updating group-by fields using query model to " + groupFields);
             }
-            config.setGroupFields(Sets.newHashSet(remappedGroupFields));
-            // If grouping is set, we must make the projection fields match the group fields, as well as include any grouping aggregation fields.
-            Set<String> newProjectFields = Sets.newHashSet(remappedGroupFields);
+            config.setGroupFields(groupFields);
             
-            // Update the projection fields.
-            config.setProjectFields(newProjectFields);
-        }
-        
-        GroupAggregateFields groupAggregateFields = config.getGroupAggregateFields();
-        if (groupAggregateFields != null && groupAggregateFields.hasGroupFields()) {
-            groupAggregateFields.remapFields(inverseReverseModel);
-            if (log.isTraceEnabled()) {
-                log.trace("Updated groupAggregateFields using query model to " + groupAggregateFields);
-            }
-            config.setGroupAggregateFields(groupAggregateFields);
-            // Update the projection fields to include all group-by fields and all aggregation fields.
-            config.setProjectFields(groupAggregateFields.getDistinctFields());
+            // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
+            config.setProjectFields(groupFields.getProjectionFields());
         }
         
         UniqueFields uniqueFields = config.getUniqueFields();
@@ -2460,7 +2446,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         // if groupby function is used, force include.grouping.context to be true
-        if (config.getGroupFields() != null && !config.getGroupFields().isEmpty()) {
+        if (config.getGroupFields() != null && config.getGroupFields().hasGroupByFields()) {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(true), false);
         } else {
             addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);

@@ -12,7 +12,7 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.test.GroupsAssert;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.After;
+import org.assertj.core.util.Sets;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -20,9 +20,11 @@ import org.junit.Test;
 import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class DocumentGrouperTest {
     
@@ -33,7 +35,7 @@ public class DocumentGrouperTest {
     private static final Key key = new Key("test_key");
     private static final Multimap<String,String> inverseReverseMap = HashMultimap.create();
     
-    private GroupAggregateFields groupAggregateFields = new GroupAggregateFields();
+    private GroupFields groupFields = new GroupFields();
     private Document document;
     private Groups groups;
     
@@ -52,7 +54,7 @@ public class DocumentGrouperTest {
     public void setUp() throws Exception {
         groups = new Groups();
         document = new Document();
-        groupAggregateFields = new GroupAggregateFields();
+        groupFields = new GroupFields();
     }
     
     /**
@@ -754,12 +756,12 @@ public class DocumentGrouperTest {
     
     @Test
     public void testAggregatingFieldsWithMixedFormatsWithModelMapping() {
-        givenGroupFields("GENDER", "AGE");
-        givenSumFields("HEIGHT");
-        givenMaxFields("HEIGHT", "BUILDING");
-        givenMinFields("BUILDING");
-        givenCountFields("HEIGHT", "BUILDING");
-        givenAverageFields("HEIGHT");
+        givenGroupFields("GEN", "AG");
+        givenSumFields("PEAK");
+        givenMaxFields("PEAK", "LOC");
+        givenMinFields("LOC");
+        givenCountFields("PEAK", "LOC");
+        givenAverageFields("PEAK");
         
         givenRemappedFields();
         
@@ -822,8 +824,8 @@ public class DocumentGrouperTest {
     
     @Test
     public void testAggregationAcrossMultipleDocumentsWithModelMapping() {
-        givenGroupFields("GENDER", "AGE");
-        givenSumFields("HEIGHT");
+        givenGroupFields("GEN", "AG");
+        givenSumFields("PEAK");
         
         givenRemappedFields();
     
@@ -890,31 +892,31 @@ public class DocumentGrouperTest {
     }
     
     private void givenGroupFields(String... fields) {
-        groupAggregateFields.addGroupFields(fields);
+        groupFields.setGroupByFields(Sets.newHashSet(Arrays.asList(fields)));
     }
     
     private void givenSumFields(String... fields) {
-        groupAggregateFields.addSumFields(fields);
+        groupFields.setSumFields(Sets.newHashSet(Arrays.asList(fields)));
     }
     
     private void givenCountFields(String... fields) {
-        groupAggregateFields.addCountFields(fields);
+        groupFields.setCountFields(Sets.newHashSet(Arrays.asList(fields)));
     }
     
     private void givenAverageFields(String... fields) {
-        groupAggregateFields.addAverageFields(fields);
+        groupFields.setAverageFields(Sets.newHashSet(Arrays.asList(fields)));
     }
     
     private void givenMinFields(String... fields) {
-        groupAggregateFields.addMinFields(fields);
+        groupFields.setMinFields(Sets.newHashSet(Arrays.asList(fields)));
     }
     
     private void givenMaxFields(String... fields) {
-        groupAggregateFields.addMaxFields(fields);
+        groupFields.setMaxFields(Sets.newHashSet(Arrays.asList(fields)));
     }
     
     private void givenRemappedFields() {
-        this.groupAggregateFields.remapFields(inverseReverseMap);
+        this.groupFields.remapFields(inverseReverseMap);
     }
     
     private void resetDocument() {
@@ -931,7 +933,7 @@ public class DocumentGrouperTest {
     
     private void executeGrouping() {
         Map.Entry<Key,Document> keyDocumentEntry = new AbstractMap.SimpleEntry<>(key, this.document);
-        DocumentGrouper.group(keyDocumentEntry, this.groupAggregateFields, this.groups);
+        DocumentGrouper.group(keyDocumentEntry, this.groupFields, this.groups);
     }
     
     private GroupingAttribute<?> numericKey(String key, String value) {

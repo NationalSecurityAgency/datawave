@@ -17,6 +17,7 @@ import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
@@ -193,7 +194,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.isCompositeFilterFunctionsEnabled());
         Assert.assertEquals(0, config.getGroupFieldsBatchSize());
         Assert.assertFalse(config.getAccrueStats());
-        Assert.assertEquals(Sets.newHashSet(), config.getGroupFields());
+        Assert.assertEquals(new GroupFields(), config.getGroupFields());
         Assert.assertEquals(new UniqueFields(), config.getUniqueFields());
         Assert.assertFalse(config.getCacheModel());
         Assert.assertTrue(config.isTrackSizes());
@@ -263,7 +264,8 @@ public class ShardQueryConfigurationTest {
         List<String> documentPermutations = Lists.newArrayList(DocumentPermutation.class.getName());
         QueryModel queryModel = new QueryModel();
         QueryImpl query = new QueryImpl();
-        Set<String> groupFields = Sets.newHashSet("groupFieldA");
+        GroupFields groupFields = new GroupFields();
+        groupFields.setGroupByFields(Sets.newHashSet("A", "B", "C"));
         UniqueFields uniqueFields = new UniqueFields();
         uniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
@@ -344,7 +346,7 @@ public class ShardQueryConfigurationTest {
         documentPermutations.add(DocumentProjection.class.getName());
         queryModel.addTermToModel("aliasA", "diskNameA");
         query.setId(UUID.randomUUID());
-        groupFields.add("groupFieldB");
+        groupFields.setMinFields(Sets.newHashSet("B", "C"));
         uniqueFields.put("uniqueFieldB", UniqueGranularity.ALL);
         contentFieldNames.add("fieldB");
         disallowedRegexPatterns.add("blah");
@@ -405,7 +407,9 @@ public class ShardQueryConfigurationTest {
         QueryImpl expectedQuery = new QueryImpl();
         expectedQuery.setId(config.getQuery().getId());
         Assert.assertEquals(expectedQuery, config.getQuery());
-        Assert.assertEquals(Sets.newHashSet("groupFieldA"), config.getGroupFields());
+        GroupFields expectedGroupFields = new GroupFields();
+        expectedGroupFields.setGroupByFields(Sets.newHashSet("A", "B", "C"));
+        Assert.assertEquals(expectedGroupFields, config.getGroupFields());
         UniqueFields expectedUniqueFields = new UniqueFields();
         expectedUniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
         Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
@@ -511,7 +515,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 202;
+        int expectedObjectCount = 200;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
