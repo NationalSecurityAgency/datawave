@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>5.7.0-SNAPSHOT</version>
+    <version>5.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast,
@@ -117,7 +117,6 @@
         <version.xerces>2.12.2</version.xerces>
         <version.zookeeper>3.8.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
-        <!-- <runOrder>random</runOrder> -->
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -1132,28 +1131,6 @@
         </dependencies>
     </dependencyManagement>
     <repositories>
-        <!--
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>todo-public</id>
-            <url>https://todo/nexus/content/groups/public</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>todo-public-snapshots</id>
-            <url>https://todo/nexus/content/groups/public-snapshots</url>
-        </repository>
-        -->
         <repository>
             <!--
                 This repository is a temporary work-around until we can public artifacts to maven central.

@@ -3,6 +3,10 @@ package datawave.common.util;
 public class ArgumentChecker {
     private static final String NULL_ARG_MSG = "argument was null";
     
+    private ArgumentChecker() {
+        throw new IllegalStateException("Do not instantiate utility class.");
+    }
+    
     public static final void notNull(final Object arg1) {
         if (arg1 == null)
             throw new IllegalArgumentException(NULL_ARG_MSG + ":Is null- arg1? true");
