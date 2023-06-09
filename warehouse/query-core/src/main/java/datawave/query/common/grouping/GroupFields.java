@@ -1,6 +1,7 @@
 package datawave.query.common.grouping;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -9,6 +10,7 @@ import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -18,7 +20,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class GroupFields {
+/**
+ * Represents a set of fields that have been specified within a {@code #groupby()} function, as well as any fields specified in the functions {@code #sum()},
+ * {@code #count()}, {@code #average()}, {@code #min()}, and {@code #max()} that should be used when preforming a group-by operation on documents. This class
+ * can easily be captured as a parameter string using {@link GroupFields#toString()}, and transformed back into a {@link GroupFields} instance via
+ * {@link GroupFields#from(String)}.
+ */
+public class GroupFields implements Serializable {
     
     private static final String GROUP = "GROUP";
     private static final String SUM = "SUM";
@@ -36,6 +44,17 @@ public class GroupFields {
     private Set<String> maxFields = new HashSet<>();
     private Multimap<String,String> modelMap = HashMultimap.create();
     
+    /**
+     * Returns a new {@link GroupFields} parsed the given string. The string is expected to have the format returned by {@link GroupFields#toString()}, but may
+     * also be a comma-delimited string of fields to group-by to support backwards-compatibility with the legacy format. See below for certain edge cases:
+     * <ul>
+     *     <li>Given null, null will be returned.</li>
+     *     <li>Given an empty or blank string, an empty {@link GroupFields} will be returned.</li>
+     *     <li>Given a comma-delimited list of fields, e.g {@code AGE,GENDER}, a {@link GroupFields} with the fields set as the group-by fields will be returned.</li>
+     * </ul>
+     * @param string the string to parse
+     * @return the parsed {@link GroupFields}
+     */
     @JsonCreator
     public static GroupFields from(String string) {
         if (string == null) {
@@ -93,10 +112,12 @@ public class GroupFields {
         return groupFields;
     }
     
+    // Parse a set of fields from the string.
     private static Set<String> parseSet(String str) {
         return Sets.newHashSet(StringUtils.split(str, Constants.COMMA));
     }
     
+    // Parse a multimap from the given string.
     private static Multimap<String,String> parseMap(String str) {
         Multimap<String,String> map = HashMultimap.create();
         String[] entries = StringUtils.split(str, Constants.COLON);
@@ -110,6 +131,11 @@ public class GroupFields {
         return map;
     }
     
+    /**
+     * Return a copy of the given {@link GroupFields}.
+     * @param other the other instance to copy
+     * @return the copy
+     */
     public static GroupFields copyOf(GroupFields other) {
         if (other == null) {
             return null;
@@ -126,58 +152,114 @@ public class GroupFields {
         return copy;
     }
     
+    /**
+     * Set the fields to group by.
+     * @param fields the fields
+     */
     public void setGroupByFields(Set<String> fields) {
         this.groupByFields = fields;
     }
     
-    public void setSumFields(Set<String> sumFields) {
-        this.sumFields = sumFields;
+    /**
+     * Set the fields to sum.
+     * @param fields the fields
+     */
+    public void setSumFields(Set<String> fields) {
+        this.sumFields = fields;
     }
     
-    public void setCountFields(Set<String> countFields) {
-        this.countFields = countFields;
+    /**
+     * Set the fields to count.
+     * @param fields the fields
+     */
+    public void setCountFields(Set<String> fields) {
+        this.countFields = fields;
     }
     
-    public void setAverageFields(Set<String> averageFields) {
-        this.averageFields = averageFields;
+    /**
+     * Set the fields to average.
+     * @param fields the fields
+     */
+    public void setAverageFields(Set<String> fields) {
+        this.averageFields = fields;
     }
     
-    public void setMinFields(Set<String> minFields) {
-        this.minFields = minFields;
+    /**
+     * Set the fields to find the min of.
+     * @param fields the fields
+     */
+    public void setMinFields(Set<String> fields) {
+        this.minFields = fields;
     }
     
-    public void setMaxFields(Set<String> maxFields) {
-        this.maxFields = maxFields;
+    /**
+     * Set the fields to find the max of.
+     * @param fields the fields
+     */
+    public void setMaxFields(Set<String> fields) {
+        this.maxFields = fields;
     }
     
+    /**
+     * Return the fields to group by.
+     * @return the fields
+     */
     public Set<String> getGroupByFields() {
         return groupByFields;
     }
     
+    /**
+     * Return the fields to sum.
+     * @return the fields
+     */
     public Set<String> getSumFields() {
         return sumFields;
     }
     
+    /**
+     * Return the fields to count.
+     * @return the fields
+     */
     public Set<String> getCountFields() {
         return countFields;
     }
     
+    /**
+     * Return the fields to average.
+     * @return the fields
+     */
     public Set<String> getAverageFields() {
         return averageFields;
     }
     
+    /**
+     * Return the fields to find the min of.
+     * @return the fields
+     */
     public Set<String> getMinFields() {
         return minFields;
     }
     
+    /**
+     * Return the fields to find the max of.
+     * @return the fields
+     */
     public Set<String> getMaxFields() {
         return maxFields;
     }
     
+    /**
+     * Return whether this {@link GroupFields} has any fields to group by.
+     * @return true if there are fields to group by, or false otherwise
+     */
     public boolean hasGroupByFields() {
         return groupByFields != null && !groupByFields.isEmpty();
     }
     
+    /**
+     * Return the set of all fields to group by, sum, count, average, and find the min and max of that must be included in projection.
+     * @return the fields required to be included in projection
+     */
     public Set<String> getProjectionFields() {
         Set<String> fields = new HashSet<>();
         fields.addAll(this.groupByFields);
@@ -189,6 +271,9 @@ public class GroupFields {
         return fields;
     }
     
+    /**
+     * Deconstruct the identifiers of all fields in this {@link GroupFields}.
+     */
     public void deconstructIdentifiers() {
         this.groupByFields = deconstructIdentifiers(this.groupByFields);
         this.sumFields = deconstructIdentifiers(this.sumFields);
@@ -198,10 +283,15 @@ public class GroupFields {
         this.maxFields = deconstructIdentifiers(this.maxFields);
     }
     
+    // Return a copy of the given set with all identifiers deconstructed.
     private Set<String> deconstructIdentifiers(Set<String> set) {
         return set.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
     }
     
+    /**
+     * Modify this {@link GroupFields} to ensure that all sets of fields also include their alternative mappings, and set the model map to the given map.
+     * @param modelMap the map to retrieve alternative field mappings from
+     */
     public void remapFields(Multimap<String, String> modelMap) {
         this.groupByFields = remap(this.groupByFields, modelMap);
         this.sumFields = remap(this.sumFields, modelMap);
@@ -212,6 +302,7 @@ public class GroupFields {
         this.modelMap = modelMap;
     }
     
+    // Return a copy of the given set with all alternative field mappings included.
     private Set<String> remap(Set<String> set, Multimap<String,String> map) {
         Set<String> newMappings = new HashSet<>(set);
         for (String field : set) {
@@ -223,10 +314,19 @@ public class GroupFields {
         return newMappings;
     }
     
+    /**
+     * Return the model map. This map will never be null, but may be empty if this {@link GroupFields} was never remapped via
+     * {@link GroupFields#remapFields(Multimap)}.
+     * @return the model map
+     */
     public Multimap<String,String> getModelMap() {
         return modelMap;
     }
     
+    /**
+     * Return a map of fields to their display name, possibly empty, but never null.
+     * @return the map
+     */
     public Map<String, String> getReverseModelMap() {
         Map<String,String> map = new HashMap<>();
         for (String key : modelMap.keySet()) {
@@ -236,6 +336,10 @@ public class GroupFields {
         return map;
     }
     
+    /**
+     * Return a new {@link FieldAggregator.Factory} instance configured with the aggregation fields of this {@link GroupFields}.
+     * @return a configured {@link FieldAggregator.Factory} instance
+     */
     public FieldAggregator.Factory getFieldAggregatorFactory() {
         return new FieldAggregator.Factory()
                         .withSumFields(sumFields)
@@ -278,6 +382,7 @@ public class GroupFields {
         return sb.toString();
     }
     
+    // Write the given set if not empty to the given string builder.
     private void writeFormattedSet(StringBuilder sb, String name, Set<String> set) {
         if (!set.isEmpty()) {
             if (sb.length() > 0) {
@@ -297,6 +402,7 @@ public class GroupFields {
         }
     }
     
+    // Write the model map if not empty to the given string builder.
     private void writeFormattedModelMap(StringBuilder sb) {
         if (!modelMap.isEmpty()) {
             if (sb.length() > 0) {
