@@ -59,6 +59,10 @@ public class EventKeyTest {
         
         parser.parse(eventKeyWithChildUidNoDashes);
         assertKeyWithChildUidNoDashes(parser);
+
+        //this should skip actual processing, since it was already parsed up once.
+        parser.parse(eventKeyWithChildUidNoDashes);
+        assertKeyWithChildUidNoDashes(parser);
     }
     
     private void assertNormalKey(KeyParser parser) {

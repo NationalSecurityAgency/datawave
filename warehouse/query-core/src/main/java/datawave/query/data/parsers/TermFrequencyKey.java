@@ -1,8 +1,10 @@
 package datawave.query.data.parsers;
 
+import datawave.ingest.util.GenerateMultipleNumShardsCacheFile;
 import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 
 /**
  * A {@link KeyParser} for TermFrequency keys
@@ -31,11 +33,16 @@ public class TermFrequencyKey implements KeyParser {
     private int thirdNull;
     
     private Key key;
+    private static final Logger log = Logger.getLogger(TermFrequencyKey.class);
     
     @Override
     public void parse(Key k) {
-        clearState();
-        this.key = k;
+        if (this.key != null && this.key.equals(k)) {
+            log.debug("Same key given to parse call. Skipping re-load: " + this.key.toString());
+        } else {
+            clearState();
+            this.key = k;
+        }
     }
     
     @Override

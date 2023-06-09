@@ -163,4 +163,11 @@ public class TermFrequencyKeyTest {
         assertThrows(IllegalArgumentException.class, parser::getValue);
         assertEquals(k, parser.getKey());
     }
+
+    @Test
+    public void testDoubleParse() {
+        parser.parse(tfKey);
+        assertNormalKey(parser);
+        parser.parse(tfKey);
+    }
 }

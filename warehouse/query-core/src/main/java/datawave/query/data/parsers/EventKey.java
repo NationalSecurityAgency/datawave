@@ -3,6 +3,7 @@ package datawave.query.data.parsers;
 import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 
 /**
  * A {@link KeyParser} for Event keys
@@ -29,11 +30,16 @@ public class EventKey implements KeyParser {
     private String rootUid;
     private String value;
     private String field;
-    
+    private static final Logger log = Logger.getLogger(EventKey.class);
+
     @Override
     public void parse(Key k) {
-        clearState();
-        this.key = k;
+        if (this.key != null && this.key.equals(k)) {
+            log.debug("Same key given to parse call. Skipping re-load: " + this.key.toString());
+        } else {
+            clearState();
+            this.key = k;
+        }
     }
     
     public void clearState() {

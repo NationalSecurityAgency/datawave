@@ -3,6 +3,7 @@ package datawave.query.data.parsers;
 import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 
 /**
  * A {@link KeyParser} for FieldIndex keys
@@ -28,6 +29,7 @@ public class FieldIndexKey implements KeyParser {
     private int secondNull;
     
     private Key key;
+    private static final Logger log = Logger.getLogger(FieldIndexKey.class);
     
     /**
      * Sets the key and resets all supporting objects
@@ -36,8 +38,12 @@ public class FieldIndexKey implements KeyParser {
      *            a field index key
      */
     public void parse(Key k) {
-        clearState();
-        this.key = k;
+        if (this.key != null && this.key.equals(k)) {
+            log.debug("Same key given to parse call. Skipping re-load: " + this.key.toString());
+        } else {
+            clearState();
+            this.key = k;
+        }
     }
     
     /**
