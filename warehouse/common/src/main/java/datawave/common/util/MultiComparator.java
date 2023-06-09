@@ -9,7 +9,7 @@ import java.util.Comparator;
 public class MultiComparator<T> implements Comparator<T>, Serializable {
     private static final long serialVersionUID = 7403028374892043690L;
     
-    private final Collection<Comparator<T>> comparators;
+    private transient final Collection<Comparator<T>> comparators;
     
     public MultiComparator(Collection<Comparator<T>> comparators) {
         this.comparators = comparators;
