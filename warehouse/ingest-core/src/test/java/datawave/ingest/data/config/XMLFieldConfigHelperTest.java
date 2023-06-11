@@ -31,10 +31,11 @@ import static org.junit.Assert.assertTrue;
 public class XMLFieldConfigHelperTest {
     
     private final BaseIngestHelper ingestHelper = new TestBaseIngestHelper();
-    
+    private  Configuration conf = new Configuration();
+
     @Before
     public void setUp() {
-        Configuration conf = new Configuration();
+
         conf.set(DataTypeHelper.Properties.DATA_NAME, "test");
         conf.set("test" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set("test" + BaseIngestHelper.DEFAULT_TYPE, NoOpType.class.getName());
@@ -180,6 +181,61 @@ public class XMLFieldConfigHelperTest {
         
         List<Type<?>> types = ingestHelper.getDataTypes("H");
         assertEquals(2, types.size());
+    }
+
+    @Test
+    public void testOverlappingRegex() throws Exception {
+        String input = "<?xml version=\"1.0\"?>\n"
+                + "<fieldConfig>\n"
+                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
+                + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n"
+                + "</fieldConfig>";
+
+        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+
+        List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
+        assertEquals(3, types.size());
+    }
+
+    @Test
+    public void testOverlappingRegexPrecise() throws Exception {
+        conf.setBoolean(BaseIngestHelper.USE_MOST_PRECISE_FIELD_TYPE_REGEX, true);
+        ingestHelper.setup(conf);
+
+        String input = "<?xml version=\"1.0\"?>\n"
+                + "<fieldConfig>\n"
+                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n"
+                + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
+                + "</fieldConfig>";
+
+        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+
+        List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
+        assertEquals(1, types.size());
+        assertTrue(types.get(0) instanceof datawave.data.type.DateType);
+    }
+
+    @Test
+    public void testSameLengthOverlappingRegexPrecise() throws Exception {
+        conf.setBoolean(BaseIngestHelper.USE_MOST_PRECISE_FIELD_TYPE_REGEX, true);
+        ingestHelper.setup(conf);
+
+        String input = "<?xml version=\"1.0\"?>\n"
+                + "<fieldConfig>\n"
+                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                + "    <fieldPattern pattern=\"*A\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
+                + "</fieldConfig>";
+
+        FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
+
+        List<Type<?>> types = ingestHelper.getDataTypes("BANANA");
+        assertEquals(1, types.size());
+        assertTrue(types.get(0) instanceof datawave.data.type.HexStringType);
     }
     
     @Test
