@@ -14,6 +14,10 @@ public class ProcessUtils {
     public static final int SYSTEM_EXIT_MINUS_TWO = 254;
     public static final int SYSTEM_EXIT_ONE = 1;
     
+    private ProcessUtils() {
+        throw new IllegalStateException("Do not instantiate utility class");
+    }
+    
     public static List<String> buildApplicationCommandLine(String clzName, List<String> systemProperties, boolean setupDebugger) {
         
         List<String> results = new ArrayList<>();
