@@ -4,6 +4,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -362,6 +363,9 @@ public class MultiSetBackedSortedSetTest {
         for (byte[] value : subSet) {
             assertArrayEquals(data[sortedOrder[index++]], value);
         }
+        ArrayList<byte[]> list = new ArrayList<>(subSet);
+        assertArrayEquals(data[sortedOrder[end - 1]], list.get(list.size() - 1));
+
         subSet = set.headSet(data[sortedOrder[end]]);
 
         // verify add
