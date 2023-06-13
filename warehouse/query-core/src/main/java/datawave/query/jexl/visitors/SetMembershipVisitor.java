@@ -25,7 +25,6 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
@@ -294,11 +293,6 @@ public class SetMembershipVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTArguments node, Object data) {
-        return traverseChildren(node, data);
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
         return traverseChildren(node, data);
     }
     

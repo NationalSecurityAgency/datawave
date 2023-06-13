@@ -8,7 +8,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.webservice.query.map.QueryGeometry;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
@@ -91,12 +90,6 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
     // Descend through these nodes
     @Override
     public Object visit(ASTJexlScript node, Object data) {
-        node.childrenAccept(this, data);
-        return data;
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }

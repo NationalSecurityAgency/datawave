@@ -82,8 +82,6 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
         } else if (retnode.jjtGetNumChildren() == 1) {
             if (retnode.jjtGetChild(0) instanceof ASTReferenceExpression) {
                 retnode = retnode.jjtGetChild(0);
-            } else if ((retnode.jjtGetChild(0) instanceof ASTReference) && (retnode.jjtGetChild(0).jjtGetChild(0) instanceof ASTReferenceExpression)) {
-                retnode = retnode.jjtGetChild(0).jjtGetChild(0);
             } else if (retnode.jjtGetChild(0) instanceof ASTOrNode) {
                 retnode = (JexlNode) retnode.jjtGetChild(0).jjtAccept(this, null);
             }

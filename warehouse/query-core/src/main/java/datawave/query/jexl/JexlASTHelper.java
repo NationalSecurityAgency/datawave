@@ -51,7 +51,6 @@ import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTNullLiteral;
 import org.apache.commons.jexl3.parser.ASTNumberLiteral;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
@@ -209,11 +208,8 @@ public class JexlASTHelper {
             if (node instanceof ASTStringLiteral) {
                 int numToReplace = StringUtils.countMatches(((ASTStringLiteral) node).getLiteral(), placeholder);
                 if (numToReplace > 0) {
-                    // get the parent node (skipping references)
-                    JexlNode parent = node;
-                    do {
-                        parent = parent.jjtGetParent();
-                    } while (parent instanceof ASTReference);
+                    // get the parent node
+                    JexlNode parent = node.jjtGetParent();
                     
                     // if not a regex, use single backslash. otherwise, use double.
                     // this is necessary to ensure that non-regex nodes use the escaped
@@ -265,17 +261,7 @@ public class JexlASTHelper {
                 JexlNode child = node.jjtGetChild(i);
                 
                 if (null != child) {
-                    if (child instanceof ASTReference) {
-                        for (int j = 0; j < child.jjtGetNumChildren(); j++) {
-                            JexlNode grandChild = child.jjtGetChild(j);
-                            
-                            // If the grandchild and its image is non-null and equal to the any-field identifier
-                            //
-                            if (isLiteral(grandChild)) {
-                                return grandChild;
-                            }
-                        }
-                    } else if (isLiteral(child)) {
+                    if (isLiteral(child)) {
                         return child;
                     }
                 }
@@ -363,19 +349,7 @@ public class JexlASTHelper {
         if (null != node && 2 == node.jjtGetNumChildren()) {
             JexlNode child = node.jjtGetChild(0);
             
-            if (child instanceof ASTReference) {
-                for (int j = 0; j < child.jjtGetNumChildren(); j++) {
-                    JexlNode grandChild = child.jjtGetChild(j);
-                    
-                    // If the grandchild and its image is non-null and equal to the any-field identifier
-                    if (grandChild instanceof ASTIdentifier) {
-                        return getIdentifier((ASTIdentifier) grandChild, deconstruct);
-                    } else if (grandChild instanceof ASTFunctionNode) {
-                        return null;
-                    }
-                }
-                return null;
-            } else if (child instanceof ASTIdentifier) {
+            if (child instanceof ASTIdentifier) {
                 // as of jexl3, identifiers are NOT parented by ASTReference nodes unless they are 'ant-style' and contain '.' characters
                 return getIdentifier((ASTIdentifier) child, deconstruct);
             } else {
@@ -500,21 +474,21 @@ public class JexlASTHelper {
     }
     
     /**
-     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
+     * Unwraps ASTReferenceExpressions from a JexlNode
      *
      * @param node
      *            a JexlNode
      * @return an unwrapped JexlNode
      */
     public static JexlNode dereference(JexlNode node) {
-        while (node.jjtGetNumChildren() == 1 && (node instanceof ASTReference || node instanceof ASTReferenceExpression)) {
+        while (node.jjtGetNumChildren() == 1 && node instanceof ASTReferenceExpression) {
             node = node.jjtGetChild(0);
         }
         return node;
     }
     
     /**
-     * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
+     * Unwraps ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
      *
      * @param node
      *            a JexlNode
@@ -532,14 +506,13 @@ public class JexlASTHelper {
     }
     
     /**
-     * This is the opposite of dereference in that this will climb back up reference and reference expression nodes that only contain one child.
+     * This is the opposite of dereference in that this will climb back up reference expression nodes that only contain one child.
      *
      * @param node
      * @return the parent reference/referenceexpression or this node
      */
     public static JexlNode rereference(JexlNode node) {
-        while (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() == 1
-                        && (node.jjtGetParent() instanceof ASTReference || node.jjtGetParent() instanceof ASTReferenceExpression)) {
+        while (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() == 1 && node.jjtGetParent() instanceof ASTReferenceExpression) {
             node = node.jjtGetParent();
         }
         return node;
@@ -708,23 +681,6 @@ public class JexlASTHelper {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
         
         return desc.fieldSets(metadata, datatypeFilter);
-    }
-    
-    public static List<JexlNode> getFunctionArguments(ASTFunctionNode function) {
-        List<JexlNode> args = Lists.newArrayList();
-        
-        for (int i = 0; i < function.jjtGetNumChildren(); i++) {
-            JexlNode child = function.jjtGetChild(i);
-            
-            // Arguments for the function are inside of an ASTReference
-            if (child.getClass().equals(ASTReference.class) && child.jjtGetNumChildren() == 1) {
-                JexlNode grandchild = child.jjtGetChild(0);
-                
-                args.add(grandchild);
-            }
-        }
-        
-        return args;
     }
     
     public static List<ASTEQNode> getPositiveEQNodes(JexlNode node) {

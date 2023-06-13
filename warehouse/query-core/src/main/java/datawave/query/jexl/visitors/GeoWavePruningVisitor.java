@@ -19,7 +19,6 @@ import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTFalseNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
@@ -119,12 +118,6 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         }
         
         return copiedNode;
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        JexlNode rebuiltNode = (JexlNode) super.visit(node, data);
-        return (rebuiltNode.jjtGetNumChildren() == 0) ? null : rebuiltNode;
     }
     
     @Override

@@ -109,18 +109,6 @@ public class JexlNodes {
         return node;
     }
     
-    /**
-     * Wraps any node in a reference node. This is useful for getting rid of the boilerplate associated with wrapping an {ASTStringLiteral}.
-     *
-     * @param node
-     *            the jexl node
-     * @return the node with children nodes assigned
-     */
-    public static ASTReference makeRef(JexlNode node) {
-        ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        return children(ref, node);
-    }
-    
     public static ASTReferenceExpression makeRefExp() {
         return new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
     }

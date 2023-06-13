@@ -12,7 +12,6 @@ import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.VIntWritable;
@@ -191,8 +190,6 @@ public class IndexInfo implements Writable, UidIntersector {
     private JexlNode getOrNode(JexlNode node) {
         if (node instanceof ASTOrNode) {
             return node;
-        } else if (node instanceof ASTReference) {
-            return getOrNode(node.jjtGetChild(0));
         } else if (node instanceof ASTReferenceExpression) {
             return getOrNode(node.jjtGetChild(0));
         }

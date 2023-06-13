@@ -31,7 +31,6 @@ import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.commons.jexl3.parser.ASTMethodNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
@@ -299,7 +298,7 @@ public class DatawaveInterpreter extends Interpreter {
     }
     
     private JexlNode dereference(JexlNode node) {
-        while (node.jjtGetNumChildren() == 1 && (node instanceof ASTReferenceExpression || node instanceof ASTReference)) {
+        while (node.jjtGetNumChildren() == 1 && node instanceof ASTReferenceExpression) {
             node = node.jjtGetChild(0);
         }
         return node;

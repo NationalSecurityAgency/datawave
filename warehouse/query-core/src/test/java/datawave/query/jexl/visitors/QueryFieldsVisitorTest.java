@@ -34,10 +34,6 @@ public class QueryFieldsVisitorTest {
         // identifiers
         query = "$12 == 'bar'";
         test(query, Collections.singleton("12"));
-        
-        // grouping context
-        query = "FOO.12 == 'bar'";
-        test(query, Collections.singleton("FOO"));
     }
     
     @Test

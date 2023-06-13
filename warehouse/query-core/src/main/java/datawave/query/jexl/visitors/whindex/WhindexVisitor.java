@@ -32,7 +32,6 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
@@ -287,89 +286,94 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        ExpandData parentData = (ExpandData) data;
-        
-        // only process delayed and bounded range predicates
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(DELAYED, EXCEEDED_VALUE, BOUNDED_RANGE)) {
-            return copy(node);
-        }
-        
-        // if we only have one child, just pass through
-        // this shouldn't ever really happen, but it could
-        if (node.jjtGetNumChildren() == 1)
-            return super.visit(node, data);
-            
-        // first, find all leaf nodes
-        // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
-        List<JexlNode> nonLeafNodes = new ArrayList<>();
-        Multimap<String,JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
-        
-        // if any of the non-leaf nodes is an OR with a marker node, distribute all of the sibling nodes into those OR nodes
-        List<JexlNode> orNodesWithMarkers = nonLeafNodes.stream().filter(this::isFieldValueMatchOrNode).collect(Collectors.toList());
-        if (!orNodesWithMarkers.isEmpty()) {
-            // distribute the anded nodes into the or nodes
-            JexlNode distributedNode = distributeAndedNodes(node, orNodesWithMarkers);
-            
-            // create and visit the distributed node
-            JexlNode rebuiltNode = (JexlNode) distributedNode.jjtAccept(this, parentData);
-            
-            // only return the distributed version of this node if whindexes were found
-            if (parentData.foundWhindex) {
-                // attempt to reduce the rebuilt node before returning
-                if (rebuiltNode instanceof ASTOrNode) {
-                    rebuiltNode = reduceOrNode((ASTOrNode) rebuiltNode);
-                }
-                
-                return rebuiltNode;
-            } else {
-                return node;
-            }
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(DELAYED, EXCEEDED_VALUE, BOUNDED_RANGE))) {
+            return RebuildingVisitor.copy(node);
         } else {
-            // if this is a 'leaf' range node, check to see if a whindex can be made
-            if (leafNodes.size() == 1 && leafNodes.containsValue(node)) {
-                // attempt to build a whindex
-                return visitLeafNode(node, parentData);
+            ExpandData parentData = (ExpandData) data;
+            
+            // only process delayed and bounded range predicates
+            if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(DELAYED, EXCEEDED_VALUE, BOUNDED_RANGE)) {
+                return copy(node);
             }
-            // otherwise, process the 'and' node as usual
-            else {
+            
+            // if we only have one child, just pass through
+            // this shouldn't ever really happen, but it could
+            if (node.jjtGetNumChildren() == 1)
+                return super.visit(node, data);
                 
-                Multimap<String,JexlNode> usedLeafNodes = LinkedHashMultimap.create();
+            // first, find all leaf nodes
+            // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
+            List<JexlNode> nonLeafNodes = new ArrayList<>();
+            Multimap<String,JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
+            
+            // if any of the non-leaf nodes is an OR with a marker node, distribute all of the sibling nodes into those OR nodes
+            List<JexlNode> orNodesWithMarkers = nonLeafNodes.stream().filter(this::isFieldValueMatchOrNode).collect(Collectors.toList());
+            if (!orNodesWithMarkers.isEmpty()) {
+                // distribute the anded nodes into the or nodes
+                JexlNode distributedNode = distributeAndedNodes(node, orNodesWithMarkers);
                 
-                // process the non-leaf nodes first
-                List<JexlNode> processedNonLeafNodes = processNonLeafNodes(parentData, nonLeafNodes, leafNodes, usedLeafNodes);
+                // create and visit the distributed node
+                JexlNode rebuiltNode = (JexlNode) distributedNode.jjtAccept(this, parentData);
                 
-                // next, process the remaining leaf nodes
-                List<WhindexTerm> whindexTerms = new ArrayList<>();
-                List<JexlNode> processedLeafNodes = processUnusedLeafNodes(parentData, leafNodes, usedLeafNodes, whindexTerms);
-                
-                // rebuild the node if whindexes are found
+                // only return the distributed version of this node if whindexes were found
                 if (parentData.foundWhindex) {
-                    List<JexlNode> processedNodes = new ArrayList<>();
-                    processedNodes.addAll(processedLeafNodes);
-                    processedNodes.addAll(processedNonLeafNodes);
-                    
-                    // rebuild the node
-                    JexlNode rebuiltNode = createUnwrappedAndNode(processedNodes);
-                    
-                    // distribute the used nodes into the rebuilt node
-                    if (!usedLeafNodes.values().isEmpty()) {
-                        // first we need to trim the used nodes to eliminate any wrapping nodes
-                        // i.e. reference, reference expression, or single child and/or nodes
-                        // remove any leaf nodes that are still present in whindex form
-                        List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
-                        
-                        // remove all of the child leaf nodes converted to whindex nodes. they still belong to this AND node, and don't need to be distributed
-                        leafNodesToDistribute
-                                        .removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode())).collect(Collectors.toList()));
-                        
-                        rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap,
-                                        fieldValueMappings);
+                    // attempt to reduce the rebuilt node before returning
+                    if (rebuiltNode instanceof ASTOrNode) {
+                        rebuiltNode = reduceOrNode((ASTOrNode) rebuiltNode);
                     }
                     
                     return rebuiltNode;
+                } else {
+                    return node;
                 }
-                
-                return copy(node);
+            } else {
+                // if this is a 'leaf' range node, check to see if a whindex can be made
+                if (leafNodes.size() == 1 && leafNodes.containsValue(node)) {
+                    // attempt to build a whindex
+                    return visitLeafNode(node, parentData);
+                }
+                // otherwise, process the 'and' node as usual
+                else {
+                    
+                    Multimap<String,JexlNode> usedLeafNodes = LinkedHashMultimap.create();
+                    
+                    // process the non-leaf nodes first
+                    List<JexlNode> processedNonLeafNodes = processNonLeafNodes(parentData, nonLeafNodes, leafNodes, usedLeafNodes);
+                    
+                    // next, process the remaining leaf nodes
+                    List<WhindexTerm> whindexTerms = new ArrayList<>();
+                    List<JexlNode> processedLeafNodes = processUnusedLeafNodes(parentData, leafNodes, usedLeafNodes, whindexTerms);
+                    
+                    // rebuild the node if whindexes are found
+                    if (parentData.foundWhindex) {
+                        List<JexlNode> processedNodes = new ArrayList<>();
+                        processedNodes.addAll(processedLeafNodes);
+                        processedNodes.addAll(processedNonLeafNodes);
+                        
+                        // rebuild the node
+                        JexlNode rebuiltNode = createUnwrappedAndNode(processedNodes);
+                        
+                        // distribute the used nodes into the rebuilt node
+                        if (!usedLeafNodes.values().isEmpty()) {
+                            // first we need to trim the used nodes to eliminate any wrapping nodes
+                            // i.e. reference, reference expression, or single child and/or nodes
+                            // remove any leaf nodes that are still present in whindex form
+                            List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
+                            
+                            // remove all of the child leaf nodes converted to whindex nodes. they still belong to this AND node, and don't need to be
+                            // distributed
+                            leafNodesToDistribute.removeAll(
+                                            whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode())).collect(Collectors.toList()));
+                            
+                            rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap,
+                                            fieldValueMappings);
+                        }
+                        
+                        return rebuiltNode;
+                    }
+                    
+                    return copy(node);
+                }
             }
         }
     }
@@ -526,16 +530,6 @@ public class WhindexVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return RebuildingVisitor.copy(node);
-    }
-    
-    // if the node is marked, only descend into delayed predicates or bounded ranges
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(DELAYED, EXCEEDED_VALUE, BOUNDED_RANGE))) {
-            return RebuildingVisitor.copy(node);
-        }
-        
-        return super.visit(node, data);
     }
     
     // if the node is marked, only descend into delayed predicates or bounded ranges
@@ -928,10 +922,6 @@ public class WhindexVisitor extends RebuildingVisitor {
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(JexlNode node) {
-        if (node instanceof ASTReference) {
-            return getLeafNode((ASTReference) node);
-        }
-        
         if (node instanceof ASTReferenceExpression) {
             return getLeafNode((ASTReferenceExpression) node);
         }
@@ -948,29 +938,6 @@ public class WhindexVisitor extends RebuildingVisitor {
             return node;
         }
         
-        return null;
-    }
-    
-    /**
-     * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
-     * actual leaf node.
-     *
-     * @param node
-     *            The node whose children we will check
-     * @return The found leaf node, or null
-     */
-    private JexlNode getLeafNode(ASTReference node) {
-        // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BOUNDED_RANGE))) {
-            if (node.jjtGetNumChildren() == 1) {
-                JexlNode kid = node.jjtGetChild(0);
-                if (kid instanceof ASTReferenceExpression) {
-                    return getLeafNode((ASTReferenceExpression) kid);
-                } else if (kid instanceof ASTFunctionNode) {
-                    return getLeafNode((ASTFunctionNode) kid);
-                }
-            }
-        }
         return null;
     }
     

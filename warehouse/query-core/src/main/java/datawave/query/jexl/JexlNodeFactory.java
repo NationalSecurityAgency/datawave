@@ -601,8 +601,8 @@ public class JexlNodeFactory {
     
     public static JexlNode buildUntypedNode(JexlNode original, String fieldName) {
         // required to handle ranges that could not be expanded
-        if (original instanceof ASTAndNode || original instanceof ASTOrNode || original instanceof ASTReferenceExpression || original instanceof ASTReference
-                        || original instanceof ASTAssignment || original instanceof ASTIdentifier || original instanceof ASTTrueNode) {
+        if (original instanceof ASTAndNode || original instanceof ASTOrNode || original instanceof ASTReferenceExpression || original instanceof ASTAssignment
+                        || original instanceof ASTIdentifier || original instanceof ASTTrueNode) {
             JexlNode newNode = shallowCopy(original);
             newNode.jjtSetParent(original.jjtGetParent());
             for (int i = 0; i < original.jjtGetNumChildren(); i++) {
