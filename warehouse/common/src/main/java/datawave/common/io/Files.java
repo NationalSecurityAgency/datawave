@@ -22,6 +22,10 @@ public class Files {
     private static final String FILE_NOT_WRITABLE = "File, '%s' cannot be written to.";
     private static final String RENAME_ERROR = "Error moving '%s' -> '%s' - %s";
     
+    private Files() {
+        throw new IllegalStateException("Do not instantiate utility class.");
+    }
+    
     /**
      * Performs a variety of checks to ensure that the directory is valid. Checks include: exists||mkdirs, isDirectory, canRead, and canExecute.
      *

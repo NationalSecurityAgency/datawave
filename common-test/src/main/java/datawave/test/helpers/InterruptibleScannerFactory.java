@@ -16,6 +16,11 @@ import java.util.Map;
  * This class creates a new instance of an {@link InterruptibleScanner}
  */
 public class InterruptibleScannerFactory {
+    
+    private InterruptibleScannerFactory() {
+        throw new IllegalStateException("Do not instantiate utility class");
+    }
+    
     public static InterruptibleScanner create(Scanner delegate) {
         return (InterruptibleScanner) Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(), new Class<?>[] {InterruptibleScanner.class},
                         new InterruptibleScannerHandler(delegate));
