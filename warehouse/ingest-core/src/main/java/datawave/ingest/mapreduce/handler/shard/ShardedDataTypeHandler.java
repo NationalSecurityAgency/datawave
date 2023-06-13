@@ -40,7 +40,6 @@ import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.statsd.StatsDEnabledDataTypeHandler;
 import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
 import datawave.ingest.table.config.LoadDateTableConfigHelper;
 import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
@@ -168,7 +167,12 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      * Enable/Disable term frequency calcuation for fields in the metadata
      */
     public static final String METADATA_TERM_FREQUENCY = "metadata.term.frequency.enabled";
-    
+
+    /**
+     * Enable/disable creating uids for the global index
+     */
+    public static final String SHARD_INDEX_CREATE_UIDS = "shard.index.create.uids";
+
     /**
      * Suppress event key generation making this into a psuedo re-indexing job No type prefix here as it is meant to be job level not datatype level.
      */
@@ -196,6 +200,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     private LoadingCache<String,String> dCache = null;
     protected MarkingFunctions markingFunctions;
     protected IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
+
+    private boolean shardIndexCreateUids = true;
     private boolean suppressEventKeys = false;
     
     /**
@@ -284,6 +290,9 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         
         // Event key suppression
         this.suppressEventKeys = conf.getBoolean(SUPPRESS_EVENT_KEYS, false);
+
+        //  option to create uids for the global index
+        this.shardIndexCreateUids = conf.getBoolean(SHARD_INDEX_CREATE_UIDS, true);
     }
     
     private void setupToReindexIfEnabled(Configuration conf) {
@@ -1141,21 +1150,37 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
      *            flag for the delete count
      * @return a value
      */
-    private Value createUidArray(String uid, boolean isDeleted) {
-        
-        // Create a UID object for the Value
-        Builder uidBuilder = Uid.List.newBuilder();
-        uidBuilder.setIGNORE(false);
-        
-        if (isDeleted)
+    protected Value createUidArray(String uid, boolean isDeleted) {
+        return new Value(createUidList(uid, isDeleted).toByteArray());
+    }
+
+    /**
+     * Create a {@link Uid.List} given a uid and delete mode flag
+     *
+     * @param uid        an event uid
+     * @param deleteMode a flag
+     * @return a Uid.List
+     */
+    protected Uid.List createUidList(String uid, boolean deleteMode) {
+        Uid.List.Builder uidBuilder = Uid.List.newBuilder();
+
+        //  delete mode takes precedent over disabled uid creation
+        if (deleteMode) {
+            uidBuilder.setIGNORE(false);
             uidBuilder.setCOUNT(-1);
-        else
+            uidBuilder.addUID(uid);
+        } else if (!shardIndexCreateUids) {
+            //  uid not created
+            uidBuilder.setIGNORE(true);
             uidBuilder.setCOUNT(1);
-        
-        uidBuilder.addUID(uid);
-        
-        Uid.List uidList = uidBuilder.build();
-        return new Value(uidList.toByteArray());
+        } else {
+            //  uid created
+            uidBuilder.setIGNORE(false);
+            uidBuilder.setCOUNT(1);
+            uidBuilder.addUID(uid);
+        }
+
+        return uidBuilder.build();
     }
     
     /**
@@ -1199,20 +1224,8 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             Text colf = new Text(fieldName);
             Text colq = new Text(shardId);
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
-            
-            // Create a UID object for the Value
-            Builder uidBuilder = Uid.List.newBuilder();
-            uidBuilder.setIGNORE(false);
-            if (!deleteMode) {
-                uidBuilder.setCOUNT(1);
-                uidBuilder.addUID(event.getId().toString());
-            } else {
-                uidBuilder.setCOUNT(-1);
-                uidBuilder.addUID(event.getId().toString());
-            }
-            Uid.List uidList = uidBuilder.build();
-            
-            Value val = new Value(uidList.toByteArray());
+
+            Value val = createUidArray(event.getId().toString(), deleteMode);
             
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
@@ -1236,17 +1249,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
             
             // Create a UID object for the Value
-            Builder uidBuilder = Uid.List.newBuilder();
-            uidBuilder.setIGNORE(false);
-            if (!deleteMode) {
-                uidBuilder.setCOUNT(1);
-                uidBuilder.addUID(event.getId().toString());
-            } else {
-                uidBuilder.setCOUNT(-1);
-                uidBuilder.addUID(event.getId().toString());
-            }
-            Uid.List uidList = uidBuilder.build();
-            Value val = new Value(uidList.toByteArray());
+            Value val = createUidArray(event.getId().toString(), deleteMode);
             
             /**
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
@@ -1563,6 +1566,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     
     public boolean getSuppressEventKeys() {
         return suppressEventKeys;
+    }
+
+    public boolean getShardIndexCreateUids(){
+        return shardIndexCreateUids;
     }
     
     /**
