@@ -6,33 +6,34 @@ import datawave.util.UniversalSet;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
 /**
  * A visitor that checks the query tree to determine if the query can be satisfied by only looking in the field index. The result of this is passed to the
@@ -104,23 +105,17 @@ public class SatisfactionVisitor extends BaseVisitor {
     }
     
     @Override
-    public Object visit(ASTReference node, Object o) {
+    public Object visit(ASTAndNode and, Object data) {
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
         // Recurse only if not delayed
-        if (!QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
-            super.visit(node, o);
+        if (!instance.isType(DELAYED)) {
+            if (instance.isNotAnyTypeOf(EXCEEDED_OR, EXCEEDED_VALUE)) {
+                and.childrenAccept(this, data);
+            }
         } else {
             isQueryFullySatisfied = false;
         }
         
-        return null;
-    }
-    
-    @Override
-    public Object visit(ASTAndNode and, Object data) {
-        
-        if (QueryPropertyMarker.findInstance(and).isNotAnyTypeOf(ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
-            and.childrenAccept(this, data);
-        }
         return null;
     }
     
@@ -140,8 +135,9 @@ public class SatisfactionVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
+        ASTNamespaceIdentifier namespaceNode = (ASTNamespaceIdentifier) node.jjtGetChild(0);
         // only functions in the QueryFunctions package can be fully satistfied by the field index
-        if (!node.jjtGetChild(0).image.equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
+        if (!namespaceNode.getNamespace().equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
             isQueryFullySatisfied = false;
         }
         
@@ -150,14 +146,6 @@ public class SatisfactionVisitor extends BaseVisitor {
     
     @Override
     public Object visit(ASTMethodNode node, Object data) {
-        // if a method on a field, then not fully satisfied
-        isQueryFullySatisfied = false;
-        
-        return null;
-    }
-    
-    @Override
-    public Object visit(ASTSizeMethod node, Object data) {
         // if a method on a field, then not fully satisfied
         isQueryFullySatisfied = false;
         
@@ -293,7 +281,7 @@ public class SatisfactionVisitor extends BaseVisitor {
     }
     
     protected boolean isUnindexed(ASTIdentifier node) {
-        final String fieldName = JexlASTHelper.deconstructIdentifier(node.image);
+        final String fieldName = JexlASTHelper.deconstructIdentifier(node.getName());
         return this.unindexedFields.contains(fieldName);
     }
     

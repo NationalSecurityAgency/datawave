@@ -167,7 +167,7 @@ public class RegexQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testAndNotAgain() throws Exception {
         String query = "(NUM == '2' || NUM == '3') && CITY !~ '.*iSs.*'";
-        String expected = "(NUM == '+aE2' || NUM == '+aE3') && !(((_Delayed_ = true) && (CITY =~ '.*iss.*')))";
+        String expected = "(NUM == '+aE2' || NUM == '+aE3') && !((_Delayed_ = true) && (CITY =~ '.*iss.*'))";
         String plan = getPlan(query, false, false);
         assertEquals(expected, plan);
     }

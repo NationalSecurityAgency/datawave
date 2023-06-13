@@ -13,8 +13,8 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  * This interface will describe the arguments for a jexl function that has implemented (@see JexlArgumentDescriptor). The initial use of this is to determine

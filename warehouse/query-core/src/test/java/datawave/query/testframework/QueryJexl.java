@@ -3,22 +3,23 @@ package datawave.query.testframework;
 import datawave.data.normalizer.Normalizer;
 import datawave.data.normalizer.NumberNormalizer;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.Expression;
-import org.apache.commons.jexl2.ExpressionImpl;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.MapContext;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.SimpleNode;
-import org.apache.commons.jexl2.parser.TokenMgrError;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlExpression;
+import org.apache.commons.jexl3.MapContext;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.internal.Script;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.TokenMgrException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -63,11 +64,11 @@ public class QueryJexl {
     
     private static final Logger log = Logger.getLogger(QueryJexl.class);
     
-    private static final JexlEngine jEngine = new JexlEngine();
+    private static final Engine jEngine = new Engine();
     private final RawDataManager manager;
     private final Date startDate;
     private final Date endDate;
-    private final Expression jExpr;
+    private final JexlExpression jExpr;
     
     /**
      * @param queryStr
@@ -100,10 +101,10 @@ public class QueryJexl {
         
         // one can either normalize the query string or match the variables in the expression
         // for simplicity it is easier just to match the variables to the correct field
-        final ExpressionImpl exp = (ExpressionImpl) this.jExpr;
+        final JexlExpression exp = this.jExpr;
         // see limitations in the javadoc
         // an expression that has "((...))" will not return the correct variables
-        final Set<List<String>> vars = exp.getVariables();
+        final Set<List<String>> vars = ((Script) exp).getVariables();
         
         while (entries.hasNext()) {
             Map<String,String> mapping = entries.next();
@@ -136,13 +137,13 @@ public class QueryJexl {
     
     // =================================
     // private methods
-    private Expression createNormalizedExpression(final String query) {
+    private JexlExpression createNormalizedExpression(final String query) {
         try {
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             Deque<SimpleNode> nodes = new LinkedList<>();
             normalizeScript(script, nodes);
             return new NormalizedExpression(jEngine, query, script);
-        } catch (TokenMgrError | org.apache.commons.jexl2.parser.ParseException pe) {
+        } catch (TokenMgrException | org.apache.commons.jexl3.parser.ParseException pe) {
             throw new AssertionError(pe);
         }
     }
@@ -173,7 +174,7 @@ public class QueryJexl {
                 if (child instanceof ASTIdentifier) {
                     ASTIdentifier id = (ASTIdentifier) child;
                     // change identifier to lower case
-                    id.image = id.image.toLowerCase();
+                    JexlNodes.setIdentifier(id, String.valueOf(JexlNodes.getImage(id)).toLowerCase());
                     
                     // check for string or numeric literal on node stack
                     SimpleNode entry = nodes.removeFirst();
@@ -182,7 +183,7 @@ public class QueryJexl {
                         // exp is "value OP field"
                         // remove op node
                         SimpleNode opNode = nodes.removeFirst();
-                        normalizeField(id.image, (JexlNode) entry, opNode);
+                        normalizeField(id.getName(), (JexlNode) entry, opNode);
                     } else {
                         // push entry back on stack and add identifier
                         nodes.addFirst(entry);
@@ -195,7 +196,7 @@ public class QueryJexl {
                     if (entry instanceof ASTIdentifier) {
                         // exp is "field OP value"
                         SimpleNode opNode = nodes.removeFirst();
-                        normalizeField(((JexlNode) entry).image, (JexlNode) child, opNode);
+                        normalizeField(String.valueOf(JexlNodes.getImage((JexlNode) entry)), (JexlNode) child, opNode);
                     } else {
                         // push entry back on stack and add literal
                         nodes.addFirst(entry);
@@ -212,17 +213,17 @@ public class QueryJexl {
         if (null != norm) {
             if (norm instanceof NumberNormalizer) {
                 try {
-                    Integer.parseInt(value.image);
+                    Integer.parseInt(String.valueOf(JexlNodes.getImage(value)));
                 } catch (NumberFormatException nfe) {
-                    throw new AssertionError("invalid integer(" + value.image + ")", nfe);
+                    throw new AssertionError("invalid integer(" + JexlNodes.getImage(value) + ")", nfe);
                 }
             } else {
                 // normalize all other values
                 // check for regex nodes
                 if (opNode instanceof ASTERNode || opNode instanceof ASTNRNode) {
-                    value.image = norm.normalizeRegex(value.image);
+                    JexlNodes.setImage(value, norm.normalizeRegex(String.valueOf(JexlNodes.getImage(value))));
                 } else {
-                    value.image = norm.normalize(value.image);
+                    JexlNodes.setImage(value, norm.normalize(String.valueOf(JexlNodes.getImage(value))));
                 }
             }
         }
@@ -232,8 +233,8 @@ public class QueryJexl {
      * Test class used to create an expression from the normalized JEXL script. <br>
      * NOTE: The query string wil not be changed but the script will represent the normalized expression.
      */
-    private static class NormalizedExpression extends ExpressionImpl {
-        NormalizedExpression(JexlEngine engine, String query, ASTJexlScript script) {
+    private static class NormalizedExpression extends Script {
+        NormalizedExpression(Engine engine, String query, ASTJexlScript script) {
             super(engine, query, script);
         }
         
@@ -261,7 +262,8 @@ public class QueryJexl {
             log.info("valid simple jexl parser/evaluation");
             for (int n = 1; n <= TEST_ENTRIES; n++) {
                 String val = "hOME-" + n;
-                String q = "HOME == '" + val + "' or xxx == 'xxx'";
+                // NOTE: JEXL 3 will throw a JexlException for unknown identifiers. The Datawave Arithmetic/Interpreter overrides this to treat unknown as null.
+                String q = "HOME == '" + val + "' or home == 'bogus'";
                 QueryJexl p = new QueryJexl(q, manager, date, date);
                 Set<Map<String,String>> resp = p.evaluate();
                 Assert.assertEquals(1, resp.size());
@@ -390,7 +392,8 @@ public class QueryJexl {
         @Test
         public void testOrAnd() {
             log.info("jexl OR/AND test");
-            String q = "HOME == 'hOme-2' or ('homE-3' == Home and xXXx == 'xXx')";
+            // NOTE: JEXL 3 will throw a JexlException for unknown identifiers. The Datawave Arithmetic/Interpreter overrides this to treat unknown as null.
+            String q = "HOME == 'hOme-2' or ('homE-3' == Home and home == 'bogus')";
             QueryJexl p = new QueryJexl(q, manager, date, date);
             Set<Map<String,String>> resp = p.evaluate();
             Assert.assertEquals(1, resp.size());

@@ -1,21 +1,21 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
+import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
 
 /**
  * Visitor that removes conjunction children of OR nodes that are made redundant by virtue of distributed equivalency. For example:
@@ -82,7 +82,7 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
             } else if (children.size() < node.jjtGetNumChildren()) {
                 // If there were some redundant children, but more than one relevant child, return a new OR node with the relevant children.
                 JexlNode copy = new ASTOrNode(JJTORNODE);
-                copy.image = node.image;
+                JexlNodes.copyImage(node, copy);
                 JexlNodes.children(copy, children.toArray(new JexlNode[0]));
                 return copy;
             } else {

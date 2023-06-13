@@ -11,9 +11,9 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -135,7 +135,7 @@ public class IntersectionTest {
         
         // Assert expected index info
         IndexInfo expectedIndexInfo = new IndexInfo(3);
-        expectedIndexInfo.applyNode(JexlASTHelper.parseJexlQuery("(F1 == 'v1' && F2 == 'v2')").jjtGetChild(0));
+        expectedIndexInfo.applyNode(JexlASTHelper.parseJexlQuery("F1 == 'v1' && F2 == 'v2'").jjtGetChild(0));
         
         assertEquals(expectedIndexInfo, nextedTuple.second());
         assertTrue(TreeEqualityVisitor.isEqual(expectedIndexInfo.getNode(), nextedTuple.second().getNode()));

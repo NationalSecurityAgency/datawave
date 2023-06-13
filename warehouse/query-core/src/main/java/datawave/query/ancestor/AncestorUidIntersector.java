@@ -8,7 +8,7 @@ import datawave.query.index.lookup.UidIntersector;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.ArrayList;
 import java.util.HashMap;

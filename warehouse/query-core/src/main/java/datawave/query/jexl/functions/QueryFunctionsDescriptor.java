@@ -12,19 +12,22 @@ import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
@@ -51,14 +54,16 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             switch (name) {
                 case BETWEEN:
-                    JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0), args.get(1).image);
-                    JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0), args.get(2).image);
+                    JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), args.get(0),
+                                    String.valueOf(JexlNodes.getImage(args.get(1))));
+                    JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), args.get(0),
+                                    String.valueOf(JexlNodes.getImage(args.get(2))));
                     // Return a bounded range.
-                    return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
+                    return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
                 case LENGTH:
                     // Return a regex node with the appropriate number of matching characters
                     return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
-                                    ".{" + args.get(1).image + ',' + args.get(2).image + '}');
+                                    ".{" + JexlNodes.getImage(args.get(1)) + ',' + JexlNodes.getImage(args.get(2)) + '}');
                 case QueryFunctions.MATCH_REGEX:
                     // Return an index query.
                     return getIndexQuery();
@@ -73,9 +78,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         
         private JexlNode getIndexQuery() {
             JexlNode node0 = args.get(0);
-            final String value = args.get(1).image;
+            final String value = String.valueOf(JexlNodes.getImage(args.get(1)));
             if (node0 instanceof ASTIdentifier) {
-                final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
                 return JexlNodeFactory.buildNode((ASTERNode) null, field, value);
             } else {
                 // node0 is an Or node or an And node
@@ -83,7 +88,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+                    String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
                     JexlNode kid = JexlNodeFactory.buildNode((ASTERNode) null, field, value);
                     kid.jjtSetParent(newParent);
                     newParent.jjtAddChild(kid, i++);
@@ -94,9 +99,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         
         private JexlNode getTextIndexQuery() {
             JexlNode node0 = args.get(0);
-            final String value = args.get(1).image;
+            final String value = String.valueOf(JexlNodes.getImage(args.get(1)));
             if (node0 instanceof ASTIdentifier) {
-                final String field = JexlASTHelper.deconstructIdentifier(node0.image);
+                final String field = JexlASTHelper.deconstructIdentifier(((ASTIdentifier) node0).getName());
                 return JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
             } else {
                 // node0 is an Or node or an And node
@@ -104,7 +109,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                 JexlNode newParent = JexlNodeFactory.shallowCopy(node0);
                 int i = 0;
                 for (ASTIdentifier identifier : JexlASTHelper.getIdentifiers(node0)) {
-                    String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+                    String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
                     JexlNode kid = JexlNodeFactory.buildNode((ASTEQNode) null, field, value);
                     kid.jjtSetParent(newParent);
                     newParent.jjtAddChild(kid, i++);
@@ -161,9 +166,9 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         FunctionJexlNodeVisitor visitor = FunctionJexlNodeVisitor.eval(node);
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(visitor.namespace());
         
-        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
-                            + node.jjtGetChild(0).image);
+        if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(visitor.namespace()))
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of " + visitor.namespace());
         if (!functionClass.equals(QueryFunctions.class))
             throw new IllegalArgumentException(
                             "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);

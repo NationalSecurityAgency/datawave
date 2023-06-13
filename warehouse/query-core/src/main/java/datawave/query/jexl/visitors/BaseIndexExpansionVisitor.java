@@ -10,9 +10,9 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -203,7 +203,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         private JexlNode rebuiltNode;
         
         public FutureJexlNode(JexlNode origNode, IndexLookup lookup, boolean ignoreComposites, boolean keepOriginalNode) {
-            super(ParserTreeConstants.JJTREFERENCE);
+            super(origNode.getId());
             this.origNode = origNode;
             this.lookup = lookup;
             this.ignoreComposites = ignoreComposites;

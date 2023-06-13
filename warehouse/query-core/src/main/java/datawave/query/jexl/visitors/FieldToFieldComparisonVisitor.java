@@ -1,15 +1,17 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.JexlNode;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 /**
  * Class to detect field to field comparison nodes and turns it into ASTEvaluationOnly node
@@ -48,7 +50,7 @@ public class FieldToFieldComparisonVisitor extends RebuildingVisitor {
         
         JexlNode copy = copy(node);
         if (identifierNodes > 1) {
-            return ASTEvaluationOnly.create(copy);
+            return QueryPropertyMarker.create(copy, EVALUATION_ONLY);
         }
         return copy;
     }

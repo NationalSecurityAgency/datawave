@@ -4,13 +4,11 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -18,6 +16,13 @@ import java.util.Collection;
 import java.util.List;
 
 import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -37,13 +42,13 @@ public class QueryPropertyMarkerTest {
         assertEmptyInstance(findInstance("((_Bounded_ = true) && (FOO > '1' && FOO < '2')) && ((_EvalOnly_ = true) && (FOO == '1' && BAR == '2'))"));
         
         // Test unwrapped marker and unwrapped sources
-        assertInstance(findInstance("(_Delayed_ = true) && FOO == '1' && BAR == '2'"), ASTDelayedPredicate.class, "(FOO == '1' && BAR == '2')");
+        assertInstance(findInstance("(_Delayed_ = true) && FOO == '1' && BAR == '2'"), DELAYED, "(FOO == '1' && BAR == '2')");
         // Test unwrapped marker and wrapped sources
-        assertInstance(findInstance("(_Delayed_ = true) && (FOO == '1' && BAR == '2')"), ASTDelayedPredicate.class, "FOO == '1' && BAR == '2'");
+        assertInstance(findInstance("(_Delayed_ = true) && (FOO == '1' && BAR == '2')"), DELAYED, "FOO == '1' && BAR == '2'");
         // Test wrapped marker and unwrapped sources
-        assertInstance(findInstance("((_Delayed_ = true) && FOO == '1' && BAR == '2')"), ASTDelayedPredicate.class, "(FOO == '1' && BAR == '2')");
+        assertInstance(findInstance("((_Delayed_ = true) && FOO == '1' && BAR == '2')"), DELAYED, "(FOO == '1' && BAR == '2')");
         // Test wrapped marker and wrapped sources
-        assertInstance(findInstance("((_Delayed_ = true) && (FOO == '1' && BAR == '2'))"), ASTDelayedPredicate.class, "FOO == '1' && BAR == '2'");
+        assertInstance(findInstance("((_Delayed_ = true) && (FOO == '1' && BAR == '2'))"), DELAYED, "FOO == '1' && BAR == '2'");
     }
     
     @Test
@@ -56,8 +61,8 @@ public class QueryPropertyMarkerTest {
         assertSame(instance, secondInstance);
         
         JexlNode source = parseJexlQuery("(FOO == 'a')");
-        instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, source);
-        assertEquals(ASTDelayedPredicate.class, instance.getType());
+        instance = QueryPropertyMarker.Instance.of(DELAYED, source);
+        assertEquals(DELAYED, instance.getType());
         assertEquals(source, instance.getSource());
     }
     
@@ -65,131 +70,131 @@ public class QueryPropertyMarkerTest {
     public void testInstance_isAnyType() throws ParseException {
         assertFalse(QueryPropertyMarker.Instance.of().isAnyType());
         
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, parseJexlQuery("FOO == 'a'"));
         assertTrue(instance.isAnyType());
     }
     
     @Test
     public void testInstance_isType() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
-        assertTrue(instance.isType(ASTDelayedPredicate.class));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, parseJexlQuery("FOO == 'a'"));
+        assertTrue(instance.isType(DELAYED));
         assertFalse(instance.isType(null));
-        assertFalse(instance.isType(BoundedRange.class));
+        assertFalse(instance.isType(BOUNDED_RANGE));
         
         assertTrue(QueryPropertyMarker.Instance.of().isType(null));
-        assertFalse(QueryPropertyMarker.Instance.of().isType(ASTDelayedPredicate.class));
+        assertFalse(QueryPropertyMarker.Instance.of().isType(DELAYED));
     }
     
     @SuppressWarnings("unchecked")
     @Test
     public void testInstance_isAnyTypeOf() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, parseJexlQuery("FOO == 'a'"));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, parseJexlQuery("FOO == 'a'"));
         
-        assertTrue(instance.isAnyTypeOf(ASTDelayedPredicate.class, BoundedRange.class));
-        assertTrue(instance.isAnyTypeOf(Sets.newHashSet(ASTDelayedPredicate.class, BoundedRange.class)));
+        assertTrue(instance.isAnyTypeOf(DELAYED, BOUNDED_RANGE));
+        assertTrue(instance.isAnyTypeOf(Sets.newHashSet(DELAYED, BOUNDED_RANGE)));
         
         assertFalse(instance.isAnyTypeOf());
-        assertFalse(instance.isAnyTypeOf(IndexHoleMarkerJexlNode.class, BoundedRange.class));
-        assertFalse(instance.isAnyTypeOf(Sets.newHashSet(IndexHoleMarkerJexlNode.class, BoundedRange.class)));
+        assertFalse(instance.isAnyTypeOf(INDEX_HOLE, BOUNDED_RANGE));
+        assertFalse(instance.isAnyTypeOf(Sets.newHashSet(INDEX_HOLE, BOUNDED_RANGE)));
         
-        assertThrows(NullPointerException.class, () -> instance.isAnyTypeOf((Collection<Class<? extends QueryPropertyMarker>>) null));
+        assertThrows(NullPointerException.class, () -> instance.isAnyTypeOf((Collection<QueryPropertyMarker.MarkerType>) null));
     }
     
     @SuppressWarnings("unchecked")
     @Test
     public void testInstance_isAnyTypeExcept() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
-        assertTrue(instance.isAnyTypeExcept(IndexHoleMarkerJexlNode.class, BoundedRange.class));
-        assertTrue(instance.isAnyTypeExcept(Sets.newHashSet(IndexHoleMarkerJexlNode.class, BoundedRange.class)));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
+        assertTrue(instance.isAnyTypeExcept(INDEX_HOLE, BOUNDED_RANGE));
+        assertTrue(instance.isAnyTypeExcept(Sets.newHashSet(INDEX_HOLE, BOUNDED_RANGE)));
         assertTrue(instance.isAnyTypeExcept());
         
-        assertFalse(instance.isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class));
-        assertFalse(instance.isAnyTypeExcept(Sets.newHashSet(ASTDelayedPredicate.class, BoundedRange.class)));
+        assertFalse(instance.isAnyTypeExcept(DELAYED, BOUNDED_RANGE));
+        assertFalse(instance.isAnyTypeExcept(Sets.newHashSet(DELAYED, BOUNDED_RANGE)));
         
-        assertThrows(NullPointerException.class, () -> instance.isAnyTypeExcept((Collection<Class<? extends QueryPropertyMarker>>) null));
+        assertThrows(NullPointerException.class, () -> instance.isAnyTypeExcept((Collection<QueryPropertyMarker.MarkerType>) null));
     }
     
     @SuppressWarnings("unchecked")
     @Test
     public void testInstance_isNotAnyTypeOf() throws ParseException {
-        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.Instance.of(DELAYED, Lists.newArrayList(parseJexlQuery("FOO == 'a'")));
         
-        assertTrue(instance.isNotAnyTypeOf(IndexHoleMarkerJexlNode.class, BoundedRange.class));
-        assertTrue(instance.isNotAnyTypeOf(Sets.newHashSet(IndexHoleMarkerJexlNode.class, BoundedRange.class)));
-        assertTrue(QueryPropertyMarker.Instance.of().isNotAnyTypeOf(ASTDelayedPredicate.class, BoundedRange.class));
-        assertTrue(QueryPropertyMarker.Instance.of().isNotAnyTypeOf(Sets.newHashSet(ASTDelayedPredicate.class, BoundedRange.class)));
+        assertTrue(instance.isNotAnyTypeOf(INDEX_HOLE, BOUNDED_RANGE));
+        assertTrue(instance.isNotAnyTypeOf(Sets.newHashSet(INDEX_HOLE, BOUNDED_RANGE)));
+        assertTrue(QueryPropertyMarker.Instance.of().isNotAnyTypeOf(DELAYED, BOUNDED_RANGE));
+        assertTrue(QueryPropertyMarker.Instance.of().isNotAnyTypeOf(Sets.newHashSet(DELAYED, BOUNDED_RANGE)));
         assertTrue(instance.isNotAnyTypeOf());
         
-        assertFalse(instance.isNotAnyTypeOf(ASTDelayedPredicate.class, BoundedRange.class));
-        assertFalse(instance.isNotAnyTypeOf(Sets.newHashSet(ASTDelayedPredicate.class, BoundedRange.class)));
+        assertFalse(instance.isNotAnyTypeOf(DELAYED, BOUNDED_RANGE));
+        assertFalse(instance.isNotAnyTypeOf(Sets.newHashSet(DELAYED, BOUNDED_RANGE)));
         
-        assertThrows(NullPointerException.class, () -> instance.isNotAnyTypeOf((Collection<Class<? extends QueryPropertyMarker>>) null));
+        assertThrows(NullPointerException.class, () -> instance.isNotAnyTypeOf((Collection<QueryPropertyMarker.MarkerType>) null));
     }
     
     @Test
     public void testInstance_isDelayedPredicate() {
-        assertTrue(QueryPropertyMarker.Instance.of(IndexHoleMarkerJexlNode.class, (List<JexlNode>) null).isDelayedPredicate());
-        assertTrue(QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, (List<JexlNode>) null).isDelayedPredicate());
-        assertTrue(QueryPropertyMarker.Instance.of(ASTEvaluationOnly.class, (List<JexlNode>) null).isDelayedPredicate());
-        assertTrue(QueryPropertyMarker.Instance.of(ExceededOrThresholdMarkerJexlNode.class, (List<JexlNode>) null).isDelayedPredicate());
-        assertTrue(QueryPropertyMarker.Instance.of(ExceededTermThresholdMarkerJexlNode.class, (List<JexlNode>) null).isDelayedPredicate());
-        assertTrue(QueryPropertyMarker.Instance.of(ExceededTermThresholdMarkerJexlNode.class, (List<JexlNode>) null).isDelayedPredicate());
+        assertTrue(QueryPropertyMarker.Instance.of(INDEX_HOLE, (List<JexlNode>) null).isDelayedPredicate());
+        assertTrue(QueryPropertyMarker.Instance.of(DELAYED, (List<JexlNode>) null).isDelayedPredicate());
+        assertTrue(QueryPropertyMarker.Instance.of(EVALUATION_ONLY, (List<JexlNode>) null).isDelayedPredicate());
+        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_OR, (List<JexlNode>) null).isDelayedPredicate());
+        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isDelayedPredicate());
+        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isDelayedPredicate());
         
-        assertFalse(QueryPropertyMarker.Instance.of(BoundedRange.class, (List<JexlNode>) null).isDelayedPredicate());
+        assertFalse(QueryPropertyMarker.Instance.of(BOUNDED_RANGE, (List<JexlNode>) null).isDelayedPredicate());
     }
     
     @Test
     public void testInstance_isIvarator() {
-        assertTrue(QueryPropertyMarker.Instance.of(ExceededOrThresholdMarkerJexlNode.class, (List<JexlNode>) null).isIvarator());
-        assertTrue(QueryPropertyMarker.Instance.of(ExceededTermThresholdMarkerJexlNode.class, (List<JexlNode>) null).isIvarator());
-        assertTrue(QueryPropertyMarker.Instance.of(ExceededTermThresholdMarkerJexlNode.class, (List<JexlNode>) null).isIvarator());
+        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_OR, (List<JexlNode>) null).isIvarator());
+        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isIvarator());
+        assertTrue(QueryPropertyMarker.Instance.of(EXCEEDED_TERM, (List<JexlNode>) null).isIvarator());
         
-        assertFalse(QueryPropertyMarker.Instance.of(IndexHoleMarkerJexlNode.class, (List<JexlNode>) null).isIvarator());
-        assertFalse(QueryPropertyMarker.Instance.of(ASTDelayedPredicate.class, (List<JexlNode>) null).isIvarator());
-        assertFalse(QueryPropertyMarker.Instance.of(ASTEvaluationOnly.class, (List<JexlNode>) null).isIvarator());
-        assertFalse(QueryPropertyMarker.Instance.of(BoundedRange.class, (List<JexlNode>) null).isIvarator());
+        assertFalse(QueryPropertyMarker.Instance.of(INDEX_HOLE, (List<JexlNode>) null).isIvarator());
+        assertFalse(QueryPropertyMarker.Instance.of(DELAYED, (List<JexlNode>) null).isIvarator());
+        assertFalse(QueryPropertyMarker.Instance.of(EVALUATION_ONLY, (List<JexlNode>) null).isIvarator());
+        assertFalse(QueryPropertyMarker.Instance.of(BOUNDED_RANGE, (List<JexlNode>) null).isIvarator());
     }
     
     @Test
     public void testNoDoubleMarks_ExceededOr() {
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_List_ = true) && (FOO =~ 'ba.*'))";
-        testApplyMarkerMultipleTimes(source, expected, ExceededOrThresholdMarkerJexlNode.class);
+        testApplyMarkerMultipleTimes(source, expected, EXCEEDED_OR);
     }
     
     @Test
     public void testNoDoubleMarks_ExceededTerm() {
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_Term_ = true) && (FOO =~ 'ba.*'))";
-        testApplyMarkerMultipleTimes(source, expected, ExceededTermThresholdMarkerJexlNode.class);
+        testApplyMarkerMultipleTimes(source, expected, EXCEEDED_TERM);
     }
     
     @Test
     public void testNoDoubleMarks_ExceededValue() {
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_Value_ = true) && (FOO =~ 'ba.*'))";
-        testApplyMarkerMultipleTimes(source, expected, ExceededValueThresholdMarkerJexlNode.class);
+        testApplyMarkerMultipleTimes(source, expected, EXCEEDED_VALUE);
     }
     
     @Test
     public void testNoDoubleMarks_IndexHoleMarker() {
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_Hole_ = true) && (FOO =~ 'ba.*'))";
-        testApplyMarkerMultipleTimes(source, expected, IndexHoleMarkerJexlNode.class);
+        testApplyMarkerMultipleTimes(source, expected, INDEX_HOLE);
     }
     
     @Test
     public void testNoDoubleMarks_DelayedPredicate() {
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_Delayed_ = true) && (FOO =~ 'ba.*'))";
-        testApplyMarkerMultipleTimes(source, expected, ASTDelayedPredicate.class);
+        testApplyMarkerMultipleTimes(source, expected, DELAYED);
     }
     
     @Test
     public void testNoDoubleMarks_EvaluationOnly() {
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_Eval_ = true) && (FOO =~ 'ba.*'))";
-        testApplyMarkerMultipleTimes(source, expected, ASTEvaluationOnly.class);
+        testApplyMarkerMultipleTimes(source, expected, EVALUATION_ONLY);
     }
     
     @Test
@@ -198,18 +203,18 @@ public class QueryPropertyMarkerTest {
         JexlNode right = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), "FOO", "7");
         JexlNode source = JexlNodeFactory.createAndNode(Arrays.asList(left, right));
         String expected = "((_Bounded_ = true) && (FOO >= '3' && FOO <= '7'))";
-        testApplyMarkerMultipleTimes(source, expected, BoundedRange.class);
+        testApplyMarkerMultipleTimes(source, expected, BOUNDED_RANGE);
     }
     
-    private void testApplyMarkerMultipleTimes(JexlNode source, String expected, Class<? extends QueryPropertyMarker> markerClass) {
+    private void testApplyMarkerMultipleTimes(JexlNode source, String expected, QueryPropertyMarker.MarkerType type) {
         
         // assert first marker apply
-        JexlNode marked = QueryPropertyMarker.create(source, markerClass);
+        JexlNode marked = QueryPropertyMarker.create(source, type);
         assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
         
         // apply marker several more times and assert nothing changes
         for (int i = 0; i < 5; i++) {
-            marked = QueryPropertyMarker.create(marked, markerClass);
+            marked = QueryPropertyMarker.create(marked, type);
         }
         assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
     }
@@ -219,12 +224,12 @@ public class QueryPropertyMarkerTest {
         // mark a regex as value exceeded
         JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
         String expected = "((_Value_ = true) && (FOO =~ 'ba.*'))";
-        JexlNode marked = QueryPropertyMarker.create(source, ExceededValueThresholdMarkerJexlNode.class);
+        JexlNode marked = QueryPropertyMarker.create(source, EXCEEDED_VALUE);
         assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
         
         // then delay it to skip global index lookup
         expected = "((_Delayed_ = true) && ((_Value_ = true) && (FOO =~ 'ba.*')))";
-        JexlNode delayed = QueryPropertyMarker.create(marked, ASTDelayedPredicate.class);
+        JexlNode delayed = QueryPropertyMarker.create(marked, DELAYED);
         assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(delayed));
     }
     
@@ -237,7 +242,7 @@ public class QueryPropertyMarkerTest {
         assertNull(instance.getSource());
     }
     
-    private void assertInstance(QueryPropertyMarker.Instance instance, Class<? extends QueryPropertyMarker> type, String source) {
+    private void assertInstance(QueryPropertyMarker.Instance instance, QueryPropertyMarker.MarkerType type, String source) {
         assertEquals(type, instance.getType());
         assertEquals(source, buildQuery(instance.getSource()));
     }

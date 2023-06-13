@@ -5,14 +5,16 @@ import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.test.JexlNodeAssert;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.Parser;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.JexlFeatures;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.Parser;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
@@ -162,8 +164,8 @@ public class TreeFlatteningRebuildingVisitorTest {
         for (int i = 2; i <= numTerms; i++) {
             sb.append(" OR ").append(i);
         }
-        assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(
-                        new Parser(new StringReader(";")).parse(new StringReader(new LuceneToJexlQueryParser().parse(sb.toString()).toString()), null)));
+        assertNotNull(TreeFlatteningRebuildingVisitor.flattenAll(new Parser(new StringProvider(";")).parse(null, new JexlFeatures(),
+                        new LuceneToJexlQueryParser().parse(sb.toString()).toString(), null)));
     }
     
     @Test
@@ -185,8 +187,8 @@ public class TreeFlatteningRebuildingVisitorTest {
     @Test
     public void singleChildAndOrTest() {
         JexlNode eqNode = JexlNodeFactory.buildEQNode("FIELD", "value");
-        JexlNode and1 = JexlNodeFactory.createUnwrappedAndNode(Collections.singleton(eqNode));
-        JexlNode or1 = JexlNodeFactory.createUnwrappedOrNode(Collections.singleton(and1));
+        JexlNode and1 = JexlNodeFactory.createAndNode(Collections.singleton(eqNode));
+        JexlNode or1 = JexlNodeFactory.createOrNode(Collections.singleton(and1));
         
         JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(or1);
         
@@ -205,8 +207,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         JexlNodes.children(union, eq);
         
         JexlNode refExpr = JexlNodes.wrap(union);
-        JexlNode ref = JexlNodes.makeRef(refExpr);
-        ASTJexlScript script = JexlNodeFactory.createScript(ref);
+        ASTJexlScript script = JexlNodeFactory.createScript(refExpr);
         
         JexlNode flattened = TreeFlatteningRebuildingVisitor.flatten(script);
         

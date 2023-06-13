@@ -3,8 +3,8 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.Sets;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import java.util.Set;
@@ -263,8 +263,8 @@ public class ValidateFilterFunctionVisitorTest {
         test("filter:getMaxTime(DEATH_DATE) % 123456L", false);
         test("filter:getMaxTime(INDEX_ONLY) % 123456L", true);
         
-        test("filter:getMaxTime(DEATH_DATE).size() = true", false);
-        test("filter:getMaxTime(INDEX_ONLY).size() = true", true);
+        test("filter:getMaxTime(DEATH_DATE).size()", false);
+        test("filter:getMaxTime(INDEX_ONLY).size()", true);
         
         test("filter:getMaxTime(DEATH_DATE).size() == true", false);
         test("filter:getMaxTime(INDEX_ONLY).size() == true", true);

@@ -1,7 +1,7 @@
 package datawave.query.planner.pushdown;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.id;
+import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.id;
 
 import java.util.NoSuchElementException;
 
@@ -14,8 +14,8 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 /**

@@ -5,7 +5,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
 import java.util.ArrayList;

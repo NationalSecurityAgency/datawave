@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -92,7 +93,8 @@ public class SimpleFlattenQueryTest extends AbstractFunctionalQuery {
         log.info("------  testErrorDataDictionary  ------");
         String city = "'salem'";
         String query = "CITY" + EQ_OP + city;
-        runTest(query, query);
+        runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                        Collections.emptyMap());
     }
     
     // end of unit tests

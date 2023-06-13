@@ -4,15 +4,16 @@ import com.google.common.collect.Lists;
 import datawave.query.jexl.JexlASTHelper;
 
 import datawave.query.jexl.JexlNodeFactory;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static datawave.query.jexl.JexlNodeFactory.buildEQNode;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQueryWithoutParse;
 
 public class SortedDedupedJexlStringBuildingVisitorTest {
@@ -36,7 +37,7 @@ public class SortedDedupedJexlStringBuildingVisitorTest {
     @Test
     public void testExpressionDelayed() throws Exception {
         JexlNode queryA = JexlASTHelper.parseJexlQuery("FOO == 'abc'");
-        JexlNode queryB = ASTDelayedPredicate.create(JexlASTHelper.parseJexlQuery("FOO == 'abc'"));
+        JexlNode queryB = QueryPropertyMarker.create(JexlASTHelper.parseJexlQuery("FOO == 'abc'"), DELAYED);
         Assert.assertNotEquals(nodeToKey(queryA), nodeToKey(queryB));
         
     }

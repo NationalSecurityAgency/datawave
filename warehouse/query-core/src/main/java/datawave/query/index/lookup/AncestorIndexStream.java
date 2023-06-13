@@ -2,7 +2,7 @@ package datawave.query.index.lookup;
 
 import datawave.data.hash.UIDConstants;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.Collection;
 import java.util.HashMap;

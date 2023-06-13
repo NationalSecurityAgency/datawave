@@ -1,9 +1,11 @@
-package org.apache.commons.jexl2.parser;
+package org.apache.commons.jexl3.parser;
 
 import com.google.common.base.Preconditions;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 import java.lang.reflect.Constructor;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,12 +30,13 @@ public class JexlNodes {
      * @return a node
      */
     public static <T extends JexlNode> T ensureCapacity(T node, final int capacity) {
-        JexlNode[] children = node.children;
-        if (children == null) {
-            node.children = new JexlNode[capacity];
-        } else if (children.length < capacity) {
-            node.children = new JexlNode[capacity];
-            System.arraycopy(children, 0, node.children, 0, children.length);
+        int numChildren = node.jjtGetNumChildren();
+        if (numChildren < capacity) {
+            JexlNode[] newChildren = new JexlNode[capacity];
+            for (int i = 0; i < numChildren; i++) {
+                newChildren[i] = node.jjtGetChild(i);
+            }
+            node.jjtSetChildren(newChildren);
         }
         return node;
     }
@@ -64,7 +67,8 @@ public class JexlNodes {
     public static <T extends JexlNode> T newInstanceOfType(T node) {
         try {
             @SuppressWarnings("rawtypes")
-            Constructor constructor = node.getClass().getConstructor(Integer.TYPE);
+            Constructor constructor = node.getClass().getDeclaredConstructor(Integer.TYPE);
+            constructor.setAccessible(true);
             return (T) constructor.newInstance(node.id);
         } catch (Exception e) {
             throw new IllegalArgumentException(e);
@@ -79,7 +83,12 @@ public class JexlNodes {
      * @return array representation of a nodes children
      */
     public static JexlNode[] children(JexlNode node) {
-        return node.children == null ? new JexlNode[0] : node.children;
+        int numChildren = node.jjtGetNumChildren();
+        JexlNode[] newChildren = new JexlNode[numChildren];
+        for (int i = 0; i < numChildren; i++) {
+            newChildren[i] = node.jjtGetChild(i);
+        }
+        return newChildren;
     }
     
     /**
@@ -94,8 +103,8 @@ public class JexlNodes {
      * @return the provided node
      */
     public static <T extends JexlNode> T children(T node, JexlNode... children) {
-        node.children = children;
-        for (JexlNode child : node.children)
+        node.jjtSetChildren(children);
+        for (JexlNode child : children)
             newParent(child, node);
         return node;
     }
@@ -110,6 +119,23 @@ public class JexlNodes {
     public static ASTReference makeRef(JexlNode node) {
         ASTReference ref = new ASTReference(ParserTreeConstants.JJTREFERENCE);
         return children(ref, node);
+    }
+    
+    public static ASTReferenceExpression makeRefExp() {
+        return new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
+    }
+    
+    public static ASTFunctionNode makeFunction(String namespace, String name, JexlNode... arguments) {
+        ASTNamespaceIdentifier namespaceNode = new ASTNamespaceIdentifier(ParserTreeConstants.JJTNAMESPACEIDENTIFIER);
+        namespaceNode.setNamespace(namespace, name);
+        
+        ASTArguments argumentNode = new ASTArguments(ParserTreeConstants.JJTARGUMENTS);
+        argumentNode.jjtSetChildren(arguments);
+        
+        ASTFunctionNode functionNode = new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE);
+        functionNode.jjtSetChildren(new JexlNode[] {namespaceNode, argumentNode});
+        
+        return functionNode;
     }
     
     /**
@@ -158,10 +184,10 @@ public class JexlNodes {
      * @return the parent
      */
     public static <T extends JexlNode> T replaceChild(T parent, JexlNode a, JexlNode b) {
-        for (int i = 0; i < parent.children.length; ++i) {
-            if (parent.children[i] == a) {
-                parent.children[i] = b;
-                b.parent = parent;
+        for (int i = 0; i < parent.jjtGetNumChildren(); ++i) {
+            if (parent.jjtGetChild(i) == a) {
+                parent.jjtAddChild(b, i);
+                b.jjtSetParent(parent);
             }
         }
         return parent;
@@ -181,11 +207,11 @@ public class JexlNodes {
      * @return the parent
      */
     public static <T extends JexlNode> T swap(T parent, JexlNode a, JexlNode b) {
-        for (int i = 0; i < parent.children.length; ++i) {
-            if (parent.children[i] == a) {
-                parent.children[i] = b;
-                b.parent = parent;
-                a.parent = null;
+        for (int i = 0; i < parent.jjtGetNumChildren(); ++i) {
+            if (parent.jjtGetChild(i) == a) {
+                parent.jjtAddChild(b, i);
+                b.jjtSetParent(parent);
+                a.jjtSetParent(null);
             }
         }
         return parent;
@@ -194,25 +220,113 @@ public class JexlNodes {
     public static JexlNode promote(JexlNode parent, JexlNode child) {
         JexlNode grandpa = parent.jjtGetParent();
         if (grandpa == null) {
-            child.parent = null;
+            child.jjtSetParent(null);
             return child;
         } else {
             return swap(parent.jjtGetParent(), parent, child);
         }
     }
     
-    public static void setLiteral(ASTNumberLiteral literal, Number value) {
+    public static boolean setLiteral(ASTNumberLiteral literal, Number value) {
+        boolean success = false;
+        
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
         
-        literal.literal = value;
+        if (isNaturalNumber(value.getClass())) {
+            literal.setNatural(value.toString());
+            success = true;
+        } else if (isRealNumber(value.getClass())) {
+            literal.setReal(value.toString());
+            success = true;
+        }
+        
+        return success;
+    }
+    
+    protected static boolean isNaturalNumber(Class<? extends Number> clazz) {
+        return clazz == Integer.class || clazz == Long.class || clazz == BigInteger.class;
+    }
+    
+    protected static boolean isRealNumber(Class<? extends Number> clazz) {
+        return clazz == Float.class || clazz == Double.class || clazz == BigDecimal.class;
     }
     
     public static void setLiteral(ASTStringLiteral literal, String value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
         
-        literal.image = value;
+        literal.setLiteral(value);
+    }
+    
+    public static void setLiteral(ASTRegexLiteral literal, String value) {
+        Preconditions.checkNotNull(literal);
+        Preconditions.checkNotNull(value);
+        
+        literal.setLiteral(value);
+    }
+    
+    public static void setLiteral(ASTJxltLiteral literal, String value) {
+        Preconditions.checkNotNull(literal);
+        Preconditions.checkNotNull(value);
+        
+        literal.setLiteral(value);
+    }
+    
+    public static void setAnnotation(ASTAnnotation annotation, String name) {
+        Preconditions.checkNotNull(annotation);
+        Preconditions.checkNotNull(name);
+        
+        annotation.setName(name);
+    }
+    
+    public static void setQualifiedIdentifier(ASTQualifiedIdentifier identifier, String value) {
+        Preconditions.checkNotNull(identifier);
+        Preconditions.checkNotNull(value);
+        
+        identifier.setName(value);
+    }
+    
+    public static void setIdentifier(ASTIdentifier identifier, String name) {
+        Preconditions.checkNotNull(identifier);
+        Preconditions.checkNotNull(name);
+        
+        identifier.setSymbol(name);
+    }
+    
+    public static void setIdentifierAccess(ASTIdentifierAccess identifierAccess, String value) {
+        Preconditions.checkNotNull(identifierAccess);
+        Preconditions.checkNotNull(value);
+        
+        identifierAccess.setIdentifier(value);
+    }
+    
+    public static Object getImage(JexlNode node) {
+        Object value = null;
+        if (node instanceof ASTIdentifier) {
+            value = ((ASTIdentifier) node).getName();
+        } else if (node instanceof ASTStringLiteral) {
+            value = ((ASTStringLiteral) node).getLiteral();
+        } else if (node instanceof ASTNumberLiteral) {
+            value = ((ASTNumberLiteral) node).getLiteral();
+        }
+        return value;
+    }
+    
+    public static boolean setImage(JexlNode node, Object value) {
+        boolean success = false;
+        if (node instanceof ASTIdentifier && value instanceof String) {
+            JexlNodes.setIdentifier((ASTIdentifier) node, (String) value);
+        } else if (node instanceof ASTStringLiteral && value instanceof String) {
+            JexlNodes.setLiteral((ASTStringLiteral) node, (String) value);
+        } else if (node instanceof ASTNumberLiteral && value instanceof Number) {
+            JexlNodes.setLiteral((ASTNumberLiteral) node, (Number) value);
+        }
+        return success;
+    }
+    
+    public static boolean copyImage(JexlNode original, JexlNode copy) {
+        return setImage(copy, getImage(original));
     }
     
     /**
@@ -227,12 +341,24 @@ public class JexlNodes {
             // marked node trees begin with ref-refExpr, no need to wrap again
             return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), node);
         }
-        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), makeRef(wrap(node)));
+        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), wrap(node));
     }
     
-    public static ASTIdentifier makeIdentifierWithImage(String image) {
-        ASTIdentifier id = new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
-        id.image = image;
+    public static ASTIdentifier makeIdentifier() {
+        return new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
+    }
+    
+    public static ASTNumberLiteral makeNumberLiteral() {
+        return new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
+    }
+    
+    public static ASTStringLiteral makeStringLiteral() {
+        return new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
+    }
+    
+    public static ASTIdentifier makeIdentifierWithImage(String identifier) {
+        ASTIdentifier id = makeIdentifier();
+        id.setSymbol(identifier);
         return id;
     }
     
@@ -246,15 +372,15 @@ public class JexlNodes {
         return Preconditions.checkNotNull(otherChild);
     }
     
-    public static ASTReference literal(String s) {
+    public static ASTStringLiteral literal(String s) {
         ASTStringLiteral l = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
-        l.image = s;
-        return makeRef(l);
+        setLiteral(l, s);
+        return l;
     }
     
     public static ASTNumberLiteral literal(Number n) {
         ASTNumberLiteral l = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
-        l.literal = n;
+        setLiteral(l, n);
         return l;
     }
     

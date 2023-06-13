@@ -7,9 +7,9 @@ import javax.annotation.Nullable;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.BaseVisitor;
 
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNENode;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Sets;

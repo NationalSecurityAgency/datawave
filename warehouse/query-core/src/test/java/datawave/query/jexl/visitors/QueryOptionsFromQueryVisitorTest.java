@@ -2,9 +2,9 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.QueryParameters;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 

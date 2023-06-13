@@ -45,8 +45,6 @@ import datawave.query.jexl.NodeTypeCount;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.AddShardsAndDaysVisitor;
 import datawave.query.jexl.visitors.BoundedRangeDetectionVisitor;
 import datawave.query.jexl.visitors.BoundedRangeIndexExpansionVisitor;
@@ -129,12 +127,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
@@ -166,6 +164,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     
@@ -920,7 +921,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 
                 // Check if there are any bounded ranges to expand.
-                if (nodeCount.isPresent(BoundedRange.class)) {
+                if (nodeCount.isPresent(BOUNDED_RANGE)) {
                     config.setQueryTree(timedExpandRanges(timers, "Expand Ranges", config.getQueryTree(), config, metadataHelper, scannerFactory));
                 }
                 
@@ -935,7 +936,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 }
                 
                 // Check if there are functions that can be pushed into exceeded value ranges.
-                if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+                if (nodeCount.isPresent(ASTFunctionNode.class) && nodeCount.isPresent(EXCEEDED_VALUE)) {
                     config.setQueryTree(timedPushFunctions(timers, config.getQueryTree(), config, metadataHelper));
                 }
                 
@@ -1605,7 +1606,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         // Check if there are any bounded ranges to expand.
-        if (nodeCount.isPresent(BoundedRange.class)) {
+        if (nodeCount.isPresent(BOUNDED_RANGE)) {
             
             try {
                 config.setQueryTree(BoundedRangeIndexExpansionVisitor.expandBoundedRanges(config, scannerFactory, metadataHelper, config.getQueryTree()));
@@ -1629,7 +1630,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         // Check if there are functions that can be pushed into exceeded value ranges.
-        if (nodeCount.hasAll(ASTFunctionNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+        if (nodeCount.isPresent(ASTFunctionNode.class) && nodeCount.isPresent(EXCEEDED_VALUE)) {
             config.setQueryTree(PushFunctionsIntoExceededValueRanges.pushFunctions(config.getQueryTree(), metadataHelper, config.getDatatypeFilter()));
             if (log.isDebugEnabled()) {
                 logQuery(config.getQueryTree(), "Query after expanding pushing functions into exceeded value ranges again:");
@@ -2034,7 +2035,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     /*
      * (non-Javadoc)
      * 
-     * @see PushDownPlanner#rewriteQuery( org.apache .commons.jexl2.parser.ASTJexlScript)
+     * @see PushDownPlanner#rewriteQuery( org.apache .commons.jexl3.parser.ASTJexlScript)
      */
     @Override
     public ASTJexlScript applyRules(final ASTJexlScript queryTree, ScannerFactory scannerFactory, MetadataHelper metadataHelper,

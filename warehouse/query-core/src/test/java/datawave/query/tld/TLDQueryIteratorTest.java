@@ -7,7 +7,7 @@ import datawave.query.function.TLDRangeProvider;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.util.TypeMetadata;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

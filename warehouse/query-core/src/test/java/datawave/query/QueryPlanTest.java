@@ -14,12 +14,14 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+
+import java.util.Collections;
 
 import static datawave.query.testframework.RawDataManager.RE_OP;
 import static org.junit.Assert.assertEquals;
@@ -85,7 +87,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         String query = "species != " + "'dog'";
         String expectedPlan = "!(SPECIES == 'dog')";
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected InvalidQueryException.");
         } catch (InvalidQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
@@ -112,7 +115,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         
         this.logic.setMetadataTableName("missing");
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected DatawaveFatalQueryException.");
         } catch (DatawaveFatalQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());
@@ -122,9 +126,10 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
     @Test
     public void planInMetricsAfterFTSDException() throws Exception {
         String query = Constants.ANY_FIELD + " != " + "'" + TestCities.london + "'";
-        String expectedPlan = "(!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london'))";
+        String expectedPlan = "!(_ANYFIELD_ == 'london') && !(CITY == 'london') && !(STATE == 'london')";
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected FullTableScanDisallowedException.");
         } catch (FullTableScansDisallowedException e) {
             assertEquals(expectedPlan, metric.getPlan());
@@ -137,7 +142,8 @@ public class QueryPlanTest extends AbstractFunctionalQuery {
         String expectedPlan = query;
         
         try {
-            runTest(query, query);
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
             fail("Expected DoNotPerformOptimizedQueryException.");
         } catch (DoNotPerformOptimizedQueryException e) {
             assertEquals(expectedPlan, metric.getPlan());

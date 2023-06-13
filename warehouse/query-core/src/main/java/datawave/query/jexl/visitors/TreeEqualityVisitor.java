@@ -1,69 +1,105 @@
 package datawave.query.jexl.visitors;
 
 import datawave.core.common.logging.ThreadConfigurableLogger;
-import org.apache.commons.jexl2.parser.ASTAdditiveNode;
-import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
-import org.apache.commons.jexl2.parser.ASTAmbiguous;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTArrayAccess;
-import org.apache.commons.jexl2.parser.ASTArrayLiteral;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
-import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
-import org.apache.commons.jexl2.parser.ASTBlock;
-import org.apache.commons.jexl2.parser.ASTConstructorNode;
-import org.apache.commons.jexl2.parser.ASTDivNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEmptyFunction;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFloatLiteral;
-import org.apache.commons.jexl2.parser.ASTForeachStatement;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTIfStatement;
-import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTMapEntry;
-import org.apache.commons.jexl2.parser.ASTMapLiteral;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTModNode;
-import org.apache.commons.jexl2.parser.ASTMulNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTNullLiteral;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTReturnStatement;
-import org.apache.commons.jexl2.parser.ASTSizeFunction;
-import org.apache.commons.jexl2.parser.ASTSizeMethod;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTernaryNode;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.ASTVar;
-import org.apache.commons.jexl2.parser.ASTWhileStatement;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserVisitor;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
+import org.apache.commons.jexl3.parser.ASTAnnotation;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTArrayAccess;
+import org.apache.commons.jexl3.parser.ASTArrayLiteral;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl3.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl3.parser.ASTBlock;
+import org.apache.commons.jexl3.parser.ASTBreak;
+import org.apache.commons.jexl3.parser.ASTConstructorNode;
+import org.apache.commons.jexl3.parser.ASTContinue;
+import org.apache.commons.jexl3.parser.ASTDecrementGetNode;
+import org.apache.commons.jexl3.parser.ASTDefineVars;
+import org.apache.commons.jexl3.parser.ASTDivNode;
+import org.apache.commons.jexl3.parser.ASTDoWhileStatement;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTEWNode;
+import org.apache.commons.jexl3.parser.ASTEmptyFunction;
+import org.apache.commons.jexl3.parser.ASTExtendedLiteral;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTForeachStatement;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTGetDecrementNode;
+import org.apache.commons.jexl3.parser.ASTGetIncrementNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTIdentifierAccess;
+import org.apache.commons.jexl3.parser.ASTIfStatement;
+import org.apache.commons.jexl3.parser.ASTIncrementGetNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJxltLiteral;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMapEntry;
+import org.apache.commons.jexl3.parser.ASTMapLiteral;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTModNode;
+import org.apache.commons.jexl3.parser.ASTMulNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNEWNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNSWNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTNullLiteral;
+import org.apache.commons.jexl3.parser.ASTNullpNode;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTQualifiedIdentifier;
+import org.apache.commons.jexl3.parser.ASTRangeNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTRegexLiteral;
+import org.apache.commons.jexl3.parser.ASTReturnStatement;
+import org.apache.commons.jexl3.parser.ASTSWNode;
+import org.apache.commons.jexl3.parser.ASTSetAddNode;
+import org.apache.commons.jexl3.parser.ASTSetAndNode;
+import org.apache.commons.jexl3.parser.ASTSetDivNode;
+import org.apache.commons.jexl3.parser.ASTSetLiteral;
+import org.apache.commons.jexl3.parser.ASTSetModNode;
+import org.apache.commons.jexl3.parser.ASTSetMultNode;
+import org.apache.commons.jexl3.parser.ASTSetOrNode;
+import org.apache.commons.jexl3.parser.ASTSetShiftLeftNode;
+import org.apache.commons.jexl3.parser.ASTSetShiftRightNode;
+import org.apache.commons.jexl3.parser.ASTSetShiftRightUnsignedNode;
+import org.apache.commons.jexl3.parser.ASTSetSubNode;
+import org.apache.commons.jexl3.parser.ASTSetXorNode;
+import org.apache.commons.jexl3.parser.ASTShiftLeftNode;
+import org.apache.commons.jexl3.parser.ASTShiftRightNode;
+import org.apache.commons.jexl3.parser.ASTShiftRightUnsignedNode;
+import org.apache.commons.jexl3.parser.ASTSizeFunction;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTSubNode;
+import org.apache.commons.jexl3.parser.ASTTernaryNode;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.ASTUnaryPlusNode;
+import org.apache.commons.jexl3.parser.ASTVar;
+import org.apache.commons.jexl3.parser.ASTWhileStatement;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserVisitor;
+import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Determine whether two trees are equivalent, accounting for arbitrary order within subtrees.
  */
-public class TreeEqualityVisitor implements ParserVisitor {
+public class TreeEqualityVisitor extends ParserVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(TreeEqualityVisitor.class);
     
     private boolean equal = true;
@@ -142,12 +178,9 @@ public class TreeEqualityVisitor implements ParserVisitor {
         } else if (!node1.getClass().equals(node2.getClass())) {
             equal = false;
             return "Classes differ: " + node1.getClass().getSimpleName() + " vs " + node2.getClass().getSimpleName();
-        } else if (!equal(node1.jjtGetValue(), node2.jjtGetValue())) {
+        } else if (node1 instanceof JexlNode && !equal(JexlNodes.getImage((JexlNode) node1), JexlNodes.getImage((JexlNode) node2))) {
             equal = false;
-            return ("Node values differ: " + node1.jjtGetValue() + " vs " + node2.jjtGetValue());
-        } else if (node1 instanceof JexlNode && !equal(((JexlNode) node1).image, ((JexlNode) node2).image)) {
-            equal = false;
-            return ("Node images differ: " + ((JexlNode) node1).image + " vs " + ((JexlNode) node2).image);
+            return ("Node images differ: " + JexlNodes.getImage((JexlNode) node1) + " vs " + JexlNodes.getImage((JexlNode) node2));
         } else if (node1.jjtGetNumChildren() > 0 || node2.jjtGetNumChildren() > 0) {
             List<SimpleNode> list1 = listChildren(node1);
             List<SimpleNode> list2 = listChildren(node2);
@@ -156,7 +189,8 @@ public class TreeEqualityVisitor implements ParserVisitor {
                     log.debug("not equal " + list1.size() + " " + list2.size());
                 }
                 equal = false;
-                return ("Num children differ: " + list1 + " vs " + list2);
+                return ("Num children differ: [" + list1.stream().map(x -> x.getClass().getSimpleName()).collect(Collectors.joining(", ")) + "] vs ["
+                                + list2.stream().map(x -> x.getClass().getSimpleName()).collect(Collectors.joining(", ")) + "]");
             }
             Object reason = null;
             // start visiting recursively to find equality
@@ -174,7 +208,8 @@ public class TreeEqualityVisitor implements ParserVisitor {
                 }
                 // if we get here with !equal, then we never found a match for a node...break out
                 if (!equal) {
-                    return "Did not find a matching child for " + child1 + " in " + list2 + ": " + reason;
+                    return "Did not find a matching child for " + child1.getClass().getSimpleName() + " in [" + list2.get(0).getClass().getSimpleName() + "]: "
+                                    + reason;
                 }
             }
         }
@@ -192,8 +227,7 @@ public class TreeEqualityVisitor implements ParserVisitor {
             changed = false;
             for (SimpleNode child : list) {
                 // note the isAssignableFrom is to handle QueryPropertyMarker nodes
-                if (((child.getClass().equals(ASTReference.class) || ASTReference.class.isAssignableFrom(child.getClass())) && (child.jjtGetNumChildren() == 1))
-                                || (child.getClass().equals(ASTReferenceExpression.class) && (child.jjtGetNumChildren() == 1))
+                if ((child.getClass().equals(ASTReferenceExpression.class) && (child.jjtGetNumChildren() == 1))
                                 || (child.getClass().equals(ASTOrNode.class) && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTOrNode.class)))
                                 || (child.getClass().equals(ASTAndNode.class)
                                                 && ((child.jjtGetNumChildren() == 1) || node.getClass().equals(ASTAndNode.class)))) {
@@ -224,22 +258,12 @@ public class TreeEqualityVisitor implements ParserVisitor {
     }
     
     @Override
-    public Object visit(SimpleNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
-    }
-    
-    @Override
     public Object visit(ASTJexlScript node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
     
     @Override
     public Object visit(ASTBlock node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
-    }
-    
-    @Override
-    public Object visit(ASTAmbiguous node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
     
@@ -334,16 +358,6 @@ public class TreeEqualityVisitor implements ParserVisitor {
     }
     
     @Override
-    public Object visit(ASTAdditiveNode node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
-    }
-    
-    @Override
-    public Object visit(ASTAdditiveOperator node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
-    }
-    
-    @Override
     public Object visit(ASTMulNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
@@ -393,14 +407,6 @@ public class TreeEqualityVisitor implements ParserVisitor {
         return visitEquality(node, (SimpleNode) data);
     }
     
-    public Object visit(ASTIntegerLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
-    }
-    
-    public Object visit(ASTFloatLiteral node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
-    }
-    
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
@@ -442,11 +448,6 @@ public class TreeEqualityVisitor implements ParserVisitor {
     }
     
     @Override
-    public Object visit(ASTSizeMethod node, Object data) {
-        return visitEquality(node, (SimpleNode) data);
-    }
-    
-    @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
@@ -478,6 +479,206 @@ public class TreeEqualityVisitor implements ParserVisitor {
     
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTDoWhileStatement node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTContinue node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTBreak node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTDefineVars node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTNullpNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTShiftLeftNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTShiftRightNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTShiftRightUnsignedNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSWNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTNSWNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTEWNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTNEWNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTAddNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSubNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTUnaryPlusNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTRegexLiteral node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetLiteral node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTExtendedLiteral node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTRangeNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTIdentifierAccess node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTArguments node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetAddNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetSubNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetMultNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetDivNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetModNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetAndNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetOrNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetXorNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetShiftLeftNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetShiftRightNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTGetDecrementNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTGetIncrementNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTDecrementGetNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTIncrementGetNode node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTJxltLiteral node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTAnnotation node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTAnnotatedStatement node, Object data) {
+        return visitEquality(node, (SimpleNode) data);
+    }
+    
+    @Override
+    protected Object visit(ASTQualifiedIdentifier node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
 }

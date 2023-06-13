@@ -4,7 +4,7 @@ import com.google.common.collect.PeekingIterator;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -66,7 +66,7 @@ public class ScannerStream extends BaseIndexStream {
     
     // exceeded value threshold, so we can evaluate with data but may need special handling
     public static ScannerStream exceededValueThreshold(Iterator<Tuple2<String,IndexInfo>> itr, JexlNode currNode) {
-        JexlNode resultNode = JexlNodeFactory.wrap(currNode);
+        JexlNode resultNode = currNode;
         return new ScannerStream(itr, StreamContext.EXCEEDED_VALUE_THRESHOLD, resultNode);
     }
     

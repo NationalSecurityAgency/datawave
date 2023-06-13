@@ -3,7 +3,7 @@ package datawave.query.planner;
 import datawave.core.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
 import datawave.webservice.query.Query;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import java.io.IOException;
 import java.util.Collection;

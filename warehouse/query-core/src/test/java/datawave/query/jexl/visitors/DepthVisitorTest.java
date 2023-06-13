@@ -2,7 +2,7 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Assert;
 import org.junit.Test;
 

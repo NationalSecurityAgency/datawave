@@ -5,25 +5,25 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.text.SimpleDateFormat;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that are not executable against the index because of missing data in the global index.
@@ -79,23 +79,28 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        LiteralRange range = JexlASTHelper.findRange().indexedOnly(this.dataTypeFilter, this.helper).notDelayed().getRange(node);
-        
-        if (range != null) {
-            return delayBoundedIndexHole(range, node, data);
-        } else {
-            JexlNode andNode = JexlNodes.newInstanceOfType(node);
-            andNode.image = node.image;
-            andNode.jjtSetParent(node.jjtGetParent());
+        // if not already delayed somehow
+        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BOUNDED_RANGE)) {
+            LiteralRange range = JexlASTHelper.findRange().indexedOnly(this.dataTypeFilter, this.helper).notDelayed().getRange(node);
             
-            // We have no bounded range to replace, just proceed as normal
-            JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                JexlNode newChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
-                andNode.jjtAddChild(newChild, i);
-                newChild.jjtSetParent(andNode);
+            if (range != null) {
+                return delayBoundedIndexHole(range, node, data);
+            } else {
+                JexlNode andNode = JexlNodes.newInstanceOfType(node);
+                JexlNodes.copyImage(node, andNode);
+                andNode.jjtSetParent(node.jjtGetParent());
+                
+                // We have no bounded range to replace, just proceed as normal
+                JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    JexlNode newChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
+                    andNode.jjtAddChild(newChild, i);
+                    newChild.jjtSetParent(andNode);
+                }
+                return andNode;
             }
-            return andNode;
+        } else {
+            return node;
         }
     }
     
@@ -113,7 +118,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode, Object data) {
         
         if (missingIndexRange(range)) {
-            return IndexHoleMarkerJexlNode.create(currentNode);
+            return QueryPropertyMarker.create(currentNode, INDEX_HOLE);
         } else {
             return currentNode;
         }
@@ -123,16 +128,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not already delayed somehow
-        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
-            return super.visit(node, data);
-        }
-        return node;
-    }
-    
-    @Override
-    public Object visit(ASTReference node, Object data) {
-        // if not already delayed somehow
-        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
+        if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BOUNDED_RANGE)) {
             return super.visit(node, data);
         }
         return node;
@@ -141,7 +137,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (isIndexed(node) && missingIndexRange(node)) {
-            return IndexHoleMarkerJexlNode.create(node);
+            return QueryPropertyMarker.create(node, INDEX_HOLE);
         }
         return node;
     }
@@ -149,7 +145,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTERNode node, Object data) {
         if (isIndexed(node) && missingIndexRange(node)) {
-            return IndexHoleMarkerJexlNode.create(node);
+            return QueryPropertyMarker.create(node, INDEX_HOLE);
         }
         return node;
     }

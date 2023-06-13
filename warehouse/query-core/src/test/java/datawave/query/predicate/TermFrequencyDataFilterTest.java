@@ -5,7 +5,7 @@ import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Before;
 import org.junit.Test;
 

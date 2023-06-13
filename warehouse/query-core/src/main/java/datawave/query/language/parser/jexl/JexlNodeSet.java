@@ -3,7 +3,7 @@ package datawave.query.language.parser.jexl;
 import com.google.common.collect.Sets;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.Collection;
 import java.util.Collections;

@@ -1,14 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTUnsatisfiableGENode;
-import org.apache.commons.jexl2.parser.ASTUnsatisfiableGTNode;
-import org.apache.commons.jexl2.parser.ASTUnsatisfiableLENode;
-import org.apache.commons.jexl2.parser.ASTUnsatisfiableLTNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTUnsatisfiableGENode;
+import org.apache.commons.jexl3.parser.ASTUnsatisfiableGTNode;
+import org.apache.commons.jexl3.parser.ASTUnsatisfiableLENode;
+import org.apache.commons.jexl3.parser.ASTUnsatisfiableLTNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  *

@@ -3,11 +3,11 @@ package datawave.query.jexl.visitors;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.jexl.functions.QueryFunctions;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.HashSet;
 import java.util.Set;

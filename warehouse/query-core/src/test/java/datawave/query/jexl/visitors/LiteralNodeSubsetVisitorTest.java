@@ -3,8 +3,8 @@ package datawave.query.jexl.visitors;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import java.util.HashSet;

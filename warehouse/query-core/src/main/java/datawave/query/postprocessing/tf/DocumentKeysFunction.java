@@ -12,9 +12,9 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJexlArgumentDescriptor;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
@@ -54,7 +54,7 @@ public class DocumentKeysFunction {
         for (String key : functions.keySet()) {
             Collection<Function> coll = functions.get(key);
             for (Function f : coll) {
-                parent = f.args().get(0).jjtGetParent();
+                parent = f.args().get(0).jjtGetParent().jjtGetParent();
                 
                 if (!(parent instanceof ASTFunctionNode)) {
                     throw new IllegalArgumentException("parent was not a function node");

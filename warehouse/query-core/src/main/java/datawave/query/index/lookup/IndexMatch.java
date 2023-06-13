@@ -8,7 +8,7 @@ import java.util.Set;
 import datawave.query.jexl.JexlNodeFactory;
 
 import datawave.query.language.parser.jexl.JexlNodeSet;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.google.common.base.Function;
@@ -75,7 +75,7 @@ public class IndexMatch implements WritableComparable<IndexMatch> {
                 return JexlNodeFactory.createAndNode(nodeSet.getNodes());
             case OR:
             default:
-                return JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
+                return JexlNodeFactory.createOrNode(nodeSet.getNodes());
         }
     }
     

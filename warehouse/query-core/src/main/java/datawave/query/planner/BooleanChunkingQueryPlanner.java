@@ -17,7 +17,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.Query;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 

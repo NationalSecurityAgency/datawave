@@ -2,7 +2,7 @@ package datawave.ingest.mapreduce.handler.edge.evaluation;
 
 import datawave.attribute.EventField;
 import datawave.attribute.EventFieldValueTuple;
-import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl3.JexlArithmetic;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -86,25 +86,24 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
     }
     
     @Override
-    public boolean matches(Object left, Object right) {
-        
-        if (left == null && right == null) {
+    public Boolean contains(Object container, Object value) {
+        if (value == null && container == null) {
             // if both are null L == R
             return true;
         }
-        if (left == null || right == null) {
+        if (value == null || container == null) {
             // we know both aren't null, therefore L != R
             return false;
         }
-        final String arg = left.toString();
+        final String arg = value.toString();
         boolean matches = false;
-        if (right instanceof java.util.regex.Pattern) {
-            matches = ((java.util.regex.Pattern) right).matcher(arg).matches();
+        if (container instanceof java.util.regex.Pattern) {
+            matches = ((java.util.regex.Pattern) container).matcher(arg).matches();
             if (matches) {
-                addMatchingGroup(left);
+                addMatchingGroup(value);
             }
         } else {
-            matches = arg.matches(right.toString());
+            matches = arg.matches(container.toString());
         }
         return matches;
     }

@@ -1,6 +1,6 @@
 package datawave.query.index.lookup;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import datawave.query.util.Tuple2;
 

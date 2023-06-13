@@ -1,10 +1,10 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  * Determine if all query terms are negated

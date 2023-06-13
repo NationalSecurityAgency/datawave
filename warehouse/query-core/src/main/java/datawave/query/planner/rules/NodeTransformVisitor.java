@@ -5,22 +5,22 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.List;
 
@@ -49,7 +49,12 @@ public class NodeTransformVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        return applyTransforms(super.visit(node, data));
+        // do not recurse on a marker node
+        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
+            return applyTransforms(RebuildingVisitor.copy(node));
+        } else {
+            return applyTransforms(super.visit(node, data));
+        }
     }
     
     @Override
@@ -104,12 +109,7 @@ public class NodeTransformVisitor extends RebuildingVisitor {
     
     @Override
     public Object visit(ASTReference node, Object data) {
-        // do not recurse on a marker node
-        if (QueryPropertyMarker.findInstance(node).isAnyType()) {
-            return applyTransforms(RebuildingVisitor.copy(node));
-        } else {
-            return applyTransforms(super.visit(node, data));
-        }
+        return applyTransforms(super.visit(node, data));
     }
     
     @Override

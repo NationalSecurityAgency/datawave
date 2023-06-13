@@ -15,30 +15,27 @@ import datawave.query.jexl.functions.GeoFunctionsDescriptor;
 import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
 import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -53,6 +50,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
 /**
  * The 'WhindexVisitor' is used to replace wide-scoped geowave fields with value-specific, narrow-scoped geowave fields where appropriate.
@@ -289,8 +290,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         ExpandData parentData = (ExpandData) data;
         
         // only process delayed and bounded range predicates
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class,
-                        BoundedRange.class)) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(DELAYED, EXCEEDED_VALUE, BOUNDED_RANGE)) {
             return copy(node);
         }
         
@@ -531,8 +531,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node)
-                        .isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(DELAYED, EXCEEDED_VALUE, BOUNDED_RANGE))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -542,8 +541,7 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node)
-                        .isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Lists.newArrayList(DELAYED, EXCEEDED_VALUE, BOUNDED_RANGE))) {
             return RebuildingVisitor.copy(node);
         }
         
@@ -963,7 +961,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReference node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BOUNDED_RANGE))) {
             if (node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTReferenceExpression) {
@@ -986,7 +984,7 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BOUNDED_RANGE))) {
             if (node != null && node.jjtGetNumChildren() == 1) {
                 JexlNode kid = node.jjtGetChild(0);
                 if (kid instanceof ASTAndNode) {
@@ -1012,10 +1010,10 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTAndNode node) {
         // ignore marked nodes
-        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BoundedRange.class))) {
+        if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(Collections.singletonList(BOUNDED_RANGE))) {
             if (node.jjtGetNumChildren() == 1) {
                 return getLeafNode(node.jjtGetChild(0));
-            } else if (QueryPropertyMarkerVisitor.getInstance(node).isType(BoundedRange.class)) {
+            } else if (QueryPropertyMarkerVisitor.getInstance(node).isType(BOUNDED_RANGE)) {
                 return node;
             }
         }
@@ -1052,7 +1050,7 @@ public class WhindexVisitor extends RebuildingVisitor {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
             else
-                return JexlNodeFactory.createUnwrappedAndNode(jexlNodes);
+                return JexlNodeFactory.createAndNode(jexlNodes);
         }
         return null;
     }
@@ -1070,7 +1068,7 @@ public class WhindexVisitor extends RebuildingVisitor {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
             else
-                return JexlNodeFactory.createUnwrappedOrNode(jexlNodes);
+                return JexlNodeFactory.createOrNode(jexlNodes);
         }
         return null;
     }

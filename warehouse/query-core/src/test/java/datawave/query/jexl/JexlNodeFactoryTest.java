@@ -5,12 +5,12 @@ import com.google.common.collect.Sets;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.junit.Test;
 
 import java.util.List;

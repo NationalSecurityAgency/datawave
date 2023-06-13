@@ -3,7 +3,7 @@ package datawave.query.planner.pushdown;
 import java.util.Collection;
 
 import datawave.query.config.ShardQueryConfiguration;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;

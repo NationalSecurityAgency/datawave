@@ -1,14 +1,15 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import org.apache.commons.jexl2.Interpreter;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlOptions;
+import org.apache.commons.jexl3.internal.Frame;
+import org.apache.commons.jexl3.internal.Interpreter;
+import org.apache.commons.jexl3.parser.ASTOrNode;
 
 public class EdgeJexlInterpreter extends Interpreter {
-    
-    public EdgeJexlInterpreter(EdgeJexlEngine edgeJexlEngine, JexlContext context, boolean strictFlag, boolean silentFlag) {
-        super(edgeJexlEngine, context, strictFlag, silentFlag);
+    public EdgeJexlInterpreter(EdgeJexlEngine engine, JexlOptions opts, JexlContext context, Frame eFrame) {
+        super(engine, opts, context, eFrame);
     }
     
     // we want to avoid short circuiting an OR so we generate all possible edges if they are group aware

@@ -6,7 +6,7 @@ import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.tree.QueryNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.junit.Assert;
 import org.junit.Test;
 

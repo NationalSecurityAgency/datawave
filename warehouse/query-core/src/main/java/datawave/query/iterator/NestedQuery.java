@@ -1,7 +1,7 @@
 package datawave.query.iterator;
 
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.function.JexlEvaluation;
 

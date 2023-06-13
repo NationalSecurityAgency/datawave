@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
 import com.google.common.base.Predicate;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlArithmetic;
+import org.apache.commons.jexl3.JexlScript;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Collection;
@@ -12,7 +12,7 @@ import java.util.Collection;
  * This class operates against a {@code Multimap<String, NormalizedContentInterface>} normalizedFields during ingest.
  *
  */
-public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
+public class EdgePreconditionJexlEvaluation implements Predicate<JexlScript> {
     
     private static final Logger log = LoggerFactory.getLogger(EdgePreconditionJexlEvaluation.class);
     
@@ -49,7 +49,7 @@ public class EdgePreconditionJexlEvaluation implements Predicate<Script> {
     }
     
     @Override
-    public boolean apply(Script compiledScript) {
+    public boolean apply(JexlScript compiledScript) {
         boolean matched = false;
         if (null == getJexlContext()) {
             log.trace("Dropping entry because it was null");

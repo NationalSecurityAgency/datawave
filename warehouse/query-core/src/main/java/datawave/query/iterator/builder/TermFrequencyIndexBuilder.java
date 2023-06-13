@@ -18,7 +18,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when

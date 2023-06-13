@@ -4,8 +4,8 @@ import com.google.common.collect.Sets;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import java.util.Set;

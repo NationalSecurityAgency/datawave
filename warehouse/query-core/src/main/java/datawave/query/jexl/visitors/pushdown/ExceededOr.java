@@ -1,16 +1,18 @@
-package datawave.query.jexl.nodes;
+package datawave.query.jexl.visitors.pushdown;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.log4j.Logger;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,10 +25,10 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
-/**
- * This is a node that can be put in place of or list to denote that the or list threshold was exceeded
- */
-public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+
+public class ExceededOr {
+    private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);
     
     private static final ObjectMapper objectMapper = new ObjectMapper();
     
@@ -34,87 +36,51 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
     public static final String EXCEEDED_OR_FIELD = "field";
     public static final String EXCEEDED_OR_PARAMS = "params";
     
-    private static final String LABEL = "_List_";
+    private final String id;
+    private final String field;
+    private final ExceededOrParams params;
+    private final JexlNode jexlNode;
     
-    /**
-     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
-     * 
-     * @return the label
-     */
-    public static String label() {
-        return LABEL;
+    public ExceededOr(JexlNode jexlNode) {
+        this.id = decodeId(jexlNode);
+        this.field = decodeField(jexlNode);
+        this.params = decodeParams(jexlNode);
+        this.jexlNode = jexlNode;
     }
     
-    public ExceededOrThresholdMarkerJexlNode() {
-        super();
+    public ExceededOr(String field, URI fstPath) throws JsonProcessingException {
+        this(field, new ExceededOrParams(fstPath.toString()));
     }
     
-    public ExceededOrThresholdMarkerJexlNode(int id) {
-        super(id);
+    public ExceededOr(String field, SortedSet<String> values) throws JsonProcessingException {
+        this(field, new ExceededOrParams(values, null));
     }
     
-    /**
-     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
-     * 
-     * @param node
-     *            the source node
-     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
-     */
-    public ExceededOrThresholdMarkerJexlNode(JexlNode node) {
-        super(node);
+    public ExceededOr(String field, List<Range> ranges) throws JsonProcessingException {
+        this(field, new ExceededOrParams(null, ranges));
     }
     
-    /**
-     * Returns {@value #LABEL}.
-     * 
-     * @return the label
-     */
-    @Override
-    public String getLabel() {
-        return LABEL;
+    private ExceededOr(String field, ExceededOrParams params) throws JsonProcessingException {
+        this.id = UUID.randomUUID().toString();
+        this.field = field;
+        this.params = params;
+        this.jexlNode = createJexlNode();
     }
     
-    public static ExceededOrThresholdMarkerJexlNode createFromFstURI(String fieldName, URI fstPath) throws JsonProcessingException {
-        return new ExceededOrThresholdMarkerJexlNode(fieldName, fstPath, null, null);
+    public String getId() {
+        return id;
     }
     
-    public static ExceededOrThresholdMarkerJexlNode createFromValues(String fieldName, Set<String> values) throws JsonProcessingException {
-        return new ExceededOrThresholdMarkerJexlNode(fieldName, null, values, null);
+    public String getField() {
+        return field;
     }
     
-    public static ExceededOrThresholdMarkerJexlNode createFromRanges(String fieldName, Collection<Range> ranges) throws JsonProcessingException {
-        return new ExceededOrThresholdMarkerJexlNode(fieldName, null, null, ranges);
+    public ExceededOrParams getParams() {
+        return params;
     }
     
-    private ExceededOrThresholdMarkerJexlNode(String fieldName, URI fstPath, Set<String> values, Collection<Range> ranges) throws JsonProcessingException {
-        ExceededOrParams params = (fstPath != null) ? new ExceededOrParams(fstPath.toString()) : new ExceededOrParams(values, ranges);
-        
-        // Create an assignment for the params
-        JexlNode idNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_ID, UUID.randomUUID().toString()));
-        JexlNode fieldNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_FIELD, fieldName));
-        JexlNode paramsNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_PARAMS, objectMapper.writeValueAsString(params)));
-        
-        // now set the source
-        setupSource(JexlNodeFactory.createAndNode(Arrays.asList(idNode, fieldNode, paramsNode)));
-    }
-    
-    /**
-     * Get the parameters for this marker node (see constructors)
-     * 
-     * @param source
-     *            the source
-     * @return The params associated with this ExceededOrThresholdMarker
-     * @throws IOException
-     *             for problems with read/write
-     */
-    public static ExceededOrParams getParameters(JexlNode source) throws IOException {
-        Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
-        // turn the FST URI into a URI and the values into a set of values
-        Object paramsObj = parameters.get(EXCEEDED_OR_PARAMS);
-        if (paramsObj != null)
-            return objectMapper.readValue(String.valueOf(paramsObj), ExceededOrParams.class);
-        else
-            return null;
+    public JexlNode getJexlNode() {
+        return jexlNode;
     }
     
     /**
@@ -124,7 +90,7 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
      *            the source node
      * @return The id associated with this ExceededOrThresholdMarker
      */
-    public static String getId(JexlNode source) {
+    private String decodeId(JexlNode source) {
         Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
         Object paramsObj = parameters.get(EXCEEDED_OR_ID);
         if (paramsObj != null)
@@ -140,13 +106,44 @@ public class ExceededOrThresholdMarkerJexlNode extends QueryPropertyMarker {
      *            the source node
      * @return The field associated with this ExceededOrThresholdMarker
      */
-    public static String getField(JexlNode source) {
+    private String decodeField(JexlNode source) {
         Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
         Object paramsObj = parameters.get(EXCEEDED_OR_FIELD);
         if (paramsObj != null)
             return String.valueOf(paramsObj);
         else
             return null;
+    }
+    
+    /**
+     * Get the parameters for this marker node (see constructors)
+     *
+     * @param source
+     *            the source
+     * @return The params associated with this ExceededOrThresholdMarker
+     */
+    private ExceededOrParams decodeParams(JexlNode source) {
+        Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
+        // turn the FST URI into a URI and the values into a set of values
+        Object paramsObj = parameters.get(EXCEEDED_OR_PARAMS);
+        if (paramsObj != null) {
+            try {
+                return objectMapper.readValue(String.valueOf(paramsObj), ExceededOrParams.class);
+            } catch (JsonProcessingException e) {
+                log.error("Unable to read exceeded or params from node", e);
+            }
+        }
+        return null;
+    }
+    
+    protected JexlNode createJexlNode() throws JsonProcessingException {
+        // Create an assignment for the params
+        JexlNode idNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_ID, UUID.randomUUID().toString()));
+        JexlNode fieldNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_FIELD, field));
+        JexlNode paramsNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_PARAMS, objectMapper.writeValueAsString(params)));
+        
+        // now set the source
+        return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(idNode, fieldNode, paramsNode)), EXCEEDED_OR);
     }
     
     @JsonInclude(JsonInclude.Include.NON_NULL)

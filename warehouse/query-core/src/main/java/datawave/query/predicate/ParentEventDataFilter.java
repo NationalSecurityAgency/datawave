@@ -2,7 +2,7 @@ package datawave.query.predicate;
 
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import java.util.Set;
 

@@ -16,6 +16,7 @@ import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ShardIdValues;
+import org.apache.commons.jexl3.JexlException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -75,13 +77,49 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         String expect = CityField.CITY.name() + NE_OP + "all";
         try {
             runTest(query, expect);
-            Assert.fail("full table scan exception expected");
+            Assert.fail("undefined variable exception expected");
+        } catch (JexlException.Variable e) {
+            // expected
+        }
+        
+        try {
+            runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                            Collections.emptyMap());
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
         
+        // @formatter:off
+        List<String> expectedResults = Arrays.asList(
+                "par-usa-ma-10",
+                "ldn-fra-lle-11",
+                "rom-usa-ms-10",
+                "par-usa-oh-8",
+                "par-usa-oh-9",
+                "ldn-uk-7",
+                "par-usa-mo-8",
+                "rom-ita-7",
+                "edge-case-id-3",
+                "edge-case-id-4",
+                "ldn-usa-mo-8",
+                "par-ita-11",
+                "edge-case-id-1",
+                "edge-case-id-2",
+                "ldn-usa-oh-8",
+                "rom-usa-mo-8",
+                "edge-case-id-9",
+                "ldn-usa-mi-10",
+                "par-fra-lle-7",
+                "rom-bel-11",
+                "edge-case-id-7",
+                "edge-case-id-8",
+                "edge-case-id-5",
+                "edge-case-id-6",
+                "rom-usa-oh-8");
+        // @formatter:on
+        
         this.logic.setFullTableScanEnabled(true);
-        runTest(query, expect);
+        runTestQuery(expectedResults, query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1], Collections.emptyMap());
     }
     
     @Test
@@ -235,8 +273,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     public void testErrorQuery() throws Exception {
         log.info("------  testErrorQuery  ------");
         String query = "error-query";
-        String expect = "a == 'a'";
-        runTest(query, expect);
+        runTestQuery(Collections.emptyList(), query, this.dataManager.getShardStartEndDate()[0], this.dataManager.getShardStartEndDate()[1],
+                        Collections.emptyMap());
     }
     
     // ============================================

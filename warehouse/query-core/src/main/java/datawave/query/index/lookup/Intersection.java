@@ -27,7 +27,8 @@ import datawave.query.util.Tuples;
 import datawave.util.StringUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 /**
@@ -143,7 +144,7 @@ public class Intersection extends BaseIndexStream {
                     case DELAYED_FIELD:
                     case UNKNOWN_FIELD:
                     case EXCEEDED_TERM_THRESHOLD:
-                        this.delayedNodes.add(stream.currentNode());
+                        this.delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                         break;
                     case NO_OP:
                         // this intersection is going to be merged with a parent intersection, do nothing

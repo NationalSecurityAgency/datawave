@@ -14,15 +14,15 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.GeoUtils;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTFalseNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Geometry;
 
@@ -30,7 +30,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.children;
 
 /**
  * This visitor should be run after bounded ranges have been expanded in order to check for expanded GeoWave terms which do not intersect with the original

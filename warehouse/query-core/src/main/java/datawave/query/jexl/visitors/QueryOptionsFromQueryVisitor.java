@@ -6,15 +6,16 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.jexl.functions.QueryFunctions;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,8 +24,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
+import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTANDNODE;
+import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
 
 /**
  * Visits the query tree and extracts the parameters from any options functions present and adds them to the provided data {@link Map}. Any options function
@@ -117,7 +118,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
         } else {
             // If there are multiple children, return a new junction with the children.
             JexlNode copy = creator.get();
-            copy.image = node.image;
+            JexlNodes.copyImage(node, copy);
             JexlNodes.children(copy, children.toArray(new JexlNode[0]));
             return copy;
         }
@@ -175,9 +176,10 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
      * @return null if this is a function with any key/value options, or the rebuilt node
      */
     private Object visit(ASTFunctionNode node, Map<String,String> optionsMap) {
+        ASTNamespaceIdentifier nsIdentifier = (ASTNamespaceIdentifier) node.jjtGetChild(0);
         // if this is the f:options function, create a List for the userData to be passed to the child nodes
-        if (node.jjtGetChild(0).image.equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
-            switch (node.jjtGetChild(1).image) {
+        if (nsIdentifier.getNamespace().equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
+            switch (String.valueOf(nsIdentifier.getName())) {
                 case QueryFunctions.OPTIONS_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
@@ -209,7 +211,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case UniqueFunction.UNIQUE_BY_SECOND_FUNCTION:
                 case UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION: {
                     UniqueFields uniqueFields = new UniqueFields();
-                    updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(node.jjtGetChild(1).image));
+                    updateUniqueFields(node, uniqueFields, optionsMap, UniqueFunction.findByName(nsIdentifier.getName()));
                     return null;
                 }
                 case QueryFunctions.GROUPBY_FUNCTION: {
@@ -232,7 +234,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     // Find all unique fields declared in the provided node and add them to the provided {@link UniqueFields} with the specified transformer.
     private void putFieldsFromChildren(JexlNode node, UniqueFields uniqueFields, UniqueGranularity transformer) {
         List<String> fields = new ArrayList<>();
-        this.visit(node, fields);
+        node.jjtAccept(this, fields);
         fields.forEach((field) -> uniqueFields.put(field, transformer));
     }
     
@@ -273,7 +275,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         // Check if the current node is a child of the f:options function.
-        if (!RESERVED.contains(node.image)) {
+        if (!RESERVED.contains(JexlNodes.getImage(node))) {
             addImageToListData(node, data);
         }
         return super.visit(node, data);
@@ -284,7 +286,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private void addImageToListData(JexlNode node, Object data) {
         if (data instanceof List) {
             List list = (List) data;
-            list.add(node.image);
+            list.add(JexlNodes.getImage(node));
         }
     }
     

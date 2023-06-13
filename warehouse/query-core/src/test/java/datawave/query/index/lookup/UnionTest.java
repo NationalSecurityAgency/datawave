@@ -6,7 +6,7 @@ import com.google.common.collect.PeekingIterator;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
 import java.util.ArrayList;

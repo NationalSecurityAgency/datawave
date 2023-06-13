@@ -8,9 +8,9 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,10 +54,10 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
                         }
                     }
                     
-                    functionNodes.add(JexlNodes.makeRef(FunctionJexlNodeVisitor.makeFunctionFrom(functionVisitor.namespace(), functionVisitor.name(),
-                                    newArgs.toArray(new JexlNode[0]))));
+                    functionNodes.add(FunctionJexlNodeVisitor.makeFunctionFrom(functionVisitor.namespace(), functionVisitor.name(),
+                                    newArgs.toArray(new JexlNode[0])));
                 }
-                return JexlNodeFactory.createUnwrappedOrNode(functionNodes);
+                return JexlNodeFactory.createOrNode(functionNodes);
             }
         } else if (descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
             Set<String> fields = descriptor.fields(metadataHelper, Collections.emptySet());
@@ -79,10 +79,10 @@ class SplitGeoWaveFunctionVisitor extends RebuildingVisitor {
                             }
                         }
                         
-                        functionNodes.add(JexlNodes.makeRef(FunctionJexlNodeVisitor.makeFunctionFrom(functionVisitor.namespace(), functionVisitor.name(),
-                                        newArgs.toArray(new JexlNode[0]))));
+                        functionNodes.add(FunctionJexlNodeVisitor.makeFunctionFrom(functionVisitor.namespace(), functionVisitor.name(),
+                                        newArgs.toArray(new JexlNode[0])));
                     }
-                    return JexlNodeFactory.createUnwrappedOrNode(functionNodes);
+                    return JexlNodeFactory.createOrNode(functionNodes);
                 }
             }
         }

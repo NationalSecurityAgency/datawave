@@ -1,22 +1,19 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import org.apache.commons.jexl2.Interpreter;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.introspection.Uberspect;
-import org.apache.commons.logging.Log;
+import org.apache.commons.jexl3.JexlBuilder;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlOptions;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.internal.Frame;
+import org.apache.commons.jexl3.internal.Interpreter;
 
-import java.util.Map;
-
-public class EdgeJexlEngine extends JexlEngine {
-    
-    public EdgeJexlEngine(Uberspect anUberspect, JexlArithmetic anArithmetic, Map<String,Object> theFunctions, Log log) {
-        super(anUberspect, anArithmetic, theFunctions, log);
+public class EdgeJexlEngine extends Engine {
+    public EdgeJexlEngine(JexlBuilder conf) {
+        super(conf);
     }
     
     @Override
-    protected Interpreter createInterpreter(JexlContext context, boolean strictFlag, boolean silentFlag) {
-        return new EdgeJexlInterpreter(this, context, strictFlag, silentFlag);
+    protected Interpreter createInterpreter(JexlContext context, Frame frame, JexlOptions opts) {
+        return new EdgeJexlInterpreter(this, opts, context, frame);
     }
 }

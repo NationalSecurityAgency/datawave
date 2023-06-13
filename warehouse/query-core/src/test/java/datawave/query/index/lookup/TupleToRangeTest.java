@@ -7,8 +7,8 @@ import datawave.query.planner.QueryPlan;
 import datawave.query.util.Tuple2;
 import datawave.util.TableName;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 

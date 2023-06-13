@@ -14,7 +14,7 @@ import datawave.query.iterator.IndexOnlyFunctionIterator;
 import static datawave.query.jexl.visitors.SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX;
 import static datawave.query.Constants.EMPTY_STRING;
 
-import org.apache.commons.jexl2.MapContext;
+import org.apache.commons.jexl3.MapContext;
 
 import com.google.common.base.Objects;
 

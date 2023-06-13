@@ -2,16 +2,19 @@ package datawave.query.planner.pushdown;
 
 import java.util.Collection;
 
+import com.google.common.base.Preconditions;
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.planner.pushdown.rules.DelayedPredicatePushDown;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
 /**
  * The PushDownVisitor will decide what nodes are "delayed" in that they do NOT require a global index lookup due to cost or other reasons.
@@ -83,14 +86,17 @@ public class PushDownVisitor extends RebuildingVisitor {
             return false;
         }
         int delayedCount = 0;
-        IsType delayedCheck = new IsType(ASTDelayedPredicate.class);
         for (int i = 0; i < jexlScript.jjtGetNumChildren(); i++) {
             JexlNode child = jexlScript.jjtGetChild(i);
-            if (delayedCheck.apply(child)) {
+            if (isDelayedPredicate(child)) {
                 delayedCount++;
             }
         }
         return delayedCount == jexlScript.jjtGetNumChildren();
     }
     
+    private boolean isDelayedPredicate(JexlNode node) {
+        Preconditions.checkNotNull(node);
+        return QueryPropertyMarker.findInstance(node).isType(DELAYED);
+    }
 }

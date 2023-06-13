@@ -3,7 +3,7 @@ package datawave.query.index.lookup;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Test;
 
 import java.text.ParseException;

@@ -10,20 +10,19 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.pushdown.ExceededOr;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -37,18 +36,27 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.visitors.pushdown.ExceededOr.EXCEEDED_OR_FIELD;
+import static datawave.query.jexl.visitors.pushdown.ExceededOr.EXCEEDED_OR_ID;
+import static datawave.query.jexl.visitors.pushdown.ExceededOr.EXCEEDED_OR_PARAMS;
+import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
 
 /**
  * Visits a JexlNode tree, and take large (defined by config.getFieldedListThreshold) lists of values against a single field into an FST ivarator (bypass the
@@ -57,6 +65,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
  */
 public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownLargeFieldedListsVisitor.class);
+    
     private ShardQueryConfiguration config;
     private String fstHdfsUri;
     private FileSystem fs;
@@ -109,7 +118,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTOrNode node, Object data) {
         ASTOrNode newNode = newInstanceOfType(node);
-        newNode.image = node.image;
+        JexlNodes.copyImage(node, newNode);
         
         Multimap<String,JexlNode> eqNodesByField = LinkedListMultimap.create();
         Multimap<String,JexlNode> rangeNodesByField = LinkedListMultimap.create();
@@ -161,10 +170,10 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                     // if we have an hdfs cache directory and if past the fst/list threshold, then create the fst/list and replace the list with an assignment
                     if (fstHdfsUri != null && (eqNodes.size() >= config.getMaxOrExpansionFstThreshold())) {
                         URI fstPath = createFst(values);
-                        markers.add(ExceededOrThresholdMarkerJexlNode.createFromFstURI(field, fstPath));
+                        markers.add(QueryPropertyMarker.create(new ExceededOr(field, fstPath).getJexlNode(), EXCEEDED_OR));
                         eqNodes = null;
                     } else if (eqNodes.size() >= config.getMaxOrExpansionThreshold()) {
-                        markers.add(ExceededOrThresholdMarkerJexlNode.createFromValues(field, values));
+                        markers.add(QueryPropertyMarker.create(new ExceededOr(field, values).getJexlNode(), EXCEEDED_OR));
                         eqNodes = null;
                     }
                     
@@ -179,8 +188,9 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
                         rangeNodes = new ArrayList<>();
                         for (List<Map.Entry<Range,JexlNode>> rangeList : batchedRanges) {
                             if (rangeList.size() > 1) {
-                                markers.add(ExceededOrThresholdMarkerJexlNode.createFromRanges(field,
-                                                rangeList.stream().map(Map.Entry::getKey).collect(Collectors.toList())));
+                                markers.add(QueryPropertyMarker.create(
+                                                new ExceededOr(field, rangeList.stream().map(Map.Entry::getKey).collect(Collectors.toList())).getJexlNode(),
+                                                EXCEEDED_OR));
                             } else {
                                 rangeNodes.add(rangeList.get(0).getValue());
                             }
@@ -313,9 +323,9 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             } else {
                 otherNodes.add(origNode);
             }
-        } else if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
+        } else if (instance.isType(EXCEEDED_VALUE)) {
             assignNodeByField(origNode, instance.getSource(), eqNodes, rangeNodes, otherNodes);
-        } else if (instance.isType(BoundedRange.class)) {
+        } else if (instance.isType(BOUNDED_RANGE)) {
             LiteralRange range = JexlASTHelper.findRange().getRange(subNode);
             rangeNodes.put(JexlASTHelper.rebuildIdentifier(range.getFieldName()), origNode);
         } else if ((subNode.jjtGetNumChildren() == 1)
@@ -356,5 +366,4 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         
         return fstFile.toUri();
     }
-    
 }

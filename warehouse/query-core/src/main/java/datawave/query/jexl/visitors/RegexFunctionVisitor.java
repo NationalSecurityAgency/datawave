@@ -11,9 +11,10 @@ import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
             List<JexlNode> children = new ArrayList<>(identifiers.size());
             
             for (ASTIdentifier identifier : identifiers) {
-                JexlNode regexNode = buildRegexNode(identifier, functionMetadata.name(), arguments.get(1).image);
+                JexlNode regexNode = buildRegexNode(identifier, functionMetadata.name(), String.valueOf(JexlNodes.getImage(arguments.get(1))));
                 if (regexNode != null) {
                     children.add(regexNode);
                 }
@@ -111,7 +112,7 @@ public class RegexFunctionVisitor extends FunctionIndexQueryExpansionVisitor {
      * @return a new regex node, or null if no such regex node could be built
      */
     private JexlNode buildRegexNode(ASTIdentifier identifier, String functionName, String regex) {
-        String field = JexlASTHelper.deconstructIdentifier(identifier.image);
+        String field = JexlASTHelper.deconstructIdentifier(identifier.getName());
         if (nonEventFields.contains(field.toUpperCase())) {
             try {
                 JavaRegexAnalyzer jra = new JavaRegexAnalyzer(regex);

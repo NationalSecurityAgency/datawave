@@ -6,10 +6,11 @@ import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,7 +31,7 @@ public class RegexReplacementTransformRule implements NodeTransformRule {
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         if (node instanceof ASTERNode || node instanceof ASTNRNode) {
             JexlNode literal = JexlASTHelper.getLiteral(node);
-            literal.image = processPattern(literal.image);
+            JexlNodes.setImage(literal, processPattern(String.valueOf(JexlNodes.getImage(literal))));
         } else if (node instanceof ASTFunctionNode) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
@@ -38,7 +39,7 @@ public class RegexReplacementTransformRule implements NodeTransformRule {
                             && EvaluationPhaseFilterFunctionsDescriptor.EvaluationPhaseFilterJexlArgumentDescriptor.regexFunctions
                                             .contains(functionMetadata.name())) {
                 JexlNode literal = JexlASTHelper.getLiteral(functionMetadata.args().get(1));
-                literal.image = processPattern(literal.image);
+                JexlNodes.setImage(literal, processPattern(String.valueOf(JexlNodes.getImage(literal))));
             }
         }
         return node;

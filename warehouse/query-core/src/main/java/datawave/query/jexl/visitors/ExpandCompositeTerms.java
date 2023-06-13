@@ -18,27 +18,24 @@ import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -54,7 +51,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static org.apache.commons.jexl3.parser.JexlNodes.children;
 
 /**
  * This is a visitor which runs across the query tree and creates composite jexl nodes where applicable. Composite field mappings are determined via ingest
@@ -176,7 +176,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         ExpandData parentData = (ExpandData) data;
         
         // only process delayed and bounded range predicates
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(DELAYED, BOUNDED_RANGE)) {
             return copy(node);
         }
         
@@ -294,7 +294,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(DELAYED, BOUNDED_RANGE)) {
             return copy(node);
         }
         
@@ -304,7 +304,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     // only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, BoundedRange.class)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeExcept(DELAYED, BOUNDED_RANGE)) {
             return copy(node);
         }
         
@@ -517,15 +517,17 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         if (finalNodes.size() > 1) {
             finalNode = createUnwrappedAndNode(finalNodes);
             if (composite.getJexlNodeList().size() > 1) {
-                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(
-                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
+                JexlNode delayedNode = QueryPropertyMarker.create(createUnwrappedAndNode(
+                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())),
+                                EVALUATION_ONLY);
                 finalNode = createUnwrappedAndNode(Arrays.asList(JexlNodeFactory.wrap(finalNode), delayedNode));
             }
         } else {
             finalNode = finalNodes.get(0);
             if (composite.getJexlNodeList().size() > 1 && !(finalNode instanceof ASTEQNode)) {
-                JexlNode delayedNode = ASTEvaluationOnly.create(createUnwrappedAndNode(
-                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())));
+                JexlNode delayedNode = QueryPropertyMarker.create(createUnwrappedAndNode(
+                                composite.getJexlNodeList().stream().map(node -> JexlNodeFactory.wrap(copy(node))).collect(Collectors.toList())),
+                                EVALUATION_ONLY);
                 finalNode = createUnwrappedAndNode(Arrays.asList(finalNode, delayedNode));
             }
         }
@@ -970,7 +972,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReference node) {
         // ignore marked nodes
-        if (node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
+        if (node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BOUNDED_RANGE)) {
             JexlNode kid = node.jjtGetChild(0);
             if (kid instanceof ASTReferenceExpression) {
                 return getLeafNode((ASTReferenceExpression) kid);
@@ -989,7 +991,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
      */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
         // ignore marked nodes
-        if (node != null && node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BoundedRange.class)) {
+        if (node != null && node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BOUNDED_RANGE)) {
             JexlNode kid = node.jjtGetChild(0);
             if (kid instanceof ASTAndNode) {
                 return getLeafNode((ASTAndNode) kid);
@@ -1014,10 +1016,10 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
     private JexlNode getLeafNode(ASTAndNode node) {
         // ignore marked nodes
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        if (!instance.isAnyType() || instance.isType(BoundedRange.class)) {
+        if (!instance.isAnyType() || instance.isType(BOUNDED_RANGE)) {
             if (node.jjtGetNumChildren() == 1) {
                 return getLeafNode(node.jjtGetChild(0));
-            } else if (instance.isType(BoundedRange.class)) {
+            } else if (instance.isType(BOUNDED_RANGE)) {
                 return node;
             }
         }
@@ -1037,9 +1039,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
             else {
-                JexlNode andNode = JexlNodeFactory.createUnwrappedAndNode(jexlNodes);
+                JexlNode andNode = JexlNodeFactory.createAndNode(jexlNodes);
                 if (JexlASTHelper.findRange().notMarked().isRange(andNode))
-                    return BoundedRange.create(andNode);
+                    return QueryPropertyMarker.create(andNode, BOUNDED_RANGE);
                 else
                     return andNode;
             }
@@ -1060,7 +1062,7 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             if (jexlNodes.size() == 1)
                 return jexlNodes.stream().findFirst().get();
             else
-                return JexlNodeFactory.createUnwrappedOrNode(jexlNodes);
+                return JexlNodeFactory.createOrNode(jexlNodes);
         }
         return null;
     }

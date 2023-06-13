@@ -1,6 +1,6 @@
 package datawave.test;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.List;
 

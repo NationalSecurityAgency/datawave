@@ -15,7 +15,8 @@ import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
 
 import datawave.util.StringUtils;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
@@ -85,7 +86,7 @@ public class Union extends BaseIndexStream {
                 case UNKNOWN_FIELD:
                 case EXCEEDED_TERM_THRESHOLD:
                     // these nodes need to be persisted via the set of delayedNodes
-                    delayedNodes.add(stream.currentNode());
+                    delayedNodes.add(JexlNodes.wrap(stream.currentNode()));
                     continue;
                 case INITIALIZED:
                     throw new RuntimeException("Invalid state in RangeStream");
@@ -257,7 +258,7 @@ public class Union extends BaseIndexStream {
         if (nodeSet.size() == 1) {
             currNode = nodeSet.iterator().next();
         } else {
-            currNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
+            currNode = JexlNodeFactory.createOrNode(nodeSet.getNodes());
         }
         
         // update pointers with the current node

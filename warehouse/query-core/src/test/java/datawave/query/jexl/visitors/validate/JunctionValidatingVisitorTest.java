@@ -3,12 +3,12 @@ package datawave.query.jexl.visitors.validate;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -72,10 +72,10 @@ public class JunctionValidatingVisitorTest {
     @Test
     public void testValidDisjunctionInvalidConjunction() {
         ASTEQNode eqNode = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "baz");
-        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(eqNode));
+        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Arrays.asList(eqNode));
         
         ASTEQNode termA = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
-        ASTOrNode validDisjunction = (ASTOrNode) JexlNodeFactory.createUnwrappedOrNode(Arrays.asList(termA, invalidConjunction));
+        ASTOrNode validDisjunction = (ASTOrNode) JexlNodeFactory.createOrNode(Arrays.asList(termA, invalidConjunction));
         
         assertFalse(validate(validDisjunction));
         // nested AndNode prints like (term)
@@ -88,9 +88,9 @@ public class JunctionValidatingVisitorTest {
     public void testInvalidDisjunctionValidConjunction() {
         ASTEQNode left = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "bar");
         ASTEQNode right = (ASTEQNode) JexlNodeFactory.buildEQNode("FOO", "baz");
-        ASTOrNode validDisjunction = (ASTOrNode) JexlNodeFactory.createUnwrappedOrNode(Arrays.asList(left, right));
+        ASTOrNode validDisjunction = (ASTOrNode) JexlNodeFactory.createOrNode(Arrays.asList(left, right));
         
-        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createUnwrappedAndNode(Arrays.asList(validDisjunction));
+        ASTAndNode invalidConjunction = (ASTAndNode) JexlNodeFactory.createAndNode(Arrays.asList(validDisjunction));
         
         assertFalse(validate(invalidConjunction));
         // top level AndNode does not print because of single child

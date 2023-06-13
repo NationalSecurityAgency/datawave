@@ -1,6 +1,6 @@
 package datawave.query.jexl.functions.arguments;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 public interface JexlArgument {
     

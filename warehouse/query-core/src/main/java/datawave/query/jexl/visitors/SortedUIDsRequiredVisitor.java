@@ -1,23 +1,24 @@
 package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTMethodNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTNotNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAssignment;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTNotNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.Set;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
 /**
  * A visitor that checks the query tree to determine if sorting the UIDs coming from the field index is required. Normally they are, however if the query
@@ -89,9 +90,9 @@ public class SortedUIDsRequiredVisitor extends BaseVisitor {
     public Object visit(ASTReference node, Object data) {
         // delayed predicates are not run against the index (if acknowledging them)
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        if (!(acknowledgeDelayedPredicates && instance.isType(ASTDelayedPredicate.class))) {
-            if (!instance.isType(IndexHoleMarkerJexlNode.class)) {
-                if (instance.isAnyTypeOf(ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class)) {
+        if (!(acknowledgeDelayedPredicates && instance.isType(DELAYED))) {
+            if (!instance.isType(INDEX_HOLE)) {
+                if (instance.isAnyTypeOf(EXCEEDED_OR, EXCEEDED_VALUE)) {
                     ivarators++;
                     indexedFieldCount++;
                 } else {
@@ -125,7 +126,7 @@ public class SortedUIDsRequiredVisitor extends BaseVisitor {
     }
     
     protected boolean isIndexed(ASTIdentifier node) {
-        final String fieldName = JexlASTHelper.deconstructIdentifier(node.image);
+        final String fieldName = JexlASTHelper.deconstructIdentifier(node.getName());
         return this.indexedFields.contains(fieldName);
     }
     

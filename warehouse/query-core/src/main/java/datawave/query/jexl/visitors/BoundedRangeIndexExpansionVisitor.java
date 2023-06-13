@@ -9,19 +9,20 @@ import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.lookups.IndexLookup;
 import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 
 /**
  * Visits a Jexl tree, looks for bounded ranges, and replaces them with concrete values from the index
@@ -68,16 +69,15 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
     }
     
     @Override
-    public Object visit(ASTReference node, Object data) {
+    public Object visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         
         // don't traverse delayed nodes
-        if (instance.isAnyTypeOf(IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class, ExceededValueThresholdMarkerJexlNode.class,
-                        ExceededTermThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class)) {
+        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, EXCEEDED_VALUE, EXCEEDED_TERM, EXCEEDED_OR)) {
             return RebuildingVisitor.copy(node);
         }
         // handle bounded range
-        else if (instance.isType(BoundedRange.class)) {
+        else if (instance.isType(BOUNDED_RANGE)) {
             LiteralRange<?> range = rangeFinder.getRange(node);
             if (range != null) {
                 try {

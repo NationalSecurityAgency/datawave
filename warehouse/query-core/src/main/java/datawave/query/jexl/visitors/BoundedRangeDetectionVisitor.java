@@ -4,21 +4,22 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
     
@@ -41,8 +42,8 @@ public class BoundedRangeDetectionVisitor extends ShortCircuitBaseVisitor {
     }
     
     @Override
-    public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarker.findInstance(node).isType(BoundedRange.class)) {
+    public Object visit(ASTAndNode node, Object data) {
+        if (QueryPropertyMarker.findInstance(node).isType(BOUNDED_RANGE)) {
             LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
             try {
                 if (null != data && helper.getNonEventFields(config.getDatatypeFilter()).contains(range.getFieldName())) {

@@ -4,18 +4,19 @@ import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 
 public class RegexPushdownTransformRule implements NodeTransformRule {
     private static final Logger log = Logger.getLogger(RegexPushdownTransformRule.class);
@@ -33,7 +34,7 @@ public class RegexPushdownTransformRule implements NodeTransformRule {
                         throw new DatawaveFatalQueryException("Not allowing " + identifier + " =~ " + regex);
                     } else {
                         log.error("RegexPushdownTransformRule.apply: Forcing evaluation only for " + regex);
-                        return ASTEvaluationOnly.create(node);
+                        return QueryPropertyMarker.create(node, EVALUATION_ONLY);
                     }
                 }
             }

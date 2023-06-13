@@ -1,7 +1,7 @@
 package datawave.test;
 
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.assertj.core.api.AbstractIterableAssert;
 import org.assertj.core.api.IterableAssert;
 import org.assertj.core.api.ListAssert;

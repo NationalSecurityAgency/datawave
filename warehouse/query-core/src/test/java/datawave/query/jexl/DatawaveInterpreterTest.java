@@ -6,13 +6,16 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.DatawaveJexlScript;
-import org.apache.commons.jexl2.ExpressionImpl;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.Script;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlOptions;
+import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.internal.DatawaveJexlScript;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.internal.Script;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.easymock.EasyMock;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -22,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.mock;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -34,7 +38,7 @@ public class DatawaveInterpreterTest {
         
         DatawaveJexlContext context = new DatawaveJexlContext();
         
-        Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
+        JexlScript script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
         
         context.set("GEO", "0321􏿿+bE4.4");
         context.set("WKT_BYTE_LENGTH", "+bE4.4");
@@ -52,25 +56,28 @@ public class DatawaveInterpreterTest {
         
         DatawaveJexlContext context = new DatawaveJexlContext();
         
-        Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
+        JexlScript script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
         
         assertTrue(DatawaveInterpreter.isMatched(script.execute(context)));
     }
     
     @Test
     public void invocationFails_alwaysThrowsException() {
-        JexlEngine engine = mock(JexlEngine.class);
+        Engine engine = new DatawaveJexlEngine();
         JexlContext context = mock(JexlContext.class);
-        DatawaveInterpreter interpreter = new DatawaveInterpreter(engine, context, false, false);
-        JexlException exception = new JexlException(new ASTStringLiteral(1), "Function failure");
+        JexlOptions opts = new JexlOptions();
+        opts.setStrict(false);
+        opts.setSilent(false);
+        DatawaveInterpreter interpreter = new DatawaveInterpreter(engine, opts, context, null);
+        JexlException exception = new JexlException(JexlNodes.makeStringLiteral(), "Function failure");
         
         // Make mocks available.
-        EasyMock.replay(engine, context);
+        EasyMock.replay(context);
         
         // Capture the expected exception.
         Exception thrown = null;
         try {
-            interpreter.invocationFailed(exception);
+            interpreter.invocationException(null, null, exception);
         } catch (Exception e) {
             thrown = e;
         }
@@ -414,13 +421,13 @@ public class DatawaveInterpreterTest {
     private void test(String query, JexlContext context, boolean expectedResult) {
         
         // create binary tree and execute the query
-        Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
+        JexlScript script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
         Object executed = script.execute(context);
         boolean isMatched = ArithmeticJexlEngines.isMatched(executed);
         assertEquals("Unexpected result for query (binary tree): " + query, expectedResult, isMatched);
         
         // create flattened tree and execute the query
-        DatawaveJexlScript dwScript = DatawaveJexlScript.create((ExpressionImpl) script);
+        DatawaveJexlScript dwScript = DatawaveJexlScript.create((Script) script);
         executed = dwScript.execute(context);
         isMatched = ArithmeticJexlEngines.isMatched(executed);
         assertEquals("Unexpected result for query (flattened tree): " + query, expectedResult, isMatched);

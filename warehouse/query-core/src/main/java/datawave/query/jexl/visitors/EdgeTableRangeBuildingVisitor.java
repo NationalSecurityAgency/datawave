@@ -10,18 +10,19 @@ import datawave.query.tables.edge.contexts.QueryContext;
 import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -31,7 +32,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.getImage;
 
 /**
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build
@@ -458,8 +460,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             throw new IllegalArgumentException("Problem parsing query");
         }
         
-        String identifier = getIdentity(node.jjtGetChild(0));
-        String literal = getLiteral(node.jjtGetChild(1));
+        String identifier = String.valueOf(JexlNodes.getImage(node.jjtGetChild(0)));
+        String literal = String.valueOf(JexlNodes.getImage(node.jjtGetChild(1)));
         List<IdentityContext> contexts = new ArrayList<>();
         
         if (identifier.equals(fields.getSourceFieldName()) || identifier.equals(fields.getSinkFieldName()) || identifier.equals(fields.getAttribute3FieldName())
@@ -499,39 +501,6 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
     }
     
     /**
-     * Gets the Identity of an expression eg. SOURCE
-     * 
-     * @param referenceNode
-     *            a reference node
-     * @return the identity
-     */
-    private String getIdentity(SimpleNode referenceNode) {
-        
-        if (referenceNode.jjtGetNumChildren() != 1) {
-            log.error("Reference node (identity) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
-        }
-        
-        return referenceNode.jjtGetChild(0).image.toUpperCase();
-    }
-    
-    /**
-     * Gets the string literal
-     * 
-     * @param referenceNode
-     *            reference node
-     * @return string literal
-     */
-    private String getLiteral(SimpleNode referenceNode) {
-        if (referenceNode.jjtGetNumChildren() != 1) {
-            log.error("Reference node (literal) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
-            throw new IllegalArgumentException("Problem parsing query");
-        }
-        
-        return referenceNode.jjtGetChild(0).image;
-    }
-    
-    /**
      * Used only for the Edge'Source'QueryLogic Basically function support was an afterthought only to support old code in the existing Edge'Source'QueryLogic A
      * list with a single Identity context is returned in the following format: Identity = FUNCTION Opperator = FUNCTION LITER = "{function string}" //eg
      * source.has_all(SINK, "t1", "t2", ...)
@@ -552,21 +521,21 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             if (0 == i) {
-                sb.append(node.jjtGetChild(i).image);
+                sb.append(JexlNodes.getImage(node.jjtGetChild(i)));
             } else if (1 == i) {
-                if (!allowedFunctions.contains(node.jjtGetChild(i).image.toLowerCase())) {
+                if (!allowedFunctions.contains(String.valueOf(JexlNodes.getImage(node.jjtGetChild(i))).toLowerCase())) {
                     BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
-                                    node.jjtGetChild(i).image + " not supported function for EdgeQuery");
+                                    JexlNodes.getImage(node.jjtGetChild(i)) + " not supported function for EdgeQuery");
                     throw new UnsupportedOperationException(qe);
                 }
                 sb.append(":");
-                sb.append(node.jjtGetChild(i).image);
+                sb.append(JexlNodes.getImage(node.jjtGetChild(i)));
             } else if (2 == i) {
                 sb.append("(");
-                sb.append(getLiteral(node.jjtGetChild(i)));
+                sb.append(JexlNodes.getImage(node.jjtGetChild(i)));
             } else if (2 < i) {
                 sb.append(", ");
-                sb.append("'" + getLiteral(node.jjtGetChild(i)).toLowerCase() + "'");
+                sb.append("'" + String.valueOf(JexlNodes.getImage(node.jjtGetChild(i))).toLowerCase() + "'");
             }
         }
         

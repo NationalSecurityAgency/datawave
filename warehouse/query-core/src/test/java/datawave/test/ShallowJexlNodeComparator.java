@@ -1,6 +1,7 @@
 package datawave.test;
 
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -30,12 +31,6 @@ public class ShallowJexlNodeComparator implements Comparator<JexlNode> {
             return 1;
         }
         if (first.jjtGetNumChildren() != second.jjtGetNumChildren()) {
-            return 1;
-        }
-        if (!Objects.equals(first.image, second.image)) {
-            return 1;
-        }
-        if (!Objects.equals(first.jjtGetValue(), second.jjtGetValue())) {
             return 1;
         }
         return 0;

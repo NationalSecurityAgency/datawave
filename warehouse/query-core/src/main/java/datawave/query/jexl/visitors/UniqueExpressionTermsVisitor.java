@@ -1,9 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.children;
 
 /**
  * Visitor that enforces node uniqueness within AND or OR expressions. Nodes can be single nodes or subtrees.
@@ -92,7 +92,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
         } else {
             // If two or more children remain, return a copy with the unique children.
             JexlNode copy = JexlNodes.newInstanceOfType(node);
-            copy.image = node.image;
+            JexlNodes.copyImage(node, copy);
             copy.jjtSetParent(node.jjtGetParent());
             JexlNodes.children(copy, uniqueChildren.toArray(new JexlNode[0]));
             return copy;

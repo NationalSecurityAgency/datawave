@@ -11,9 +11,10 @@ import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Value;
-import org.apache.commons.jexl2.JexlContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlEngine;
+import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.internal.Engine;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
@@ -299,10 +300,10 @@ public class EventErrorSummary implements Cloneable, JexlContext {
         }
         if (matches && jexlQuery != null) {
             // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
-            JexlEngine engine = new JexlEngine();
+            JexlEngine engine = new Engine();
             
             // Evaluate the JexlContext against the Script
-            Script script = engine.createScript(jexlQuery);
+            JexlScript script = engine.createScript(jexlQuery);
             
             Object o = script.execute(this);
             

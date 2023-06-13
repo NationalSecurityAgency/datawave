@@ -4,8 +4,8 @@ import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.test.JexlNodeAssert;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -34,19 +34,20 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.collect.Sets;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTFloatLiteral;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTStringLiteral;
-import org.apache.commons.jexl2.parser.ASTTrueNode;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTArguments;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTStringLiteral;
+import org.apache.commons.jexl3.parser.ASTTrueNode;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.log4j.Logger;
 
@@ -169,7 +170,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(nextArg instanceof ASTNumberLiteral || nextArg instanceof ASTUnaryMinusNode || nextArg instanceof ASTFloatLiteral)) {
+                    if (!(nextArg instanceof ASTNumberLiteral || nextArg instanceof ASTUnaryMinusNode)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }
@@ -260,7 +261,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     
                     // we override the zones if the first argument is a string
                     if (firstArg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(firstArg.image);
+                        fields = Collections.singleton(String.valueOf(JexlNodes.getImage(firstArg)));
                         termOffsetMap = args.next();
                     } else {
                         JexlNode nextArg = args.peek();
@@ -282,7 +283,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     
                     // we override the zones if the first argument is a string
                     if (firstArg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(firstArg.image);
+                        fields = Collections.singleton(String.valueOf(JexlNodes.getImage(firstArg)));
                         
                         termOffsetMap = args.next();
                     } else {
@@ -303,16 +304,16 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 } else if (CONTENT_SCORED_PHRASE_FUNCTION_NAME.equals(funcName)) {
                     JexlNode firstArg = args.next();
                     
-                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
+                    if (firstArg instanceof ASTNumberLiteral || firstArg instanceof ASTUnaryMinusNode) {
                         // firstArg is max score value, skip
                         firstArg = args.next();
                     }
                     
                     // we override the zones if the first argument is a string
                     if (firstArg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(firstArg.image);
+                        fields = Collections.singleton(String.valueOf(JexlNodes.getImage(firstArg)));
                         
-                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode || firstArg instanceof ASTFloatLiteral) {
+                        if (args.peek() instanceof ASTNumberLiteral || args.peek() instanceof ASTUnaryMinusNode) {
                             args.next(); // max score not needed for fields and terms
                         }
                         
@@ -337,7 +338,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     
                     // we override the zones if the first argument is a string or identifier
                     if (arg instanceof ASTStringLiteral) {
-                        fields = Collections.singleton(arg.image);
+                        fields = Collections.singleton(String.valueOf(JexlNodes.getImage(arg)));
                         arg = args.next();
                     } else if (!JexlASTHelper.getIdentifiers(arg).isEmpty()) {
                         if (oredFields != null && arg instanceof ASTAndNode) {
@@ -349,7 +350,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     }
                     
                     // we can trash the distance
-                    if (!(arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode || arg instanceof ASTFloatLiteral)) {
+                    if (!(arg instanceof ASTNumberLiteral || arg instanceof ASTUnaryMinusNode)) {
                         BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NUMERIC_DISTANCE_ARGUMENT_MISSING);
                         throw new IllegalArgumentException(qe);
                     }
@@ -518,7 +519,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
          */
         public static JexlNode updateFunctionWithField(JexlNode function, String field) {
             JexlNode functionCopy = RebuildingVisitor.copy(function);
-            JexlNode replacementField = JexlNodes.makeRef(JexlNodeFactory.buildIdentifier(field));
+            JexlNode replacementField = JexlNodeFactory.buildIdentifier(field);
             
             FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
             functionCopy.jjtAccept(visitor, null);
@@ -548,7 +549,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     break;
                 case CONTENT_WITHIN_FUNCTION_NAME:
                 case CONTENT_SCORED_PHRASE_FUNCTION_NAME:
-                    if (first instanceof ASTNumberLiteral || first instanceof ASTUnaryMinusNode || first instanceof ASTFloatLiteral) {
+                    if (first instanceof ASTNumberLiteral || first instanceof ASTUnaryMinusNode) {
                         zoneExists = false;
                     }
                     break;
@@ -557,9 +558,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             }
             
             List<JexlNode> updated = new LinkedList<>();
-            Iterator<JexlNode> iter = Arrays.asList(JexlNodes.children(functionCopy)).iterator();
-            updated.add(iter.next()); // add function namespace (ex. 'content')
-            updated.add(iter.next()); // add function name (ex. 'phrase' or 'adjacent')
+            ASTArguments argsNode = (ASTArguments) functionCopy.jjtGetChild(1);
+            Iterator<JexlNode> iter = Arrays.asList(JexlNodes.children(argsNode)).iterator();
             updated.add(replacementField);
             if (zoneExists) {
                 iter.next(); // skip a zone argument if it exists
@@ -567,7 +567,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             while (iter.hasNext()) {
                 updated.add(iter.next());
             }
-            return JexlNodes.children(functionCopy, updated.toArray(new JexlNode[0]));
+            JexlNodes.children(argsNode, updated.toArray(new JexlNode[0]));
+            return functionCopy;
         }
         
         /**
@@ -582,7 +583,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             while (iter.hasNext()) {
                 child = JexlASTHelper.dereference(iter.next());
                 if (child instanceof ASTStringLiteral) {
-                    sb.append(child.image);
+                    sb.append(((ASTStringLiteral) child).getLiteral());
                     if (iter.hasNext()) {
                         sb.append(" ");
                     }
@@ -597,7 +598,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             for (JexlNode arg : args) {
                 child = JexlASTHelper.dereference(arg);
                 if (child instanceof ASTStringLiteral) {
-                    values.add(child.image);
+                    values.add(((ASTStringLiteral) child).getLiteral());
                 }
             }
             return values;
@@ -626,9 +627,9 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
         
-        if (!CONTENT_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image)) {
+        if (!CONTENT_FUNCTION_NAMESPACE.equals(fvis.namespace())) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED,
-                            MessageFormat.format("Class: {0}, Namespace: {1}", this.getClass().getSimpleName(), node.jjtGetChild(0).image));
+                            MessageFormat.format("Class: {0}, Namespace: {1}", this.getClass().getSimpleName(), fvis.namespace()));
             throw new IllegalArgumentException(qe);
         }
         if (!functionClass.equals(ContentFunctions.class)) {

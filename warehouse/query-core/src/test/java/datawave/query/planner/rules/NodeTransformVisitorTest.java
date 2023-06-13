@@ -7,10 +7,10 @@ import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.children;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 

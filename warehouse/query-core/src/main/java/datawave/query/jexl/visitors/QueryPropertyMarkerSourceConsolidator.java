@@ -3,8 +3,8 @@ package datawave.query.jexl.visitors;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.List;
 import java.util.stream.Collectors;

@@ -13,38 +13,41 @@ import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
-import org.apache.commons.jexl2.parser.ASTNENode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.commons.jexl3.parser.ASTNRNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If
@@ -141,12 +144,11 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
     
     @Override
-    public Object visit(ASTReference node, Object data) {
+    public Object visit(ASTAndNode node, Object data) {
         /**
          * If we have an exceeded value or term predicate we can safely assume that expansion has occurred in the unfielded expansion along with all types
          */
-        if (QueryPropertyMarker.findInstance(node).isAnyTypeOf(ExceededValueThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class)
-                        || this.expandedNodes.contains(node)) {
+        if (QueryPropertyMarker.findInstance(node).isAnyTypeOf(EXCEEDED_VALUE, EXCEEDED_TERM) || this.expandedNodes.contains(node)) {
             return node;
         }
         
@@ -159,7 +161,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
     }
     
     private Object expandRangeForNormalizers(LiteralRange<?> range, JexlNode node) {
-        Set<BoundedRange> aliasedBounds = new HashSet<BoundedRange>();
+        Map<String,JexlNode> aliasedBounds = new HashMap<>();
         String field = range.getFieldName();
         
         // Get all of the indexed or normalized dataTypes for the field name
@@ -191,21 +193,30 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                 continue;
             }
             
-            aliasedBounds.add(new BoundedRange(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right)));
+            // create the range node
+            JexlNode rangeNode = JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right);
+            rangeNode.jjtSetParent(node.jjtGetParent());
+            
+            // create a marked bounded range node
+            JexlNode boundedRange = QueryPropertyMarker.create(rangeNode, BOUNDED_RANGE);
+            
+            String rangeString = JexlStringBuildingVisitor.buildQueryWithoutParse(boundedRange);
+            aliasedBounds.putIfAbsent(rangeString, boundedRange);
         }
         
         if (aliasedBounds.isEmpty()) {
             return node;
         } else {
-            this.expandedNodes.addAll(aliasedBounds);
+            this.expandedNodes.addAll(aliasedBounds.values());
             
             // Avoid extra parens around the expansion
             if (1 == aliasedBounds.size()) {
-                return aliasedBounds.iterator().next();
+                return aliasedBounds.values().iterator().next();
             } else {
                 // ensure we wrap bounded ranges in parens for certain edge cases
-                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(new ArrayList(aliasedBounds));
-                return JexlNodes.wrap(JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[var.size()])));
+                List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(new ArrayList(aliasedBounds.values()));
+                JexlNode finalNode = JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[0]));
+                return (node.jjtGetParent() instanceof ASTReferenceExpression) ? finalNode : JexlNodes.wrap(finalNode);
             }
         }
     }
@@ -255,7 +266,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName, lowHi[1]);
                                 
                                 // now link em up
-                                return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
+                                return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)), BOUNDED_RANGE);
                             } catch (Exception ex) {
                                 if (log.isTraceEnabled()) {
                                     log.trace("Could not normalize " + term + " as cidr notation with: " + normalizer.getClass());
@@ -298,7 +309,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // if one of a union is evaluation only, then they all must be (see executability
                     // visitor for more understanding)
                     if (evaluationOnlyRegex) {
-                        nodeToReturn = ASTEvaluationOnly.create(nodeToReturn);
+                        nodeToReturn = QueryPropertyMarker.create(nodeToReturn, EVALUATION_ONLY);
                     }
                 } catch (Exception e) {
                     QueryException qe = new QueryException(DatawaveErrorCode.NODE_EXPANSION_ERROR, e,

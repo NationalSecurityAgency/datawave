@@ -13,8 +13,8 @@ import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
 import datawave.query.jexl.JexlASTHelper;
 
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 
 public class JexlControlledQueryParser implements QueryParser, ControlledQueryParser {
@@ -93,7 +93,7 @@ public class JexlControlledQueryParser implements QueryParser, ControlledQueryPa
         Set<String> fields = new TreeSet<>();
         List<ASTIdentifier> idList = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier id : idList) {
-            String fieldName = id.image;
+            String fieldName = id.getName();
             if (!StringUtils.isEmpty(fieldName)) {
                 fieldName = fieldName.trim().toUpperCase();
                 if (fieldName.charAt(0) == '$') {

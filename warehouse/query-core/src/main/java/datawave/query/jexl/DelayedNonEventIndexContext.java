@@ -12,7 +12,7 @@ import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.io.IOException;
 import java.util.ArrayList;

@@ -1,6 +1,6 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl3.JexlArithmetic;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

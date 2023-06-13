@@ -2,7 +2,8 @@ package datawave.query.jexl.functions;
 
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 import java.text.MessageFormat;
 import java.util.Arrays;
@@ -30,14 +31,14 @@ public class CompareFunctionValidator {
                             MessageFormat.format("{0} requires 4 arguments", function));
             throw new IllegalArgumentException(qe);
         } else {
-            if (!operators.contains(args.get(1).image)) {
+            if (!operators.contains(String.valueOf(JexlNodes.getImage(args.get(1))))) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
                                 MessageFormat.format("{0} requires valid comparison operator (<, <=, >, >=, ==/= or !=) as 2nd arguments", function));
                 throw new IllegalArgumentException(qe);
             }
             
             try {
-                Mode.valueOf(args.get(2).image);
+                Mode.valueOf(String.valueOf(JexlNodes.getImage(args.get(2))));
             } catch (IllegalArgumentException iae) {
                 BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
                                 MessageFormat.format("{0} requires ANY or ALL as 3rd arguments", function));

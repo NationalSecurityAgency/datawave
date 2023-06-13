@@ -6,7 +6,7 @@ import datawave.query.iterator.QueryOptions;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.VariableNameVisitor;
 import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import java.util.Arrays;
 import java.util.HashSet;

@@ -5,16 +5,18 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that reference low selectable fields.
@@ -47,7 +49,7 @@ public class PushdownLowSelectivityNodesVisitor extends ShortCircuitBaseVisitor 
     }
     
     @Override
-    public Object visit(ASTReference node, Object data) {
+    public Object visit(ASTAndNode node, Object data) {
         // if not already delayed somehow
         if (!QueryPropertyMarker.findInstance(node).isAnyType()) {
             return super.visit(node, data);
@@ -59,9 +61,9 @@ public class PushdownLowSelectivityNodesVisitor extends ShortCircuitBaseVisitor 
     public Object visit(ASTEQNode node, Object data) {
         // if this node represents a field/value that has poor selectability, then push it down
         if (hasLowSelectability(node)) {
-            return ASTDelayedPredicate.create(node);
+            JexlNodes.swap(node.jjtGetParent(), node, QueryPropertyMarker.create(node, DELAYED));
         }
-        return node;
+        return data;
     }
     
     public boolean hasLowSelectability(JexlNode node) {

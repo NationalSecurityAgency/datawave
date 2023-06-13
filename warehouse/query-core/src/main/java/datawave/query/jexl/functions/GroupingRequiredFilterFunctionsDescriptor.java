@@ -14,11 +14,12 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import org.apache.commons.jexl3.parser.JexlNodes;
 
 public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
     
@@ -79,7 +80,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                         if (f == null) {
                             filterMap.put(fieldName, f = new EventDataQueryExpressionVisitor.ExpressionFilter(attributeFactory, fieldName));
                         }
-                        f.addFieldPattern(valueNode.image);
+                        f.addFieldPattern(String.valueOf(JexlNodes.getImage(valueNode)));
                     }
                 }
             }

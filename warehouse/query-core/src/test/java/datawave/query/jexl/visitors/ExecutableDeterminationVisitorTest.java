@@ -3,16 +3,16 @@ package datawave.query.jexl.visitors;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.util.MetadataHelper;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Assert;
@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static org.hamcrest.CoreMatchers.any;
 import static org.hamcrest.CoreMatchers.anything;
 
@@ -546,7 +547,7 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      */
     private JexlNode wrap(JexlNode toWrap) {
         ASTReference reference = new ASTReference(ParserTreeConstants.JJTREFERENCE);
-        ASTReferenceExpression parens = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
+        ASTReferenceExpression parens = JexlNodes.makeRefExp();
         
         parens.jjtAddChild(toWrap, 0);
         toWrap.jjtSetParent(parens);
@@ -697,8 +698,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         
         replayAll();
         
-        JexlNode query = ASTEvaluationOnly.create(JexlASTHelper.parseJexlQuery("FOO == FOO2"));
+        JexlNode query = QueryPropertyMarker.create(JexlASTHelper.parseJexlQuery("FOO == FOO2"), EVALUATION_ONLY);
         Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE, ExecutableDeterminationVisitor.getState(query, config, helper, output));
-        Assert.assertEquals("Summary: NON_EXECUTABLE:[ASTEvaluationOnly( delayed/eval only predicate )]", output.get(0));
+        Assert.assertEquals("Summary: NON_EXECUTABLE:[AndNode( delayed/eval only predicate )]", output.get(0));
     }
 }

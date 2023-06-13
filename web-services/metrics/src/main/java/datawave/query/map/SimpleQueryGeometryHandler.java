@@ -12,7 +12,7 @@ import datawave.query.metrics.ShardTableQueryMetricHandler;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.map.QueryGeometry;
 import datawave.webservice.query.map.QueryGeometryResponse;
-import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;

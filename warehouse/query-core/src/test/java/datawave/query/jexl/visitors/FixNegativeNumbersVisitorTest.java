@@ -2,10 +2,10 @@ package datawave.query.jexl.visitors;
 
 import datawave.query.jexl.JexlASTHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTNumberLiteral;
+import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 public class FixNegativeNumbersVisitorTest {
@@ -21,7 +21,7 @@ public class FixNegativeNumbersVisitorTest {
         ASTJexlScript fixed = FixNegativeNumbersVisitor.fix(queryScript);
         
         // Verify the unary minus mode was converted to a number literal.
-        JexlNodeAssert.assertThat(fixed).child(0).child(1).isInstanceOf(ASTNumberLiteral.class).hasValue("-1");
+        JexlNodeAssert.assertThat(fixed).child(0).child(1).isInstanceOf(ASTNumberLiteral.class).hasImage("-1");
         
         // Verify the resulting script has a valid lineage and the same query string.
         JexlNodeAssert.assertThat(fixed).hasExactQueryString(query).hasValidLineage();

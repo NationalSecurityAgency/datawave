@@ -4,10 +4,10 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.Type;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTGTNode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;

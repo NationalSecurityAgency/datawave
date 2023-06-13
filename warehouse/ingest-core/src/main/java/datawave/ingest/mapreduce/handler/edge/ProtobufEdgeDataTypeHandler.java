@@ -46,7 +46,8 @@ import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl2.Script;
+import org.apache.commons.jexl3.JexlScript;
+import org.apache.commons.jexl3.internal.Script;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
@@ -133,7 +134,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     private EdgePreconditionJexlEvaluation edgePreconditionEvaluation;
     private EdgePreconditionCacheHelper edgePreconditionCacheHelper;
     private EdgePreconditionArithmetic arithmetic = new EdgePreconditionArithmetic();
-    private Map<String,Script> scriptCache;
+    private Map<String,JexlScript> scriptCache;
     
     protected String edgeTableName = null;
     protected String metadataTableName = null;

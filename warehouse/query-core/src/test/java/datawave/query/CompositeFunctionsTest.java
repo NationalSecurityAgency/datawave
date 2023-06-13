@@ -10,6 +10,8 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;

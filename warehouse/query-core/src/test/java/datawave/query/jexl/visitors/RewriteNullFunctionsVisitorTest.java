@@ -4,8 +4,8 @@ import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.test.JexlNodeAssert;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -43,11 +43,11 @@ public class RewriteNullFunctionsVisitorTest {
     @Test
     public void testMultiFieldedIsNull() throws ParseException {
         String query = "filter:isNull(FOO || FOO2)";
-        String expected = "(FOO == null && FOO2 == null)";
+        String expected = "FOO == null && FOO2 == null";
         test(query, expected);
         
         query = "filter:isNull((FOO || FOO2))";
-        expected = "(FOO == null && FOO2 == null)";
+        expected = "FOO == null && FOO2 == null";
         test(query, expected);
     }
     
@@ -101,11 +101,11 @@ public class RewriteNullFunctionsVisitorTest {
     @Test
     public void testMultiFieldedIsNotNull() throws ParseException {
         String query = "filter:isNotNull(FOO || FOO2)";
-        String expected = "(!(FOO == null) || !(FOO2 == null))";
+        String expected = "!(FOO == null) || !(FOO2 == null)";
         test(query, expected);
         
         query = "filter:isNotNull((FOO || FOO2))";
-        expected = "(!(FOO == null) || !(FOO2 == null))";
+        expected = "!(FOO == null) || !(FOO2 == null)";
         test(query, expected);
     }
     
@@ -149,11 +149,11 @@ public class RewriteNullFunctionsVisitorTest {
     @Test
     public void testManyFields() throws ParseException {
         String query = "filter:isNull(F1 || F2 || F3 || F4)";
-        String expected = "(F1 == null && F2 == null && F3 == null && F4 == null)";
+        String expected = "F1 == null && F2 == null && F3 == null && F4 == null";
         test(query, expected);
         
         query = "filter:isNotNull(F1 || F2 || F3 || F4)";
-        expected = "(!(F1 == null) || !(F2 == null) || !(F3 == null) || !(F4 == null))";
+        expected = "!(F1 == null) || !(F2 == null) || !(F3 == null) || !(F4 == null)";
         test(query, expected);
     }
     
@@ -161,7 +161,7 @@ public class RewriteNullFunctionsVisitorTest {
     public void testWeirdModelExpansion() throws ParseException {
         // this happens when the input query is like #ISNULL((F0 OR F3)) and F0 is expanded to (F1 OR F2)
         String query = "filter:isNull(((F1 || F2) || F3))";
-        String expected = "(F1 == null && F2 == null && F3 == null)";
+        String expected = "F1 == null && F2 == null && F3 == null";
         test(query, expected);
     }
     

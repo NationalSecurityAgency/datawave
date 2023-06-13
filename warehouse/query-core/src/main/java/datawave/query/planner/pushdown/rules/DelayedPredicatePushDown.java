@@ -6,19 +6,18 @@ import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.CostEstimator;
 import datawave.query.planner.pushdown.PushDownVisitor;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
 /**
  * Purpose: Rule that pulls up top level delayed predicates based upon cost
@@ -50,13 +49,9 @@ public class DelayedPredicatePushDown extends PushDownRule {
         
         JexlNode child = node.jjtGetChild(0);
         
-        if (QueryPropertyMarker.findInstance(node).isType(ASTDelayedPredicate.class)) {
+        if (QueryPropertyMarker.findInstance(node).isType(DELAYED)) {
             child = child.jjtGetChild(0);
             child = (JexlNode) child.jjtAccept(this, data);
-            
-            if (child instanceof ASTReferenceExpression) {
-                child = JexlNodes.makeRef(child);
-            }
             
             child.jjtSetParent(newScript);
             newScript.jjtAddChild(child, 0);
@@ -93,7 +88,7 @@ public class DelayedPredicatePushDown extends PushDownRule {
         
         while (tupleIter.hasNext()) {
             
-            child = ASTDelayedPredicate.create(tupleIter.next().first());
+            child = QueryPropertyMarker.create(tupleIter.next().first(), DELAYED);
             
             newAnd.jjtAddChild(child, i);
             child.jjtSetParent(newAnd);
@@ -129,7 +124,7 @@ public class DelayedPredicatePushDown extends PushDownRule {
     /*
      * (non-Javadoc)
      * 
-     * @see datawave.query.planner.pushdown.PushDownRule#getCost(org.apache.commons.jexl2.parser.JexlNode)
+     * @see datawave.query.planner.pushdown.PushDownRule#getCost(org.apache.commons.jexl3.parser.JexlNode)
      */
     @Override
     public Cost getCost(JexlNode node) {

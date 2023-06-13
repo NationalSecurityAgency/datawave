@@ -6,7 +6,7 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
