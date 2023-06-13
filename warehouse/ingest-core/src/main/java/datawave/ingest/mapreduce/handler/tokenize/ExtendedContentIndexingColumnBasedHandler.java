@@ -21,7 +21,6 @@ import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.protobuf.TermWeight;
-import datawave.ingest.protobuf.Uid;
 import datawave.util.TextUtil;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -773,18 +772,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
         Key k = this.createIndexKey(nFV.getIndexedFieldValue().getBytes(), colf, colq, visibility, event.getDate(), deleteMode);
 
         // Create a UID object for the Value
-        Uid.List.Builder uidBuilder = Uid.List.newBuilder();
-        uidBuilder.setIGNORE(false);
-        if (!deleteMode) {
-            uidBuilder.setCOUNT(1);
-            uidBuilder.addUID(this.eventUid);
-        } else {
-            uidBuilder.setCOUNT(-1);
-            uidBuilder.addUID(this.eventUid);
-        }
-        Uid.List uidList = uidBuilder.build();
-        Value val = new Value(uidList.toByteArray());
-
+        Value val = createUidArray(eventUid, deleteMode);
+        
         BulkIngestKey bKey = new BulkIngestKey(tableName, k);
         contextWriter.write(bKey, val, context);
     }
