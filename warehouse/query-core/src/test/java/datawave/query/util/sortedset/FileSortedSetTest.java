@@ -31,7 +31,7 @@ public class FileSortedSetTest {
         Comparator<Integer> c = new Comparator<Integer>() {
             @Override
             public int compare(Integer o1, Integer o2) {
-                if (o1 == null){
+                if (o1 == null) {
                     return (o2 == null ? 0 : -1);
                 } else {
                     return (o2 == null ? 1 : o1.compareTo(o2));
@@ -43,16 +43,17 @@ public class FileSortedSetTest {
         data = new TreeSet<>(c);
         Random r = new Random(123948710248L);
         // data.add(null);
-        for (int i = 0; i < 20; i++){
+        for (int i = 0; i < 20; i++) {
             data.add(r.nextInt());
         }
         extraData = new TreeSet<>(c);
-        for (int i = 0; i <20; i++){
+        for (int i = 0; i < 20; i++) {
             extraData.add(r.nextInt());
         }
         extraData.removeAll(data);
         set.addAll(data);
     }
+
     @After
     public void tearDown() {
         handler.getFile().delete();
@@ -93,7 +94,7 @@ public class FileSortedSetTest {
         SortedSet<Integer> someData = new TreeSet<>(data);
         someData.add(extraData.first());
         assertTrue(set.containsAll(data));
-        for (Integer i : data){
+        for (Integer i : data) {
             assertTrue(set.contains(i));
         }
         assertFalse(set.containsAll(someData));
@@ -115,41 +116,42 @@ public class FileSortedSetTest {
             assertTrue(set.contains(i));
         }
         assertFalse(set.containsAll(someData));
-        for (Integer i : extraData){
+        for (Integer i : extraData) {
             assertFalse(set.contains(i));
         }
     }
+
     @Test
-    public void testIterator() throws Exception{
+    public void testIterator() throws Exception {
         SortedSet<Integer> testData = new TreeSet<>(data);
         Iterator<Integer> dataIterator = testData.iterator();
         Iterator<Integer> setIterator = set.iterator();
-        while (dataIterator.hasNext()){
+        while (dataIterator.hasNext()) {
             assertTrue(setIterator.hasNext());
             assertEquals(dataIterator.next(), setIterator.next());
         }
         assertFalse(setIterator.hasNext());
-        for (Integer i : set){
+        for (Integer i : set) {
             assertTrue(testData.remove(i));
         }
         assertTrue(testData.isEmpty());
         set.persist();
         dataIterator = data.iterator();
         setIterator = set.iterator();
-        while (dataIterator.hasNext()){
+        while (dataIterator.hasNext()) {
             assertTrue(setIterator.hasNext());
             assertEquals(dataIterator.next(), setIterator.next());
         }
         assertFalse(setIterator.hasNext());
         testData.addAll(data);
-        for (Integer i : set){
+        for (Integer i : set) {
             assertTrue(testData.remove(i));
         }
         assertTrue(testData.isEmpty());
         set.load();
         dataIterator = data.iterator();
         setIterator = set.iterator();
-        while (dataIterator.hasNext()){
+        while (dataIterator.hasNext()) {
             assertTrue(setIterator.hasNext());
             assertEquals(dataIterator.next(), setIterator.next());
         }
@@ -203,7 +205,7 @@ public class FileSortedSetTest {
         a = set.toArray(new Integer[set.size() * 2]);
         assertArrayEquals(d, a);
         set.load();
-        a =  set.toArray(new Integer[set.size() * 2]);
+        a = set.toArray(new Integer[set.size() * 2]);
         assertArrayEquals(d, a);
     }
 
@@ -219,7 +221,7 @@ public class FileSortedSetTest {
         try {
             set.add(extraData.first());
             fail("Expected persisted set.add to fail");
-        } catch (Exception e){
+        } catch (Exception e) {
             // expected
         }
         set.load();
@@ -266,7 +268,7 @@ public class FileSortedSetTest {
 
         set.addAll(data);
         set.persist();
-        try{
+        try {
             set.retainAll(someData);
             fail("Expected persisted set.retainAll to fail");
         } catch (Exception e) {
@@ -298,7 +300,7 @@ public class FileSortedSetTest {
 
         set.addAll(data);
         set.persist();
-        try{
+        try {
             set.removeAll(someData);
             fail("Expected persisted set.retainAll to fail");
         } catch (Exception e) {
@@ -331,7 +333,7 @@ public class FileSortedSetTest {
         assertNotNull(set.comparator());
         SortedSet<Integer> tempData = new TreeSet<>();
         for (Integer i : data) {
-            if (i != null){
+            if (i != null) {
                 tempData.add(i);
             }
         }
@@ -366,7 +368,7 @@ public class FileSortedSetTest {
         Integer fromElement = null;
         Integer toElement = null;
         int index = 0;
-        for (Integer i: data){
+        for (Integer i : data) {
             if (index == (data.size() / 3)) {
                 fromElement = i;
             } else if (index == data.size() * 2 / 3) {
@@ -382,15 +384,15 @@ public class FileSortedSetTest {
         assertEquals(data.subSet(fromElement, toElement), subSet);
         set.load();
         subSet = set.subSet(fromElement, toElement);
-        assertEquals(data.subSet(fromElement, toElement),subSet);
+        assertEquals(data.subSet(fromElement, toElement), subSet);
     }
 
     @Test
-    public void testHeadSet() throws  Exception {
+    public void testHeadSet() throws Exception {
         Integer toElement = null;
         int index = 0;
         for (Integer i : data) {
-            if (index == data.size() * 2 /3) {
+            if (index == data.size() * 2 / 3) {
                 toElement = i;
                 break;
             }
@@ -411,7 +413,7 @@ public class FileSortedSetTest {
         Integer fromElement = null;
         int index = 0;
         for (Integer i : data) {
-            if (index == (data.size() /3)) {
+            if (index == (data.size() / 3)) {
                 fromElement = i;
                 break;
             }

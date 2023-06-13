@@ -291,7 +291,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         // Event key suppression
         this.suppressEventKeys = conf.getBoolean(SUPPRESS_EVENT_KEYS, false);
 
-        //  option to create uids for the global index
+        // option to create uids for the global index
         this.shardIndexCreateUids = conf.getBoolean(SHARD_INDEX_CREATE_UIDS, true);
     }
 
@@ -1158,24 +1158,26 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
     /**
      * Create a {@link Uid.List} given a uid and delete mode flag
      *
-     * @param uid        an event uid
-     * @param deleteMode a flag
+     * @param uid
+     *            an event uid
+     * @param deleteMode
+     *            a flag
      * @return a Uid.List
      */
     protected Uid.List createUidList(String uid, boolean deleteMode) {
         Uid.List.Builder uidBuilder = Uid.List.newBuilder();
 
-        //  delete mode takes precedent over disabled uid creation
+        // delete mode takes precedent over disabled uid creation
         if (deleteMode) {
             uidBuilder.setIGNORE(false);
             uidBuilder.setCOUNT(-1);
             uidBuilder.addUID(uid);
         } else if (!shardIndexCreateUids) {
-            //  uid not created
+            // uid not created
             uidBuilder.setIGNORE(true);
             uidBuilder.setCOUNT(1);
         } else {
-            //  uid created
+            // uid created
             uidBuilder.setIGNORE(false);
             uidBuilder.setCOUNT(1);
             uidBuilder.addUID(uid);
@@ -1227,7 +1229,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
             TextUtil.textAppend(colq, event.getDataType().outputName(), helper.getReplaceMalformedUTF8());
 
             Value val = createUidArray(event.getId().toString(), deleteMode);
-            
+
             // Dont create index entries for empty values
             if (!StringUtils.isEmpty(normalizedMaskedValue)) {
                 // Create a key for the masked field value with the masked visibility
@@ -1251,7 +1253,7 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
 
             // Create a UID object for the Value
             Value val = createUidArray(event.getId().toString(), deleteMode);
-            
+
             /**
              * For values that are not being masked, we use the "unmaskedValue" and the masked visibility e.g. release the value as it was in the event at the
              * lower visibility
@@ -1569,10 +1571,10 @@ public abstract class ShardedDataTypeHandler<KEYIN> extends StatsDEnabledDataTyp
         return suppressEventKeys;
     }
 
-    public boolean getShardIndexCreateUids(){
+    public boolean getShardIndexCreateUids() {
         return shardIndexCreateUids;
     }
-    
+
     /**
      * helper object
      *

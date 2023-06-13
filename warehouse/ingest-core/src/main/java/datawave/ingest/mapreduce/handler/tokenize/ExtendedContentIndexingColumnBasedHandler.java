@@ -850,7 +850,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
 
         // Create a UID object for the Value
         Value val = createUidArray(eventUid, deleteMode);
-        
+
         BulkIngestKey bKey = new BulkIngestKey(tableName, k);
         contextWriter.write(bKey, val, context);
     }
