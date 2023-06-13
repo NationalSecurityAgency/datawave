@@ -25,11 +25,11 @@ import java.util.Map.Entry;
  * <pre>
  * Scanner s = conn.createScanner(TABLE_NAME, authorizations);
  * InterruptibleScanner scanner = new InterruptibleScanner(s);
- * // TODO: Configure scanner, set range
+ * // Configure scanner, set range
  * Iterator&lt;Entry&lt;Key,Value&gt;&gt; iter = scanner.iterator();
- * // TODO: iterator over key values, test some values
+ * // Iterate over key values, test some values
  * iter = scanner.interrupt(); // Simulate a tear down
- * // TODO: test this value is the expected next value, has not returned a duplicate
+ * // Test that this value is the expected next value, and that it has not returned a duplicate
  * </pre>
  */
 public interface InterruptibleScanner extends Scanner {
