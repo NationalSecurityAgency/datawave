@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -77,7 +76,7 @@ public class SequentialScheduler extends Scheduler {
      */
     @Override
     public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
-        return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
+        return scannerFactory.newScanner(config, qd);
     }
     
     public class SequentialSchedulerIterator implements Iterator<Entry<Key,Value>> {
@@ -142,7 +141,7 @@ public class SequentialScheduler extends Scheduler {
             if (null != newQueryData) {
                 
                 try {
-                    this.currentBS = createBatchScanner(this.config, this.scannerFactory, newQueryData);
+                    this.currentBS = this.scannerFactory.newScanner(this.config, newQueryData);
                 } catch (TableNotFoundException e) {
                     throw new RuntimeException(e);
                 }

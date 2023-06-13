@@ -18,8 +18,10 @@ import datawave.webservice.common.connection.WrappedConnector;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
+import datawave.webservice.query.configuration.QueryData;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -305,4 +307,22 @@ public class ScannerFactory {
         
         return baseScanner;
     }
+
+    public BatchScanner newScanner(ShardQueryConfiguration config, QueryData qd) throws TableNotFoundException {
+        final BatchScanner bs = this.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
+                config.getQuery());
+
+        if (log.isTraceEnabled()) {
+            log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
+        }
+
+        bs.setRanges(qd.getRanges());
+
+        for (IteratorSetting cfg : qd.getSettings()) {
+            bs.addScanIterator(cfg);
+        }
+
+        return bs;
+    }
+
 }
