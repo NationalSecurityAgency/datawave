@@ -45,7 +45,6 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setSource(source.deepCopy(env));
         builder.setTypeMetadata(typeMetadata);
         builder.setDatatypeFilter(getDatatypeFilter());
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(getFiAggregator());
         builder.setTimeFilter(timeFilter);
         builder.setNode(node);
@@ -134,11 +133,11 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         builder.setTimeFilter(getTimeFilter(node));
         builder.setTypeMetadata(typeMetadata);
         builder.setDatatypeFilter(getDatatypeFilter());
-        builder.setFieldsToAggregate(fieldsToAggregate);
         builder.setKeyTransform(getFiAggregator());
-        builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
         builder.setNode(node);
         node.childrenAccept(this, builder);
+
+        builder.setBuildDocument(shouldBuildDocument(builder.getField()));
         
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.

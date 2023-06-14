@@ -81,13 +81,9 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 }
                 regexIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRegexIteratorJexl: " + regexIterator);
-                
-                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-                if (forceDocumentBuild) {
-                    canBuildDocument = true;
-                }
-                // Add an interator to aggregate documents. This is needed for index only fields.
-                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
+
+                // Add an iterator to aggregate documents. This is needed for index only fields.
+                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(this.buildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(regexIterator, null, null);
                 
                 docIterator = aggregatingIterator;
@@ -106,9 +102,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             timeFilter = null;
             datatypeFilter = null;
             keyTform = null;
-            timeFilter = null;
             ivaratorCacheDirs = null;
-            field = null;
             node = null;
             return itr;
         } else {

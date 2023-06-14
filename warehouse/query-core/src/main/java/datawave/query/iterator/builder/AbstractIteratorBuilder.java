@@ -60,15 +60,15 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
     protected LinkedList<NestedIterator> includes = new LinkedList<>(), excludes = new LinkedList<>();
     
     protected HashMultimap<String,String> observedFieldValues = HashMultimap.create();
-    
-    protected boolean forceDocumentBuild = false;
+
+    protected boolean buildDocument = false;
     
     public void addInclude(NestedIterator itr) {
         includes.add(itr);
     }
-    
-    public void forceDocumentBuild(boolean forceDocumentBuild) {
-        this.forceDocumentBuild = forceDocumentBuild;
+
+    public void setBuildDocument(boolean buildDocument) {
+        this.buildDocument = buildDocument;
     }
     
     public void addExclude(NestedIterator itr) {

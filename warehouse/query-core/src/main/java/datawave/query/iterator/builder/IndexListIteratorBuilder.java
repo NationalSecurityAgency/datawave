@@ -112,13 +112,8 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
                 listIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexListIteratorJexl: " + listIterator);
                 
-                boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
-                if (forceDocumentBuild) {
-                    canBuildDocument = true;
-                }
-                
-                // Add an interator to aggregate documents. This is needed for index only fields.
-                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
+                // Add an iterator to aggregate documents. This is needed for index only fields.
+                DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(buildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(listIterator, null, null);
                 
                 docIterator = aggregatingIterator;
@@ -135,7 +130,6 @@ public class IndexListIteratorBuilder extends IvaratorBuilder implements Iterato
             timeFilter = null;
             datatypeFilter = null;
             keyTform = null;
-            timeFilter = null;
             ivaratorCacheDirs = null;
             node = null;
             field = null;
