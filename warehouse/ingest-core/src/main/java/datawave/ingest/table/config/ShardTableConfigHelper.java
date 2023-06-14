@@ -33,7 +33,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     protected static final String SHARDED_TABLET_BALANCER_CLASS = ShardedTableTabletBalancer.class.getName();
     
     public static final String KEEP_COUNT_ONLY_INDEX_ENTRIES = "index.tables.keep.count.only.entries";
-
+    
     public static final String KEEP_COUNT_ONLY_INDEX_NO_UIDS = "index.tables.keep.count.only.no.uids";
     
     public static final String SHARD_TABLE_BALANCER_CONFIG = "shard.table.balancer.class";
@@ -205,8 +205,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
             }
-
-            if(conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)){
+            
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)) {
                 aggClass = KeepCountOnlyNoUidAggregator.class.getName();
             }
             
@@ -238,8 +238,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_ENTRIES, false)) {
                 aggClass = KeepCountOnlyUidAggregator.class.getName();
             }
-
-            if(conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)){
+            
+            if (conf.getBoolean(KEEP_COUNT_ONLY_INDEX_NO_UIDS, false)) {
                 aggClass = KeepCountOnlyNoUidAggregator.class.getName();
             }
             
