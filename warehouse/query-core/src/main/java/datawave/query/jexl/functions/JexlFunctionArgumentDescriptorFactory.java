@@ -2,18 +2,13 @@ package datawave.query.jexl.functions;
 
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.BaseVisitor;
 
 import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-
-import com.google.common.base.Function;
-import com.google.common.collect.ImmutableList;
 
 /**
  * This interface can be implemented by a class supplying JEXL functions to provide additional information about the arguments. The initial purpose of this is
@@ -86,29 +81,5 @@ public interface JexlFunctionArgumentDescriptorFactory {
                 throw new IllegalArgumentException("Expected children not found in ASTFunctionNode");
             }
         }
-    }
-}
-
-class FunctionVisitor extends BaseVisitor {
-    private ImmutableList.Builder<ASTFunctionNode> functions = ImmutableList.builder();
-    
-    public ImmutableList<ASTFunctionNode> functions() {
-        return functions.build();
-    }
-    
-    @Override
-    public Object visit(ASTFunctionNode node, Object data) {
-        functions.add(node);
-        
-        // we may be passed a function as an argument
-        node.childrenAccept(this, null);
-        return null;
-    }
-}
-
-class GetNamespace implements Function<ASTFunctionNode,String> {
-    @Override
-    public String apply(ASTFunctionNode from) {
-        return String.valueOf(JexlNodes.getImage(from.jjtGetChild(0)));
     }
 }
