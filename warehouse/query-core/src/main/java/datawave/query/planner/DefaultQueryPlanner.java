@@ -110,6 +110,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
@@ -126,6 +127,7 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
@@ -793,6 +795,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel));
+
+        if (config.getPruneQueryByIngestTypes()) {
+            timedPruneQueryByIngestTypes(config, "Prune by Ingest Types", timers);
+        }
 
         // ExpandCompositeTerms was here
 
@@ -1560,6 +1566,23 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         stopwatch.stop();
         return config.getQueryTree();
+    }
+
+    private void timedPruneQueryByIngestTypes(ShardQueryConfiguration config, String stage, QueryStopwatch timers) {
+        try {
+            TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
+
+            JexlNode copy = RebuildingVisitor.copy(config.getQueryTree());
+            copy = IngestTypePruningVisitor.prune(copy, metadataHelper.getTypeMetadata());
+
+            if (ExecutableDeterminationVisitor.isExecutable(copy, config, metadataHelper)) {
+                config.setQueryTree((ASTJexlScript) copy);
+            }
+
+            stopwatch.stop();
+        } catch (TableNotFoundException e) {
+            log.warn("could not prune query by ingest types: failed to get TypeMetadata");
+        }
     }
 
     protected ASTJexlScript timedRemoveDelayedPredicates(QueryStopwatch timers, String stage, ASTJexlScript script, ShardQueryConfiguration config,

@@ -2192,6 +2192,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
     }
 
+    public boolean getPruneQueryByIngestTypes() {
+        return getConfig().getPruneQueryByIngestTypes();
+    }
+
+    public void setPruneQueryByIngestTypes(boolean pruneQueryByIngestTypes) {
+        getConfig().setPruneQueryByIngestTypes(pruneQueryByIngestTypes);
+    }
+
     public boolean getReduceQueryFields() {
         return this.getConfig().getReduceQueryFields();
     }
