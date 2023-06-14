@@ -10,7 +10,7 @@ import datawave.query.iterator.NestedIterator;
 import com.google.common.collect.TreeMultimap;
 
 class NegationFilter {
-    
+
     /**
      * Checks the value <code>t</code> against the supplied filters. If necessary, the filters are advanced up to at least T before checking.
      *
@@ -29,7 +29,7 @@ class NegationFilter {
         if (filters.containsKey(t)) {
             return true;
         }
-        
+
         Collection<T> currentFilters = new LinkedList<>(filters.keySet().headSet(t));
         boolean filtered = false;
         // return as soon as we find a match
@@ -46,7 +46,7 @@ class NegationFilter {
                 }
             }
         }
-        
+
         return filtered;
     }
 }

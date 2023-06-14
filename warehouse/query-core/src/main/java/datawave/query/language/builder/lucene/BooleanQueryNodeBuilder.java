@@ -48,19 +48,19 @@ import org.apache.lucene.search.Query;
  */
 @Deprecated
 public class BooleanQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         BooleanQueryNode booleanNode = (BooleanQueryNode) queryNode;
-        
+
         datawave.query.language.tree.QueryNode bNode = null;
         List<QueryNode> children = booleanNode.getChildren();
-        
+
         if (children != null) {
             List<datawave.query.language.tree.QueryNode> childrenList = new ArrayList<>();
-            
+
             LinkedList<QueryNode> extraNodeList = new LinkedList<>();
             boolean isNegation = false;
-            
+
             for (QueryNode child : children) {
                 Object obj = child.getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
                 if (obj != null) {
@@ -68,21 +68,21 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
                     childrenList.add(query);
                 }
             }
-            
+
             datawave.query.language.tree.QueryNode[] childrenArray = new datawave.query.language.tree.QueryNode[childrenList.size()];
             childrenList.toArray(childrenArray);
-            
+
             bNode = createNode(queryNode, childrenArray, isNegation, extraNodeList);
         }
-        
+
         return bNode;
-        
+
     }
-    
+
     private datawave.query.language.tree.QueryNode createNode(QueryNode queryNode, datawave.query.language.tree.QueryNode[] childrenArray, boolean isNegation,
                     LinkedList<QueryNode> extraNodeList) throws QueryNodeException {
         datawave.query.language.tree.QueryNode bNode = null;
-        
+
         if (queryNode instanceof AndQueryNode) {
             bNode = new HardAndNode(childrenArray);
         } else if (queryNode instanceof OrQueryNode) {
@@ -96,8 +96,8 @@ public class BooleanQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new QueryNodeException(new MessageImpl("Unknown class: " + queryNode.getClass().getName()));
         }
-        
+
         return bNode;
     }
-    
+
 }

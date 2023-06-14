@@ -19,7 +19,7 @@ public class QueryUtil {
     public static final String PARAMETER_SEPARATOR = ";";
     public static final String PARAMETER_NAME_VALUE_SEPARATOR = ":";
     private static final String NULL_BYTE = "\u0000";
-    
+
     public static String getQueryImplClassName(Key key) {
         String colq = key.getColumnQualifier().toString();
         String[] parts = colq.split(NULL_BYTE);
@@ -30,9 +30,9 @@ public class QueryUtil {
             throw new RuntimeException("Query impl class name not found in colq: " + colq);
         }
     }
-    
-    public static <T extends Query> T deserialize(String queryImplClassName, Text columnVisibility, Value value) throws InvalidProtocolBufferException,
-                    ClassNotFoundException {
+
+    public static <T extends Query> T deserialize(String queryImplClassName, Text columnVisibility, Value value)
+                    throws InvalidProtocolBufferException, ClassNotFoundException {
         @SuppressWarnings("unchecked")
         Class<T> queryClass = (Class<T>) Class.forName(queryImplClassName);
         byte[] b = value.get();
@@ -42,7 +42,7 @@ public class QueryUtil {
         queryImpl.setColumnVisibility(columnVisibility.toString());
         return queryImpl;
     }
-    
+
     public static Set<Parameter> parseParameters(final String parameters) {
         final Set<Parameter> params = new HashSet<>();
         if (null != parameters) {
@@ -56,9 +56,9 @@ public class QueryUtil {
         }
         return params;
     }
-    
+
     private static ThreadLocal<LinkedBuffer> BUFFER = ThreadLocal.withInitial(() -> LinkedBuffer.allocate(1024));
-    
+
     public static <T extends Query> Mutation toMutation(T query, ColumnVisibility vis) {
         // Store by sid for backwards compatibility
         Mutation m = new Mutation(query.getOwner());
@@ -72,7 +72,7 @@ public class QueryUtil {
             BUFFER.get().clear();
         }
     }
-    
+
     public static String toParametersString(final Set<Parameter> parameters) {
         final StringBuilder params = new StringBuilder();
         if (null != parameters) {
@@ -80,7 +80,7 @@ public class QueryUtil {
                 if (params.length() > 0) {
                     params.append(PARAMETER_SEPARATOR);
                 }
-                
+
                 params.append(param.getParameterName());
                 params.append(PARAMETER_NAME_VALUE_SEPARATOR);
                 params.append(param.getParameterValue());

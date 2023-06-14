@@ -48,9 +48,9 @@ import org.apache.lucene.search.TermQuery;
  */
 @Deprecated
 public class FunctionQueryNodeBuilder implements QueryBuilder {
-    
+
     private Map<String,LuceneQueryFunction> allowedFunctionMap = Collections.synchronizedMap(new HashMap<>());
-    
+
     public FunctionQueryNodeBuilder() {
         addFunction(new IsNull());
         addFunction(new IsNotNull());
@@ -60,11 +60,11 @@ public class FunctionQueryNodeBuilder implements QueryBuilder {
         addFunction(new Occurrence());
         addFunction(new EvaluationOnly());
     }
-    
+
     public FunctionQueryNodeBuilder(List<LuceneQueryFunction> allowedFunctions) {
         setAllowedFunctions(allowedFunctions);
     }
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         datawave.query.language.tree.QueryNode returnNode = null;
         int depth = 0;
@@ -72,41 +72,41 @@ public class FunctionQueryNodeBuilder implements QueryBuilder {
         while ((parent = parent.getParent()) != null) {
             depth++;
         }
-        
+
         if (queryNode instanceof FunctionQueryNode) {
             FunctionQueryNode functionQueryNode = (FunctionQueryNode) queryNode;
-            
+
             String functionName = functionQueryNode.getFunction();
             List<String> parameterList = functionQueryNode.getParameterList();
-            
+
             LuceneQueryFunction referenceFunction = allowedFunctionMap.get(functionName.toUpperCase());
-            
+
             if (referenceFunction == null) {
                 NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, MessageFormat.format("{0}", functionName));
                 throw new IllegalArgumentException(qe);
             }
-            
+
             LuceneQueryFunction function = (LuceneQueryFunction) referenceFunction.duplicate();
-            
+
             returnNode = new FunctionNode(function, parameterList, depth, queryNode.getParent());
         }
-        
+
         return returnNode;
     }
-    
+
     public List<LuceneQueryFunction> getAllowedFunctions() {
         List<LuceneQueryFunction> allowedFunctions = new ArrayList<>();
         allowedFunctions.addAll(allowedFunctionMap.values());
         return allowedFunctions;
     }
-    
+
     public void setAllowedFunctions(List<LuceneQueryFunction> allowedFunctions) {
         allowedFunctionMap.clear();
         for (LuceneQueryFunction f : allowedFunctions) {
             addFunction(f);
         }
     }
-    
+
     private void addFunction(LuceneQueryFunction function) {
         allowedFunctionMap.put(function.getName().toUpperCase(), function);
     }

@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class GroupingRequiredFilterFunctionsTest {
-    
+
     private ValueTuple makeValueTuple(String csv) {
         String[] tokens = csv.split(",");
         String field = tokens[0];
@@ -22,7 +22,7 @@ public class GroupingRequiredFilterFunctionsTest {
         String normalized = tokens[2];
         return new ValueTuple(field, type, normalized, typeAttribute);
     }
-    
+
     @Test
     public void testAtomValuesMatch() {
         // @formatter:off
@@ -31,36 +31,36 @@ public class GroupingRequiredFilterFunctionsTest {
                 makeValueTuple("ALPHA.1,BAR,bar"),
                 makeValueTuple("BETA.1,BAR,bar"),
                 makeValueTuple("GAMMA.1,BAR,bar")).size() == 3);
-        
+
         // no matches across all 3 args
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(
                 makeValueTuple("ALPHA.1,BAR,bar"),
                 makeValueTuple("BETA.1,BAR,bar"),
                 makeValueTuple("GAMMA.1,BAZ,baz")).size() == 0);
-        
+
         // no matches because the 2nd arg has matching 'bar' but in a different grouping context
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(
                 makeValueTuple("ALPHA.1,BAR,bar"),
                 makeValueTuple("BETA.2,BAR,bar"), // different context
                 makeValueTuple("GAMMA.1,BAR,bar")).size() == 0);
-        
+
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(
                 Collections.singleton(makeValueTuple("ALPHA.1,BAR,bar")),
                 Collections.singleton(makeValueTuple("BETA.1,BAR,bar")),
                 Collections.singleton(makeValueTuple("GAMMA.1,BAR,bar"))).size() == 3);
-        
+
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(
                 Collections.singleton(makeValueTuple("ALPHA.1,BAR,bar")),
                 Collections.singleton(makeValueTuple("BETA.1,BAR,bar")),
                 Collections.singleton(makeValueTuple("GAMMA.1,BAZ,baz"))).size() == 0);
-        
+
         Assert.assertTrue(GroupingRequiredFilterFunctions.atomValuesMatch(
                 Collections.singleton(makeValueTuple("ALPHA.1,BAR,bar")),
                 Collections.singleton(makeValueTuple("BETA.2,BAR,bar")), // different grouping context
                 Collections.singleton(makeValueTuple("GAMMA.1,BAR,bar"))).size() == 0);
         // @formatter:on
     }
-    
+
     @Test
     public void testAtomValuesMatchMult() {
         // @formatter:off
@@ -115,20 +115,20 @@ public class GroupingRequiredFilterFunctionsTest {
         Assert.assertTrue(matches.size() == 6);
         // @formatter:on
     }
-    
+
     @Test
     public void testMatchesInGroup() {
         // @formatter:off
         Assert.assertTrue(GroupingRequiredFilterFunctions.matchesInGroup(
                 makeValueTuple("ALPHA.1,BAR,bar"), "bar",
                 makeValueTuple("GAMMA.1,BAZ,baz"), "baz").size() == 2);
-        
+
         Assert.assertTrue(GroupingRequiredFilterFunctions.matchesInGroup(
                 Collections.singleton(makeValueTuple("ALPHA.1,BAR,bar")), "bar",
                         Collections.singleton(makeValueTuple("GAMMA.1,BAZ,baz")), "baz").size() == 2);
         // @formatter:on
     }
-    
+
     @Test
     public void testGetGroupsForMatchesInGroup() {
         // @formatter:off
@@ -138,14 +138,14 @@ public class GroupingRequiredFilterFunctionsTest {
                 makeValueTuple("GAMMA.1,BAZ,baz"), "baz");
         Assert.assertTrue(groups.size() == 1);
         Assert.assertTrue(groups.contains("1"));
-        
+
         // there is only one match and it is in context group .1
         groups = GroupingRequiredFilterFunctions.getGroupsForMatchesInGroup(
                 Collections.singleton(makeValueTuple("ALPHA.1,BAR,bar")), "bar",
                         Collections.singleton(makeValueTuple("GAMMA.1,BAZ,baz")), "baz");
         Assert.assertTrue(groups.size() == 1);
         Assert.assertTrue(groups.contains("1"));
-        
+
         // there is only one match because, while 'bar' matches in both context group2 .1 and .2 for the 1st argument,
         // 'baz' matches only in context group .1 for the 2nd argument
         groups = GroupingRequiredFilterFunctions.getGroupsForMatchesInGroup(
@@ -158,22 +158,22 @@ public class GroupingRequiredFilterFunctionsTest {
         Assert.assertTrue(groups.contains("1"));
         // @formatter:on
     }
-    
+
     @Test
     public void testMatchesInGroupLeft() {
         // @formatter:off
         Collection<?> groups = GroupingRequiredFilterFunctions.matchesInGroupLeft(
                 makeValueTuple("NAME.grandparent_0.parent_0.child_1,FREDO,fredo"), "fredo",
                         makeValueTuple("NAME.grandparent_0.parent_0.child_0,SANTINO,santino"), "santino");
-        
+
         Assert.assertTrue(groups.size() == 2);
-        
+
         groups = GroupingRequiredFilterFunctions.matchesInGroupLeft(
                 makeValueTuple("NAME.grandparent_0.parent_0.child_1,FREDO,fredo"), "fredo",
                         makeValueTuple("NAME.grandparent_0.parent_1.child_0,SANTINO,santino"), "santino", 1);
-        
+
         Assert.assertTrue(groups.size() == 2);
-        
+
         // returns 2 matches because the matching groups for 'fredo' in the tuples in the 1st arg is
         // NAME.grandparent_0.parent_0 and NAME.grandparent_0.parent_1
         // but the matching group for 'santino' in the tuple of the 2nd arg is
@@ -182,16 +182,16 @@ public class GroupingRequiredFilterFunctionsTest {
                 makeValueTuple("NAME.grandparent_0.parent_0.child_1,FREDO,fredo"),
                 makeValueTuple("NAME.grandparent_0.parent_1.child_1,FREDO,fredo")), "fredo",
                 makeValueTuple("NAME.grandparent_0.parent_1.child_0,SANTINO,santino"), "santino", 0);
-        
+
         Assert.assertTrue(groups.size() == 2);
-        
+
         // returns 3 matches because the matching group is 'NAME.grandparent_0' and 'fredo' matches in 2 tuples of the 1st arg
         // 'santino' matches in the tuple of the 2nd arg
         groups = GroupingRequiredFilterFunctions.matchesInGroupLeft(Lists.newArrayList(
                 makeValueTuple("NAME.grandparent_0.parent_0.child_1,FREDO,fredo"),
                 makeValueTuple("NAME.grandparent_0.parent_1.child_1,FREDO,fredo")), "fredo",
                 makeValueTuple("NAME.grandparent_0.parent_1.child_0,SANTINO,santino"), "santino", 1);
-        
+
         Assert.assertTrue(groups.size() == 3);
         // @formatter:on
     }

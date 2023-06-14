@@ -34,12 +34,12 @@ import org.apache.lucene.search.Query;
  * tag.
  */
 public class GroupQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         GroupQueryNode groupNode = (GroupQueryNode) queryNode;
-        
+
         JexlNode child = (JexlNode) groupNode.getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
         return new JexlGroupingNode(Collections.singletonList(child));
     }
-    
+
 }

@@ -9,19 +9,19 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class AncestorQueryIteratorTest {
-    
+
     @Test
     public void testGetRangeProvider() {
         AncestorQueryIterator iterator = new AncestorQueryIterator();
         RangeProvider provider = iterator.getRangeProvider();
         assertEquals(AncestorRangeProvider.class.getSimpleName(), provider.getClass().getSimpleName());
     }
-    
+
     @Test
     public void testGetEquality() {
         AncestorQueryIterator iterator = new AncestorQueryIterator();
         Equality equality = iterator.getEquality();
         assertEquals(AncestorEquality.class.getSimpleName(), equality.getClass().getSimpleName());
     }
-    
+
 }

@@ -7,7 +7,7 @@ import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 
 /**
- * 
+ *
  */
 public interface SeekableIterator {
     /**

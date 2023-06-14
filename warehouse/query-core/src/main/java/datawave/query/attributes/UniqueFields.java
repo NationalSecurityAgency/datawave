@@ -24,9 +24,9 @@ import java.util.Set;
  * {@link UniqueFields#from(String)}.
  */
 public class UniqueFields implements Serializable {
-    
+
     private Multimap<String,UniqueGranularity> fieldMap;
-    
+
     /**
      * Returns a new {@link UniqueFields} parsed from this string. The provided string is expected to have the format returned by
      * {@link UniqueFields#toString()}. Any fields not specified with a {@link UniqueGranularity} name will be added with the default ALL granularity. All
@@ -49,15 +49,15 @@ public class UniqueFields implements Serializable {
         }
         // Strip whitespaces.
         string = StringUtils.deleteWhitespace(string);
-        
+
         if (string.isEmpty()) {
             return new UniqueFields();
         }
-        
+
         UniqueFields uniqueFields = new UniqueFields();
         final int finalIndex = string.length() - 1;
         int currentIndex = 0;
-        
+
         while (currentIndex < finalIndex) {
             int nextComma = string.indexOf(Constants.COMMA, currentIndex);
             int nextStartBracket = string.indexOf(Constants.BRACKET_START, currentIndex);
@@ -112,10 +112,10 @@ public class UniqueFields implements Serializable {
                 currentIndex = nextEndBracket + 1; // Advance to the start of the next field.
             }
         }
-        
+
         return uniqueFields;
     }
-    
+
     // Return the parsed granularity instance, or throw an exception if one could not be parsed.
     private static UniqueGranularity parseGranularity(String granularity) {
         try {
@@ -124,7 +124,7 @@ public class UniqueFields implements Serializable {
             throw new IllegalArgumentException("Invalid unique granularity given: " + granularity);
         }
     }
-    
+
     /**
      * Return a copy of the given {@link UniqueFields}.
      *
@@ -140,11 +140,11 @@ public class UniqueFields implements Serializable {
         uniqueFields.fieldMap = TreeMultimap.create(other.fieldMap);
         return uniqueFields;
     }
-    
+
     public UniqueFields() {
         fieldMap = TreeMultimap.create();
     }
-    
+
     /**
      * Create a new {@link UniqueFields} with the provided map as the underlying field map.
      *
@@ -154,7 +154,7 @@ public class UniqueFields implements Serializable {
     public UniqueFields(SortedSetMultimap<String,UniqueGranularity> fieldMap) {
         this.fieldMap = fieldMap;
     }
-    
+
     /**
      * Put a field-{@link UniqueGranularity} key pair into this {@link UniqueFields}.
      *
@@ -166,10 +166,10 @@ public class UniqueFields implements Serializable {
     public void put(String field, UniqueGranularity uniqueGranularity) {
         fieldMap.put(field, uniqueGranularity);
     }
-    
+
     /**
      * Put all field-granularity pairings from the provided field map into this {@link UniqueFields}.
-     * 
+     *
      * @param fieldMap
      *            the field map to add entries from
      */
@@ -178,25 +178,25 @@ public class UniqueFields implements Serializable {
             this.fieldMap.putAll(fieldMap);
         }
     }
-    
+
     /**
      * Return a copy of the fields within this {@link UniqueFields}. Modifications to this set will not modify the fields in this {@link UniqueFields}.
-     * 
+     *
      * @return the
      */
     public Set<String> getFields() {
         return Sets.newHashSet(fieldMap.keySet());
     }
-    
+
     /**
      * Return the underlying field-granularity map from this {@link UniqueFields}.
-     * 
+     *
      * @return the field map
      */
     public Multimap<String,UniqueGranularity> getFieldMap() {
         return fieldMap;
     }
-    
+
     /**
      * Replace any identifier fields with their deconstructed version.
      */
@@ -212,10 +212,10 @@ public class UniqueFields implements Serializable {
         }
         this.fieldMap = newFieldMap;
     }
-    
+
     /**
      * Remap all fields to include any matches from the provided model. The original field entries will be retained.
-     * 
+     *
      * @param model
      *            the model to find mappings from
      */
@@ -230,7 +230,7 @@ public class UniqueFields implements Serializable {
         }
         this.fieldMap = newFieldMap;
     }
-    
+
     /**
      * Returns whether or not this {@link UniqueFields} contains any fields.
      *
@@ -239,11 +239,11 @@ public class UniqueFields implements Serializable {
     public boolean isEmpty() {
         return fieldMap.isEmpty();
     }
-    
+
     /**
      * Returns a set that contains the result of each value transformed by each granularity defined for specified field. If no granularity is found, a copy of
      * the original value set will be returned.
-     * 
+     *
      * @param field
      *            the field
      * @param values
@@ -263,7 +263,7 @@ public class UniqueFields implements Serializable {
             return transformedValues;
         }
     }
-    
+
     public String transformValue(String field, String value) {
         Collection<UniqueGranularity> granularities = fieldMap.get(field);
         // If there is no granularity, or only the ALL granularity was specified, return the original values.
@@ -278,7 +278,7 @@ public class UniqueFields implements Serializable {
             return combinedValue.toString();
         }
     }
-    
+
     /**
      * Returns this {@link UniqueFields} as a formatted string that can later be parsed back into a {@link UniqueFields} using {@link UniqueFields#from(String)}
      * . This is also what will be used when serializing a {@link UniqueFields} to JSON/XML. The string will have the format
@@ -310,7 +310,7 @@ public class UniqueFields implements Serializable {
         }
         return sb.toString();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -322,10 +322,10 @@ public class UniqueFields implements Serializable {
         UniqueFields that = (UniqueFields) o;
         return Objects.equals(fieldMap, that.fieldMap);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(fieldMap);
     }
-    
+
 }

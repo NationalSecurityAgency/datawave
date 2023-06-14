@@ -46,7 +46,7 @@ import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 
 public class MapReduceStatePersisterTest {
-    
+
     private static final String userDN = "CN=Guy Some Other soguy, OU=acme";
     private static final String sid = "soguy";
     private static final String[] auths = new String[] {"AUTHS"};
@@ -61,15 +61,15 @@ public class MapReduceStatePersisterTest {
     private static final String runtimeParameters = "queryId=1234567890";
     private static final String NULL = "\u0000";
     private static String id = UUID.randomUUID().toString();
-    
+
     private InMemoryInstance instance = new InMemoryInstance("test instance");
     private AccumuloClient client = null;
     private DatawavePrincipal principal = null;
-    
+
     private AccumuloConnectionFactory connectionFactory = null;
     private EJBContext ctx = null;
     private MapReduceStatePersisterBean bean = null;
-    
+
     @Before
     public void setup() throws Exception {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -88,11 +88,11 @@ public class MapReduceStatePersisterTest {
         field(MapReduceStatePersisterBean.class, "ctx").set(bean, ctx);
         Logger.getLogger(MapReduceStatePersisterBean.class).setLevel(Level.OFF);
     }
-    
+
     @Test
     public void testPersistentCreate() throws Exception {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
-        
+
         HashMap<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
@@ -100,10 +100,10 @@ public class MapReduceStatePersisterTest {
         replayAll();
         bean.create(id, hdfs, jt, workingDirectory, mapReduceJobId, resultsDirectory, runtimeParameters, jobName);
         verifyAll();
-        
+
         assertTrue(client.tableOperations().exists(TABLE_NAME));
         assertTrue(client.tableOperations().exists(INDEX_TABLE_NAME));
-        
+
         String row = id;
         Key dirKey = new Key(row, sid, MapReduceStatePersisterBean.WORKING_DIRECTORY);
         Value dirValue = new Value(workingDirectory.getBytes());
@@ -119,14 +119,14 @@ public class MapReduceStatePersisterTest {
         Value nameVal = new Value(jobName.getBytes());
         Key stateKey = new Key(row, sid, MapReduceStatePersisterBean.STATE + NULL + mapReduceJobId);
         Value stateVal = new Value(MapReduceState.STARTED.toString().getBytes());
-        
+
         boolean dir = false;
         boolean hdfs = false;
         boolean jt = false;
         boolean output = false;
         boolean params = false;
         boolean state = false;
-        
+
         Scanner s = client.createScanner(TABLE_NAME, new Authorizations(auths));
         s.setRange(new Range(row));
         for (Entry<Key,Value> entry : s) {
@@ -165,7 +165,7 @@ public class MapReduceStatePersisterTest {
         }
         if (!dir || !hdfs || !jt || !output || !params || !state)
             fail("Not all K/V checked out ok");
-        
+
         Key indexKey = new Key(mapReduceJobId, sid, id);
         Value indexValue = MapReduceStatePersisterBean.NULL_VALUE;
         boolean index = false;
@@ -180,14 +180,14 @@ public class MapReduceStatePersisterTest {
         if (!index)
             fail("Index K/V did not check out ok");
     }
-    
+
     @Test
     public void testUpdateState() throws Exception {
         // create the initial entry
         testPersistentCreate();
-        
+
         PowerMock.resetAll();
-        
+
         // Get ready to call updateState
         HashMap<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
@@ -197,10 +197,10 @@ public class MapReduceStatePersisterTest {
         expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
         connectionFactory.returnClient(client);
         replayAll();
-        
+
         bean.updateState(mapReduceJobId, MapReduceState.FAILED);
         verifyAll();
-        
+
         // Ensure that the new FAILED state made it into the table
         Key failedKey = new Key(id, sid, MapReduceStatePersisterBean.STATE + NULL + mapReduceJobId);
         Value failedValue = new Value(MapReduceState.FAILED.toString().getBytes());
@@ -208,7 +208,7 @@ public class MapReduceStatePersisterTest {
         Scanner s = client.createScanner(TABLE_NAME, new Authorizations(auths));
         s.setRange(new Range(id));
         s.fetchColumnFamily(new Text(sid));
-        
+
         for (Entry<Key,Value> entry : s) {
             if (entry.getKey().getColumnQualifier().toString().equals(MapReduceStatePersisterBean.STATE + NULL + mapReduceJobId)) {
                 if (failedKey.equals(entry.getKey(), PartialKey.ROW_COLFAM_COLQUAL) && failedValue.equals(entry.getValue())) {
@@ -218,12 +218,12 @@ public class MapReduceStatePersisterTest {
         }
         if (!found)
             fail("Updated state not found");
-        
+
     }
-    
+
     @Test
     public void testFind() throws Exception {
-        
+
         // create some entries
         testPersistentCreate();
         PowerMock.resetAll();
@@ -233,21 +233,21 @@ public class MapReduceStatePersisterTest {
         id = UUID.randomUUID().toString();
         testPersistentCreate();
         PowerMock.resetAll();
-        
+
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
         expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
         connectionFactory.returnClient(client);
         replayAll();
-        
+
         MapReduceInfoResponseList result = bean.find();
         verifyAll();
-        
+
         assertEquals(3, result.getResults().size());
-        
+
     }
-    
+
     @Test
     public void testFindNoResults() throws Exception {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
@@ -256,16 +256,16 @@ public class MapReduceStatePersisterTest {
         expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
         connectionFactory.returnClient(client);
         replayAll();
-        
+
         MapReduceInfoResponseList result = bean.find();
         verifyAll();
-        
+
         assertEquals(0, result.getResults().size());
     }
-    
+
     @Test
     public void testDontFindSomeoneElsesResults() throws Exception {
-        
+
         // create some entries
         testPersistentCreate();
         PowerMock.resetAll();
@@ -275,7 +275,7 @@ public class MapReduceStatePersisterTest {
         id = UUID.randomUUID().toString();
         testPersistentCreate();
         PowerMock.resetAll();
-        
+
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Gal Some Other sogal, OU=acme", "CN=ca, OU=acme"), UserType.USER, Arrays.asList(auths),
                         null, null, 0L);
         principal = new DatawavePrincipal(Collections.singletonList(user));
@@ -285,16 +285,16 @@ public class MapReduceStatePersisterTest {
         expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
         connectionFactory.returnClient(client);
         replayAll();
-        
+
         MapReduceInfoResponseList result = bean.find();
         verifyAll();
-        
+
         assertEquals(0, result.getResults().size());
     }
-    
+
     @Test
     public void testDontFindSomeoneElsesJob() throws Exception {
-        
+
         // create some entries
         testPersistentCreate();
         PowerMock.resetAll();
@@ -307,20 +307,20 @@ public class MapReduceStatePersisterTest {
         expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
         connectionFactory.returnClient(client);
         replayAll();
-        
+
         MapReduceInfoResponseList result = bean.findById(id);
         verifyAll();
-        
+
         assertEquals(0, result.getResults().size());
     }
-    
+
     @Test
     public void testFindById() throws Exception {
         // create the initial entry
         testPersistentCreate();
-        
+
         PowerMock.resetAll();
-        
+
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         HashMap<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
@@ -329,7 +329,7 @@ public class MapReduceStatePersisterTest {
         replayAll();
         MapReduceInfoResponseList result = bean.findById(id);
         verifyAll();
-        
+
         assertEquals(1, result.getResults().size());
         assertNull(result.getExceptions());
         MapReduceInfoResponse response = result.getResults().get(0);
@@ -344,14 +344,14 @@ public class MapReduceStatePersisterTest {
         assertEquals(mapReduceJobId, response.getJobExecutions().get(0).getMapReduceJobId());
         assertEquals(MapReduceState.STARTED.toString(), response.getJobExecutions().get(0).getState());
     }
-    
+
     @Test
     public void testRemove() throws Exception {
         // create the initial entry
         testPersistentCreate();
-        
+
         PowerMock.resetAll();
-        
+
         // Get ready to call remove
         HashMap<String,String> trackingMap = new HashMap<>();
         expect(connectionFactory.getTrackingMap(EasyMock.anyObject())).andReturn(trackingMap);
@@ -363,10 +363,10 @@ public class MapReduceStatePersisterTest {
         expect(connectionFactory.getClient(EasyMock.eq(AccumuloConnectionFactory.Priority.ADMIN), EasyMock.eq(trackingMap))).andReturn(client);
         connectionFactory.returnClient(client);
         replayAll();
-        
+
         bean.remove(id);
         verifyAll();
-        
+
         boolean found = false;
         Scanner s = client.createScanner(TABLE_NAME, new Authorizations(auths));
         for (Entry<Key,Value> entry : s) {
@@ -381,13 +381,13 @@ public class MapReduceStatePersisterTest {
             found = true;
             break;
         }
-        
+
         if (found) {
             dump();
             fail("Remove did not remove all K/V");
         }
     }
-    
+
     private void dump() throws Exception {
         Scanner s = client.createScanner(TABLE_NAME, new Authorizations(auths));
         for (Entry<Key,Value> entry : s) {
@@ -397,7 +397,7 @@ public class MapReduceStatePersisterTest {
         for (Entry<Key,Value> entry : s) {
             System.out.println(entry.getKey() + " -> " + entry.getValue());
         }
-        
+
     }
-    
+
 }

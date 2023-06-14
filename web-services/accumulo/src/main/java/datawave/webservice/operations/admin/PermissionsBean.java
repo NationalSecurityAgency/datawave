@@ -25,18 +25,18 @@ import javax.ws.rs.Produces;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class PermissionsBean {
-    
+
     @Inject
     private RemoteAdminService remoteAdminService;
-    
+
     @Path("/GrantSystemPermission/{userName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
     public VoidResponse grantSystemPermission(@PathParam("userName") String userName, @PathParam("permission") String permission) {
-        
+
         return remoteAdminService.grantSystemPermission(userName, permission);
     }
-    
+
     @Path("/GrantTablePermission/{userName}/{tableName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
@@ -44,14 +44,14 @@ public class PermissionsBean {
                     @PathParam("permission") String permission) {
         return remoteAdminService.grantTablePermission(userName, tableName, permission);
     }
-    
+
     @Path("/RevokeSystemPermission/{userName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
     public VoidResponse revokeSystemPermission(@PathParam("userName") String userName, @PathParam("permission") String permission) {
         return remoteAdminService.revokeSystemPermission(userName, permission);
     }
-    
+
     @Path("/RevokeTablePermission/{userName}/{tableName}/{permission}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST

@@ -31,11 +31,11 @@ import org.apache.lucene.search.Query;
  * {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID} tag.
  */
 public class ModifierQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         ModifierQueryNode modifierQueryNode = (ModifierQueryNode) queryNode;
-        
+
         return (JexlNode) modifierQueryNode.getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
     }
 }

@@ -21,23 +21,23 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
 public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
-    
+
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
      *
-     * 
+     *
      *
      */
     public static class GroupingRequiredFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final ImmutableSet<String> groupingRequiredFunctions = ImmutableSet.of("atomValuesMatch", "matchesInGroup", "matchesInGroupLeft",
                         "getGroupsForMatchesInGroup");
-        
+
         private final ASTFunctionNode node;
-        
+
         public GroupingRequiredFilterJexlArgumentDescriptor(ASTFunctionNode node) {
             this.node = node;
         }
-        
+
         /**
          * Returns 'true' because none of these functions should influence the index query.
          */
@@ -45,20 +45,20 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         public JexlNode getIndexQuery(ShardQueryConfiguration config, MetadataHelper helper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            
+
             // 'true' is returned to imply that there is no range lookup possible for this function
             return TRUE_NODE;
         }
-        
+
         @Override
         public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            
+
             if (functionMetadata.name().equals("atomValuesMatch")) {
                 // special case
                 Set<String> fields = new HashSet<>();
-                
+
                 for (JexlNode node : functionMetadata.args()) {
                     fields.addAll(JexlASTHelper.getIdentifierNames(node));
                 }
@@ -84,7 +84,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                 }
             }
         }
-        
+
         @Override
         public Set<String> fieldsForNormalization(MetadataHelper helper, Set<String> datatypeFilter, int arg) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
@@ -94,7 +94,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             }
             return Collections.emptySet();
         }
-        
+
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
@@ -112,12 +112,12 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
             }
             return fields;
         }
-        
+
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
-            
+
             if (functionMetadata.name().equals("atomValuesMatch")) {
                 Set<Set<String>> fieldSets = JexlArgumentDescriptor.Fields.product(functionMetadata.args().get(0));
                 // don't include the last argument if the size is odd as that is a position arg
@@ -134,38 +134,39 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
                 return fieldSets;
             }
         }
-        
+
         @Override
         public boolean useOrForExpansion() {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
             return true;
         }
-        
+
         @Override
         public boolean regexArguments() {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
             return false;
         }
-        
+
         @Override
         public boolean allowIvaratorFiltering() {
             return true;
         }
     }
-    
+
     @Override
     public JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node) {
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!GroupingRequiredFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException(
+                                "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
             return new GroupingRequiredFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {
             throw new IllegalArgumentException(e);
         }
     }
-    
+
 }

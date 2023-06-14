@@ -25,83 +25,83 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import java.util.List;
 
 public class NodeTransformVisitor extends RebuildingVisitor {
-    
+
     private final ShardQueryConfiguration config;
     private final List<NodeTransformRule> rules;
     private final MetadataHelper helper;
-    
+
     public NodeTransformVisitor(ShardQueryConfiguration config, MetadataHelper helper, List<NodeTransformRule> rules) {
         Preconditions.checkNotNull(rules, "Must supply non-null rules to NodeTransformVisitor");
         this.helper = helper;
         this.config = config;
         this.rules = rules;
     }
-    
+
     public static ASTJexlScript transform(ASTJexlScript tree, List<NodeTransformRule> rules, ShardQueryConfiguration config, MetadataHelper helper) {
         NodeTransformVisitor visitor = new NodeTransformVisitor(config, helper, rules);
         return visitor.apply(tree);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         // do not recurse on a marker node
@@ -111,12 +111,12 @@ public class NodeTransformVisitor extends RebuildingVisitor {
             return applyTransforms(super.visit(node, data));
         }
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return applyTransforms(super.visit(node, data));
     }
-    
+
     private Object applyTransforms(Object node) {
         for (NodeTransformRule rule : rules) {
             node = rule.apply((JexlNode) node, config, helper);

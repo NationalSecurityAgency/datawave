@@ -38,127 +38,127 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Lists;
 
 public class BaseTableCache implements Serializable, TableCache {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private final transient Logger log = Logger.getLogger(this.getClass());
-    
+
     /** should be set by configuration **/
     private String tableName = null;
     private String connectionPoolName = null;
     private String auths = null;
     private long reloadInterval = 0;
     private long maxRows = Long.MAX_VALUE;
-    
+
     /** set programatically **/
     private Date lastRefresh = new Date(0);
     private AccumuloConnectionFactory connectionFactory = null;
     private transient InMemoryInstance instance = null;
     private SharedCacheCoordinator watcher = null;
     private Future<Boolean> reference = null;
-    
+
     private ReentrantLock lock = new ReentrantLock();
-    
+
     @Override
     public String getTableName() {
         return tableName;
     }
-    
+
     @Override
     public String getConnectionPoolName() {
         return connectionPoolName;
     }
-    
+
     @Override
     public String getAuths() {
         return auths;
     }
-    
+
     @Override
     public long getReloadInterval() {
         return reloadInterval;
     }
-    
+
     @Override
     public Date getLastRefresh() {
         return lastRefresh;
     }
-    
+
     @Override
     public AccumuloConnectionFactory getConnectionFactory() {
         return connectionFactory;
     }
-    
+
     @Override
     public InMemoryInstance getInstance() {
         return instance;
     }
-    
+
     @Override
     public SharedCacheCoordinator getWatcher() {
         return watcher;
     }
-    
+
     @Override
     public Future<Boolean> getReference() {
         return reference;
     }
-    
+
     @Override
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-    
+
     @Override
     public void setConnectionPoolName(String connectionPoolName) {
         this.connectionPoolName = connectionPoolName;
     }
-    
+
     @Override
     public void setAuths(String auths) {
         this.auths = auths;
     }
-    
+
     @Override
     public void setReloadInterval(long reloadInterval) {
         this.reloadInterval = reloadInterval;
     }
-    
+
     @Override
     public void setLastRefresh(Date lastRefresh) {
         this.lastRefresh = lastRefresh;
     }
-    
+
     @Override
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
         this.connectionFactory = connectionFactory;
     }
-    
+
     @Override
     public void setInstance(InMemoryInstance instance) {
         this.instance = instance;
     }
-    
+
     @Override
     public void setWatcher(SharedCacheCoordinator watcher) {
         this.watcher = watcher;
     }
-    
+
     @Override
     public void setReference(Future<Boolean> reference) {
         this.reference = reference;
     }
-    
+
     @Override
     public long getMaxRows() {
         return this.maxRows;
     }
-    
+
     @Override
     public void setMaxRows(long maxRows) {
         this.maxRows = maxRows;
     }
-    
+
     @Override
     public Boolean call() throws Exception {
         if (!lock.tryLock(0, TimeUnit.SECONDS))
@@ -167,7 +167,7 @@ public class BaseTableCache implements Serializable, TableCache {
         BatchScanner scanner = null;
         BatchWriter writer = null;
         AccumuloClient accumuloClient = null;
-        
+
         String tempTableName = tableName + "Temp";
         try {
             Map<String,String> map = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
@@ -182,33 +182,33 @@ public class BaseTableCache implements Serializable, TableCache {
                 authorizations = new Authorizations(auths);
             }
             scanner = accumuloClient.createBatchScanner(tableName, authorizations, 10);
-            
+
             AccumuloClient instanceClient = new InMemoryAccumuloClient(AccumuloTableCache.MOCK_USERNAME, instance);
             instanceClient.securityOperations().changeLocalUserPassword(AccumuloTableCache.MOCK_USERNAME, AccumuloTableCache.MOCK_PASSWORD);
             instanceClient.securityOperations().changeUserAuthorizations(AccumuloTableCache.MOCK_USERNAME, authorizations);
-            
+
             createNamespaceIfNecessary(instanceClient.namespaceOperations(), tempTableName);
-            
+
             if (instanceClient.tableOperations().exists(tempTableName)) {
                 instanceClient.tableOperations().delete(tempTableName);
             }
-            
+
             instanceClient.tableOperations().create(tempTableName);
-            
+
             writer = instanceClient.createBatchWriter(tempTableName,
                             new BatchWriterConfig().setMaxMemory(10L * (1024L * 1024L)).setMaxLatency(100L, TimeUnit.MILLISECONDS).setMaxWriteThreads(1));
             setupScanner(scanner);
-            
+
             Iterator<Entry<Key,Value>> iter = scanner.iterator();
             long count = 0;
             while (iter.hasNext()) {
-                
+
                 if (count > maxRows)
                     break;
                 Entry<Key,Value> value = iter.next();
-                
+
                 Key valueKey = value.getKey();
-                
+
                 Mutation m = new Mutation(value.getKey().getRow());
                 m.put(valueKey.getColumnFamily(), valueKey.getColumnQualifier(), new ColumnVisibility(valueKey.getColumnVisibility()), valueKey.getTimestamp(),
                                 value.getValue());
@@ -245,7 +245,7 @@ public class BaseTableCache implements Serializable, TableCache {
         }
         return true;
     }
-    
+
     public void setupScanner(BatchScanner scanner) {
         scanner.setRanges(Lists.newArrayList(new Range()));
         Map<String,String> options = new HashMap<>();
@@ -254,12 +254,12 @@ public class BaseTableCache implements Serializable, TableCache {
         IteratorSetting settings = new IteratorSetting(100, "skipFColumn", RegExFilter.class, options);
         scanner.addScanIterator(settings);
     }
-    
+
     @Override
     public String toString() {
         return "tableName: " + getTableName() + ", connectionPoolName: " + getConnectionPoolName() + ", auths: " + getAuths();
     }
-    
+
     private void createNamespaceIfNecessary(NamespaceOperations namespaceOperations, String table) throws AccumuloException, AccumuloSecurityException {
         // if the table has a namespace in it that doesn't already exist, create it
         if (table.contains(".")) {

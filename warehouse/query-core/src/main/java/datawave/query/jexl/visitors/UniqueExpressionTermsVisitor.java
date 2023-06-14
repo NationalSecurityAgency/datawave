@@ -18,23 +18,23 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 /**
  * Visitor that enforces node uniqueness within AND or OR expressions. Nodes can be single nodes or subtrees.
- * 
+ *
  * <pre>
  * For example:
  * {@code (A || A) => (A)}
  * {@code (A && A) => (A)}
  * </pre>
- * 
+ *
  * This visitor returns a copy of the original query tree, and flattens the copy via the {@link TreeFlatteningRebuildingVisitor}
  * <p>
  * Node traversal is post order.
  */
 public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
-    
+
     private int duplicates = 0;
-    
+
     private static final Logger log = Logger.getLogger(UniqueExpressionTermsVisitor.class);
-    
+
     /**
      * Apply this visitor to the query tree.
      *
@@ -47,33 +47,33 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
     public static <T extends JexlNode> T enforce(T node) {
         if (node == null)
             return null;
-        
+
         // Operate on copy of query tree.
         T copy = (T) copy(node);
-        
+
         // Flatten query tree prior to visit.
         copy = TreeFlatteningRebuildingVisitor.flatten(copy);
-        
+
         // Visit and enforce unique nodes within expressions.
         UniqueExpressionTermsVisitor visitor = new UniqueExpressionTermsVisitor();
         copy = (T) copy.jjtAccept(visitor, null);
-        
+
         if (log.isDebugEnabled()) {
             log.debug(UniqueExpressionTermsVisitor.class.getSimpleName() + " removed " + visitor.duplicates + " duplicate terms");
         }
         return copy;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         return removeDuplicateNodes(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         return removeDuplicateNodes(node, data);
     }
-    
+
     private JexlNode removeDuplicateNodes(JexlNode node, Object data) {
         // Traverse each child to de-dupe their children.
         // @formatter:off
@@ -82,10 +82,10 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
                         .filter(Objects::nonNull)
                         .collect(Collectors.toList());
         // @formatter:on
-        
+
         // Dedupe the visited children.
         List<JexlNode> uniqueChildren = getUniqueChildren(visitedChildren);
-        
+
         if (uniqueChildren.size() == 1) {
             // If only one child remains, return it.
             return uniqueChildren.get(0);
@@ -98,7 +98,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
             return copy;
         }
     }
-    
+
     private List<JexlNode> getUniqueChildren(List<JexlNode> nodes) {
         Set<String> childKeys = new HashSet<>();
         List<JexlNode> unique = new ArrayList<>();

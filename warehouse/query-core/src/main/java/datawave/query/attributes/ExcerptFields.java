@@ -21,11 +21,11 @@ import java.util.TreeMap;
  * parameter string using {@link ExcerptFields#toString()}, and transformed back into a {@link ExcerptFields} instance via {@link ExcerptFields#from(String)}.
  */
 public class ExcerptFields implements Serializable {
-    
+
     private static final long serialVersionUID = 5380671489827552579L;
-    
+
     private SortedMap<String,Integer> fieldMap;
-    
+
     /**
      * Returns a new {@link ExcerptFields} parsed from the string. The provided string is expected to have the format returned by
      * {@link ExcerptFields#toString()}.
@@ -35,7 +35,7 @@ public class ExcerptFields implements Serializable {
      * <li>Given {@code BODY/10,CONTENT/5}, an {@link ExcerptFields} will be returned with the field BODY with an offset of 10, and the field CONTENT with an
      * offset of 5.
      * </ul>
-     * 
+     *
      * @param string
      *            the string to parse
      * @return the parsed {@link ExcerptFields}
@@ -47,13 +47,13 @@ public class ExcerptFields implements Serializable {
         }
         // Strip whitespaces.
         string = StringUtils.deleteWhitespace(string);
-        
+
         if (string.isEmpty()) {
             return new ExcerptFields();
         }
-        
+
         ExcerptFields excerptFields = new ExcerptFields();
-        
+
         String[] fieldParts = string.split(Constants.COMMA);
         for (String fieldPart : fieldParts) {
             String[] parts = StringUtils.split(fieldPart, Constants.FORWARD_SLASH);
@@ -61,10 +61,10 @@ public class ExcerptFields implements Serializable {
         }
         return excerptFields;
     }
-    
+
     /**
      * Returns a copy of the given {@link ExcerptFields}
-     * 
+     *
      * @param other
      *            the instance to copy
      * @return the copy
@@ -77,23 +77,23 @@ public class ExcerptFields implements Serializable {
         excerptFields.fieldMap = new TreeMap<>(other.fieldMap);
         return excerptFields;
     }
-    
+
     public ExcerptFields() {
         fieldMap = new TreeMap<>();
     }
-    
+
     /**
      * Return the set of fields for which excerpts should be retrieved.
-     * 
+     *
      * @return the fields
      */
     public Set<String> getFields() {
         return fieldMap.keySet();
     }
-    
+
     /**
      * Do we have this field in the list of excerpt fields.
-     * 
+     *
      * @param field
      *            the field
      * @return true if we have configuration for this field, false otherwise
@@ -101,10 +101,10 @@ public class ExcerptFields implements Serializable {
     public boolean containsField(String field) {
         return fieldMap.containsKey(field);
     }
-    
+
     /**
      * Return the offset to use when retrieving excerpts for the specified field.
-     * 
+     *
      * @param field
      *            the field
      * @return the offset
@@ -112,10 +112,10 @@ public class ExcerptFields implements Serializable {
     public Integer getOffset(String field) {
         return fieldMap.get(field);
     }
-    
+
     /**
      * Put the offset to use when retrieving excerpts for the specified field.
-     * 
+     *
      * @param field
      *            the field
      * @param offset
@@ -124,16 +124,16 @@ public class ExcerptFields implements Serializable {
     public void put(String field, Integer offset) {
         fieldMap.put(field, offset);
     }
-    
+
     /**
      * Return whether this {@link ExcerptFields} is empty.
-     * 
+     *
      * @return true if empty, or false otherwise
      */
     public boolean isEmpty() {
         return fieldMap.isEmpty();
     }
-    
+
     /**
      * Replaces any field within this {@link ExcerptFields} with their deconstructed version.
      */
@@ -145,11 +145,11 @@ public class ExcerptFields implements Serializable {
         }
         this.fieldMap = deconstructedMap;
     }
-    
+
     /**
      * Expands this {@link ExcerptFields} to include any matching fields from the provided model. Original fields will be retained, but all fields will be
      * uppercase as a result of calling this method.
-     * 
+     *
      * @param model
      *            the model to find mappings from
      */
@@ -169,12 +169,12 @@ public class ExcerptFields implements Serializable {
         }
         this.fieldMap = expandedMap;
     }
-    
+
     /**
      * Returns this {@link ExcerptFields} as a formatted string that can later be parsed back into a {@link ExcerptFields} using
      * {@link ExcerptFields#from(String)}. This is also what will be used when serializing a {@link ExcerptFields} to JSON/XML. The string will have the format
      * {@code field/offset,field/offset,...}, e.g. {@code BODY/10,CONTENT/5}.
-     * 
+     *
      * @return a formatted string
      */
     @JsonValue
@@ -191,7 +191,7 @@ public class ExcerptFields implements Serializable {
         }
         return sb.toString();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -203,7 +203,7 @@ public class ExcerptFields implements Serializable {
         ExcerptFields that = (ExcerptFields) o;
         return Objects.equals(fieldMap, that.fieldMap);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(fieldMap);

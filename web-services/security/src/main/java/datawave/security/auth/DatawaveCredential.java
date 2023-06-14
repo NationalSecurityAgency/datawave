@@ -24,7 +24,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
     private String userName;
     private List<SubjectIssuerDNPair> entities = new ArrayList<>();
     private String jwtToken;
-    
+
     /**
      * Constructs a {@link DatawaveCredential} using only DN information. This means there is no supplied certificate, and this credential will only be trusted
      * if the {@link datawave.security.login.DatawavePrincipalLoginModule} is configured with trusted header login (i.e., it is configured to trust the incoming
@@ -42,7 +42,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
     public DatawaveCredential(String subjectDN, String issuerDN, String proxiedSubjects, String proxiedIssuers) {
         extractEntities(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
-    
+
     /**
      * Constructs a {@link DatawaveCredential} using a certificate. The certificate is fully trusted to identify the calling entity.
      *
@@ -59,12 +59,12 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
         String issuerDN = certificate.getIssuerDN().getName();
         extractEntities(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
-    
+
     public DatawaveCredential(String jwtToken) {
         this.userName = jwtToken;
         this.jwtToken = jwtToken;
     }
-    
+
     private void extractEntities(String subjectDN, String issuerDN, String proxiedSubjects, String proxiedIssuers) {
         if (proxiedSubjects != null) {
             String[] subjects = DnUtils.splitProxiedDNs(proxiedSubjects, true);
@@ -73,7 +73,7 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
             String[] issuers = DnUtils.splitProxiedDNs(proxiedIssuers, true);
             if (subjects.length != issuers.length)
                 throw new IllegalArgumentException("Proxied subjects and issuers don't match up. Subjects=" + proxiedSubjects + ", Issuers=" + proxiedIssuers);
-            
+
             for (int i = 0; i < subjects.length; ++i) {
                 entities.add(SubjectIssuerDNPair.of(subjects[i], issuers[i]));
             }
@@ -81,34 +81,34 @@ public class DatawaveCredential implements Credential, Comparable<DatawaveCreden
         entities.add(SubjectIssuerDNPair.of(subjectDN, issuerDN));
         userName = DnUtils.buildNormalizedProxyDN(subjectDN, issuerDN, proxiedSubjects, proxiedIssuers);
     }
-    
+
     public void pruneEntities(Set<String> entitiesToPrune) {
         Set<String> normalizedEntities = entitiesToPrune.stream().map(e -> e.toLowerCase()).collect(Collectors.toSet());
         entities = entities.stream().filter(e -> !normalizedEntities.contains(e.subjectDN().toLowerCase())).collect(Collectors.toList());
         userName = DnUtils.buildNormalizedProxyDN(entities);
     }
-    
+
     public String getUserName() {
         return userName;
     }
-    
+
     public List<SubjectIssuerDNPair> getEntities() {
         return Collections.unmodifiableList(entities);
     }
-    
+
     public X509Certificate getCertificate() {
         return certificate;
     }
-    
+
     public String getJwtToken() {
         return jwtToken;
     }
-    
+
     @Override
     public int compareTo(DatawaveCredential o) {
         return new CompareToBuilder().append(userName, o.getUserName()).append(jwtToken, o.getJwtToken()).toComparison();
     }
-    
+
     @Override
     public String toString() {
         return "DatawaveCredential[userName=\"" + getUserName() + "\", certificate=\"" + getCertificate() + "\"]";

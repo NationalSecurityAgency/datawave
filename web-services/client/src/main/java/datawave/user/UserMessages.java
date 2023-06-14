@@ -5,33 +5,33 @@ package datawave.user;
 
 public final class UserMessages {
     private UserMessages() {}
-    
+
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistryLite registry) {}
-    
+
     public interface UserAuthorizationsOrBuilder extends com.google.protobuf.MessageLiteOrBuilder {
-        
+
         // repeated string auths = 1;
         /**
          * <code>repeated string auths = 1;</code>
          */
         java.util.List<java.lang.String> getAuthsList();
-        
+
         /**
          * <code>repeated string auths = 1;</code>
          */
         int getAuthsCount();
-        
+
         /**
          * <code>repeated string auths = 1;</code>
          */
         java.lang.String getAuths(int index);
-        
+
         /**
          * <code>repeated string auths = 1;</code>
          */
         com.google.protobuf.ByteString getAuthsBytes(int index);
     }
-    
+
     /**
      * Protobuf type {@code datawave.user.UserAuthorizations}
      */
@@ -39,21 +39,21 @@ public final class UserMessages {
         // Use UserAuthorizations.newBuilder() to construct.
         private UserAuthorizations(com.google.protobuf.GeneratedMessageLite.Builder builder) {
             super(builder);
-            
+
         }
-        
+
         private UserAuthorizations(boolean noInit) {}
-        
+
         private static final UserAuthorizations defaultInstance;
-        
+
         public static UserAuthorizations getDefaultInstance() {
             return defaultInstance;
         }
-        
+
         public UserAuthorizations getDefaultInstanceForType() {
             return defaultInstance;
         }
-        
+
         private UserAuthorizations(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             initFields();
@@ -93,80 +93,80 @@ public final class UserMessages {
                 makeExtensionsImmutable();
             }
         }
-        
+
         public static com.google.protobuf.Parser<UserAuthorizations> PARSER = new com.google.protobuf.AbstractParser<UserAuthorizations>() {
             public UserAuthorizations parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws com.google.protobuf.InvalidProtocolBufferException {
                 return new UserAuthorizations(input, extensionRegistry);
             }
         };
-        
+
         @java.lang.Override
         public com.google.protobuf.Parser<UserAuthorizations> getParserForType() {
             return PARSER;
         }
-        
+
         // repeated string auths = 1;
         public static final int AUTHS_FIELD_NUMBER = 1;
         private com.google.protobuf.LazyStringList auths_;
-        
+
         /**
          * <code>repeated string auths = 1;</code>
          */
         public java.util.List<java.lang.String> getAuthsList() {
             return auths_;
         }
-        
+
         /**
          * <code>repeated string auths = 1;</code>
          */
         public int getAuthsCount() {
             return auths_.size();
         }
-        
+
         /**
          * <code>repeated string auths = 1;</code>
          */
         public java.lang.String getAuths(int index) {
             return auths_.get(index);
         }
-        
+
         /**
          * <code>repeated string auths = 1;</code>
          */
         public com.google.protobuf.ByteString getAuthsBytes(int index) {
             return auths_.getByteString(index);
         }
-        
+
         private void initFields() {
             auths_ = com.google.protobuf.LazyStringArrayList.EMPTY;
         }
-        
+
         private byte memoizedIsInitialized = -1;
-        
+
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
             if (isInitialized != -1)
                 return isInitialized == 1;
-            
+
             memoizedIsInitialized = 1;
             return true;
         }
-        
+
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
             getSerializedSize();
             for (int i = 0; i < auths_.size(); i++) {
                 output.writeBytes(1, auths_.getByteString(i));
             }
         }
-        
+
         private int memoizedSerializedSize = -1;
-        
+
         public int getSerializedSize() {
             int size = memoizedSerializedSize;
             if (size != -1)
                 return size;
-            
+
             size = 0;
             {
                 int dataSize = 0;
@@ -179,76 +179,76 @@ public final class UserMessages {
             memoizedSerializedSize = size;
             return size;
         }
-        
+
         private static final long serialVersionUID = 0L;
-        
+
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
             return super.writeReplace();
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(com.google.protobuf.ByteString data)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(com.google.protobuf.ByteString data,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.user.UserMessages.UserAuthorizations parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static Builder newBuilder() {
             return Builder.create();
         }
-        
+
         public Builder newBuilderForType() {
             return newBuilder();
         }
-        
+
         public static Builder newBuilder(datawave.user.UserMessages.UserAuthorizations prototype) {
             return newBuilder().mergeFrom(prototype);
         }
-        
+
         public Builder toBuilder() {
             return newBuilder(this);
         }
-        
+
         /**
          * Protobuf type {@code datawave.user.UserAuthorizations}
          */
@@ -258,28 +258,28 @@ public final class UserMessages {
             private Builder() {
                 maybeForceBuilderInitialization();
             }
-            
+
             private void maybeForceBuilderInitialization() {}
-            
+
             private static Builder create() {
                 return new Builder();
             }
-            
+
             public Builder clear() {
                 super.clear();
                 auths_ = com.google.protobuf.LazyStringArrayList.EMPTY;
                 bitField0_ = (bitField0_ & ~0x00000001);
                 return this;
             }
-            
+
             public Builder clone() {
                 return create().mergeFrom(buildPartial());
             }
-            
+
             public datawave.user.UserMessages.UserAuthorizations getDefaultInstanceForType() {
                 return datawave.user.UserMessages.UserAuthorizations.getDefaultInstance();
             }
-            
+
             public datawave.user.UserMessages.UserAuthorizations build() {
                 datawave.user.UserMessages.UserAuthorizations result = buildPartial();
                 if (!result.isInitialized()) {
@@ -287,7 +287,7 @@ public final class UserMessages {
                 }
                 return result;
             }
-            
+
             public datawave.user.UserMessages.UserAuthorizations buildPartial() {
                 datawave.user.UserMessages.UserAuthorizations result = new datawave.user.UserMessages.UserAuthorizations(this);
                 int from_bitField0_ = bitField0_;
@@ -298,7 +298,7 @@ public final class UserMessages {
                 result.auths_ = auths_;
                 return result;
             }
-            
+
             public Builder mergeFrom(datawave.user.UserMessages.UserAuthorizations other) {
                 if (other == datawave.user.UserMessages.UserAuthorizations.getDefaultInstance())
                     return this;
@@ -310,15 +310,15 @@ public final class UserMessages {
                         ensureAuthsIsMutable();
                         auths_.addAll(other.auths_);
                     }
-                    
+
                 }
                 return this;
             }
-            
+
             public final boolean isInitialized() {
                 return true;
             }
-            
+
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.user.UserMessages.UserAuthorizations parsedMessage = null;
@@ -334,47 +334,47 @@ public final class UserMessages {
                 }
                 return this;
             }
-            
+
             private int bitField0_;
-            
+
             // repeated string auths = 1;
             private com.google.protobuf.LazyStringList auths_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-            
+
             private void ensureAuthsIsMutable() {
                 if (!((bitField0_ & 0x00000001) == 0x00000001)) {
                     auths_ = new com.google.protobuf.LazyStringArrayList(auths_);
                     bitField0_ |= 0x00000001;
                 }
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
             public java.util.List<java.lang.String> getAuthsList() {
                 return java.util.Collections.unmodifiableList(auths_);
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
             public int getAuthsCount() {
                 return auths_.size();
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
             public java.lang.String getAuths(int index) {
                 return auths_.get(index);
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
             public com.google.protobuf.ByteString getAuthsBytes(int index) {
                 return auths_.getByteString(index);
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
@@ -384,10 +384,10 @@ public final class UserMessages {
                 }
                 ensureAuthsIsMutable();
                 auths_.set(index, value);
-                
+
                 return this;
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
@@ -397,30 +397,30 @@ public final class UserMessages {
                 }
                 ensureAuthsIsMutable();
                 auths_.add(value);
-                
+
                 return this;
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
             public Builder addAllAuths(java.lang.Iterable<java.lang.String> values) {
                 ensureAuthsIsMutable();
                 super.addAll(values, auths_);
-                
+
                 return this;
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
             public Builder clearAuths() {
                 auths_ = com.google.protobuf.LazyStringArrayList.EMPTY;
                 bitField0_ = (bitField0_ & ~0x00000001);
-                
+
                 return this;
             }
-            
+
             /**
              * <code>repeated string auths = 1;</code>
              */
@@ -430,22 +430,22 @@ public final class UserMessages {
                 }
                 ensureAuthsIsMutable();
                 auths_.add(value);
-                
+
                 return this;
             }
-            
+
             // @@protoc_insertion_point(builder_scope:datawave.user.UserAuthorizations)
         }
-        
+
         static {
             defaultInstance = new UserAuthorizations(true);
             defaultInstance.initFields();
         }
-        
+
         // @@protoc_insertion_point(class_scope:datawave.user.UserAuthorizations)
     }
-    
+
     static {}
-    
+
     // @@protoc_insertion_point(outer_class_scope)
 }

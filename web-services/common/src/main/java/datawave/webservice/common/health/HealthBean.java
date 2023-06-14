@@ -58,24 +58,24 @@ import java.util.concurrent.TimeUnit;
 public class HealthBean {
     private static final Logger LOG = LoggerFactory.getLogger(HealthBean.class);
     private static final OperatingSystemMXBean OPERATING_SYSTEM_MX_BEAN = (OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
-    
+
     private static boolean shutdownInProgress = false;
     private static String status = "ready";
-    
+
     @Inject
     private AccumuloConnectionFactoryBean accumuloConnectionFactoryBean;
-    
+
     @Inject
     @ConfigProperty(name = "dw.health.connection.percent.limit", defaultValue = "200")
     private int maxUsedPercent;
-    
+
     @Inject
     @ConfigProperty(name = "dw.health.shutdown.check.interval.ms", defaultValue = "15000")
     private long queryCompletionWaitIntervalMillis;
-    
+
     @Inject
     private Instance<HealthInfoContributor> healthInfos;
-    
+
     /**
      * Returns a {@link ServerHealth} object, which indicates the current health of the server. This object contains information regarding the operating system
      * load and swap usage, along with information regarding how many of the available Accumulo connections are in use. When the connection usage exceeds the
@@ -104,7 +104,7 @@ public class HealthBean {
             return Response.ok().entity(health).build();
         }
     }
-    
+
     /**
      * Updates the status to be returned to {@code newStatus}.
      *
@@ -122,7 +122,7 @@ public class HealthBean {
         newStatus = newStatus.trim();
         GenericResponse<String> response = new GenericResponse<>();
         response.setResult(status);
-        
+
         // We're only allowed to call updateStatus from the loopback interface, when a shutdown is not in progress.
         if (!"127.0.0.1".equals(request.getRemoteAddr())) {
             LOG.error("Status update to {} requested from {}. Denying access since the request was not from localhost.", newStatus, request.getRemoteAddr());
@@ -137,7 +137,7 @@ public class HealthBean {
             return Response.ok(response).build();
         }
     }
-    
+
     /**
      * This method initiates a shutdown. This will set internal state such that the {@link #health()} method will return a {@link Status#SERVICE_UNAVAILABLE}
      * error to prevent new queries from coming in. After that, it will wait up to {@code timeoutMinutes} for queries to complete before initiating a shutdown
@@ -166,7 +166,7 @@ public class HealthBean {
             return Response.status(Status.FORBIDDEN).entity(response).build();
         }
         LOG.warn("Shutdown requested from {}. Waiting up to {} minutes for queries to complete.", request.getRemoteAddr(), timeoutMinutes);
-        
+
         // Wait for queries to complete
         long timeoutMillis = TimeUnit.MINUTES.toMillis(timeoutMinutes);
         shutdownInProgress = true;
@@ -180,20 +180,20 @@ public class HealthBean {
                 break;
             }
             LOG.info("Connection usage is {}%. Waiting for queries to complete.", connectionUsage);
-            
+
             try {
                 Thread.sleep(queryCompletionWaitIntervalMillis);
             } catch (InterruptedException e) {
                 LOG.warn("Interrupted while waiting for queries to complete.");
             }
         }
-        
+
         if (connectionUsage <= 0) {
             response.setResult("All queries completed. Shutting down.");
         } else {
             response.setResult("Gave up waiting for queries to complete. Shutting down with pool usage percentage of " + connectionUsage + ".");
         }
-        
+
         // Initiate a server shutdown using the management JMX bean
         try {
             MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
@@ -203,10 +203,10 @@ public class HealthBean {
         } catch (MalformedObjectNameException | ReflectionException | InstanceNotFoundException | MBeanException e) {
             LOG.warn("Error shutting down: {}", e);
         }
-        
+
         return Response.ok().entity(response).build();
     }
-    
+
     @GET
     @Path("/info")
     @JmxManaged
@@ -217,7 +217,7 @@ public class HealthBean {
         }
         return versionInfos;
     }
-    
+
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.NONE)
     public static class ServerHealth {
@@ -231,130 +231,130 @@ public class HealthBean {
         private double load;
         @XmlElement(name = "SwapBytesUsed")
         private long swapBytesUsed;
-        
+
         public ServerHealth() {
             load = OPERATING_SYSTEM_MX_BEAN.getSystemCpuLoad();
             swapBytesUsed = OPERATING_SYSTEM_MX_BEAN.getTotalSwapSpaceSize() - OPERATING_SYSTEM_MX_BEAN.getFreeSwapSpaceSize();
         }
-        
+
         public int getConnectionUsagePercent() {
             return connectionUsagePercent;
         }
-        
+
         public String getStatus() {
             return status;
         }
-        
+
         public String getDetails() {
             return details;
         }
-        
+
         public double getLoad() {
             return load;
         }
-        
+
         public long getSwapBytesUsed() {
             return swapBytesUsed;
         }
     }
-    
+
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class VersionInfo {
         private String name;
         private BuildInfo build;
         private GitInfo git;
-        
+
         public VersionInfo() {
             // Constructor required for JAX-B
         }
-        
+
         public VersionInfo(String name, BuildInfo build, GitInfo git) {
             this.name = name;
             this.build = build;
             this.git = git;
         }
-        
+
         public String getName() {
             return name;
         }
-        
+
         public BuildInfo getBuild() {
             return build;
         }
-        
+
         public GitInfo getGit() {
             return git;
         }
     }
-    
+
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class BuildInfo {
         private String version;
         private String time;
-        
+
         public BuildInfo() {
             // Constructor required for JAX-B
         }
-        
+
         public BuildInfo(String version, String time) {
             this.version = version;
             this.time = time;
         }
-        
+
         public String getVersion() {
             return version;
         }
-        
+
         public String getTime() {
             return time;
         }
     }
-    
+
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class GitInfo {
         private CommitInfo commit;
         private String branch;
-        
+
         public GitInfo() {
             // Constructor required for JAX-B
         }
-        
+
         public GitInfo(CommitInfo commit, String branch) {
             this.commit = commit;
             this.branch = branch;
         }
-        
+
         public CommitInfo getCommit() {
             return commit;
         }
-        
+
         public String getBranch() {
             return branch;
         }
     }
-    
+
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.FIELD)
     public static class CommitInfo {
         private String time;
         private String id;
-        
+
         public CommitInfo() {
             // Constructor required for JAX-B
         }
-        
+
         public CommitInfo(String time, String id) {
             this.time = time;
             this.id = id;
         }
-        
+
         public String getTime() {
             return time;
         }
-        
+
         public String getId() {
             return id;
         }

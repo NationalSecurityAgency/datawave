@@ -40,7 +40,7 @@ import static org.junit.Assert.assertTrue;
 
 public class DiscoveryIteratorTest {
     static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);
-    
+
     @Test
     public void testHappyPath() throws Throwable {
         Connector con = new InMemoryInstance("DiscoveryIteratorTest").getConnector("root", new PasswordToken(""));
@@ -49,21 +49,21 @@ public class DiscoveryIteratorTest {
         Scanner s = con.createScanner("index", new Authorizations("FOO"));
         s.addScanIterator(new IteratorSetting(50, DiscoveryIterator.class));
         s.setRange(new Range());
-        
+
         Iterator<Map.Entry<Key,Value>> itr = s.iterator();
         assertTrue(itr.hasNext());
         Map.Entry<Key,Value> e = itr.next();
         assertFalse(itr.hasNext());
-        
+
         Key key = e.getKey();
         assertEquals("term", key.getRow().toString());
         assertEquals("field", key.getColumnFamily().toString());
         // see DiscoveryIterator for why this has a max unsigned char tacked on the end
         assertEquals("20130101\uffff", key.getColumnQualifier().toString());
-        
+
         Value value = e.getValue();
         assertTrue(value.getSize() > 0);
-        
+
         DataInputBuffer in = new DataInputBuffer();
         in.reset(value.get(), value.getSize());
         ArrayWritable valWrapper = new ArrayWritable(DiscoveredThing.class);
@@ -81,71 +81,71 @@ public class DiscoveryIteratorTest {
             assertEquals(240L, thing.getCount());
         }
     }
-    
+
     @Test
     public void testReseek() throws Throwable {
         DiscoveryIterator disc = new DiscoveryIterator();
-        
+
         Map<String,String> map = Maps.newHashMap();
-        
+
         TreeMap<Key,Value> ohMap = buildMap("term", "20130101");
         for (int i = 0; i < 25; i++) {
             ohMap.putAll(buildMap("term" + i, "20130101"));
         }
         disc.init(new SortedMapIterator(ohMap), map, null);
-        
+
         disc.seek(new Range(), Collections.emptyList(), false);
-        
+
         assertTrue(disc.hasTop());
-        
+
         Key key = disc.getTopKey();
         assertEquals("term", key.getRow().toString());
         assertEquals("field", key.getColumnFamily().toString());
         // see DiscoveryIterator for why this has a max unsigned char tacked on the end
         assertEquals("20130101\uffff", key.getColumnQualifier().toString());
-        
+
         SortedSet<String> set = new TreeSet<>();
         for (int i = 0; i < 25; i++) {
             set.add("term" + i);
         }
-        
+
         for (String term : set) {
             // reseek on top key
             disc.seek(new Range(key, false, new Key("term99"), false), Collections.emptyList(), false);
             key = disc.getTopKey();
-            
+
             assertEquals(term, key.getRow().toString());
             assertEquals("field", key.getColumnFamily().toString());
             // see DiscoveryIterator for why this has a max unsigned char tacked on the end
             assertEquals("20130101\uffff", key.getColumnQualifier().toString());
         }
     }
-    
+
     @Test
     public void testCountProper() throws Throwable {
         DiscoveryIterator disc = new DiscoveryIterator();
-        
+
         Map<String,String> map = Maps.newHashMap();
-        
+
         TreeMap<Key,Value> ohMap = Maps.newTreeMap();
-        
+
         for (int i = 0; i < 25; i++) {
             Value value = new Value(makeUidList((i % 2) == 0 ? 1 : -1).toByteArray());
             ohMap.put(new Key("term", "field", "20130101_0" + "\u0000t1", "FOO"), value);
         }
         disc.init(new SortedMapIterator(ohMap), map, null);
-        
+
         disc.seek(new Range(), Collections.emptyList(), false);
-        
+
         assertTrue(disc.hasTop());
-        
+
         Key key = disc.getTopKey();
         Value value = disc.getTopValue();
         assertEquals("term", key.getRow().toString());
         assertEquals("field", key.getColumnFamily().toString());
         // see DiscoveryIterator for why this has a max unsigned char tacked on the end
         assertEquals("20130101\uffff", key.getColumnQualifier().toString());
-        
+
         DataInputBuffer in = new DataInputBuffer();
         in.reset(value.get(), value.getSize());
         ArrayWritable valWrapper = new ArrayWritable(DiscoveredThing.class);
@@ -163,42 +163,42 @@ public class DiscoveryIteratorTest {
             assertEquals(1L, thing.getCount());
         }
     }
-    
+
     @Test
     public void testZeroAndNegative() throws Throwable {
         DiscoveryIterator disc = new DiscoveryIterator();
-        
+
         Map<String,String> map = Maps.newHashMap();
-        
+
         TreeMap<Key,Value> ohMap = Maps.newTreeMap();
-        
+
         for (int i = 0; i < 24; i++) {
             Value value = new Value(makeUidList((i % 2) == 0 ? 1 : -1).toByteArray());
             ohMap.put(new Key("term", "field", "20130101_0" + "\u0000t1", "FOO"), value);
         }
         disc.init(new SortedMapIterator(ohMap), map, null);
-        
+
         disc.seek(new Range(), Collections.emptyList(), false);
-        
+
         assertFalse(disc.hasTop());
-        
+
         disc = new DiscoveryIterator();
-        
+
         map = Maps.newHashMap();
-        
+
         ohMap = Maps.newTreeMap();
-        
+
         for (int i = 0; i < 24; i++) {
             Value value = new Value(makeUidList(-1).toByteArray());
             ohMap.put(new Key("term", "field", "20130101_0" + "\u0000t1", "FOO"), value);
         }
         disc.init(new SortedMapIterator(ohMap), map, null);
-        
+
         disc.seek(new Range(), Collections.emptyList(), false);
-        
+
         assertFalse(disc.hasTop());
     }
-    
+
     @Test
     public void testReverseIndex() throws Throwable {
         Connector con = new InMemoryInstance("DiscoveryIteratorTest").getConnector("root", new PasswordToken(""));
@@ -210,21 +210,21 @@ public class DiscoveryIteratorTest {
         setting.addOption(DiscoveryLogic.REVERSE_INDEX, "true");
         s.addScanIterator(setting);
         s.setRange(new Range());
-        
+
         Iterator<Map.Entry<Key,Value>> itr = s.iterator();
         assertTrue(itr.hasNext());
         Map.Entry<Key,Value> e = itr.next();
         assertFalse(itr.hasNext());
-        
+
         Key key = e.getKey();
         assertEquals("mret", key.getRow().toString());
         assertEquals("field", key.getColumnFamily().toString());
         // see DiscoveryIterator for why this has a max unsigned char tacked on the end
         assertEquals("20130101\uffff", key.getColumnQualifier().toString());
-        
+
         Value value = e.getValue();
         assertTrue(value.getSize() > 0);
-        
+
         DataInputBuffer in = new DataInputBuffer();
         in.reset(value.get(), value.getSize());
         ArrayWritable valWrapper = new ArrayWritable(DiscoveredThing.class);
@@ -241,17 +241,17 @@ public class DiscoveryIteratorTest {
             assertEquals("FOO", thing.getColumnVisibility());
             assertEquals(240L, thing.getCount());
         }
-        
+
     }
-    
+
     void writeSample(BatchWriter writer) throws MutationsRejectedException {
         writeSample(writer, false);
     }
-    
+
     void writeSample(BatchWriter writer, boolean reverse) throws MutationsRejectedException {
         writeSample(writer, (reverse ? "mret" : "term"));
     }
-    
+
     void writeSample(BatchWriter writer, String term) throws MutationsRejectedException {
         int nShards = 10;
         String date = "20130101";
@@ -265,7 +265,7 @@ public class DiscoveryIteratorTest {
         }
         writer.addMutation(m);
     }
-    
+
     TreeMap<Key,Value> buildMap(String term, String date) {
         int nShards = 10;
         TreeMap<Key,Value> map = Maps.newTreeMap();
@@ -278,7 +278,7 @@ public class DiscoveryIteratorTest {
         }
         return map;
     }
-    
+
     Uid.List makeUidList(int count) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         builder.setIGNORE(true);

@@ -22,7 +22,7 @@ import java.util.List;
  * A base class used to build ivarators
  */
 public abstract class IvaratorBuilder extends IndexIteratorBuilder {
-    
+
     protected List<IvaratorCacheDir> ivaratorCacheDirs;
     protected String hdfsFileCompressionCodec;
     protected QueryLock queryLock;
@@ -39,11 +39,11 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected CompositeMetadata compositeMetadata;
     protected int compositeSeekThreshold;
     protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool;
-    
+
     protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
         FileSystem hdfsFileSystem = ivaratorCacheDir.getFs();
-        
+
         final URI hdfsCacheURI;
         try {
             hdfsCacheURI = new URI(ivaratorCacheDirURI);
@@ -56,123 +56,123 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
             throw new IllegalStateException("Invalid hdfs cache dir URI: " + ivaratorCacheDirURI, e);
         }
     }
-    
+
     public List<IvaratorCacheDir> getIvaratorCacheDirs() {
         return ivaratorCacheDirs;
     }
-    
+
     public void setIvaratorCacheDirs(List<IvaratorCacheDir> ivaratorCacheDirs) {
         this.ivaratorCacheDirs = ivaratorCacheDirs;
     }
-    
+
     public String getHdfsFileCompressionCodec() {
         return hdfsFileCompressionCodec;
     }
-    
+
     public void setHdfsFileCompressionCodec(String hdfsFileCompressionCodec) {
         this.hdfsFileCompressionCodec = hdfsFileCompressionCodec;
     }
-    
+
     public QueryLock getQueryLock() {
         return queryLock;
     }
-    
+
     public void setQueryLock(QueryLock queryLock) {
         this.queryLock = queryLock;
     }
-    
+
     public int getIvaratorCacheBufferSize() {
         return ivaratorCacheBufferSize;
     }
-    
+
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         this.ivaratorCacheBufferSize = ivaratorCacheBufferSize;
     }
-    
+
     public long getIvaratorCacheScanPersistThreshold() {
         return ivaratorCacheScanPersistThreshold;
     }
-    
+
     public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
         this.ivaratorCacheScanPersistThreshold = ivaratorCacheScanPersistThreshold;
     }
-    
+
     public long getIvaratorCacheScanTimeout() {
         return ivaratorCacheScanTimeout;
     }
-    
+
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         this.ivaratorCacheScanTimeout = ivaratorCacheScanTimeout;
     }
-    
+
     public int getMaxRangeSplit() {
         return maxRangeSplit;
     }
-    
+
     public void setMaxRangeSplit(int maxRangeSplit) {
         this.maxRangeSplit = maxRangeSplit;
     }
-    
+
     public int getIvaratorMaxOpenFiles() {
         return ivaratorMaxOpenFiles;
     }
-    
+
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         this.ivaratorMaxOpenFiles = ivaratorMaxOpenFiles;
     }
-    
+
     public long getMaxIvaratorResults() {
         return maxIvaratorResults;
     }
-    
+
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         this.maxIvaratorResults = maxIvaratorResults;
     }
-    
+
     public int getIvaratorNumRetries() {
         return ivaratorNumRetries;
     }
-    
+
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
         this.ivaratorNumRetries = ivaratorNumRetries;
     }
-    
+
     public FileSortedSet.PersistOptions getIvaratorPersistOptions() {
         return ivaratorPersistOptions;
     }
-    
+
     public void setIvaratorPersistOptions(FileSortedSet.PersistOptions ivaratorPersistOptions) {
         this.ivaratorPersistOptions = ivaratorPersistOptions;
     }
-    
+
     public void setCollectTimingDetails(boolean collectTimingDetails) {
         this.collectTimingDetails = collectTimingDetails;
     }
-    
+
     public void setQuerySpanCollector(QuerySpanCollector querySpanCollector) {
         this.querySpanCollector = querySpanCollector;
     }
-    
+
     public CompositeMetadata getCompositeMetadata() {
         return compositeMetadata;
     }
-    
+
     public void setCompositeMetadata(CompositeMetadata compositeMetadata) {
         this.compositeMetadata = compositeMetadata;
     }
-    
+
     public int getCompositeSeekThreshold() {
         return compositeSeekThreshold;
     }
-    
+
     public void setCompositeSeekThreshold(int compositeSeekThreshold) {
         this.compositeSeekThreshold = compositeSeekThreshold;
     }
-    
+
     public GenericObjectPool<SortedKeyValueIterator<Key,Value>> getIvaratorSourcePool() {
         return ivaratorSourcePool;
     }
-    
+
     public void setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
         this.ivaratorSourcePool = ivaratorSourcePool;
     }

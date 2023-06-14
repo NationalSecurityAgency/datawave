@@ -10,11 +10,11 @@ import org.apache.commons.logging.Log;
 import java.util.Map;
 
 public class EdgeJexlEngine extends JexlEngine {
-    
+
     public EdgeJexlEngine(Uberspect anUberspect, JexlArithmetic anArithmetic, Map<String,Object> theFunctions, Log log) {
         super(anUberspect, anArithmetic, theFunctions, log);
     }
-    
+
     @Override
     protected Interpreter createInterpreter(JexlContext context, boolean strictFlag, boolean silentFlag) {
         return new EdgeJexlInterpreter(this, context, strictFlag, silentFlag);

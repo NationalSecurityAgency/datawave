@@ -17,9 +17,9 @@ public class PassThroughMetricsStore<OK,OV> implements MetricsStore<OK,OV> {
     private static final String ENCODING = "UTF-8";
     private static final Value ONE = createOne();
     private static final Logger logger = Logger.getLogger(PassThroughMetricsStore.class);
-    
+
     private final Text table;
-    
+
     /*
      * Initialize a reusable value for a count of 1, which is the most common use.
      */
@@ -30,16 +30,16 @@ public class PassThroughMetricsStore<OK,OV> implements MetricsStore<OK,OV> {
             return null;
         }
     }
-    
+
     private final ContextWriter<OK,OV> contextWriter;
     private final TaskInputOutputContext<?,?,OK,OV> context;
-    
+
     public PassThroughMetricsStore(ContextWriter<OK,OV> contextWriter, TaskInputOutputContext<?,?,OK,OV> context) {
         this.contextWriter = contextWriter;
         this.context = context;
         this.table = new Text(MetricsConfiguration.getTable(context.getConfiguration()));
     }
-    
+
     @Override
     public void increase(String key, long count) {
         try {
@@ -50,7 +50,7 @@ public class PassThroughMetricsStore<OK,OV> implements MetricsStore<OK,OV> {
             logger.error("Could not write metrics to the context writer, dropping them...", e);
         }
     }
-    
+
     @Override
     public void close() throws Exception {}
 }

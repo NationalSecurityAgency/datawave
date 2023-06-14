@@ -25,15 +25,15 @@ import javax.ws.rs.Produces;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class StatsBean {
-    
+
     @Inject
     private RemoteStatsService remoteStatsService;
-    
+
     @PermitAll
     public StatsResponse stats() {
         return remoteStatsService.getStats();
     }
-    
+
     @Path("/Stats")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET

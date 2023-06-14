@@ -23,20 +23,20 @@ import java.util.Objects;
 import java.util.Set;
 
 public class QueryLogicTestHarness {
-    
+
     private static final Logger log = Logger.getLogger(QueryLogicTestHarness.class);
-    
+
     private final TestResultParser parser;
     private final KryoDocumentDeserializer deserializer;
-    
+
     public QueryLogicTestHarness(final TestResultParser testParser) {
         this.parser = testParser;
         this.deserializer = new KryoDocumentDeserializer();
     }
-    
+
     // =============================================
     // interfaces for lambda functions
-    
+
     /**
      * Assert checking for any specific conditions.
      */
@@ -49,17 +49,17 @@ public class QueryLogicTestHarness {
          */
         void assertValid(Document doc);
     }
-    
+
     public interface TestResultParser {
         String parse(Key key, Document document);
     }
-    
+
     // =============================================
     // assert methods
-    
+
     /**
      * Determines if the correct results were obtained for a query.
-     * 
+     *
      * @param logic
      *            key/value response data
      * @param expected
@@ -69,21 +69,21 @@ public class QueryLogicTestHarness {
      */
     public void assertLogicResults(BaseQueryLogic<Map.Entry<Key,Value>> logic, Collection<String> expected, List<DocumentChecker> checkers) {
         Set<String> actualResults = new HashSet<>();
-        
+
         if (log.isDebugEnabled()) {
             log.debug("    ======  expected id(s)  ======");
             for (String e : expected) {
                 log.debug("id(" + e + ")");
             }
         }
-        
+
         for (Map.Entry<Key,Value> entry : logic) {
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.getKey())) {
                 continue;
             }
-            
+
             final Document document = this.deserializer.apply(entry).getValue();
-            
+
             // check all of the types to ensure that all are keepers as defined in the
             // AttributeFactory class
             int count = 0;
@@ -107,29 +107,29 @@ public class QueryLogicTestHarness {
                     count++;
                 }
             }
-            
+
             // ignore empty documents (possible when only passing FinalDocument back)
             if (count == 0) {
                 continue;
             }
-            
+
             // parse the document
             String extractedResult = this.parser.parse(entry.getKey(), document);
             log.debug("result(" + extractedResult + ") key(" + entry.getKey() + ") document(" + document + ")");
-            
+
             // verify expected results
             Assert.assertNotNull("extracted result", extractedResult);
             Assert.assertFalse("duplicate result(" + extractedResult + ") key(" + entry.getKey() + ")", actualResults.contains(extractedResult));
             actualResults.add(extractedResult);
-            
+
             // perform any custom assert checks on document
             for (final DocumentChecker check : checkers) {
                 check.assertValid(document);
             }
         }
-        
+
         log.info("total records found(" + actualResults.size() + ") expected(" + expected.size() + ")");
-        
+
         // ensure that the complete expected result set exists
         if (expected.size() > actualResults.size()) {
             final Set<String> notFound = new HashSet<>(expected);
@@ -144,7 +144,7 @@ public class QueryLogicTestHarness {
                 log.error("unexpected result(" + r + ")");
             }
         }
-        
+
         Assert.assertEquals("results do not match expected", expected.size(), actualResults.size());
         Assert.assertTrue("expected and actual values do not match", expected.containsAll(actualResults));
         Assert.assertTrue("expected and actual values do not match", actualResults.containsAll(expected));

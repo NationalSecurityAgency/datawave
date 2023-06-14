@@ -19,53 +19,53 @@ import java.util.HashMap;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class Metadata implements Serializable, Message<Metadata> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "DataType")
     private String dataType = null;
-    
+
     @XmlElement(name = "InternalId")
     private String internalId = null;
-    
+
     @XmlElement(name = "Table")
     private String table = null;
-    
+
     @XmlElement(name = "Row")
     private String row = null;
-    
+
     public String getDataType() {
         return dataType;
     }
-    
+
     public String getInternalId() {
         return internalId;
     }
-    
+
     public void setDataType(String dataType) {
         this.dataType = dataType;
     }
-    
+
     public void setInternalId(String internalId) {
         this.internalId = internalId;
     }
-    
+
     public String getTable() {
         return table;
     }
-    
+
     public String getRow() {
         return row;
     }
-    
+
     public void setTable(String table) {
         this.table = table;
     }
-    
+
     public void setRow(String row) {
         this.row = row;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         Metadata om = (Metadata) o;
@@ -76,7 +76,7 @@ public class Metadata implements Serializable, Message<Metadata> {
         builder.append(table, om.table);
         return builder.isEquals();
     }
-    
+
     @Override
     public int hashCode() {
         int result = dataType != null ? dataType.hashCode() : 0;
@@ -85,44 +85,44 @@ public class Metadata implements Serializable, Message<Metadata> {
         result = 31 * result + (row != null ? row.hashCode() : 0);
         return result;
     }
-    
+
     public static Schema<Metadata> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<Metadata> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<Metadata> SCHEMA = new Schema<Metadata>() {
-        
+
         @Override
         public Metadata newMessage() {
             return new Metadata();
         }
-        
+
         @Override
         public Class<? super Metadata> typeClass() {
             return Metadata.class;
         }
-        
+
         @Override
         public String messageName() {
             return Metadata.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return Metadata.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(Metadata message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, Metadata message) throws IOException {
             if (message.dataType != null)
@@ -134,7 +134,7 @@ public class Metadata implements Serializable, Message<Metadata> {
             if (message.row != null)
                 output.writeString(4, message.row, false);
         }
-        
+
         @Override
         public void mergeFrom(Input input, Metadata message) throws IOException {
             int number;
@@ -158,7 +158,7 @@ public class Metadata implements Serializable, Message<Metadata> {
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -174,13 +174,13 @@ public class Metadata implements Serializable, Message<Metadata> {
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
             fieldMap.put("dataType", 1);

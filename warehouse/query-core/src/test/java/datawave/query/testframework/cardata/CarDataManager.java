@@ -19,13 +19,13 @@ import java.util.List;
 import java.util.Set;
 
 public class CarDataManager extends AbstractDataManager {
-    
+
     private static final Logger log = Logger.getLogger(CarDataManager.class);
-    
+
     public CarDataManager() {
         super(CarField.EVENT_ID.name(), CarField.START_DATE.name(), CarField.getFieldsMetadata());
     }
-    
+
     @Override
     public void addTestData(final URI file, final String datatype, final Set<String> indexes) throws IOException {
         Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
@@ -43,12 +43,12 @@ public class CarDataManager extends AbstractDataManager {
             log.info("car test data(" + file + ") count(" + count + ")");
         }
     }
-    
+
     @Override
     public List<String> getHeaders() {
         return CarField.headers();
     }
-    
+
     private Set<RawData> getRawData(final Set<RawData> rawData, final Date start, final Date end) {
         final Set<RawData> data = new HashSet<>(this.rawData.size());
         final Set<String> shards = this.shardValues.getShardRange(start, end);
@@ -58,12 +58,12 @@ public class CarDataManager extends AbstractDataManager {
                 data.add(raw);
             }
         }
-        
+
         return data;
     }
-    
+
     static class CarRawData extends BaseRawData {
-        
+
         CarRawData(final String datatype, final String fields[]) {
             super(datatype, fields, CarField.headers(), CarField.getFieldsMetadata());
             Assert.assertEquals("car ingest data field count is invalid", CarField.headers().size(), fields.length);

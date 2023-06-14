@@ -23,54 +23,54 @@ import java.util.Set;
  */
 public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(GeoFeatureVisitor.class);
-    
+
     private Set<QueryGeometry> geoFeatures;
     private GeometryJSON geoJson = new GeometryJSON();
     private WKTReader wktReader = new WKTReader();
-    
+
     private boolean isLuceneQuery;
-    
+
     private GeoFeatureVisitor(Set<QueryGeometry> geoFeatures) {
         this(geoFeatures, false);
     }
-    
+
     private GeoFeatureVisitor(Set<QueryGeometry> geoFeatures, boolean isLuceneQuery) {
         this.geoFeatures = geoFeatures;
         this.isLuceneQuery = isLuceneQuery;
     }
-    
+
     public static Set<QueryGeometry> getGeoFeatures(JexlNode node) {
         return getGeoFeatures(node, false);
     }
-    
+
     public static Set<QueryGeometry> getGeoFeatures(JexlNode node, boolean isLuceneQuery) {
         Set<QueryGeometry> geoFeatures = new LinkedHashSet<>();
         node.jjtAccept(new GeoFeatureVisitor(geoFeatures, isLuceneQuery), null);
         return geoFeatures;
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        
+
         try {
             String wkt = null;
-            
+
             if (desc instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
                 wkt = ((GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) desc).getWkt();
             } else if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {
                 wkt = ((GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) desc).getWkt();
             }
-            
+
             if (wkt != null) {
                 String function = JexlStringBuildingVisitor.buildQuery(node);
-                
+
                 // reformat as a lucene function
                 if (isLuceneQuery) {
                     int paramsIdx = function.indexOf('(');
                     String op = function.substring(0, function.indexOf('('));
                     String params = function.substring(paramsIdx);
-                    
+
                     if (op.startsWith("geowave:")) {
                         function = op.replace("geowave:", "#").toUpperCase() + params;
                     } else if (op.startsWith("geo:")) {
@@ -78,29 +78,29 @@ public class GeoFeatureVisitor extends ShortCircuitBaseVisitor {
                         function = "#GEO(" + opParam + ", " + params.substring(1);
                     }
                 }
-                
+
                 geoFeatures.add(new QueryGeometry(function, geoJson.toString(wktReader.read(wkt))));
             }
         } catch (Exception e) {
             log.error("Unable to extract geo feature from function", e);
         }
-        
+
         return node;
     }
-    
+
     // Descend through these nodes
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         node.childrenAccept(this, data);
