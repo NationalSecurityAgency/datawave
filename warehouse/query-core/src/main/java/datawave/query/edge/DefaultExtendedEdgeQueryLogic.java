@@ -147,7 +147,7 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
             }
             if (prefilterValues != null) {
                 String value = serializePrefilter();
-                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_WHITELIST, value);
+                edgeIteratorSetting.addOption(EdgeFilterIterator.PREFILTER_ALLOWLIST, value);
             }
             
             if (includeStats) {

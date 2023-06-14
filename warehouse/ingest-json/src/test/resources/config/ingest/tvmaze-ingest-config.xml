@@ -94,7 +94,7 @@
         <name>myjson.data.process.extra.fields</name>
         <value>true</value>
         <description>If true, "extra" fields within the json tree (ie, those outside the defined "header") should be
-            processed. Otherwise, everything outside the header will be ignored unless explicitly whitelisted</description>
+            processed. Otherwise, everything outside the header will be ignored unless explicitly allowlisted</description>
     </property>
 
     <property>
@@ -246,11 +246,11 @@
         <name>myjson.data.category.token.fieldname.designator</name>
         <value>_TOKEN</value>
         <description>Field name suffix to be applied to field names that are tokenized.
-            See *.data.category.index.tokenize.whitelist</description>
+            See *.data.category.index.tokenize.allowlist</description>
     </property>
 
     <property>
-        <name>myjson.data.category.index.tokenize.whitelist</name>
+        <name>myjson.data.category.index.tokenize.allowlist</name>
         <value>SUMMARY,NETWORK_NAME,NAME,EMBEDDED_CAST_CHARACTER_NAME,EMBEDDED_CAST_PERSON_NAME</value>
         <description>These are the fields to tokenize and index.</description>
     </property>

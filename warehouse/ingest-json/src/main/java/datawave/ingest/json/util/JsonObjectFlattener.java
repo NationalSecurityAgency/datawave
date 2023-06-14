@@ -103,7 +103,7 @@ public interface JsonObjectFlattener {
      * {@link Multimap} instance
      *
      * <p>
-     * It's the resulting normalized key that {@link JsonObjectFlattener} implementations should use to compare against blacklist and whitelist sets, with
+     * It's the resulting normalized key that {@link JsonObjectFlattener} implementations should use to compare against blacklist and allowlist sets, with
      * normalization applied as close to the actual {@link Multimap#put(Object, Object)} operation as possible
      */
     interface MapKeyValueNormalizer {
@@ -205,16 +205,16 @@ public interface JsonObjectFlattener {
         Builder<T> pathDelimiter(String pathDelimiter) throws NullPointerException;
         
         /**
-         * Only map keys matching those in whitelist will be added to the flattened map. If used in conjunction with blacklist, blacklist takes precedence
+         * Only map keys matching those in allowlist will be added to the flattened map. If used in conjunction with blacklist, blacklist takes precedence
          *
-         * @param mapKeyWhitelist
-         *            whitelisted keys
+         * @param mapKeyAllowlist
+         *            Allowlisted keys
          * @return builder instance
          */
-        Builder<T> mapKeyWhitelist(Set<String> mapKeyWhitelist);
+        Builder<T> mapKeyAllowlist(Set<String> mapKeyAllowlist);
         
         /**
-         * Map keys within blacklist will be excluded from the flattened map. If used in conjunction with whitelist, blacklist takes precedence
+         * Map keys within blacklist will be excluded from the flattened map. If used in conjunction with Allowlist, blacklist takes precedence
          *
          * @param mapKeyBlacklist
          *            blacklisted keys
@@ -252,7 +252,7 @@ public interface JsonObjectFlattener {
         /**
          * <p>
          * Sets the {@link MapKeyValueNormalizer} to be applied to flattened keys just prior to {@link Multimap#put(Object, Object)} and also prior to
-         * whitelist/blacklist checks. That is, create your whitelist and blacklist sets based on your ideal, "normalized" key structure
+         * Allowlist/blacklist checks. That is, create your Allowlist and blacklist sets based on your ideal, "normalized" key structure
          *
          * @param normalizer
          *            normalizer instance

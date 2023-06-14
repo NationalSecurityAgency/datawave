@@ -88,10 +88,10 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
      *            flag to include the sinks
      * @param includeSources
      *            flag to include sources
-     * @param updateWhitelist
-     *            flag to update whitelist
+     * @param updateAllowlist
+     *            flag to update Allowlist
      */
-    public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms, boolean updateWhitelist) {
+    public void updateQueryStrings(QueryContext qContext, boolean includeSources, boolean includeSinks, boolean includColumnFamilyTerms, boolean updateAllowlist) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
         int numTermsAdded = 0;
@@ -101,7 +101,7 @@ public class VisitationContext implements EdgeModelAware, EdgeContext {
         }
         
         qContext.buildStrings(trimmedQuery, trimmedStatsQuery, includeStats, includeSources, includeSinks, preFilterValues, includColumnFamilyTerms,
-                        updateWhitelist);
+                        updateAllowlist);
         trimmedQuery.append(")");
         if (includeStats) {
             trimmedStatsQuery.append(")");

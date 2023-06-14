@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * <p>
  * Custom {@link JsonObjectFlattener} implementation that has a {@link JsonDataTypeHelper} instance, in order to utilize some of its behaviors, e.g., its
- * key/value normalization behavior, whitelist/blacklist options, etc
+ * key/value normalization behavior, allowlist/blacklist options, etc
  *
  * <p>
  * Forces path delimiters and ordinal position delimiters to the appropriate values, based on the configured {@link JsonObjectFlattener.FlattenMode}, and based

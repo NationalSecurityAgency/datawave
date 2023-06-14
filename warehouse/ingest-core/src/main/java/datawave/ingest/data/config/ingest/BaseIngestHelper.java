@@ -209,10 +209,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                         defaultFailedFieldPolicy.name()));
         failedNormalizationField = config.get(this.getType().typeName() + FAILED_NORMALIZATION_FIELD, failedNormalizationField);
         
-        // Ensure that we have only a whitelist or a blacklist of fields to
+        // Ensure that we have only a Allowlist or a blacklist of fields to
         // index
         if (config.get(this.getType().typeName() + BLACKLIST_INDEX_FIELDS) != null && config.get(this.getType().typeName() + INDEX_FIELDS) != null) {
-            throw new RuntimeException("Configuration contains BlackList and Whitelist for indexed fields, " + "it specifies both.  Type: "
+            throw new RuntimeException("Configuration contains BlackList and Allowlist for indexed fields, " + "it specifies both.  Type: "
                             + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + BLACKLIST_INDEX_FIELDS) + " and "
                             + config.get(this.getType().typeName() + INDEX_FIELDS));
         }
@@ -259,11 +259,11 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
         
-        // Ensure that we have only a whitelist or a blacklist of fields to
+        // Ensure that we have only a Allowlist or a blacklist of fields to
         // reverse index
         if (config.get(this.getType().typeName() + BLACKLIST_REVERSE_INDEX_FIELDS) != null
                         && config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
-            throw new RuntimeException("Configuration contains BlackList and Whitelist for indexed fields, it specifies both.  Type: "
+            throw new RuntimeException("Configuration contains BlackList and Allowlist for indexed fields, it specifies both.  Type: "
                             + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + BLACKLIST_REVERSE_INDEX_FIELDS) + "  "
                             + config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS));
         }

@@ -953,7 +953,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             documents = Iterators.transform(documents, new AttributeKeepFilter<>());
         }
         
-        // Project fields using a whitelist or a blacklist before serialization
+        // Project fields using a allowlist or a blacklist before serialization
         if (this.projectResults) {
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentProjection, trackingSpan, getProjection()));

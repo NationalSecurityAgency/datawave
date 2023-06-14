@@ -21,8 +21,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     
     private static final Logger log = Logger.getLogger(ContentBaseIngestHelper.class);
     
-    private final Set<String> contentIndexWhitelist = new HashSet<>();
-    private final Set<String> contentReverseIndexWhitelist = new HashSet<>();
+    private final Set<String> contentIndexAllowlist = new HashSet<>();
+    private final Set<String> contentReverseIndexAllowlist = new HashSet<>();
     
     private final Set<String> contentIndexBlacklist = new HashSet<>();
     private final Set<String> contentReverseIndexBlacklist = new HashSet<>();
@@ -33,8 +33,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     /**
      * Fields that we want to perform content indexing and reverse indexing (i.e. token and then index the tokens)
      */
-    public static final String TOKEN_INDEX_WHITELIST = ".data.category.index.tokenize.whitelist";
-    public static final String TOKEN_REV_INDEX_WHITELIST = ".data.category.index.reverse.tokenize.whitelist";
+    public static final String TOKEN_INDEX_ALLOWLIST = ".data.category.index.tokenize.allowlist";
+    public static final String TOKEN_REV_INDEX_ALLOWLIST = ".data.category.index.reverse.tokenize.allowlist";
     
     public static final String TOKEN_INDEX_BLACKLIST = ".data.category.index.tokenize.blacklist";
     public static final String TOKEN_REV_INDEX_BLACKLIST = ".data.category.index.reverse.tokenize.blacklist";
@@ -89,8 +89,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
             tokenFieldNameDesignator = "";
         }
         
-        contentIndexWhitelist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_INDEX_WHITELIST));
-        contentReverseIndexWhitelist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_REV_INDEX_WHITELIST));
+        contentIndexAllowlist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_INDEX_ALLOWLIST));
+        contentReverseIndexAllowlist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_REV_INDEX_ALLOWLIST));
         contentIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_INDEX_BLACKLIST));
         contentReverseIndexBlacklist.addAll(trimConfigStrings(config, getType().typeName() + TOKEN_REV_INDEX_BLACKLIST));
         
@@ -122,7 +122,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
             return fieldConfigHelper.isTokenizedField(field);
         }
         
-        return contentIndexBlacklist.isEmpty() ? contentIndexWhitelist.contains(field) : !contentIndexBlacklist.contains(field);
+        return contentIndexBlacklist.isEmpty() ? contentIndexAllowlist.contains(field) : !contentIndexBlacklist.contains(field);
     }
     
     @Override
@@ -132,7 +132,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
             return fieldConfigHelper.isReverseTokenizedField(field);
         }
         
-        return contentReverseIndexBlacklist.isEmpty() ? contentReverseIndexWhitelist.contains(field) : !contentReverseIndexBlacklist.contains(field);
+        return contentReverseIndexBlacklist.isEmpty() ? contentReverseIndexAllowlist.contains(field) : !contentReverseIndexBlacklist.contains(field);
     }
     
     @Override

@@ -35,14 +35,14 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     protected final String pathDelimiter;
     protected final JsonElementNameNormalizer nameNormalizer;
     protected final MapKeyValueNormalizer keyValueNormalizer;
-    protected final Set<String> mapKeyWhitelist;
+    protected final Set<String> mapKeyAllowlist;
     protected final Set<String> mapKeyBlacklist;
     protected final String occurrenceDelimiter;
     protected final boolean addArrayIndexToFieldName;
     
     protected JsonObjectFlattenerImpl(Builder builder) {
         this.pathDelimiter = builder.pathDelimiter;
-        this.mapKeyWhitelist = builder.fieldNameWhitelist != null ? new HashSet<>(builder.fieldNameWhitelist) : null;
+        this.mapKeyAllowlist = builder.fieldNameAllowlist != null ? new HashSet<>(builder.fieldNameAllowlist) : null;
         this.mapKeyBlacklist = builder.fieldNameBlacklist != null ? new HashSet<>(builder.fieldNameBlacklist) : null;
         this.flattenMode = builder.flattenMode;
         this.occurrenceDelimiter = builder.occurrenceDelimiter;
@@ -235,7 +235,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     }
     
     /**
-     * Uses blacklist and whitelist to determine whether or not the key/value pair should be ignored
+     * Uses blacklist and Allowlist to determine whether or not the key/value pair should be ignored
      * 
      * @param key
      *            key to evaluate
@@ -252,8 +252,8 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
                 return true;
             }
         }
-        if (null != mapKeyWhitelist && !mapKeyWhitelist.isEmpty()) {
-            if (!mapKeyWhitelist.contains(key)) {
+        if (null != mapKeyAllowlist && !mapKeyAllowlist.isEmpty()) {
+            if (!mapKeyAllowlist.contains(key)) {
                 return true;
             }
         }
@@ -272,7 +272,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     public static class Builder implements JsonObjectFlattener.Builder<JsonObjectFlattenerImpl> {
         
         protected String pathDelimiter = DEFAULT_PATH_DELIMITER;
-        protected Set<String> fieldNameWhitelist = null;
+        protected Set<String> fieldNameAllowlist = null;
         protected Set<String> fieldNameBlacklist = null;
         protected JsonElementNameNormalizer nameNormalizer = null;
         protected MapKeyValueNormalizer keyValueNormalizer = null;
@@ -288,8 +288,8 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         }
         
         @Override
-        public Builder mapKeyWhitelist(Set<String> mapKeyWhitelist) {
-            this.fieldNameWhitelist = mapKeyWhitelist;
+        public Builder mapKeyAllowlist(Set<String> mapKeyAllowlist) {
+            this.fieldNameAllowlist = mapKeyAllowlist;
             return this;
         }
         

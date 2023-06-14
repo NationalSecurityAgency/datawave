@@ -242,8 +242,8 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     }
     
     /**
-     * Test whether the field should be kept by checking against the blacklist and whitelist. Presence in the blacklist takes precedence over presence on the
-     * whitelist.
+     * Test whether the field should be kept by checking against the blacklist and Allowlist. Presence in the blacklist takes precedence over presence on the
+     * Allowlist.
      * 
      * @param fieldName
      *            the field name
@@ -251,16 +251,16 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
      */
     protected boolean keepField(String fieldName) {
         final Set<String> blacklist = helper.getFieldBlacklist();
-        final Set<String> whitelist = helper.getFieldWhitelist();
+        final Set<String> allowlist = helper.getFieldAllowlist();
         
         if (blacklist != null && blacklist.contains(fieldName)) {
             return false; // drop the field that is in the blacklist.
         } // else keep the non-blacklisted field.
         
-        if (whitelist != null) { // whitelist exists
-            if (!whitelist.contains(fieldName)) {
-                return false; // drop the field not in the whitelist.
-            } // else keep the whitelisted field.
+        if (allowlist != null) { // allowlist exists
+            if (!allowlist.contains(fieldName)) {
+                return false; // drop the field not in the allowlist.
+            } // else keep the allowlisted field.
         } // else keep field.
         
         return true;

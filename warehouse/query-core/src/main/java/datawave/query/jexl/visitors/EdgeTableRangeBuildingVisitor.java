@@ -580,7 +580,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     /**
      * This method creates a new VisitationContext object to be returned and loads the final list of queryContexts which are then used to build the ranges and
      * normalized query One of the main purposes of this method is to create the normalized query that is used to filter column families from ranges. This is a
-     * problem when there are multiple query contexts because the whitelist will exclude certain column family values, which will affect what gets returned by
+     * problem when there are multiple query contexts because the allowlist will exclude certain column family values, which will affect what gets returned by
      * the query. This is addressed by the columnFamilyAreDifferent boolean which is passed down to populateQuery()
      * 
      * @param queryContexts
@@ -606,7 +606,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
         }
         
         // If there are multiple query contexts, and their column families are not the same, we will pass down a boolean
-        // so that the whitelist will not get updated to improve column family filtering against ranges
+        // so that the allowlist will not get updated to improve column family filtering against ranges
         
         if (queryContexts.size() > 1) {
             int i;

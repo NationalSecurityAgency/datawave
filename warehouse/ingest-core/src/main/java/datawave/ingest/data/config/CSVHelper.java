@@ -43,7 +43,7 @@ public class CSVHelper extends DataTypeHelperImpl {
     /**
      * Parameter to explicitly specify a subset of fields that should be added to the event, all others are dropped.
      */
-    public static final String FIELD_WHITELIST = ".data.field.whitelist";
+    public static final String FIELD_ALLOWLIST = ".data.field.allowlist";
     
     /**
      * Parameter to explicitly specify a subset of fields that should be removed from the event, all others are kept.
@@ -51,7 +51,7 @@ public class CSVHelper extends DataTypeHelperImpl {
     public static final String FIELD_BLACKLIST = ".data.field.blacklist";
     
     /**
-     * Parameter to specify the fields that are multivalued (whitelist)
+     * Parameter to specify the fields that are multivalued (allowlist)
      */
     public static final String MULTI_VALUED_FIELDS = ".data.fields.multivalued";
     
@@ -144,7 +144,7 @@ public class CSVHelper extends DataTypeHelperImpl {
     private String multiValuedTruncateField = "TRUNCATED_MULTI_VALUED_FIELD";
     private String multiValuedDropField = "DROPPED_MULTI_VALUED_FIELD";
     private Set<String> fieldBlacklist = null;
-    private Set<String> fieldWhitelist = null;
+    private Set<String> fieldAllowlist = null;
     
     /** The Set of field names that a record must have to be valid. */
     private Set<String> _requiredFields = null;
@@ -171,10 +171,10 @@ public class CSVHelper extends DataTypeHelperImpl {
         // Get the process extra fields property
         this.processExtraFields = config.getBoolean(this.getType().typeName() + PROCESS_EXTRA_FIELDS, false);
         
-        // Get the whitelist of event fields to keep.
-        Collection<String> cw = config.getStringCollection(this.getType().typeName() + FIELD_WHITELIST);
+        // Get the allowlist of event fields to keep.
+        Collection<String> cw = config.getStringCollection(this.getType().typeName() + FIELD_ALLOWLIST);
         if (cw != null && !cw.isEmpty()) {
-            this.fieldWhitelist = new HashSet<>(cw);
+            this.fieldAllowlist = new HashSet<>(cw);
         }
         
         // Get the blacklist of event fields to drop.
@@ -354,8 +354,8 @@ public class CSVHelper extends DataTypeHelperImpl {
         return fieldBlacklist;
     }
     
-    public Set<String> getFieldWhitelist() {
-        return fieldWhitelist;
+    public Set<String> getFieldAllowlist() {
+        return fieldAllowlist;
     }
     
     /**
