@@ -33,44 +33,44 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 public class DateIndexDataTypeHandlerTest {
-    
+
     private Configuration conf;
     private DateIndexDataTypeHandler<Text> handler;
     private TestBaseIngestHelper helper = new TestBaseIngestHelper();
     private DateNormalizer dateNormalizer = new DateNormalizer();
-    
+
     @Before
     public void setup() throws Exception {
-        
+
         conf = new Configuration();
         conf.set("num.shards", "11");
         conf.set("data.name", "testdatatype");
         conf.set("testdatatype.ingest.helper.class", TestBaseIngestHelper.class.getName());
         conf.set("testdatatype.handler.classes", DateIndexDataTypeHandler.class.getName());
-        
+
         // date index configuration
         conf.set("date.index.table.name", TableName.DATE_INDEX);
         conf.set("date.index.table.loader.priority", "30");
         conf.set("DateIndex.table.config.class", DateIndexTableConfigHelper.class.getName());
         conf.set("date.index.table.locality.groups", "activity:ACTIVITY,loaded:LOADED");
-        
+
         // some date index configuration for our "testdatatype" events
         conf.set("testdatatype.date.index.type.to.field.map", "ACTIVITY=ACTIVITY_DATE,LOADED=LOAD_DATE");
         conf.set("all" + Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        
+
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf);
-        
+
         handler = new DateIndexDataTypeHandler<>();
         handler.setup(new TaskAttemptContextImpl(conf, new TaskAttemptID()));
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testMissingConfigSetup() {
         DateIndexDataTypeHandler<Text> handler = new DateIndexDataTypeHandler<>();
         handler.setup(new TaskAttemptContextImpl(new Configuration(), new TaskAttemptID()));
     }
-    
+
     @Test
     public void testHandler() {
         // create a sample event
@@ -78,15 +78,15 @@ public class DateIndexDataTypeHandlerTest {
         RawRecordContainer event = getEvent(data);
         String shardId = new ShardIdFactory(conf).getShardId(event);
         int shard1 = ShardIdFactory.getShard(shardId);
-        
+
         // create some fields
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(event);
-        
+
         // add a load date
         NormalizedContentInterface loadDate = new NormalizedFieldAndValue("LOAD_DATE", "2014-01-01T13:39:39Z");
         loadDate.setIndexedFieldValue(dateNormalizer.normalize(loadDate.getEventFieldValue()));
         eventFields.put("LOAD_DATE", loadDate);
-        
+
         // process the event
         Multimap<BulkIngestKey,Value> mutations = handler.processBulk(new Text("1"), event, eventFields, null);
         Assert.assertEquals(0, mutations.size());
@@ -94,17 +94,17 @@ public class DateIndexDataTypeHandlerTest {
         handler.getMetadata().addEvent(helper, event, eventFields);
         mutations = handler.getMetadata().getBulkMetadata();
         Assert.assertEquals(2, mutations.size());
-        
+
         // verify that clear clears out the mutations
         handler.getMetadata().clear();
         mutations = handler.getMetadata().getBulkMetadata();
         Assert.assertEquals(0, mutations.size());
-        
+
         // verify that the mutations are not duplicated
         handler.getMetadata().addEvent(helper, event, eventFields);
         handler.getMetadata().addEvent(helper, event, eventFields);
         Assert.assertEquals(2, mutations.size());
-        
+
         BitSet expectedValue = DateIndexUtil.getBits(shard1);
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
             Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
@@ -124,9 +124,9 @@ public class DateIndexDataTypeHandlerTest {
                 Assert.fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
-        
+
     }
-    
+
     @Test
     public void testHandlerMultiEventReduction() {
         // create a sample event
@@ -134,20 +134,20 @@ public class DateIndexDataTypeHandlerTest {
         RawRecordContainer event = getEvent(data);
         String shardId = new ShardIdFactory(conf).getShardId(event);
         int shard1 = ShardIdFactory.getShard(shardId);
-        
+
         // create some fields
         Multimap<String,NormalizedContentInterface> eventFields = helper.getEventFields(event);
-        
+
         // add a load date
         NormalizedContentInterface loadDate = new NormalizedFieldAndValue("LOAD_DATE", "2014-01-01T13:39:39Z");
         loadDate.setIndexedFieldValue(dateNormalizer.normalize(loadDate.getEventFieldValue()));
         eventFields.put("LOAD_DATE", loadDate);
-        
+
         // process the event
         handler.getMetadata().addEvent(helper, event, eventFields);
         Multimap<BulkIngestKey,Value> mutations = handler.getMetadata().getBulkMetadata();
         Assert.assertEquals(2, mutations.size());
-        
+
         // create a second sample event
         data = "00000000-0000-0000-0000-000000000000,UUID,FOO,null,2013-04-30T00:00:00Z,2013-04-29T11:11:11Z";
         event = getEvent(data);
@@ -155,15 +155,15 @@ public class DateIndexDataTypeHandlerTest {
         int shard2 = ShardIdFactory.getShard(shardId);
         eventFields = helper.getEventFields(event);
         // do not put the load date in this one: eventFields.put("LOAD_DATE", loadDate);
-        
+
         // ensure we have a different shard for testing purposes
         Assert.assertNotEquals(shard1, shard2);
-        
+
         // verify that the mutations are reduced
         handler.getMetadata().addEvent(helper, event, eventFields);
         mutations = handler.getMetadata().getBulkMetadata();
         Assert.assertEquals(2, mutations.size());
-        
+
         for (BulkIngestKey bulkIngestKey : mutations.keySet()) {
             Assert.assertEquals(1, mutations.get(bulkIngestKey).size());
             Value value = mutations.get(bulkIngestKey).iterator().next();
@@ -185,9 +185,9 @@ public class DateIndexDataTypeHandlerTest {
                 Assert.fail("Unexpected colf: " + key.getColumnFamily());
             }
         }
-        
+
     }
-    
+
     private RawRecordContainer getEvent(String data) {
         RawRecordContainerImplTest.ValidatingRawRecordContainerImpl event = new RawRecordContainerImplTest.ValidatingRawRecordContainerImpl();
         event.setDataType(TypeRegistry.getType("testdatatype"));
@@ -201,24 +201,24 @@ public class DateIndexDataTypeHandlerTest {
         event.validate();
         return event;
     }
-    
+
     private static String getIndexedValue(String dataStr, int index) {
         String[] data = StringUtils.split(dataStr, ',');
         return (data.length > index ? data[index] : null);
     }
-    
+
     private static String getId(String data) {
         return getIndexedValue(data, 0);
     }
-    
+
     private static String getType(String data) {
         return getIndexedValue(data, 1);
     }
-    
+
     private static String getState(String data) {
         return getIndexedValue(data, 2);
     }
-    
+
     private static String getOriginator(String data) {
         String o = getIndexedValue(data, 3);
         if (o == null) {
@@ -227,15 +227,15 @@ public class DateIndexDataTypeHandlerTest {
             return (o.equals("null") ? "" : o);
         }
     }
-    
+
     private static String getDate(String data) {
         return getIndexedValue(data, 4);
     }
-    
+
     private static String getActivityDate(String data) {
         return getIndexedValue(data, 5);
     }
-    
+
     private static long getTime(String data) {
         String date = getDate(data);
         if (date != null) {
@@ -245,14 +245,14 @@ public class DateIndexDataTypeHandlerTest {
             return 0;
         }
     }
-    
+
     public static class TestBaseIngestHelper extends BaseIngestHelper {
         private DateNormalizer dateNormalizer = new DateNormalizer();
-        
+
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
             Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
-            
+
             String data = new String(event.getRawData());
             eventFields.put("ID", new BaseNormalizedContent("ID", DateIndexDataTypeHandlerTest.getId(data)));
             eventFields.put("TYPE", new BaseNormalizedContent("TYPE", DateIndexDataTypeHandlerTest.getType(data)));
@@ -262,7 +262,7 @@ public class DateIndexDataTypeHandlerTest {
             NormalizedContentInterface activityDate = new NormalizedFieldAndValue("ACTIVITY_DATE", DateIndexDataTypeHandlerTest.getActivityDate(data));
             activityDate.setIndexedFieldValue(dateNormalizer.normalize(activityDate.getEventFieldValue()));
             eventFields.put("ACTIVITY_DATE", activityDate);
-            
+
             return eventFields;
         }
     }

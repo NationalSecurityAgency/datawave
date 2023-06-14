@@ -15,12 +15,12 @@ import java.util.Objects;
  * This class provides the ability to perform a number of assertions specific to {@link JexlNode} instances, and is intended to be used for testing purposes.
  */
 public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
-    
+
     private static final DeepJexlNodeComparator COMPARATOR = new DeepJexlNodeComparator();
-    
+
     /**
      * Return a new {@link JexlNodeAssert} that will perform assertions on the specified node.
-     * 
+     *
      * @param node
      *            the node
      * @return a new {@link JexlNodeAssert} for the node
@@ -28,18 +28,18 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
     public static JexlNodeAssert assertThat(JexlNode node) {
         return new JexlNodeAssert(node);
     }
-    
+
     public JexlNodeAssert(JexlNode node) {
         super(node, JexlNodeAssert.class);
     }
-    
+
     protected JexlNodeAssert(JexlNode node, Class<?> selfType) {
         super(node, selfType);
     }
-    
+
     /**
      * Verifies that the actual node's image is null
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasNullImage() {
@@ -49,10 +49,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's image is not null.
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasNonNullImage() {
@@ -62,10 +62,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's image is equal to the given one.
-     * 
+     *
      * @param image
      *            the image
      * @return this {@link JexlNodeAssert}
@@ -77,10 +77,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's value is null.
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasNullValue() {
@@ -90,10 +90,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's value is not null.
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasNonNullValue() {
@@ -103,10 +103,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's value is equal to the given one.
-     * 
+     *
      * @param value
      *            the value
      * @return this {@link JexlNodeAssert}
@@ -118,10 +118,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's parent is null.
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasNullParent() {
@@ -131,10 +131,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's parent is not null.
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasNonNullParent() {
@@ -144,20 +144,20 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Returns a new {@link JexlNodeAssert} that will perform assertions on the actual node's parent.
-     * 
+     *
      * @return the new {@link JexlNodeAssert} for the parent
      */
     public JexlNodeAssert parent() {
         isNotNull();
         return assertThat(actual.jjtGetParent());
     }
-    
+
     /**
      * Verifies that the actual node has no children.
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasNoChildren() {
@@ -165,10 +165,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         hasNumChildren(0);
         return this;
     }
-    
+
     /**
      * Verifies that the actual node has the given number of children.
-     * 
+     *
      * @param numChildren
      *            the number of children
      * @return this {@link JexlNodeAssert}
@@ -177,14 +177,14 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         isNotNull();
         if (actual.jjtGetNumChildren() != numChildren) {
             failWithMessage("Expected %d children, but had %d", numChildren, actual.jjtGetNumChildren());
-            
+
         }
         return this;
     }
-    
+
     /**
      * Returns a new {@link JexlNodeAssert} that will perform assertions on the specified child.
-     * 
+     *
      * @param child
      *            the child
      * @return the new {@link JexlNodeAssert} for the child
@@ -193,10 +193,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         isNotNull();
         return assertThat(actual.jjtGetChild(child));
     }
-    
+
     /**
      * Verifies that the actual node's query string as supplied by {@link JexlStringBuildingVisitor#buildQuery(JexlNode)} is an exact match to the given one.
-     * 
+     *
      * @param query
      *            the query string
      * @return this {@link JexlNodeAssert}
@@ -209,11 +209,11 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node's query string as supplied by {@link JexlStringBuildingVisitor#buildQuery(JexlNode)} contains the given expression within
      * it as a substring.
-     * 
+     *
      * @param expression
      *            the query expression
      * @return this {@link JexlNodeAssert}
@@ -226,10 +226,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node has a valid lineage as determined by {@link JexlASTHelper#validateLineageVerbosely(JexlNode, boolean)}.
-     * 
+     *
      * @return this {@link JexlNodeAssert}
      */
     public JexlNodeAssert hasValidLineage() {
@@ -240,11 +240,11 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         }
         return this;
     }
-    
+
     /**
      * Verifies that the actual node is equal to the given query string as determined by a {@link TreeEqualityVisitor} comparison. The query string will be
      * parsed to a query tree that will always have a root {@link ASTJexlScript} node.
-     * 
+     *
      * @param query
      *            the query
      * @return this {@link JexlNodeAssert}
@@ -254,10 +254,10 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
     public JexlNodeAssert isEqualTo(String query) throws ParseException {
         return isEqualTo(query, false);
     }
-    
+
     /**
      * Verifies that the actual node is equal to the given node as determined by a {@link TreeEqualityVisitor} comparison.
-     * 
+     *
      * @param node
      *            the node
      * @return this {@link JexlNodeAssert}
@@ -265,12 +265,12 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
     public JexlNodeAssert isEqualTo(JexlNode node) {
         return isEqualTo(node, false);
     }
-    
+
     /**
      * Verifies that the actual node is equal to the given query string as determined by a {@link TreeEqualityVisitor} comparison. The query string will be
      * parsed to a query tree that will always have a root {@link ASTJexlScript} node. If the assertion fails and printQueries is true, both the actual node and
      * parsed node will be printed to the system output via {@link PrintingVisitor#printQuery(String)} for debugging purposes.
-     * 
+     *
      * @param query
      *            the query
      * @return this {@link JexlNodeAssert}
@@ -283,12 +283,12 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         assertEqual(actual, expected, printQueries);
         return this;
     }
-    
+
     /**
      * Verifies that the actual node is equal to the given node as determined by a {@link TreeEqualityVisitor} comparison. If the assertion fails and
      * printQueries is true, both the actual node and expected node will be printed to the system output via {@link PrintingVisitor#printQuery(String)} for
      * debugging purposes.
-     * 
+     *
      * @param node
      *            the node
      * @return this {@link JexlNodeAssert}
@@ -297,12 +297,12 @@ public class JexlNodeAssert extends AbstractAssert<JexlNodeAssert,JexlNode> {
         assertEqual(actual, node, printQueries);
         return this;
     }
-    
+
     // Return the query tree's query string, or "null" if the query tree is null.
     private String getQueryString(JexlNode node) {
         return node != null ? JexlStringBuildingVisitor.buildQuery(node) : "null";
     }
-    
+
     // Assert whether the two nodes are equal.
     private void assertEqual(JexlNode actual, JexlNode expected, boolean printQueries) {
         int result = COMPARATOR.compare(actual, expected);

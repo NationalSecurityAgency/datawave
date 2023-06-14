@@ -21,7 +21,7 @@ import java.util.Map;
  */
 public class LoadDateFilter extends DateTypeFilter {
     protected Range columnRange = null;
-    
+
     private static Range decodeRange(String e) throws IOException {
         ByteArrayInputStream b = new ByteArrayInputStream(Base64.decodeBase64(e.getBytes()));
         DataInputStream in = new DataInputStream(b);
@@ -34,18 +34,18 @@ public class LoadDateFilter extends DateTypeFilter {
             in.close();
             b.close();
         }
-        
+
         return range;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         LoadDateFilter result = (LoadDateFilter) super.deepCopy(env);
         result.columnRange = columnRange;
-        
+
         return result;
     }
-    
+
     /**
      * Method to setup the jexl query expression from the iterator options for evaluation.
      *
@@ -55,20 +55,20 @@ public class LoadDateFilter extends DateTypeFilter {
      *             for issues with read/write
      */
     private void initOptions(Map<String,String> options) throws IOException {
-        
+
         String e = options.get(ColumnRangeIterator.RANGE_NAME);
         if (e == null) {
             throw new IllegalArgumentException("LOAD_DATE_RANGE_NAME must be set");
         }
         columnRange = decodeRange(e);
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws java.io.IOException {
         super.init(source, options, env);
         initOptions(options);
     }
-    
+
     /**
      * Determines if the edge key satisfies the conditions expressed in the supplied JEXL query string.
      *
@@ -81,15 +81,15 @@ public class LoadDateFilter extends DateTypeFilter {
     @Override
     public boolean accept(Key k, Value V) {
         String loadDate;
-        
+
         if (!super.accept(k, V)) {
             return false;
         }
-        
+
         // now, filter on load date range
         try {
             EdgeValue value = EdgeValue.decode(V);
-            
+
             if (value.hasLoadDate()) {
                 loadDate = value.getLoadDate();
             } else {
@@ -98,16 +98,16 @@ public class LoadDateFilter extends DateTypeFilter {
         } catch (InvalidProtocolBufferException e) {
             loadDate = extractEventDate(k);
         }
-        
+
         Key dateKey = new Key(loadDate);
-        
+
         if (columnRange.beforeStartKey(dateKey) || columnRange.afterEndKey(dateKey)) {
             return false;
         } else {
             return true;
         }
     }
-    
+
     // @note old-style edges always used event date in the column qualifier.
     // However, we now have edges that may contain the activity date in the
     // column qualifier. Even though we know that any edge without a load date
@@ -117,7 +117,7 @@ public class LoadDateFilter extends DateTypeFilter {
     // can't assume an event date edge. Therefore, we now extract the
     // event date from the timestamp value rather than the column qualifier.
     private String extractEventDate(Key k) {
-        
+
         return DateHelper.format(k.getTimestamp());
     }
 }

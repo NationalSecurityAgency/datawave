@@ -20,27 +20,27 @@ import com.esotericsoftware.kryo.io.Output;
 
 public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     private static final GeoNormalizer normalizer = new GeoNormalizer();
-    
+
     private String point;
-    
+
     protected GeoPoint() {
         super(null, true);
     }
-    
+
     public GeoPoint(String point, Key docKey, boolean toKeep) {
         super(docKey, toKeep);
         this.point = point;
         validate();
     }
-    
+
     @Override
     public long sizeInBytes() {
         return sizeInBytes(point) + super.sizeInBytes(4);
         // 4 for string reference
     }
-    
+
     protected void validate() {
         try {
             normalizer.normalize(this.point);
@@ -48,28 +48,28 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
             throw new IllegalArgumentException("Cannot parse the geo value " + this.point, ne);
         }
     }
-    
+
     public String getGeoPoint() {
         return this.point;
     }
-    
+
     @Override
     public Object getData() {
         return getGeoPoint();
     }
-    
+
     @Override
     public void write(DataOutput out) throws IOException {
         write(out, false);
     }
-    
+
     @Override
     public void write(DataOutput out, boolean reducedResponse) throws IOException {
         writeMetadata(out, reducedResponse);
         WritableUtils.writeString(out, this.point);
         WritableUtils.writeVInt(out, toKeep ? 1 : 0);
     }
-    
+
     @Override
     public void readFields(DataInput in) throws IOException {
         readMetadata(in);
@@ -77,12 +77,12 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
         this.toKeep = WritableUtils.readVInt(in) != 0;
         validate();
     }
-    
+
     @Override
     public int compareTo(GeoPoint o) {
         String s1 = this.getGeoPoint();
         String s2 = o.getGeoPoint();
-        
+
         try {
             s1 = normalizer.normalize(s1);
         } catch (IllegalArgumentException ne) {
@@ -93,36 +93,36 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
         } catch (IllegalArgumentException ne) {
             throw new IllegalArgumentException("Cannot parse the geo value " + s2, ne);
         }
-        
+
         int cmp = s1.compareTo(s2);
         if (0 == cmp) {
             return compareMetadata(o);
         }
-        
+
         return cmp;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (null == o) {
             return false;
         }
-        
+
         if (o instanceof GeoPoint) {
             return 0 == this.compareTo((GeoPoint) o);
         }
-        
+
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         HashCodeBuilder hcb = new HashCodeBuilder(163, 157);
         hcb.append(super.hashCode()).append(this.getGeoPoint());
-        
+
         return hcb.toHashCode();
     }
-    
+
     @Override
     public Collection<ValueTuple> visit(Collection<String> fieldNames, DatawaveJexlContext context) {
         try {
@@ -131,19 +131,19 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
             throw new IllegalArgumentException("Cannot parse the geo value " + this.point, ne);
         }
     }
-    
+
     @Override
     public void write(Kryo kryo, Output output) {
         write(kryo, output, false);
     }
-    
+
     @Override
     public void write(Kryo kryo, Output output, Boolean reducedResponse) {
         writeMetadata(kryo, output, reducedResponse);
         output.writeString(this.point);
         output.writeBoolean(this.toKeep);
     }
-    
+
     @Override
     public void read(Kryo kryo, Input input) {
         readMetadata(kryo, input);
@@ -151,15 +151,15 @@ public class GeoPoint extends Attribute<GeoPoint> implements Serializable {
         this.toKeep = input.readBoolean();
         validate();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see Attribute#deepCopy()
      */
     @Override
     public GeoPoint copy() {
         return new GeoPoint(this.getGeoPoint(), this.getMetadata(), this.isToKeep());
     }
-    
+
 }

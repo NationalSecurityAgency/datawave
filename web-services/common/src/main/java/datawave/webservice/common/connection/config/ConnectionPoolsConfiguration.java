@@ -10,31 +10,31 @@ import java.util.List;
 import java.util.Map;
 
 public class ConnectionPoolsConfiguration {
-    
+
     @Inject
     @ConfigProperty(name = "dw.connectionPool.default", defaultValue = "WAREHOUSE")
     private String defaultPool = null;
-    
+
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @Inject
     @ConfigProperty(name = "dw.connectionPool.pools", defaultValue = "WAREHOUSE,METRICS")
     private List<String> poolNames;
-    
+
     private Map<String,ConnectionPoolConfiguration> pools = new HashMap<>();
-    
+
     @PostConstruct
     private void initializePools() {
         for (String poolName : poolNames) {
             pools.put(poolName, new ConnectionPoolConfiguration(poolName.toLowerCase()));
         }
     }
-    
+
     public String getDefaultPool() {
         return defaultPool;
     }
-    
+
     public Map<String,ConnectionPoolConfiguration> getPools() {
         return Collections.unmodifiableMap(pools);
     }
-    
+
 }

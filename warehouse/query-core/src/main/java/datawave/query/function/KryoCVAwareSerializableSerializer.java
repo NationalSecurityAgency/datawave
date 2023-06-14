@@ -9,19 +9,19 @@ import com.esotericsoftware.kryo.serializers.DefaultSerializers.KryoSerializable
 
 public class KryoCVAwareSerializableSerializer extends KryoSerializableSerializer {
     private Boolean reducedResponse = true;
-    
+
     public KryoCVAwareSerializableSerializer(Boolean reducedResponse) {
         setReducedResponse(reducedResponse);
     }
-    
+
     public Boolean getReducedResponse() {
         return reducedResponse;
     }
-    
+
     public void setReducedResponse(Boolean reducedResponse) {
         this.reducedResponse = reducedResponse;
     }
-    
+
     @Override
     public void write(Kryo kryo, Output output, KryoSerializable object) {
         if (object instanceof Document) {
@@ -30,5 +30,5 @@ public class KryoCVAwareSerializableSerializer extends KryoSerializableSerialize
             object.write(kryo, output);
         }
     }
-    
+
 }

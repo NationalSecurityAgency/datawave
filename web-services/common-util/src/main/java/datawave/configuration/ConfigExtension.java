@@ -21,11 +21,11 @@ public class ConfigExtension implements Extension {
     @SuppressWarnings("unused")
     <T> void processInjectionTarget(@Observes ProcessInjectionTarget<T> pit) {
         final InjectionTarget<T> it = pit.getInjectionTarget();
-        
+
         final AnnotatedType<T> at = pit.getAnnotatedType();
         String xmlName = at.getJavaClass().getSimpleName() + ".xml";
         InputStream xmlStream = at.getJavaClass().getResourceAsStream(xmlName);
-        
+
         if (Configuration.class.isAssignableFrom(at.getJavaClass())) {
             if (xmlStream == null) {
                 throw new InjectionException("No configuration XML found for " + xmlName);
@@ -34,7 +34,7 @@ public class ConfigExtension implements Extension {
             // Don't do anything if the injection target doesn't implement Configuration
             return;
         }
-        
+
         try {
             SAXParserFactory factory = SAXParserFactory.newInstance();
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
@@ -47,27 +47,27 @@ public class ConfigExtension implements Extension {
                 public T produce(CreationalContext<T> ctx) {
                     return instance;
                 }
-                
+
                 @Override
                 public void inject(T instance, CreationalContext<T> ctx) {
                     it.inject(instance, ctx);
                 }
-                
+
                 @Override
                 public void postConstruct(T instance) {
                     it.postConstruct(instance);
                 }
-                
+
                 @Override
                 public void preDestroy(T instance) {
                     it.preDestroy(instance);
                 }
-                
+
                 @Override
                 public void dispose(T instance) {
                     it.dispose(instance);
                 }
-                
+
                 @Override
                 public Set<InjectionPoint> getInjectionPoints() {
                     return it.getInjectionPoints();

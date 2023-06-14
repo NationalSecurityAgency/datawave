@@ -20,7 +20,7 @@ import static datawave.webservice.common.audit.Auditor.AuditType;
  */
 @ApplicationScoped
 public class DatawaveCommonConfigPropertyProducer extends BaseConfigPropertyProducer {
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -28,7 +28,7 @@ public class DatawaveCommonConfigPropertyProducer extends BaseConfigPropertyProd
     public Map<String,AuditType> produceStringAuditTypeMapConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] pairs = StringUtils.split(propertyValue, "|");
-        
+
         Map<String,AuditType> map = new LinkedHashMap<>();
         if (pairs != null) {
             for (String pair : pairs) {

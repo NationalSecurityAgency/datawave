@@ -22,12 +22,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class BufferedFileBackedKeySortedSetTest {
-    
+
     private final List<SortedSetTempFileHandler> tempFileHandlers = new ArrayList<>();
     private Key[] data = null;
     private int[] sortedOrder = null;
     private BufferedFileBackedSortedSet<Key> set = null;
-    
+
     @Before
     public void setUp() throws Exception {
         byte[] template = new byte[] {5, 2, 78, 4, 8, 3, 54, 23, 6, 21, 7, 16};
@@ -55,20 +55,20 @@ public class BufferedFileBackedKeySortedSetTest {
                 tempFileHandlers.add(fileHandler);
                 return fileHandler;
             }
-            
+
             @Override
             public boolean isValid() {
                 return true;
             }
         }), new FileKeySortedSet.Factory());
-        
+
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
         for (int d = 0; d < 11; d++) {
             Collections.addAll(set, data);
         }
     }
-    
+
     @After
     public void tearDown() throws Exception {
         // Delete each sorted set file and its checksum.
@@ -79,19 +79,19 @@ public class BufferedFileBackedKeySortedSetTest {
             tryDelete(checksum);
         }
         tempFileHandlers.clear();
-        
+
         data = null;
         sortedOrder = null;
         set.clear();
         set = null;
     }
-    
+
     private void tryDelete(File file) {
         if (file.exists()) {
             Assert.assertTrue("Failed to delete file " + file, file.delete());
         }
     }
-    
+
     @Test
     public void testSize() {
         int expectedSize = data.length;
@@ -113,7 +113,7 @@ public class BufferedFileBackedKeySortedSetTest {
             assertEquals(expectedSize, set.size());
         }
     }
-    
+
     @Test
     public void testIsEmpty() {
         assertFalse(set.isEmpty());
@@ -132,13 +132,13 @@ public class BufferedFileBackedKeySortedSetTest {
             assertFalse(set.isEmpty());
         }
     }
-    
+
     @Test
     public void testClear() {
         set.clear();
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testContainsObject() {
         for (int i = (data.length / 2); i < data.length; i++) {
@@ -151,7 +151,7 @@ public class BufferedFileBackedKeySortedSetTest {
             assertFalse(set.contains(data[i]));
         }
     }
-    
+
     @Test
     public void testIterator() {
         int index = 0;
@@ -165,7 +165,7 @@ public class BufferedFileBackedKeySortedSetTest {
             fail();
         }
     }
-    
+
     @Test
     public void testIteratorRemove() {
         int size = set.size();
@@ -189,7 +189,7 @@ public class BufferedFileBackedKeySortedSetTest {
         assertEquals(size, failCount);
         assertFalse(set.isEmpty());
     }
-    
+
     @Test
     public void testSubSet() {
         int start = sortedOrder.length / 3;
@@ -205,7 +205,7 @@ public class BufferedFileBackedKeySortedSetTest {
             // expected
         }
     }
-    
+
     @Test
     public void testHeadSet() {
         int end = sortedOrder.length / 3;
@@ -220,7 +220,7 @@ public class BufferedFileBackedKeySortedSetTest {
             // expected
         }
     }
-    
+
     @Test
     public void testTailSet() {
         int start = sortedOrder.length / 3;
@@ -235,26 +235,26 @@ public class BufferedFileBackedKeySortedSetTest {
             // expected
         }
     }
-    
+
     @Test
     public void testLast() {
         Key expected = data[sortedOrder[data.length - 1]];
         Key value = set.last();
         assertEquals(expected, value);
     }
-    
+
     @Test
     public void testFirst() {
         Key expected = data[sortedOrder[0]];
         Key value = set.first();
         assertEquals(expected, value);
     }
-    
+
     @Test
     public void testCompaction() throws IOException {
         assertEquals(8, set.getSets().size());
         set.persist();
         assertEquals(3, set.getSets().size());
     }
-    
+
 }

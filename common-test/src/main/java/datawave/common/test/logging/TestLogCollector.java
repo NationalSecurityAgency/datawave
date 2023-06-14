@@ -24,8 +24,7 @@ import java.util.List;
 /**
  * JUnit Rule for aggregating the log output from a given set of loggers into a simple string list.
  * <p>
- * This class replaces our legacy CommonTestAppender, which implemented a pattern of usage that is
- * broken and no longer valid in log4j 2x
+ * This class replaces our legacy CommonTestAppender, which implemented a pattern of usage that is broken and no longer valid in log4j 2x
  * </p>
  */
 public class TestLogCollector extends ExternalResource {
@@ -41,19 +40,14 @@ public class TestLogCollector extends ExternalResource {
 
     @Override
     protected void before() {
-        StringLayout layout = PatternLayout.newBuilder()
-                .withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
-        Appender appender = WriterAppender.newBuilder()
-                .setName(TestLogCollector.class.getSimpleName())
-                .setFilter(new FilterAdapter(new Filter() {
-                    @Override
-                    public int decide(LoggingEvent event) {
-                        messages.add(event.getMessage().toString());
-                        return Filter.ACCEPT;
-                    }
-                }))
-                .setLayout(layout)
-                .setTarget(writer).build();
+        StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
+        Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(new FilterAdapter(new Filter() {
+            @Override
+            public int decide(LoggingEvent event) {
+                messages.add(event.getMessage().toString());
+                return Filter.ACCEPT;
+            }
+        })).setLayout(layout).setTarget(writer).build();
         appender.start();
         this.loggers.stream().forEach(l -> l.setAppender(appender));
     }

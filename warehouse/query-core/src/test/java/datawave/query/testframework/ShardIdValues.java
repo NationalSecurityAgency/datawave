@@ -21,10 +21,10 @@ import java.util.Set;
 public class ShardIdValues {
     // list of shards for testing
     private static final Random rVal = new Random(System.currentTimeMillis());
-    
+
     /**
      * Converts the shard id date into a {@link Date} object.
-     * 
+     *
      * @param shard
      *            shard date
      * @return Date representation of the shard date
@@ -36,10 +36,10 @@ public class ShardIdValues {
             throw new AssertionError("invalid date string(" + shard + ")");
         }
     }
-    
+
     private final Map<String,Date> shardIds;
     private final List<Date> sortedDate = new ArrayList<>();
-    
+
     /**
      *
      * @param shardDate
@@ -52,11 +52,11 @@ public class ShardIdValues {
             Date date = convertShardToDate(shard);
             this.shardIds.put(shard, date);
         }
-        
+
         this.sortedDate.addAll(this.shardIds.values());
         Collections.sort(sortedDate);
     }
-    
+
     /**
      * Returns a list of valid shard dates that are within the start/end dates inclusive.
      *
@@ -73,10 +73,10 @@ public class ShardIdValues {
                 shards.add(entry.getKey());
             }
         }
-        
+
         return shards;
     }
-    
+
     /**
      * Retrieves the start and end date for the enumerated values.
      *

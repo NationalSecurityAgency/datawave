@@ -21,7 +21,7 @@ import com.google.common.collect.TreeMultimap;
  * in the scope of a Map from term to {@link TermFrequencyList}
  */
 public class TermFrequencyList {
-    
+
     /**
      * A zone is actually a combination of the zone and the event id (uid or record id)
      */
@@ -30,30 +30,30 @@ public class TermFrequencyList {
         private final String zone;
         // is this field a content expansion field meaning it is used for unfielded content functions
         private final boolean contentExpansionField;
-        
+
         public Zone(String zone, boolean contentExpansionField, String eventId) {
             this.zone = zone;
             this.contentExpansionField = contentExpansionField;
             this.eventId = eventId;
         }
-        
+
         public String getEventId() {
             return eventId;
         }
-        
+
         public String getZone() {
             return zone;
         }
-        
+
         public boolean isContentExpansionField() {
             return contentExpansionField;
         }
-        
+
         @Override
         public int hashCode() {
             return eventId.hashCode() + zone.hashCode() + (contentExpansionField ? 1 : 0);
         }
-        
+
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof Zone) {
@@ -62,7 +62,7 @@ public class TermFrequencyList {
             }
             return false;
         }
-        
+
         @Override
         public int compareTo(Zone o) {
             int comparison = zone.compareTo(o.getZone());
@@ -74,16 +74,16 @@ public class TermFrequencyList {
             }
             return comparison;
         }
-        
+
         @Override
         public String toString() {
             return zone + '(' + eventId + ") ->" + contentExpansionField;
         }
     }
-    
+
     /**
      * Get an event id from the term frequency key
-     * 
+     *
      * @param key
      *            a TermFrequency key
      * @return an event id
@@ -91,7 +91,7 @@ public class TermFrequencyList {
     public static String getEventId(Key key) {
         StringBuilder eventId = new StringBuilder();
         eventId.append(key.getRow()).append('\0');
-        
+
         int index = 0;
         ByteSequence backing = key.getColumnQualifierData();
         for (int i = backing.offset(); i < backing.length(); i++) {
@@ -104,96 +104,96 @@ public class TermFrequencyList {
                 }
             }
         }
-        
+
         eventId.append(new String(backing.getBackingArray(), backing.offset(), (index - backing.offset())));
         return eventId.toString();
     }
-    
+
     protected final TreeMultimap<Zone,TermWeightPosition> offsetsPerField;
-    
+
     public TermFrequencyList(TreeMultimap<Zone,TermWeightPosition> offsetsByField) {
         checkNotNull(offsetsByField);
-        
+
         this.offsetsPerField = offsetsByField;
     }
-    
+
     public TermFrequencyList(Entry<Zone,Iterable<TermWeightPosition>> offsetsPerField) {
         this(Collections.singleton(offsetsPerField));
     }
-    
+
     public TermFrequencyList(Entry<Zone,Iterable<TermWeightPosition>>... offsetsPerField) {
         this(Arrays.asList(offsetsPerField));
     }
-    
+
     public TermFrequencyList(Iterable<Entry<Zone,Iterable<TermWeightPosition>>> offsetsPerField) {
         checkNotNull(offsetsPerField);
-        
+
         this.offsetsPerField = TreeMultimap.create();
-        
+
         addOffsets(offsetsPerField);
     }
-    
+
     public static TermFrequencyList merge(TermFrequencyList list1, TermFrequencyList list2) {
         TreeMultimap<Zone,TermWeightPosition> offsetsPerField = TreeMultimap.create();
         offsetsPerField.putAll(list1.offsetsPerField);
         offsetsPerField.putAll(list2.offsetsPerField);
         return new TermFrequencyList(offsetsPerField);
     }
-    
+
     public void addOffsets(Zone field, Iterable<TermWeightPosition> offsets) {
         checkNotNull(field);
         checkNotNull(offsets);
-        
+
         this.offsetsPerField.putAll(field, offsets);
     }
-    
+
     public void addOffsets(Entry<Zone,Iterable<TermWeightPosition>> offsetForField) {
         checkNotNull(offsetForField);
-        
+
         addOffsets(offsetForField.getKey(), offsetForField.getValue());
     }
-    
+
     public void addOffsets(Iterable<Entry<Zone,Iterable<TermWeightPosition>>> offsetsForFields) {
         checkNotNull(offsetsForFields);
-        
+
         for (Entry<Zone,Iterable<TermWeightPosition>> offsetForField : offsetsForFields) {
             addOffsets(offsetForField);
         }
     }
-    
+
     public void addOffsets(TreeMultimap<Zone,TermWeightPosition> offsetsForFields) {
         checkNotNull(offsetsForFields);
-        
+
         for (Zone field : offsetsForFields.keySet()) {
             addOffsets(field, offsetsForFields.get(field));
         }
     }
-    
+
     /**
      * Return an <code>Immutable</code> copy of the entire mapping
-     * 
+     *
      * @return a copy of all offsets
      */
     public TreeMultimap<Zone,TermWeightPosition> fetchOffsets() {
         return this.offsetsPerField;
     }
-    
+
     /**
      * Return only offsets for a limited set of fields
-     * 
+     *
      * @param fields
      *            a set of fields
      * @return offsets filtered by the provided fields
      */
     public TreeMultimap<Zone,TermWeightPosition> fetchOffsets(Set<Zone> fields) {
         checkNotNull(fields);
-        
+
         return (TreeMultimap<Zone,TermWeightPosition>) Multimaps.filterKeys(this.offsetsPerField, new FieldFilterPredicate(fields));
     }
-    
+
     /**
      * Let clients ask what fields we are currently tracking.
-     * 
+     *
      * @return a set of fields
      */
     public Set<String> fields() {
@@ -207,10 +207,10 @@ public class TermFrequencyList {
             return fields;
         }
     }
-    
+
     /**
      * Let clients ask what event ids we are currently tracking.
-     * 
+     *
      * @return a set of ids
      */
     public Set<String> eventIds() {
@@ -224,47 +224,47 @@ public class TermFrequencyList {
             return eventIds;
         }
     }
-    
+
     /**
      * Let clients ask what zones we are currently tracking.
-     * 
+     *
      * @return a set of zones
      */
     public Set<Zone> zones() {
         return this.offsetsPerField.isEmpty() ? Collections.emptySet() : Collections.unmodifiableSet(this.offsetsPerField.keySet());
     }
-    
+
     @Override
     public String toString() {
         return this.offsetsPerField.toString();
     }
-    
+
     @Override
     public int hashCode() {
         return this.offsetsPerField.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof TermFrequencyList) {
             TermFrequencyList other = (TermFrequencyList) o;
-            
+
             return this.offsetsPerField.equals(other.offsetsPerField);
         }
-        
+
         return false;
     }
-    
+
     private class FieldFilterPredicate implements Predicate<Zone> {
         private final Set<Zone> fieldNames;
-        
+
         public FieldFilterPredicate(Set<Zone> fieldNames) {
             this.fieldNames = fieldNames;
         }
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see com.google.common.base.Predicate#apply(java.lang.Object)
          */
         @Override
@@ -272,6 +272,6 @@ public class TermFrequencyList {
             // Retain results which have the given field name
             return this.fieldNames.contains(input);
         }
-        
+
     }
 }

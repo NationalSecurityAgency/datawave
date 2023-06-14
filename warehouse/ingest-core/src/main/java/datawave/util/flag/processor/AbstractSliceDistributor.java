@@ -22,16 +22,16 @@ import com.google.common.collect.Ordering;
  * Normally distributes data based on a generic slice object.
  */
 public abstract class AbstractSliceDistributor<S extends Comparable<S>> implements FlagDistributor {
-    
+
     protected TreeMap<S,Set<InputFile>> buckets;
     protected FlagDataTypeConfig fc;
-    
+
     @Override
     public void setup(FlagDataTypeConfig fc) {
         this.fc = fc;
         buckets = new TreeMap<>(getComparator(fc.isLifo()));
     }
-    
+
     public Comparator<S> getComparator(boolean lifo) {
         if (lifo) {
             return (o1, o2) -> {
@@ -42,7 +42,7 @@ public abstract class AbstractSliceDistributor<S extends Comparable<S>> implemen
             return Ordering.natural();
         }
     }
-    
+
     @Override
     public final boolean hasNext(boolean mustHaveMax) {
         int max = mustHaveMax ? fc.getMaxFlags() : 1;
@@ -56,7 +56,7 @@ public abstract class AbstractSliceDistributor<S extends Comparable<S>> implemen
         }
         return total >= max;
     }
-    
+
     @Override
     public final Collection<InputFile> next(SizeValidator validator) {
         TreeMap<S,Integer> stats = new TreeMap<>(getComparator(fc.isLifo()));
@@ -71,7 +71,7 @@ public abstract class AbstractSliceDistributor<S extends Comparable<S>> implemen
             totalMaps += typeMaps;
             stats.put(pair.getKey(), typeMaps);
         }
-        
+
         if (totalMaps == 0)
             return Collections.EMPTY_SET;
         HashSet<InputFile> flagFiles = new HashSet<>();
@@ -99,5 +99,5 @@ public abstract class AbstractSliceDistributor<S extends Comparable<S>> implemen
         }
         return flagFiles;
     }
-    
+
 }

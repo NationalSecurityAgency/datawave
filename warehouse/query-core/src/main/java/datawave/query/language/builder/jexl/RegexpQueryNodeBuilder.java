@@ -32,23 +32,23 @@ import org.apache.lucene.search.TermQuery;
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.
  */
 public class RegexpQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         JexlNode returnNode = null;
-        
+
         if (queryNode instanceof RegexpQueryNode) {
             RegexpQueryNode regexpQueryNode = (RegexpQueryNode) queryNode;
             String field = regexpQueryNode.getFieldAsString();
             UnescapedCharSequence ecs = (UnescapedCharSequence) regexpQueryNode.getText();
-            
+
             if (field == null || field.isEmpty()) {
                 returnNode = new JexlSelectorNode(JexlSelectorNode.Type.REGEX, "", ecs.toString());
             } else {
                 returnNode = new JexlSelectorNode(JexlSelectorNode.Type.REGEX, field, ecs.toString());
             }
         }
-        
+
         return returnNode;
     }
-    
+
 }

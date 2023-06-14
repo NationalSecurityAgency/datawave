@@ -14,7 +14,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 public interface DocumentIterator extends SortedKeyValueIterator<Key,Value> {
     // get the document
     Document document();
-    
+
     /**
      * Move the iterator forward to the first Key great than or equal to pointer
      *

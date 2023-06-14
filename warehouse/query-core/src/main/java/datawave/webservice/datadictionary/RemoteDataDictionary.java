@@ -28,75 +28,75 @@ import java.util.function.Supplier;
 @RefreshableScope
 public class RemoteDataDictionary extends RemoteHttpService {
     private ObjectReader dataDictReader;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.useSrvDnsLookup", defaultValue = "false")
     private boolean useSrvDNS;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.srvDnsServers", defaultValue = "127.0.0.1")
     private List<String> srvDnsServers;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.srvDnsPort", defaultValue = "8600")
     private int srvDnsPort;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.scheme", defaultValue = "https")
     private String dictServiceScheme;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.host", defaultValue = "localhost")
     private String dictServiceHost;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.port", defaultValue = "8843")
     private int dictServicePort;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.data.uri", defaultValue = "/dictionary/data/v1/")
     private String dictServiceURI;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.maxConnections", defaultValue = "100")
     private int maxConnections;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.retryCount", defaultValue = "5")
     private int retryCount;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.unavailableRetryCount", defaultValue = "15")
     private int unavailableRetryCount;
-    
+
     @Inject
     @ConfigProperty(name = "dw.remoteDictionary.unavailableRetryDelayMS", defaultValue = "2000")
     private int unavailableRetryDelay;
-    
+
     @Inject
     @Metric(name = "dw.remoteDictionary.retries", absolute = true)
     private Counter retryCounter;
-    
+
     @Inject
     @Metric(name = "dw.remoteDictionary.failures", absolute = true)
     private Counter failureCounter;
-    
+
     @Inject
     @CallerPrincipal
     protected DatawavePrincipal callerPrincipal;
-    
+
     @Inject
     @DataDictionaryType
     protected TypeReference<? extends DataDictionaryBase<?,? extends MetadataFieldBase<?,?>>> dataDictionaryType;
-    
+
     @Override
     @PostConstruct
     public void init() {
         super.init();
-        
+
         dataDictReader = objectMapper.readerFor(dataDictionaryType);
     }
-    
+
     public DataDictionaryBase<?,? extends MetadataFieldBase<?,?>> getDataDictionary(String modelName, String modelTableName, String metadataTableName,
                     String auths) {
         final String bearerHeader = "Bearer " + jwtTokenHandler.createTokenFromUsers(callerPrincipal.getName(), callerPrincipal.getProxiedUsers());
@@ -113,70 +113,70 @@ public class RemoteDataDictionary extends RemoteHttpService {
                 () -> "getDataDictionary [" + modelName + ", " + modelTableName + ", " + metadataTableName + ", " + auths + "]");
         // @formatter:on
     }
-    
+
     @Override
     protected String serviceHost() {
         return dictServiceHost;
     }
-    
+
     @Override
     protected int servicePort() {
         return dictServicePort;
     }
-    
+
     @Override
     protected String serviceURI() {
         return dictServiceURI;
     }
-    
+
     @Override
     protected boolean useSrvDns() {
         return useSrvDNS;
     }
-    
+
     @Override
     protected List<String> srvDnsServers() {
         return srvDnsServers;
     }
-    
+
     @Override
     protected int srvDnsPort() {
         return srvDnsPort;
     }
-    
+
     @Override
     protected String serviceScheme() {
         return dictServiceScheme;
     }
-    
+
     @Override
     protected int maxConnections() {
         return maxConnections;
     }
-    
+
     @Override
     protected int retryCount() {
         return retryCount;
     }
-    
+
     @Override
     protected int unavailableRetryCount() {
         return unavailableRetryCount;
     }
-    
+
     @Override
     protected int unavailableRetryDelay() {
         return unavailableRetryDelay;
     }
-    
+
     @Override
     protected Counter retryCounter() {
         return retryCounter;
     }
-    
+
     @Override
     protected Counter failureCounter() {
         return failureCounter;
     }
-    
+
 }

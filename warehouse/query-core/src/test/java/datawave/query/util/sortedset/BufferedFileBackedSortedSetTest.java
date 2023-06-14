@@ -24,12 +24,12 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class BufferedFileBackedSortedSetTest {
-    
+
     private final List<SortedSetTempFileHandler> tempFileHandlers = new ArrayList<>();
     private byte[][] data = null;
     private int[] sortedOrder = null;
     private BufferedFileBackedSortedSet<byte[]> set = null;
-    
+
     @Before
     public void setUp() throws Exception {
         byte[] template = new byte[] {5, 2, 78, 4, 8, 3, 54, 23, 6, 21, 7, 16};
@@ -56,20 +56,20 @@ public class BufferedFileBackedSortedSetTest {
                                 tempFileHandlers.add(fileHandler);
                                 return fileHandler;
                             }
-                            
+
                             @Override
                             public boolean isValid() {
                                 return true;
                             }
                         }), new FileSerializableSortedSet.Factory());
-        
+
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
         for (int d = 0; d < 11; d++) {
             Collections.addAll(set, data);
         }
     }
-    
+
     @After
     public void tearDown() throws Exception {
         // Delete each sorted set file and its checksum.
@@ -80,19 +80,19 @@ public class BufferedFileBackedSortedSetTest {
             tryDelete(checksum);
         }
         tempFileHandlers.clear();
-        
+
         data = null;
         sortedOrder = null;
         set.clear();
         set = null;
     }
-    
+
     private void tryDelete(File file) {
         if (file.exists()) {
             Assert.assertTrue("Failed to delete file " + file, file.delete());
         }
     }
-    
+
     @Test
     public void testSize() {
         int expectedSize = data.length;
@@ -114,7 +114,7 @@ public class BufferedFileBackedSortedSetTest {
             assertEquals(expectedSize, set.size());
         }
     }
-    
+
     @Test
     public void testIsEmpty() {
         assertFalse(set.isEmpty());
@@ -133,13 +133,13 @@ public class BufferedFileBackedSortedSetTest {
             assertFalse(set.isEmpty());
         }
     }
-    
+
     @Test
     public void testClear() {
         set.clear();
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testContainsObject() {
         for (int i = (data.length / 2); i < data.length; i++) {
@@ -152,11 +152,11 @@ public class BufferedFileBackedSortedSetTest {
             assertFalse(set.contains(data[i]));
         }
     }
-    
+
     @Test
     public void testRemove() {
         int expectedSize = data.length;
-        
+
         assertFalse(set.isPersisted());
         for (int i = 0; i < data.length; i++) {
             set.remove(data[i]);
@@ -164,11 +164,11 @@ public class BufferedFileBackedSortedSetTest {
         }
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testRemovePersisted() throws IOException {
         int expectedSize = data.length;
-        
+
         assertFalse(set.isPersisted());
         set.persist();
         assertTrue(set.isPersisted());
@@ -179,11 +179,11 @@ public class BufferedFileBackedSortedSetTest {
         }
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testRemoveIf() {
         int expectedSize = data.length;
-        
+
         assertFalse(set.isPersisted());
         set.removeIf(new Predicate<byte[]>() {
             @Override
@@ -193,7 +193,7 @@ public class BufferedFileBackedSortedSetTest {
         });
         assertFalse(set.isPersisted());
         assertEquals(expectedSize, set.size());
-        
+
         set.removeIf(new Predicate<byte[]>() {
             @Override
             public boolean test(byte[] bytes) {
@@ -203,15 +203,15 @@ public class BufferedFileBackedSortedSetTest {
         assertFalse(set.isPersisted());
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testRemoveIfPersisted() throws IOException {
         int expectedSize = data.length;
-        
+
         assertFalse(set.isPersisted());
         set.persist();
         assertTrue(set.isPersisted());
-        
+
         set.removeIf(new Predicate<byte[]>() {
             @Override
             public boolean test(byte[] bytes) {
@@ -220,7 +220,7 @@ public class BufferedFileBackedSortedSetTest {
         });
         assertTrue(set.isPersisted());
         assertEquals(expectedSize, set.size());
-        
+
         set.removeIf(new Predicate<byte[]>() {
             @Override
             public boolean test(byte[] bytes) {
@@ -230,41 +230,41 @@ public class BufferedFileBackedSortedSetTest {
         assertTrue(set.isPersisted());
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testRemoveAll() {
         int expectedSize = data.length;
-        
+
         assertFalse(set.isPersisted());
         set.removeAll(Collections.emptySet());
         assertFalse(set.isPersisted());
         assertEquals(expectedSize, set.size());
-        
+
         Set<byte[]> toRemove = new TreeSet<byte[]>(new ByteArrayComparator());
         toRemove.addAll(Arrays.asList(data));
         set.removeAll(toRemove);
         assertFalse(set.isPersisted());
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testRemoveAllPersisted() throws IOException {
         int expectedSize = data.length;
-        
+
         assertFalse(set.isPersisted());
         set.persist();
         assertTrue(set.isPersisted());
         set.removeAll(Collections.emptySet());
         assertTrue(set.isPersisted());
         assertEquals(expectedSize, set.size());
-        
+
         Set<byte[]> toRemove = new TreeSet<byte[]>(new ByteArrayComparator());
         toRemove.addAll(Arrays.asList(data));
         set.removeAll(toRemove);
         assertTrue(set.isPersisted());
         assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testIterator() {
         int index = 0;
@@ -278,7 +278,7 @@ public class BufferedFileBackedSortedSetTest {
             fail();
         }
     }
-    
+
     @Test
     public void testIteratorRemove() {
         int size = set.size();
@@ -302,7 +302,7 @@ public class BufferedFileBackedSortedSetTest {
         assertEquals(size, failCount);
         assertFalse(set.isEmpty());
     }
-    
+
     @Test
     public void testComparator() {
         Comparator<? super byte[]> comparator = set.comparator();
@@ -314,7 +314,7 @@ public class BufferedFileBackedSortedSetTest {
             assertTrue(Arrays.equals(expected, value));
         }
     }
-    
+
     @Test
     public void testSubSet() {
         int start = sortedOrder.length / 3;
@@ -330,7 +330,7 @@ public class BufferedFileBackedSortedSetTest {
             // expected
         }
     }
-    
+
     @Test
     public void testHeadSet() {
         int end = sortedOrder.length / 3;
@@ -345,7 +345,7 @@ public class BufferedFileBackedSortedSetTest {
             // expected
         }
     }
-    
+
     @Test
     public void testTailSet() {
         int start = sortedOrder.length / 3;
@@ -360,26 +360,26 @@ public class BufferedFileBackedSortedSetTest {
             // expected
         }
     }
-    
+
     @Test
     public void testLast() {
         byte[] expected = data[sortedOrder[data.length - 1]];
         byte[] value = set.last();
         assertTrue(Arrays.equals(expected, value));
     }
-    
+
     @Test
     public void testFirst() {
         byte[] expected = data[sortedOrder[0]];
         byte[] value = set.first();
         assertTrue(Arrays.equals(expected, value));
     }
-    
+
     @Test
     public void testCompaction() throws IOException {
         assertEquals(8, set.getSets().size());
         set.persist();
         assertEquals(3, set.getSets().size());
     }
-    
+
 }

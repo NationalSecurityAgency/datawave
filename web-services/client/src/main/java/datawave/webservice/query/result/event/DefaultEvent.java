@@ -26,33 +26,33 @@ import java.util.Map;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implements Serializable, Message<DefaultEvent>, ObjectSizeOf {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)
     private HashMap<String,String> markings = null;
-    
+
     @XmlElement(name = "Metadata")
     private Metadata metadata = null;
-    
+
     @XmlElementWrapper(name = "Fields")
     @XmlElement(name = "Field")
     private List<DefaultField> fields = null;
-    
+
     public List<DefaultField> getFields() {
         return fields;
     }
-    
+
     public void setFields(List<DefaultField> fields) {
         this.fields = fields;
     }
-    
+
     @Override
     public String toString() {
         return getMarkings() + ": " + (this.fields != null ? this.fields.toString() : "fields are null");
     }
-    
+
     public void setMarkings(Map<String,String> markings) {
         if (null != markings) {
             this.markings = new HashMap<>(markings);
@@ -61,31 +61,31 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
         }
         super.setMarkings(this.markings);
     }
-    
+
     public Metadata getMetadata() {
         return metadata;
     }
-    
+
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof DefaultEvent) {
             DefaultEvent v = (DefaultEvent) o;
-            
+
             EqualsBuilder eb = new EqualsBuilder();
-            
+
             eb.append(this.markings, v.markings);
             eb.append(this.metadata, v.metadata);
             eb.append(this.fields, v.fields);
             return eb.isEquals();
         }
-        
+
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         int result = markings != null ? markings.hashCode() : 0;
@@ -93,42 +93,42 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
         result = 31 * result + (fields != null ? fields.hashCode() : 0);
         return result;
     }
-    
+
     @Override
     public Schema<DefaultEvent> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<DefaultEvent> SCHEMA = new Schema<DefaultEvent>() {
         public DefaultEvent newMessage() {
             return new DefaultEvent();
         }
-        
+
         public Class<DefaultEvent> typeClass() {
             return DefaultEvent.class;
         }
-        
+
         public String messageName() {
             return DefaultEvent.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return DefaultEvent.class.getName();
         }
-        
+
         public boolean isInitialized(DefaultEvent message) {
             return true;
         }
-        
+
         public void writeTo(Output output, DefaultEvent message) throws IOException {
             if (message.markings != null)
                 output.writeObject(1, message.markings, MapSchema.SCHEMA, false);
-            
+
             if (message.metadata != null) {
                 output.writeObject(2, message.metadata, Metadata.getSchema(), false);
             }
-            
+
             if (message.fields != null) {
                 Schema<DefaultField> schema = null;
                 for (DefaultField field : message.fields) {
@@ -141,7 +141,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, DefaultEvent message) throws IOException {
             int number;
             Schema<DefaultField> schema = null;
@@ -170,7 +170,7 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -183,12 +183,12 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
             fieldMap.put("markings", 1);
@@ -196,10 +196,10 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
             fieldMap.put("fields", 3);
         }
     };
-    
+
     // the approximate size in bytes of this event
     private long size = -1;
-    
+
     /**
      * @param size
      *            the approximate size of this event in bytes
@@ -207,14 +207,14 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
     public void setSizeInBytes(long size) {
         this.size = size;
     }
-    
+
     /**
      * @return The set size in bytes, -1 if unset
      */
     public long getSizeInBytes() {
         return this.size;
     }
-    
+
     /**
      * Get the approximate size of this event in bytes. Used by the ObjectSizeOf mechanism in the webservice. Throws an exception if the local size was not set
      * to allow the ObjectSizeOf mechanism to do its thang.
@@ -226,5 +226,5 @@ public class DefaultEvent extends EventBase<DefaultEvent,DefaultField> implement
         }
         return this.size;
     }
-    
+
 }

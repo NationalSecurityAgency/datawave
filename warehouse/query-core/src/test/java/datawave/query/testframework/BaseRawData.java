@@ -21,22 +21,22 @@ import java.util.Set;
  */
 public abstract class BaseRawData implements RawData {
     private static final Logger log = Logger.getLogger(BaseRawData.class);
-    
+
     /**
      * Field name for the datatype for each event. This field is added to every event.
      */
     public static final String EVENT_DATATYPE = Normalizer.LC_NO_DIACRITICS_NORMALIZER.normalize("EVENT_DATATYPE");
-    
+
     private static final RawMetaData DATATYPE_METADATA = new RawMetaData(EVENT_DATATYPE, Normalizer.LC_NO_DIACRITICS_NORMALIZER, false);
-    
+
     // =============================
     // instance members
     /** mapping of field to data for each event */
     protected final Map<String,Set<String>> event = new HashMap<>();
-    
+
     protected final Map<String,RawMetaData> metaDataMap;
     protected final List<String> headers;
-    
+
     /**
      *
      * @param datatype
@@ -53,14 +53,14 @@ public abstract class BaseRawData implements RawData {
         if (!this.metaDataMap.containsKey(EVENT_DATATYPE)) {
             this.metaDataMap.put(EVENT_DATATYPE, DATATYPE_METADATA);
         }
-        
+
         // add event datatype to event data
         // this will be used when filtering by datatype
         final Set<String> eventDt = new HashSet<>();
         eventDt.add(DATATYPE_METADATA.normalizer.normalize(datatype));
         this.event.put(EVENT_DATATYPE, eventDt);
     }
-    
+
     /**
      * Creates a POJO for a raw data event. The values in the <code>fields</code> must match the corresponding entries specified in the <code>headers</code>.
      * The fields and values will be normalized.
@@ -71,18 +71,18 @@ public abstract class BaseRawData implements RawData {
      *            ordered list of field names
      * @param metadata
      *            field metadata
-     * */
+     */
     public BaseRawData(final String datatype, final String[] fields, final List<String> fieldHeaders, final Map<String,RawMetaData> metadata) {
         this(datatype, fieldHeaders, metadata);
         processFields(datatype, fields);
     }
-    
+
     public void processFields(final String datatype, final String[] fields) {
         // add each header event
         final List<String> hdrs = getHeaders();
         // ensure headers match field input
         Assert.assertEquals(hdrs.size(), fields.length);
-        
+
         for (int n = 0; n < hdrs.size(); n++) {
             String header = hdrs.get(n);
             final Normalizer<?> norm = getNormalizer(header);
@@ -125,7 +125,7 @@ public abstract class BaseRawData implements RawData {
             }
         }
     }
-    
+
     /**
      * Converts data from a {@link NormalizedContentInterface} into a raw data entry.
      *
@@ -148,7 +148,7 @@ public abstract class BaseRawData implements RawData {
             this.event.put(fld.getKey().toLowerCase(), values);
         }
     }
-    
+
     /**
      * Converts a map of fields to values to a raw entry.
      *
@@ -171,10 +171,10 @@ public abstract class BaseRawData implements RawData {
             this.event.put(entry.getKey().toLowerCase(), fieldVals);
         }
     }
-    
+
     // ================================
     // implemented interface methods
-    
+
     @Override
     public Set<Map<String,String>> getMapping() {
         // convert multi-value fields into separate entries
@@ -205,55 +205,55 @@ public abstract class BaseRawData implements RawData {
                 expanded.addAll(multiAdd);
             }
         }
-        
+
         return expanded;
     }
-    
+
     @Override
     public String getValue(final String field) {
         Set<String> val = this.event.get(field);
         return (val == null ? null : val.iterator().next());
     }
-    
+
     @Override
     public Set<String> getAllValues(final String field) {
         return this.event.get(field);
     }
-    
+
     @Override
     public String getKey(String field) {
         // by default the query field is the same as the header field
         // some datatypes may alter the query field
         return field;
     }
-    
+
     @Override
     public List<String> getHeaders() {
         return this.headers;
     }
-    
+
     @Override
     public boolean containsField(String field) {
         return this.metaDataMap.keySet().contains(field.toLowerCase());
     }
-    
+
     @Override
     public boolean isTokenizedField(String field) {
         // by default all fields are not tokenized - see groups data
         return false;
     }
-    
+
     @Override
     public boolean isMultiValueField(final String field) {
         return this.metaDataMap.get(field.toLowerCase()).multiValue;
     }
-    
+
     @Override
     public Normalizer<?> getNormalizer(String field) {
         Assert.assertTrue(containsField(field));
         return this.metaDataMap.get(field.toLowerCase()).normalizer;
     }
-    
+
     // ================================
     // base override methods
     @Override
@@ -265,7 +265,7 @@ public abstract class BaseRawData implements RawData {
         BaseRawData data = (BaseRawData) o;
         return Objects.equals(event, data.event);
     }
-    
+
     @Override
     public int hashCode() {
         return this.event.hashCode();

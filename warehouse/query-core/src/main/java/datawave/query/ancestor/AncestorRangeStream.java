@@ -16,18 +16,18 @@ public class AncestorRangeStream extends RangeStream {
     public AncestorRangeStream(ShardQueryConfiguration config, ScannerFactory scanners, MetadataHelper metadataHelper) {
         super(config, scanners, metadataHelper);
     }
-    
+
     @Override
     public IndexStream visit(ASTOrNode node, Object data) {
         IndexStream unmerged = super.visit(node, data);
-        
+
         return new AncestorIndexStream(unmerged, node);
     }
-    
+
     @Override
     public IndexStream visit(ASTAndNode node, Object data) {
         IndexStream unmerged = super.visit(node, data);
-        
+
         return new AncestorIndexStream(unmerged, node);
     }
 }

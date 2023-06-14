@@ -29,39 +29,39 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class CSVRecordReader extends CSVReaderBase implements EventFixer {
-    
+
     private static final Logger log = Logger.getLogger(CSVRecordReader.class);
-    
+
     private static final IngestConfiguration ingestConfig = IngestConfigurationFactory.getIngestConfiguration();
     private static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
-    
+
     private String csvEventId;
     private final Multimap<String,Object> metadataForValidation = ArrayListMultimap.create(100, 1);
     private String rawData = null;
-    
+
     private ExtendedCSVHelper csvHelper;
     private DataTypeOverrideHelper dataTypeHelper;
     private Map<String,String> securityMarkings;
-    
+
     @Override
     public void initialize(InputSplit genericSplit, TaskAttemptContext context) throws IOException {
         // call the super initialization
         super.initialize(genericSplit, context);
     }
-    
+
     @Override
     public void initializeEvent(Configuration conf) throws IOException {
         // the data name over takes place here
         super.initializeEvent(conf);
-        
+
         this.csvHelper = (ExtendedCSVHelper) this.helper;
-        
+
         this.dataTypeHelper = new DataTypeOverrideHelper();
         this.dataTypeHelper.setup(conf);
-        
+
         markingsHelper = ingestConfig.getMarkingsHelper(conf, this.csvHelper.getType());
     }
-    
+
     @Override
     public void setup(Configuration conf) {
         try {
@@ -70,7 +70,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
             throw new IllegalArgumentException("Cannot setup CSVRecordReader", e);
         }
     }
-    
+
     @Override
     public RawRecordContainer fixEvent(RawRecordContainer e) {
         rawFileName = e.getRawFileName();
@@ -84,7 +84,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         }
         return e;
     }
-    
+
     @Override
     public boolean nextKeyValue() throws IOException {
         if (rawData != null) {
@@ -94,7 +94,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
             return super.nextKeyValue();
         }
     }
-    
+
     @Override
     public Text getCurrentValue() {
         if (rawData != null) {
@@ -107,12 +107,12 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
             return super.getCurrentValue();
         }
     }
-    
+
     @Override
     protected ExtendedCSVHelper createHelper(Configuration conf) {
         return new ExtendedCSVHelper();
     }
-    
+
     @Override
     public RawRecordContainer getEvent() {
         securityMarkings = null;
@@ -120,7 +120,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         metadataForValidation.clear();
         return super.getEvent();
     }
-    
+
     @Override
     protected void decorateEvent() {
         if (null != this.securityMarkings && !this.securityMarkings.isEmpty()) {
@@ -132,16 +132,16 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
                 throw new RuntimeException(e);
             }
         }
-        
+
         // now validate
         for (EventValidator validator : this.csvHelper.getValidators()) {
             validator.validate(event, metadataForValidation.asMap());
         }
     }
-    
+
     /**
      * Determine if a field is required to be added to the metadata for validation
-     * 
+     *
      * @param fieldName
      *            field name
      * @return true if required
@@ -157,7 +157,7 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         }
         return false;
     }
-    
+
     @Override
     protected void processPreSplitField(String fieldName, String fieldValue) {
         if (requiredForValidation(fieldName)) {
@@ -165,13 +165,13 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         }
         super.processPreSplitField(fieldName, ExtendedCSVHelper.expandFieldValue(fieldValue));
     }
-    
+
     @Override
     protected void checkField(String fieldName, String fieldValue) {
         if (requiredForValidation(fieldName)) {
             metadataForValidation.put(fieldName, fieldValue);
         }
-        
+
         // If fieldName is a security marking field (as configured by EVENT_SECURITY_MARKING_FIELD_NAMES),
         // then put the marking value into this.securityMarkings, where the key is the field name for the marking
         // (as configured by EVENT_SECURITY_MARKING_FIELD_DOMAINS)
@@ -185,14 +185,14 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         }
         // Now lets add metadata extracted from the parsers
         else if (!StringUtils.isEmpty(this.csvHelper.getEventIdFieldName()) && fieldName.equals(this.csvHelper.getEventIdFieldName())) {
-            
+
             if (this.csvHelper.getEventIdDowncase()) {
                 fieldValue = fieldValue.toLowerCase();
             }
-            
+
             // remember the id for uid creation
             csvEventId = fieldValue;
-            
+
             try {
                 getMetadataFromParsers(csvEventId);
             } catch (Exception e) {
@@ -203,10 +203,10 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
         if (!(fieldName.equals(eventDateFieldName) && event.getDate() > Long.MIN_VALUE)) {
             super.checkField(fieldName, fieldValue);
         }
-        
+
         dataTypeHelper.updateEventDataType(event, fieldName, fieldValue);
     }
-    
+
     /**
      * Overridden to create a UID with appropriate extra attachment info
      */
@@ -214,10 +214,10 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
     protected UID uidOverride(RawRecordContainer e) {
         return DataTypeOverrideHelper.getUid(this.csvEventId, e.getTimeForUID(), uidBuilder);
     }
-    
+
     /**
      * Apply the id metadata parser
-     * 
+     *
      * @param idFieldValue
      *            id field value
      * @throws Exception
@@ -232,13 +232,13 @@ public class CSVRecordReader extends CSVReaderBase implements EventFixer {
             checkField(entry.getKey(), entry.getValue());
         }
     }
-    
+
     public MarkingsHelper getMarkingsHelper() {
         return markingsHelper;
     }
-    
+
     public void setMarkingsHelper(MarkingsHelper markingHelper) {
         this.markingsHelper = markingHelper;
     }
-    
+
 }

@@ -29,13 +29,13 @@ public class CompositeUserOperations implements UserOperations {
     final ResponseObjectFactory responseObjectFactory;
     final List<UserOperations> userOperations;
     final boolean includeLocal;
-    
+
     public CompositeUserOperations(List<UserOperations> remoteOperations, boolean includeLocal, ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
         this.userOperations = remoteOperations;
         this.includeLocal = includeLocal;
     }
-    
+
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
         AuthorizationsListBase auths = responseObjectFactory.getAuthorizationsList();
@@ -62,18 +62,18 @@ public class CompositeUserOperations implements UserOperations {
                         .forEach(e -> auths.addAuths(e.getKey().subjectDN, e.getKey().issuerDN, e.getValue()));
         return auths;
     }
-    
+
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             return (DatawavePrincipal) callerObject;
         }
         throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
-    
+
     public static AuthorizationsListBase.SubjectIssuerDNPair dn(SubjectIssuerDNPair dn) {
         return new AuthorizationsListBase.SubjectIssuerDNPair(dn.subjectDN(), dn.issuerDN());
     }
-    
+
     @Override
     public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
         GenericResponse<String> response = new GenericResponse<>();
@@ -100,7 +100,7 @@ public class CompositeUserOperations implements UserOperations {
         }
         return response;
     }
-    
+
     @Override
     public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
         List<DatawavePrincipal> principals = new ArrayList<>();
@@ -110,10 +110,10 @@ public class CompositeUserOperations implements UserOperations {
         for (UserOperations ops : userOperations) {
             principals.add(ops.getRemoteUser(principal));
         }
-        
+
         return AuthorizationsUtil.mergePrincipals(principals.toArray(new DatawavePrincipal[0]));
     }
-    
+
     public static Exception getException(QueryExceptionType qet) {
         if (qet.getCode() != null) {
             if (qet.getCause() != null) {

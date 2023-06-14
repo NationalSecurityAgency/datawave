@@ -18,20 +18,20 @@ import org.apache.accumulo.core.data.Value;
 import com.google.common.collect.Lists;
 
 public abstract class Scheduler implements CloseableIterable<Entry<Key,Value>> {
-    
+
     protected Collection<IteratorSetting> settings = Lists.newArrayList();
-    
+
     public abstract BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException;
-    
+
     /**
      * Returns the scan session stats provided by this scheduler
-     * 
+     *
      * @return the scan session stats
      */
     public abstract ScanSessionStats getSchedulerStats();
-    
+
     public void addSetting(IteratorSetting customSetting) {
         settings.add(customSetting);
     }
-    
+
 }

@@ -28,12 +28,12 @@ import java.util.Set;
  * This only works on positive phrase queries -- that is, no guarantee is made for negated phrases
  */
 public class DocumentKeysFunction {
-    
+
     private static final Logger log = Logger.getLogger(DocumentKeysFunction.class);
 
     private final Set<String> negatedValues = new HashSet<>();
     private final Multimap<String,ContentFunction> contentFunctions = LinkedListMultimap.create();
-    
+
     /**
      * @param config
      *            a {@link TermFrequencyConfig}
@@ -41,30 +41,30 @@ public class DocumentKeysFunction {
     public DocumentKeysFunction(TermFrequencyConfig config) {
         populateContentFunctions(config.getScript());
     }
-    
+
     protected void populateContentFunctions(JexlNode node) {
-        
+
         ContentFunctionsDescriptor descriptor = new ContentFunctionsDescriptor();
         ContentJexlArgumentDescriptor argsDescriptor;
         Set<String>[] fieldsAndTerms;
         JexlNode parent;
         String field;
-        
+
         Multimap<String,Function> functions = TermOffsetPopulator.getContentFunctions(node);
         for (String key : functions.keySet()) {
             Collection<Function> coll = functions.get(key);
             for (Function f : coll) {
                 parent = f.args().get(0).jjtGetParent();
-                
+
                 if (!(parent instanceof ASTFunctionNode)) {
                     throw new IllegalArgumentException("parent was not a function node");
                 }
-                
+
                 argsDescriptor = descriptor.getArgumentDescriptor((ASTFunctionNode) parent);
-                
+
                 // content, tf, and indexed fields are not actually needed to extract fields from the function node
                 fieldsAndTerms = argsDescriptor.fieldsAndTerms(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), null);
-                
+
                 if (fieldsAndTerms[0].size() != 1) {
                     throw new IllegalStateException("content function had more than one field");
                 }
@@ -73,27 +73,27 @@ public class DocumentKeysFunction {
                 ContentFunction contentFunction = new ContentFunction(field, fieldsAndTerms[1]);
                 contentFunctions.put(contentFunction.getField(), contentFunction);
 
-                if(isFunctionNegated(f)){
+                if (isFunctionNegated(f)) {
                     negatedValues.addAll(contentFunction.getValues());
                 }
             }
         }
     }
 
-    public boolean isFunctionNegated(Function f){
+    public boolean isFunctionNegated(Function f) {
         JexlNode node = f.args().get(0);
         int numNegations = 0;
-        if(node != null){
-            while (node.jjtGetParent() != null){
+        if (node != null) {
+            while (node.jjtGetParent() != null) {
                 node = node.jjtGetParent();
-                if(node instanceof ASTNotNode){
+                if (node instanceof ASTNotNode) {
                     numNegations++;
                 }
             }
         }
         return numNegations % 2 == 1;
     }
-    
+
     /**
      * Reduces the search space to the union of the document keys associated with each content function
      *
@@ -106,20 +106,20 @@ public class DocumentKeysFunction {
     protected Set<Key> getDocKeys(Document d, Set<Key> docKeys) {
         Multimap<String,Key> valueToKeys = buildValueToKeys(d);
 
-        //  add all negated values
-        for(String value : negatedValues){
+        // add all negated values
+        for (String value : negatedValues) {
             valueToKeys.putAll(value, docKeys);
         }
 
         Set<Key> filterKeys = buildFilterKeys(valueToKeys);
-        
+
         if (log.isDebugEnabled() && docKeys.size() != filterKeys.size()) {
             log.debug("reduced document keys from " + docKeys.size() + " to " + filterKeys.size() + " (-" + (docKeys.size() - filterKeys.size()) + ")");
         }
-        
+
         return filterKeys;
     }
-    
+
     /**
      * Constructs the multimap of value to document keys
      *
@@ -138,7 +138,7 @@ public class DocumentKeysFunction {
         }
         return valueToKeys;
     }
-    
+
     /**
      * Gets the sum of all content function values
      *
@@ -155,7 +155,7 @@ public class DocumentKeysFunction {
         }
         return values;
     }
-    
+
     /**
      * Extract value or values from the provided Attribute, only adding to the multimap if the values match the filter
      *
@@ -189,7 +189,7 @@ public class DocumentKeysFunction {
             valueToKeys.put((String) attr.getData(), attr.getMetadata());
         }
     }
-    
+
     /**
      * Builds the filter keys from the content functions and value-to-keys multimap
      * <p>
@@ -209,11 +209,11 @@ public class DocumentKeysFunction {
                 } else {
                     keys.retainAll(valueToKeys.get(value));
                 }
-                
+
                 if (keys.isEmpty())
                     break;
             }
-            
+
             if (keys != null) {
                 filterKeys.addAll(keys);
             }

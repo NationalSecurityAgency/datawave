@@ -23,43 +23,43 @@ import com.google.common.cache.CacheBuilder;
  *
  */
 public class FlagEntryMoverTest extends AbstractFlagConfig {
-    
+
     private static final Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES)
                     .concurrencyLevel(10).build();
     private FileSystem fs;
-    
+
     public FlagEntryMoverTest() {}
-    
+
     @Before
     public void before() throws Exception {
         fmc = getDefaultFMC();
         fmc.setBaseHDFSDir(fmc.getBaseHDFSDir().replace("target", "target/FlagEntryMoverTest"));
         fs = FileSystem.getLocal(new Configuration());
-        
+
         cleanTestDirs();
     }
-    
+
     @Test
     public void testWrite() throws IOException {
         final String METRICS_DIR = "target/test/metrics";
-        
+
         FlagMetrics metrics = new FlagMetrics(this.fs, false);
         metrics.updateCounter(this.getClass().getSimpleName(), "COUNTER_ONE", System.currentTimeMillis());
         metrics.writeMetrics(METRICS_DIR, "base");
-        
+
     }
-    
+
     /**
      * Test of call method, of class FlagEntryMover.
      */
     @Test
     public void testCall() throws Exception {
-        
+
         Path file = getTestFile(fs);
-        
+
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
         createTrackedDirs(fs, entry);
-        
+
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         InputFile result = instance.call();
         assertSame(result, entry);
@@ -69,17 +69,17 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
         Assert.assertEquals(entry.getPath().getName(), entry.getFlagging().getName());
         Assert.assertEquals(entry.getPath().getName(), entry.getLoaded().getName());
     }
-    
+
     @Test
     public void testConflict() throws Exception {
-        
+
         Path file = getTestFile(fs);
-        
+
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
         createTrackedDirs(fs, entry);
-        
+
         fs.copyFromLocalFile(file, entry.getFlagging());
-        
+
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         InputFile result = instance.call();
         assertFalse("Should not have moved", result.isMoved());
@@ -89,21 +89,21 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
         Assert.assertEquals(entry.getPath().getName(), entry.getFlagging().getName());
         Assert.assertEquals(entry.getPath().getName(), entry.getLoaded().getName());
     }
-    
+
     @Test
     public void testConflictMove() throws Exception {
-        
+
         Path file = getTestFile(fs);
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
         createTrackedDirs(fs, entry);
-        
+
         // create conflict file with different checksum
         final Path loadFile = entry.getLoaded();
         Thread.sleep(10);
         try (final OutputStream os = fs.create(loadFile)) {
             os.write(("" + System.currentTimeMillis()).getBytes());
         }
-        
+
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         final InputFile result = instance.call();
         assertTrue(result.isMoved());

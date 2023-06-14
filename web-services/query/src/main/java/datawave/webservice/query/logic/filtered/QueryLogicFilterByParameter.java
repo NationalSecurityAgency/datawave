@@ -12,31 +12,31 @@ import java.util.Set;
  * specified then the parameter is treated as a boolean parameter (i.e. the value is "true"). One can also negate the matching of the parameter.
  */
 public class QueryLogicFilterByParameter extends QueryParameterPredicate implements FilteredQueryLogic.QueryLogicFilter {
-    
+
     // if negated than the negation of the match is returned
     private boolean negated = false;
-    
+
     public QueryLogicFilterByParameter() {}
-    
+
     public QueryLogicFilterByParameter(String parameter) {
         setParameter(parameter);
     }
-    
+
     public QueryLogicFilterByParameter(String parameter, String value) {
         this(parameter);
         setValue(value);
     }
-    
+
     public QueryLogicFilterByParameter(String parameter, boolean negated) {
         this(parameter);
         setNegated(negated);
     }
-    
+
     public QueryLogicFilterByParameter(String parameter, String value, boolean negated) {
         this(parameter, value);
         setNegated(negated);
     }
-    
+
     @Override
     public boolean canRunQuery(Query settings, Set<Authorizations> auths) {
         boolean canRunQuery = test(settings);
@@ -45,11 +45,11 @@ public class QueryLogicFilterByParameter extends QueryParameterPredicate impleme
         }
         return canRunQuery;
     }
-    
+
     public boolean isNegated() {
         return negated;
     }
-    
+
     public void setNegated(boolean negated) {
         this.negated = negated;
     }

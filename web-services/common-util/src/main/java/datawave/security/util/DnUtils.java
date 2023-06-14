@@ -17,18 +17,18 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 public class DnUtils {
-    
+
     /** Config for injecting NPE OU identifiers */
     public static final String PROPS_RESOURCE = "dnutils.properties";
-    
+
     private static final Properties PROPS = new Properties();
-    
+
     public static final String SUBJECT_DN_PATTERN_PROPERTY = "subject.dn.pattern";
-    
+
     private static final Pattern SUBJECT_DN_PATTERN;
-    
+
     private static final Logger log = LoggerFactory.getLogger(DnUtils.class);
-    
+
     static {
         InputStream in = null;
         try {
@@ -57,19 +57,19 @@ public class DnUtils {
             throw new RuntimeException(t);
         }
     }
-    
+
     public static String[] splitProxiedDNs(String proxiedDNs, boolean allowDups) {
         return ProxiedEntityUtils.splitProxiedDNs(proxiedDNs, allowDups);
     }
-    
+
     public static String[] splitProxiedSubjectIssuerDNs(String proxiedDNs) {
         return ProxiedEntityUtils.splitProxiedSubjectIssuerDNs(proxiedDNs);
     }
-    
+
     public static String buildProxiedDN(String... dns) {
         return ProxiedEntityUtils.buildProxiedDN(dns);
     }
-    
+
     public static Collection<String> buildNormalizedDNList(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs) {
         List<String> dnList = new ArrayList<>();
         if (proxiedSubjectDNs != null) {
@@ -97,7 +97,7 @@ public class DnUtils {
         dnList.add(issuerDN.replaceAll("(?<!\\\\)([<>])", "\\\\$1"));
         return dnList;
     }
-    
+
     public static String buildNormalizedProxyDN(String subjectDN, String issuerDN, String proxiedSubjectDNs, String proxiedIssuerDNs) {
         StringBuilder sb = new StringBuilder();
         for (String escapedDN : buildNormalizedDNList(subjectDN, issuerDN, proxiedSubjectDNs, proxiedIssuerDNs)) {
@@ -108,7 +108,7 @@ public class DnUtils {
         }
         return sb.toString();
     }
-    
+
     public static String buildNormalizedProxyDN(List<SubjectIssuerDNPair> dns) {
         StringBuilder sb = new StringBuilder();
         dns.stream().forEach(dn -> {
@@ -121,31 +121,31 @@ public class DnUtils {
         });
         return sb.toString();
     }
-    
+
     public static String getCommonName(String dn) {
         return ProxiedEntityUtils.getCommonName(dn);
     }
-    
+
     public static String[] getOrganizationalUnits(String dn) {
         return ProxiedEntityUtils.getOrganizationalUnits(dn);
     }
-    
+
     public static String getShortName(String dn) {
         return ProxiedEntityUtils.getShortName(dn);
     }
-    
+
     public static boolean isServerDN(String dn) {
         return NpeUtils.isNPE(dn);
     }
-    
+
     public static String getUserDN(String[] dns) {
         return getUserDN(dns, false);
     }
-    
+
     public static String getUserDN(String[] dns, boolean issuerDNs) {
         if (issuerDNs && (dns.length % 2) != 0)
             throw new IllegalArgumentException("DNs array is not a subject/issuer DN list: " + Arrays.toString(dns));
-        
+
         for (int i = 0; i < dns.length; i += (issuerDNs) ? 2 : 1) {
             String dn = dns[i];
             if (!isServerDN(dn))
@@ -153,29 +153,29 @@ public class DnUtils {
         }
         return null;
     }
-    
+
     public static String[] getComponents(String dn, String componentName) {
         return ProxiedEntityUtils.getComponents(dn, componentName);
     }
-    
+
     public static String normalizeDN(String userName) {
         return ProxiedEntityUtils.normalizeDN(userName);
     }
-    
+
     /**
      * Encapsulates the known/valid NPE OU list, and whatever else is needed for NPE handling. Static inner-class, so that injection of the configured OUs is
      * only performed on-demand/if needed
      */
     public static class NpeUtils {
-        
+
         /** Property containing a comma-delimited list of OUs */
         public static final String NPE_OU_PROPERTY = "npe.ou.entries";
-        
+
         /** Parsed NPE OU identifiers */
         static final List<String> NPE_OU_LIST;
-        
+
         private NpeUtils() {}
-        
+
         static {
             List<String> npeOUs = new ArrayList<>();
             String ouString = System.getProperty(NPE_OU_PROPERTY, PROPS.getProperty(NPE_OU_PROPERTY));
@@ -189,7 +189,7 @@ public class DnUtils {
             }
             NPE_OU_LIST = Collections.unmodifiableList(npeOUs);
         }
-        
+
         static boolean isNPE(String dn) {
             String[] ouList = ProxiedEntityUtils.getOrganizationalUnits(dn);
             for (String ou : ouList) {
