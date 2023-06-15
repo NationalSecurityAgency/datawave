@@ -4,6 +4,7 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
@@ -61,8 +62,12 @@ public class EventKeyTest {
         assertKeyWithChildUidNoDashes(parser);
 
         // this should skip actual processing, since it was already parsed up once.
-        parser.parse(eventKeyWithChildUidNoDashes);
+        Key dupeKey = new Key("row", "datatype\0d8zay2.3pnndm.anolok.12.34", "FIELD\0value");
+        parser.parse(dupeKey);
         assertKeyWithChildUidNoDashes(parser);
+        assertNotNull(parser.getDatatype());
+        assertNotNull(parser.getValue());
+        assertNotNull(parser.getField());
     }
 
     private void assertNormalKey(KeyParser parser) {

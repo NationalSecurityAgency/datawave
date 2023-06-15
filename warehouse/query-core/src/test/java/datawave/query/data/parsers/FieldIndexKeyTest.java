@@ -4,6 +4,7 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -54,7 +55,12 @@ public class FieldIndexKeyTest {
         assertNormalKey();
 
         // this should skip actual processing, since it was already parsed up once.
-        parser.parse(fiKey);
+
+        Key dupeKey = new Key("row", "fi\0FIELD", "value\0datatype\0d8zay2.-3pnndm.-anolok");
+        parser.parse(dupeKey);
+        assertNotNull(parser.getDatatype());
+        assertNotNull(parser.getValue());
+        assertNotNull(parser.getField());
         assertNormalKey();
     }
 

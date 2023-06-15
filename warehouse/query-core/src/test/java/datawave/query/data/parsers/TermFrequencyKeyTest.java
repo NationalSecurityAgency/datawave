@@ -4,6 +4,7 @@ import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 
@@ -168,6 +169,11 @@ public class TermFrequencyKeyTest {
     public void testDoubleParse() {
         parser.parse(tfKey);
         assertNormalKey(parser);
-        parser.parse(tfKey);
+
+        Key dupeKey = new Key("row", "tf", "datatype\0d8zay2.-3pnndm.-anolok\0value\0FIELD");
+        parser.parse(dupeKey);
+        assertNotNull(parser.getDatatype());
+        assertNotNull(parser.getValue());
+        assertNotNull(parser.getField());
     }
 }
