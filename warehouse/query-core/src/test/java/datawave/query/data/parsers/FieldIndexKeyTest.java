@@ -53,7 +53,7 @@ public class FieldIndexKeyTest {
         parser.parse(fiKey);
         assertNormalKey();
 
-        //this should skip actual processing, since it was already parsed up once.
+        // this should skip actual processing, since it was already parsed up once.
         parser.parse(fiKey);
         assertNormalKey();
     }
