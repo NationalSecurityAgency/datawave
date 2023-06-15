@@ -60,9 +60,9 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.ParserVisitor;
 import org.apache.commons.jexl2.parser.SimpleNode;
+import org.apache.commons.jexl2.parser.TokenMgrError;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.jexl2.parser.TokenMgrError;
 
 /**
  * Does a pretty print out of a depth first traversal.

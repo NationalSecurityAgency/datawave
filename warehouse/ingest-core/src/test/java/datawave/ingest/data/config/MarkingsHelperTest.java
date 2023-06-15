@@ -1,12 +1,13 @@
 package datawave.ingest.data.config;
 
-import datawave.ingest.data.Type;
-import datawave.marking.MarkingFunctions;
+import java.util.Map;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Map;
+import datawave.ingest.data.Type;
+import datawave.marking.MarkingFunctions;
 
 public class MarkingsHelperTest {
     public static final String FIELD_NAME = "FIELDNAME1";

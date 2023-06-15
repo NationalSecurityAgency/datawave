@@ -1,5 +1,26 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.GT_OP;
+import static datawave.query.testframework.RawDataManager.LT_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.data.type.NumberType;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.iterator.QueryIterator;
@@ -14,26 +35,6 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.webservice.query.configuration.QueryData;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.GT_OP;
-import static datawave.query.testframework.RawDataManager.LT_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
 

@@ -1,9 +1,10 @@
 package datawave.query.index.lookup;
 
-import datawave.query.tld.TLD;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import datawave.query.tld.TLD;
 
 public class CreateTLDUidsIteratorTest {
 

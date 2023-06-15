@@ -2,17 +2,17 @@ package datawave.query.function;
 
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Cardinality;
-import datawave.query.attributes.FieldValueCardinality;
-import datawave.query.attributes.Document;
-import datawave.query.tables.facets.FacetedSearchType;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Cardinality;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.FieldValueCardinality;
+import datawave.query.tables.facets.FacetedSearchType;
 
 /**
  *

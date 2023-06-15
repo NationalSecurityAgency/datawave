@@ -3,14 +3,14 @@ package datawave.query.jexl.functions;
 import java.io.IOException;
 import java.util.Collection;
 
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
 
 public interface FieldIndexAggregator {
     /**

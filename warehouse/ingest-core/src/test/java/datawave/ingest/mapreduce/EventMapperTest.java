@@ -1,17 +1,11 @@
 package datawave.ingest.mapreduce;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.BaseNormalizedContent;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.metrics.Metric;
-import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
-import datawave.ingest.mapreduce.job.metrics.TestEventCountMetricsReceiver;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import static org.easymock.EasyMock.*;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.LongWritable;
@@ -24,11 +18,19 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.easymock.EasyMock.*;
-import static org.junit.Assert.*;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
-import java.io.IOException;
-import java.util.Map;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.BaseNormalizedContent;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.metrics.Metric;
+import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
+import datawave.ingest.mapreduce.job.metrics.TestEventCountMetricsReceiver;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
 public class EventMapperTest {
 

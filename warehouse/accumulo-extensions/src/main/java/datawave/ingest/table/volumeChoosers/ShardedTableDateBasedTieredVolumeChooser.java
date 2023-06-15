@@ -1,14 +1,6 @@
 package datawave.ingest.table.volumeChoosers;
 
-import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
-import org.apache.accumulo.core.spi.fs.RandomVolumeChooser;
-import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.util.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import static java.time.temporal.ChronoUnit.DAYS;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -18,7 +10,15 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static java.time.temporal.ChronoUnit.DAYS;
+import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
+import org.apache.accumulo.core.spi.fs.RandomVolumeChooser;
+import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 //@formatter:off
 /**

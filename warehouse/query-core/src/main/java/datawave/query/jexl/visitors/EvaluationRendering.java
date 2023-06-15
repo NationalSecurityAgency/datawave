@@ -1,12 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Preconditions;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.util.MetadataHelper;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
@@ -14,7 +9,14 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.google.common.base.Preconditions;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.util.MetadataHelper;
 
 /**
  *

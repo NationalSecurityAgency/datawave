@@ -1,18 +1,17 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.Constants;
-import datawave.query.jexl.DatawaveJexlEngine;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.TermFrequencyList.Zone;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.postprocessing.tf.TermOffsetMap;
-import datawave.query.util.MockDateIndexHelper;
-import datawave.query.util.MockMetadataHelper;
+import static org.junit.Assert.fail;
+
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.JexlContext;
 import org.apache.commons.jexl2.JexlEngine;
@@ -30,17 +29,20 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
 
-import static org.junit.Assert.fail;
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.Constants;
+import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.TermFrequencyList.Zone;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.util.MockDateIndexHelper;
+import datawave.query.util.MockMetadataHelper;
 
 public class ContentFunctionsTest {
     static final Logger log = Logger.getLogger(ContentFunctionsTest.class);

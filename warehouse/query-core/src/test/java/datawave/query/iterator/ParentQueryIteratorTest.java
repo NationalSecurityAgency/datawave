@@ -1,7 +1,26 @@
 package datawave.query.iterator;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -11,23 +30,6 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.predicate.ParentRangeProvider;
 import datawave.query.predicate.TimeFilter;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class ParentQueryIteratorTest {
 

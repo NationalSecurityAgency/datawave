@@ -1,13 +1,15 @@
 package datawave.edge.util;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.edge.protobuf.EdgeData;
-import datawave.edge.protobuf.EdgeData.EdgeValue.Builder;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.StringUtils;
 
-import java.util.List;
-import java.util.UUID;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.edge.protobuf.EdgeData;
+import datawave.edge.protobuf.EdgeData.EdgeValue.Builder;
 
 /**
  * Utility class for serializing edge table protocol buffer. Previously, the EdgeValueHelper class was sufficient for handling the edge values, but with the

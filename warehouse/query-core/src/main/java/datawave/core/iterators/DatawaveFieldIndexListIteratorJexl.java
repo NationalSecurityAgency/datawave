@@ -1,8 +1,15 @@
 package datawave.core.iterators;
 
-import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.query.Constants;
-import datawave.query.jexl.DatawaveArithmetic;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -21,15 +28,9 @@ import org.apache.lucene.util.fst.NoOutputs;
 import org.apache.lucene.util.fst.Outputs;
 import org.apache.lucene.util.fst.Util;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.SortedSet;
+import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.query.Constants;
+import datawave.query.jexl.DatawaveArithmetic;
 
 /**
  *

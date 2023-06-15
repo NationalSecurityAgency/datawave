@@ -10,11 +10,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import datawave.metrics.config.MetricsConfig;
-import datawave.metrics.mapreduce.util.JobSetupUtil;
-import datawave.metrics.util.Connections;
-import datawave.util.time.DateHelper;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -35,6 +30,11 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
+
+import datawave.metrics.config.MetricsConfig;
+import datawave.metrics.mapreduce.util.JobSetupUtil;
+import datawave.metrics.util.Connections;
+import datawave.util.time.DateHelper;
 
 /**
  * This MapReduce job computes a by-day summary of query metrics.

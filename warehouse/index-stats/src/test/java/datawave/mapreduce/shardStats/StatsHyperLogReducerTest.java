@@ -1,21 +1,5 @@
 package datawave.mapreduce.shardStats;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import datawave.ingest.config.TableConfigCache;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
@@ -28,6 +12,24 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 
 public class StatsHyperLogReducerTest {
 

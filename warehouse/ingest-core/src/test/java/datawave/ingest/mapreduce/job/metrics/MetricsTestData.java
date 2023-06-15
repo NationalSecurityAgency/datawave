@@ -1,17 +1,19 @@
 package datawave.ingest.mapreduce.job.metrics;
 
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configuration;
+import org.easymock.EasyMock;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.BaseNormalizedContent;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-import org.apache.hadoop.conf.Configuration;
-import org.easymock.EasyMock;
-
-import java.util.Map;
 
 /**
  * Utilites for creating common testing data.

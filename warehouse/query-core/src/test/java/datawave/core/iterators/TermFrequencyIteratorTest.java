@@ -1,17 +1,10 @@
 package datawave.core.iterators;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.query.iterator.SortedListKeyValueIterator;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import static datawave.query.Constants.NULL;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -23,11 +16,20 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static datawave.query.Constants.NULL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.io.Text;
+import org.junit.Test;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.query.iterator.SortedListKeyValueIterator;
 
 public class TermFrequencyIteratorTest {
 

@@ -1,17 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.model.QueryModel;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -35,14 +32,19 @@ import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.JexlNodeFactory.ContainerType;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.model.QueryModel;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * Apply the forward mapping

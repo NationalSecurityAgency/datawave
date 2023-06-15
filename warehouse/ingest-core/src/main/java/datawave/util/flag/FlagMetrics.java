@@ -3,9 +3,6 @@ package datawave.util.flag;
 import java.io.File;
 import java.io.IOException;
 
-import datawave.ingest.mapreduce.StandaloneStatusReporter;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -15,6 +12,9 @@ import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.StandaloneStatusReporter;
+import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
 
 /**
  * Collects and reports FlagMaker metrics.

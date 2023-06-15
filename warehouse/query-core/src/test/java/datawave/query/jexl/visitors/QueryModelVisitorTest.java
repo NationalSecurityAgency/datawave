@@ -1,15 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
-import datawave.data.type.Type;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.model.QueryModel;
-import datawave.query.util.MockMetadataHelper;
-import datawave.test.JexlNodeAssert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -20,14 +19,17 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.Type;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.model.QueryModel;
+import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 
 public class QueryModelVisitorTest {
 

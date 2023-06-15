@@ -1,10 +1,11 @@
 package datawave.query.iterator.builder;
 
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.core.iterators.querylock.QueryLock;
-import datawave.query.composite.CompositeMetadata;
-import datawave.query.iterator.profile.QuerySpanCollector;
-import datawave.query.util.sortedset.FileSortedSet;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.List;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
@@ -12,11 +13,11 @@ import org.apache.commons.pool.impl.GenericObjectPool;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.List;
+import datawave.core.iterators.querylock.QueryLock;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.util.sortedset.FileSortedSet;
 
 /**
  * A base class used to build ivarators

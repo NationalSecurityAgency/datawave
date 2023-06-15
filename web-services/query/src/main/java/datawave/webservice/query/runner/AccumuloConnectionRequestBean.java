@@ -1,14 +1,15 @@
 package datawave.webservice.query.runner;
 
-import org.apache.accumulo.core.util.Pair;
-import org.apache.log4j.Logger;
+import java.security.Principal;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.Resource;
 import javax.ejb.EJBContext;
 import javax.inject.Singleton;
-import java.security.Principal;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.accumulo.core.util.Pair;
+import org.apache.log4j.Logger;
 
 /**
  * For storing a map of queryId to Thread that is requesting an AccumuloConnection

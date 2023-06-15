@@ -12,21 +12,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
-import datawave.ingest.mapreduce.handler.shard.content.ContentIndexCounters;
-import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
-import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.util.TextUtil;
-
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
@@ -50,6 +35,21 @@ import org.xml.sax.SAXException;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.ContextWrappedStatusReporter;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
+import datawave.ingest.mapreduce.handler.shard.content.ContentIndexCounters;
+import datawave.ingest.mapreduce.handler.shard.content.TermAndZone;
+import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.util.TextUtil;
 
 public class WikipediaDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> {
     private static final Logger log = Logger.getLogger(WikipediaDataTypeHandler.class);

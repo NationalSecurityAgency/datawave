@@ -1,13 +1,14 @@
 package datawave.ingest.metadata;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.Lists;
+import java.util.Collection;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collection;
+import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 
 public class MetadataWithMostRecentDateTest {
 

@@ -7,13 +7,13 @@ import java.io.DataInput;
 import java.io.IOException;
 import java.util.Date;
 
-import datawave.util.StringUtils;
-
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.util.hash.Hash;
 import org.apache.hadoop.util.hash.MurmurHash;
+
+import datawave.util.StringUtils;
 
 /**
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UUID which consumes 128 bits, we are using:

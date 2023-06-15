@@ -1,18 +1,19 @@
 package datawave.query.planner.rules;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * This class is use to replace expressions within regex strings within a query tree.

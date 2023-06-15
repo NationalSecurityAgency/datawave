@@ -2,9 +2,9 @@ package datawave.query.util.cache;
 
 import java.util.Set;
 
-import datawave.ingest.util.cache.CacheId;
-
 import org.apache.accumulo.core.security.Authorizations;
+
+import datawave.ingest.util.cache.CacheId;
 
 /**
  *

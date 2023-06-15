@@ -1,22 +1,6 @@
 package datawave.query.iterator;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import datawave.data.type.NumberType;
-import datawave.marking.MarkingFunctions;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.common.grouping.GroupingUtil;
-import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
-import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
-import datawave.query.jexl.JexlASTHelper;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.slf4j.Logger;
-import org.springframework.util.Assert;
+import static org.slf4j.LoggerFactory.getLogger;
 
 import java.math.BigDecimal;
 import java.util.AbstractMap;
@@ -30,7 +14,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.slf4j.LoggerFactory.getLogger;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.slf4j.Logger;
+import org.springframework.util.Assert;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+
+import datawave.data.type.NumberType;
+import datawave.marking.MarkingFunctions;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.common.grouping.GroupingUtil;
+import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
+import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Because the t-server may tear down and start a new iterator at any time after a next() call, there can be no saved state in this class. For that reason, each

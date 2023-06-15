@@ -1,13 +1,10 @@
 package datawave.query.language.parser.jexl;
 
-import com.google.common.collect.Sets;
-import datawave.ingest.data.tokenize.StandardAnalyzer;
-import datawave.ingest.data.tokenize.TokenSearch;
-import datawave.query.Constants;
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.language.tree.ServerHeadNode;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler;
 import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
@@ -16,10 +13,15 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import com.google.common.collect.Sets;
+
+import datawave.ingest.data.tokenize.StandardAnalyzer;
+import datawave.ingest.data.tokenize.TokenSearch;
+import datawave.query.Constants;
+import datawave.query.language.parser.ParseException;
+import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlQueryParser {
 

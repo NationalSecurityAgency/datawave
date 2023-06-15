@@ -1,20 +1,22 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.TreeMultimap;
-import datawave.query.iterator.Util;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.TreeMultimap;
+
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.Util;
 
 public class NegationFilterTest {
     @Test

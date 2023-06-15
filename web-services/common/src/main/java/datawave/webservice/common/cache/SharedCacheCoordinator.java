@@ -1,7 +1,20 @@
 package datawave.webservice.common.cache;
 
-import com.google.common.base.Preconditions;
-import datawave.common.util.ArgumentChecker;
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.inject.Inject;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -25,19 +38,9 @@ import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
 import org.jboss.logging.Logger;
 
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.Serializable;
-import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
+import com.google.common.base.Preconditions;
+
+import datawave.common.util.ArgumentChecker;
 
 /**
  * Coordinates operations on a shared cache. That is, this coordinates operations where an in-memory cache may be running on multiple servers and each in-memory

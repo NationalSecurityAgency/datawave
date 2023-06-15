@@ -1,8 +1,19 @@
 package datawave.query.util;
 
-import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import datawave.security.util.ScannerHelper;
-import datawave.util.StringUtils;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -20,21 +31,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
+
 import com.github.benmanes.caffeine.cache.Cache;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
+import datawave.security.util.ScannerHelper;
+import datawave.util.StringUtils;
 
 /**
  * <p>

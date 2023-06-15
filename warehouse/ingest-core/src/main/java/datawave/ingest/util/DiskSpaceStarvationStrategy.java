@@ -1,10 +1,10 @@
 package datawave.ingest.util;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.log4j.Logger;
 
 import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Tokenizes and applies n-grams to a BloomFilter until disk space has been exhausted to a minimum threshold (expressed as a percentage of the total available).

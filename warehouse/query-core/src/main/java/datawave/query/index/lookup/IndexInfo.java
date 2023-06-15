@@ -1,20 +1,12 @@
 package datawave.query.index.lookup;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.query.language.parser.jexl.JexlNodeSet;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -25,12 +17,22 @@ import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import com.google.common.base.Objects;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.language.parser.jexl.JexlNodeSet;
 
 /**
  * This class represents information about hits in the index.

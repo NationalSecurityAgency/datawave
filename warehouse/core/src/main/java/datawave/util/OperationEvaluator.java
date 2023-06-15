@@ -1,11 +1,12 @@
 package datawave.util;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Preconditions;
-import org.apache.commons.lang.StringUtils;
-
 import java.util.Comparator;
 import java.util.Date;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
 
 /**
  * Provides utility functions for evaluating arithmetic and logical operations given relevant arguments and a non-constant operator.

@@ -1,7 +1,8 @@
 package datawave.resteasy.interceptor;
 
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map.Entry;
 
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
@@ -10,9 +11,9 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map.Entry;
+
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
 
 @Provider
 @Priority(Priorities.USER)

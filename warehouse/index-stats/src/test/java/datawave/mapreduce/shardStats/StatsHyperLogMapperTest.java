@@ -1,17 +1,7 @@
 package datawave.mapreduce.shardStats;
 
-import datawave.ingest.config.TableConfigCache;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import static datawave.mapreduce.shardStats.StatsInit.EMPTY_VALUE;
+import static datawave.mapreduce.shardStats.StatsInit.TEST_TABLE;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,8 +12,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static datawave.mapreduce.shardStats.StatsInit.EMPTY_VALUE;
-import static datawave.mapreduce.shardStats.StatsInit.TEST_TABLE;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Test;
+
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class StatsHyperLogMapperTest {
     private static final Logger log = Logger.getLogger(StatsHyperLogMapperTest.class);

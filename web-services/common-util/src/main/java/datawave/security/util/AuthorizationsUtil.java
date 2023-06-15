@@ -1,19 +1,5 @@
 package datawave.security.util;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.accumulo.util.security.UserAuthFunctions;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
-
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,6 +13,22 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.StringUtils;
+
+import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.accumulo.util.security.UserAuthFunctions;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
 
 /**
  * Several of these methods refer to different types of principals:

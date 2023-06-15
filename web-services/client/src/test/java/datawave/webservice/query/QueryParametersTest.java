@@ -1,5 +1,8 @@
 package datawave.webservice.query;
 
+import java.text.ParseException;
+import java.util.Date;
+
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
@@ -7,9 +10,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import java.text.ParseException;
-import java.util.Date;
 
 public class QueryParametersTest {
 

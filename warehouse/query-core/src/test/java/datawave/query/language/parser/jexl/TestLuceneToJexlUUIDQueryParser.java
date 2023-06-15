@@ -1,16 +1,16 @@
 package datawave.query.language.parser.jexl;
 
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.language.tree.ServerHeadNode;
-import datawave.query.data.UUIDType;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import datawave.query.data.UUIDType;
+import datawave.query.language.parser.ParseException;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlUUIDQueryParser {
     private LuceneToJexlUUIDQueryParser parser;

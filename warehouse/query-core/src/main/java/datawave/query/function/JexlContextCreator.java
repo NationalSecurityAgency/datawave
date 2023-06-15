@@ -7,15 +7,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.attributes.Document;
-import datawave.query.util.Tuple3;
-import datawave.query.util.Tuples;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
+
+import datawave.query.attributes.Document;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.util.Tuple3;
+import datawave.query.util.Tuples;
 
 public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<String,Object>>,Tuple3<Key,Document,DatawaveJexlContext>> {
 

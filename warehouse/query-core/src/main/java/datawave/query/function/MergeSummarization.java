@@ -1,13 +1,13 @@
 package datawave.query.function;
 
-import datawave.query.attributes.Cardinality;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 
 import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
+
+import datawave.query.attributes.Cardinality;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
 
 /**
  *

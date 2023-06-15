@@ -1,8 +1,12 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.NonShardedSplitsFile;
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Map;
+
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Value;
@@ -15,12 +19,9 @@ import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Map;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.NonShardedSplitsFile;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 
 /**
  * Range partitioner that uses a split file with the format: {@code tableName<tab>splitPoint}

@@ -1,5 +1,12 @@
 package datawave.query.iterator.builder;
 
+import java.io.IOException;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.iterator.DocumentIterator;
 import datawave.query.iterator.NestedIterator;
@@ -7,12 +14,6 @@ import datawave.query.iterator.logic.DocumentAggregatingIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.predicate.Filter;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
 
 /**
  * A convenience class that aggregates a field, filter, range, source iterator, normalizer mappings, index only fields, data type filter and key transformer

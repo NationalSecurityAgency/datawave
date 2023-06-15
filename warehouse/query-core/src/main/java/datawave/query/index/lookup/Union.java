@@ -1,5 +1,7 @@
 package datawave.query.index.lookup;
 
+import static datawave.query.index.lookup.ShardEquality.isDay;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,19 +10,17 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.ExecutorService;
 
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.language.parser.jexl.JexlNodeSet;
-import datawave.query.util.Tuple2;
-import datawave.query.util.Tuples;
-
-import datawave.util.StringUtils;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
-import static datawave.query.index.lookup.ShardEquality.isDay;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.language.parser.jexl.JexlNodeSet;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuples;
+import datawave.util.StringUtils;
 
 /**
  * Creates a union of global index range streams.

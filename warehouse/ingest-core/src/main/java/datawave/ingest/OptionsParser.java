@@ -1,10 +1,11 @@
 package datawave.ingest;
 
+import org.apache.hadoop.conf.Configuration;
+
 import datawave.ingest.config.TableConfigCache;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.util.ConfigurationFileHelper;
 import datawave.util.cli.PasswordConverter;
-import org.apache.hadoop.conf.Configuration;
 
 public class OptionsParser {
 

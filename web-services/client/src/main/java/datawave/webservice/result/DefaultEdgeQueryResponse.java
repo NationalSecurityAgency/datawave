@@ -19,7 +19,6 @@ import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.DefaultEdge;
 import datawave.webservice.query.result.edge.EdgeBase;
-
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;

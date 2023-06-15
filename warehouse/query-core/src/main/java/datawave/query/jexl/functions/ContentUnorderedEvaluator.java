@@ -11,9 +11,10 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.postprocessing.tf.TermOffsetMap;
-import org.apache.log4j.Logger;
 
 /**
  * <p>

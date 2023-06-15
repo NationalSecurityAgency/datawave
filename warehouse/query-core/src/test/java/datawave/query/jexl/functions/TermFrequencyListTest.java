@@ -1,9 +1,9 @@
 package datawave.query.jexl.functions;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class TermFrequencyListTest {
 

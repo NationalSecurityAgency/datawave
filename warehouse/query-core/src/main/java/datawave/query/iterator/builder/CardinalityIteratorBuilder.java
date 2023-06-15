@@ -1,8 +1,9 @@
 package datawave.query.iterator.builder;
 
+import org.apache.hadoop.io.Text;
+
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
-import org.apache.hadoop.io.Text;
 
 public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
 

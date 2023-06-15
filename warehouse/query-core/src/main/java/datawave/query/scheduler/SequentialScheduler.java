@@ -5,18 +5,18 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.stats.ScanSessionStats;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.configuration.QueryData;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.stats.ScanSessionStats;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.configuration.QueryData;
 
 /**
  *

@@ -1,16 +1,17 @@
 package datawave.test;
 
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.assertj.core.api.AbstractIterableAssert;
-import org.assertj.core.api.IterableAssert;
-import org.assertj.core.api.ListAssert;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.assertj.core.api.AbstractIterableAssert;
+import org.assertj.core.api.IterableAssert;
+import org.assertj.core.api.ListAssert;
+
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * A {@link AbstractIterableAssert} implementation that supports performing AssertJ assertions on an {@link Iterable} of {@link JexlNode} instances. Equality

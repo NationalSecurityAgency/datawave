@@ -2,6 +2,7 @@ package datawave.webservice.modification;
 
 import java.io.Serializable;
 import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;

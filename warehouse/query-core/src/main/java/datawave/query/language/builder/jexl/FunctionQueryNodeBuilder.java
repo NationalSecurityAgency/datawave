@@ -1,5 +1,18 @@
 package datawave.query.language.builder.jexl;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.search.TermQuery;
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -16,24 +29,11 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.jexl.JexlFunctionNode;
 import datawave.query.language.parser.jexl.JexlNode;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.search.TermQuery;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.

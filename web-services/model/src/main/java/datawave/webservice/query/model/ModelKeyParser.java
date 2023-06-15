@@ -1,7 +1,7 @@
 package datawave.webservice.query.model;
 
-import datawave.webservice.model.Direction;
-import datawave.webservice.model.FieldMapping;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -10,7 +10,8 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import java.util.Set;
+import datawave.webservice.model.Direction;
+import datawave.webservice.model.FieldMapping;
 
 public class ModelKeyParser {
 

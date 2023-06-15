@@ -2,14 +2,14 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Map;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
 
 public class IgnorableFatalErrorHelper implements IgnorableErrorHelperInterface {
 

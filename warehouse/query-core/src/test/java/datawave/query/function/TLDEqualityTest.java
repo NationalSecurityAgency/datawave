@@ -1,10 +1,10 @@
 package datawave.query.function;
 
-import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.apache.accumulo.core.data.Key;
+import org.junit.Test;
 
 public class TLDEqualityTest {
 

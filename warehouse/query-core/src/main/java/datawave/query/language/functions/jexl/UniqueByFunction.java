@@ -1,11 +1,11 @@
 package datawave.query.language.functions.jexl;
 
+import java.text.MessageFormat;
+import java.util.List;
+
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-
-import java.text.MessageFormat;
-import java.util.List;
 
 /**
  * Abstract class that contains common functionality for unique-by functions.

@@ -1,17 +1,17 @@
 package datawave.webservice.query.configuration;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-
-import datawave.query.data.UUIDType;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import datawave.query.data.UUIDType;
 
 @RunWith(PowerMockRunner.class)
 public class TestLookupUUIDConfiguration {

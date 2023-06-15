@@ -7,15 +7,18 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import datawave.query.model.QueryModel;
 import datawave.webservice.model.Direction;
 import datawave.webservice.model.FieldMapping;
 import datawave.webservice.model.Model;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class TestCardinalityConfiguration {
 

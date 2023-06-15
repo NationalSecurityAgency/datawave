@@ -1,18 +1,5 @@
 package datawave.query.planner;
 
-import datawave.query.CloseableIterable;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Comparator;
-
 import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
@@ -20,6 +7,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Collection;
+import java.util.Comparator;
+
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import datawave.query.CloseableIterable;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.QueryData;
 
 public class ThreadedRangeBundlerTest {
 

@@ -1,18 +1,5 @@
 package datawave.metrics.mapreduce.util;
 
-import datawave.metrics.analytic.DateConverter;
-import datawave.metrics.config.MetricsConfig;
-import datawave.metrics.config.MetricsOptions;
-import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.ParseException;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.log4j.Logger;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -28,6 +15,20 @@ import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.ParseException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.log4j.Logger;
+
+import datawave.metrics.analytic.DateConverter;
+import datawave.metrics.config.MetricsConfig;
+import datawave.metrics.config.MetricsOptions;
+import datawave.util.time.DateHelper;
 
 public class JobSetupUtil {
     /*

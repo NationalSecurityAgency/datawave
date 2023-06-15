@@ -1,14 +1,16 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.collect.Multimap;
-import datawave.util.TableName;
-import org.apache.hadoop.conf.Configuration;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Test;
+
+import com.google.common.collect.Multimap;
+
+import datawave.util.TableName;
 
 public class MetricsConfigurationTest {
 

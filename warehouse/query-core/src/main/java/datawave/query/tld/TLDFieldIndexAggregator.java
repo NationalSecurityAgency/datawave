@@ -4,8 +4,13 @@ import static datawave.query.tld.TLD.parsePointerFromFI;
 import static datawave.query.tld.TLD.parseRootPointerFromFI;
 
 import java.io.IOException;
-
 import java.util.Set;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.hadoop.io.Text;
 
 import datawave.marking.ColumnVisibilityCache;
 import datawave.query.Constants;
@@ -15,14 +20,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.FieldIndexAggregator;
-
 import datawave.query.jexl.functions.SeekingAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.io.Text;
 
 public class TLDFieldIndexAggregator extends SeekingAggregator implements FieldIndexAggregator {
     private Set<String> fieldsToAggregate;

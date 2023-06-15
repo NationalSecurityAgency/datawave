@@ -1,16 +1,18 @@
 package datawave.ingest.data.config.ingest;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.GroupedNormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
+import static org.junit.Assert.assertEquals;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.GroupedNormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 public class IngestFieldFilterTest {
 

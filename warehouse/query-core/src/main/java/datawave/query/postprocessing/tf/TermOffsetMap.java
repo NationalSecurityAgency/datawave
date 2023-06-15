@@ -1,13 +1,14 @@
 package datawave.query.postprocessing.tf;
 
-import datawave.query.jexl.functions.TermFrequencyList;
-import org.javatuples.Triplet;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
+
+import org.javatuples.Triplet;
+
+import datawave.query.jexl.functions.TermFrequencyList;
 
 /**
  * This encapsulates term frequencies information that is used when evaluating content:phrase and content:within functions in a JEXL query. It is also used to

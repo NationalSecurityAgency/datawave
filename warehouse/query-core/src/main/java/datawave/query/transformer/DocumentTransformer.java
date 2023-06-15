@@ -1,6 +1,17 @@
 package datawave.query.transformer;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Preconditions;
+
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.util.StringUtils;
@@ -14,15 +25,6 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Transforms a document into a web service Event Object.

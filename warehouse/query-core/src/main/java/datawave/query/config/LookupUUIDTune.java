@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+
 import datawave.query.Constants;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
@@ -17,9 +20,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 
 public class LookupUUIDTune implements Profile {
 

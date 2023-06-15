@@ -3,12 +3,6 @@ package datawave.query.scheduler;
 import java.util.Collection;
 import java.util.Map.Entry;
 
-import datawave.query.CloseableIterable;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.stats.ScanSessionStats;
-import datawave.webservice.query.configuration.QueryData;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -16,6 +10,12 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import com.google.common.collect.Lists;
+
+import datawave.query.CloseableIterable;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.stats.ScanSessionStats;
+import datawave.webservice.query.configuration.QueryData;
 
 public abstract class Scheduler implements CloseableIterable<Entry<Key,Value>> {
 

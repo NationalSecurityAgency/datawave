@@ -2,16 +2,18 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Set;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.util.StringUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.text.StrTokenizer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.util.StringUtils;
 
 public class CSVIngestHelper extends ContentBaseIngestHelper {
 

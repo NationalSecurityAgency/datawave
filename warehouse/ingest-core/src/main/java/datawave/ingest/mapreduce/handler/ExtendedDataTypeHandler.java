@@ -2,16 +2,15 @@ package datawave.ingest.mapreduce.handler;
 
 import java.io.IOException;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import org.apache.accumulo.core.data.Value;
-
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
 /**
  * Generic high level interface for processing Events. The EventMapper class uses instances of this interface to process Event objects that are read from the

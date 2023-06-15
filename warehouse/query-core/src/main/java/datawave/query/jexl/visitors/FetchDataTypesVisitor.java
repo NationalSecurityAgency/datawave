@@ -4,19 +4,6 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
-import datawave.data.type.NumberType;
-import datawave.data.type.Type;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.Tuple2;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -35,6 +22,19 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
+import datawave.data.type.Type;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.Tuple2;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * Walk the AST returning a Multimap of String fieldNames to Sets of Types for terms in the query that need normalization for the express purpose of index

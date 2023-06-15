@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
+
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
@@ -10,13 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.client.AccumuloException;
-
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.ConfigurationCopy;
 import org.apache.accumulo.core.conf.Property;
@@ -51,7 +47,10 @@ import com.google.common.base.Splitter;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
 
 public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 

@@ -1,9 +1,7 @@
 package datawave.query.iterator.pipeline;
 
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.iterator.profile.QuerySpanCollector;
+import java.util.Collection;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -11,7 +9,10 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 
-import java.util.Collection;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
 
 public class PipelineFactory {
 

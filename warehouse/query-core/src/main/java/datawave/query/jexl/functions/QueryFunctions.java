@@ -1,14 +1,5 @@
 package datawave.query.jexl.functions;
 
-import datawave.data.type.util.NumericalEncoder;
-import datawave.query.attributes.UniqueGranularity;
-import datawave.query.attributes.ValueTuple;
-
-import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.JexlPatternCache;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -17,6 +8,15 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
+
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.log4j.Logger;
+
+import datawave.data.type.util.NumericalEncoder;
+import datawave.query.attributes.UniqueGranularity;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.JexlPatternCache;
 
 /**
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by QueryFunctionsDescriptor. This is kept as a separate class to reduce accumulo dependencies

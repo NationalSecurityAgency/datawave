@@ -1,11 +1,9 @@
 package datawave.webservice.query.cache;
 
-import com.google.common.cache.Cache;
+import static org.powermock.reflect.Whitebox.setInternalState;
 
-import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.runner.RunningQuery;
+import java.util.Date;
+import java.util.UUID;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -15,10 +13,12 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
-import java.util.Date;
-import java.util.UUID;
+import com.google.common.cache.Cache;
 
-import static org.powermock.reflect.Whitebox.setInternalState;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.runner.RunningQuery;
 
 @RunWith(PowerMockRunner.class)
 public class QueryExpirationBeanTest {

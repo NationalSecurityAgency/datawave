@@ -1,8 +1,5 @@
 package datawave.query.statsd;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -10,6 +7,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Created on 4/27/17.

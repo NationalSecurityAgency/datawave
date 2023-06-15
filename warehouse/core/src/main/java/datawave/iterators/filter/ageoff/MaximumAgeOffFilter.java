@@ -1,10 +1,11 @@
 package datawave.iterators.filter.ageoff;
 
-import datawave.iterators.filter.AgeOffConfigParams;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
+
+import datawave.iterators.filter.AgeOffConfigParams;
 
 /**
  * Data type age off filter. Traverses through indexed tables

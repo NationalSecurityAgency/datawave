@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors.validate;
 
-import datawave.query.jexl.visitors.BaseVisitor;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -53,6 +52,8 @@ import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
+
+import datawave.query.jexl.visitors.BaseVisitor;
 
 /**
  * Validates that every ASTAndNode and every ASTOrNode has more than one child

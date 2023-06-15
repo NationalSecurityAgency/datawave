@@ -3,9 +3,9 @@ package datawave.webservice.util;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 
-import datawave.webservice.HtmlProvider;
-
 import javax.ws.rs.core.MediaType;
+
+import datawave.webservice.HtmlProvider;
 
 public class HtmlProviderMessageBodyWriter extends AbstractHtmlProviderMessageBodyWriter<HtmlProvider> {
 

@@ -1,25 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Sets;
-import datawave.data.normalizer.IpAddressNormalizer;
-import datawave.data.type.IpAddressType;
-import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -39,12 +26,27 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Sets;
+
+import datawave.data.normalizer.IpAddressNormalizer;
+import datawave.data.type.IpAddressType;
+import datawave.data.type.Type;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlASTHelper.IdentifierOpLiteral;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.JexlNodeFactory.ContainerType;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * When more than one normalizer exists for a field, we want to transform the single term into a conjunction of the term with each normalizer applied to it. If

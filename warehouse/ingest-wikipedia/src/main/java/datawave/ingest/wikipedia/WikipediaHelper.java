@@ -2,12 +2,12 @@ package datawave.ingest.wikipedia;
 
 import java.util.Set;
 
-import datawave.ingest.data.config.DataTypeHelperImpl;
-import datawave.util.StringUtils;
-
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Sets;
+
+import datawave.ingest.data.config.DataTypeHelperImpl;
+import datawave.util.StringUtils;
 
 /**
  *

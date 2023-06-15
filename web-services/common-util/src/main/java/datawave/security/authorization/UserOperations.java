@@ -1,10 +1,5 @@
 package datawave.security.authorization;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.user.AuthorizationsListBase;
-import datawave.webservice.result.GenericResponse;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -12,6 +7,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.user.AuthorizationsListBase;
+import datawave.webservice.result.GenericResponse;
 
 /**
  * A user operations service is one that can pass calls off to another external user operations endpoint

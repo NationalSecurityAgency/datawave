@@ -3,9 +3,6 @@ package datawave.webservice.query.model;
 import java.util.Collections;
 import java.util.Set;
 
-import datawave.webservice.model.Direction;
-import datawave.webservice.model.FieldMapping;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.security.Authorizations;
@@ -20,6 +17,9 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import datawave.webservice.model.Direction;
+import datawave.webservice.model.FieldMapping;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(ModelKeyParser.class)

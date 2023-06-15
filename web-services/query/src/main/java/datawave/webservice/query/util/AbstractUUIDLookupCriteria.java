@@ -1,10 +1,11 @@
 package datawave.webservice.query.util;
 
-import datawave.webservice.query.Query;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
+
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import datawave.webservice.query.Query;
 
 /**
  * Abstract implementation of criteria used for UUID lookup queries

@@ -1,17 +1,10 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Preconditions;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
-import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import datawave.webservice.query.exception.QueryException;
+import static org.apache.commons.jexl2.parser.JexlNodes.promote;
+
+import java.text.MessageFormat;
+import java.util.NoSuchElementException;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
@@ -29,10 +22,19 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.text.MessageFormat;
-import java.util.NoSuchElementException;
+import com.google.common.base.Preconditions;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.promote;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * This visitor examines a JEXL tree and verifies that it satisfies all of the following conditions:

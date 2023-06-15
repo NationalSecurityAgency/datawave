@@ -1,5 +1,8 @@
 package datawave.query.tables.facets;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.handler.facet.FacetHandler;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
@@ -7,9 +10,6 @@ import datawave.query.QueryTestTableHelper;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.FieldConfig;
 import datawave.webservice.query.Query;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
 
 public class FacetedCitiesDataType extends CitiesDataType {
 

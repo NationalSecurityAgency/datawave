@@ -1,5 +1,13 @@
 package datawave.query.statsd;
 
+import java.nio.charset.Charset;
+import java.text.NumberFormat;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -7,14 +15,6 @@ import com.timgroup.statsd.ConvenienceMethodProvidingStatsDClient;
 import com.timgroup.statsd.NonBlockingUdpSender;
 import com.timgroup.statsd.StatsDClientErrorHandler;
 import com.timgroup.statsd.StatsDClientException;
-import java.nio.charset.Charset;
-import java.text.NumberFormat;
-import java.util.Locale;
-
-import org.apache.log4j.Logger;
-
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A client that can be used to record live query metrics. This client will cache results and will periodically send them with a specified max cache size.

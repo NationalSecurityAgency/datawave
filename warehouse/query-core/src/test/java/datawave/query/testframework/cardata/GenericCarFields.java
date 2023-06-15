@@ -1,11 +1,11 @@
 package datawave.query.testframework.cardata;
 
-import datawave.query.testframework.cardata.CarsDataType.CarField;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import datawave.query.testframework.cardata.CarsDataType.CarField;
 
 public class GenericCarFields extends AbstractCarFields {
 
