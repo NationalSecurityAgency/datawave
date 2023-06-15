@@ -60,7 +60,7 @@ public class HudBean {
 
     /**
      * Return true if there is at least one log in the last 60 minutes.
-     * 
+     *
      * @param userId
      *            the userid
      * @return true if there is at least one log in the last 60 minutes.

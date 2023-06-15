@@ -19,17 +19,17 @@ import org.apache.accumulo.core.data.Value;
 
 /**
  * Attempts to distribute rows among reducers evenly. This can also be configured to also shuffle specific column families within each row
- * 
+ *
  * The base functionality of this partitioner is to have different shards distributed among the reducers in round robin fashion.
  */
 public class RowHashingPartitioner extends Partitioner<BulkIngestKey,Value> implements DelegatePartitioner {
     public static final String COLUMN_FAMILIES = "datawave.partitioner.rr.colfams";
-    
+
     private static Logger log = Logger.getLogger(RowHashingPartitioner.class);
-    
+
     private Configuration conf;
     private Set<Text> colFams = Collections.emptySet();
-    
+
     @Override
     public int getPartition(BulkIngestKey bKey, Value value, int reducers) {
         HashCodeBuilder hcb = new HashCodeBuilder(157, 41);
@@ -45,18 +45,18 @@ public class RowHashingPartitioner extends Partitioner<BulkIngestKey,Value> impl
         }
         return partition;
     }
-    
+
     @Override
     public Configuration getConf() {
         return conf;
     }
-    
+
     @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
         configure(COLUMN_FAMILIES);
     }
-    
+
     private void configure(String propertyName) {
         // build the colFams set
         String columnFamiliesCsv = conf.get(propertyName, "");
@@ -68,17 +68,17 @@ public class RowHashingPartitioner extends Partitioner<BulkIngestKey,Value> impl
             }
         }
     }
-    
+
     @Override
     public void configureWithPrefix(String prefix) {
         configure(prefix + '.' + COLUMN_FAMILIES);
     }
-    
+
     @Override
     public int getNumPartitions() {
         return Integer.MAX_VALUE;
     }
-    
+
     @Override
     public void initializeJob(Job job) {
         // no op

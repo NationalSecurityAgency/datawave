@@ -12,7 +12,7 @@ public class RefreshableScopeContext extends AbstractSharedContext {
     public RefreshableScopeContext() {
         super("STATIC_INSTANCE");
     }
-    
+
     @Override
     public Class<? extends Annotation> getScope() {
         return RefreshableScope.class;

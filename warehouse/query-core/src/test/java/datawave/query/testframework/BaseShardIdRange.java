@@ -11,7 +11,7 @@ import java.util.stream.Stream;
  * @see ShardIdValues
  */
 public enum BaseShardIdRange {
-    
+
     // list of shards for testing
     DATE_2015_0404("20150404"),
     DATE_2015_0505("20150505"),
@@ -21,22 +21,22 @@ public enum BaseShardIdRange {
     DATE_2015_0909("20150909"),
     DATE_2015_1010("20151010"),
     DATE_2015_1111("20151111");
-    
+
     private final String shardId;
-    
+
     BaseShardIdRange(final String id) {
         this.shardId = id;
     }
-    
+
     private static final List<String> SHARD_IDS = Stream.of(BaseShardIdRange.values()).map(e -> e.shardId).collect(Collectors.toList());
-    
+
     public static List<String> getShardDates() {
         return SHARD_IDS;
     }
-    
+
     /**
      * Returns the shard id date.
-     * 
+     *
      * @return shard date
      */
     public String getDateStr() {

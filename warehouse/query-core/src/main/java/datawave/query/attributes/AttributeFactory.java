@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 
 public class AttributeFactory {
     private static final Logger log = Logger.getLogger(AttributeFactory.class);
-    
+
     protected static final LoadingCache<String,Class<?>> clazzCache = CacheBuilder.newBuilder().maximumSize(128).expireAfterAccess(1, TimeUnit.HOURS)
                     .build(new CacheLoader<String,Class<?>>() {
                         @Override
@@ -38,23 +38,23 @@ public class AttributeFactory {
                             return Class.forName(clazz);
                         }
                     });
-    
+
     private final TypeMetadata typeMetadata;
-    
+
     private String defaultType = NoOpType.class.getName();
     private Class<?> mostGeneralType = LcNoDiacriticsType.class;
     private static final List<Class<?>> mostGeneralTypes = Collections
                     .unmodifiableList(Lists.<Class<?>> newArrayList(NoOpType.class, LcNoDiacriticsType.class));
-    
+
     public AttributeFactory(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
     }
-    
+
     public AttributeFactory(TypeMetadata typeMetadata, String defaultType) {
         this(typeMetadata);
         this.defaultType = defaultType;
     }
-    
+
     private String extractIngestDataTypeFromKey(Key key) {
         Text cf = new Text();
         key.getColumnFamily(cf);
@@ -68,25 +68,25 @@ public class AttributeFactory {
         cf.set(cf.getBytes(), 0, endPos);
         return cf.toString();
     }
-    
+
     public Attribute<?> create(String fieldName, String data, Key key, boolean toKeep) {
-        
+
         return this.create(fieldName, data, key, extractIngestDataTypeFromKey(key), toKeep, false);
     }
-    
+
     public Attribute<?> create(String fieldName, String data, Key key, boolean toKeep, boolean isComposite) {
-        
+
         return this.create(fieldName, data, key, extractIngestDataTypeFromKey(key), toKeep, isComposite);
     }
-    
+
     public Attribute<?> create(String fieldName, String data, Key key, String ingestType, boolean toKeep) {
         return this.create(fieldName, data, key, ingestType, toKeep, false);
     }
-    
+
     public Attribute<?> create(String fieldName, String data, Key key, String ingestType, boolean toKeep, boolean isComposite) {
-        
+
         Collection<String> dataTypes = (isComposite) ? Arrays.asList(NoOpType.class.getName()) : this.typeMetadata.getTypeMetadata(fieldName, ingestType);
-        
+
         try {
             if (null == dataTypes || dataTypes.isEmpty()) {
                 Class<?> dataTypeClass = clazzCache.get(this.defaultType);
@@ -96,7 +96,7 @@ public class AttributeFactory {
                 Class<?> dataTypeClass = clazzCache.get(dataType);
                 return getAttribute(dataTypeClass, fieldName, data, key, toKeep);
             } else {
-                
+
                 Iterable<Class<?>> typeClasses = Iterables.transform(dataTypes, new Function<String,Class<?>>() {
                     @Nullable
                     @Override
@@ -108,11 +108,11 @@ public class AttributeFactory {
                         }
                     }
                 });
-                
+
                 Collection<Class<?>> keepers = AttributeFactory.getKeepers(typeClasses);
-                
+
                 HashSet<Attribute<? extends Comparable<?>>> attrSet = Sets.newHashSet();
-                
+
                 for (String dataType : dataTypes) {
                     Class<?> dataTypeClass = clazzCache.get(dataType);
                     Attribute<?> attribute = getAttribute(dataTypeClass, fieldName, data, key, toKeep);
@@ -123,7 +123,7 @@ public class AttributeFactory {
                     }
                     attrSet.add(attribute);
                 }
-                
+
                 return new Attributes(attrSet, toKeep);
             }
         } catch (Exception ex) {
@@ -131,14 +131,14 @@ public class AttributeFactory {
             throw new RuntimeException("Could not create Attribute for " + fieldName + " and " + data, ex);
         }
     }
-    
+
     protected Attribute<?> getAttribute(Class<?> dataTypeClass, String fieldName, String data, Key key, boolean toKeep) throws Exception {
         Type<?> type = (Type<?>) dataTypeClass.newInstance();
         try {
             type.setDelegateFromString(data);
             return new TypeAttribute(type, key, toKeep);
         } catch (Exception ex) {
-            
+
             if (ex instanceof IllegalArgumentException) {
                 log.warn("Could not parse " + fieldName + " = '" + data + "', resorting to a NoOpType");
                 return new TypeAttribute(new NoOpType(data), key, toKeep);
@@ -146,10 +146,10 @@ public class AttributeFactory {
                 log.error("Could not create Attribute for " + fieldName + " and " + data, ex);
                 throw new IllegalArgumentException("Could not create Attribute for " + fieldName + " and " + data, ex);
             }
-            
+
         }
     }
-    
+
     public static Collection<Class<?>> getKeepers(Iterable<Class<?>> finders) {
         Collection<Class<?>> keepers = Sets.newHashSet(finders);
         List<Class<?>> losers = AttributeFactory.mostGeneralTypes;
@@ -157,7 +157,7 @@ public class AttributeFactory {
             // do not remove anything
             return keepers;
         }
-        
+
         // created and populated only for trace debug
         Collection<Class<?>> weepers = null;
         if (log.isTraceEnabled()) {
@@ -183,5 +183,5 @@ public class AttributeFactory {
         }
         return keepers;
     }
-    
+
 }

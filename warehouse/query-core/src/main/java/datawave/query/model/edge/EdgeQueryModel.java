@@ -11,7 +11,7 @@ import datawave.query.model.util.LoadModelFromXml;
 /**
  * This class defines a typical QueryModel, allowing the query syntax for edge queries to be easily customized for an external client's needs/preferences.
  * However, it has a few important distinctions from event-based QueryModel definitions:
- * 
+ *
  * <br>
  * <br>
  * (1) Unlike event-based query models, edge field names don't exist on disk in the way that internal event attributes do. The edge data model is relatively
@@ -28,10 +28,10 @@ import datawave.query.model.util.LoadModelFromXml;
  * (3) Additionally, index-only/unevaluated fields are ignored, as this concept is not applicable to edges.
  */
 public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
-    
+
     /**
      * This constructor allows the class to be used in conjunction with existing QueryModel loaders.
-     * 
+     *
      * @param other
      *            the other model
      * @throws InvalidModelException
@@ -41,26 +41,26 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
         super(other);
         validateModel(this);
     }
-    
+
     /** This constructor should never be used */
     @SuppressWarnings("unused")
     private EdgeQueryModel() {}
-    
+
     public void setUnevaluatedFields(Set<String> uneval) {
         // No-Op/Ignore
     }
-    
+
     public void addUnevaluatedField(String uneval) {
         // No-Op/Ignore
     }
-    
+
     public boolean isUnevaluatedField(String field) {
         return false; // Always false
     }
-    
+
     /**
      * Simple factory method to load a query model from the specified classpath resource.
-     * 
+     *
      * @param queryModelXml
      *            the model xml
      * @return EdgeQueryModel instance
@@ -70,33 +70,33 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
     public static EdgeQueryModel loadModel(String queryModelXml) throws Exception {
         return new EdgeQueryModel(LoadModelFromXml.loadModel(queryModelXml));
     }
-    
+
     /**
      * Thrown whenever an invalid edge query model is detected.
      */
     public static class InvalidModelException extends Exception {
         private static final long serialVersionUID = 1L;
-        
+
         public InvalidModelException() {
             super();
         }
-        
+
         public InvalidModelException(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
         public InvalidModelException(String message) {
             super(message);
         }
-        
+
         public InvalidModelException(Throwable cause) {
             super(cause);
         }
     }
-    
+
     /**
      * Ensures that the given model contains valid 1-to-1 mappings of alias to internal field.
-     * 
+     *
      * @param model
      *            a query model
      * @throws InvalidModelException
@@ -116,18 +116,20 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
                 throw new InvalidModelException(String.format("The model has no field mapping for alias '%s'", modelEntry.getKey()));
             }
             if (aliasedFieldNames.size() > 1) {
-                throw new InvalidModelException("An alias cannot be associated with more than one internal field name. Offending alias: " + modelEntry.getKey());
+                throw new InvalidModelException(
+                                "An alias cannot be associated with more than one internal field name. Offending alias: " + modelEntry.getKey());
             }
             for (String aliasedFieldName : aliasedFieldNames) {
                 if (!model.getAllInternalFieldNames().contains(aliasedFieldName)) {
-                    String msg = String.format("The model contains a 'nameOnDisk' field that isn't recognized by the internal model. "
-                                    + "Alias: '%s' Invalid Field: '%s'", modelEntry.getKey(), aliasedFieldName);
+                    String msg = String.format(
+                                    "The model contains a 'nameOnDisk' field that isn't recognized by the internal model. " + "Alias: '%s' Invalid Field: '%s'",
+                                    modelEntry.getKey(), aliasedFieldName);
                     throw new InvalidModelException(msg);
                 }
             }
         }
     }
-    
+
     public Collection<String> getAllInternalFieldNames() {
         return Fields.getInstance().getBaseFieldNames();
     }

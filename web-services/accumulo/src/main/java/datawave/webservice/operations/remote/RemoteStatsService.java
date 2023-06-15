@@ -14,18 +14,18 @@ import javax.interceptor.Interceptor;
 @Alternative
 @Priority(Interceptor.Priority.APPLICATION)
 public class RemoteStatsService extends RemoteAccumuloService {
-    
+
     private static final String STATS_SUFFIX = "stats";
-    
+
     private ObjectReader statsReader;
-    
+
     @Override
     @PostConstruct
     public void init() {
         super.init();
         statsReader = objectMapper.readerFor(StatsResponse.class);
     }
-    
+
     @Timed(name = "dw.remoteAccumuloService.stats", absolute = true)
     public StatsResponse getStats() {
         return execGet(STATS_SUFFIX, statsReader);

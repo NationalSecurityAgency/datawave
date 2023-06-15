@@ -27,46 +27,46 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class DatawaveInterpreterTest {
-    
+
     @Test
     public void mergeAndNodeFunctionalSetsTest() {
         String query = "((GEO == '0321􏿿+bE4.4' || GEO == '0334􏿿+bE4.4' || GEO == '0320􏿿+bE4.4' || GEO == '0335􏿿+bE4.4') && ((_Delayed_ = true) && ((GEO >= '030a' && GEO <= '0335') && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH < '+bE8'))))";
-        
+
         DatawaveJexlContext context = new DatawaveJexlContext();
-        
+
         Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
-        
+
         context.set("GEO", "0321􏿿+bE4.4");
         context.set("WKT_BYTE_LENGTH", "+bE4.4");
-        
+
         assertTrue(DatawaveInterpreter.isMatched(script.execute(context)));
     }
-    
+
     @Test
     public void largeOrListTest() {
         List<String> uuids = new ArrayList<>();
         for (int i = 0; i < 1000000; i++)
             uuids.add("'" + UUID.randomUUID().toString() + "'");
-        
+
         String query = String.join(" || ", uuids);
-        
+
         DatawaveJexlContext context = new DatawaveJexlContext();
-        
+
         Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
-        
+
         assertTrue(DatawaveInterpreter.isMatched(script.execute(context)));
     }
-    
+
     @Test
     public void invocationFails_alwaysThrowsException() {
         JexlEngine engine = mock(JexlEngine.class);
         JexlContext context = mock(JexlContext.class);
         DatawaveInterpreter interpreter = new DatawaveInterpreter(engine, context, false, false);
         JexlException exception = new JexlException(new ASTStringLiteral(1), "Function failure");
-        
+
         // Make mocks available.
         EasyMock.replay(engine, context);
-        
+
         // Capture the expected exception.
         Exception thrown = null;
         try {
@@ -74,80 +74,80 @@ public class DatawaveInterpreterTest {
         } catch (Exception e) {
             thrown = e;
         }
-        
+
         // Verify that an exception is thrown even when strict == false.
         assertEquals(thrown, exception);
     }
-    
+
     @Test
     public void testSimpleQuery() {
         String query = "FOO == 'bar'";
         test(query, true);
-        
+
         query = "FOO == 'baz'";
         test(query, true);
-        
+
         query = "FOO != 'bar'";
         test(query, false);
-        
+
         query = "FOO != 'baz'";
         test(query, false);
     }
-    
+
     @Test
     public void testOrWithTwoTerms() {
         String query = "FOO == 'bar' || FOO == 'baz'";
         test(query, true);
-        
+
         query = "FOO == 'abc' || FOO == 'xyz'";
         test(query, false);
     }
-    
+
     @Test
     public void testOrWithFourTerms() {
         String query = "FOO == 'bar' || FOO == 'baz' || FOO == 'barzee' || FOO == 'zeebar'";
         test(query, true);
-        
+
         query = "FOO == 'barzee' || FOO == 'zeebar' || FOO == 'bar' || FOO == 'baz'";
         test(query, true);
     }
-    
+
     @Test
     public void testAndWithTwoTerms() {
         String query = "FOO == 'bar' && FOO == 'baz'";
         test(query, true);
-        
+
         query = "FOO != 'bar' && FOO == 'baz'";
         test(query, false);
     }
-    
+
     @Test
     public void testAndWithFourTerms() {
         String query = "FOO == 'bar' && FOO == 'baz' && FOO == 'barzee' && FOO == 'zeebar'";
         test(query, false);
-        
+
         query = "FOO == 'barzee' && FOO == 'zeebar' && FOO == 'bar' && FOO == 'baz'";
         test(query, false);
     }
-    
+
     @Test
     public void testMixOfAndOrExpressions() {
         String query = "((FOO == 'bar' && FOO == 'baz') || (FOO == 'barzee' && FOO == 'zeebar'))";
         test(query, true);
-        
+
         query = "((FOO == 'bar' && FOO == 'zeebar') || (FOO == 'barzee' && FOO == 'baz'))";
         test(query, false);
-        
+
         query = "((FOO == 'bar' || FOO == 'baz') && (FOO == 'barzee' || FOO == 'zeebar'))";
         test(query, false);
-        
+
         query = "((FOO == 'bar' || FOO == 'zeebar') && (FOO == 'barzee' || FOO == 'baz'))";
         test(query, true);
-        
+
         query = "DEATH_DATE.min() < '20160301120000'";
         test(query, true);
     }
-    
+
     @Test
     public void testFilterBeforeDate() {
         //  @formatter:off
@@ -189,10 +189,10 @@ public class DatawaveInterpreterTest {
                 {"filter:beforeDate((DEATH_DATE||DEATH_DATE), '20030101', 'yyyyMMdd')", true},    //  multi value match
         };
         //  @formatter:on
-        
+
         test(array);
     }
-    
+
     @Test
     public void testFilterAfterDate() {
         //  @formatter:off
@@ -234,149 +234,149 @@ public class DatawaveInterpreterTest {
                 {"filter:afterDate((DEATH_DATE||DEATH_DATE), '19500101', 'yyyyMMdd')", true},    //  multi value match, pre-epoch
         };
         //  @formatter:on
-        
+
         test(array);
     }
-    
+
     @Test
     public void testBoundedRange() {
         String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150'))";
         test(query, buildBoundedRangeContext(), true);
-        
+
         query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130'))";
         test(query, buildBoundedRangeContext(), false);
     }
-    
+
     @Test
     public void testBoundedRangeAndTerm() {
         // range matches, term matches
         String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) && FOO == 'bar'";
         test(query, buildBoundedRangeContext(), true);
-        
+
         // range matches, term misses
         query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) && FOO != 'bar'";
         test(query, buildBoundedRangeContext(), false);
-        
+
         // range misses, term hits
         query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) && FOO == 'bar'";
         test(query, buildBoundedRangeContext(), false);
-        
+
         // range misses, term misses
         query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) && FOO != 'bar'";
         test(query, buildBoundedRangeContext(), false);
     }
-    
+
     @Test
     public void testBoundedRangeOrTerm() {
         // range matches, term matches
         String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) || FOO == 'bar'";
         test(query, buildBoundedRangeContext(), true);
-        
+
         // range matches, term misses
         query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) || FOO != 'bar'";
         test(query, buildBoundedRangeContext(), true);
-        
+
         // range misses, term hits
         query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) || FOO == 'bar'";
         test(query, buildBoundedRangeContext(), true);
-        
+
         // range misses, term misses
         query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) || FOO != 'bar'";
         test(query, buildBoundedRangeContext(), false);
     }
-    
+
     // test filter:isNull
     @Test
     public void testFilterFunctionIsNull() {
         // single field, present
         String query = "FOO == 'bar' && filter:isNull(FOO)";
         test(query, buildDefaultContext(), false);
-        
+
         // single field, absent
         query = "FOO == 'bar' && filter:isNull(ABSENT)";
         test(query, buildDefaultContext(), true);
     }
-    
+
     @Ignore
     @Test
     public void testFilterFunctionMultiFieldedIsNull() {
         // Once #1604 is complete these tests will evaluate correctly
-        
+
         // multi field, all present
         String query = "FOO == 'bar' && filter:isNull(FOO || FOO)";
         test(query, buildDefaultContext(), false);
-        
+
         // multi field, (present || absent)
         query = "FOO == 'bar' && filter:isNull(FOO || FOO)";
         test(query, buildDefaultContext(), true);
-        
+
         query = "FOO == 'bar' && filter:isNull(FOO || ABSENT)";
         test(query, buildDefaultContext(), true);
-        
+
         // multi field, (absent || present)
         query = "FOO == 'bar' && filter:isNull(ABSENT || FOO)";
         test(query, buildDefaultContext(), true);
-        
+
         // multi field, all absent
         query = "FOO == 'bar' && filter:isNull(ABSENT || ABSENT)";
         test(query, buildDefaultContext(), true);
     }
-    
+
     // test filter:isNotNull and not(filter:isNull)
     @Test
     public void testFilterFunctionIsNotNull() {
         // single field, present
         String query = "FOO == 'bar' && filter:isNotNull(FOO)";
         test(query, buildDefaultContext(), true);
-        
+
         query = "FOO == 'bar' && !(filter:isNull(FOO))";
         test(query, buildDefaultContext(), true);
-        
+
         // single field, absent
         query = "FOO == 'bar' && filter:isNotNull(ABSENT)";
         test(query, buildDefaultContext(), false);
-        
+
         query = "FOO == 'bar' && !(filter:isNull(ABSENT))";
         test(query, buildDefaultContext(), false);
     }
-    
+
     @Ignore
     @Test
     public void testFilterFunctionsMultiFieldedIsNotNull() {
         // Once #1604 is complete these tests will evaluate correctly
-        
+
         // multi field, all present
         String query = "FOO == 'bar' && filter:isNotNull(FOO || FOO)";
         test(query, buildDefaultContext(), true);
-        
+
         query = "FOO == 'bar' && !(filter:isNull(FOO || FOO))";
         test(query, buildDefaultContext(), true);
-        
+
         // multi field, (present || absent)
         query = "FOO == 'bar' && filter:isNotNull(FOO || ABSENT)";
         test(query, buildDefaultContext(), true);
-        
+
         query = "FOO == 'bar' && !(filter:isNull(FOO || ABSENT))";
         test(query, buildDefaultContext(), true);
-        
+
         query = "FOO == 'bar' && ( !(filter:isNull(FOO)) || !(filter:isNull(ABSENT)) )";
         test(query, buildDefaultContext(), true);
-        
+
         // multi field, (absent || present)
         query = "FOO == 'bar' && filter:isNotNull(ABSENT || FOO)";
         test(query, buildDefaultContext(), false); // this is wrong. isNotNull expands into an AND so both values must be null.
-        
+
         query = "FOO == 'bar' && !(filter:isNull(ABSENT || FOO))";
         test(query, buildDefaultContext(), false); // this is wrong. isNotNull expands into an AND so both values must be null.
-        
+
         // multi field, all absent
         query = "FOO == 'bar' && filter:isNotNull(ABSENT || ABSENT)";
         test(query, buildDefaultContext(), false);
-        
+
         query = "FOO == 'bar' && !(filter:isNull(ABSENT || ABSENT))";
         test(query, buildDefaultContext(), false);
     }
-    
+
     /**
      * Semi-parameterized test method, uses the default context
      *
@@ -388,10 +388,10 @@ public class DatawaveInterpreterTest {
             test((String) sub[0], (boolean) sub[1]);
         }
     }
-    
+
     /**
      * Evaluate a query against a default context
-     * 
+     *
      * @param query
      *            the query
      * @param expectedResult
@@ -400,10 +400,10 @@ public class DatawaveInterpreterTest {
     private void test(String query, boolean expectedResult) {
         test(query, buildDefaultContext(), expectedResult);
     }
-    
+
     /**
      * Evaluates a query against a jexl context. Tests with both a binary tree and a flattened tree.
-     * 
+     *
      * @param query
      *            a jexl query
      * @param context
@@ -412,22 +412,22 @@ public class DatawaveInterpreterTest {
      *            the expected evaluation of the query given the context
      */
     private void test(String query, JexlContext context, boolean expectedResult) {
-        
+
         // create binary tree and execute the query
         Script script = ArithmeticJexlEngines.getEngine(new DefaultArithmetic()).createScript(query);
         Object executed = script.execute(context);
         boolean isMatched = ArithmeticJexlEngines.isMatched(executed);
         assertEquals("Unexpected result for query (binary tree): " + query, expectedResult, isMatched);
-        
+
         // create flattened tree and execute the query
         DatawaveJexlScript dwScript = DatawaveJexlScript.create((ExpressionImpl) script);
         executed = dwScript.execute(context);
         isMatched = ArithmeticJexlEngines.isMatched(executed);
         assertEquals("Unexpected result for query (flattened tree): " + query, expectedResult, isMatched);
     }
-    
+
     protected Key docKey = new Key("dt\0uid");
-    
+
     /**
      * Build a jexl context with default values for several different type attributes
      *
@@ -471,10 +471,10 @@ public class DatawaveInterpreterTest {
         //  @formatter:on
         return context;
     }
-    
+
     /**
      * Build a jexl context with values that will match bounded ranges
-     * 
+     *
      * @return a context
      */
     private JexlContext buildBoundedRangeContext() {
@@ -483,5 +483,5 @@ public class DatawaveInterpreterTest {
         context.set("FOO", new FunctionalSet(Arrays.asList("bar", "baz")));
         return context;
     }
-    
+
 }

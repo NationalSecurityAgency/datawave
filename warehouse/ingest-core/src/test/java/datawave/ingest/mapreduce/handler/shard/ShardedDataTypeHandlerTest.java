@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ShardedDataTypeHandlerTest {
-    
+
     ShardedDataTypeHandler<Text> handler;
     AbstractColumnBasedHandler<Text> dataTypeHandler;
     TestIngestHelper ingestHelper;
@@ -44,9 +44,9 @@ public class ShardedDataTypeHandlerTest {
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
-    
+
     Configuration configuration;
-    
+
     public static class TestIngestHelper extends ContentBaseIngestHelper {
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer record) {
@@ -58,23 +58,23 @@ public class ShardedDataTypeHandlerTest {
             }
             return normalizeMap(eventFields);
         }
-        
+
         public String getNormalizedMaskedValue(final String key) {
             return "MASKED_VALUE";
         }
     }
-    
+
     public static class TestMaskedHelper implements MaskedFieldHelper {
         @Override
         public void setup(Configuration config) {
-            
+
         }
-        
+
         @Override
         public boolean hasMappings() {
             return true;
         }
-        
+
         @Override
         public boolean contains(String key) {
             if (key.equals("TEST_COL")) {
@@ -82,15 +82,15 @@ public class ShardedDataTypeHandlerTest {
             } else {
                 return false;
             }
-            
+
         }
-        
+
         @Override
         public String get(String key) {
             return "MASKED_VALUE";
         }
     }
-    
+
     public static void setupConfiguration(Configuration conf) {
         conf.set(DATA_TYPE_NAME + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set(DataTypeHelper.Properties.DATA_NAME, DATA_TYPE_NAME);
@@ -108,7 +108,7 @@ public class ShardedDataTypeHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_LPRIORITY, "30");
     }
-    
+
     @Before
     public void setUp() throws Exception {
         configuration = new Configuration();
@@ -117,17 +117,17 @@ public class ShardedDataTypeHandlerTest {
         handler.setup(new TaskAttemptContextImpl(configuration, new TaskAttemptID()));
         handler.setShardIndexTableName(new Text("shardIndex"));
         handler.setShardReverseIndexTableName(new Text("shardReverseIndex"));
-        
+
         dataTypeHandler = new AbstractColumnBasedHandler<>();
         dataTypeHandler.setup(new TaskAttemptContextImpl(configuration, new TaskAttemptID()));
-        
+
         ingestHelper = new TestIngestHelper();
         ingestHelper.setup(configuration);
-        
+
         maskedFieldHelper = new TestMaskedHelper();
         maskedFieldHelper.setup(configuration);
     }
-    
+
     @Test
     public void testCreateTermIndex() {
         Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
@@ -137,17 +137,17 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        
+
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
-        
+
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
                         handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
-        
+
         assertTrue(termIndex.size() == 1);
     }
-    
+
     @Test
     public void testCreateTermReverseIndex() {
         Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
@@ -157,15 +157,15 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        
+
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
-        
+
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
-        
+
         assertTrue(termIndex.size() == 2);
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
@@ -176,7 +176,7 @@ public class ShardedDataTypeHandlerTest {
         }
         assertTrue(foundValue);
     }
-    
+
     @Test
     public void testMaskedForward() {
         Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
@@ -186,15 +186,15 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        
+
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
-        
+
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.FORWARD);
-        
+
         assertTrue(termIndex.size() == 2);
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
@@ -205,7 +205,7 @@ public class ShardedDataTypeHandlerTest {
         }
         assertTrue(foundValue);
     }
-    
+
     @Test
     public void testNonMaskedReverseIndex() {
         Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
@@ -215,14 +215,14 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        
+
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
-        
+
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "TEST_COL", "FIELD_VALUE", visibility, null, null, shardId,
                         handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
-        
+
         assertTrue(termIndex.size() == 1);
         boolean foundValue = false;
         for (BulkIngestKey k : termIndex.keySet()) {
@@ -233,7 +233,7 @@ public class ShardedDataTypeHandlerTest {
         }
         assertTrue(foundValue);
     }
-    
+
     @Test
     public void testNonMaskedVisibility() {
         Type dataType = new Type(DATA_TYPE_NAME, TestIngestHelper.class, null, null, 10, null);
@@ -243,20 +243,20 @@ public class ShardedDataTypeHandlerTest {
         record.setRawFileName("data_" + 0 + ".dat");
         record.setRawRecordNumber(1);
         record.setRawData(entry.getBytes(StandardCharsets.UTF_8));
-        
+
         Uid.List uid = Uid.List.newBuilder().setIGNORE(false).setCOUNT(1).addUID("d8zay2.-3pnndm.-anolok").build();
         byte[] visibility = new byte[] {65, 76, 76};
         byte[] maskVisibility = new byte[] {67, 76, 76};
         byte[] shardId = new byte[] {50, 48, 48, 48, 48, 49, 48, 49, 95, 54, 57};
-        
+
         Multimap<BulkIngestKey,Value> termIndex = handler.createTermIndexColumn(record, "OTHER_COL", "FIELD_VALUE", visibility, maskVisibility,
                         maskedFieldHelper, shardId, handler.getShardIndexTableName(), new Value(uid.toByteArray()), Direction.REVERSE);
-        
+
         assertTrue(termIndex.size() == 1);
         for (BulkIngestKey k : termIndex.keySet()) {
             byte[] keyBytes = k.getKey().getColumnVisibility().getBytes();
             assertTrue(Arrays.equals(keyBytes, maskVisibility));
         }
     }
-    
+
 }

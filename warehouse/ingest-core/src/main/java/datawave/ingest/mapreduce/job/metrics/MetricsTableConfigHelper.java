@@ -14,28 +14,28 @@ import java.util.Collection;
  * Table configuration helper for the ingest metrics table.
  */
 public class MetricsTableConfigHelper extends AbstractTableConfigHelper {
-    
+
     private String tableName;
     private Configuration conf;
     private Logger logger;
-    
+
     @Override
     public void setup(String tableName, Configuration conf, Logger logger) throws IllegalArgumentException {
         this.conf = conf;
         this.tableName = tableName;
         this.logger = logger;
     }
-    
+
     @Override
     public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         if (MetricsConfiguration.isEnabled(conf)) {
             try {
                 String table = MetricsConfiguration.getTable(conf);
-                
+
                 if (!table.equals(this.tableName)) {
                     throw new IllegalArgumentException("Table names did not match. Configuration = " + table + ", Configuration Helper = " + this.tableName);
                 }
-                
+
                 Collection<MetricsReceiver> receivers = MetricsConfiguration.getReceivers(conf);
                 for (MetricsReceiver receiver : receivers) {
                     logger.info("Configuring metrics receiver " + receiver);

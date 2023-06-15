@@ -28,12 +28,12 @@ import java.util.Map;
  * Loads test data from a Json input file. There are separate methods for loading data for Accumulo and for the processing of expected results.
  */
 public class JsonTestFileLoader implements TestFileLoader, DataLoader {
-    
+
     private static final Logger log = Logger.getLogger(JsonTestFileLoader.class);
-    
+
     private final URI uri;
     private final Configuration conf;
-    
+
     /**
      *
      * @param uri
@@ -45,7 +45,7 @@ public class JsonTestFileLoader implements TestFileLoader, DataLoader {
         this.uri = uri;
         this.conf = conf;
     }
-    
+
     @Override
     public void loadTestData(SequenceFile.Writer seqFile) throws IOException {
         TypeRegistry.reset();
@@ -54,7 +54,7 @@ public class JsonTestFileLoader implements TestFileLoader, DataLoader {
         File file = new File(this.uri);
         FileSplit split = new FileSplit(path, 0, file.length(), null);
         TaskAttemptContext ctx = new TaskAttemptContextImpl(this.conf, new TaskAttemptID());
-        
+
         try (JsonRecordReader reader = new JsonRecordReader()) {
             reader.initialize(split, ctx);
             while (reader.nextKeyValue()) {
@@ -63,7 +63,7 @@ public class JsonTestFileLoader implements TestFileLoader, DataLoader {
             }
         }
     }
-    
+
     @Override
     public Collection<Multimap<String,NormalizedContentInterface>> getRawData() throws IOException {
         TypeRegistry.reset();
@@ -72,10 +72,10 @@ public class JsonTestFileLoader implements TestFileLoader, DataLoader {
         File file = new File(this.uri);
         FileSplit split = new FileSplit(path, 0, file.length(), null);
         TaskAttemptContext ctx = new TaskAttemptContextImpl(this.conf, new TaskAttemptID());
-        
+
         JsonIngestHelper helper = new JsonIngestHelper();
         helper.setup(this.conf);
-        
+
         List<Multimap<String,NormalizedContentInterface>> entries = new ArrayList<>();
         try (JsonRecordReader reader = new JsonRecordReader()) {
             reader.initialize(split, ctx);
@@ -90,9 +90,9 @@ public class JsonTestFileLoader implements TestFileLoader, DataLoader {
                 }
             }
         }
-        
+
         log.debug("raw entries loaded: " + entries.size());
-        
+
         return entries;
     }
 }

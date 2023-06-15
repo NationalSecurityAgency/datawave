@@ -26,13 +26,13 @@ import javax.inject.Inject;
 // by default all methods are non-blocking
 @MBean
 public class CachedResultsQueryCacheBean {
-    
+
     @Inject
     private CachedResultsBean bean;
-    
+
     @Inject
     private CachedResultsQueryCache cachedRunningQueryCache;
-    
+
     @PermitAll
     @JmxManaged
     public String listRunningQueries() {
@@ -43,7 +43,7 @@ public class CachedResultsQueryCacheBean {
         }
         return buf.toString();
     }
-    
+
     @JmxManaged
     public String cancelLoad(String queryId) throws Exception {
         try {
@@ -53,5 +53,5 @@ public class CachedResultsQueryCacheBean {
             return "Error cancelling query: " + e.getMessage();
         }
     }
-    
+
 }

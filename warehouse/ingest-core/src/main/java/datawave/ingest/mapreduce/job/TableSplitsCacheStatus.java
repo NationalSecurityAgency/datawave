@@ -12,9 +12,9 @@ public class TableSplitsCacheStatus {
     private static final long DEFAULT_CACHE_TIMEOUT = 21600000L;
     public static final String SPLITS_CACHE_TIMEOUT_MS = "datawave.ingest.splits.cache.timeout.ms";
     public static final Logger log = Logger.getLogger(TableSplitsCacheStatus.class);
-    
+
     /**
-     * 
+     *
      * @param conf
      *            the configuration
      * @return if the cache is valid
@@ -37,5 +37,5 @@ public class TableSplitsCacheStatus {
         }
         return null != fileStatus && isFileAgeValid;
     }
-    
+
 }

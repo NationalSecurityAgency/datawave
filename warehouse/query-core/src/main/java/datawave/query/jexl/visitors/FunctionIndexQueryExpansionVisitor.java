@@ -32,17 +32,17 @@ import static datawave.query.jexl.functions.ContentFunctionsDescriptor.ContentJe
  *
  */
 public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
-    
+
     protected ShardQueryConfiguration config;
     protected MetadataHelper metadataHelper;
     protected DateIndexHelper dateIndexHelper;
-    
+
     public FunctionIndexQueryExpansionVisitor(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper) {
         this.config = config;
         this.metadataHelper = metadataHelper;
         this.dateIndexHelper = dateIndexHelper;
     }
-    
+
     /**
      * Expand functions to be AND'ed with their index query equivalents.
      *
@@ -62,57 +62,57 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     public static <T extends JexlNode> T expandFunctions(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
                     T script) {
         JexlNode copy = copy(script);
-        
+
         FunctionIndexQueryExpansionVisitor visitor = new FunctionIndexQueryExpansionVisitor(config, metadataHelper, dateIndexHelper);
-        
+
         return (T) copy.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         boolean evaluationOnly = (data instanceof Boolean) && (Boolean) data;
-        
+
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        
+
         if (desc instanceof RebuildingJexlArgumentDescriptor) {
             JexlNode rebuiltNode = ((RebuildingJexlArgumentDescriptor) desc).rebuildNode(config, this.metadataHelper, this.dateIndexHelper,
                             this.config.getDatatypeFilter(), node);
-            
+
             // if the node changed, visit the rebuilt node
             if (rebuiltNode != node)
                 return rebuiltNode.jjtAccept(this, data);
         }
-        
+
         if (!evaluationOnly) {
             JexlNode indexQuery = desc.getIndexQuery(config, this.metadataHelper, this.dateIndexHelper, this.config.getDatatypeFilter());
             if (indexQuery != null && !(indexQuery instanceof ASTTrueNode)) {
@@ -124,16 +124,16 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
                 }
             }
         }
-        
+
         return copy(node);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
         return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isType(ASTEvaluationOnly.class));
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.

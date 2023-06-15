@@ -28,10 +28,10 @@ public class SecurityDomainProducer {
     @Produces
     @Resource(name = "java:jboss/jaas/datawave/jsse")
     private JSSESecurityDomain domain;
-    
+
     @Resource(name = "java:jboss/jaas/datawave")
     private AuthenticationManager authenticationManager;
-    
+
     @Produces
     @AuthorizationCache
     @SuppressWarnings("unchecked")

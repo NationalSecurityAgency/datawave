@@ -24,7 +24,7 @@ public class FileRuleWatcherTest {
     private Path filePath;
     private Collection<FilterRule> rules;
     private Map<String,TestFilter> rulesByMatchPattern;
-    
+
     @Before
     public void before() throws IOException {
         rulesByMatchPattern = new HashMap<>();
@@ -40,7 +40,7 @@ public class FileRuleWatcherTest {
             rulesByMatchPattern.put(matchPattern, testFilter);
         }
     }
-    
+
     @Test
     public void verifyNoBleedOverOfTTlValue() throws IOException {
         Assert.assertEquals(10, rulesByMatchPattern.get("1").options.getTTL());
@@ -49,7 +49,7 @@ public class FileRuleWatcherTest {
         Assert.assertEquals(-1, rulesByMatchPattern.get("C").options.getTTL());
         Assert.assertEquals(10, rulesByMatchPattern.get("D").options.getTTL());
     }
-    
+
     @Test
     public void verifyNoBleedOverOfTTlUnits() throws IOException {
         Assert.assertEquals("ms", rulesByMatchPattern.get("1").options.getTTLUnits());
@@ -58,7 +58,7 @@ public class FileRuleWatcherTest {
         Assert.assertEquals(DEFAULT_UNITS, rulesByMatchPattern.get("C").options.getTTLUnits());
         Assert.assertEquals("ms", rulesByMatchPattern.get("D").options.getTTLUnits());
     }
-    
+
     @Test
     public void verifyNoBleedOverOfExtendedOptions() throws IOException {
         Assert.assertEquals("false", rulesByMatchPattern.get("1").options.getOption("filtersWater"));
@@ -66,20 +66,20 @@ public class FileRuleWatcherTest {
         Assert.assertEquals("true", rulesByMatchPattern.get("B").options.getOption("filtersWater"));
         Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("filtersWater"));
         Assert.assertEquals("false", rulesByMatchPattern.get("D").options.getOption("filtersWater"));
-        
+
         Assert.assertEquals("1234", rulesByMatchPattern.get("1").options.getOption("myTagName.ttl"));
         Assert.assertNull(rulesByMatchPattern.get("A").options.getOption("myTagName.ttl"));
         Assert.assertNull(rulesByMatchPattern.get("B").options.getOption("myTagName.ttl"));
         Assert.assertNull(rulesByMatchPattern.get("C").options.getOption("myTagName.ttl"));
         Assert.assertNull(rulesByMatchPattern.get("D").options.getOption("myTagName.ttl"));
     }
-    
+
     @Test(expected = IOException.class)
     public void verifyFilterClass() throws IOException {
         Path fileWithMissingClassname = new Path(this.getClass().getResource(FILE_WITH_MISSING_FILTER_CLASS).toString());
         rules = watcher.loadContents(fs.open(fileWithMissingClassname));
     }
-    
+
     @Test
     public void verifyNumericFieldInOptions() throws IOException {
         // backwards compatibility

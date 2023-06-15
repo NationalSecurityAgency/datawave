@@ -10,19 +10,19 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
 public class DateFormatUtil {
-    
+
     private String defaultTime = "000000";
     private String defaultMillisec = "000";
     private static String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static SimpleDateFormat dateFormat = null;
-    
+
     private static Logger log = Logger.getLogger(DateFormatUtil.class);
-    
+
     static {
         dateFormat = new SimpleDateFormat(formatPattern);
         dateFormat.setLenient(false);
     }
-    
+
     public Date fromString(String s) {
         Date d = null;
         ParseException e = null;
@@ -35,11 +35,11 @@ public class DateFormatUtil {
                 if (StringUtils.isNotBlank(this.defaultTime) && !str.contains(" ")) {
                     str = str + " " + this.defaultTime;
                 }
-                
+
                 if (StringUtils.isNotBlank(this.defaultMillisec) && !str.contains(".")) {
                     str = str + "." + this.defaultMillisec;
                 }
-                
+
                 try {
                     d = DateFormatUtil.dateFormat.parse(str);
                     // if any time value in HHmmss was set either by default or by the user
@@ -52,8 +52,8 @@ public class DateFormatUtil {
                 }
             }
         }
-        
+
         return d;
     }
-    
+
 }

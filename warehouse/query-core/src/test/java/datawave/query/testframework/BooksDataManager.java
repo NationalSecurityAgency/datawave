@@ -29,14 +29,14 @@ import java.util.Set;
  * Creates accumulo data as grouping data. However, that does not limit additional test classes for other purposes.
  */
 public class BooksDataManager extends AbstractDataManager {
-    
+
     private static final Logger log = Logger.getLogger(BooksDataManager.class);
-    
+
     private final String datatype;
     private final AccumuloClient accumuloClient;
     private final FieldConfig fieldIndex;
     private final ConfigData cfgData;
-    
+
     /**
      *
      * @param datatype
@@ -62,15 +62,15 @@ public class BooksDataManager extends AbstractDataManager {
         }
         this.rawDataIndex.put(datatype, indexes.getIndexFields());
     }
-    
+
     @Override
     public List<String> getHeaders() {
         return this.cfgData.headers();
     }
-    
+
     /**
      * Loads test data as grouping data from a multimap.
-     * 
+     *
      * @param data
      *            list of multimap entries of field name to values
      */
@@ -91,29 +91,29 @@ public class BooksDataManager extends AbstractDataManager {
             throw new AssertionError(me);
         }
     }
-    
+
     /**
      * Loads test data from a CSV file.
-     * 
+     *
      * @param file
      *            uri of CSV file
      */
     public void loadGroupingData(final URI file) {
         Assert.assertFalse("datatype has already been configured(" + this.datatype + ")", this.rawData.containsKey(this.datatype));
-        
+
         try (final Reader reader = Files.newBufferedReader(Paths.get(file)); final CSVReader csv = new CSVReader(reader)) {
             GroupingAccumuloWriter writer = new GroupingAccumuloWriter(this.datatype, this.accumuloClient, this.cfgData.getDateField(), this.fieldIndex,
                             this.cfgData);
-            
+
             Set<RawData> bookData = new HashSet<>();
             List<Map.Entry<Multimap<String,String>,UID>> loadData = new ArrayList<>();
-            
+
             int count = 0;
             String[] data;
             while (null != (data = csv.readNext())) {
                 RawData rawEntry = new BooksRawData(this.datatype, this.getHeaders(), this.metadata, data);
                 bookData.add(rawEntry);
-                
+
                 final Multimap<String,String> mm = ((BooksRawData) rawEntry).toMultimap();
                 UID uid = UID.builder().newId(mm.toString().getBytes(), "");
                 loadData.add(Maps.immutableEntry(mm, uid));
@@ -125,22 +125,22 @@ public class BooksDataManager extends AbstractDataManager {
             throw new AssertionError(e);
         }
     }
-    
+
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
         // ignore
         log.error("noop condition - use loadTestData method");
         Assert.fail("method not supported for books data manager");
     }
-    
+
     /**
      * POJO for a single raw data entry for the books datatype.
      */
     private static class BooksRawData extends BaseRawData {
-        
+
         /**
          * This allows a test to loadstatic test data in the form of a map of field name to values.
-         * 
+         *
          * @param datatype
          *            datatype name
          * @param baseHeaders
@@ -154,10 +154,10 @@ public class BooksDataManager extends AbstractDataManager {
             super(datatype, baseHeaders, metaData);
             processMapFormat(datatype, rawData);
         }
-        
+
         /**
          * Loads a CSV entry in the form of a array.
-         * 
+         *
          * @param datatype
          *            datatype name
          * @param baseHeaders
@@ -171,10 +171,10 @@ public class BooksDataManager extends AbstractDataManager {
             super(datatype, baseHeaders, metaData);
             processFields(datatype, fields);
         }
-        
+
         /**
          * Converts the entry to a {@link Multimap}.
-         * 
+         *
          * @return populated multimap
          */
         Multimap<String,String> toMultimap() {
@@ -184,7 +184,7 @@ public class BooksDataManager extends AbstractDataManager {
                     mm.put(e.getKey().toUpperCase(), val);
                 }
             }
-            
+
             return mm;
         }
     }

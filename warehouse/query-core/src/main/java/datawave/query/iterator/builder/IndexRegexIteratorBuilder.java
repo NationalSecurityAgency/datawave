@@ -15,21 +15,21 @@ import java.io.IOException;
 /**
  * A convenience class that aggregates a field, regex, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
  * traversing a subtree in a query. This allows arbitrary ordering of the arguments.
- * 
+ *
  */
 public class IndexRegexIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
     private static Logger log = Logger.getLogger(IndexRegexIteratorBuilder.class);
-    
+
     protected Boolean negated;
-    
+
     public boolean isNegated() {
         return negated;
     }
-    
+
     public void setNegated(boolean negated) {
         this.negated = negated;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
@@ -37,14 +37,14 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + field + (negated ? "!~" : "=~") + value);
             }
-            
+
             // we can't build an ivarator if no ivarator directories have been defined
             if (ivaratorCacheDirs.isEmpty())
                 throw new IllegalStateException("No ivarator cache dirs defined");
-            
+
             // ensure that we are able to create the first ivarator cache dir (the control dir)
             validateIvaratorControlDir(ivaratorCacheDirs.get(0));
-            
+
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
@@ -81,7 +81,7 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 }
                 regexIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexRegexIteratorJexl: " + regexIterator);
-                
+
                 boolean canBuildDocument = this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field);
                 if (forceDocumentBuild) {
                     canBuildDocument = true;
@@ -89,15 +89,15 @@ public class IndexRegexIteratorBuilder extends IvaratorBuilder implements Iterat
                 // Add an interator to aggregate documents. This is needed for index only fields.
                 DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(canBuildDocument, this.typeMetadata, keyTform);
                 aggregatingIterator.init(regexIterator, null, null);
-                
+
                 docIterator = aggregatingIterator;
-                
+
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to initialize regex iterator stack", e);
                 // } catch (JavaRegexParseException e) {
                 // throw new IllegalStateException("Unable to parse regex " + value, e);
             }
-            
+
             IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, getNode(), getField());
             field = null;
             value = null;

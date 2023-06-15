@@ -30,11 +30,11 @@ import org.apache.lucene.search.Query;
  */
 @Deprecated
 public class ModifierQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         ModifierQueryNode modifierQueryNode = (ModifierQueryNode) queryNode;
-        
+
         return (datawave.query.language.tree.QueryNode) (modifierQueryNode).getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
     }
 }

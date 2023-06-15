@@ -20,27 +20,27 @@ import javax.jms.MessageListener;
 import javax.jms.TextMessage;
 
 @RunAs("InternalUser")
-@MessageDriven(name = "ModificationCacheMessageBean", activationConfig = {
-        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
-        @ActivationConfigProperty(propertyName = "destination", propertyValue = "topic/AccumuloTableCache"),
-        @ActivationConfigProperty(propertyName = "useLocalTx", propertyValue = "true"),
-        @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "Durable"),
-        @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "ModificationCacheMessageBean"),
-        @ActivationConfigProperty(propertyName = "user", propertyValue = "${dw.hornetq.system.userName}"),
-        @ActivationConfigProperty(propertyName = "password", propertyValue = "${dw.hornetq.system.password}"),
-        @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "${dw.modification.cache.mdb.pool.size}")})
+@MessageDriven(name = "ModificationCacheMessageBean",
+                activationConfig = {@ActivationConfigProperty(propertyName = "destinationType", propertyValue = "javax.jms.Topic"),
+                        @ActivationConfigProperty(propertyName = "destination", propertyValue = "topic/AccumuloTableCache"),
+                        @ActivationConfigProperty(propertyName = "useLocalTx", propertyValue = "true"),
+                        @ActivationConfigProperty(propertyName = "subscriptionDurability", propertyValue = "Durable"),
+                        @ActivationConfigProperty(propertyName = "subscriptionName", propertyValue = "ModificationCacheMessageBean"),
+                        @ActivationConfigProperty(propertyName = "user", propertyValue = "${dw.hornetq.system.userName}"),
+                        @ActivationConfigProperty(propertyName = "password", propertyValue = "${dw.hornetq.system.password}"),
+                        @ActivationConfigProperty(propertyName = "maxSession", propertyValue = "${dw.modification.cache.mdb.pool.size}")})
 @TransactionManagement(value = TransactionManagementType.CONTAINER)
 @TransactionAttribute(value = TransactionAttributeType.NOT_SUPPORTED)
 public class ModificationCacheMessageBean implements MessageListener {
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private ModificationCacheBean modificationCacheBean;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private ModificationConfiguration modificationConfiguration;
-    
+
     @Override
     public void onMessage(Message message) {
         String tableName;

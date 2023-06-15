@@ -15,8 +15,8 @@ import org.apache.log4j.Logger;
 /**
  * Class to create the Metadata table for the sharded error tables. Extends the MetadataTableConfigHelper since all we want to do differently is change the name
  * of the Metadata table that will be used.
- * 
- * 
+ *
+ *
  */
 public class ErrorMetadataTableConfigHelper extends MetadataTableConfigHelper {
     @Override
@@ -26,19 +26,19 @@ public class ErrorMetadataTableConfigHelper extends MetadataTableConfigHelper {
             configureToDropBadData(tops, scope.name());
         }
     }
-    
+
     @Override
     public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {
-        
+
         this.log = log;
         this.conf = config;
         this.tableName = conf.get(ErrorShardedDataTypeHandler.ERROR_PROP_PREFIX + ShardedDataTypeHandler.METADATA_TABLE_NAME, null);
-        
+
         if (this.tableName == null || !this.tableName.equals(tableName)) {
             throw new IllegalArgumentException("No Such Table: " + tableName);
         }
     }
-    
+
     // MetricsFileProtoIngestHelper creates nonsense field names, each containing a '.'
     private void configureToDropBadData(TableOperations tops, String scopeName) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         String stem = String.format("%s%s.%s", Property.TABLE_ITERATOR_PREFIX, scopeName, "dropBadData");

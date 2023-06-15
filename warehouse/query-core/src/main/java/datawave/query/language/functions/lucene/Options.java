@@ -17,12 +17,12 @@ public class Options extends LuceneQueryFunction {
     public Options() {
         super(QueryFunctions.OPTIONS_FUNCTION, new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() % 2 != 0) { // must have even number of args
@@ -36,7 +36,7 @@ public class Options extends LuceneQueryFunction {
             throw new IllegalArgumentException("function: " + this.name + " must be part of an AND expression");
         }
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Options();

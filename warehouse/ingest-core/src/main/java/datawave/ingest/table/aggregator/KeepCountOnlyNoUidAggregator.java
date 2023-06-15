@@ -6,7 +6,7 @@ package datawave.ingest.table.aggregator;
  * Practically this version does not require additional configuration.
  */
 public class KeepCountOnlyNoUidAggregator extends KeepCountOnlyUidAggregator {
-    
+
     public KeepCountOnlyNoUidAggregator() {
         super(0);
     }

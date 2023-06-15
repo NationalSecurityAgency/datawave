@@ -33,9 +33,8 @@ import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_
 
 public class ProtobufEdgeDeletePreconditionTest {
 
-
-    private static Multimap<String, NormalizedContentInterface> fields = HashMultimap.create();
-    private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[]{SimpleDataTypeHandler.class.getName()}, 10, null);
+    private static Multimap<String,NormalizedContentInterface> fields = HashMultimap.create();
+    private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private Configuration conf;
 
     @Before
@@ -109,7 +108,6 @@ public class ProtobufEdgeDeletePreconditionTest {
     public void testDeleteUnawarePreconDifferentGroup() {
         // FELINE == 'tabby'
 
-
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
         fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
         fields.put("FELINE", new NormalizedFieldAndValue("FELINE", "tabby", "PET", "0"));
@@ -118,7 +116,7 @@ public class ProtobufEdgeDeletePreconditionTest {
         fields.put("FISH", new NormalizedFieldAndValue("FISH", "guppy", "WILD", "1"));
         fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "fetch", "THING", "0"));
 
-        ProtobufEdgeDataTypeHandler<Text, BulkIngestKey, Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         edgeHandler.setup(context);
 
@@ -138,7 +136,6 @@ public class ProtobufEdgeDeletePreconditionTest {
         expectedKeys.add("tabby");
         expectedKeys.add("tabby%00;salmon");
         expectedKeys.add("tabby%00;guppy");
-
 
         RawRecordContainer myEvent = getEvent(conf);
 
@@ -163,12 +160,12 @@ public class ProtobufEdgeDeletePreconditionTest {
         fields.put("CAR", new NormalizedFieldAndValue("CAR", "zonda", "ATTR", "0"));
         fields.put("CAR", new NormalizedFieldAndValue("CAR", "lotus", "ATTR", "1"));
 
-        ProtobufEdgeDataTypeHandler<Text, BulkIngestKey, Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         edgeHandler.setup(context);
 
         Set<String> expectedKeys = new HashSet<>();
-        //please do not eat and drive.  this dataset is for example only and not meant to condone culinarily distracted driving
+        // please do not eat and drive. this dataset is for example only and not meant to condone culinarily distracted driving
         expectedKeys.add("zonda");
         expectedKeys.add("zonda%00;banoffee");
         expectedKeys.add("zonda%00;applesauce");
@@ -184,7 +181,6 @@ public class ProtobufEdgeDeletePreconditionTest {
         expectedKeys.add("banoffee");
         expectedKeys.add("banoffee%00;zonda");
         expectedKeys.add("banoffee%00;lotus");
-
 
         RawRecordContainer myEvent = getEvent(conf);
 

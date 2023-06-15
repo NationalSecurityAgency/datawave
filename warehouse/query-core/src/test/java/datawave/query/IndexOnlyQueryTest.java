@@ -21,12 +21,12 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(IndexOnlyQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         FieldConfig generic = new GenericCityFields();
@@ -36,15 +36,15 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         generic.addCompositeField(comp);
         generic.addIndexField(CityField.COUNTRY.name());
         generic.addIndexOnlyField(CityField.STATE.name());
-        
+
         accumuloSetup.setData(FileType.CSV, new CitiesDataType(CitiesDataType.CityEntry.generic, generic));
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public IndexOnlyQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testIndex() throws Exception {
         log.info("------  testIndex  ------");
@@ -52,7 +52,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         String query = CityField.STATE.name() + EQ_OP + state;
         runTest(query, query);
     }
-    
+
     @Test
     public void testAnd() throws Exception {
         log.info("------  testAnd  ------");
@@ -62,7 +62,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testAndNot() throws Exception {
         log.info("------  testAndNot  ------");
@@ -72,31 +72,30 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testAndNoIndex() throws Exception {
         log.info("------  testAndNoIndex  ------");
         String state = "'ohio'";
         String code = "'fra'";
         for (final TestCities city : TestCities.values()) {
-            String query = "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + "filter:includeRegex(" + CityField.CODE.name() + ","
-                            + code + "))" + OR_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.STATE.name() + EQ_OP
-                            + state + ")";
+            String query = "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + "filter:includeRegex(" + CityField.CODE.name() + "," + code
+                            + "))" + OR_OP + "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.STATE.name() + EQ_OP + state
+                            + ")";
             String expectQuery = "(" + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.CODE.name() + RE_OP + code + ") or ("
                             + CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + " and " + CityField.STATE.name() + EQ_OP + state + ")";
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testDelayedPredicate() throws Exception {
         log.info("------  testDelayedPredicate  ------");
         String cont = "'north america'";
         String state = "'ohio'";
         for (final TestCities city : TestCities.values()) {
-            String query = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name().toLowerCase() + " == 'none')" + " and "
-                            +
-                            // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
+            String query = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name().toLowerCase() + " == 'none')" + " and " +
+            // NOTE: the ASTDelayedPredicate will not normalize the value - convert to lower case before query
                             "((_Delayed_ = true) and (" + CityField.CITY.name() + EQ_OP + "'" + city.name().toLowerCase() + "'" + "))" + " and "
                             + CityField.STATE.name() + EQ_OP + state;
             String expectQuery = "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP + CityField.CITY.name() + " == 'none')" + " and " + "("
@@ -104,7 +103,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testOneDelayedPredicate() throws Exception {
         log.info("------  testOneDelayedPredicate  ------");
@@ -115,7 +114,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testOr() throws Exception {
         log.info("------  testOr  ------");
@@ -125,7 +124,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testRegex() throws Exception {
         log.info("------  testRegex  ------");
@@ -134,7 +133,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         String eQuery = CityField.STATE.name() + RE_OP + state;
         runTest(query, eQuery);
     }
-    
+
     // ============================================
     // error conditions
     @Test(expected = FullTableScansDisallowedException.class)
@@ -146,7 +145,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test(expected = FullTableScansDisallowedException.class)
     public void testErrorNotRegex() throws Exception {
         log.info("------  testErrorNotRegex  ------");
@@ -154,7 +153,7 @@ public class IndexOnlyQueryTest extends AbstractFunctionalQuery {
         String query = CityField.STATE.name() + " !~ " + state;
         runTest(query, query);
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

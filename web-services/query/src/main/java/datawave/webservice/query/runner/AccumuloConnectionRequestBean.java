@@ -16,18 +16,18 @@ import java.util.concurrent.ConcurrentHashMap;
 @Singleton
 // CDI singleton
 public class AccumuloConnectionRequestBean {
-    
+
     private static Logger log = Logger.getLogger(AccumuloConnectionRequestBean.class);
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     private Map<String,Pair<Principal,Thread>> getConnectionThreadMap = new ConcurrentHashMap<>();
-    
+
     public boolean cancelConnectionRequest(String id) {
         return cancelConnectionRequest(id, ctx.getCallerPrincipal());
     }
-    
+
     public boolean cancelConnectionRequest(String id, Principal principal) {
         // this call checks that the Principal used for the connection request and th connection cancel are the same
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
@@ -47,7 +47,7 @@ public class AccumuloConnectionRequestBean {
         }
         return connectionRequestCanceled;
     }
-    
+
     public boolean adminCancelConnectionRequest(String id) {
         // it is assumed that admin status is already checked, so this call does not check the calling Principals
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
@@ -63,12 +63,12 @@ public class AccumuloConnectionRequestBean {
         }
         return connectionRequestCanceled;
     }
-    
+
     public void requestBegin(String id) {
         Pair<Principal,Thread> connectionRequestPair = new Pair<>(ctx.getCallerPrincipal(), Thread.currentThread());
         getConnectionThreadMap.put(id, connectionRequestPair);
     }
-    
+
     public void requestEnd(String id) {
         getConnectionThreadMap.remove(id);
     }

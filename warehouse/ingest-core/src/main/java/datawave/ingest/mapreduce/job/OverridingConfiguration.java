@@ -15,7 +15,7 @@ import java.util.TreeMap;
 public class OverridingConfiguration extends Configuration {
     public OverridingConfiguration(String prefix, Configuration base) {
         Map<String,String> overrides = new TreeMap<>();
-        
+
         for (Map.Entry<String,String> property : base) {
             String k = property.getKey();
             if (k.startsWith(prefix + ".")) {
@@ -25,7 +25,7 @@ public class OverridingConfiguration extends Configuration {
                 set(k, property.getValue());
             }
         }
-        
+
         for (Map.Entry<String,String> entry : overrides.entrySet()) {
             set(entry.getKey(), entry.getValue());
         }

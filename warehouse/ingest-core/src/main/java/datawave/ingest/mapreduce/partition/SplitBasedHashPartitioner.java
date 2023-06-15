@@ -24,11 +24,11 @@ public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implem
     public static final String PARTITIONER_SPACE_MULTIPLIER = "split.based.hash.partitioner.multiplier";
     private static Logger log = Logger.getLogger(SplitBasedHashPartitioner.class);
     private int spaceMultiplier = 0;
-    
+
     public void setMultiplier(int multiplier) {
         this.spaceMultiplier = multiplier;
     }
-    
+
     @Override
     public int getPartition(BulkIngestKey bKey, Value value, int numPartitions) {
         int indexWithinSplits = super.getPartition(bKey, value, numPartitions);
@@ -37,13 +37,13 @@ public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implem
         int selectedPartitioner = indexWithinSplits * spaceMultiplier + offsetWithinPartitionerSpace;
         return selectedPartitioner % numPartitions;
     }
-    
+
     @Override
     public void setConf(Configuration conf) {
         super.setConf(conf);
         this.spaceMultiplier = conf.getInt(PARTITIONER_SPACE_MULTIPLIER, 2); // generic property
     }
-    
+
     @Override
     public void configureWithPrefix(String prefix) {
         super.configureWithPrefix(prefix);
@@ -51,13 +51,13 @@ public class SplitBasedHashPartitioner extends MultiTableRangePartitioner implem
         this.spaceMultiplier = super.getConf().getInt(prefix + "." + PARTITIONER_SPACE_MULTIPLIER, this.spaceMultiplier);
         // e.g. for table x use x.split.based.hash.partitioner.multiplier of y
     }
-    
+
     @Override
     protected int calculateIndex(int index, int numPartitions, String tableName, int cutPointArrayLength) {
         // will wrap indexes
         return super.calculateIndex(index, numPartitions, tableName, cutPointArrayLength) % numPartitions;
     }
-    
+
     @Override
     protected boolean isTrimmed() {
         return false;

@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 @Singleton
 // CDI singleton
 public class CachedResultsQueryCache extends AbstractQueryCache<CachedRunningQuery> {
-    
+
     @Override
     protected Cache<String,CachedRunningQuery> buildCache() {
         return CacheBuilder.newBuilder().expireAfterAccess(24, TimeUnit.HOURS).maximumSize(20000).concurrencyLevel(1000).build();

@@ -10,11 +10,11 @@ import java.util.ArrayList;
  * {@code #unique(field[TENTH_OF_HOUR])}.
  */
 public class UniqueByTenthOfHour extends UniqueByFunction {
-    
+
     public UniqueByTenthOfHour() {
         super(QueryOptionsFromQueryVisitor.UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, new ArrayList<>());
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new UniqueByTenthOfHour();

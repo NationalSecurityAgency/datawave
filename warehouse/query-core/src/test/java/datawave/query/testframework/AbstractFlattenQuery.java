@@ -19,5 +19,5 @@ public abstract class AbstractFlattenQuery { // extends AbstractFunctionalQuery 
     //
     //
     // protected FieldConfig getFieldConfig();
-    
+
 }

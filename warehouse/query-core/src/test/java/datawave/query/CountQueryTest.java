@@ -31,12 +31,12 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
  * Tests that use the {@link CountingShardQueryLogic}.
  */
 public class CountQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(CountQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -48,55 +48,55 @@ public class CountQueryTest extends AbstractFunctionalQuery {
             generic.addReverseIndexField(idx);
         }
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public CountQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testRegex() throws Exception {
         log.info("------  testRegex  ------");
-        
+
         String state = "'mISs.*'";
         String query = CityField.CODE.name() + EQ_OP + "'usA'" + AND_OP + CityField.STATE.name() + RE_OP + state;
         runCountTest(query);
     }
-    
+
     @Test
     public void testRegexMulti() throws Exception {
         log.info("------  testRegexMulti  ------");
-        
+
         String state = "'m.*si.*'";
         String query = CityField.CODE.name() + EQ_OP + "'usA'" + AND_OP + CityField.STATE.name() + RE_OP + state;
         runCountTest(query);
     }
-    
+
     @Test
     public void testEqual() throws Exception {
         log.info("------  testEqual  ------");
-        
+
         String state = "'Missouri'";
         String query = CityField.STATE.name() + EQ_OP + state;
         runCountTest(query);
     }
-    
+
     @Test
     public void testNotEqual() throws Exception {
         log.info("------  testNotEqual  ------");
-        
+
         String state = "'Missouri'";
         String query = CityField.STATE.name() + NE_OP + state + AND_OP + CityField.CONTINENT.name() + RE_OP + "'north.*'";
         runCountTest(query);
     }
-    
+
     @Test
     public void testOr() throws Exception {
         log.info("------  testOr  ------");
-        
+
         String city = "'paris'";
         String fra = "'frA'";
         String usa = "'UsA'";
@@ -106,7 +106,7 @@ public class CountQueryTest extends AbstractFunctionalQuery {
                         + CityField.CODE.name() + EQ_OP + ita + ")";
         runCountTest(query);
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

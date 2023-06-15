@@ -27,31 +27,31 @@ import com.google.common.collect.Maps;
  * Jexl Masking rule will provide a rule based upon JEXL 'queries'
  */
 public class JexlRule extends AppliedRule {
-    
+
     /**
      * Internal source
      */
     protected QueryIterator queryIter = null;
-    
+
     protected boolean isApplied;
-    
+
     private HashMap<String,String> iterOptions;
-    
+
     protected IteratorEnvironment environment;
-    
+
     private static final Logger log = Logger.getLogger(JexlRule.class);
-    
+
     @Override
     public void init(FilterOptions options) {
         init(options, null);
     }
-    
+
     @Override
     public void init(FilterOptions options, IteratorEnvironment iterEnv) {
         super.init(options, iterEnv);
-        
+
         isApplied = false;
-        
+
         iterOptions = Maps.newHashMap();
         iterOptions.put(QueryOptions.DISABLE_EVALUATION, "false");
         iterOptions.put(QueryOptions.QUERY, options.getOption("query"));
@@ -69,19 +69,19 @@ public class JexlRule extends AppliedRule {
         iterOptions.put(QueryOptions.NON_INDEXED_DATATYPES, "");
         iterOptions.put(QueryOptions.CONTAINS_INDEX_ONLY_TERMS, "false");
     }
-    
+
     @Override
     public FilterRule decorate(Object decorate) {
         if (decorate instanceof IteratorEnvironment) {
             this.environment = (IteratorEnvironment) decorate;
         }
-        
+
         return this;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.iterators.filter.ageoff.AppliedRule#accept(datawave.iterators.filter.ageoff.AgeOffPeriod, org.apache.accumulo.core.data.Key,
      * org.apache.accumulo.core.data.Value)
      */
@@ -93,7 +93,7 @@ public class JexlRule extends AppliedRule {
             isApplied = true;
             if (log.isDebugEnabled())
                 log.debug("Returning false immediately as their is no top key in the source");
-            
+
             return false;
         }
         if (isDocument(iter.getTopKey())) {
@@ -108,19 +108,19 @@ public class JexlRule extends AppliedRule {
                 }
             }
             try {
-                
+
                 Key topKey = iter.getTopKey();
                 if (log.isDebugEnabled())
                     log.debug(topKey);
                 queryIter.seek(new Range(new Key(topKey.getRow(), topKey.getColumnFamily()), true, topKey.followingKey(PartialKey.ROW_COLFAM), false),
                                 Collections.emptyList(), false);
-                
+
             } catch (IOException e) {
                 log.error(e);
                 // review
                 return false;
             }
-            
+
             isApplied = true;
             // / means that we successfully matched the document, right?
             // amirite?
@@ -132,16 +132,16 @@ public class JexlRule extends AppliedRule {
                 if (log.isDebugEnabled())
                     log.debug("has no top ");
             }
-            
+
             return false;
-            
+
         } else {
             log.debug("false ");
             isApplied = false;
             return false;
         }
     }
-    
+
     /**
      * @param topKey
      *            the top key
@@ -156,23 +156,23 @@ public class JexlRule extends AppliedRule {
             if (log.isDebugEnabled())
                 log.debug(topKey);
         }
-        
+
         return false;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.iterators.filter.ageoff.AppliedRule#isFilterRuleApplied()
      */
     @Override
     public boolean isFilterRuleApplied() {
         return isApplied;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.iterators.filter.ageoff.AppliedRule#accept(datawave.iterators.filter.ageoff.AgeOffPeriod, org.apache.accumulo.core.data.Key,
      * org.apache.accumulo.core.data.Value)
      */
@@ -181,5 +181,5 @@ public class JexlRule extends AppliedRule {
         // accept method is not needed, here
         return false;
     }
-    
+
 }
