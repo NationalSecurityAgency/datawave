@@ -7,6 +7,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public class EventKeyTest {
 
@@ -68,6 +69,9 @@ public class EventKeyTest {
         assertNotNull(parser.getDatatype());
         assertNotNull(parser.getValue());
         assertNotNull(parser.getField());
+        assertTrue(parser.getKey() != dupeKey);
+        assertTrue(parser.getKey() == eventKeyWithChildUidNoDashes);
+
     }
 
     private void assertNormalKey(KeyParser parser) {

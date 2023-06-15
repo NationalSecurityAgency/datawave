@@ -61,6 +61,8 @@ public class FieldIndexKeyTest {
         assertNotNull(parser.getDatatype());
         assertNotNull(parser.getValue());
         assertNotNull(parser.getField());
+        assertTrue(parser.getKey() != dupeKey);
+        assertTrue(parser.getKey() == fiKey);
         assertNormalKey();
     }
 
