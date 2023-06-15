@@ -16,12 +16,9 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
-
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
 
 /**
  * This will flatten ands and ors. If requested this will also remove reference expressions where possible. A reference expression represents a set of
@@ -127,15 +124,15 @@ public class TreeFlatteningRebuilder {
             // if this is a reference node, flatten it
             if (hasChildren && node instanceof ASTReferenceExpression) {
                 newNode = flattenReferenceExpression(
-                                (ASTReferenceExpression) JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
+                                (ASTReferenceExpression) JexlNodes.setChildren(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
             }
             // if this is an AND or OR node, flatten it
             else if (hasChildren && (node instanceof ASTOrNode || node instanceof ASTAndNode)) {
-                newNode = flattenAndOrNode(JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
+                newNode = flattenAndOrNode(JexlNodes.setChildren(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0])));
             }
             // if this is a node with children, assign the children
             else if (hasChildren && node == parentStack.peek()) {
-                newNode = JexlNodes.children(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0]));
+                newNode = JexlNodes.setChildren(parentStack.pop(), childrenStack.pop().toArray(new JexlNode[0]));
             }
             // if this is a leaf node, just keep it
             else {
@@ -185,8 +182,15 @@ public class TreeFlatteningRebuilder {
             // if this node has children, create copies of them
             if (poppedNode.jjtGetNumChildren() > 0) {
                 List<JexlNode> copiedChildren = new ArrayList<>();
-                List<JexlNode> children = (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) ? getAndOrLeaves(poppedNode)
-                                : Arrays.asList(children(poppedNode));
+                List<JexlNode> children;
+                if (poppedNode instanceof ASTAndNode || poppedNode instanceof ASTOrNode) {
+                    children = getAndOrLeaves(poppedNode);
+                } else {
+                    children = new ArrayList<>();
+                    for (int i = 0; i < poppedNode.jjtGetNumChildren(); i++) {
+                        children.add(poppedNode.jjtGetChild(i));
+                    }
+                }
                 
                 for (JexlNode child : children) {
                     if (child != null) {
@@ -200,7 +204,7 @@ public class TreeFlatteningRebuilder {
                 }
                 
                 // Reassign the children for this copied node
-                JexlNodes.children(poppedNode, copiedChildren.toArray(new JexlNode[0]));
+                JexlNodes.setChildren(poppedNode, copiedChildren.toArray(new JexlNode[0]));
             }
         }
         
@@ -226,8 +230,8 @@ public class TreeFlatteningRebuilder {
                         (currNode instanceof ASTOrNode ||
                         (currNode instanceof ASTAndNode && !isBoundedRange((ASTAndNode) currNode))))) {
                 // @formatter:on
-                for (JexlNode child : children(currNode)) {
-                    stack.push(child);
+                for (int i = 0; i < currNode.jjtGetNumChildren(); i++) {
+                    stack.push(currNode.jjtGetChild(i));
                 }
             } else {
                 children.push(currNode);
@@ -259,9 +263,9 @@ public class TreeFlatteningRebuilder {
             
             JexlNodes.ensureCapacity(newNode, node.jjtGetNumChildren());
             
-            int nodeIdx = 0;
-            for (JexlNode child : children(node))
-                newNode.jjtAddChild(child, nodeIdx++);
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                newNode.jjtAddChild(node.jjtGetChild(i), i);
+            }
         }
         return newNode;
     }
@@ -356,9 +360,9 @@ public class TreeFlatteningRebuilder {
             
             Deque<JexlNode> children = new LinkedList<>();
             Deque<JexlNode> stack = new LinkedList<>();
-            
-            for (JexlNode child : children(node))
-                stack.push(child);
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                stack.push(node.jjtGetChild(i));
+            }
             
             while (!stack.isEmpty()) {
                 JexlNode poppedNode = stack.pop();
@@ -373,7 +377,7 @@ public class TreeFlatteningRebuilder {
                 }
             }
             
-            return JexlNodes.children(node, children.toArray(new JexlNode[0]));
+            return JexlNodes.setChildren(node, children.toArray(new JexlNode[0]));
         }
     }
     

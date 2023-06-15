@@ -565,7 +565,7 @@ public class QueryPruningVisitor extends BaseVisitor {
                         }
                     }
                     
-                    JexlNodes.children(parent, children.toArray(new JexlNode[children.size()]));
+                    JexlNodes.setChildren(parent, children.toArray(new JexlNode[children.size()]));
                 }
             }
             

@@ -1,7 +1,7 @@
 package datawave.query.jexl.visitors;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
 
 import java.util.ArrayList;
@@ -252,14 +252,13 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         ASTArguments newNode = newInstanceOfType(node);
         JexlNodes.copyImage(node, newNode);
         ArrayList<JexlNode> children = newArrayList();
-        JexlNode[] childNodes = children(node);
-        for (int i = 0; i < childNodes.length; i++) {
-            JexlNode copiedChild = (JexlNode) childNodes[i].jjtAccept(this, i);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode copiedChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, i);
             if (copiedChild != null) {
                 children.add(copiedChild);
             }
         }
-        return children(newNode, children.toArray(new JexlNode[0]));
+        return setChildren(newNode, children.toArray(new JexlNode[0]));
     }
     
     @Override

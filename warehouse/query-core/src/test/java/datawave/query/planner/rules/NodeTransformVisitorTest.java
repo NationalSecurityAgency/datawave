@@ -21,7 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -37,9 +37,11 @@ public class NodeTransformVisitorTest {
             if (node instanceof ASTAndNode) {
                 // reverse the children
                 ArrayList<JexlNode> children = newArrayList();
-                children.addAll(Arrays.asList(children(node)));
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    children.add(node.jjtGetChild(i));
+                }
                 Collections.reverse(children);
-                return children(node, children.toArray(new JexlNode[0]));
+                return setChildren(node, children.toArray(new JexlNode[0]));
             }
             return node;
         }

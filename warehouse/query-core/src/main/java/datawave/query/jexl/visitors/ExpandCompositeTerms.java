@@ -53,7 +53,6 @@ import java.util.stream.Collectors;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
 
 /**
  * This is a visitor which runs across the query tree and creates composite jexl nodes where applicable. Composite field mappings are determined via ingest
@@ -128,7 +127,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         // iterate over the children and attempt to create composites
         List<JexlNode> unmodifiedNodes = new ArrayList<>();
         List<JexlNode> modifiedNodes = new ArrayList<>();
-        for (JexlNode child : children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             ExpandData eData = new ExpandData();
             
             // add the anded leaf nodes from our ancestors
@@ -909,7 +909,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
         }
         
         if (childrenLeafNodes.isEmpty()) {
-            for (JexlNode child : children(rootNode)) {
+            for (int i = 0; i < rootNode.jjtGetNumChildren(); i++) {
+                JexlNode child = rootNode.jjtGetChild(i);
                 JexlNode leafKid = getLeafNode(child);
                 if (leafKid != null) {
                     String kidFieldName;
@@ -1137,7 +1138,8 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             List<JexlNode> nodesMissingEverything = new ArrayList<>();
             List<JexlNode> nodesWithEverything = new ArrayList<>();
             Map<JexlNode,List<JexlNode>> nodesMissingSomething = new LinkedHashMap<>();
-            for (JexlNode child : children(node)) {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                JexlNode child = node.jjtGetChild(i);
                 DistAndData foundData = new DistAndData();
                 JexlNode processedChild = (JexlNode) child.jjtAccept(this, foundData);
                 
@@ -1225,9 +1227,9 @@ public class ExpandCompositeTerms extends RebuildingVisitor {
             
             // check each child node to see how many of the desired andedNodes are present
             List<JexlNode> rebuiltChildren = new ArrayList<>();
-            for (JexlNode child : children(node)) {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 DistAndData foundData = new DistAndData();
-                rebuiltChildren.add((JexlNode) child.jjtAccept(this, foundData));
+                rebuiltChildren.add((JexlNode) node.jjtGetChild(i).jjtAccept(this, foundData));
                 
                 parentData.usedAndedNodes.addAll(foundData.usedAndedNodes);
             }

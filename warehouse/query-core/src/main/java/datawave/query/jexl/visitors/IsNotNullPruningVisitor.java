@@ -120,16 +120,16 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
         if (!QueryPropertyMarkerVisitor.getInstance(node).isAnyType()) {
             boolean notNullExists = false;
             Set<String> fields = new HashSet<>(node.jjtGetNumChildren());
-            for (JexlNode child : JexlNodes.children(node)) {
-                notNullExists |= findEqualityFieldsForNode(child, fields);
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                notNullExists |= findEqualityFieldsForNode(node.jjtGetChild(i), fields);
             }
             
             // only rebuild if it's possible
             if (notNullExists && !fields.isEmpty()) {
                 List<JexlNode> next = new ArrayList<>(node.jjtGetNumChildren());
                 JexlNode built;
-                for (JexlNode child : JexlNodes.children(node)) {
-                    built = pruneNode(child, fields);
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    built = pruneNode(node.jjtGetChild(i), fields);
                     if (built != null) {
                         next.add(built);
                     }
@@ -140,7 +140,7 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
                     JexlNodes.replaceChild(node.jjtGetParent(), node, next.get(0));
                     return data; // no sense visiting a single node we just built, so return here
                 } else {
-                    JexlNodes.children(node, next.toArray(new JexlNode[0]));
+                    JexlNodes.setChildren(node, next.toArray(new JexlNode[0]));
                 }
             }
             
@@ -216,9 +216,8 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
      * @return the original node, or null if it is pruned
      */
     private JexlNode pruneUnion(JexlNode node, Set<String> fields) {
-        
-        for (JexlNode child : JexlNodes.children(node)) {
-            JexlNode deref = JexlASTHelper.dereference(child);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode deref = JexlASTHelper.dereference(node.jjtGetChild(i));
             if (!isIsNotNullFunction(deref)) {
                 return node;
             }
@@ -247,9 +246,8 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
                 return child instanceof ASTNullLiteral;
             }
         } else if (node instanceof ASTOrNode) {
-            for (JexlNode child : JexlNodes.children(node)) {
-                child = JexlASTHelper.dereference(child);
-                if (!isIsNotNullFunction(child)) {
+            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                if (!isIsNotNullFunction(JexlASTHelper.dereference(node.jjtGetChild(i)))) {
                     return false;
                 }
             }
@@ -305,8 +303,8 @@ public class IsNotNullPruningVisitor extends BaseVisitor {
     protected String fieldForUnion(JexlNode node) {
         String field;
         Set<String> fields = new HashSet<>(node.jjtGetNumChildren());
-        for (JexlNode child : JexlNodes.children(node)) {
-            child = JexlASTHelper.dereference(child);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
             field = null;
             if (child instanceof ASTEQNode || child instanceof ASTERNode) {
                 Set<String> names = JexlASTHelper.getIdentifierNames(child);

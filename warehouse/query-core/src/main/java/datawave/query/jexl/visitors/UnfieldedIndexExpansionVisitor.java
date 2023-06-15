@@ -26,7 +26,6 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
@@ -196,7 +195,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         ASTReferenceExpression ref = (ASTReferenceExpression) super.visit(node, data);
-        if (JexlNodes.children(ref).length == 0) {
+        if (ref.jjtGetNumChildren() == 0) {
             return null;
         } else {
             return ref;

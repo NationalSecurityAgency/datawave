@@ -7,14 +7,9 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
 
 /**
  * Visitor that enforces node uniqueness within AND or OR expressions. Nodes can be single nodes or subtrees.
@@ -76,12 +71,13 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
     
     private JexlNode removeDuplicateNodes(JexlNode node, Object data) {
         // Traverse each child to de-dupe their children.
-        // @formatter:off
-        List<JexlNode> visitedChildren = Arrays.stream(children(node))
-                        .map(child -> (JexlNode) child.jjtAccept(this, data))
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toList());
-        // @formatter:on
+        List<JexlNode> visitedChildren = new ArrayList<>();
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode childCopy = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
+            if (childCopy != null) {
+                visitedChildren.add(childCopy);
+            }
+        }
         
         // Dedupe the visited children.
         List<JexlNode> uniqueChildren = getUniqueChildren(visitedChildren);
@@ -94,7 +90,7 @@ public class UniqueExpressionTermsVisitor extends RebuildingVisitor {
             JexlNode copy = JexlNodes.newInstanceOfType(node);
             JexlNodes.copyImage(node, copy);
             copy.jjtSetParent(node.jjtGetParent());
-            JexlNodes.children(copy, uniqueChildren.toArray(new JexlNode[0]));
+            JexlNodes.setChildren(copy, uniqueChildren.toArray(new JexlNode[0]));
             return copy;
         }
     }

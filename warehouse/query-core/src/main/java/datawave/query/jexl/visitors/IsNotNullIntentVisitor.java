@@ -34,7 +34,7 @@ public class IsNotNullIntentVisitor extends BaseVisitor {
         if (".*?".equals(value)) {
             JexlNode nullLiteral = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
             JexlNode neNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
-            JexlNodes.children(neNode, node.jjtGetChild(0), nullLiteral);
+            JexlNodes.setChildren(neNode, node.jjtGetChild(0), nullLiteral);
             
             JexlNodes.replaceChild(node.jjtGetParent(), node, neNode);
         }

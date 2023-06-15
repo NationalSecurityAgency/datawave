@@ -34,8 +34,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
-
 /**
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build
  * the accumulo ranges and the normalized query that will be sent to the EdgeFilterIterator for further evaluation <br>
@@ -178,8 +176,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
-        for (JexlNode child : children(node)) {
-            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            childContexts.add((List<? extends EdgeContext>) node.jjtGetChild(i).jjtAccept(this, null));
         }
         
         if (childContexts.isEmpty()) {
@@ -284,8 +282,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
-        for (JexlNode child : children(node)) {
-            childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            childContexts.add((List<? extends EdgeContext>) node.jjtGetChild(i).jjtAccept(this, null));
         }
         
         if (childContexts.isEmpty()) {

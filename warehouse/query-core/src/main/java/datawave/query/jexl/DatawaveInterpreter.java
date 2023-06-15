@@ -33,7 +33,6 @@ import org.apache.commons.jexl3.parser.ASTMethodNode;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.internal.Interpreter;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
@@ -453,8 +452,8 @@ public class DatawaveInterpreter extends Interpreter {
         
         // holds all values for intersection
         FunctionalSet functionalSet = new FunctionalSet<>();
-        for (JexlNode child : JexlNodes.children(node)) {
-            
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             Object o = child.jjtAccept(this, data);
             if (o == null) {
                 o = FunctionalSet.empty();

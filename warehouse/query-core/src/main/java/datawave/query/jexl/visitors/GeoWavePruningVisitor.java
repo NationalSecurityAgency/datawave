@@ -29,8 +29,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
-
 /**
  * This visitor should be run after bounded ranges have been expanded in order to check for expanded GeoWave terms which do not intersect with the original
  * query geometry. This is a possibility as the GeoWave ranges start out being overly inclusive in order to minimize the number of ranges needed to run a geo
@@ -62,8 +60,8 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         Multimap<String,Geometry> fieldToGeometryMap = (data instanceof Multimap) ? (Multimap<String,Geometry>) data : HashMultimap.create();
         
         // if one of the anded nodes is a geowave function, pass down the geometry and field name in the multimap
-        for (JexlNode child : children(node)) {
-            child = JexlASTHelper.dereference(child);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
             if (child instanceof ASTFunctionNode) {
                 JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) child);
                 if (desc instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor) {

@@ -432,8 +432,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 
             } else if (deref instanceof ASTOrNode) {
                 // multiple components
-                for (JexlNode child : JexlNodes.children(deref)) {
-                    components.add(JexlASTHelper.dereference(child));
+                for (int i = 0; i < deref.jjtGetNumChildren(); i++) {
+                    components.add(JexlASTHelper.dereference(deref.jjtGetChild(i)));
                 }
             } else {
                 throw new IllegalStateException(
@@ -476,7 +476,9 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 if (component instanceof ASTEQNode) {
                     children.add(component);
                 } else if (component instanceof ASTAndNode) {
-                    children.addAll(Arrays.asList(JexlNodes.children(component)));
+                    for (int i = 0; i < component.jjtGetNumChildren(); i++) {
+                        children.add(component.jjtGetChild(i));
+                    }
                 } else {
                     throw new IllegalStateException("Unexpected component. Expected ASTAndNode or ASTEqNode but was: " + component.getClass().getSimpleName());
                 }
@@ -557,16 +559,16 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             }
             
             List<JexlNode> updated = new LinkedList<>();
-            ASTArguments argsNode = (ASTArguments) functionCopy.jjtGetChild(1);
-            Iterator<JexlNode> iter = Arrays.asList(JexlNodes.children(argsNode)).iterator();
             updated.add(replacementField);
-            if (zoneExists) {
-                iter.next(); // skip a zone argument if it exists
+            
+            ASTArguments argsNode = (ASTArguments) functionCopy.jjtGetChild(1);
+            // skip a zone argument if it exists
+            for (int i = 0; i < argsNode.jjtGetNumChildren(); i++) {
+                if (i != 0 || !zoneExists) {
+                    updated.add(argsNode.jjtGetChild(i));
+                }
             }
-            while (iter.hasNext()) {
-                updated.add(iter.next());
-            }
-            JexlNodes.children(argsNode, updated.toArray(new JexlNode[0]));
+            JexlNodes.setChildren(argsNode, updated.toArray(new JexlNode[0]));
             return functionCopy;
         }
         

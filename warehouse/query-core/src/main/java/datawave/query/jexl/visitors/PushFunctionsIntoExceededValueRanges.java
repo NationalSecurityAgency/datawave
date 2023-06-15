@@ -29,7 +29,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
 
 /**
@@ -135,7 +135,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
             children.addAll(exceededValueRangeNodes.values());
             
             // and return the new and node with the new children
-            return children(newNode, children.toArray(new JexlNode[children.size()]));
+            return setChildren(newNode, children.toArray(new JexlNode[children.size()]));
         }
     }
     
@@ -202,8 +202,8 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         for (JexlNode function : functions) {
             allChildren[i++] = function;
         }
-        andNode = children(andNode, allChildren);
-        children(parent, andNode);
+        andNode = setChildren(andNode, allChildren);
+        setChildren(parent, andNode);
         return range;
     }
     

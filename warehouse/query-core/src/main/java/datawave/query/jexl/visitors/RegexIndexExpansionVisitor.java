@@ -46,7 +46,6 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
 import static org.apache.commons.jexl3.parser.JexlNodes.id;
 
 /**
@@ -296,7 +295,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     @Override
     public Object visit(ASTReference node, Object data) {
         ASTReference ref = (ASTReference) super.visit(node, data);
-        if (JexlNodes.children(ref).length == 0) {
+        if (ref.jjtGetNumChildren() == 0) {
             return null;
         } else {
             return ref;
@@ -405,9 +404,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                 return expand;
             }
             default: {
-                JexlNode[] children = children(node);
-                if (children.length == 1 && !QueryPropertyMarker.findInstance(children[0]).isAnyType()) {
-                    boolean expand = descendIntoSubtree(children[0], visited);
+                if (node.jjtGetNumChildren() == 1 && !QueryPropertyMarker.findInstance(node.jjtGetChild(0)).isAnyType()) {
+                    boolean expand = descendIntoSubtree(node.jjtGetChild(0), visited);
                     visited.put(node, expand);
                     return expand;
                 } else {
@@ -443,7 +441,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
      */
     private boolean computeExpansionForSubtree(JexlNode node, Join join, Map<JexlNode,Boolean> visited) {
         boolean expand = Join.AND.equals(join);
-        for (JexlNode child : children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             Boolean computedValue = visited.get(child);
             if (computedValue == null) {
                 computedValue = descendIntoSubtree(child, visited);
@@ -610,7 +609,8 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     }
     
     public void collapseAndSubtrees(ASTAndNode node, List<JexlNode> subTrees) {
-        for (JexlNode child : children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             if (ParserTreeConstants.JJTANDNODE == id(child)) {
                 collapseAndSubtrees((ASTAndNode) child, subTrees);
             } else {

@@ -76,22 +76,6 @@ public class JexlNodes {
     }
     
     /**
-     * Returns an array representation of a nodes children. If a node has no children, an empty array is returned.
-     *
-     * @param node
-     *            the jexl node
-     * @return array representation of a nodes children
-     */
-    public static JexlNode[] children(JexlNode node) {
-        int numChildren = node.jjtGetNumChildren();
-        JexlNode[] newChildren = new JexlNode[numChildren];
-        for (int i = 0; i < numChildren; i++) {
-            newChildren[i] = node.jjtGetChild(i);
-        }
-        return newChildren;
-    }
-    
-    /**
      * Sets the supplied child array as the children member of {node} and sets the parent reference of each element in {children} to {node}.
      *
      * @param node
@@ -102,7 +86,7 @@ public class JexlNodes {
      *            the children nodes
      * @return the provided node
      */
-    public static <T extends JexlNode> T children(T node, JexlNode... children) {
+    public static <T extends JexlNode> T setChildren(T node, JexlNode... children) {
         node.jjtSetChildren(children);
         for (JexlNode child : children)
             newParent(child, node);
@@ -135,7 +119,7 @@ public class JexlNodes {
      */
     public static ASTReferenceExpression wrap(JexlNode node) {
         ASTReferenceExpression ref = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-        return children(ref, node);
+        return setChildren(ref, node);
     }
     
     public static boolean isWrapped(JexlNode node) {
@@ -327,9 +311,9 @@ public class JexlNodes {
     public static ASTNotNode negate(JexlNode node) {
         if (QueryPropertyMarker.findInstance(node).isAnyType()) {
             // marked node trees begin with ref-refExpr, no need to wrap again
-            return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), node);
+            return setChildren(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), node);
         }
-        return children(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), wrap(node));
+        return setChildren(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), wrap(node));
     }
     
     public static ASTIdentifier makeIdentifier() {
@@ -354,9 +338,12 @@ public class JexlNodes {
         Preconditions.checkArgument(parent.jjtGetNumChildren() == 2, "Jexl tree must be binary, but received node with %s children.",
                         parent.jjtGetNumChildren());
         JexlNode otherChild = null;
-        for (JexlNode n : children(parent))
-            if (child != n)
+        for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
+            JexlNode n = parent.jjtGetChild(i);
+            if (child != n) {
                 otherChild = n;
+            }
+        }
         return Preconditions.checkNotNull(otherChild);
     }
     
@@ -406,7 +393,7 @@ public class JexlNodes {
         // update the children references if they changed
         if (found) {
             // reset the children on the parent node to remove this one
-            JexlNodes.children(parent, children.toArray(nodeArray));
+            JexlNodes.setChildren(parent, children.toArray(nodeArray));
         }
         
         return found;

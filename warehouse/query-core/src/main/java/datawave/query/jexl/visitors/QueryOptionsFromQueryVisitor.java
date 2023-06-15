@@ -101,8 +101,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
     private Object visitJunction(JexlNode node, Object data, Supplier<JexlNode> creator) {
         // Visit each child, and keep only the non-null ones.
         List<JexlNode> children = new ArrayList<>();
-        for (JexlNode child : JexlNodes.children(node)) {
-            Object copy = child.jjtAccept(this, data);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            Object copy = node.jjtGetChild(i).jjtAccept(this, data);
             if (copy != null) {
                 children.add((JexlNode) copy);
             }
@@ -118,7 +118,7 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             // If there are multiple children, return a new junction with the children.
             JexlNode copy = creator.get();
             JexlNodes.copyImage(node, copy);
-            JexlNodes.children(copy, children.toArray(new JexlNode[0]));
+            JexlNodes.setChildren(copy, children.toArray(new JexlNode[0]));
             return copy;
         }
     }

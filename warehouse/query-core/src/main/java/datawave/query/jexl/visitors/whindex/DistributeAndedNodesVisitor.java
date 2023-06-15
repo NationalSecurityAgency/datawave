@@ -168,7 +168,8 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         List<JexlNode> nodesMissingEverything = new ArrayList<>();
         List<JexlNode> nodesWithEverything = new ArrayList<>();
         Map<JexlNode,List<JexlNode>> nodesMissingSomething = new LinkedHashMap<>();
-        for (JexlNode child : JexlNodes.children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode child = node.jjtGetChild(i);
             DistributeAndedNodesVisitor.DistAndData foundData = new DistributeAndedNodesVisitor.DistAndData();
             JexlNode processedChild = (JexlNode) child.jjtAccept(this, foundData);
             
@@ -269,9 +270,9 @@ class DistributeAndedNodesVisitor extends RebuildingVisitor {
         
         // check each child node to see how many of the desired andedNodes are present
         List<JexlNode> rebuiltChildren = new ArrayList<>();
-        for (JexlNode child : JexlNodes.children(node)) {
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             DistributeAndedNodesVisitor.DistAndData foundData = new DistributeAndedNodesVisitor.DistAndData();
-            rebuiltChildren.add((JexlNode) child.jjtAccept(this, foundData));
+            rebuiltChildren.add((JexlNode) node.jjtGetChild(i).jjtAccept(this, foundData));
             
             parentData.usedAndedNodes.addAll(foundData.usedAndedNodes);
         }

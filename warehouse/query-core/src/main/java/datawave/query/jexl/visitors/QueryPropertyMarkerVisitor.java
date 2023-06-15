@@ -15,8 +15,6 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
-
 /**
  * This class is used to determine whether the specified node is an instance of a query marker. The reason for this functionality is that if the query is
  * serialized and deserialized, then only the underlying assignment will persist. This class will identify the Reference, ReferenceExpression, or And nodes,
@@ -111,13 +109,14 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         Deque<JexlNode> stack = new LinkedList<>();
         stack.push(node);
         while (!stack.isEmpty()) {
-            JexlNode descendant = stack.pop();
-            if (descendant instanceof ASTAndNode) {
-                for (JexlNode sibling : children(descendant)) {
+            JexlNode descendent = stack.pop();
+            if (descendent instanceof ASTAndNode) {
+                for (int i = 0; i < descendent.jjtGetNumChildren(); i++) {
+                    JexlNode sibling = descendent.jjtGetChild(i);
                     stack.push(sibling);
                 }
             } else {
-                children.add(descendant);
+                children.add(descendent);
             }
         }
         // Ensure we return the children in their original order.

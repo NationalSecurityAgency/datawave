@@ -157,7 +157,7 @@ public class JexlNodeFactory {
                 } else {
                     junction = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
                 }
-                return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                return JexlNodes.setChildren(junction, children.toArray(new JexlNode[0]));
         }
     }
     
@@ -227,7 +227,7 @@ public class JexlNodeFactory {
                     case 1:
                         return children.get(0);
                     default:
-                        return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                        return JexlNodes.setChildren(junction, children.toArray(new JexlNode[0]));
                 }
             }
             
@@ -259,7 +259,7 @@ public class JexlNodeFactory {
                 case 1:
                     return children.get(0);
                 default:
-                    return JexlNodes.children(junction, children.toArray(new JexlNode[0]));
+                    return JexlNodes.setChildren(junction, children.toArray(new JexlNode[0]));
             }
         }
     }

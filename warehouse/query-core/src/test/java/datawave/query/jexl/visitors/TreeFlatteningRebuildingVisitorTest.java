@@ -203,7 +203,7 @@ public class TreeFlatteningRebuildingVisitorTest {
         JexlNode eq = JexlNodeFactory.buildEQNode("FIELD", "value");
         
         JexlNode union = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-        JexlNodes.children(union, eq);
+        JexlNodes.setChildren(union, eq);
         
         JexlNode refExpr = JexlNodes.wrap(union);
         ASTJexlScript script = JexlNodeFactory.createScript(refExpr);

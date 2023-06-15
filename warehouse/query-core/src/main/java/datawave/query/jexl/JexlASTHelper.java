@@ -83,7 +83,6 @@ import java.util.stream.Collectors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static org.apache.commons.jexl3.parser.JexlNodes.wrap;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
 
 /**
  *
@@ -225,7 +224,8 @@ public class JexlASTHelper {
             }
             
             if (node.jjtGetNumChildren() > 0) {
-                for (JexlNode child : children(node)) {
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    JexlNode child = node.jjtGetChild(i);
                     if (child != null) {
                         workingStack.push(child);
                     }
@@ -1443,8 +1443,8 @@ public class JexlASTHelper {
             return (ASTIdentifier) node;
         }
         
-        for (JexlNode child : children(node)) {
-            ASTIdentifier test = findIdentifier(child);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            ASTIdentifier test = findIdentifier(node.jjtGetChild(i));
             if (test != null) {
                 return test;
             }
@@ -1465,8 +1465,8 @@ public class JexlASTHelper {
             return node;
         }
         
-        for (JexlNode child : children(node)) {
-            JexlNode test = findLiteral(child);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            JexlNode test = findLiteral(node.jjtGetChild(i));
             if (test instanceof JexlNode.Constant<?>) {
                 return test;
             }
@@ -1646,7 +1646,8 @@ public class JexlASTHelper {
             JexlNode node = workingStack.pop();
             
             if (node.jjtGetNumChildren() > 0) {
-                for (JexlNode child : children(node)) {
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    JexlNode child = node.jjtGetChild(i);
                     if (child != null) {
                         if (child.jjtGetParent() == null) {
                             String message = "Tree included child " + child + " with a null parent";

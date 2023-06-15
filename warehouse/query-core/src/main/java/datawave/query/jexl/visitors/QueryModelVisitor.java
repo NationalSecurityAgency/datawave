@@ -185,7 +185,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         
         for (String alias : aliases) {
             if (alias != null) {
-                JexlNode rangeNode = QueryPropertyMarker.create(JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
+                JexlNode rangeNode = QueryPropertyMarker.create(JexlNodes.setChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getLowerNode()), alias),
                                 JexlASTHelper.setField(RebuildingVisitor.copy(range.getUpperNode()), alias)), BOUNDED_RANGE);
                 aliasedBounds.add(rangeNode);
@@ -198,7 +198,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
             nodeToAdd = JexlASTHelper.dereference(aliasedBounds.get(0));
         } else {
             ASTOrNode unionOfAliases = new ASTOrNode(ParserTreeConstants.JJTORNODE);
-            nodeToAdd = JexlNodes.children(unionOfAliases, aliasedBounds.toArray(new JexlNode[aliasedBounds.size()]));
+            nodeToAdd = JexlNodes.setChildren(unionOfAliases, aliasedBounds.toArray(new JexlNode[aliasedBounds.size()]));
         }
         
         return nodeToAdd;

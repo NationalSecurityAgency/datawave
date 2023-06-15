@@ -116,7 +116,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 
 /**
  * A visitor that builds a tree of iterators. The main points are at ASTAndNodes and ASTOrNodes, where the code will build AndIterators and OrIterators,
@@ -1324,10 +1324,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             ASTJexlScript script = new ASTJexlScript(ParserTreeConstants.JJTJEXLSCRIPT);
             if (nodes.size() > 1) {
                 ASTAndNode andNode = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
-                children(script, andNode);
-                children(andNode, nodes.toArray(new JexlNode[nodes.size()]));
+                setChildren(script, andNode);
+                setChildren(andNode, nodes.toArray(new JexlNode[nodes.size()]));
             } else {
-                children(script, nodes.get(0));
+                setChildren(script, nodes.get(0));
             }
             
             String query = JexlStringBuildingVisitor.buildQuery(script);

@@ -83,7 +83,7 @@ public class ConjunctionEliminationVisitor extends RebuildingVisitor {
                 // If there were some redundant children, but more than one relevant child, return a new OR node with the relevant children.
                 JexlNode copy = new ASTOrNode(JJTORNODE);
                 JexlNodes.copyImage(node, copy);
-                JexlNodes.children(copy, children.toArray(new JexlNode[0]));
+                JexlNodes.setChildren(copy, children.toArray(new JexlNode[0]));
                 return copy;
             } else {
                 // If no children are redundant, return a copy of the original node.

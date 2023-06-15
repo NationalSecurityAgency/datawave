@@ -193,7 +193,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             }
             
             // create the range node
-            JexlNode rangeNode = JexlNodes.children(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right);
+            JexlNode rangeNode = JexlNodes.setChildren(new ASTAndNode(ParserTreeConstants.JJTANDNODE), left, right);
             rangeNode.jjtSetParent(node.jjtGetParent());
             
             // create a marked bounded range node
@@ -214,7 +214,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             } else {
                 // ensure we wrap bounded ranges in parens for certain edge cases
                 List<ASTReferenceExpression> var = JexlASTHelper.wrapInParens(new ArrayList(aliasedBounds.values()));
-                JexlNode finalNode = JexlNodes.children(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[0]));
+                JexlNode finalNode = JexlNodes.setChildren(new ASTOrNode(ParserTreeConstants.JJTORNODE), var.toArray(new JexlNode[0]));
                 return (node.jjtGetParent() instanceof ASTReferenceExpression) ? finalNode : JexlNodes.wrap(finalNode);
             }
         }

@@ -22,8 +22,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
-
 /**
  * A composite range is a special type of composite which is used to create a single bounded range from multiple terms. Composite ranges can only be created
  * when the base composite term produces ranges whose terms, and underlying data within that range are of fixed length.

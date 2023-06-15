@@ -49,7 +49,7 @@ import static com.google.common.collect.Lists.newArrayList;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static org.apache.commons.jexl3.parser.JexlNodes.children;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
 
 /**
@@ -119,8 +119,9 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
         List<JexlNode> otherNodes = new ArrayList<>();
         
         // first pull out sets of nodes by field
-        for (JexlNode childNode : children(node))
-            assignNodeByField(childNode, eqNodesByField, rangeNodesByField, otherNodes);
+        for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+            assignNodeByField(node.jjtGetChild(i), eqNodesByField, rangeNodesByField, otherNodes);
+        }
         
         ArrayList<JexlNode> children = newArrayList();
         
@@ -220,7 +221,7 @@ public class PushdownLargeFieldedListsVisitor extends RebuildingVisitor {
             }
         }
         
-        return children.size() == 1 ? Iterables.getOnlyElement(children) : children(newNode, children.toArray(new JexlNode[0]));
+        return children.size() == 1 ? Iterables.getOnlyElement(children) : setChildren(newNode, children.toArray(new JexlNode[0]));
     }
     
     /**
