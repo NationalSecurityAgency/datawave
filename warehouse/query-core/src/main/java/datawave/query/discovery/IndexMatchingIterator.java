@@ -44,11 +44,11 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
     public static final String CONF = "term.pattern.";
     public static final String REVERSE_INDEX = "reverse.index";
     public static final String RANGE = "term.range.";
-    
-    private static final Pair<Boolean,Optional<ImmutableSortedSet<String>>> ALL_FIELDS = Pair
-                    .with(Boolean.TRUE, Optional.<ImmutableSortedSet<String>> absent());
+
+    private static final Pair<Boolean,Optional<ImmutableSortedSet<String>>> ALL_FIELDS = Pair.with(Boolean.TRUE,
+                    Optional.<ImmutableSortedSet<String>> absent());
     private static final Logger log = Logger.getLogger(IndexMatchingIterator.class);
-    
+
     // configured options
     private Set<String> unfieldedLiterals;
     private Multimap<String,String> fieldedLiterals;
@@ -57,70 +57,70 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
     private Set<LiteralRange<String>> unfieldedRanges;
     private Multimap<String,LiteralRange<String>> fieldedRanges;
     private boolean reverseIndex;
-    
+
     // involved w/ scanning keys and values
     private SortedKeyValueIterator<Key,Value> src;
     private Key topKey;
     private Value topValue;
-    
+
     // used to skip ahead and preserve the original scan range
     private Range scanRange;
     private Collection<ByteSequence> scanCFs;
     private boolean scanInclusive;
-    
+
     // cache of the set of fields that could match the previous term
     private Pair<String,Pair<Boolean,Optional<ImmutableSortedSet<String>>>> fieldsForLastTerm;
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (env != null && !IteratorScope.scan.equals(env.getIteratorScope())) {
             throw new IOException("This is a scan time only iterator.");
         }
-        
+
         src = source;
-        
+
         Gson gson = gson();
-        
+
         Configuration conf = gson.fromJson(options.get(CONF), Configuration.class);
         this.unfieldedLiterals = conf.getUnfieldedLiterals();
         this.fieldedLiterals = conf.getFieldedLiterals();
         this.unfieldedRanges = conf.getUnfieldedRanges();
         this.fieldedRanges = conf.getFieldedRanges();
-        
+
         this.unfieldedMatchers = Sets.newIdentityHashSet();
         for (String pattern : conf.getUnfieldedPatterns()) {
             Matcher m = Pattern.compile(pattern).matcher("");
             this.unfieldedMatchers.add(m);
         }
-        
+
         this.fieldedMatchers = HashMultimap.create();
         for (Entry<String,Collection<String>> pattern : conf.getFieldedPatterns().asMap().entrySet()) {
             Matcher m = Pattern.compile(pattern.getKey()).matcher("");
             this.fieldedMatchers.putAll(m, pattern.getValue());
         }
-        
+
         if (options.containsKey(REVERSE_INDEX)) {
             reverseIndex = Boolean.parseBoolean(options.get(REVERSE_INDEX));
         } else {
             reverseIndex = false;
         }
-        
+
         topKey = null;
         topValue = null;
     }
-    
+
     @Override
     public boolean hasTop() {
         return topKey != null;
     }
-    
+
     @Override
     public void next() throws IOException {
         Key lastTop = topKey;
         topKey = null;
         while (src.hasTop()) {
             Key key = src.getTopKey();
-            
+
             /*
              * since we already validated a given row+colfam, if the last top has the same row+colfam, then this key is automagically valid.
              */
@@ -130,12 +130,12 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                 propagateTop();
                 return;
             }
-            
+
             String row = stringify(key.getRowData());
             String term = (reverseIndex ? new StringBuilder().append(row).reverse().toString() : row);
-            
+
             Pair<Boolean,Optional<ImmutableSortedSet<String>>> matches = fieldsFor(term);
-            
+
             if (matches.getValue0()) {
                 Optional<ImmutableSortedSet<String>> maybeFields = matches.getValue1();
                 if (maybeFields.isPresent()) {
@@ -153,7 +153,7 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                         return;
                     } else {
                         Key next = possibleMatch == null ? key.followingKey(PartialKey.ROW) : new Key(row, possibleMatch);
-                        
+
                         UniqueColumnFamilyIterator.moveTo(next, src, scanRange, scanCFs, scanInclusive);
                         continue;
                     }
@@ -168,7 +168,7 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
             }
         }
     }
-    
+
     /*
      * Macro-like function to set the top and advance the source.
      */
@@ -177,7 +177,7 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
         topValue = src.getTopValue();
         src.next();
     }
-    
+
     /*
      * Checks the cached value for the term. If it matches, we just return the cached value, otherwise we compute the fields for the term, set it to the last
      * cached value and return.
@@ -192,12 +192,12 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
             log.debug("Returning " + fieldsForLastTerm.getValue1());
         return fieldsForLastTerm.getValue1();
     }
-    
+
     /*
      * Checks to see if a term matches a configured literal or pattern and returns the fields that match.
-     * 
+     *
      * The return value is a pair of boolean and an optional set.
-     * 
+     *
      * - If the boolean value is true, that means the term matched a literal or pattern. - if the set is present, then we have a set of fields we want to filter
      * column families on - if the set is not present, then we can allow all column families/fields - therefore, the set should never present and empty - If the
      * boolean value is false, then the term did not match and the set should be ignored
@@ -225,10 +225,10 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                 return ALL_FIELDS;
             }
         }
-        
+
         ImmutableSortedSet.Builder<String> fields = ImmutableSortedSet.naturalOrder();
         fields.addAll(fieldedLiterals.get(term));
-        
+
         for (Entry<Matcher,Collection<String>> e : fieldedMatchers.asMap().entrySet()) {
             Matcher m = e.getKey();
             m.reset(term);
@@ -243,7 +243,7 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                 }
             }
         }
-        
+
         for (Entry<String,Collection<LiteralRange<String>>> r : fieldedRanges.asMap().entrySet()) {
             for (LiteralRange<String> range : r.getValue()) {
                 if (range.contains(term)) {
@@ -252,15 +252,15 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
                 }
             }
         }
-        
+
         ImmutableSortedSet<String> fieldSet = fields.build();
-        
+
         Pair<Boolean,Optional<ImmutableSortedSet<String>>> p = Pair.with(!fieldSet.isEmpty(), Optional.of(fieldSet));
         if (log.isDebugEnabled())
             log.debug("For \"" + term + "\" returning " + p);
         return p;
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         this.scanRange = range;
@@ -269,17 +269,17 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
         src.seek(range, columnFamilies, inclusive);
         next();
     }
-    
+
     @Override
     public Key getTopKey() {
         return topKey;
     }
-    
+
     @Override
     public Value getTopValue() {
         return topValue;
     }
-    
+
     @Override
     public IndexMatchingIterator deepCopy(IteratorEnvironment env) {
         IndexMatchingIterator i = new IndexMatchingIterator();
@@ -290,10 +290,10 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
         i.fieldedMatchers = this.fieldedMatchers;
         return i;
     }
-    
+
     /**
      * Converts a byte sequence backed by a byte array into a String using the default encoding of the JVM.
-     * 
+     *
      * @param bs
      *            the byte sequence
      * @return the string form of the bytes
@@ -302,74 +302,73 @@ public class IndexMatchingIterator implements SortedKeyValueIterator<Key,Value> 
         Preconditions.checkArgument(bs.isBackedByArray(), "Received byte sequence that isn't backed by an array!");
         return new String(bs.getBackingArray(), bs.offset(), bs.length());
     }
-    
+
     public static class Configuration {
-        
+
         private Set<String> unfieldedLiterals = newTreeSet(), unfieldedPatterns = newTreeSet();
         private Multimap<String,String> fieldedLiterals = TreeMultimap.create(), fieldedPatterns = TreeMultimap.create();
         private Set<LiteralRange<String>> unfieldedRanges = new TreeSet();
         private Multimap<String,LiteralRange<String>> fieldedRanges = TreeMultimap.create();
-        
+
         public boolean addLiteral(String literal) {
             return unfieldedLiterals.add(literal);
         }
-        
+
         public boolean addLiteral(String literal, String field) {
             return fieldedLiterals.put(literal, field);
         }
-        
+
         public boolean addPattern(String pattern) {
             return unfieldedPatterns.add(pattern);
         }
-        
+
         public boolean addPattern(String pattern, String field) {
             return fieldedPatterns.put(pattern, field);
         }
-        
+
         public boolean addRange(LiteralRange<String> range) {
             return unfieldedRanges.add(range);
         }
-        
+
         public boolean addRange(LiteralRange<String> range, String field) {
             return fieldedRanges.put(field, range);
         }
-        
+
         public Set<String> getUnfieldedLiterals() {
             return unfieldedLiterals;
         }
-        
+
         public Set<String> getUnfieldedPatterns() {
             return unfieldedPatterns;
         }
-        
+
         public Set<LiteralRange<String>> getUnfieldedRanges() {
             return unfieldedRanges;
         }
-        
+
         public Multimap<String,String> getFieldedLiterals() {
             return fieldedLiterals;
         }
-        
+
         public Multimap<String,String> getFieldedPatterns() {
             return fieldedPatterns;
         }
-        
+
         public Multimap<String,LiteralRange<String>> getFieldedRanges() {
             return fieldedRanges;
         }
-        
+
         @Override
         public String toString() {
-            return "Configuration [unfieldedLiterals=" + unfieldedLiterals + ", unfieldedPatterns=" + unfieldedPatterns + ", unfieldedRanges="
-                            + unfieldedRanges + ", fieldedLiterals=" + fieldedLiterals + ", fieldedPatterns=" + fieldedPatterns + ", fieldedRanges="
-                            + fieldedRanges + "]";
+            return "Configuration [unfieldedLiterals=" + unfieldedLiterals + ", unfieldedPatterns=" + unfieldedPatterns + ", unfieldedRanges=" + unfieldedRanges
+                            + ", fieldedLiterals=" + fieldedLiterals + ", fieldedPatterns=" + fieldedPatterns + ", fieldedRanges=" + fieldedRanges + "]";
         }
     }
-    
+
     public static Gson gson() {
         return new GsonBuilder().registerTypeAdapter(MultimapType.get(), new MultimapSerializer())
                         .registerTypeAdapter(LiteralRangeMultimapType.get(), new LiteralRangeMultimapSerializer())
                         .registerTypeAdapter(LiteralRangeType.get(), new LiteralRangeSerializer()).create();
     }
-    
+
 }

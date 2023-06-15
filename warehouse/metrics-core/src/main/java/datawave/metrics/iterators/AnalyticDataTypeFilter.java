@@ -8,7 +8,7 @@ import org.apache.accumulo.core.data.Value;
 
 public class AnalyticDataTypeFilter extends DataTypeFilter {
     private AnalyticEntryKey aek = new AnalyticEntryKey();
-    
+
     @Override
     public boolean accept(Key k, Value v) {
         try {
@@ -18,5 +18,5 @@ public class AnalyticDataTypeFilter extends DataTypeFilter {
             return false;
         }
     }
-    
+
 }

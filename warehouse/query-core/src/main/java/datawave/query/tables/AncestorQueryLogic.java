@@ -24,24 +24,24 @@ public class AncestorQueryLogic extends ShardQueryLogic {
         setRangeStream();
         setIter();
     }
-    
+
     public AncestorQueryLogic(AncestorQueryLogic other) {
         super(other);
         setIsTldQuery(true);
         setIter();
     }
-    
+
     @Override
     public void setQueryPlanner(QueryPlanner planner) {
         if (!(planner instanceof DefaultQueryPlanner)) {
             throw new IllegalArgumentException("Query logic requires DefaultQueryPlanner compatibility");
         }
-        
+
         super.setQueryPlanner(planner);
         setRangeStream();
         setIter();
     }
-    
+
     /**
      * Overriding this generates TLD end ranges without generating TLD start ranges. Essentially expanding a hit down the branch so all branch candidates can be
      * potentially hit. This is specifically for the case where the index hits further up the tree than the additional/delayed predicates. Without this no range
@@ -55,15 +55,15 @@ public class AncestorQueryLogic extends ShardQueryLogic {
     public boolean isTldQuery() {
         return true;
     }
-    
+
     private void setRangeStream() {
         ((DefaultQueryPlanner) getQueryPlanner()).setRangeStreamClass(AncestorRangeStream.class.getCanonicalName());
     }
-    
+
     private void setIter() {
         getQueryPlanner().setQueryIteratorClass(AncestorQueryIterator.class);
     }
-    
+
     @Override
     public AncestorQueryLogic clone() {
         return new AncestorQueryLogic(this);

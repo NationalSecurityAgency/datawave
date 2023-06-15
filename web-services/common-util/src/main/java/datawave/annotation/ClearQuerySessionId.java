@@ -18,5 +18,5 @@ import java.lang.annotation.Target;
 @Documented
 @NameBinding
 public @interface ClearQuerySessionId {
-    
+
 }

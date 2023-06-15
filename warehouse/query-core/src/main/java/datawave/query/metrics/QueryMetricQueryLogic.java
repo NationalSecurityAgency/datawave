@@ -20,10 +20,10 @@ import org.apache.accumulo.core.security.Authorizations;
  * Extension to the query logic that enforces the current user is equal to the USER field in the QueryMetrics <br>
  * <p>
  * QLF.xml entry: <br>
- * 
+ *
  * <pre>
  * {@code
- * 
+ *
  *  <bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.metrics.QueryMetricsQueryLogic">
  *      <property name="logicDescription" value="Query Metrics query for users" />
  *      <property name="includeHierarchyFields" value="false" />
@@ -39,25 +39,25 @@ import org.apache.accumulo.core.security.Authorizations;
  *  </bean>
  * }
  * </pre>
- * 
+ *
  * <br>
  */
 public class QueryMetricQueryLogic extends ShardQueryLogic {
-    
+
     @Inject
     @CallerPrincipal
     private DatawavePrincipal callerPrincipal;
-    
+
     private Collection<String> roles = null;
-    
+
     public void setRolesSets(Collection<String> roleSets) {
         this.roles = roleSets;
     }
-    
+
     public QueryMetricQueryLogic() {
         super();
     }
-    
+
     public QueryMetricQueryLogic(QueryMetricQueryLogic other) {
         super(other);
         callerPrincipal = other.callerPrincipal;
@@ -66,29 +66,29 @@ public class QueryMetricQueryLogic extends ShardQueryLogic {
             roles.addAll(other.roles);
         }
     }
-    
+
     @Override
     public QueryMetricQueryLogic clone() {
         return new QueryMetricQueryLogic(this);
     }
-    
+
     @Override
     public final GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         return super.initialize(client, settings, auths);
     }
-    
+
     @Override
     public final String getJexlQueryString(Query settings) throws ParseException {
-        
+
         if (null == this.roles) {
             this.roles = callerPrincipal.getPrimaryUser().getRoles();
         }
-        
+
         String query = super.getJexlQueryString(settings);
         if (this.roles.contains("MetricsAdministrator")) {
             return query;
         }
-        
+
         StringBuilder jexl = new StringBuilder();
         if (!query.isEmpty()) {
             jexl.append("(").append(query).append(")");

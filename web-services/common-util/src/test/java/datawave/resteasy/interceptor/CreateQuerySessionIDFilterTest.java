@@ -30,14 +30,14 @@ import org.junit.runner.RunWith;
  */
 @RunWith(EasyMockRunner.class)
 public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
-    
+
     private CreateQuerySessionIDFilter filter;
     private ResponseContainerRequestContext request;
     private ContainerResponseContextImpl response;
     private GenerateQuerySessionId annotation;
     @Mock(type = MockType.STRICT)
     private ResourceMethodInvoker method;
-    
+
     @Before
     public void setUp() throws Exception {
         annotation = new GenerateQuerySessionId() {
@@ -45,37 +45,37 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
             public String cookieBasePath() {
                 return "/test/path/";
             }
-            
+
             @Override
             public Class<? extends Annotation> annotationType() {
                 return GenerateQuerySessionId.class;
             }
         };
-        
+
         request = new ResponseContainerRequestContext(MockHttpRequest.post("/mock"));
         request.setProperty(ResourceMethodInvoker.class.getName(), method);
-        
+
         response = new ContainerResponseContextImpl(request.getHttpRequest(), new MockHttpResponse(), new BuiltResponse());
-        
+
         filter = new CreateQuerySessionIDFilter();
     }
-    
+
     @Test
     public void filter() throws Exception {
         EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
         replayAll();
-        
+
         CreateQuerySessionIDFilter.QUERY_ID.set("1234");
         filter.filter(request, response);
-        
+
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
         assertNotNull("No cookie present when we should have one.", responseCookie);
         assertEquals("query-session-id", responseCookie.getName());
         assertEquals("/test/path/1234", responseCookie.getPath());
-        
+
         verifyAll();
     }
-    
+
     @Test
     public void filterNoQueryId() throws Exception {
         EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
@@ -84,45 +84,45 @@ public class CreateQuerySessionIDFilterTest extends EasyMockSupport {
         // noinspection ConfusingArgumentToVarargsMethod
         EasyMock.expect(method.getMethod()).andReturn(getClass().getMethod("filterNoQueryId", null));
         replayAll();
-        
+
         CreateQuerySessionIDFilter.QUERY_ID.set(null);
         filter.filter(request, response);
-        
+
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
         assertNotNull("No cookie present when we should have one.", responseCookie);
         assertEquals("query-session-id", responseCookie.getName());
         assertEquals("/test/path/", responseCookie.getPath());
-        
+
         verifyAll();
     }
-    
+
     @Test
     public void filterServerError() throws Exception {
         response.setStatusInfo(Response.Status.INTERNAL_SERVER_ERROR);
         EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
         replayAll();
-        
+
         CreateQuerySessionIDFilter.QUERY_ID.set("1234");
         filter.filter(request, response);
-        
+
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
         assertNull("Cookie present when we shouldn't have one.", responseCookie);
-        
+
         verifyAll();
     }
-    
+
     @Test
     public void filterClientError() throws Exception {
         response.setStatusInfo(Response.Status.BAD_REQUEST);
         EasyMock.expect(method.getMethodAnnotations()).andReturn(new Annotation[] {annotation});
         replayAll();
-        
+
         CreateQuerySessionIDFilter.QUERY_ID.set("1234");
         filter.filter(request, response);
-        
+
         NewCookie responseCookie = (NewCookie) response.getHeaders().getFirst("Set-Cookie");
         assertNull("Cookie present when we shouldn't have one.", responseCookie);
-        
+
         verifyAll();
     }
 }

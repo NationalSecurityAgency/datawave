@@ -16,16 +16,16 @@ import org.apache.accumulo.core.security.VisibilityParseException;
 /**
  * RecordReader that returns only Events that the caller can see using the Accumulo VisibilityFilter. This class expects that
  * SecureEventSequenceFileRecordReader.authorizations property is set in the configuration with a valid set of authorizations (comma separated string)
- * 
+ *
  * @param <K>
  *            - type of the file record reader
  */
 public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRecordReader<K> {
-    
+
     private VisibilityEvaluator filter = null;
     public static final String AUTHS = "SecureEventSequenceFileRecordReader.authorizations";
     private static final String SPLIT = ",";
-    
+
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
         super.initialize(split, context);
@@ -37,7 +37,7 @@ public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRec
         Authorizations a = new Authorizations(auths.split(SPLIT));
         filter = new VisibilityEvaluator(a);
     }
-    
+
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         boolean result;
@@ -61,8 +61,8 @@ public class SecureEventSequenceFileRecordReader<K> extends EventSequenceFileRec
                 }
             }
         } while (!result);
-        
+
         return result;
     }
-    
+
 }

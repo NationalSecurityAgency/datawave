@@ -25,46 +25,46 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class GeoWaveFunctionsDescriptorTest {
-    
+
     private static List<String> expandedWkt;
-    
+
     @BeforeClass
     public static void readExpandedWkt() {
         ClassLoader classLoader = GeoWaveFunctionsDescriptor.class.getClassLoader();
         expandedWkt = new BufferedReader(new InputStreamReader(classLoader.getResourceAsStream("datawave/query/jexl/functions/expandedWkt.txt"))).lines()
                         .collect(Collectors.toList());
     }
-    
+
     @Test
     public void testAntiMeridianSpanningMultipolygon() throws Exception {
         String query = "geowave:intersects(GEO_FIELD, 'MULTIPOLYGON(((160 60, 180 60, 180 70, 160 70, 160 60)), ((-180 70, -180 60, -175 60, -175 70, -180 70)))')";
-        
+
         ShardQueryConfiguration config = new ShardQueryConfiguration();
-        
+
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.addField("GEO_FIELD", "datawave.data.type.GeometryType");
-        
+
         // DEFAULT, maxEnvelopes = 4
         String defaultExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
         Assert.assertEquals(expandedWkt.get(0), defaultExpandedQuery);
-        
+
         // maxEnvelopes = 1
         config.setGeoWaveMaxEnvelopes(1);
         String oneEnvelopeExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
         Assert.assertEquals(expandedWkt.get(1), oneEnvelopeExpandedQuery);
-        
+
         // maxEnvelopes = 2
         config.setGeoWaveMaxEnvelopes(2);
         String twoEnvelopesExpandedQuery = convertFunctionToIndexQuery(query, config, helper);
         Assert.assertEquals(expandedWkt.get(2), twoEnvelopesExpandedQuery);
-        
+
         // Test the the default number of envelopes produces a different expanded query than the single envelope expansion
         Assert.assertNotEquals(defaultExpandedQuery, oneEnvelopeExpandedQuery);
-        
+
         // Test that the default number of envelopes produces the same expanded query as the two envelope expansion
         Assert.assertEquals(defaultExpandedQuery, twoEnvelopesExpandedQuery);
     }
-    
+
     @Test
     public void testMultipolygonIntersection() throws Exception {
         // @formatter:off
@@ -77,17 +77,17 @@ public class GeoWaveFunctionsDescriptorTest {
                 "((-180 68, -100 68, -100 70, -180 70, -180 68)), " + // GROUP 2
                 "((-5 -5, 5 -5, 5 5, -5 5, -5 -5)))";                 // GROUP 3
         // @formatter:on
-        
+
         List<Envelope> envelopes = (List<Envelope>) Whitebox.invokeMethod(GeoWaveFunctionsDescriptor.class, "getSeparateEnvelopes",
                         AbstractGeometryNormalizer.parseGeometry(wkt), 4);
-        
+
         Assert.assertEquals(3, envelopes.size());
-        
+
         List<Envelope> expectedEnvelopes = new ArrayList<>();
         expectedEnvelopes.add(new Envelope(100, 180, 20, 70));
         expectedEnvelopes.add(new Envelope(-180, -80, 60, 88));
         expectedEnvelopes.add(new Envelope(-5, 5, -5, 5));
-        
+
         Iterator<Envelope> expectedIter = expectedEnvelopes.iterator();
         while (expectedIter.hasNext()) {
             boolean foundMatch = false;
@@ -100,16 +100,16 @@ public class GeoWaveFunctionsDescriptorTest {
             Assert.assertTrue(foundMatch);
         }
     }
-    
+
     public static String convertFunctionToIndexQuery(String queryStr, ShardQueryConfiguration config, MetadataHelper metadataHelper) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(queryStr);
         ASTFunctionNode func = find(script);
         JexlArgumentDescriptor desc = new GeoWaveFunctionsDescriptor().getArgumentDescriptor(func);
-        
+
         JexlNode indexQuery = desc.getIndexQuery(config, metadataHelper, null, null);
         return JexlStringBuildingVisitor.buildQuery(indexQuery);
     }
-    
+
     /**
      * Traverse the node graph to find the first function node in the iteration and returns it. Null is returned if no function node is found.
      *

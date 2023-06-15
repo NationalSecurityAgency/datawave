@@ -10,11 +10,11 @@ import java.util.Map;
 
 public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
     private Logger log = LoggerFactory.getLogger(getClass().getName());
-    
+
     @Override
     public Map<String,String> convertAndValidate(MultivaluedMap<String,String> queryParameters) {
         AuditParameters validatedParams = new AuditParameters();
-        
+
         MultivaluedMapImpl<String,String> auditParams = new MultivaluedMapImpl<>();
         // Pull parameters that are specified as query parameters (potentially under a different name) into the
         // audit parameters.
@@ -22,7 +22,7 @@ public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
             auditParams.put(AuditParameters.QUERY_AUTHORIZATIONS, queryParameters.get(AuditParameters.QUERY_AUTHORIZATIONS));
         if (queryParameters.containsKey(QueryParameters.QUERY_STRING))
             auditParams.put(AuditParameters.QUERY_STRING, queryParameters.get(AuditParameters.QUERY_STRING));
-        
+
         // Put additional values passed by the caller (because these values were computed programmatically and not
         // directly supplied in the query call) into the audit parameters.
         if (queryParameters.containsKey(PrivateAuditConstants.AUDIT_TYPE))
@@ -38,14 +38,14 @@ public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
         if (queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
             validatedParams.setAuditId(queryParameters.getFirst(AuditParameters.AUDIT_ID));
         }
-        
+
         // Now validate the audit parameters and convert to a map.
         validatedParams.validate(auditParams);
-        
+
         log.debug("generated audit parameters: " + validatedParams);
         return validatedParams.toMap();
     }
-    
+
     @Override
     public Map<String,String> validate(MultivaluedMap<String,String> auditParameters) {
         AuditParameters validatedParams = new AuditParameters();

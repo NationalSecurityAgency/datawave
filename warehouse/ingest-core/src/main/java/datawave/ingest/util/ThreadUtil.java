@@ -9,9 +9,9 @@ import java.util.concurrent.TimeUnit;
  * Utilities for working with ThreadPools.
  */
 public class ThreadUtil {
-    
+
     private static final Logger logger = Logger.getLogger(ThreadUtil.class);
-    
+
     /**
      * Shuts down the executor and gives tasks that are still in progress the given amount of time before continuing.
      *
@@ -33,7 +33,7 @@ public class ThreadUtil {
             return false;
         }
     }
-    
+
     /**
      * Waits for all active threads in the thread pool to complete.
      *
@@ -72,9 +72,9 @@ public class ThreadUtil {
             log.info("Finished Waiting for " + type + " running, T: " + active + "/" + poolSize + ", Completed: " + compl + "/" + workUnits + ", "
                             + ", Remaining: " + qSize + ", " + (cur - start) + " ms elapsed");
         }
-        
+
         long stop = System.currentTimeMillis();
         return (stop - start);
     }
-    
+
 }

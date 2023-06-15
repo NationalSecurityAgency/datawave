@@ -10,7 +10,7 @@ public class RfileSplit {
     public long length;
     public String[] hosts;
     private int hashCode;
-    
+
     public RfileSplit(Path path, int start, long length, String[] locations) {
         this.path = path;
         this.start = start;
@@ -18,7 +18,7 @@ public class RfileSplit {
         this.hosts = locations;
         hashCode = new HashCodeBuilder().append(path).append(start).append(length).append(hosts).hashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof RfileSplit) {
@@ -27,7 +27,7 @@ public class RfileSplit {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;

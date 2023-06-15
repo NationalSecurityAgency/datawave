@@ -38,7 +38,7 @@ import static java.util.Map.Entry;
  * the scanned values.
  */
 public class UpgradeCounterValues {
-    
+
     private Options options;
     private Option instanceNameOpt, zookeeperOpt, usernameOpt, passwordOpt, tableNameOpt, rangesOpt, bsThreadsOpt, bwThreadsOpt, bwMemoryOpt;
     private String instanceName, zookeepers, username, password, tableName;
@@ -46,24 +46,24 @@ public class UpgradeCounterValues {
     private int bwThreads = 10;
     private long bwMemory = 10 * 1048576;
     private ArrayList<Range> ranges;
-    
+
     public UpgradeCounterValues() {
         generateCommandLineOptions();
     }
-    
+
     protected void run(String[] args) throws ParseException, AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
         parseConfig(args);
-        
+
         try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).build()) {
             Authorizations auths = client.securityOperations().getUserAuthorizations(client.whoami());
-            try (BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory)
-                            .setMaxLatency(60, TimeUnit.SECONDS));
+            try (BatchWriter writer = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxWriteThreads(bwThreads).setMaxMemory(bwMemory).setMaxLatency(60, TimeUnit.SECONDS));
                             BatchScanner scanner = client.createBatchScanner(tableName, auths, bsThreads)) {
                 scanner.setRanges(ranges);
-                
+
                 for (Entry<Key,Value> entry : scanner) {
                     Key key = entry.getKey();
-                    
+
                     ByteArrayDataInput in = ByteStreams.newDataInput(entry.getValue().get());
                     Counters counters = new Counters();
                     try {
@@ -77,7 +77,7 @@ public class UpgradeCounterValues {
                             String groupName = Text.readString(in);
                             String groupDisplayName = Text.readString(in);
                             CounterGroup group = counters.addGroup(groupName, groupDisplayName);
-                            
+
                             int groupSize = WritableUtils.readVInt(in);
                             for (int i = 0; i < groupSize; i++) {
                                 String counterName = Text.readString(in);
@@ -88,7 +88,7 @@ public class UpgradeCounterValues {
                                 group.addCounter(counterName, counterDisplayName, value);
                             }
                         }
-                        
+
                         ByteArrayDataOutput out = ByteStreams.newDataOutput();
                         counters.write(out);
                         Mutation m = new Mutation(key.getRow());
@@ -97,11 +97,11 @@ public class UpgradeCounterValues {
                         writer.addMutation(m);
                     }
                 }
-                
+
             }
         }
     }
-    
+
     private void parseConfig(String[] args) throws ParseException {
         CommandLine cl = new DefaultParser().parse(options, args);
         instanceName = cl.getOptionValue(instanceNameOpt.getOpt());
@@ -120,7 +120,7 @@ public class UpgradeCounterValues {
             }
             System.out.println("Using ranges: " + ranges);
         }
-        
+
         if (cl.hasOption(bsThreadsOpt.getOpt()))
             bsThreads = Integer.parseInt(cl.getOptionValue(bsThreadsOpt.getOpt()));
         if (cl.hasOption(bwThreadsOpt.getOpt()))
@@ -128,55 +128,55 @@ public class UpgradeCounterValues {
         if (cl.hasOption(bwMemoryOpt.getOpt()))
             bwMemory = Long.parseLong(cl.getOptionValue(bwMemoryOpt.getOpt()));
     }
-    
+
     private void generateCommandLineOptions() {
         options = new Options();
-        
+
         tableNameOpt = new Option("tn", "tableName", true, "The name of the table to scan");
         tableNameOpt.setRequired(true);
         options.addOption(tableNameOpt);
-        
+
         instanceNameOpt = new Option("i", "instance", true, "Accumulo instance name");
         instanceNameOpt.setArgName("name");
         instanceNameOpt.setRequired(true);
         options.addOption(instanceNameOpt);
-        
+
         zookeeperOpt = new Option("zk", "zookeeper", true, "Comma-separated list of ZooKeeper servers");
         zookeeperOpt.setArgName("server[,server]");
         zookeeperOpt.setRequired(true);
         options.addOption(zookeeperOpt);
-        
+
         usernameOpt = new Option("u", "username", true, "Accumulo username");
         usernameOpt.setArgName("name");
         usernameOpt.setRequired(true);
         options.addOption(usernameOpt);
-        
+
         passwordOpt = new Option("p", "password", true, "Accumulo password");
         passwordOpt.setArgName("passwd");
         passwordOpt.setRequired(true);
         options.addOption(passwordOpt);
-        
+
         rangesOpt = new Option("r", "range", true, "Range in startRow,endRow format (both start and end are exclusive");
         rangesOpt.setArgName("range");
         rangesOpt.setRequired(false);
         options.addOption(rangesOpt);
-        
+
         bsThreadsOpt = new Option("st", "bwThreads", true, "Number of batch writer threads");
         bsThreadsOpt.setArgName("bwThreads");
         bsThreadsOpt.setRequired(false);
         options.addOption(bsThreadsOpt);
-        
+
         bwThreadsOpt = new Option("wt", "bwThreads", true, "Number of batch writer threads");
         bwThreadsOpt.setArgName("bwThreads");
         bwThreadsOpt.setRequired(false);
         options.addOption(bwThreadsOpt);
-        
+
         bwMemoryOpt = new Option("wm", "bwMemory", true, "Bytes to keep before flushing the batch writer");
         bwMemoryOpt.setArgName("bwMemory");
         bwMemoryOpt.setRequired(false);
         options.addOption(bwMemoryOpt);
     }
-    
+
     public static void main(String[] args) throws Exception {
         new UpgradeCounterValues().run(args);
     }

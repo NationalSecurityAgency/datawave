@@ -7,12 +7,12 @@ import datawave.util.cli.PasswordConverter;
 import org.apache.hadoop.conf.Configuration;
 
 public class OptionsParser {
-    
+
     // todo: we parse these same arguments across several different classes in slightly different ways with very similar flags (e.g. zookeepers, zooKeepers,
     // zoo, etc).
     // This is a first step towards standardizing these flags.
     // The intent is to expand upon this class later, but limiting to this set for now to avoid scope creep. Must.... resist...
-    
+
     public static final String instanceFlag = "-instance";
     public static final String instanceFlag2 = "-i";
     public static final String zookeepersFlag = "-zookeepers";
@@ -25,9 +25,9 @@ public class OptionsParser {
     public static final String configDirFlag = "-cd";
     public static final String additionalResourceFlag = "-";
     public static final String configDirSuffix = "config.xml";
-    
+
     // todo: ingest options and more
-    
+
     public static Configuration parseArguments(String[] args, Configuration conf) {
         String configDir = null;
         for (int i = 0; i < args.length; i++) {
@@ -51,13 +51,13 @@ public class OptionsParser {
                 String configValue = args[++i];
                 conf.set(configName, configValue);
             }
-            
+
             else if (!args[i].startsWith(additionalResourceFlag)) {
                 conf.addResource(args[i]);
             }
         }
-        
+
         return conf;
     }
-    
+
 }

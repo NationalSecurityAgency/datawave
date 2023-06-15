@@ -27,22 +27,22 @@ import java.util.Collection;
 @SuppressWarnings("UnstableApiUsage")
 // Guava HashFunction, Hasher, etc. TODO: migrate to Java 8 functional API
 public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collection<NormalizedContentInterface>,Collection<NormalizedContentInterface>> {
-    
+
     public static final String FIELD_APPEND = ".hash";
     public static final byte[] FIELD_APPEND_BYTES = FIELD_APPEND.getBytes();
     private static final byte[] EMPTY_BYTES = new byte[] {};
     private static final Value EMPTY_VALUE = new Value(EMPTY_BYTES);
-    
+
     private final long maxValues;
     private final long timestamp;
-    
+
     private final ContextWriter<KEYOUT,VALUEOUT> contextWriter;
     private final Text outputTable;
     private final TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context;
-    
+
     protected final HashFunction hashingFunction = Hashing.sha1();
     protected Hasher hasher;
-    
+
     /**
      *
      * @param contextWriter
@@ -64,7 +64,7 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
         this.outputTable = outputTable;
         this.timestamp = timestamp;
     }
-    
+
     /**
      * If the number of field/value pairs in the input is larger than a threshold, generate a hash for this collection and map individual field values to that
      * hash. These are emitted to the specified table.
@@ -79,51 +79,51 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
     public Collection<NormalizedContentInterface> apply(@Nullable Collection<NormalizedContentInterface> input) {
         if (input == null || input.isEmpty())
             return input;
-        
+
         if (input.size() > maxValues) {
             hasher = hashingFunction.newHasher(input.size());
             byte[] hashBytes = new byte[hashingFunction.bits() / 8];
-            
+
             Multimap<BulkIngestKey,Value> map = ArrayListMultimap.create(input.size(), 1);
             NormalizedContentInterface firstElement = Iterables.getFirst(input, null);
-            
+
             if (firstElement == null) {
                 return input;
             }
-            
+
             for (NormalizedContentInterface nci : input) {
                 hasher.putUnencodedChars(nci.getIndexedFieldValue());
                 byte[] indexedValue = nci.getIndexedFieldValue().getBytes();
                 // key maintains a reference to hashBytes, so it is properly updated by the time it is written
                 map.put(new BulkIngestKey(outputTable, new Key(hashBytes, indexedValue, EMPTY_BYTES, EMPTY_BYTES, timestamp, false, false)), EMPTY_VALUE);
             }
-            
+
             final String hash = hasher.hash().toString();
             final byte[] hashStringBytes = hash.getBytes();
             System.arraycopy(hashStringBytes, 0, hashBytes, 0, hashBytes.length);
-            
+
             try {
                 contextWriter.write(map, context);
             } catch (IOException | InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            
+
             final String newFieldName = (firstElement.getIndexedFieldName() + FIELD_APPEND).intern();
-            
+
             NormalizedFieldAndValue generated = new NormalizedFieldAndValue(firstElement);
             generated.setFieldName(newFieldName);
             generated.setIndexedFieldName(newFieldName);
             generated.setIndexedFieldValue(hash);
-            
+
             return Lists.newArrayList(generated);
         }
-        
+
         return input;
     }
-    
+
     /**
      * Determine if the indexedFieldName ends with the suffix defined in FIELD_APPEND_BYTES
-     * 
+     *
      * @param pivotTypes
      *            the field to inspect
      * @return true if the field name ends with the FIELD_APPEND_BYTES suffix.
@@ -141,7 +141,7 @@ public class HashTableFunction<KEYIN,KEYOUT,VALUEOUT> implements Function<Collec
                     FIELD_APPEND_BYTES.length // length
             );
             // @formatter:on
-            
+
             return cmp == 0;
         }
         return false;

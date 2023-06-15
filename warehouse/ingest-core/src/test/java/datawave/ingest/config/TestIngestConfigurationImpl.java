@@ -21,22 +21,22 @@ public class TestIngestConfigurationImpl implements IngestConfiguration {
     public MarkingsHelper getMarkingsHelper(Configuration config, Type dataType) {
         return new MarkingsHelper.NoOp(config, dataType);
     }
-    
+
     @Override
     public MaskedFieldHelper createMaskedFieldHelper() {
         return null;
     }
-    
+
     @Override
     public RawRecordContainer createRawRecordContainer() {
         return null;
     }
-    
+
     @Override
     public MimeDecoder createMimeDecoder() {
         return b -> MimeUtility.decodeText(new String(b, "iso-8859-1")).getBytes();
     }
-    
+
     @Override
     public RawRecordMetadata createMetadata(Text shardTableName, Text metadataTableName, Text loadDatesTableName, Text shardIndexTableName,
                     Text shardReverseIndexTableName, boolean frequency) {

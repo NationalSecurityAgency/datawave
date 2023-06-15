@@ -13,15 +13,15 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 public class RFileInputFormat extends FileInputFormat<Key,Value> {
-    
+
     @Override
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
         return new RFileRecordReader();
     }
-    
+
     @Override
     protected boolean isSplitable(JobContext context, Path filename) {
         return false;
     }
-    
+
 }

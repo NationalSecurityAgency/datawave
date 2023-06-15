@@ -14,17 +14,17 @@ import java.util.Random;
 
 public class InputFileTest {
     private static final Logger log = LoggerFactory.getLogger(InputFileTest.class);
-    
+
     private static final Random rVal = new Random(System.currentTimeMillis());
     private static final String BASE_DIR = "/base";
     private InputFile inFile;
-    
+
     @Before
     public void setup() {
         Path p = new Path("path");
         this.inFile = new InputFile("foo", p, 10, 10, 0, BASE_DIR);
     }
-    
+
     @Test
     public void testUpdateDir() {
         log.info("-----  testUpdateDir  -----");
@@ -39,7 +39,7 @@ public class InputFileTest {
             inFile.setMoved(false);
         }
     }
-    
+
     @Test
     public void testEqualsHashCode() {
         InputFile test = new InputFile(inFile.getFolder(), inFile.getPath(), inFile.getBlocksize(), inFile.getFilesize(), inFile.getTimestamp(), "/xx");
@@ -49,7 +49,7 @@ public class InputFileTest {
         Assert.assertNotEquals(test, this.inFile);
         Assert.assertNotEquals(test.hashCode(), this.inFile.hashCode());
     }
-    
+
     private TrackedDir getRandomDir(TrackedDir exclude) {
         List<TrackedDir> valid = new ArrayList<>();
         for (TrackedDir dir : TrackedDir.values()) {
@@ -57,7 +57,7 @@ public class InputFileTest {
                 valid.add(dir);
             }
         }
-        
+
         int idx = rVal.nextInt(valid.size());
         return valid.get(idx);
     }

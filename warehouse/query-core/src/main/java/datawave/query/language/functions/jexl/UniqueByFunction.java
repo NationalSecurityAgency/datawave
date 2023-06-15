@@ -11,11 +11,11 @@ import java.util.List;
  * Abstract class that contains common functionality for unique-by functions.
  */
 public abstract class UniqueByFunction extends JexlQueryFunction {
-    
+
     public UniqueByFunction(String functionName, List<String> parameterList) {
         super(functionName, parameterList);
     }
-    
+
     /**
      * This function must be given at least one field parameter, and may only be given field names, and not additional granularity levels.
      *
@@ -37,11 +37,11 @@ public abstract class UniqueByFunction extends JexlQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(this.name);
         if (parameterList.isEmpty()) {
             sb.append("()");
@@ -53,8 +53,8 @@ public abstract class UniqueByFunction extends JexlQueryFunction {
             }
             sb.append(')');
         }
-        
+
         return sb.toString();
     }
-    
+
 }

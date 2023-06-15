@@ -34,14 +34,14 @@ import org.apache.lucene.search.Query;
  * applies the slop value defined in the {@link SlopQueryNode}.
  */
 public class SlopQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         JexlNode returnNode = null;
-        
+
         SlopQueryNode phraseSlopNode = (SlopQueryNode) queryNode;
-        
+
         JexlNode node = (JexlNode) phraseSlopNode.getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
         if (node instanceof JexlPhraseNode) {
             JexlPhraseNode phraseNode = (JexlPhraseNode) node;
             returnNode = new JexlWithinNode(phraseNode.getField(), phraseNode.getWordList(), phraseSlopNode.getValue());
@@ -52,8 +52,8 @@ public class SlopQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new UnsupportedOperationException(node.getClass().getName() + " found as a child of a SlopQueryNode -- not implemented");
         }
-        
+
         return returnNode;
     }
-    
+
 }

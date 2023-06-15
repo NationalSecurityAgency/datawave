@@ -22,52 +22,52 @@ public class LimitedSortedKeyValueIterator implements SortedKeyValueIterator<Key
     private SortedKeyValueIterator<Key,Value> delegate;
     private Key limit;
     private IteratorEnvironment environment;
-    
+
     public LimitedSortedKeyValueIterator(SortedKeyValueIterator<Key,Value> delegate) {
         this.delegate = delegate;
     }
-    
+
     public LimitedSortedKeyValueIterator(LimitedSortedKeyValueIterator other) {
         this.limit = other.limit;
         this.environment = other.environment;
         this.delegate = other.delegate.deepCopy(environment);
     }
-    
+
     public void setLimit(Key limit) {
         this.limit = limit;
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.delegate = source;
         this.environment = env;
     }
-    
+
     @Override
     public boolean hasTop() {
         return (delegate.hasTop() && delegate.getTopKey().compareTo(limit) <= 0);
     }
-    
+
     @Override
     public void next() throws IOException {
         delegate.next();
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         delegate.seek(range, columnFamilies, inclusive);
     }
-    
+
     @Override
     public Key getTopKey() {
         return delegate.getTopKey();
     }
-    
+
     @Override
     public Value getTopValue() {
         return delegate.getTopValue();
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new LimitedSortedKeyValueIterator(this);

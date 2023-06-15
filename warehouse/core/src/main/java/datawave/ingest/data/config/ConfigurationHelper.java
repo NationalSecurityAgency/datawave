@@ -14,15 +14,15 @@ import com.google.common.collect.Sets;
 
 /**
  * Helper class that performs variable interpolation on keys and values in the Hadoop Configuration object
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class ConfigurationHelper extends Configuration {
-    
+
     /**
      * Replaces all occurrences of match in the original configuration's set of key's and values to replacement and returns a new configuration object.
-     * 
+     *
      * @param orig
      *            the original configuration
      * @param regex
@@ -40,10 +40,10 @@ public class ConfigurationHelper extends Configuration {
         }
         return conf;
     }
-    
+
     /**
      * Helper method to get properties from Hadoop configuration
-     * 
+     *
      * @param <T>
      *            Type of the value of property
      * @param conf
@@ -61,7 +61,7 @@ public class ConfigurationHelper extends Configuration {
         String p = conf.get(propertyName);
         if (StringUtils.isEmpty(p))
             throw new IllegalArgumentException(propertyName + " must be specified");
-        
+
         if (resultClass.equals(String.class))
             return (T) p;
         else if (resultClass.equals(String[].class))
@@ -78,14 +78,14 @@ public class ConfigurationHelper extends Configuration {
             return (T) Double.valueOf(p);
         else
             throw new IllegalArgumentException(resultClass.getSimpleName() + " is unhandled.");
-        
+
     }
-    
+
     public static void set(final Configuration conf, final String name, final Object value) {
         if (null == value) {
             return;
         }
-        
+
         if (value instanceof String) {
             conf.set(name, (String) value);
         } else if (value instanceof Integer) {
@@ -102,10 +102,10 @@ public class ConfigurationHelper extends Configuration {
             throw (new IllegalArgumentException(value.getClass().getSimpleName() + " is unhandled."));
         }
     }
-    
+
     /**
      * Adds the parameter to the configuration object, but only if the value is non-null.
-     * 
+     *
      * @param conf
      *            configuration object to update
      * @param propertyName
@@ -120,10 +120,10 @@ public class ConfigurationHelper extends Configuration {
             conf.set(propertyName, StringUtils.join(value, delimiter));
         }
     }
-    
+
     /**
      * Returns the parameter as a set, assuming the value is a comma-separated string. An exception is thrown if the value is null.
-     * 
+     *
      * @param conf
      *            configuration object
      * @param propertyName
@@ -136,20 +136,20 @@ public class ConfigurationHelper extends Configuration {
         final String p = conf.get(propertyName);
         if (StringUtils.isEmpty(p))
             throw new IllegalArgumentException(propertyName + " must be specified");
-        
+
         final String compositeValue = p.trim();
         if (StringUtils.isEmpty(compositeValue)) {
             return (new HashSet<>());
         }
-        
+
         return (Sets.newHashSet(compositeValue.split(delimiter)));
     }
-    
+
     /**
      * Get the value of the <code>name</code> property as a <code>List</code> of objects implementing the interface specified by <code>xface</code>.
-     * 
+     *
      * An exception is thrown if any of the classes does not exist, or if it does not implement the named interface.
-     * 
+     *
      * @param <U>
      *            Type of list
      * @param name
@@ -172,5 +172,5 @@ public class ConfigurationHelper extends Configuration {
         }
         return ret;
     }
-    
+
 }

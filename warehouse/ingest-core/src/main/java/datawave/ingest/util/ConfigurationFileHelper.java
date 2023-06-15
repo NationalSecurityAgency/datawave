@@ -9,15 +9,15 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 /**
- * 
+ *
  * This utility will consolidate configuration files in one directory and return a new Configuration object that contains the values with or without the hadoop
  * config default values or add them to the Configuration object that is passed in
  */
 public class ConfigurationFileHelper {
     private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(ConfigurationFileHelper.class);
-    
+
     /**
-     * 
+     *
      * @param configDirectory
      *            the config directory
      * @param configSuffix
@@ -31,9 +31,9 @@ public class ConfigurationFileHelper {
         setConfigurationFromFiles(conf, configDirectory, configSuffix);
         return conf;
     }
-    
+
     /**
-     * 
+     *
      * @param conf
      *            a configuration
      * @param configDirectory

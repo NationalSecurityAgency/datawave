@@ -78,26 +78,26 @@ import java.util.Set;
 @MBean
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Resource
     private EJBContext context;
-    
+
     @Inject
     private AccumuloTableCache cache;
-    
+
     private Map<String,Map<Priority,AccumuloClientPool>> pools;
-    
+
     @Inject
     private ConnectionPoolsConfiguration connectionPoolsConfiguration;
-    
+
     private String defaultPoolName = null;
-    
+
     @PostConstruct
     public void init() {
         this.pools = new HashMap<>();
-        
+
         if (this.connectionPoolsConfiguration == null) {
             log.error("connectionPoolsConfiguration was null - aborting init()");
             return;
@@ -117,7 +117,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             } catch (Exception e) {
                 log.error("Error configuring mock accumulo user for AccumuloConnectionFactoryBean.", e);
             }
-            
+
             // Initialize the distributed tracing system. This needs to be done once at application startup. Since
             // it is tied to Accumulo connections, we do it here in this singleton bean.
             String appName = "datawave_ws";
@@ -127,10 +127,10 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                 log.warn("Unable to retrieve system property \"app\": " + e.getMessage());
             }
         }
-        
+
         cache.setConnectionFactory(this);
     }
-    
+
     private AccumuloClientPool createConnectionPool(ConnectionPoolConfiguration conf, int limit) {
         AccumuloClientPoolFactory factory = new AccumuloClientPoolFactory(conf.getUsername(), conf.getPassword(), conf.getZookeepers(), conf.getInstance());
         AccumuloClientPool pool = new AccumuloClientPool(factory);
@@ -138,22 +138,22 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         pool.setTestOnReturn(true);
         pool.setMaxTotal(limit);
         pool.setMaxIdle(-1);
-        
+
         try {
             pool.addObject();
         } catch (Exception e) {
             log.error("Error pre-populating connection pool", e);
         }
-        
+
         return pool;
     }
-    
+
     private void setupMockAccumuloUser(ConnectionPoolConfiguration conf, AccumuloClientPool pool, HashMap<String,Pair<String,PasswordToken>> instances)
                     throws Exception {
         AccumuloClient c = null;
         try {
             c = pool.borrowObject(new HashMap<>());
-            
+
             Pair<String,PasswordToken> pair = instances.get(cache.getInstance().getInstanceID());
             String user = "root";
             PasswordToken password = new PasswordToken(new byte[0]);
@@ -181,7 +181,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             pool.returnObject(c);
         }
     }
-    
+
     @PreDestroy
     public void tearDown() {
         for (Entry<String,Map<Priority,AccumuloClientPool>> entry : this.pools.entrySet()) {
@@ -194,7 +194,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             }
         }
     }
-    
+
     /**
      * @param poolName
      *            the name of the pool to query
@@ -203,7 +203,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     public String getConnectionUserName(String poolName) {
         return connectionPoolsConfiguration.getPools().get(poolName).getUsername();
     }
-    
+
     /**
      * Gets a client from the pool with the assigned priority
      *
@@ -218,7 +218,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
         return getClient(null, priority, trackingMap);
     }
-    
+
     /**
      * Gets a client from the named pool with the assigned priority
      *
@@ -235,12 +235,12 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     public AccumuloClient getClient(final String cpn, final Priority priority, final Map<String,String> tm) throws Exception {
         final Map<String,String> trackingMap = (tm != null) ? tm : new HashMap<>();
         final String poolName = (cpn != null) ? cpn : defaultPoolName;
-        
+
         if (!priority.equals(Priority.ADMIN)) {
             final String userDN = getCurrentUserDN();
             if (userDN != null)
                 trackingMap.put("user.dn", userDN);
-            
+
             final Collection<String> proxyServers = getCurrentProxyServers();
             if (proxyServers != null)
                 trackingMap.put("proxyServers", StringUtils.join(proxyServers, " -> "));
@@ -260,7 +260,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         }
         return wrappedAccumuloClient;
     }
-    
+
     /**
      * Returns the client to the pool with the associated priority.
      *
@@ -285,7 +285,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         }
         log.info("returnConnection called with connection that did not come from any AccumuloConnectionPool");
     }
-    
+
     @PermitAll
     // permit anyone to get the report
     @JmxManaged
@@ -298,10 +298,10 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             buf.append("NORMAL: ").append(entry.getValue().get(Priority.NORMAL)).append("\n");
             buf.append("LOW: ").append(entry.getValue().get(Priority.LOW)).append("\n");
         }
-        
+
         return buf.toString();
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns metrics for the AccumuloConnectionFactoryBean
      *
@@ -317,20 +317,20 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     public ConnectionFactoryResponse getConnectionFactoryMetrics() {
         ConnectionFactoryResponse response = new ConnectionFactoryResponse();
         ArrayList<ConnectionPool> connectionPools = new ArrayList<>();
-        
+
         Set<String> exclude = new HashSet<>();
         exclude.add("connection.state.start");
         exclude.add("state");
         exclude.add("request.location");
-        
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss,SSS");
-        
+
         for (Entry<String,Map<Priority,AccumuloClientPool>> entry : this.pools.entrySet()) {
             for (Entry<Priority,AccumuloClientPool> entry2 : entry.getValue().entrySet()) {
                 String poolName = entry.getKey();
                 Priority priority = entry2.getKey();
                 AccumuloClientPool p = entry2.getValue();
-                
+
                 long now = System.currentTimeMillis();
                 MutableInt maxActive = new MutableInt();
                 MutableInt numActive = new MutableInt();
@@ -340,7 +340,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                 // getConnectionPoolStats will collect the tracking maps and maxActive, numActive, maxIdle, numIdle while synchronized
                 // to ensure consistency between the GenericObjectPool and the tracking maps
                 List<Map<String,String>> requestingConnectionsMap = p.getConnectionPoolStats(maxActive, numActive, maxIdle, numIdle, numWaiting);
-                
+
                 ConnectionPool poolInfo = new ConnectionPool();
                 poolInfo.setPriority(priority.name());
                 poolInfo.setMaxActive(maxActive.toInteger());
@@ -349,7 +349,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                 poolInfo.setMaxIdle(maxIdle.toInteger());
                 poolInfo.setNumIdle(numIdle.toInteger());
                 poolInfo.setPoolName(poolName);
-                
+
                 List<Connection> requestingConnections = new ArrayList<>();
                 for (Map<String,String> m : requestingConnectionsMap) {
                     Connection c = new Connection();
@@ -383,7 +383,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         response.setConnectionPools(connectionPools);
         return response;
     }
-    
+
     @PermitAll
     @JmxManaged
     public int getConnectionUsagePercent() {
@@ -393,13 +393,13 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
                 // Don't include ADMIN priority connections when computing a usage percentage
                 if (Priority.ADMIN.equals(poolEntry.getKey()))
                     continue;
-                
+
                 MutableInt maxActive = new MutableInt();
                 MutableInt numActive = new MutableInt();
                 MutableInt numWaiting = new MutableInt();
                 MutableInt unused = new MutableInt();
                 poolEntry.getValue().getConnectionPoolStats(maxActive, numActive, unused, unused, numWaiting);
-                
+
                 double percentage = (numActive.doubleValue() + numWaiting.doubleValue()) / maxActive.doubleValue();
                 if (percentage > maxPercentage) {
                     maxPercentage = percentage;
@@ -408,7 +408,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         }
         return (int) (maxPercentage * 100);
     }
-    
+
     @Override
     @PermitAll
     public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
@@ -417,30 +417,30 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             StackTraceElement ste = stackTrace[1];
             trackingMap.put("request.location", ste.getClassName() + "." + ste.getMethodName() + ":" + ste.getLineNumber());
         }
-        
+
         return trackingMap;
     }
-    
+
     public String getCurrentUserDN() {
-        
+
         String currentUserDN = null;
         Principal p = context.getCallerPrincipal();
-        
+
         if (p instanceof DatawavePrincipal) {
             currentUserDN = ((DatawavePrincipal) p).getUserDN().subjectDN();
         }
-        
+
         return currentUserDN;
     }
-    
+
     public Collection<String> getCurrentProxyServers() {
         List<String> currentProxyServers = null;
         Principal p = context.getCallerPrincipal();
-        
+
         if (p instanceof DatawavePrincipal) {
             currentProxyServers = ((DatawavePrincipal) p).getProxyServers();
         }
-        
+
         return currentProxyServers;
     }
 }

@@ -8,21 +8,21 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TcpClient implements AutoCloseable {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(TcpClient.class);
-    
+
     private final String host;
     private final int port;
     private Socket sock = null;
     private PrintWriter out = null;
     private long connectTime = 0L;
     private long backoff = 2000;
-    
+
     public TcpClient(String hostname, int port) {
         this.host = hostname;
         this.port = port;
     }
-    
+
     /**
      * Opens a TCP connection to the specified host and port
      *
@@ -34,7 +34,7 @@ public class TcpClient implements AutoCloseable {
             throw new IOException();
         }
     }
-    
+
     /**
      * Write a metric to Timely
      *
@@ -48,13 +48,13 @@ public class TcpClient implements AutoCloseable {
         }
         out.write(metric);
     }
-    
+
     public synchronized void flush() {
         if (null != out) {
             out.flush();
         }
     }
-    
+
     /**
      * Closes the tcp connection to Timely
      *
@@ -77,7 +77,7 @@ public class TcpClient implements AutoCloseable {
             }
         }
     }
-    
+
     private synchronized int connect() {
         if (null == sock || !sock.isConnected() || out.checkError()) {
             if (System.currentTimeMillis() > (connectTime + backoff)) {
@@ -102,5 +102,5 @@ public class TcpClient implements AutoCloseable {
         }
         return 0;
     }
-    
+
 }

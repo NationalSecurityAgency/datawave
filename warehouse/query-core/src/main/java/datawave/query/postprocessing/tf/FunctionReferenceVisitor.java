@@ -21,20 +21,20 @@ import com.google.common.collect.Multimap;
  */
 public class FunctionReferenceVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(FunctionReferenceVisitor.class);
-    
+
     private final Set<String> namespaceFilter;
     private final Multimap<String,Function> functions;
-    
+
     /**
      * Default constructor that delegates to {@link #FunctionReferenceVisitor(Set)}
      */
     private FunctionReferenceVisitor() {
         this(Collections.emptySet());
     }
-    
+
     /**
      * Constructor that accepts a namespace filter
-     * 
+     *
      * @param namespaceFilter
      *            a set of namespaces
      */
@@ -42,7 +42,7 @@ public class FunctionReferenceVisitor extends BaseVisitor {
         this.functions = ArrayListMultimap.create();
         this.namespaceFilter = namespaceFilter;
     }
-    
+
     /**
      * Static entrypoint. Caller provides a JexlNode
      *
@@ -55,10 +55,10 @@ public class FunctionReferenceVisitor extends BaseVisitor {
         node.jjtAccept(visitor, null);
         return visitor.functions();
     }
-    
+
     /**
      * Static entrypoint. Caller provides a JexlNode and a namespace filter.
-     * 
+     *
      * @param node
      *            a node in the query tree
      * @param namespaceFilter
@@ -70,7 +70,7 @@ public class FunctionReferenceVisitor extends BaseVisitor {
         node.jjtAccept(visitor, null);
         return visitor.functions();
     }
-    
+
     /**
      * Getter for the function multimap
      *
@@ -79,7 +79,7 @@ public class FunctionReferenceVisitor extends BaseVisitor {
     public Multimap<String,Function> functions() {
         return functions;
     }
-    
+
     /**
      * This method attempts to build a Function object and map it to a namespace.
      * <p>
@@ -101,7 +101,7 @@ public class FunctionReferenceVisitor extends BaseVisitor {
             log.error("Function node does have 3 children-- must supply a namespace, function name and at least one argument.");
             return null;
         }
-        
+
         int child = 0;
         String namespace = node.jjtGetChild(child++).image;
         String functionName = node.jjtGetChild(child++).image;
@@ -109,11 +109,11 @@ public class FunctionReferenceVisitor extends BaseVisitor {
         for (; child < node.jjtGetNumChildren(); ++child) {
             args.add(node.jjtGetChild(child));
         }
-        
+
         if (namespaceFilter.isEmpty() || namespaceFilter.contains(namespace)) {
             functions.put(namespace, new Function(functionName, args));
         }
-        
+
         return null;
     }
 }
