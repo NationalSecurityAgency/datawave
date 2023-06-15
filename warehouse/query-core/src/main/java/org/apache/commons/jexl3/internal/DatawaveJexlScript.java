@@ -3,7 +3,6 @@ package org.apache.commons.jexl3.internal;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlExpression;
-import org.apache.commons.jexl3.JexlOptions;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import java.util.List;

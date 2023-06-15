@@ -27,8 +27,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
-import static org.hamcrest.CoreMatchers.any;
-import static org.hamcrest.CoreMatchers.anything;
 
 public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;

@@ -1,7 +1,6 @@
 package datawave.query.jexl.visitors;
 
 import org.apache.commons.jexl3.parser.ASTAddNode;
-import org.apache.commons.jexl3.parser.ASTAmbiguous;
 import org.apache.commons.jexl3.parser.ASTArrayAccess;
 import org.apache.commons.jexl3.parser.ASTArrayLiteral;
 import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
@@ -31,7 +30,6 @@ import org.apache.commons.jexl3.parser.ASTTernaryNode;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
-import org.apache.commons.jexl3.parser.SimpleNode;
 
 public class ShortCircuitBaseVisitor extends BaseVisitor {
     

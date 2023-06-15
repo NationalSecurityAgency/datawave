@@ -3,13 +3,7 @@ package datawave.query.jexl;
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
 import org.apache.log4j.Logger;
-import org.apache.lucene.util.IntsRef;
-import org.apache.lucene.util.IntsRefBuilder;
-import org.apache.lucene.util.fst.FST;
-import org.apache.lucene.util.fst.Util;
 
-import java.io.IOException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;

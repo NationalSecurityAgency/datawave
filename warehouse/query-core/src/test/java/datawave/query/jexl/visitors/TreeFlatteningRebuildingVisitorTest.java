@@ -18,7 +18,6 @@ import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
-import java.io.StringReader;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;

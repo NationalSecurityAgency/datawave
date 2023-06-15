@@ -1,7 +1,6 @@
 package datawave.query.index.lookup;
 
 import com.google.common.collect.PeekingIterator;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.tables.RangeStreamScanner;
 import datawave.query.util.Tuple2;
 import org.apache.commons.jexl3.parser.JexlNode;

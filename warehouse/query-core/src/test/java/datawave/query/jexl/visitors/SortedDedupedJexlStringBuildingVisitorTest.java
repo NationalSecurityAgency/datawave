@@ -14,7 +14,6 @@ import java.util.Arrays;
 
 import static datawave.query.jexl.JexlNodeFactory.buildEQNode;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQueryWithoutParse;
 
 public class SortedDedupedJexlStringBuildingVisitorTest {
     

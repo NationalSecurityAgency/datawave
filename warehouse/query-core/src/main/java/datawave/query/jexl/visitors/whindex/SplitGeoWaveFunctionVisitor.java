@@ -10,7 +10,6 @@ import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
 
 import java.util.ArrayList;
 import java.util.Collections;

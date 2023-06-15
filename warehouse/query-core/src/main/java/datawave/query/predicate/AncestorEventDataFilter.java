@@ -4,7 +4,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.query.Constants;
-import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ASTJexlScript;

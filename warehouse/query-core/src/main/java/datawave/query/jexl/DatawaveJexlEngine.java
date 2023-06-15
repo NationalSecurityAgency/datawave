@@ -9,8 +9,6 @@ import org.apache.commons.jexl3.internal.Interpreter;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
-import java.util.Map;
-
 /**
  * Extension of the JexlEngine.
  * 

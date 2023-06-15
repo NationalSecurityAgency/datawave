@@ -17,7 +17,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;

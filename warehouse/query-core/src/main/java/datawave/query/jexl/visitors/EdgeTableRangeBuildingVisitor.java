@@ -35,7 +35,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
 import static org.apache.commons.jexl3.parser.JexlNodes.children;
-import static org.apache.commons.jexl3.parser.JexlNodes.getImage;
 
 /**
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build

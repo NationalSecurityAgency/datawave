@@ -9,7 +9,6 @@ import datawave.ingest.mapreduce.handler.fact.functions.MultimapContext;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlScript;
 import org.apache.commons.jexl3.internal.Engine;
-import org.apache.commons.jexl3.internal.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

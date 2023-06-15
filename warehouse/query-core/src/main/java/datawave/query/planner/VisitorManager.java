@@ -1,7 +1,6 @@
 package datawave.query.planner;
 
 import datawave.query.exceptions.DatawaveQueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 /**

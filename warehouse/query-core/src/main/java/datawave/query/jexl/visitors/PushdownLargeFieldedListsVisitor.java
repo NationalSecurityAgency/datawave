@@ -36,25 +36,19 @@ import java.io.OutputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.Lists.newArrayList;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static datawave.query.jexl.visitors.pushdown.ExceededOr.EXCEEDED_OR_FIELD;
-import static datawave.query.jexl.visitors.pushdown.ExceededOr.EXCEEDED_OR_ID;
-import static datawave.query.jexl.visitors.pushdown.ExceededOr.EXCEEDED_OR_PARAMS;
 import static org.apache.commons.jexl3.parser.JexlNodes.children;
 import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
 

@@ -7,7 +7,6 @@ import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
 import datawave.query.config.IndexHole;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.function.MaskedValueFilterInterface;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
