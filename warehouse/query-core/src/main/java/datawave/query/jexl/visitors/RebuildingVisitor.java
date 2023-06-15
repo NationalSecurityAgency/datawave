@@ -8,14 +8,12 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 
 import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
 import org.apache.commons.jexl3.parser.ASTAddNode;
-import org.apache.commons.jexl3.parser.ASTAmbiguous;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
 import org.apache.commons.jexl3.parser.ASTAnnotation;
@@ -99,14 +97,10 @@ import org.apache.commons.jexl3.parser.ASTTernaryNode;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
 import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.ASTUnaryPlusNode;
-import org.apache.commons.jexl3.parser.ASTUnknownFieldERNode;
-import org.apache.commons.jexl3.parser.ASTUnsatisfiableERNode;
 import org.apache.commons.jexl3.parser.ASTVar;
 import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.jexl3.parser.Node;
-import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
 import com.google.common.base.Function;
 

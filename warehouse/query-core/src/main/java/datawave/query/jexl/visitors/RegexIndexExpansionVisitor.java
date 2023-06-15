@@ -27,8 +27,6 @@ import org.apache.commons.jexl3.parser.ASTNENode;
 import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.ASTNotNode;
 import org.apache.commons.jexl3.parser.ASTReference;
-import org.apache.commons.jexl3.parser.ASTUnknownFieldERNode;
-import org.apache.commons.jexl3.parser.ASTUnsatisfiableERNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
@@ -266,14 +264,7 @@ public class RegexIndexExpansionVisitor extends BaseIndexExpansionVisitor {
                     log.info(logLine);
                 }
                 
-                // If we've *never* seen this field, we want to denote the difference against it not being indexed
-                if (fieldName.equals(Constants.ANY_FIELD)) {
-                    return node;
-                } else if (!allFields.contains(fieldName)) {
-                    return RebuildingVisitor.copyInto(node, ASTUnknownFieldERNode.create());
-                } else {
-                    return RebuildingVisitor.copyInto(node, ASTUnsatisfiableERNode.create());
-                }
+                return node;
             }
         } catch (TableNotFoundException e) {
             throw new DatawaveFatalQueryException(e);

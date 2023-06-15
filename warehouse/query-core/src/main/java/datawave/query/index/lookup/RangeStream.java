@@ -61,7 +61,6 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
-import org.apache.commons.jexl3.parser.ASTUnknownFieldERNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.hadoop.io.Text;
@@ -594,8 +593,13 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.unindexed(node);
         }
         
-        if (node instanceof ASTUnknownFieldERNode) {
-            return ScannerStream.unknownField(node);
+        try {
+            if (!this.getAllFieldsFromHelper().contains(fieldName)) {
+                return ScannerStream.unknownField(node);
+            }
+        } catch (TableNotFoundException e) {
+            log.error(e);
+            throw new RuntimeException(e);
         }
         
         return ScannerStream.noData(node);
