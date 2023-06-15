@@ -35,7 +35,9 @@ public class EventKey implements KeyParser {
     @Override
     public void parse(Key k) {
         if (this.key != null && this.key.equals(k)) {
-            log.debug("Same key given to parse call. Skipping re-load: " + this.key.toString());
+            if (log.isDebugEnabled()) {
+                log.debug("Same key given to parse call. Skipping re-load: " + this.key.toString());
+            }
         } else {
             clearState();
             this.key = k;
