@@ -22,19 +22,19 @@ import datawave.user.AuthorizationsListBase;
 @Provider
 @Produces("text/plain")
 public class TextMessageBodyWriter implements MessageBodyWriter<Object> {
-    
+
     public long getSize(Object ua, Class<?> c, Type type, Annotation[] annotations, MediaType media) {
         // -1 means size unknown according to the javadoc.
         return -1;
     }
-    
+
     public boolean isWriteable(Class<?> c, Type type, Annotation[] annotations, MediaType media) {
         return AuthorizationsListBase.class.isAssignableFrom(c) || DatawavePrincipal.class.isAssignableFrom(c) || DnList.class.isAssignableFrom(c);
     }
-    
+
     public void writeTo(Object ua, Class<?> c, Type type, Annotation[] annotations, MediaType media, MultivaluedMap<String,Object> args, OutputStream out)
                     throws IOException, WebApplicationException {
         out.write(ua.toString().getBytes());
     }
-    
+
 }

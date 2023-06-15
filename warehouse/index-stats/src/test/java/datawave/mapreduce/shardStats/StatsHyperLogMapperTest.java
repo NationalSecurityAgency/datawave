@@ -27,35 +27,35 @@ import static datawave.mapreduce.shardStats.StatsInit.TEST_TABLE;
 
 public class StatsHyperLogMapperTest {
     private static final Logger log = Logger.getLogger(StatsHyperLogMapperTest.class);
-    
+
     static {
         Logger.getLogger(StatsHyperLogMapper.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsHyperLogMapperTest.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsTestData.class).setLevel(Level.DEBUG);
     }
-    
+
     @Test
     public void testOneValue() throws IOException, InterruptedException {
         log.info("-----  testOneValue  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno);
         runDriver(testEntries);
     }
-    
+
     @Test
     public void testDuplicateInputValues() throws IOException, InterruptedException {
         log.info("-----  testDuplicateInputValues  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno, StatsTestData.FOne_VUno);
         runDriver(testEntries);
     }
-    
+
     @Test
     public void testMultiValues() throws IOException, InterruptedException {
         log.info("-----  testMultiValues  ------");
         List<StatsTestData> testEntries = Arrays.asList(StatsTestData.FOne_VUno, StatsTestData.FTwo_VUno_T2);
         runDriver(testEntries);
     }
-    
+
     @Test
     public void testMultiValuesWithDups() throws IOException, InterruptedException {
         log.info("-----  testMultiValuesWithDups  ------");
@@ -63,7 +63,7 @@ public class StatsHyperLogMapperTest {
                         StatsTestData.FTwo_VUno_T2);
         runDriver(testEntries);
     }
-    
+
     @Test
     public void testAllValuesWithDups() throws IOException, InterruptedException {
         log.info("-----  testAllValuesWithDups  ------");
@@ -75,13 +75,13 @@ public class StatsHyperLogMapperTest {
         }
         runDriver(testEntries);
     }
-    
+
     // =====================================
     // private methods
     private void runDriver(List<StatsTestData> entries) throws IOException, InterruptedException {
         final Mapper<Key,Value,BulkIngestKey,Value> mapper = new StatsHyperLogMapper();
         final MockMapDriver<Key,Value,BulkIngestKey,Value> driver = new MockMapDriver(mapper);
-        
+
         // set output table name
         Configuration conf = driver.getConfiguration();
         conf.set(StatsJob.OUTPUT_TABLE_NAME, TEST_TABLE);
@@ -101,7 +101,7 @@ public class StatsHyperLogMapperTest {
         conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, url.getPath());
         conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
         conf.set(FileSystem.FS_DEFAULT_NAME_KEY, URI.create("file:///").toString());
-        
+
         log.debug("=====  MAPPER INPUT  =====");
         // generate input and output entries
         List<Key> inputKeys = StatsTestData.generateMapperInput(entries);
@@ -109,7 +109,7 @@ public class StatsHyperLogMapperTest {
             log.debug("key(" + key + ")");
             driver.addInput(key, EMPTY_VALUE);
         }
-        
+
         log.debug("=====  EXPECTED MAPPER OUTPUT  =====");
         Map<BulkIngestKey,Value> output = StatsTestData.generateMapOutput(entries);
         Map<BulkIngestKey,StatsHyperLogSummary> summary = new HashMap<>();
@@ -117,17 +117,17 @@ public class StatsHyperLogMapperTest {
             StatsHyperLogSummary stats = new StatsHyperLogSummary(entry.getValue());
             summary.put(entry.getKey(), stats);
         }
-        
+
         // run test
         List<MRPair<BulkIngestKey,Value>> results = driver.run();
         Assert.assertEquals("results size does not match expected", output.size(), results.size());
-        
+
         for (MRPair<BulkIngestKey,Value> entry : results) {
             BulkIngestKey rKey = entry.key;
-            
+
             Key k = rKey.getKey();
             k.setTimestamp(0);
-            
+
             // timestamp has been altered - keys will not have same hashcode
             // find output key
             BulkIngestKey oKey = null;
@@ -142,7 +142,7 @@ public class StatsHyperLogMapperTest {
             StatsHyperLogSummary stats = new StatsHyperLogSummary(rVal);
             log.debug("key(" + oKey.getKey() + ") value(" + stats + ")");
             Assert.assertEquals("key(" + oKey.getKey() + ")", summary.get(oKey), stats);
-            
+
             // for small sample size cardinality should math real value
             Assert.assertEquals(stats.getUniqueCount(), stats.getHyperLogPlus().cardinality());
         }

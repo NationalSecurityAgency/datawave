@@ -11,10 +11,10 @@ import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import org.apache.log4j.Logger;
 
 public class DatawaveSelectorExtractor implements SelectorExtractor {
-    
+
     private static final Logger log = Logger.getLogger(DatawaveSelectorExtractor.class);
     private LuceneToJexlQueryParser luceneToJexlQueryParser = new LuceneToJexlQueryParser();
-    
+
     @Override
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
         List<String> selectorList = new ArrayList<>();
@@ -29,7 +29,7 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
                 String jexlQuery = node.getOriginalQuery();
                 jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
             }
-            
+
             if (jexlScript != null) {
                 List<ASTEQNode> eqNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
                 for (ASTEQNode n : eqNodes) {
@@ -44,7 +44,7 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
         }
         return selectorList;
     }
-    
+
     public void setLuceneToJexlQueryParser(LuceneToJexlQueryParser luceneToJexlQueryParser) {
         this.luceneToJexlQueryParser = luceneToJexlQueryParser;
     }

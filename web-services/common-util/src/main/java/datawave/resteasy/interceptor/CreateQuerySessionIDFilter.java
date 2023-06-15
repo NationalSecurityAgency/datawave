@@ -24,13 +24,13 @@ import java.util.UUID;
 public class CreateQuerySessionIDFilter implements ContainerResponseFilter {
     private final Logger log = Logger.getLogger(CreateQuerySessionIDFilter.class);
     public static final ThreadLocal<String> QUERY_ID = new ThreadLocal<>();
-    
+
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
         ResourceMethodInvoker method = (ResourceMethodInvoker) request.getProperty(ResourceMethodInvoker.class.getName());
-        
+
         GenerateQuerySessionId annotation = FindAnnotation.findAnnotation(method.getMethodAnnotations(), GenerateQuerySessionId.class);
-        
+
         String path = annotation.cookieBasePath();
         String id = "";
         String cookieValue = generateCookieValue();
@@ -43,7 +43,7 @@ public class CreateQuerySessionIDFilter implements ContainerResponseFilter {
                 setCookie = false;
                 QUERY_ID.set(null);
                 break;
-            
+
             default:
                 if (StringUtils.isEmpty(QUERY_ID.get())) {
                     log.error(method.getResourceClass() + "." + method.getMethod().getName() + " did not set QUERY_ID threadlocal.");
@@ -53,13 +53,13 @@ public class CreateQuerySessionIDFilter implements ContainerResponseFilter {
                 }
                 break;
         }
-        
+
         if (setCookie) {
             response.getHeaders().add(HttpHeaderNames.SET_COOKIE,
                             new NewCookie(Constants.QUERY_COOKIE_NAME, cookieValue, path + id, null, null, NewCookie.DEFAULT_MAX_AGE, false));
         }
     }
-    
+
     public static String generateCookieValue() {
         return Integer.toString(UUID.randomUUID().hashCode() & Integer.MAX_VALUE);
     }

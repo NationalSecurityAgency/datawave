@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
  * </ul>
  */
 public class TermFrequencyKey implements KeyParser {
-    
+
     // CQ partitions
     private String datatype;
     private String uid;
@@ -25,16 +25,16 @@ public class TermFrequencyKey implements KeyParser {
     private String value;
     private String field;
     private String uidAndValue;
-    
+
     private ByteSequence cq;
-    
+
     private int firstNull;
     private int secondNull;
     private int thirdNull;
-    
+
     private Key key;
     private static final Logger log = Logger.getLogger(TermFrequencyKey.class);
-    
+
     @Override
     public void parse(Key k) {
         if (this.key != null && this.key.equals(k)) {
@@ -46,37 +46,37 @@ public class TermFrequencyKey implements KeyParser {
             this.key = k;
         }
     }
-    
+
     @Override
     public void clearState() {
         this.key = null;
-        
+
         this.datatype = null;
         this.uid = null;
         this.rootUid = null;
         this.value = null;
         this.field = null;
-        
+
         this.uidAndValue = null;
         this.cq = null;
-        
+
         this.firstNull = -1;
         this.secondNull = -1;
         this.thirdNull = -1;
     }
-    
+
     /**
      * Iterate to find the split points
      */
     public void traverseColumnQualifier() {
-        
+
         // bail out if the backing key is null, or if any split point was found
         if (key == null || firstNull != -1 || secondNull != -1 || thirdNull != -1) {
             return;
         }
-        
+
         this.cq = key.getColumnQualifierData();
-        
+
         // Find all possible split points
         for (int i = 0; i < cq.length(); i++) {
             if (cq.byteAt(i) == 0x00) {
@@ -88,7 +88,7 @@ public class TermFrequencyKey implements KeyParser {
                 }
             }
         }
-        
+
         // find third null via reverse iteration
         for (int i = cq.length() - 1; i >= 0; i--) {
             if (cq.byteAt(i) == 0x00) {
@@ -97,12 +97,12 @@ public class TermFrequencyKey implements KeyParser {
             }
         }
     }
-    
+
     @Override
     public String getDatatype() {
         if (datatype == null) {
             traverseColumnQualifier();
-            
+
             if (firstNull != -1 && cq != null) {
                 datatype = cq.subSequence(0, firstNull).toString();
             } else {
@@ -111,12 +111,12 @@ public class TermFrequencyKey implements KeyParser {
         }
         return datatype;
     }
-    
+
     @Override
     public String getUid() {
         if (uid == null) {
             traverseColumnQualifier();
-            
+
             if (firstNull != -1 && secondNull != -1 && cq != null) {
                 uid = cq.subSequence(firstNull + 1, secondNull).toString();
             } else {
@@ -125,29 +125,29 @@ public class TermFrequencyKey implements KeyParser {
         }
         return uid;
     }
-    
+
     @Override
     public String getRootUid() {
         if (rootUid == null) {
-            
+
             if (uid == null) {
                 getUid();
             }
-            
+
             if (uid == null) {
                 throw new IllegalArgumentException("Failed to parse root UID from tf key");
             }
-            
+
             rootUid = TLD.getRootUid(uid);
         }
         return rootUid;
     }
-    
+
     @Override
     public String getValue() {
         if (value == null) {
             traverseColumnQualifier();
-            
+
             if (secondNull != -1 && thirdNull != -1 && cq != null) {
                 value = cq.subSequence(secondNull + 1, thirdNull).toString();
             } else {
@@ -156,12 +156,12 @@ public class TermFrequencyKey implements KeyParser {
         }
         return value;
     }
-    
+
     @Override
     public String getField() {
         if (field == null) {
             traverseColumnQualifier();
-            
+
             if (thirdNull != -1 && cq != null) {
                 field = cq.subSequence(thirdNull + 1, cq.length()).toString();
             } else {
@@ -170,7 +170,7 @@ public class TermFrequencyKey implements KeyParser {
         }
         return field;
     }
-    
+
     public String getUidAndValue() {
         // call to isValid is made as part of the getUid and getValue calls
         if (uidAndValue == null && getUid() != null && getValue() != null) {
@@ -178,7 +178,7 @@ public class TermFrequencyKey implements KeyParser {
         }
         return uidAndValue;
     }
-    
+
     /**
      * Get the key
      *

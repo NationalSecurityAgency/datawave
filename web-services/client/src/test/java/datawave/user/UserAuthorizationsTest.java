@@ -12,13 +12,13 @@ public class UserAuthorizationsTest extends ProtobufSerializationTestBase {
     public void setup() {
         super.setUp();
     }
-    
+
     @Test
     public void testFieldConfiguration() {
         String[] expecteds = new String[] {"SCHEMA", "auths", "serialVersionUID"};
         testFieldNames(expecteds, UserAuthorizations.class);
     }
-    
+
     @Test
     public void testSerialization() throws Exception {
         TreeSet<String> auths = new TreeSet<String>();

@@ -14,21 +14,21 @@ import datawave.webservice.result.BaseQueryResponse;
 import org.apache.log4j.Logger;
 
 public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic {
-    
+
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicTransformer.class);
-    
+
     private List<QueryLogicTransformer<I,O>> delegates = null;
-    
+
     public CompositeQueryLogicTransformer(List<QueryLogicTransformer<I,O>> delegates) {
         this.delegates = delegates;
     }
-    
+
     @Override
     public O transform(I input) {
         // The objects put into the pageQueue have already been transformed, so no transformation required here.
         return (O) input;
     }
-    
+
     @Override
     public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
         List<CacheableQueryRow> result = null;
@@ -44,7 +44,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return result;
     }
-    
+
     @Override
     public List<Object> readFromCache(List<CacheableQueryRow> row) {
         List<Object> result = null;
@@ -60,7 +60,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return result;
     }
-    
+
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         Exception lastFailure = null;
@@ -81,5 +81,5 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return null;
     }
-    
+
 }

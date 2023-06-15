@@ -20,77 +20,77 @@ import com.google.common.base.Preconditions;
 
 /**
  * Purpose: Basic Iterable resource. Contains the connector from which we will create the scanners.
- * 
+ *
  * Justification: This class should contain all resources that will be used to identify a given scanner session. The batchScanner can be returned as a
  * BatchScanner resource. ScannerResource is an immutable resource. While we could make them mutable, their purpose is to maintain history of scan sessions so
  * that can do runtime analysis, if desired.
- * 
+ *
  * Design: Is closeable for obvious reasons, is an iterable so that instead of exposing the specific underlying accumulo resource, we return an iterator. While
  * this isn't entirely necessary, it does allow us to better inject test code.
- * 
+ *
  */
 public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
-    
+
     /**
      * Our connector.
      */
     private AccumuloClient client;
-    
+
     public AccumuloResource(final AccumuloClient client) {
         Preconditions.checkNotNull(client);
-        
+
         this.client = client;
     }
-    
+
     public AccumuloResource(final AccumuloResource other) {
         // deep copy
     }
-    
+
     protected AccumuloClient getClient() {
         return client;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.io.Closeable#close()
      */
     @Override
     public void close() throws IOException {
         // nothing to close.
     }
-    
+
     protected void init(final String tableName, final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
         // do nothing.
     }
-    
+
     /**
      * Sets the option on this currently running resource.
-     * 
+     *
      * @param options
      *            options to set
      * @return the resource
      */
     public AccumuloResource setOptions(SessionOptions options) {
-        
+
         return this;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Iterable#iterator()
      */
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         return Collections.emptyIterator();
     }
-    
+
     public static final class ResourceFactory {
-        
+
         /**
          * Initializes a resource after it was delegated.
-         * 
+         *
          * @param clazz
          *            a class
          * @param baseResource
@@ -111,10 +111,10 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
                         final Set<Authorizations> auths, Range currentRange) throws TableNotFoundException {
             return initializeResource(clazz, baseResource, tableName, auths, Collections.singleton(currentRange));
         }
-        
+
         public static <T> AccumuloResource initializeResource(Class<T> clazz, AccumuloResource baseResource, final String tableName,
                         final Set<Authorizations> auths, Collection<Range> currentRange) throws TableNotFoundException {
-            
+
             AccumuloResource newResource = null;
             try {
                 newResource = (AccumuloResource) clazz.getConstructor(AccumuloResource.class).newInstance(baseResource);
@@ -123,10 +123,10 @@ public class AccumuloResource implements Closeable, Iterable<Entry<Key,Value>> {
                             | SecurityException e) {
                 throw new RuntimeException(e);
             }
-            
+
             return newResource;
         }
-        
+
     }
-    
+
 }

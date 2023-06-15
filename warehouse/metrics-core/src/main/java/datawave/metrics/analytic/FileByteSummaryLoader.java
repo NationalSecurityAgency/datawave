@@ -32,22 +32,22 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
 /**
- * 
+ *
  */
 public class FileByteSummaryLoader extends Configured implements Tool {
     private static final Logger log = Logger.getLogger(FileByteSummaryLoader.class);
     private static String defaultVisibility = "PUBLIC";
-    
+
     private static class FileByteMetricsMapper extends Mapper<Key,Value,Key,Value> {
         Text holder = new Text();
-        
+
         /*
          * TODO: Determine whether this entire file should be removed or refactored, as it is currently not in use and its applicability toward general ingest
          * usage patterns is somewhat questionable
          */
-        
+
         private Pattern radixRegex = Pattern.compile("TODO: <PATTERN-PLACEHOLDER>");
-        
+
         @Override
         protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
             key.getRow(holder);
@@ -61,33 +61,33 @@ public class FileByteSummaryLoader extends Configured implements Tool {
                 context.write(makeKey(outRow, "GROOMER_RLABEL_BYTES", m.group(1), defaultVisibility), makeValue(holder.toString()));
             }
         }
-        
+
         private Key makeKey(String row, String cf, String cq, String cv) {
             return new Key(row, cf, cq, cv);
         }
-        
+
         private Value makeValue(String value) {
             return new Value(value.getBytes());
         }
     }
-    
+
     @Override
     public int run(String[] args) throws Exception {
         Configuration conf = JobSetupUtil.configure(args, getConf(), log);
-        
+
         JobSetupUtil.printConfig(getConf(), log);
-        
+
         Job job = new Job(conf);
         Configuration jconf = job.getConfiguration();
         job.setJarByClass(this.getClass());
         job.setJobName("FileByteMetricsSummaries");
-        
+
         try {
             Connections.initTables(conf);
         } catch (AccumuloException | AccumuloSecurityException e) {
             throw new IOException(e);
         }
-        
+
         String inputTable = jconf.get(MetricsConfig.RAW_FILE_INDEX_TABLE, MetricsConfig.DEFAULT_RAW_FILE_INDEX_TABLE);
         String outputTable = jconf.get(MetricsConfig.METRICS_SUMMARY_TABLE, MetricsConfig.DEFAULT_METRICS_SUMMARY_TABLE);
         String userName = jconf.get(MetricsConfig.USER);
@@ -97,11 +97,11 @@ public class FileByteSummaryLoader extends Configured implements Tool {
         Range dayRange = JobSetupUtil.computeTimeRange(jconf, log);
         long delta = Long.parseLong(dayRange.getEndKey().getRow().toString()) - Long.parseLong(dayRange.getStartKey().getRow().toString());
         int numDays = (int) Math.max(1, delta / TimeUnit.DAYS.toMillis(1));
-        
+
         defaultVisibility = jconf.get(MetricsConfig.DEFAULT_VISIBILITY, defaultVisibility);
-        
+
         dayRange = JobSetupUtil.formatReverseSlashedTimeRange(dayRange, log);// convert millisecond epoc timestamp to /YYYY/MM/DD
-        
+
         job.setMapperClass(FileByteMetricsMapper.class);
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
@@ -113,19 +113,19 @@ public class FileByteSummaryLoader extends Configured implements Tool {
         AccumuloInputFormat.setRanges(job, Collections.singletonList(dayRange));
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo
         RowPartitioner.configureJob(job);
-        
+
         // Configure the reducer and output format to write out our metrics
         MetricsDailySummaryReducer.configureJob(job, numDays, jconf.get(MetricsConfig.INSTANCE), jconf.get(MetricsConfig.ZOOKEEPERS), userName, password,
                         outputTable);
-        
+
         job.submit();
         JobSetupUtil.changeJobPriority(job, log);
-        
+
         job.waitForCompletion(true);
-        
+
         return 0;
     }
-    
+
     public static void main(String[] args) {
         try {
             ToolRunner.run(new FileByteSummaryLoader(), args);
@@ -133,5 +133,5 @@ public class FileByteSummaryLoader extends Configured implements Tool {
             e.printStackTrace(); // Called from main()
         }
     }
-    
+
 }

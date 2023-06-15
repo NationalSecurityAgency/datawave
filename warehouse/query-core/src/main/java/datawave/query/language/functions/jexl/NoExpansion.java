@@ -15,11 +15,11 @@ import java.util.List;
  * Note: The exclude is only applied to the fields in the original query. An original field can be expanded into an excluded field.
  */
 public class NoExpansion extends JexlQueryFunction {
-    
+
     public NoExpansion() {
         super("noExpansion", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 1) {
@@ -27,12 +27,12 @@ public class NoExpansion extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new NoExpansion();
     }
-    
+
     @Override
     public String toString() {
         List<String> params = getParameterList();

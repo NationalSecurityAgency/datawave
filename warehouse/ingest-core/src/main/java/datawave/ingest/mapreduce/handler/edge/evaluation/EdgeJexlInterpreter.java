@@ -6,11 +6,11 @@ import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 
 public class EdgeJexlInterpreter extends Interpreter {
-    
+
     public EdgeJexlInterpreter(EdgeJexlEngine edgeJexlEngine, JexlContext context, boolean strictFlag, boolean silentFlag) {
         super(edgeJexlEngine, context, strictFlag, silentFlag);
     }
-    
+
     // we want to avoid short circuiting an OR so we generate all possible edges if they are group aware
     @Override
     public Object visit(ASTOrNode node, Object data) {
@@ -36,5 +36,5 @@ public class EdgeJexlInterpreter extends Interpreter {
         }
         return (matchesL || matchesR);
     }
-    
+
 }

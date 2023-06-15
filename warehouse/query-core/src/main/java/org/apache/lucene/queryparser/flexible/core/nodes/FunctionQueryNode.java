@@ -32,33 +32,33 @@ import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
  * A {@link FieldQueryNode} represents a element that contains field/text tuple
  */
 public class FunctionQueryNode extends QueryNodeImpl {
-    
+
     private static final long serialVersionUID = 3634521145130758265L;
-    
+
     /**
      * The term's text.
      */
     protected CharSequence text;
-    
+
     /**
      * The term's begin position.
      */
     protected int begin;
-    
+
     /**
      * The term's end position.
      */
     protected int end;
-    
+
     /**
      * The term's position increment.
      */
     protected int positionIncrement;
-    
+
     protected String function;
-    
+
     protected List<String> parameterList = new ArrayList<>();
-    
+
     /**
      * @param begin
      *            - position in the query string
@@ -74,14 +74,14 @@ public class FunctionQueryNode extends QueryNodeImpl {
         int openParen = s.indexOf("(");
         int closeParen = s.lastIndexOf(")");
         this.function = s.substring(1, openParen);
-        
+
         Character endQuote = null;
         Character beginQuote = null;
         boolean paramStarted = false;
         UnescapedCharSequence chars = (UnescapedCharSequence) text;
         int currArgStart = openParen + 1;
         for (int x = openParen + 1; x < closeParen; x++) {
-            
+
             char c = chars.charAt(x);
             if (paramStarted == false) {
                 if (Character.isWhitespace(c) == false) {
@@ -103,13 +103,13 @@ public class FunctionQueryNode extends QueryNodeImpl {
                                         + "], expecting ',' or ')'");
                     }
                 }
-                
+
                 if (beginQuote != null && Character.valueOf(c).equals(beginQuote) && chars.wasEscaped(x) == false) {
                     endQuote = beginQuote;
                     beginQuote = null;
                 }
             }
-            
+
             String seq = null;
             if (c == ',' && chars.wasEscaped(x) == false && beginQuote == null) {
                 UnescapedCharSequence unescapedSeq = (UnescapedCharSequence) chars.subSequence(currArgStart, x);
@@ -134,13 +134,13 @@ public class FunctionQueryNode extends QueryNodeImpl {
                     if (beginQuote != null) {
                         throw new ParseException(new MessageImpl("Reached end of parameter list " + text + " looking for matching " + beginQuote));
                     }
-                    
+
                     if (endQuote == '\'') {
                         seq = toStringEscaped(unescapedSeq, new char[] {'"', '(', ')', ',', '\\'}).toString().trim();
                     } else {
                         seq = toStringEscaped(unescapedSeq, new char[] {'\'', '(', ')', ',', '\\'}).toString().trim();
                     }
-                    
+
                     int start = seq.indexOf(endQuote);
                     int stop = seq.lastIndexOf(endQuote);
                     seq = seq.substring(start + 1, stop);
@@ -152,13 +152,13 @@ public class FunctionQueryNode extends QueryNodeImpl {
                 currArgStart = x + 1;
             }
         }
-        
+
         this.begin = begin;
         this.end = end;
         this.setLeaf(true);
-        
+
     }
-    
+
     private String toStringEscaped(UnescapedCharSequence seq, char[] enabledChars) {
         StringBuilder result = new StringBuilder();
         for (int i = 0; i < seq.length(); i++) {
@@ -168,69 +168,69 @@ public class FunctionQueryNode extends QueryNodeImpl {
                     break;
                 }
             }
-            
+
             result.append(seq.charAt(i));
         }
         return result.toString();
     }
-    
+
     public String getFunction() {
         return function;
     }
-    
+
     public List<String> getParameterList() {
         return parameterList;
     }
-    
+
     protected CharSequence getTermEscaped(EscapeQuerySyntax escaper) {
         return escaper.escape(this.text, Locale.getDefault(), Type.NORMAL);
     }
-    
+
     protected CharSequence getTermEscapeQuoted(EscapeQuerySyntax escaper) {
         return escaper.escape(this.text, Locale.getDefault(), Type.STRING);
     }
-    
+
     public CharSequence toQueryString(EscapeQuerySyntax escaper) {
         return getTermEscaped(escaper);
     }
-    
+
     @Override
     public String toString() {
         return "<function start='" + this.begin + "' end='" + this.end + "' text='" + this.text + "'/>";
     }
-    
+
     public int getBegin() {
         return this.begin;
     }
-    
+
     public void setBegin(int begin) {
         this.begin = begin;
     }
-    
+
     public int getEnd() {
         return this.end;
     }
-    
+
     public void setEnd(int end) {
         this.end = end;
     }
-    
+
     public int getPositionIncrement() {
         return this.positionIncrement;
     }
-    
+
     public void setPositionIncrement(int pi) {
         this.positionIncrement = pi;
     }
-    
+
     @Override
     public FunctionQueryNode cloneTree() throws CloneNotSupportedException {
         FunctionQueryNode fqn = (FunctionQueryNode) super.cloneTree();
         fqn.begin = this.begin;
         fqn.end = this.end;
         fqn.positionIncrement = this.positionIncrement;
-        
+
         return fqn;
     }
-    
+
 }

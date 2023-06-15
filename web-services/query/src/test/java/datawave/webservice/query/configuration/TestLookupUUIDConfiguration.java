@@ -15,7 +15,7 @@ import static org.junit.Assert.assertNotNull;
 
 @RunWith(PowerMockRunner.class)
 public class TestLookupUUIDConfiguration {
-    
+
     @Test
     public void testSimpleCase() {
         // Run the test
@@ -23,7 +23,7 @@ public class TestLookupUUIDConfiguration {
         subject.setBeginDate(SimpleDateFormat.getDateInstance().format(new Date()));
         subject.setColumnVisibility("A&B");
         subject.setUuidTypes(Arrays.asList(new UUIDType()));
-        
+
         // Verify results
         assertNotNull("Test subject should not be null", subject);
         assertNotNull("Begin date should not be null", subject.getBeginDate());

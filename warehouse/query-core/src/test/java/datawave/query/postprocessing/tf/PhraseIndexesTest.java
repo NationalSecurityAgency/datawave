@@ -10,10 +10,10 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class PhraseIndexesTest {
-    
+
     private static final String EVENT_ID_1 = "shard1\u0000dt\u0000uid1";
     private static final String EVENT_ID_2 = "shard2\u0000dt\u0000uid2";
-    
+
     /**
      * Verify formatting an empty {@link PhraseIndexes} returns an empty string.
      */
@@ -21,7 +21,7 @@ public class PhraseIndexesTest {
     public void testEmptyPhraseOffsetsToString() {
         assertEquals("", new PhraseIndexes().toString());
     }
-    
+
     /**
      * Verify formatting a non-empty {@link PhraseIndexes} to a string.
      */
@@ -32,10 +32,10 @@ public class PhraseIndexesTest {
         phraseIndexes.addIndexTriplet("BODY", EVENT_ID_2, 10, 11);
         phraseIndexes.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
         phraseIndexes.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
-        
+
         assertEquals("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2 + ",12,17", phraseIndexes.toString());
     }
-    
+
     /**
      * Verify offsets are ordered correctly.
      */
@@ -46,10 +46,10 @@ public class PhraseIndexesTest {
         phraseIndexes.addIndexTriplet("BODY", EVENT_ID_2, 11, 10);
         phraseIndexes.addIndexTriplet("CONTENT", EVENT_ID_1, 4, 3);
         phraseIndexes.addIndexTriplet("CONTENT", EVENT_ID_2, 17, 12);
-        
+
         assertEquals("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2 + ",12,17", phraseIndexes.toString());
     }
-    
+
     /**
      * Verify that {@link PhraseIndexes#from(String)} returns null when given a null input.
      */
@@ -57,7 +57,7 @@ public class PhraseIndexesTest {
     public void testParsingFromNullString() {
         assertNull(PhraseIndexes.from(null));
     }
-    
+
     /**
      * Verify that {@link PhraseIndexes#from(String)} returns a non-null, empty {@link PhraseIndexes} from a blank string.
      */
@@ -65,7 +65,7 @@ public class PhraseIndexesTest {
     public void testParsingFromEmpytString() {
         assertTrue(PhraseIndexes.from("   ").isEmpty());
     }
-    
+
     /**
      * Verify that {@link PhraseIndexes#from(String)} correctly parses a non-blank string.
      */
@@ -76,12 +76,12 @@ public class PhraseIndexesTest {
         expected.addIndexTriplet("BODY", EVENT_ID_2, 10, 11);
         expected.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
         expected.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
-        
-        PhraseIndexes actual = PhraseIndexes.from("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2
-                        + ",12,17");
+
+        PhraseIndexes actual = PhraseIndexes
+                        .from("BODY:" + EVENT_ID_1 + ",1,3:" + EVENT_ID_2 + ",10,11/CONTENT:" + EVENT_ID_1 + ",3,4:" + EVENT_ID_2 + ",12,17");
         assertEquals(expected, actual);
     }
-    
+
     @Test
     public void testOverlappingPhraseOffsets() {
         PhraseIndexes expected = new PhraseIndexes();
@@ -89,7 +89,7 @@ public class PhraseIndexesTest {
         expected.addIndexTriplet("BODY", EVENT_ID_2, 10, 11);
         expected.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
         expected.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
-        
+
         PhraseIndexes actual = new PhraseIndexes();
         actual.addIndexTriplet("BODY", EVENT_ID_1, 1, 2);
         actual.addIndexTriplet("BODY", EVENT_ID_1, 2, 3);
@@ -101,10 +101,10 @@ public class PhraseIndexesTest {
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 14, 15);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 15, 17);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 13, 14);
-        
+
         assertEquals(expected, actual);
     }
-    
+
     @Test
     public void testOverlap() {
         PhraseIndexes actual = new PhraseIndexes();
@@ -114,7 +114,7 @@ public class PhraseIndexesTest {
         actual.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 19, 20);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
-        
+
         assertEquals(null, actual.getOverlap("BODY", EVENT_ID_1, new TermWeightPosition.Builder().setOffset(4).build()));
         assertEquals(null, actual.getOverlap("BODY", EVENT_ID_1, new TermWeightPosition.Builder().setOffset(4).build()));
         assertEquals(new Triplet(EVENT_ID_1, 1, 3),
@@ -124,7 +124,7 @@ public class PhraseIndexesTest {
         assertEquals(new Triplet(EVENT_ID_2, 12, 17),
                         actual.getOverlap("CONTENT", EVENT_ID_2, new TermWeightPosition.Builder().setOffset(21).setPrevSkips(4).build()));
     }
-    
+
     @Test
     public void testGetOverlappingPosition() {
         PhraseIndexes actual = new PhraseIndexes();
@@ -134,7 +134,7 @@ public class PhraseIndexesTest {
         actual.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 19, 20);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
-        
+
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
         builder.addTermOffset(4);
         builder.addPrevSkips(1);
@@ -152,7 +152,7 @@ public class PhraseIndexesTest {
         builder.addPrevSkips(0);
         builder.addScore(1);
         TermWeight.Info twInfo = builder.build();
-        
+
         // position 3,4 (4 prevSkip 1) overlaps 1,3 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(4).setPrevSkips(1).build(), actual.getOverlappingPosition("BODY", EVENT_ID_1, twInfo));
         // no overlaps with 10,11 phrase
@@ -162,7 +162,7 @@ public class PhraseIndexesTest {
         // position 18,21 (21 prevSkip 3) overlaps 19,20 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(21).setPrevSkips(3).build(), actual.getOverlappingPosition("CONTENT", EVENT_ID_2, twInfo));
     }
-    
+
     @Test
     public void testGetOverlappingPositionBruteForce() {
         PhraseIndexes actual = new PhraseIndexes();
@@ -172,7 +172,7 @@ public class PhraseIndexesTest {
         actual.addIndexTriplet("CONTENT", EVENT_ID_1, 3, 4);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 19, 20);
         actual.addIndexTriplet("CONTENT", EVENT_ID_2, 12, 17);
-        
+
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
         builder.addTermOffset(9);
         builder.addPrevSkips(0);
@@ -190,7 +190,7 @@ public class PhraseIndexesTest {
         builder.addPrevSkips(3);
         builder.addScore(1);
         TermWeight.Info twInfo = builder.build();
-        
+
         // position 3,4 (4 prevSkip 1) overlaps 1,3 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(4).setPrevSkips(1).build(), actual.getOverlappingPosition("BODY", EVENT_ID_1, twInfo));
         // no overlaps with 10,11 phrase
@@ -200,5 +200,5 @@ public class PhraseIndexesTest {
         // position 18,21 (21 prevSkip 3) overlaps 19,20 phrase
         assertEquals(new TermWeightPosition.Builder().setOffset(21).setPrevSkips(3).build(), actual.getOverlappingPosition("CONTENT", EVENT_ID_2, twInfo));
     }
-    
+
 }

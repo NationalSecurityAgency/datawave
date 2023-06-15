@@ -20,7 +20,7 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 public class MultimapSerializer implements JsonSerializer<Multimap<String,String>>, JsonDeserializer<Multimap<String,String>> {
-    
+
     @Override
     public Multimap<String,String> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         ArrayListMultimap<String,String> mm = ArrayListMultimap.create();
@@ -35,7 +35,7 @@ public class MultimapSerializer implements JsonSerializer<Multimap<String,String
         }
         return mm;
     }
-    
+
     @Override
     public JsonElement serialize(Multimap<String,String> src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject mm = new JsonObject();
@@ -48,5 +48,5 @@ public class MultimapSerializer implements JsonSerializer<Multimap<String,String
         }
         return mm;
     }
-    
+
 }

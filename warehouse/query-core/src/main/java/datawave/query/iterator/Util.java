@@ -13,24 +13,24 @@ import com.google.common.collect.TreeMultimap;
 
 /**
  * Provides utility methods for text matching and multimaps that need to be referenced by the iterators.
- * 
+ *
  */
 @SuppressWarnings("rawtypes")
 public class Util {
     public interface Transformer<T> {
         T transform(T t);
     }
-    
+
     private static final Transformer<?> keyTransformer;
-    
+
     private static final Comparator<Comparable> comparableComparator;
-    
+
     private static final Comparator<?> hashComparator;
-    
+
     private static final Comparator<?> nestedIteratorComparator;
-    
+
     private static final TreeMultimap EMPTY;
-    
+
     static {
         keyTransformer = (Transformer<Object>) o -> {
             if (o instanceof Key) {
@@ -39,22 +39,22 @@ public class Util {
             }
             return o;
         };
-        
+
         comparableComparator = (o1, o2) -> {
             if (o1 instanceof Key) {
                 return ((Key) o1).compareTo((Key) o2, PartialKey.ROW_COLFAM);
             }
             return o1.compareTo(o2);
         };
-        
+
         hashComparator = (Comparator<Object>) Comparator.comparingInt(Object::hashCode);
-        
+
         nestedIteratorComparator = (Comparator<NestedIterator>) (o1, o2) -> {
-            
+
             // reversed order to sort bigger documents first
             Document doc1 = o1.document();
             Document doc2 = o2.document();
-            
+
             if (o1 == o2) {
                 return 0;
             } else if (doc1 == null && doc2 == null) {
@@ -71,69 +71,69 @@ public class Util {
                 }
             }
         };
-        
+
         EMPTY = TreeMultimap.create();
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <T extends Comparable> Transformer<T> keyTransformer() {
         return (Transformer<T>) keyTransformer;
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <T extends Comparable> Comparator<T> keyComparator() {
         return (Comparator<T>) comparableComparator;
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <T> Comparator<T> hashComparator() {
         return (Comparator<T>) hashComparator;
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <T> Comparator<T> nestedIteratorComparator() {
         return (Comparator<T>) nestedIteratorComparator;
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <K,V> TreeMultimap<K,V> getEmpty() {
         return (TreeMultimap<K,V>) EMPTY;
     }
-    
+
     public static Text minPrefix(Text root) {
         return appendSuffix(root, (byte) 0x00);
     }
-    
+
     public static Text maxPrefix(Text root) {
         return appendSuffix(root, (byte) 0x01);
     }
-    
+
     public static Text appendText(Text root, Text suffix) {
         if (null == suffix || 0 == suffix.getLength()) {
             return root;
         }
-        
+
         root.append(suffix.getBytes(), 0, suffix.getLength());
         return root;
     }
-    
+
     public static Text appendSuffix(Text root, byte suffix) {
         byte[] bytes = new byte[root.getLength() + 1];
         System.arraycopy(root.getBytes(), 0, bytes, 0, root.getLength());
         bytes[bytes.length - 1] = suffix;
         return new Text(bytes);
     }
-    
+
     public static int prefixDiff(Text prefix, Text text) {
         int textEnd = (prefix.getLength() > text.getLength()) ? text.getLength() : prefix.getLength();
-        
+
         return WritableComparator.compareBytes(prefix.getBytes(), 0, prefix.getLength(), text.getBytes(), 0, textEnd);
     }
-    
+
     public static boolean prefixMatches(Text prefix, Text text) {
         return prefixDiff(prefix, text) == 0;
     }
-    
+
     public static <T> Document buildNewDocument(Iterable<? extends NestedIterator<T>> iterators) {
         Document d = new Document();
         for (NestedIterator<T> iterator : iterators) {
@@ -141,5 +141,5 @@ public class Util {
         }
         return d;
     }
-    
+
 }

@@ -14,12 +14,12 @@ import java.util.Set;
  * Defines the methods that are required to dynamically resolve and validate query results.
  */
 public interface RawDataManager {
-    
+
     /**
      * Provide the {@link BaseShardIdRange} values as the default shard date range.
      */
     ShardIdValues SHARD_ID_VALUES = new ShardIdValues(BaseShardIdRange.getShardDates());
-    
+
     // and/or logical strings for use by unit tests
     String AND_OP = " and ";
     String OR_OP = " or ";
@@ -35,18 +35,18 @@ public interface RawDataManager {
     String NE_OP = " != ";
     String RE_OP = " =~ ";
     String RN_OP = " !~ ";
-    
+
     // string and char value for multivalue fields
     String MULTIVALUE_SEP = ";";
     char MULTIVALUE_SEP_CHAR = ';';
-    
+
     /**
      * Returns the field headers for this data manager.
      *
      * @return headers strings
      */
     List<String> getHeaders();
-    
+
     /**
      * Loads the contents of a raw file into the a set of POJOs.
      *
@@ -60,7 +60,7 @@ public interface RawDataManager {
      *             error processing ingest file
      */
     void addTestData(URI file, String datatype, Set<String> indexes) throws IOException;
-    
+
     /**
      * Retrieves the all of the raw data for the date range
      *
@@ -71,7 +71,7 @@ public interface RawDataManager {
      * @return raw data entries
      */
     Iterator<Map<String,String>> rangeData(Date start, Date end);
-    
+
     /**
      * Retrieves the key field for all of the entries.
      *
@@ -80,7 +80,7 @@ public interface RawDataManager {
      * @return key field value for all entries
      */
     Set<String> getKeys(Set<Map<String,String>> entries);
-    
+
     /**
      * Retrieves the normalizer class for a field name/.
      *
@@ -89,7 +89,7 @@ public interface RawDataManager {
      * @return normalizer for valid field name
      */
     Normalizer getNormalizer(String field);
-    
+
     /**
      * Converts part of a query using ANY_FIELD into an equivalent string that includes all of the indexed fields. This is performed before the JEXL expression
      * is created. It appears to be more complicated to modify the Jexl script after it has been created. Equivalent to {@link #convertAnyField(String, String)}
@@ -100,7 +100,7 @@ public interface RawDataManager {
      * @return execution JEXL query compatible to ANY_FIELD execution
      */
     String convertAnyField(String phrase);
-    
+
     /**
      * Converts part of a query using ANY_FIELD into an equivalent string that includes all of the indexed fields. This is performed before the JEXL expression
      * is created. It appears to be more complicated to modify the Jexl script after it has been created.
@@ -112,14 +112,14 @@ public interface RawDataManager {
      * @return execution JEXL query compatible to ANY_FIELD execution
      */
     String convertAnyField(String phrase, String op);
-    
+
     /**
      * Creates an array that contains a random start and end date based upon the shard dates specified for the raw data.
      *
      * @return [0] => start date; [1] => end date
      */
     Date[] getRandomStartEndDate();
-    
+
     /**
      * Creates an array that contains the start and end date based upon the shard dates specified for the raw data.
      *

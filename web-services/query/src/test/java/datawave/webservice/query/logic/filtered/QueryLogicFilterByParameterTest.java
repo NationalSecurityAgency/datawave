@@ -20,7 +20,7 @@ public class QueryLogicFilterByParameterTest {
         query.addParameter("foo", "true");
         assertTrue(filter.canRunQuery(query, null));
     }
-    
+
     @Test
     public void testValue() {
         QueryLogicFilterByParameter filter = new QueryLogicFilterByParameter();
@@ -37,7 +37,7 @@ public class QueryLogicFilterByParameterTest {
         query.addParameter("foo", "bar");
         assertTrue(filter.canRunQuery(query, null));
     }
-    
+
     @Test
     public void testNegates() {
         QueryLogicFilterByParameter filter = new QueryLogicFilterByParameter();
@@ -55,5 +55,5 @@ public class QueryLogicFilterByParameterTest {
         query.addParameter("foo", "bar");
         assertFalse(filter.canRunQuery(query, null));
     }
-    
+
 }

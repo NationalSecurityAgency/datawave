@@ -36,10 +36,10 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * created by the original QueryPropertyMarker instance, as the marked node. Children of the marker node will not be identified as marked.
  */
 public class QueryPropertyMarkerVisitor extends BaseVisitor {
-    
+
     private static final Map<String,Class<? extends QueryPropertyMarker>> markers = new HashMap<>();
     private static final Set<String> registeredMarkers = new HashSet<>();
-    
+
     /**
      * Register a query property marker type so that it may be identified by {@link QueryPropertyMarkerVisitor}.
      *
@@ -53,10 +53,10 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
      * @throws IllegalAccessException
      *             if the marker's label() method cannot be accessed
      */
-    public static boolean registerMarker(Class<? extends QueryPropertyMarker> marker) throws NoSuchMethodException, InvocationTargetException,
-                    IllegalAccessException {
+    public static boolean registerMarker(Class<? extends QueryPropertyMarker> marker)
+                    throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Preconditions.checkNotNull(marker, "Marker class must not be null");
-        
+
         // Check if this marker type has already been registered. This is a safeguard to avoid the reflection steps below if possible.
         if (registeredMarkers.contains(marker.getName())) {
             return false;
@@ -64,26 +64,26 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             // Get the label via reflection by calling the static label() method.
             Method method = marker.getDeclaredMethod("label");
             String label = (String) method.invoke(null);
-            
+
             // Verify the label returned is not null or empty. This will ensure a query marker is not registered without properly overriding the base
             // QueryPropertyMarker.label() method.
             if (label == null || label.isEmpty()) {
                 throw new IllegalArgumentException("label() method must return a unique, non-empty label for type " + marker.getName());
             }
-            
+
             // Verify the label is unique. This will ensure a query marker is not registered with a conflicting label.
             if (markers.containsKey(label)) {
                 Class<? extends QueryPropertyMarker> existingMarker = markers.get(label);
                 throw new IllegalArgumentException(marker.getName() + " has the same label as " + existingMarker.getName() + ", labels must be unique");
             }
-            
+
             // Register the marker.
             markers.put(label, marker);
             registeredMarkers.add(marker.getName());
             return true;
         }
     }
-    
+
     // Register known marker types.
     static {
         try {
@@ -98,7 +98,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             throw new RuntimeException("Failed to register default marker types for " + QueryPropertyMarkerVisitor.class.getName(), e);
         }
     }
-    
+
     /**
      * Examine the specified node to see if it represents a query property marker, and return an {@link Instance} with the marker's type and source node. If the
      * specified node is not a marker type, an empty {@link Instance} will be returned.
@@ -117,13 +117,13 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         }
         return Instance.of();
     }
-    
+
     private Class<? extends QueryPropertyMarker> marker;
     private List<JexlNode> sourceNodes;
     private boolean visitedFirstAndNode;
-    
+
     private QueryPropertyMarkerVisitor() {}
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         // Do not search for a marker in any assignment nodes that are not within the first AND node.
@@ -135,22 +135,22 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         // Do not descend into children of OR nodes.
         return null;
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // Only the first AND node is a potential marker candidate.
         if (!visitedFirstAndNode) {
             visitedFirstAndNode = true;
-            
+
             // Get the flattened children.
             List<JexlNode> children = getFlattenedChildren(node);
-            
+
             // Examine each child for a marker identifier.
             List<JexlNode> siblings = new ArrayList<>();
             for (JexlNode child : children) {
@@ -162,17 +162,17 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                         continue;
                     }
                 }
-                
+
                 siblings.add(JexlASTHelper.dereference(child));
             }
-            
+
             // If a marker was found, assign the source nodes.
             if (markerFound())
                 sourceNodes = siblings;
         }
         return null;
     }
-    
+
     /**
      * Return the flattened children of the specified node. Nested {@link ASTAndNode} nodes are ignored, and their children are considered direct children for
      * the parent {@link ASTAndNode} node.
@@ -198,7 +198,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         // Ensure we return the children in their original order.
         return children.size() == 1 ? children : Lists.reverse(children);
     }
-    
+
     /**
      * Return whether a {@link QueryPropertyMarker} has been found yet.
      *

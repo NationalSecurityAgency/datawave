@@ -15,9 +15,9 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ExcerptFieldsTest {
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     /**
      * Verify that {@link ExcerptFields#isEmpty()} returns true for a {@link ExcerptFields} with no fields.
      */
@@ -25,7 +25,7 @@ public class ExcerptFieldsTest {
     public void testIsEmpty() {
         assertTrue(new ExcerptFields().isEmpty());
     }
-    
+
     /**
      * Verify that {@link ExcerptFields#isEmpty()} returns false for a {@link ExcerptFields} with fields.
      */
@@ -35,7 +35,7 @@ public class ExcerptFieldsTest {
         excerptFields.put("CONTENT", 10);
         assertFalse(excerptFields.isEmpty());
     }
-    
+
     /**
      * Verify formatting an empty {@link ExcerptFields} returns an empty string.
      */
@@ -43,7 +43,7 @@ public class ExcerptFieldsTest {
     public void testEmptyExcerptFieldsToString() {
         assertEquals("", new ExcerptFields().toString());
     }
-    
+
     /**
      * Verify formatting a non-empty {@link ExcerptFields} to a string.
      */
@@ -54,7 +54,7 @@ public class ExcerptFieldsTest {
         excerptFields.put("CONTENT", 5);
         assertEquals("BODY/10,CONTENT/5", excerptFields.toString());
     }
-    
+
     /**
      * Verify that {@link ExcerptFields#from(String)} returns null when given a null input.
      */
@@ -62,7 +62,7 @@ public class ExcerptFieldsTest {
     public void testParsingFromNullString() {
         assertNull(ExcerptFields.from(null));
     }
-    
+
     /**
      * Verify that {@link ExcerptFields#from(String)} returns a non-null, empty {@link ExcerptFields} from a blank string.
      */
@@ -70,7 +70,7 @@ public class ExcerptFieldsTest {
     public void testParsingFromEmptyString() {
         assertTrue(ExcerptFields.from("  ").isEmpty());
     }
-    
+
     /**
      * Verify that {@link ExcerptFields#from(String)} correctly parses a non-blank string.
      */
@@ -79,11 +79,11 @@ public class ExcerptFieldsTest {
         ExcerptFields expected = new ExcerptFields();
         expected.put("BODY", 10);
         expected.put("CONTENT", 5);
-        
+
         ExcerptFields actual = ExcerptFields.from("BODY/10,CONTENT/5");
         assertEquals(expected, actual);
     }
-    
+
     /**
      * Verify that when a {@link ExcerptFields} is serialized, it is serialized as the result of {@link ExcerptFields#toString()}
      */
@@ -92,11 +92,11 @@ public class ExcerptFieldsTest {
         ExcerptFields excerptFields = new ExcerptFields();
         excerptFields.put("BODY", 10);
         excerptFields.put("CONTENT", 5);
-        
+
         String json = objectMapper.writeValueAsString(excerptFields);
         assertEquals("\"BODY/10,CONTENT/5\"", json);
     }
-    
+
     /**
      * Verify that a formatted string can be deserialized into a {@link ExcerptFields}.
      */
@@ -105,13 +105,13 @@ public class ExcerptFieldsTest {
         ExcerptFields expected = new ExcerptFields();
         expected.put("BODY", 10);
         expected.put("CONTENT", 5);
-        
+
         String json = "\"BODY/10,CONTENT/5\"";
         ExcerptFields actual = objectMapper.readValue(json, ExcerptFields.class);
-        
+
         assertEquals(expected, actual);
     }
-    
+
     /**
      * Verify that when deconstructing the fields of an {@link ExcerptFields}, that they are replaced correctly.
      */
@@ -121,17 +121,17 @@ public class ExcerptFieldsTest {
         actual.put("$FIELDA", 10);
         actual.put("$FIELDB", 5);
         actual.put("FIELDC", 1);
-        
+
         ExcerptFields expected = new ExcerptFields();
         expected.put("FIELDA", 10);
         expected.put("FIELDB", 5);
         expected.put("FIELDC", 1);
-        
+
         actual.deconstructFields();
-        
+
         assertEquals(expected, actual);
     }
-    
+
     /**
      * Verify that when expanding the fields of a {@link ExcerptFields}, that they are replaced correctly.
      */
@@ -140,19 +140,19 @@ public class ExcerptFieldsTest {
         ExcerptFields actual = new ExcerptFields();
         actual.put("fielda", 10);
         actual.put("fieldc", 1);
-        
+
         ExcerptFields expected = new ExcerptFields();
         expected.put("FIELDA", 10);
         expected.put("FIELDAA", 10);
         expected.put("FIELDBB", 10);
         expected.put("FIELDC", 1);
-        
+
         Multimap<String,String> model = HashMultimap.create();
         model.put("FIELDA", "FIELDAA");
         model.put("FIELDA", "FIELDBB");
-        
+
         actual.expandFields(model);
-        
+
         assertEquals(expected, actual);
     }
 }

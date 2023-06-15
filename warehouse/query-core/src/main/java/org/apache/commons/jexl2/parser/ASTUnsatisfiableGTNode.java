@@ -9,17 +9,17 @@ public class ASTUnsatisfiableGTNode extends ASTGTNode {
     public ASTUnsatisfiableGTNode(int id) {
         super(id);
     }
-    
+
     public ASTUnsatisfiableGTNode(Parser p, int id) {
         super(p, id);
     }
-    
+
     /** Accept the visitor. **/
     @Override
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
-    
+
     public static ASTUnsatisfiableGTNode create() {
         return new ASTUnsatisfiableGTNode(ParserTreeConstants.JJTGTNODE);
     }

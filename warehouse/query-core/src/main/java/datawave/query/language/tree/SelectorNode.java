@@ -8,9 +8,9 @@ import org.apache.log4j.Logger;
 
 public class SelectorNode extends QueryNode {
     private static final Logger log = Logger.getLogger(SelectorNode.class.getName());
-    
+
     private Term query;
-    
+
     public SelectorNode(String query) {
         super(null, null);
         String field = FieldedTerm.parseField(query);
@@ -19,7 +19,7 @@ public class SelectorNode extends QueryNode {
             this.query = new FieldedTerm(query);
         } else {
             int firstWildcardIndex = WildcardFieldedTerm.getFirstWildcardIndex(selector);
-            
+
             if (firstWildcardIndex >= 0) {
                 this.query = new WildcardFieldedTerm(field, selector);
             } else {
@@ -27,14 +27,14 @@ public class SelectorNode extends QueryNode {
             }
         }
     }
-    
+
     public SelectorNode(String field, String selector) {
         super(null, null);
         if (!selector.contains("*") && !selector.contains("?")) {
             this.query = new FieldedTerm(field, selector);
         } else {
             int firstWildcardIndex = WildcardFieldedTerm.getFirstWildcardIndex(selector);
-            
+
             if (firstWildcardIndex >= 0) {
                 this.query = new WildcardFieldedTerm(field, selector);
             } else {
@@ -42,17 +42,17 @@ public class SelectorNode extends QueryNode {
             }
         }
     }
-    
+
     public SelectorNode(FieldedTerm fieldedTerm) {
         super(null, null);
         this.query = fieldedTerm;
     }
-    
+
     @Override
     public String toString() {
         return query.toString().replaceAll("\0", "");
     }
-    
+
     /**
      * Since this node does not have any children, return toString()
      */
@@ -60,21 +60,21 @@ public class SelectorNode extends QueryNode {
     public String getContents() {
         return toString();
     }
-    
+
     @Override
     protected boolean isParentDifferent() {
         return true;
     }
-    
+
     @Override
     public QueryNode clone() {
         return new SelectorNode(query.toString());
     }
-    
+
     public void setQuery(FieldedTerm query) {
         this.query = query;
     }
-    
+
     public Term getQuery() {
         return query;
     }

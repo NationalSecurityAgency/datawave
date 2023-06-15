@@ -32,9 +32,9 @@ import com.google.common.collect.Maps;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class SimpleField extends FieldBase<SimpleField> implements Serializable, Message<SimpleField> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
     @XmlElementWrapper(name = "Markings")
@@ -45,9 +45,9 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
     private String name;
     @XmlElement(name = "Value")
     private TypedValue value;
-    
+
     public SimpleField() {}
-    
+
     public SimpleField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
         super();
         this.name = name;
@@ -56,11 +56,11 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
         this.timestamp = timestamp;
         this.value = new TypedValue(value);
     }
-    
+
     public Long getTimestamp() {
         return timestamp;
     }
-    
+
     public String getValueString() {
         if (value.getValue() instanceof Type<?>) {
             return ((Type<?>) value.getValue()).getDelegate().toString();
@@ -70,23 +70,23 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             return value.getValue().toString();
         }
     }
-    
+
     public TypedValue getTypedValue() {
         return this.value;
     }
-    
+
     public Object getValueOfTypedValue() {
         return (null == value) ? null : value.getValue();
     }
-    
+
     public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
-    
+
     public void setValue(Object value) {
         this.value = new TypedValue(value);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
@@ -102,19 +102,19 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             buf.append("null ]");
         return buf.toString();
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(columnVisibility).append(markings).append(timestamp).append(name).append(value).hashCode();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof SimpleField) {
             SimpleField v = (SimpleField) o;
-            
+
             EqualsBuilder eb = new EqualsBuilder();
-            
+
             eb.append(this.name, v.name);
             eb.append(this.timestamp, v.timestamp);
             eb.append(this.columnVisibility, v.columnVisibility);
@@ -122,72 +122,72 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             eb.append(this.value, v.value);
             return eb.isEquals();
         }
-        
+
         return false;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
-    
+
     private void assureMarkings() {
         if (this.markings == null)
             this.markings = Maps.newHashMap();
     }
-    
+
     public Map<String,String> getMarkings() {
         this.assureMarkings();
         return markings;
     }
-    
+
     public void setMarkings(Map<String,String> markings) {
         this.markings = markings;
     }
-    
+
     public static Schema<SimpleField> getSchema() {
         return SCHEMA;
     }
-    
+
     // @Override
     public Schema<SimpleField> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<Map<String,String>> MAP_SCHEMA = new MapSchema();
-    
+
     @XmlTransient
     private static final Schema<SimpleField> SCHEMA = new Schema<SimpleField>() {
-        
+
         @Override
         public SimpleField newMessage() {
             return new SimpleField();
         }
-        
+
         @Override
         public Class<? super SimpleField> typeClass() {
             return SimpleField.class;
         }
-        
+
         @Override
         public String messageName() {
             return SimpleField.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return SimpleField.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(SimpleField message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, SimpleField message) throws IOException {
             if (message.columnVisibility != null)
@@ -201,7 +201,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
                 output.writeObject(5, message.markings, MAP_SCHEMA, false);
             }
         }
-        
+
         @Override
         public void mergeFrom(Input input, SimpleField message) throws IOException {
             int number;
@@ -230,7 +230,7 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -248,13 +248,13 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         private final HashMap<String,Integer> fieldMap = new HashMap<>();
         {
             fieldMap.put("columnVisibility", 1);
@@ -264,11 +264,11 @@ public class SimpleField extends FieldBase<SimpleField> implements Serializable,
             fieldMap.put("markings", 5);
         }
     };
-    
+
     public String getColumnVisibility() {
         return columnVisibility;
     }
-    
+
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
