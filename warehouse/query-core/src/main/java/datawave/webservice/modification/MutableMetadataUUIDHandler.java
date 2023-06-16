@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
  * INSERT Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -61,7 +61,7 @@ import org.apache.log4j.Logger;
  * DELETE Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -84,7 +84,7 @@ import org.apache.log4j.Logger;
  * UPDATE Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -108,7 +108,7 @@ import org.apache.log4j.Logger;
  * REPLACE Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -131,7 +131,7 @@ import org.apache.log4j.Logger;
  * Example of bulk request:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
