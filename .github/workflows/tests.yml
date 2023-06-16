@@ -130,6 +130,12 @@ jobs:
   compose-build-and-test:
     runs-on: ubuntu-latest
     steps:
+    - name: Free up some space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf $AGENT_TOOLSDIRECTORY
     - name: Checkout Code
       uses: actions/checkout@v3
       with:
@@ -147,12 +153,6 @@ jobs:
           ${{ runner.os }}-maven-build-
           ${{ runner.os }}-maven-format-
           ${{ runner.os }}-maven-
-    - name: Free up some space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /opt/ghc
-        sudo rm -rf /usr/local/share/boost
-        sudo rm -rf $AGENT_TOOLSDIRECTORY
     # Builds the quickstart and microservice docker images and runs a query test
     - name: Docker Compose Query Tests
       run: |
