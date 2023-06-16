@@ -30,6 +30,7 @@ import org.apache.commons.jexl3.parser.ASTNumberLiteral;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.ASTSizeFunction;
 import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.ASTSubNode;
 import org.apache.commons.jexl3.parser.ASTTrueNode;
@@ -595,6 +596,14 @@ public class JexlStringBuildingVisitor extends BaseVisitor {
     public Object visit(ASTUnaryMinusNode node, Object data) {
         StringBuilder sb = (StringBuilder) data;
         sb.append("-");
+        node.childrenAccept(this, sb);
+        return sb;
+    }
+    
+    @Override
+    public Object visit(ASTSizeFunction node, Object data) {
+        StringBuilder sb = (StringBuilder) data;
+        sb.append("size");
         node.childrenAccept(this, sb);
         return sb;
     }
