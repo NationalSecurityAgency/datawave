@@ -12,26 +12,26 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class RangeDefinitionTest {
-    
+
     @Test
     public void docSpecificRangeTest() {
         Range docSpecificRange = new Range(new Key("20190101_0", "dataType\u0000some-doc-id"), false, new Key("20190101_0", "dataType\u0000some-doc-id\u0000"),
                         false);
         assertTrue(RangeDefinition.isDocSpecific(docSpecificRange));
     }
-    
+
     @Test
     public void shardRangeTest() {
         Range shardRange = new Range(new Key("20190101_0"), false, new Key("20190101_0\u0000"), false);
         assertFalse(RangeDefinition.isDocSpecific(shardRange));
     }
-    
+
     @Test
     public void dayRangeTest() {
         Range dayRange = new Range(new Key("20190101_0"), false, new Key("20190101" + Constants.MAX_UNICODE_STRING), false);
         assertFalse(RangeDefinition.isDocSpecific(dayRange));
     }
-    
+
     @Test
     public void allDocSpecificRangeTest() {
         List<Range> ranges = new ArrayList<>();
@@ -42,7 +42,7 @@ public class RangeDefinitionTest {
         ranges.add(new Range(new Key("20190101_4", "dataType\u0000some-doc-id4"), false, new Key("20190101_4", "dataType\u0000some-doc-id4\u0000"), false));
         assertTrue(RangeDefinition.allDocSpecific(ranges));
     }
-    
+
     @Test
     public void allDocSpecificWithDayRangeTest() {
         List<Range> ranges = new ArrayList<>();
@@ -54,7 +54,7 @@ public class RangeDefinitionTest {
         ranges.add(new Range(new Key("20190101_0"), false, new Key("20190101" + Constants.MAX_UNICODE_STRING), false));
         assertFalse(RangeDefinition.allDocSpecific(ranges));
     }
-    
+
     @Test
     public void allDocSpecificWithShardRangeTest() {
         List<Range> ranges = new ArrayList<>();

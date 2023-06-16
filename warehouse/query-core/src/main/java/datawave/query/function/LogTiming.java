@@ -18,12 +18,12 @@ import org.apache.log4j.Logger;
  * Updates the timing information per document
  */
 public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Document>> {
-    
+
     public static final String TIMING_METADATA = "TIMING_METADATA";
     protected QuerySpan spanRunner;
     private static String host = null;
     private static Logger log = Logger.getLogger(QuerySpan.class);
-    
+
     static {
         try {
             host = InetAddress.getLocalHost().getCanonicalHostName();
@@ -31,20 +31,20 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
             log.error(e.getMessage(), e);
         }
     }
-    
+
     public LogTiming(QuerySpan spanRunner) {
         this.spanRunner = spanRunner;
     }
-    
+
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
-        
+
         addTimingMetadata(entry.getValue(), this.spanRunner);
         return entry;
     }
-    
+
     public static void addTimingMetadata(Document document, QuerySpan querySpan) {
-        
+
         if (document != null && querySpan != null) {
             TimingMetadata timingMetadata = new TimingMetadata();
             synchronized (querySpan) {
@@ -57,7 +57,7 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
                 } else {
                     timingMetadata.setYieldCount(0L);
                 }
-                
+
                 long totalStageTimers = querySpan.getStageTimerTotal();
                 // do not report timers that are less than 5% of the total
                 double threshold = totalStageTimers * 0.05;

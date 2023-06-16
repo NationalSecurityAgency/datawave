@@ -20,15 +20,15 @@ import org.apache.log4j.Logger;
 
 /**
  * Description: Accumulo loading mechanism using the guava caches
- * 
+ *
  * Design: Based on Loader, which is further based on the Loader mechanism designed by Google
- * 
+ *
  * Purpose: Enables us to load elements from accumulo using the guava cache
  */
 public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
-    
+
     private static final Logger log = Logger.getLogger(AccumuloLoader.class);
-    
+
     /**
      * Our connector.
      */
@@ -45,31 +45,31 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
      * List of column families to pull
      */
     protected Collection<Text> columnFamilyList;
-    
+
     protected AccumuloLoader(AccumuloClient client, String tableName, Set<Authorizations> auths, Collection<Text> columnFamilyList) {
-        
+
         super();
         this.client = client;
         this.tableName = tableName;
         this.auths = auths;
         this.columnFamilyList = new ArrayList<>(columnFamilyList);
-        
+
         if (log.isDebugEnabled())
             log.debug("Initializing");
     }
-    
+
     /**
      * Builds the range for our lookup.
-     * 
+     *
      * @param key
      *            a key
      * @return a range
      */
     protected abstract Range buildRange(K key);
-    
+
     /**
      * Retrieves the column families for the provided key.
-     * 
+     *
      * @param key
      *            a key
      * @return column families for the provided key
@@ -77,15 +77,15 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
     protected Collection<Text> getColumnFamilies(K key) {
         return columnFamilyList;
     }
-    
+
     @Override
     protected void build(K key) throws TableNotFoundException {
         build(key, tableName);
     }
-    
+
     /**
      * Builds the key using the provided table name, so that we load the data into our cache.
-     * 
+     *
      * @param key
      *            a key
      * @param myTableName
@@ -105,29 +105,29 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
                     range = new Range();
                 } else
                     range = buildRange(key);
-                
+
                 scanner.setRange(range);
-                
+
                 for (Text cf : getColumnFamilies(key)) {
                     if (log.isDebugEnabled())
                         log.debug("== Fetching CF " + cf);
                     scanner.fetchColumnFamily(cf);
                 }
-                
+
                 for (Entry<Key,Value> entry : scanner) {
-                    
+
                     if (!store(key, entry.getKey(), entry.getValue())) {
                         log.warn("Did not accept " + entry.getKey());
                     }
-                    
+
                 }
             }
         }
     }
-    
+
     /**
      * Store the key/value pair and the key into the underlying cache
-     * 
+     *
      * @param key
      *            a key
      * @param accKey
@@ -137,7 +137,7 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
      * @return if the pair was stored
      */
     protected abstract boolean store(K key, Key accKey, Value accValue);
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof AccumuloLoader) {
@@ -149,10 +149,10 @@ public abstract class AccumuloLoader<K,V> extends Loader<K,V> {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return tableName.hashCode() + 31 + client.instanceOperations().getInstanceId().hashCode();
     }
-    
+
 }

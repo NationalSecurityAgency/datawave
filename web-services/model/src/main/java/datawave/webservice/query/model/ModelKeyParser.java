@@ -13,24 +13,24 @@ import org.apache.log4j.Logger;
 import java.util.Set;
 
 public class ModelKeyParser {
-    
+
     public static final String NULL_BYTE = "\0";
     public static final Value NULL_VALUE = new Value(new byte[0]);
     private static Logger log = Logger.getLogger(ModelKeyParser.class);
-    
+
     public static FieldMapping parseKey(Key key, Set<Authorizations> auths) {
         FieldMapping mapping = new FieldMapping();
         String row = key.getRow().toString();
         String[] colf = key.getColumnFamily().toString().split(NULL_BYTE);
         String[] colq = key.getColumnQualifier().toString().split(NULL_BYTE);
         String cv = key.getColumnVisibility().toString();
-        
+
         String datatype = null;
         Direction direction;
         String dataField;
         String modelField;
         Boolean indexOnlyField = false;
-        
+
         if (colf.length == 1) {
             // Older style, no datatype
         } else if (colf.length == 2) {
@@ -55,7 +55,7 @@ public class ModelKeyParser {
             log.error("Error parsing key: " + key);
             throw new IllegalArgumentException("Key in unknown format, colq parts: " + colq.length);
         }
-        
+
         mapping.setColumnVisibility(cv);
         mapping.setDatatype(datatype);
         mapping.setDirection(direction);
@@ -63,10 +63,10 @@ public class ModelKeyParser {
         mapping.setModelFieldName(modelField);
         return mapping;
     }
-    
+
     public static Key createKey(FieldMapping mapping, String modelName) {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
-        
+
         String inName = Direction.REVERSE.equals(mapping.getDirection()) ? mapping.getFieldName() : mapping.getModelFieldName();
         String outName = Direction.REVERSE.equals(mapping.getDirection()) ? mapping.getModelFieldName() : mapping.getFieldName();
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
@@ -77,16 +77,17 @@ public class ModelKeyParser {
                         System.currentTimeMillis() // Timestamp
         );
     }
-    
+
     public static Mutation createMutation(FieldMapping mapping, String modelName) {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
-        
+
         if (Direction.REVERSE.equals(mapping.getDirection())) {
             // Reverse mappings should not have indexOnly designators. If they do, scrub it off.
             m = new Mutation(mapping.getFieldName());
-            m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(), NULL_VALUE);
+            m.put(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis(),
+                            NULL_VALUE);
             return m;
         } else {
             m = new Mutation(mapping.getModelFieldName());
@@ -94,12 +95,12 @@ public class ModelKeyParser {
             return m;
         }
     }
-    
+
     public static Mutation createDeleteMutation(FieldMapping mapping, String modelName) {
         ColumnVisibility cv = new ColumnVisibility(mapping.getColumnVisibility());
         Mutation m;
         String dataType = StringUtils.isEmpty(mapping.getDatatype()) ? "" : NULL_BYTE + mapping.getDatatype().trim();
-        
+
         if (Direction.REVERSE.equals(mapping.getDirection())) {
             m = new Mutation(mapping.getFieldName());
             m.putDelete(modelName + dataType, mapping.getModelFieldName() + NULL_BYTE + mapping.getDirection().getValue(), cv, System.currentTimeMillis());
@@ -112,5 +113,5 @@ public class ModelKeyParser {
             return m;
         }
     }
-    
+
 }

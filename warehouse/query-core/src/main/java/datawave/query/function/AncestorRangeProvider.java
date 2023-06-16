@@ -10,7 +10,7 @@ import org.apache.hadoop.io.Text;
  *
  */
 public class AncestorRangeProvider extends DocumentRangeProvider {
-    
+
     /**
      * The start key is remapped to the beginning of the TLD to get all necessary fields
      *

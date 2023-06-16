@@ -36,7 +36,7 @@ import com.google.common.collect.Sets;
  * <p>
  * A simple iterator that will count the number of k/v pairs returned by the iterator beneath it on the stack.
  * </p>
- * 
+ *
  * <p>
  * This iterator will only ever return one key/value pair.
  * <ul>
@@ -51,7 +51,7 @@ import com.google.common.collect.Sets;
 public class ResultCountingIterator extends WrappingIterator {
     private static final Logger log = Logger.getLogger(ResultCountingIterator.class);
     private final Cache<Text,ColumnVisibility> CV_CACHE = CacheBuilder.newBuilder().concurrencyLevel(1).maximumSize(100).build();
-    
+
     private static final Ticker zeroTicker = new Ticker() {
         @Override
         public long read() {
@@ -59,23 +59,23 @@ public class ResultCountingIterator extends WrappingIterator {
         }
     };
     private int count;
-    
+
     private Key currentTopKey = null;
     private Kryo kryo = new Kryo();
-    
+
     private String threadName = null;
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-    
+
     public ResultCountingIterator() {
         threadName = Thread.currentThread().getName();
     }
-    
+
     public ResultCountingIterator(ResultCountingIterator other, IteratorEnvironment env) {
         this();
         setSource(other.getSource().deepCopy(env));
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (log.isTraceEnabled()) {
@@ -84,12 +84,12 @@ public class ResultCountingIterator extends WrappingIterator {
         setSource(source.deepCopy(env));
         this.count = 0;
     }
-    
+
     @Override
     public boolean hasTop() {
         return 0 < count;
     }
-    
+
     @Override
     public void next() throws IOException {
         if (getSource().hasTop()) {
@@ -100,7 +100,7 @@ public class ResultCountingIterator extends WrappingIterator {
             this.count = 0;
         }
     }
-    
+
     /**
      * A <code>seek</code> will reset the count made by this iterator.
      */
@@ -112,10 +112,10 @@ public class ResultCountingIterator extends WrappingIterator {
         getSource().seek(range, columnFamilies, inclusive);
         consume();
     }
-    
+
     public void consume() throws IOException {
         Stopwatch consumeSW = null, processResultSW = null, ioWaitSW = null;
-        
+
         if (log.isTraceEnabled()) {
             consumeSW = Stopwatch.createUnstarted();
             processResultSW = Stopwatch.createUnstarted();
@@ -125,38 +125,38 @@ public class ResultCountingIterator extends WrappingIterator {
             processResultSW = Stopwatch.createUnstarted(zeroTicker);
             ioWaitSW = Stopwatch.createUnstarted(zeroTicker);
         }
-        
+
         consumeSW.start();
         ioWaitSW.start();
-        
+
         this.count = 0;
         while (getSource().hasTop()) {
             ioWaitSW.stop();
             processResultSW.start();
-            
+
             if (getSource().getTopKey() != null) {
                 final Text cvholder = new Text();
-                
+
                 this.currentTopKey = getSource().getTopKey();
                 this.currentTopKey.getColumnVisibility(cvholder);
-                
+
                 // Merge the ColumnVisibilities
                 // Do not count the record if we can't parse its ColumnVisibility
                 try {
                     ColumnVisibility cv = CV_CACHE.get(cvholder, () -> new ColumnVisibility(cvholder));
-                    
+
                     columnVisibilities.add(cv);
                 } catch (Exception e) {
                     log.error("Error parsing ColumnVisibility of key", e);
                     continue;
                 }
-                
+
                 this.count++;
             }
-            
+
             processResultSW.stop();
             ioWaitSW.start();
-            
+
             try {
                 getSource().next();
             } catch (IOException e) {
@@ -164,29 +164,29 @@ public class ResultCountingIterator extends WrappingIterator {
                 break;
             }
         }
-        
+
         ioWaitSW.stop();
         consumeSW.stop();
-        
+
         if (log.isDebugEnabled()) {
             log.debug(threadName + ": Returning a count of " + this.count);
         }
-        
+
         if (log.isTraceEnabled()) {
             log.trace(threadName + ": Total consume() time: " + consumeSW.elapsed(TimeUnit.MILLISECONDS));
             log.trace(threadName + ": Total next()/hasNext() time: " + ioWaitSW.elapsed(TimeUnit.MILLISECONDS));
             log.trace(threadName + ": Total internal time: " + processResultSW.elapsed(TimeUnit.MILLISECONDS));
         }
     }
-    
+
     @Override
     public Key getTopKey() {
         return currentTopKey; // This is the unchanged key that our source iterator returned.
     }
-    
+
     /**
      * Kryo serialized object ResultCountTuple which contains a {@code long count, int visibilityLength, byte[] visibility}
-     * 
+     *
      * @return serialized form of the count and rolled up visibility
      */
     @Override
@@ -194,46 +194,46 @@ public class ResultCountingIterator extends WrappingIterator {
         if (null == currentTopKey) {
             return null;
         }
-        
+
         Stopwatch sw = null;
-        
+
         if (log.isTraceEnabled()) {
             log.trace(threadName + ": getTopValue()");
             sw = Stopwatch.createUnstarted();
         } else {
             sw = Stopwatch.createUnstarted(zeroTicker);
         }
-        
+
         sw.start();
-        
+
         ColumnVisibility cv = null;
-        
+
         try {
             cv = markingFunctions.combine(columnVisibilities);
         } catch (Exception e) {
             log.error("Could not create combined columnVisibility for the count", e);
             return null;
         }
-        
+
         ResultCountTuple result = new ResultCountTuple(this.count, cv);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Output kryoOutput = new Output(baos);
         kryo.writeObject(kryoOutput, result);
         kryoOutput.close();
-        
+
         sw.stop();
         if (log.isTraceEnabled()) {
             log.trace(threadName + ": Elapsed getTopValue(): " + sw.elapsed(TimeUnit.MILLISECONDS));
         }
-        
+
         return new Value(baos.toByteArray());
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new ResultCountingIterator(this, env);
     }
-    
+
     /**
      * Simple tuple class implementing Kryo Serialization. Will hold the count and rolled up column visibility.
      *
@@ -242,32 +242,32 @@ public class ResultCountingIterator extends WrappingIterator {
     public static class ResultCountTuple implements KryoSerializable {
         long count;
         ColumnVisibility visibility;
-        
+
         public ResultCountTuple() {
             // need default constructor for kryo
         }
-        
+
         public ResultCountTuple(long count, ColumnVisibility visibility) {
             this.count = count;
             this.visibility = visibility;
         }
-        
+
         public long getCount() {
             return count;
         }
-        
+
         public void setCount(long count) {
             this.count = count;
         }
-        
+
         public ColumnVisibility getVisibility() {
             return visibility;
         }
-        
+
         public void setVisibility(ColumnVisibility visibility) {
             this.visibility = visibility;
         }
-        
+
         @Override
         public void write(Kryo kryo, Output output) {
             output.writeLong(count);
@@ -275,14 +275,14 @@ public class ResultCountingIterator extends WrappingIterator {
             output.writeInt(expression.length);
             output.writeBytes(expression);
         }
-        
+
         @Override
         public void read(Kryo kryo, Input input) {
             this.count = input.readLong();
             int expressionLength = input.readInt();
             this.visibility = new ColumnVisibility(input.readBytes(expressionLength));
         }
-        
+
         @Override
         public String toString() {
             return "ResultCountTuple{" + "count=" + count + ", visibility=" + visibility + '}';

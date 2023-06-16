@@ -25,32 +25,32 @@ import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfi
 public class LuceneToJexlQueryParser implements QueryParser {
     private static final String[] DEFAULT_TOKENIZED_FIELDS = {"TOKFIELD"};
     private static final String[] DEFAULT_SKIP_TOKENIZE_UNFIELDED_FIELDS = {"NOTOKEN"};
-    
+
     private Set<String> tokenizedFields = new HashSet<>();
     private boolean tokenizeUnfieldedQueries = false;
     private boolean allowLeadingWildCard = true;
     private boolean useSlopForTokenizedTerms = true;
     private Set<String> skipTokenizeUnfieldedFields = new HashSet<>();
-    
+
     private boolean positionIncrementsEnabled = true;
     private Set<String> allowedFields = null;
     private Boolean allowAnyFieldQueries = true;
     private List<JexlQueryFunction> allowedFunctions = JexlTreeBuilder.DEFAULT_ALLOWED_FUNCTION_LIST;
     private Analyzer analyzer = new StandardAnalyzer();
     private QueryNodeProcessorFactory queryNodeProcessorFactory = new QueryNodeProcessorFactory();
-    
+
     public LuceneToJexlQueryParser() {
         Collections.addAll(tokenizedFields, DEFAULT_TOKENIZED_FIELDS);
         Collections.addAll(skipTokenizeUnfieldedFields, DEFAULT_SKIP_TOKENIZE_UNFIELDED_FIELDS);
     }
-    
+
     public static final ConfigurationKey<Set<String>> TOKENIZED_FIELDS = ConfigurationKey.newInstance();
     public static final ConfigurationKey<Boolean> TOKENIZE_UNFIELDED_QUERIES = ConfigurationKey.newInstance();
     public static final ConfigurationKey<Set<String>> SKIP_TOKENIZE_UNFIELDED_FIELDS = ConfigurationKey.newInstance();
     public static final ConfigurationKey<Set<String>> ALLOWED_FIELDS = ConfigurationKey.newInstance();
     public static final ConfigurationKey<Boolean> ALLOW_ANY_FIELD_QUERIES = ConfigurationKey.newInstance();
     public static final ConfigurationKey<Boolean> USE_SLOP_FOR_TOKENIZED_TERMS = ConfigurationKey.newInstance();
-    
+
     @Override
     public QueryNode parse(String query) throws ParseException {
         JexlNode parsedQuery = convertToJexlNode(query);
@@ -58,24 +58,24 @@ public class LuceneToJexlQueryParser implements QueryParser {
         node.setOriginalQuery(parsedQuery.toString());
         return node;
     }
-    
+
     public JexlNode convertToJexlNode(String query) throws ParseException {
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
         query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
-        
+
         query = query.replaceAll("\\u201c", "\""); // replace open left double quote
         query = query.replaceAll("\\u201d", "\""); // replace close right double quote
-        
+
         JexlNode parsedQuery = null;
-        
+
         try {
             Locale.setDefault(Locale.US);
             AccumuloSyntaxParser syntaxParser = new AccumuloSyntaxParser();
             syntaxParser.enable_tracing();
-            
+
             QueryNodeProcessor processor = getQueryNodeProcessor();
             QueryBuilder builder = new JexlTreeBuilder(allowedFunctions);
-            
+
             org.apache.lucene.queryparser.flexible.core.nodes.QueryNode queryTree = syntaxParser.parse(query, "");
             queryTree = processor.process(queryTree);
             parsedQuery = (JexlNode) builder.build(queryTree);
@@ -84,12 +84,12 @@ public class LuceneToJexlQueryParser implements QueryParser {
         }
         return parsedQuery;
     }
-    
+
     private QueryNodeProcessor getQueryNodeProcessor() {
         QueryConfigHandler queryConfigHandler = new QueryConfigHandler();
-        
+
         queryConfigHandler.set(ConfigurationKeys.ANALYZER, analyzer);
-        
+
         queryConfigHandler.set(ConfigurationKeys.ENABLE_POSITION_INCREMENTS, positionIncrementsEnabled);
         queryConfigHandler.set(TOKENIZED_FIELDS, tokenizedFields);
         queryConfigHandler.set(TOKENIZE_UNFIELDED_QUERIES, tokenizeUnfieldedQueries);
@@ -97,97 +97,97 @@ public class LuceneToJexlQueryParser implements QueryParser {
         queryConfigHandler.set(ALLOWED_FIELDS, allowedFields);
         queryConfigHandler.set(ALLOW_ANY_FIELD_QUERIES, allowAnyFieldQueries);
         queryConfigHandler.set(USE_SLOP_FOR_TOKENIZED_TERMS, useSlopForTokenizedTerms);
-        
+
         queryConfigHandler.set(ConfigurationKeys.ALLOW_LEADING_WILDCARD, allowLeadingWildCard);
-        
+
         QueryNodeProcessor processor = queryNodeProcessorFactory.create(queryConfigHandler);
         return processor;
     }
-    
+
     public boolean isTokenizeUnfieldedQueries() {
         return tokenizeUnfieldedQueries;
     }
-    
+
     public void setTokenizeUnfieldedQueries(boolean tokenizeUnfieldedQueries) {
         this.tokenizeUnfieldedQueries = tokenizeUnfieldedQueries;
     }
-    
+
     public boolean isPositionIncrementsEnabled() {
         return positionIncrementsEnabled;
     }
-    
+
     public void setPositionIncrementsEnabled(boolean positionIncrementsEnabled) {
         this.positionIncrementsEnabled = positionIncrementsEnabled;
     }
-    
+
     public Set<String> getTokenizedFields() {
         return tokenizedFields;
     }
-    
+
     public void setTokenizedFields(Set<String> tokenizedFields) {
         this.tokenizedFields = tokenizedFields;
     }
-    
+
     public Set<String> getSkipTokenizeUnfieldedFields() {
         return skipTokenizeUnfieldedFields;
     }
-    
+
     public void setSkipTokenizeUnfieldedFields(Set<String> skipTokenizeUnfieldedFields) {
         this.skipTokenizeUnfieldedFields = skipTokenizeUnfieldedFields;
     }
-    
+
     public boolean isAllowLeadingWildCard() {
         return allowLeadingWildCard;
     }
-    
+
     public void setAllowLeadingWildCard(boolean allowLeadingWildCard) {
         this.allowLeadingWildCard = allowLeadingWildCard;
     }
-    
+
     public Set<String> getAllowedFields() {
         return allowedFields;
     }
-    
+
     public void setAllowedFields(Set<String> allowedFields) {
         this.allowedFields = allowedFields;
     }
-    
+
     public Boolean getAllowAnyField() {
         return allowAnyFieldQueries;
     }
-    
+
     public void setAllowAnyField(Boolean allowAnyField) {
         this.allowAnyFieldQueries = allowAnyField;
     }
-    
+
     public boolean isUseSlopForTokenizedTerms() {
         return useSlopForTokenizedTerms;
     }
-    
+
     public void setUseSlopForTokenizedTerms(boolean useSlopForTokenizedTerms) {
         this.useSlopForTokenizedTerms = useSlopForTokenizedTerms;
     }
-    
+
     public Analyzer getAnalyzer() {
         return analyzer;
     }
-    
+
     public void setAnalyzer(Analyzer analyzer) {
         this.analyzer = analyzer;
     }
-    
+
     public QueryNodeProcessorFactory getQueryNodeProcessorFactory() {
         return queryNodeProcessorFactory;
     }
-    
+
     public void setQueryNodeProcessorFactory(QueryNodeProcessorFactory queryNodeProcessorFactory) {
         this.queryNodeProcessorFactory = queryNodeProcessorFactory;
     }
-    
+
     public List<JexlQueryFunction> getAllowedFunctions() {
         return allowedFunctions;
     }
-    
+
     public void setAllowedFunctions(List<JexlQueryFunction> allowedFunctions) {
         this.allowedFunctions = allowedFunctions;
     }

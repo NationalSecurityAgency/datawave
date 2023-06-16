@@ -5,168 +5,168 @@ package datawave.ingest.protobuf;
 
 public final class RawRecordContainer {
     private RawRecordContainer() {}
-    
+
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {}
-    
+
     public interface DataOrBuilder extends com.google.protobuf.MessageOrBuilder {
-        
+
         // optional uint64 date = 1;
         /**
          * <code>optional uint64 date = 1;</code>
          */
         boolean hasDate();
-        
+
         /**
          * <code>optional uint64 date = 1;</code>
          */
         long getDate();
-        
+
         // optional string dataType = 2;
         /**
          * <code>optional string dataType = 2;</code>
          */
         boolean hasDataType();
-        
+
         /**
          * <code>optional string dataType = 2;</code>
          */
         java.lang.String getDataType();
-        
+
         /**
          * <code>optional string dataType = 2;</code>
          */
         com.google.protobuf.ByteString getDataTypeBytes();
-        
+
         // optional string uid = 3;
         /**
          * <code>optional string uid = 3;</code>
          */
         boolean hasUid();
-        
+
         /**
          * <code>optional string uid = 3;</code>
          */
         java.lang.String getUid();
-        
+
         /**
          * <code>optional string uid = 3;</code>
          */
         com.google.protobuf.ByteString getUidBytes();
-        
+
         // repeated string errors = 4;
         /**
          * <code>repeated string errors = 4;</code>
          */
         java.util.List<java.lang.String> getErrorsList();
-        
+
         /**
          * <code>repeated string errors = 4;</code>
          */
         int getErrorsCount();
-        
+
         /**
          * <code>repeated string errors = 4;</code>
          */
         java.lang.String getErrors(int index);
-        
+
         /**
          * <code>repeated string errors = 4;</code>
          */
         com.google.protobuf.ByteString getErrorsBytes(int index);
-        
+
         // optional bytes visibility = 5;
         /**
          * <code>optional bytes visibility = 5;</code>
          */
         boolean hasVisibility();
-        
+
         /**
          * <code>optional bytes visibility = 5;</code>
          */
         com.google.protobuf.ByteString getVisibility();
-        
+
         // optional string rawFileName = 6;
         /**
          * <code>optional string rawFileName = 6;</code>
          */
         boolean hasRawFileName();
-        
+
         /**
          * <code>optional string rawFileName = 6;</code>
          */
         java.lang.String getRawFileName();
-        
+
         /**
          * <code>optional string rawFileName = 6;</code>
          */
         com.google.protobuf.ByteString getRawFileNameBytes();
-        
+
         // optional uint64 rawRecordNumber = 7;
         /**
          * <code>optional uint64 rawRecordNumber = 7;</code>
          */
         boolean hasRawRecordNumber();
-        
+
         /**
          * <code>optional uint64 rawRecordNumber = 7;</code>
          */
         long getRawRecordNumber();
-        
+
         // repeated string uuids = 8;
         /**
          * <code>repeated string uuids = 8;</code>
          */
         java.util.List<java.lang.String> getUuidsList();
-        
+
         /**
          * <code>repeated string uuids = 8;</code>
          */
         int getUuidsCount();
-        
+
         /**
          * <code>repeated string uuids = 8;</code>
          */
         java.lang.String getUuids(int index);
-        
+
         /**
          * <code>repeated string uuids = 8;</code>
          */
         com.google.protobuf.ByteString getUuidsBytes(int index);
-        
+
         // optional bytes rawData = 9;
         /**
          * <code>optional bytes rawData = 9;</code>
          */
         boolean hasRawData();
-        
+
         /**
          * <code>optional bytes rawData = 9;</code>
          */
         com.google.protobuf.ByteString getRawData();
-        
+
         // optional bool requiresMasking = 10;
         /**
          * <code>optional bool requiresMasking = 10;</code>
          */
         boolean hasRequiresMasking();
-        
+
         /**
          * <code>optional bool requiresMasking = 10;</code>
          */
         boolean getRequiresMasking();
-        
+
         // optional uint64 rawFileTimeStamp = 11;
         /**
          * <code>optional uint64 rawFileTimeStamp = 11;</code>
          */
         boolean hasRawFileTimeStamp();
-        
+
         /**
          * <code>optional uint64 rawFileTimeStamp = 11;</code>
          */
         long getRawFileTimeStamp();
     }
-    
+
     /**
      * Protobuf type {@code datawave.ingest.protobuf.Data}
      */
@@ -176,28 +176,28 @@ public final class RawRecordContainer {
             super(builder);
             this.unknownFields = builder.getUnknownFields();
         }
-        
+
         private Data(boolean noInit) {
             this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
         }
-        
+
         private static final Data defaultInstance;
-        
+
         public static Data getDefaultInstance() {
             return defaultInstance;
         }
-        
+
         public Data getDefaultInstanceForType() {
             return defaultInstance;
         }
-        
+
         private final com.google.protobuf.UnknownFieldSet unknownFields;
-        
+
         @java.lang.Override
         public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
             return this.unknownFields;
         }
-        
+
         private Data(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             initFields();
@@ -295,59 +295,58 @@ public final class RawRecordContainer {
                 makeExtensionsImmutable();
             }
         }
-        
+
         public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
             return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_descriptor;
         }
-        
+
         protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
-            return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_fieldAccessorTable
-                            .ensureFieldAccessorsInitialized(datawave.ingest.protobuf.RawRecordContainer.Data.class,
-                                            datawave.ingest.protobuf.RawRecordContainer.Data.Builder.class);
+            return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_fieldAccessorTable.ensureFieldAccessorsInitialized(
+                            datawave.ingest.protobuf.RawRecordContainer.Data.class, datawave.ingest.protobuf.RawRecordContainer.Data.Builder.class);
         }
-        
+
         public static com.google.protobuf.Parser<Data> PARSER = new com.google.protobuf.AbstractParser<Data>() {
             public Data parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws com.google.protobuf.InvalidProtocolBufferException {
                 return new Data(input, extensionRegistry);
             }
         };
-        
+
         @java.lang.Override
         public com.google.protobuf.Parser<Data> getParserForType() {
             return PARSER;
         }
-        
+
         private int bitField0_;
         // optional uint64 date = 1;
         public static final int DATE_FIELD_NUMBER = 1;
         private long date_;
-        
+
         /**
          * <code>optional uint64 date = 1;</code>
          */
         public boolean hasDate() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
         }
-        
+
         /**
          * <code>optional uint64 date = 1;</code>
          */
         public long getDate() {
             return date_;
         }
-        
+
         // optional string dataType = 2;
         public static final int DATATYPE_FIELD_NUMBER = 2;
         private java.lang.Object dataType_;
-        
+
         /**
          * <code>optional string dataType = 2;</code>
          */
         public boolean hasDataType() {
             return ((bitField0_ & 0x00000002) == 0x00000002);
         }
-        
+
         /**
          * <code>optional string dataType = 2;</code>
          */
@@ -364,7 +363,7 @@ public final class RawRecordContainer {
                 return s;
             }
         }
-        
+
         /**
          * <code>optional string dataType = 2;</code>
          */
@@ -378,18 +377,18 @@ public final class RawRecordContainer {
                 return (com.google.protobuf.ByteString) ref;
             }
         }
-        
+
         // optional string uid = 3;
         public static final int UID_FIELD_NUMBER = 3;
         private java.lang.Object uid_;
-        
+
         /**
          * <code>optional string uid = 3;</code>
          */
         public boolean hasUid() {
             return ((bitField0_ & 0x00000004) == 0x00000004);
         }
-        
+
         /**
          * <code>optional string uid = 3;</code>
          */
@@ -406,7 +405,7 @@ public final class RawRecordContainer {
                 return s;
             }
         }
-        
+
         /**
          * <code>optional string uid = 3;</code>
          */
@@ -420,68 +419,68 @@ public final class RawRecordContainer {
                 return (com.google.protobuf.ByteString) ref;
             }
         }
-        
+
         // repeated string errors = 4;
         public static final int ERRORS_FIELD_NUMBER = 4;
         private com.google.protobuf.LazyStringList errors_;
-        
+
         /**
          * <code>repeated string errors = 4;</code>
          */
         public java.util.List<java.lang.String> getErrorsList() {
             return errors_;
         }
-        
+
         /**
          * <code>repeated string errors = 4;</code>
          */
         public int getErrorsCount() {
             return errors_.size();
         }
-        
+
         /**
          * <code>repeated string errors = 4;</code>
          */
         public java.lang.String getErrors(int index) {
             return errors_.get(index);
         }
-        
+
         /**
          * <code>repeated string errors = 4;</code>
          */
         public com.google.protobuf.ByteString getErrorsBytes(int index) {
             return errors_.getByteString(index);
         }
-        
+
         // optional bytes visibility = 5;
         public static final int VISIBILITY_FIELD_NUMBER = 5;
         private com.google.protobuf.ByteString visibility_;
-        
+
         /**
          * <code>optional bytes visibility = 5;</code>
          */
         public boolean hasVisibility() {
             return ((bitField0_ & 0x00000008) == 0x00000008);
         }
-        
+
         /**
          * <code>optional bytes visibility = 5;</code>
          */
         public com.google.protobuf.ByteString getVisibility() {
             return visibility_;
         }
-        
+
         // optional string rawFileName = 6;
         public static final int RAWFILENAME_FIELD_NUMBER = 6;
         private java.lang.Object rawFileName_;
-        
+
         /**
          * <code>optional string rawFileName = 6;</code>
          */
         public boolean hasRawFileName() {
             return ((bitField0_ & 0x00000010) == 0x00000010);
         }
-        
+
         /**
          * <code>optional string rawFileName = 6;</code>
          */
@@ -498,7 +497,7 @@ public final class RawRecordContainer {
                 return s;
             }
         }
-        
+
         /**
          * <code>optional string rawFileName = 6;</code>
          */
@@ -512,111 +511,111 @@ public final class RawRecordContainer {
                 return (com.google.protobuf.ByteString) ref;
             }
         }
-        
+
         // optional uint64 rawRecordNumber = 7;
         public static final int RAWRECORDNUMBER_FIELD_NUMBER = 7;
         private long rawRecordNumber_;
-        
+
         /**
          * <code>optional uint64 rawRecordNumber = 7;</code>
          */
         public boolean hasRawRecordNumber() {
             return ((bitField0_ & 0x00000020) == 0x00000020);
         }
-        
+
         /**
          * <code>optional uint64 rawRecordNumber = 7;</code>
          */
         public long getRawRecordNumber() {
             return rawRecordNumber_;
         }
-        
+
         // repeated string uuids = 8;
         public static final int UUIDS_FIELD_NUMBER = 8;
         private com.google.protobuf.LazyStringList uuids_;
-        
+
         /**
          * <code>repeated string uuids = 8;</code>
          */
         public java.util.List<java.lang.String> getUuidsList() {
             return uuids_;
         }
-        
+
         /**
          * <code>repeated string uuids = 8;</code>
          */
         public int getUuidsCount() {
             return uuids_.size();
         }
-        
+
         /**
          * <code>repeated string uuids = 8;</code>
          */
         public java.lang.String getUuids(int index) {
             return uuids_.get(index);
         }
-        
+
         /**
          * <code>repeated string uuids = 8;</code>
          */
         public com.google.protobuf.ByteString getUuidsBytes(int index) {
             return uuids_.getByteString(index);
         }
-        
+
         // optional bytes rawData = 9;
         public static final int RAWDATA_FIELD_NUMBER = 9;
         private com.google.protobuf.ByteString rawData_;
-        
+
         /**
          * <code>optional bytes rawData = 9;</code>
          */
         public boolean hasRawData() {
             return ((bitField0_ & 0x00000040) == 0x00000040);
         }
-        
+
         /**
          * <code>optional bytes rawData = 9;</code>
          */
         public com.google.protobuf.ByteString getRawData() {
             return rawData_;
         }
-        
+
         // optional bool requiresMasking = 10;
         public static final int REQUIRESMASKING_FIELD_NUMBER = 10;
         private boolean requiresMasking_;
-        
+
         /**
          * <code>optional bool requiresMasking = 10;</code>
          */
         public boolean hasRequiresMasking() {
             return ((bitField0_ & 0x00000080) == 0x00000080);
         }
-        
+
         /**
          * <code>optional bool requiresMasking = 10;</code>
          */
         public boolean getRequiresMasking() {
             return requiresMasking_;
         }
-        
+
         // optional uint64 rawFileTimeStamp = 11;
         public static final int RAWFILETIMESTAMP_FIELD_NUMBER = 11;
         private long rawFileTimeStamp_;
-        
+
         /**
          * <code>optional uint64 rawFileTimeStamp = 11;</code>
          */
         public boolean hasRawFileTimeStamp() {
             return ((bitField0_ & 0x00000100) == 0x00000100);
         }
-        
+
         /**
          * <code>optional uint64 rawFileTimeStamp = 11;</code>
          */
         public long getRawFileTimeStamp() {
             return rawFileTimeStamp_;
         }
-        
+
         private void initFields() {
             date_ = 0L;
             dataType_ = "";
@@ -630,18 +629,18 @@ public final class RawRecordContainer {
             requiresMasking_ = false;
             rawFileTimeStamp_ = 0L;
         }
-        
+
         private byte memoizedIsInitialized = -1;
-        
+
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
             if (isInitialized != -1)
                 return isInitialized == 1;
-            
+
             memoizedIsInitialized = 1;
             return true;
         }
-        
+
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
             getSerializedSize();
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
@@ -679,14 +678,14 @@ public final class RawRecordContainer {
             }
             getUnknownFields().writeTo(output);
         }
-        
+
         private int memoizedSerializedSize = -1;
-        
+
         public int getSerializedSize() {
             int size = memoizedSerializedSize;
             if (size != -1)
                 return size;
-            
+
             size = 0;
             if (((bitField0_ & 0x00000001) == 0x00000001)) {
                 size += com.google.protobuf.CodedOutputStream.computeUInt64Size(1, date_);
@@ -735,114 +734,114 @@ public final class RawRecordContainer {
             memoizedSerializedSize = size;
             return size;
         }
-        
+
         private static final long serialVersionUID = 0L;
-        
+
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
             return super.writeReplace();
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(com.google.protobuf.ByteString data)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(com.google.protobuf.ByteString data,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.RawRecordContainer.Data parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static Builder newBuilder() {
             return Builder.create();
         }
-        
+
         public Builder newBuilderForType() {
             return newBuilder();
         }
-        
+
         public static Builder newBuilder(datawave.ingest.protobuf.RawRecordContainer.Data prototype) {
             return newBuilder().mergeFrom(prototype);
         }
-        
+
         public Builder toBuilder() {
             return newBuilder(this);
         }
-        
+
         @java.lang.Override
         protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
             return new Builder(parent);
         }
-        
+
         /**
          * Protobuf type {@code datawave.ingest.protobuf.Data}
          */
-        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-                        datawave.ingest.protobuf.RawRecordContainer.DataOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder>
+                        implements datawave.ingest.protobuf.RawRecordContainer.DataOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_descriptor;
             }
-            
+
             protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
                 return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_fieldAccessorTable
                                 .ensureFieldAccessorsInitialized(datawave.ingest.protobuf.RawRecordContainer.Data.class,
                                                 datawave.ingest.protobuf.RawRecordContainer.Data.Builder.class);
             }
-            
+
             // Construct using datawave.ingest.protobuf.RawRecordContainer.Data.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
-            
+
             private Builder(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
                 super(parent);
                 maybeForceBuilderInitialization();
             }
-            
+
             private void maybeForceBuilderInitialization() {
                 if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {}
             }
-            
+
             private static Builder create() {
                 return new Builder();
             }
-            
+
             public Builder clear() {
                 super.clear();
                 date_ = 0L;
@@ -869,19 +868,19 @@ public final class RawRecordContainer {
                 bitField0_ = (bitField0_ & ~0x00000400);
                 return this;
             }
-            
+
             public Builder clone() {
                 return create().mergeFrom(buildPartial());
             }
-            
+
             public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
                 return datawave.ingest.protobuf.RawRecordContainer.internal_static_datawave_ingest_protobuf_Data_descriptor;
             }
-            
+
             public datawave.ingest.protobuf.RawRecordContainer.Data getDefaultInstanceForType() {
                 return datawave.ingest.protobuf.RawRecordContainer.Data.getDefaultInstance();
             }
-            
+
             public datawave.ingest.protobuf.RawRecordContainer.Data build() {
                 datawave.ingest.protobuf.RawRecordContainer.Data result = buildPartial();
                 if (!result.isInitialized()) {
@@ -889,7 +888,7 @@ public final class RawRecordContainer {
                 }
                 return result;
             }
-            
+
             public datawave.ingest.protobuf.RawRecordContainer.Data buildPartial() {
                 datawave.ingest.protobuf.RawRecordContainer.Data result = new datawave.ingest.protobuf.RawRecordContainer.Data(this);
                 int from_bitField0_ = bitField0_;
@@ -944,7 +943,7 @@ public final class RawRecordContainer {
                 onBuilt();
                 return result;
             }
-            
+
             public Builder mergeFrom(com.google.protobuf.Message other) {
                 if (other instanceof datawave.ingest.protobuf.RawRecordContainer.Data) {
                     return mergeFrom((datawave.ingest.protobuf.RawRecordContainer.Data) other);
@@ -953,7 +952,7 @@ public final class RawRecordContainer {
                     return this;
                 }
             }
-            
+
             public Builder mergeFrom(datawave.ingest.protobuf.RawRecordContainer.Data other) {
                 if (other == datawave.ingest.protobuf.RawRecordContainer.Data.getDefaultInstance())
                     return this;
@@ -1013,11 +1012,11 @@ public final class RawRecordContainer {
                 this.mergeUnknownFields(other.getUnknownFields());
                 return this;
             }
-            
+
             public final boolean isInitialized() {
                 return true;
             }
-            
+
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.ingest.protobuf.RawRecordContainer.Data parsedMessage = null;
@@ -1033,26 +1032,26 @@ public final class RawRecordContainer {
                 }
                 return this;
             }
-            
+
             private int bitField0_;
-            
+
             // optional uint64 date = 1;
             private long date_;
-            
+
             /**
              * <code>optional uint64 date = 1;</code>
              */
             public boolean hasDate() {
                 return ((bitField0_ & 0x00000001) == 0x00000001);
             }
-            
+
             /**
              * <code>optional uint64 date = 1;</code>
              */
             public long getDate() {
                 return date_;
             }
-            
+
             /**
              * <code>optional uint64 date = 1;</code>
              */
@@ -1062,7 +1061,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional uint64 date = 1;</code>
              */
@@ -1072,17 +1071,17 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional string dataType = 2;
             private java.lang.Object dataType_ = "";
-            
+
             /**
              * <code>optional string dataType = 2;</code>
              */
             public boolean hasDataType() {
                 return ((bitField0_ & 0x00000002) == 0x00000002);
             }
-            
+
             /**
              * <code>optional string dataType = 2;</code>
              */
@@ -1096,7 +1095,7 @@ public final class RawRecordContainer {
                     return (java.lang.String) ref;
                 }
             }
-            
+
             /**
              * <code>optional string dataType = 2;</code>
              */
@@ -1110,7 +1109,7 @@ public final class RawRecordContainer {
                     return (com.google.protobuf.ByteString) ref;
                 }
             }
-            
+
             /**
              * <code>optional string dataType = 2;</code>
              */
@@ -1123,7 +1122,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional string dataType = 2;</code>
              */
@@ -1133,7 +1132,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional string dataType = 2;</code>
              */
@@ -1146,17 +1145,17 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional string uid = 3;
             private java.lang.Object uid_ = "";
-            
+
             /**
              * <code>optional string uid = 3;</code>
              */
             public boolean hasUid() {
                 return ((bitField0_ & 0x00000004) == 0x00000004);
             }
-            
+
             /**
              * <code>optional string uid = 3;</code>
              */
@@ -1170,7 +1169,7 @@ public final class RawRecordContainer {
                     return (java.lang.String) ref;
                 }
             }
-            
+
             /**
              * <code>optional string uid = 3;</code>
              */
@@ -1184,7 +1183,7 @@ public final class RawRecordContainer {
                     return (com.google.protobuf.ByteString) ref;
                 }
             }
-            
+
             /**
              * <code>optional string uid = 3;</code>
              */
@@ -1197,7 +1196,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional string uid = 3;</code>
              */
@@ -1207,7 +1206,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional string uid = 3;</code>
              */
@@ -1220,45 +1219,45 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // repeated string errors = 4;
             private com.google.protobuf.LazyStringList errors_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-            
+
             private void ensureErrorsIsMutable() {
                 if (!((bitField0_ & 0x00000008) == 0x00000008)) {
                     errors_ = new com.google.protobuf.LazyStringArrayList(errors_);
                     bitField0_ |= 0x00000008;
                 }
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
             public java.util.List<java.lang.String> getErrorsList() {
                 return java.util.Collections.unmodifiableList(errors_);
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
             public int getErrorsCount() {
                 return errors_.size();
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
             public java.lang.String getErrors(int index) {
                 return errors_.get(index);
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
             public com.google.protobuf.ByteString getErrorsBytes(int index) {
                 return errors_.getByteString(index);
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
@@ -1271,7 +1270,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
@@ -1284,7 +1283,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
@@ -1294,7 +1293,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
@@ -1304,7 +1303,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string errors = 4;</code>
              */
@@ -1317,24 +1316,24 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional bytes visibility = 5;
             private com.google.protobuf.ByteString visibility_ = com.google.protobuf.ByteString.EMPTY;
-            
+
             /**
              * <code>optional bytes visibility = 5;</code>
              */
             public boolean hasVisibility() {
                 return ((bitField0_ & 0x00000010) == 0x00000010);
             }
-            
+
             /**
              * <code>optional bytes visibility = 5;</code>
              */
             public com.google.protobuf.ByteString getVisibility() {
                 return visibility_;
             }
-            
+
             /**
              * <code>optional bytes visibility = 5;</code>
              */
@@ -1347,7 +1346,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional bytes visibility = 5;</code>
              */
@@ -1357,17 +1356,17 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional string rawFileName = 6;
             private java.lang.Object rawFileName_ = "";
-            
+
             /**
              * <code>optional string rawFileName = 6;</code>
              */
             public boolean hasRawFileName() {
                 return ((bitField0_ & 0x00000020) == 0x00000020);
             }
-            
+
             /**
              * <code>optional string rawFileName = 6;</code>
              */
@@ -1381,7 +1380,7 @@ public final class RawRecordContainer {
                     return (java.lang.String) ref;
                 }
             }
-            
+
             /**
              * <code>optional string rawFileName = 6;</code>
              */
@@ -1395,7 +1394,7 @@ public final class RawRecordContainer {
                     return (com.google.protobuf.ByteString) ref;
                 }
             }
-            
+
             /**
              * <code>optional string rawFileName = 6;</code>
              */
@@ -1408,7 +1407,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional string rawFileName = 6;</code>
              */
@@ -1418,7 +1417,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional string rawFileName = 6;</code>
              */
@@ -1431,24 +1430,24 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional uint64 rawRecordNumber = 7;
             private long rawRecordNumber_;
-            
+
             /**
              * <code>optional uint64 rawRecordNumber = 7;</code>
              */
             public boolean hasRawRecordNumber() {
                 return ((bitField0_ & 0x00000040) == 0x00000040);
             }
-            
+
             /**
              * <code>optional uint64 rawRecordNumber = 7;</code>
              */
             public long getRawRecordNumber() {
                 return rawRecordNumber_;
             }
-            
+
             /**
              * <code>optional uint64 rawRecordNumber = 7;</code>
              */
@@ -1458,7 +1457,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional uint64 rawRecordNumber = 7;</code>
              */
@@ -1468,45 +1467,45 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // repeated string uuids = 8;
             private com.google.protobuf.LazyStringList uuids_ = com.google.protobuf.LazyStringArrayList.EMPTY;
-            
+
             private void ensureUuidsIsMutable() {
                 if (!((bitField0_ & 0x00000080) == 0x00000080)) {
                     uuids_ = new com.google.protobuf.LazyStringArrayList(uuids_);
                     bitField0_ |= 0x00000080;
                 }
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
             public java.util.List<java.lang.String> getUuidsList() {
                 return java.util.Collections.unmodifiableList(uuids_);
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
             public int getUuidsCount() {
                 return uuids_.size();
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
             public java.lang.String getUuids(int index) {
                 return uuids_.get(index);
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
             public com.google.protobuf.ByteString getUuidsBytes(int index) {
                 return uuids_.getByteString(index);
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
@@ -1519,7 +1518,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
@@ -1532,7 +1531,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
@@ -1542,7 +1541,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
@@ -1552,7 +1551,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated string uuids = 8;</code>
              */
@@ -1565,24 +1564,24 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional bytes rawData = 9;
             private com.google.protobuf.ByteString rawData_ = com.google.protobuf.ByteString.EMPTY;
-            
+
             /**
              * <code>optional bytes rawData = 9;</code>
              */
             public boolean hasRawData() {
                 return ((bitField0_ & 0x00000100) == 0x00000100);
             }
-            
+
             /**
              * <code>optional bytes rawData = 9;</code>
              */
             public com.google.protobuf.ByteString getRawData() {
                 return rawData_;
             }
-            
+
             /**
              * <code>optional bytes rawData = 9;</code>
              */
@@ -1595,7 +1594,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional bytes rawData = 9;</code>
              */
@@ -1605,24 +1604,24 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional bool requiresMasking = 10;
             private boolean requiresMasking_;
-            
+
             /**
              * <code>optional bool requiresMasking = 10;</code>
              */
             public boolean hasRequiresMasking() {
                 return ((bitField0_ & 0x00000200) == 0x00000200);
             }
-            
+
             /**
              * <code>optional bool requiresMasking = 10;</code>
              */
             public boolean getRequiresMasking() {
                 return requiresMasking_;
             }
-            
+
             /**
              * <code>optional bool requiresMasking = 10;</code>
              */
@@ -1632,7 +1631,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional bool requiresMasking = 10;</code>
              */
@@ -1642,24 +1641,24 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // optional uint64 rawFileTimeStamp = 11;
             private long rawFileTimeStamp_;
-            
+
             /**
              * <code>optional uint64 rawFileTimeStamp = 11;</code>
              */
             public boolean hasRawFileTimeStamp() {
                 return ((bitField0_ & 0x00000400) == 0x00000400);
             }
-            
+
             /**
              * <code>optional uint64 rawFileTimeStamp = 11;</code>
              */
             public long getRawFileTimeStamp() {
                 return rawFileTimeStamp_;
             }
-            
+
             /**
              * <code>optional uint64 rawFileTimeStamp = 11;</code>
              */
@@ -1669,7 +1668,7 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional uint64 rawFileTimeStamp = 11;</code>
              */
@@ -1679,34 +1678,34 @@ public final class RawRecordContainer {
                 onChanged();
                 return this;
             }
-            
+
             // @@protoc_insertion_point(builder_scope:datawave.ingest.protobuf.Data)
         }
-        
+
         static {
             defaultInstance = new Data(true);
             defaultInstance.initFields();
         }
-        
+
         // @@protoc_insertion_point(class_scope:datawave.ingest.protobuf.Data)
     }
-    
+
     private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_ingest_protobuf_Data_descriptor;
     private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_ingest_protobuf_Data_fieldAccessorTable;
-    
+
     public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
         return descriptor;
     }
-    
+
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {"\n\030RawRecordContainer.proto\022\030datawave.ing"
-                        + "est.protobuf\"\330\001\n\004Data\022\014\n\004date\030\001 \001(\004\022\020\n\010d"
-                        + "ataType\030\002 \001(\t\022\013\n\003uid\030\003 \001(\t\022\016\n\006errors\030\004 \003"
-                        + "(\t\022\022\n\nvisibility\030\005 \001(\014\022\023\n\013rawFileName\030\006 "
-                        + "\001(\t\022\027\n\017rawRecordNumber\030\007 \001(\004\022\r\n\005uuids\030\010 "
-                        + "\003(\t\022\017\n\007rawData\030\t \001(\014\022\027\n\017requiresMasking\030"
-                        + "\n \001(\010\022\030\n\020rawFileTimeStamp\030\013 \001(\004B\034\n\030dataw" + "ave.ingest.protobufH\001"};
+        java.lang.String[] descriptorData = {
+                "\n\030RawRecordContainer.proto\022\030datawave.ing" + "est.protobuf\"\330\001\n\004Data\022\014\n\004date\030\001 \001(\004\022\020\n\010d"
+                                + "ataType\030\002 \001(\t\022\013\n\003uid\030\003 \001(\t\022\016\n\006errors\030\004 \003"
+                                + "(\t\022\022\n\nvisibility\030\005 \001(\014\022\023\n\013rawFileName\030\006 "
+                                + "\001(\t\022\027\n\017rawRecordNumber\030\007 \001(\004\022\r\n\005uuids\030\010 "
+                                + "\003(\t\022\017\n\007rawData\030\t \001(\014\022\027\n\017requiresMasking\030"
+                                + "\n \001(\010\022\030\n\020rawFileTimeStamp\030\013 \001(\004B\034\n\030dataw" + "ave.ingest.protobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
@@ -1720,6 +1719,6 @@ public final class RawRecordContainer {
         com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData, new com.google.protobuf.Descriptors.FileDescriptor[] {},
                         assigner);
     }
-    
+
     // @@protoc_insertion_point(outer_class_scope)
 }

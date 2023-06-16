@@ -5,6 +5,6 @@ import org.apache.hadoop.conf.Configuration;
 
 public interface EventFixer {
     void setup(Configuration conf);
-    
+
     RawRecordContainer fixEvent(RawRecordContainer e);
 }

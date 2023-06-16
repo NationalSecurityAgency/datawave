@@ -28,17 +28,17 @@ import static datawave.query.jexl.JexlASTHelper.nodeToKey;
  * For example, (ASTDelayedPredicate &amp;&amp; FOO == 'bar') will be unwrapped to FOO == 'bar', generating the node key "FOO == 'bar'".
  */
 public class JexlNodeSet implements Set<JexlNode> {
-    
+
     // Determines if we unwrap QueryPropertyMarker nodes and use their source node to determine node uniqueness.
     private boolean useSourceNodeForKeys = false;
-    
+
     // Internal map of node keys to nodes;
     protected final Map<String,JexlNode> nodeMap;
-    
+
     public JexlNodeSet() {
         this(true);
     }
-    
+
     /**
      *
      * @param useSourceNodeForKeys
@@ -48,7 +48,7 @@ public class JexlNodeSet implements Set<JexlNode> {
         this.useSourceNodeForKeys = useSourceNodeForKeys;
         this.nodeMap = new HashMap<>();
     }
-    
+
     /**
      * Get all the Jexl nodes in the set.
      *
@@ -57,7 +57,7 @@ public class JexlNodeSet implements Set<JexlNode> {
     public Collection<JexlNode> getNodes() {
         return nodeMap.values();
     }
-    
+
     /**
      * Get the set of node keys.
      *
@@ -66,17 +66,17 @@ public class JexlNodeSet implements Set<JexlNode> {
     public Set<String> getNodeKeys() {
         return nodeMap.keySet();
     }
-    
+
     @Override
     public int size() {
         return nodeMap.size();
     }
-    
+
     @Override
     public boolean isEmpty() {
         return nodeMap.isEmpty();
     }
-    
+
     @Override
     public boolean contains(Object o) {
         if (o instanceof JexlNode) {
@@ -85,25 +85,25 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return false;
     }
-    
+
     @Override
     public Iterator<JexlNode> iterator() {
         return Collections.unmodifiableCollection(nodeMap.values()).iterator();
     }
-    
+
     @Override
     public Object[] toArray() {
         return nodeMap.entrySet().toArray();
     }
-    
+
     @Override
     public <T> T[] toArray(T[] ts) {
         throw new UnsupportedOperationException("JexlNodeSet does not support toArray() calls to pre-allocated arrays.");
     }
-    
+
     /**
      * Add a JexlNode to the underlying node map, generating a node key in the process.
-     * 
+     *
      * @param node
      *            the JexlNode to be added
      * @return true if the underlying collection was modified
@@ -113,13 +113,13 @@ public class JexlNodeSet implements Set<JexlNode> {
         String nodeKey = buildKey(node);
         return directAdd(nodeKey, node);
     }
-    
+
     /**
      * Add a JexlNode to the underlying node map without generating a new node key.
      *
      * In the case that a node key is already generated and the JexlNode has not changed, this method should be preferred over {@link #add(JexlNode)} in order
      * to avoid regenerating the node key.
-     * 
+     *
      * @param nodeKey
      *            a string representation of the JexlNode
      * @param node
@@ -128,7 +128,7 @@ public class JexlNodeSet implements Set<JexlNode> {
      */
     private boolean directAdd(String nodeKey, JexlNode node) {
         if (nodeMap.containsKey(nodeKey)) {
-            
+
             // If node key is already mapped to a delayed node, do not overwrite the delayed node.
             // If we are not delayed but a delayed version of our node already exists, do not add.
             if (isDelayed(nodeMap.get(nodeKey)) || !isDelayed(node)) {
@@ -138,7 +138,7 @@ public class JexlNodeSet implements Set<JexlNode> {
         nodeMap.put(nodeKey, node);
         return true;
     }
-    
+
     /**
      * Remove by object or node key.
      *
@@ -159,7 +159,7 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return false;
     }
-    
+
     @Override
     public boolean containsAll(Collection<?> collection) {
         if (collection != null) {
@@ -172,17 +172,17 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return false;
     }
-    
+
     @Override
     public boolean addAll(Collection<? extends JexlNode> collection) {
         boolean modified = false;
         if (collection != null) {
-            
+
             // If the collection is a JexlNodeSet then avoid regenerating all of the node keys.
             if (collection instanceof JexlNodeSet) {
                 return directAddAll((JexlNodeSet) collection);
             }
-            
+
             for (Object o : collection) {
                 if (o instanceof JexlNode) {
                     if (add((JexlNode) o)) {
@@ -193,7 +193,7 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return modified;
     }
-    
+
     /**
      * Convenience method to perform a bulk add without generating new node keys.
      *
@@ -211,7 +211,7 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return modified;
     }
-    
+
     @Override
     public boolean retainAll(Collection<?> collection) {
         Set<String> retainKeys = new HashSet<>();
@@ -220,7 +220,7 @@ public class JexlNodeSet implements Set<JexlNode> {
                 retainKeys.add(buildKey((JexlNode) o));
             }
         }
-        
+
         boolean modified = false;
         for (String key : Sets.newHashSet(nodeMap.keySet())) {
             if (!retainKeys.contains(key)) {
@@ -231,7 +231,7 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return modified;
     }
-    
+
     @Override
     public boolean removeAll(Collection<?> collection) {
         boolean modified = false;
@@ -244,17 +244,17 @@ public class JexlNodeSet implements Set<JexlNode> {
         }
         return modified;
     }
-    
+
     @Override
     public void clear() {
         this.nodeMap.clear();
     }
-    
+
     // Is a node marked as delayed for any reason?
     protected boolean isDelayed(JexlNode node) {
         return QueryPropertyMarker.findInstance(node).isAnyType();
     }
-    
+
     /**
      * Build a key for the provided Jexl node. If the {@link #useSourceNodeForKeys} flag is set, this method will unwrap
      * {@link datawave.query.jexl.nodes.QueryPropertyMarker} nodes when generating the node key.
@@ -272,29 +272,29 @@ public class JexlNodeSet implements Set<JexlNode> {
             return nodeToKey(node);
         }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o == null)
             return false;
-        
+
         // Check for the same memory address.
         if (this == o)
             return true;
-        
+
         if (o instanceof JexlNodeSet) {
             JexlNodeSet other = (JexlNodeSet) o;
-            
+
             // Size first.
             if (this.size() != other.size())
                 return false;
-            
+
             // Node keys second.
             return this.nodeMap.keySet().equals(other.nodeMap.keySet());
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         int result = (useSourceNodeForKeys ? 1 : 0);

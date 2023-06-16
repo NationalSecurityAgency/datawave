@@ -9,10 +9,10 @@ import org.apache.hadoop.io.Text;
  * For use with the {@link datawave.query.tables.ParentQueryLogic}
  */
 public class ParentRangeProvider extends DocumentRangeProvider {
-    
+
     /**
      * Get the start key by parsing the root uid from the column family
-     * 
+     *
      * @param k
      *            an initial key
      * @return the start key

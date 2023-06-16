@@ -29,9 +29,9 @@ import org.apache.lucene.search.FuzzyQuery;
  * Builds a {@link FuzzyQuery} object from a {@link FuzzyQueryNode} object.
  */
 public class FuzzyQueryNodeBuilder implements QueryBuilder {
-    
+
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         throw new UnsupportedOperationException(getClass().getName() + " not implemented");
     }
-    
+
 }

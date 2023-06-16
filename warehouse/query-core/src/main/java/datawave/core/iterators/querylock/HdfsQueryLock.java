@@ -21,18 +21,18 @@ public class HdfsQueryLock implements QueryLock {
     private String[] hdfsBaseURIs;
     private FileSystemCache fsCache;
     private boolean privateCache = false;
-    
+
     public HdfsQueryLock(String hdfsSiteConfigs, String hdfsBaseURIs, String queryId) throws MalformedURLException {
         this(new FileSystemCache(hdfsSiteConfigs), hdfsBaseURIs, queryId);
         this.privateCache = true;
     }
-    
+
     public HdfsQueryLock(FileSystemCache fsCache, String hdfsBaseURIs, String queryId) throws MalformedURLException {
         this.queryId = queryId;
         this.hdfsBaseURIs = filterHdfsOnly(StringUtils.split(hdfsBaseURIs, ','));
         this.fsCache = fsCache;
     }
-    
+
     private String[] filterHdfsOnly(String[] dirs) {
         String[] hdfsDirs = new String[dirs.length];
         int index = 0;
@@ -48,27 +48,27 @@ public class HdfsQueryLock implements QueryLock {
         }
         return hdfsDirs;
     }
-    
+
     private Path getCacheDir(String hdfsBaseURI) {
         return new Path(hdfsBaseURI, queryId);
     }
-    
+
     private Path getClosedFile(String hdfsBaseURI) {
         return new Path(getCacheDir(hdfsBaseURI), "closed");
     }
-    
+
     @Override
     public void cleanup() {
         if (privateCache) {
             fsCache.cleanup();
         }
     }
-    
+
     @Override
     public void startQuery() {
         // noop, the query is considered running until we create the closed files
     }
-    
+
     @Override
     public void stopQuery() throws IOException {
         // create the closed files
@@ -76,7 +76,7 @@ public class HdfsQueryLock implements QueryLock {
             createClosedFile(hdfsBaseURI);
         }
     }
-    
+
     private void createClosedFile(String hdfsBaseURI) throws IOException {
         // get the hadoop file system and a temporary directory
         String hdfsCacheDirURI = getCacheDir(hdfsBaseURI).toString();
@@ -87,7 +87,7 @@ public class HdfsQueryLock implements QueryLock {
             fs = fsCache.getFileSystem(hdfsCacheURI);
             if (fs.exists(new Path(hdfsCacheURI))) {
                 Exception exception = null;
-                
+
                 // create the cancelled file
                 for (int i = 0; i < 10; i++) {
                     exception = null;
@@ -110,7 +110,7 @@ public class HdfsQueryLock implements QueryLock {
             throw new IllegalStateException("Invalid hdfs cache dir URI: " + hdfsCacheDirURI, e);
         }
     }
-    
+
     @Override
     public boolean isQueryRunning() {
         // if any of the closed files are found, then consider the query stopped.
@@ -133,7 +133,7 @@ public class HdfsQueryLock implements QueryLock {
         }
         return true;
     }
-    
+
     @Override
     protected void finalize() throws Throwable {
         cleanup();

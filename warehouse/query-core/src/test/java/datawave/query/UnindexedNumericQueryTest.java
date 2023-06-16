@@ -36,12 +36,12 @@ import static datawave.query.testframework.RawDataManager.LT_OP;
 import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(UnindexedNumericQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -52,35 +52,35 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
             generic.addReverseIndexField(idx);
         }
         dataTypes.add(new CitiesDataType(CityEntry.usa, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public UnindexedNumericQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testNumericTerm() throws Exception {
         log.info("------  testNumericTerm  ------");
-        
+
         String min = "115";
         String iowa = "'indiana'";
         String query = CityField.STATE.name() + EQ_OP + iowa + AND_OP + CityField.NUM.name() + GT_OP + min;
-        
+
         ShardQueryConfiguration config = (ShardQueryConfiguration) setupConfig(query);
         // verify NUM is NumberType
         String indexStr = config.getIndexedFieldDataTypesAsString();
         Assert.assertTrue(indexStr.contains(CityField.NUM.name() + ":" + NumberType.class.getName()));
-        
+
         // NUM field should not be indexed
         Set<String> indexes = config.getIndexedFields();
         Assert.assertFalse(indexes.contains(CityField.NUM.name()));
-        
+
         NumberType nt = new NumberType();
         String norm90 = nt.normalize(min);
-        
+
         Iterator<QueryData> queries = config.getQueries();
         Assert.assertTrue(queries.hasNext());
         QueryData data = queries.next();
@@ -92,31 +92,31 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
             }
         }
     }
-    
+
     @Test
     public void testRange() throws Exception {
         log.info("------  testRange  ------");
-        
+
         String min = "90";
         String max = "122";
         String ohio = "'ohio'";
         String iowa = "'iowa'";
         String query = "(" + CityField.STATE.name() + EQ_OP + ohio + OR_OP + CityField.STATE.name() + EQ_OP + iowa + ")" + AND_OP + "((_Bounded_ = true) && ("
                         + CityField.NUM.name() + GT_OP + min + AND_OP + CityField.NUM.name() + LT_OP + max + "))";
-        
+
         ShardQueryConfiguration config = (ShardQueryConfiguration) setupConfig(query);
         // verify NUM is NumberType
         String indexStr = config.getIndexedFieldDataTypesAsString();
         Assert.assertTrue(indexStr.contains(CityField.NUM.name() + ":" + NumberType.class.getName()));
-        
+
         // NUM field should not be indexed
         Set<String> indexes = config.getIndexedFields();
         Assert.assertFalse(indexes.contains(CityField.NUM.name()));
-        
+
         NumberType nt = new NumberType();
         String norm90 = nt.normalize(min);
         String norm122 = nt.normalize(max);
-        
+
         Iterator<QueryData> queries = config.getQueries();
         Assert.assertTrue(queries.hasNext());
         QueryData data = queries.next();
@@ -129,10 +129,10 @@ public class UnindexedNumericQueryTest extends AbstractFunctionalQuery {
             }
         }
     }
-    
+
     // end of unit tests
     // ============================================
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

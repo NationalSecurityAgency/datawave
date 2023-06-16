@@ -13,19 +13,19 @@ import org.junit.Test;
  * Test that object sizeof mechanism
  */
 public class ObjectSizeOfTest {
-    
+
     /**
      * @throws java.lang.Exception
      */
     @Before
     public void setUp() throws Exception {}
-    
+
     /**
      * @throws java.lang.Exception
      */
     @After
     public void tearDown() throws Exception {}
-    
+
     @Test
     public void testPrimitives() {
         assertEquals(0, ObjectSizeOf.Sizer.getPrimitiveObjectSize(void.class));
@@ -38,7 +38,7 @@ public class ObjectSizeOfTest {
         assertEquals(8, ObjectSizeOf.Sizer.getPrimitiveObjectSize(long.class));
         assertEquals(8, ObjectSizeOf.Sizer.getPrimitiveObjectSize(double.class));
     }
-    
+
     @Test
     public void testRoundUp() {
         assertEquals(0, ObjectSizeOf.Sizer.roundUp(0));
@@ -56,7 +56,7 @@ public class ObjectSizeOfTest {
         assertEquals(88, ObjectSizeOf.Sizer.roundUp(81));
         assertEquals(168, ObjectSizeOf.Sizer.roundUp(165));
     }
-    
+
     @Test
     public void testNumbers() {
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Boolean.TRUE));
@@ -68,7 +68,7 @@ public class ObjectSizeOfTest {
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Long.valueOf(1)));
         assertEquals(16, ObjectSizeOf.Sizer.getObjectSize(Double.valueOf(1)));
     }
-    
+
     @Test
     public void testObjects() {
         List<Object> list = new ArrayList<Object>(10);
@@ -82,33 +82,33 @@ public class ObjectSizeOfTest {
         long size = ObjectSizeOf.Sizer.roundUp(overhead + intsize + intsize + reference) + ObjectSizeOf.Sizer.roundUp(arrayoverhead + 10 * reference)
                         + numbersize + numbersize;
         assertEquals(size, ObjectSizeOf.Sizer.getObjectSize(list));
-        
+
         PrimitiveObject testPrimitive = new PrimitiveObject();
         size = numbersize;
         assertEquals(size, ObjectSizeOf.Sizer.getObjectSize(testPrimitive));
-        
+
         ObjectSizeOf testSized = new SizedObject();
         size = ObjectSizeOf.Sizer.roundUp(testSized.sizeInBytes());
         assertEquals(size, ObjectSizeOf.Sizer.getObjectSize(testSized));
-        
+
         RecursiveObject recursiveObject = new RecursiveObject();
         recursiveObject.o = recursiveObject;
         size = ObjectSizeOf.Sizer.roundUp(overhead + reference);
         assertEquals(size, ObjectSizeOf.Sizer.getObjectSize(recursiveObject));
     }
-    
+
     public static class PrimitiveObject {
         private long value = 0;
     }
-    
+
     public static class SizedObject implements ObjectSizeOf {
         @Override
         public long sizeInBytes() {
             return ObjectSizeOf.Sizer.roundUp(20);
         }
-        
+
     }
-    
+
     public static class RecursiveObject {
         public Object o;
     }

@@ -15,9 +15,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class ActiveQuery {
-    
+
     private static Logger log = Logger.getLogger(ActiveQuery.class);
-    
+
     private final String queryId;
     private final String activeQueryLogName;
     private long initTs = 0;
@@ -26,30 +26,30 @@ public class ActiveQuery {
     private long lastSeekCount = 0;
     private long documentSizeBytes = 0;
     private int windowSize = 0;
-    
+
     public enum CallType {
         SEEK, NEXT
     };
-    
+
     private Map<CallType,Map<Range,Long>> startTimeMap = new HashMap<>();
     private Map<CallType,Timer> timerMap = new HashMap<>();
     private Map<CallType,Long> numCallsMap = new HashMap<>();
     private Map<CallType,Integer> inCallMap = new HashMap<>();
     private Set<Range> activeRanges = new HashSet<>();
-    
+
     public ActiveQuery(String queryId, int windowSize, String activeQueryLogName) {
         this.queryId = queryId;
         this.windowSize = windowSize;
         this.activeQueryLogName = StringUtils.isNotBlank(activeQueryLogName) ? activeQueryLogName : "";
         this.initTs = System.currentTimeMillis();
     }
-    
+
     synchronized public ActiveQuerySnapshot snapshot() {
         return new ActiveQuerySnapshot(this.activeQueryLogName, this.queryId, this.lastSourceCount, this.lastNextCount, this.lastSeekCount,
                         this.documentSizeBytes, this.activeRanges.size(), this.totalElapsedTime(), this.isInCall(), this.currentCallTime(), this.numCallsMap,
                         this.timerMap);
     }
-    
+
     synchronized public void beginCall(Range range, CallType type) {
         Map<Range,Long> rangeMap = this.startTimeMap.get(type);
         if (rangeMap == null) {
@@ -60,11 +60,11 @@ public class ActiveQuery {
         activeRanges.add(range);
         setInCall(type, true);
     }
-    
+
     synchronized public void endCall(Range range, CallType type) {
         Long val = getNumCalls(type);
         this.numCallsMap.put(type, (val.longValue() + 1));
-        
+
         Map<Range,Long> rangeMap = this.startTimeMap.get(type);
         if (rangeMap != null) {
             Long start = rangeMap.get(range);
@@ -75,7 +75,7 @@ public class ActiveQuery {
             }
         }
     }
-    
+
     synchronized public void recordStats(Document document, QuerySpan querySpan) {
         if (document != null) {
             this.documentSizeBytes = document.sizeInBytes();
@@ -86,17 +86,17 @@ public class ActiveQuery {
             this.lastNextCount = querySpan.getNextCount();
         }
     }
-    
+
     synchronized public int removeRange(Range range) {
         this.activeRanges.remove(range);
         return this.activeRanges.size();
     }
-    
+
     @Override
     synchronized public String toString() {
         return snapshot().toString();
     }
-    
+
     synchronized private long getNumCalls(CallType type) {
         Long val = this.numCallsMap.get(type);
         if (val == null) {
@@ -105,11 +105,11 @@ public class ActiveQuery {
         }
         return val;
     }
-    
+
     synchronized private long totalElapsedTime() {
         return System.currentTimeMillis() - this.initTs;
     }
-    
+
     synchronized private boolean isInCall() {
         int numInCallTotal = 0;
         for (Integer numInCall : this.inCallMap.values()) {
@@ -117,7 +117,7 @@ public class ActiveQuery {
         }
         return numInCallTotal > 0;
     }
-    
+
     synchronized private Timer getTimer(CallType type) {
         Timer t = timerMap.get(type);
         if (t == null) {
@@ -126,7 +126,7 @@ public class ActiveQuery {
         }
         return t;
     }
-    
+
     synchronized private void setInCall(CallType type, boolean inCall) {
         Integer numCalls = this.inCallMap.get(type);
         if (numCalls == null) {
@@ -144,7 +144,7 @@ public class ActiveQuery {
         }
         this.inCallMap.put(type, newNumCalls);
     }
-    
+
     synchronized private long currentCallTime() {
         if (isInCall()) {
             long earliestStart = Long.MAX_VALUE;

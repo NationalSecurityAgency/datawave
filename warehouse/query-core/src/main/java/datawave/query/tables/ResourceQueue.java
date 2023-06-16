@@ -15,16 +15,16 @@ import com.google.common.base.Preconditions;
  * Closable queue that defines a simplistic factory that creates and destroys scanner resources.
  */
 public final class ResourceQueue implements Closeable {
-    
+
     private static final Logger log = Logger.getLogger(ResourceQueue.class);
-    
+
     private final GenericObjectPool<AccumuloResource> scannerPool;
-    
+
     private final byte type;
-    
+
     /**
      * Constructor for the queue that accepts the capacity and the connector. Defaults to the block when exhausted queue option
-     * 
+     *
      * @param capacity
      *            the capacity
      * @param client
@@ -33,7 +33,7 @@ public final class ResourceQueue implements Closeable {
     public ResourceQueue(int capacity, AccumuloClient client) {
         this(capacity, client, GenericObjectPool.WHEN_EXHAUSTED_BLOCK);
     }
-    
+
     /**
      * Constructor that accepts the type of pool, the connector, and the capacity
      *
@@ -47,11 +47,11 @@ public final class ResourceQueue implements Closeable {
     public ResourceQueue(int capacity, AccumuloClient client, byte type) {
         Preconditions.checkNotNull(client);
         Preconditions.checkArgument(capacity > 0);
-        
+
         this.type = type;
-        
+
         PoolableObjectFactory<AccumuloResource> factory = new AccumuloResourceFactory(client);
-        
+
         this.scannerPool = new GenericObjectPool<>(factory);
         // set the max capacity
         this.scannerPool.setMaxActive(capacity);
@@ -60,7 +60,7 @@ public final class ResourceQueue implements Closeable {
         // block
         this.scannerPool.setWhenExhaustedAction(type);
     }
-    
+
     public AccumuloResource getScannerResource() throws Exception {
         // let's grab an object from the pool,
         AccumuloResource resource = null;
@@ -75,10 +75,10 @@ public final class ResourceQueue implements Closeable {
         }
         return resource;
     }
-    
+
     /**
      * Closes the scanner resource, and returns the object to the pool
-     * 
+     *
      * @param resource
      *            a resource
      * @throws Exception
@@ -88,14 +88,14 @@ public final class ResourceQueue implements Closeable {
         resource.close();
         scannerPool.returnObject(resource);
     }
-    
+
     public int getCapacity() {
         return this.scannerPool.getMaxActive();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.io.Closeable#close()
      */
     @Override
@@ -107,26 +107,26 @@ public final class ResourceQueue implements Closeable {
             throw new IOException(e);
         }
     }
-    
+
     private static final class AccumuloResourceFactory implements PoolableObjectFactory<AccumuloResource> {
-        
+
         private final AccumuloClient client;
-        
+
         AccumuloResourceFactory(AccumuloClient client) {
             this.client = client;
         }
-        
+
         @Override
         public void activateObject(AccumuloResource object) {
             /* no-op */
         }
-        
+
         @Override
         public void destroyObject(AccumuloResource object) {
             if (log.isTraceEnabled())
                 log.trace("Removing " + object.hashCode());
         }
-        
+
         @Override
         public AccumuloResource makeObject() {
             AccumuloResource scannerResource = new AccumuloResource(client);
@@ -134,12 +134,12 @@ public final class ResourceQueue implements Closeable {
                 log.trace("Returning " + scannerResource.hashCode());
             return scannerResource;
         }
-        
+
         @Override
         public void passivateObject(AccumuloResource object) throws Exception {
             destroyObject(object);
         }
-        
+
         @Override
         public boolean validateObject(AccumuloResource object) {
             return true;

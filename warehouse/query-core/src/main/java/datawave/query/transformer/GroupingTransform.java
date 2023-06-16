@@ -38,51 +38,51 @@ import static org.slf4j.LoggerFactory.getLogger;
  * computed.
  */
 public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
-    
+
     private static final Logger log = getLogger(GroupingTransform.class);
-    
+
     /**
      * the fields (user provided) to group by
      */
     private Set<String> groupFieldsSet;
-    
+
     /**
      * holds the aggregated column visibilities for each grouped event
      */
     private final Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
-    
+
     /**
      * A map of TypeAttribute collection keys to integer counts This map uses a special key type that ignores the metadata (with visibilities) in its hashCode
      * and equals methods
      */
     private GroupCountingHashMap countingMap;
-    
+
     /**
      * Provides the grouping information (counting map, field visibilities, etc) for grouping documents.
      */
     private final GroupingUtil groupingUtil = new GroupingUtil();
-    
+
     /**
      * list of documents to return, created from the countingMap
      */
     private final LinkedList<Document> documents = new LinkedList<>();
-    
+
     /**
      * mapping used to combine field names that map to different model names
      */
     private Map<String,String> reverseModelMapping = null;
-    
+
     /**
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
      */
     private final List<Key> keys = new ArrayList<>();
-    
+
     /**
      * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
      * be returned to signal the request is still in progress.
      */
     private final long queryExecutionForPageTimeout;
-    
+
     /**
      * Constructor
      *
@@ -102,50 +102,50 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         updateConfig(groupFieldsSet, model);
         log.trace("groupFieldsSet: {}", this.groupFieldsSet);
     }
-    
+
     public void updateConfig(Collection<String> groupFieldSet, QueryModel model) {
         this.groupFieldsSet = groupFieldSet.stream().map(JexlASTHelper::deconstructIdentifier).collect(Collectors.toSet());
         if (model != null) {
             reverseModelMapping = model.getReverseQueryMapping();
         }
     }
-    
+
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         log.trace("apply to {}", keyDocumentEntry);
-        
+
         if (keyDocumentEntry != null) {
-            
+
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 return keyDocumentEntry;
             }
-            
+
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
             GroupingUtil.GroupingInfo groupingInfo = groupingUtil.getGroupingInfo(keyDocumentEntry, groupFieldsSet, countingMap, reverseModelMapping);
             this.countingMap = groupingInfo.getCountsMap();
             this.fieldVisibilities.putAll(groupingInfo.getFieldVisibilities());
         }
-        
+
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             Document intermediateResult = new Document();
             intermediateResult.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), intermediateResult);
         }
-        
+
         return null;
     }
-    
+
     @Override
     public Entry<Key,Document> flush() {
         Document document = null;
         if (!countingMap.isEmpty()) {
-            
+
             log.trace("flush will use the countingMap: {}", countingMap);
-            
+
             for (Collection<GroupingTypeAttribute<?>> entry : countingMap.keySet()) {
                 log.trace("from countingMap, got entry: {}", entry);
                 ColumnVisibility columnVisibility;
@@ -160,7 +160,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 Key docKey = keys.get(keys.size() - 1);
                 Document d = new Document(docKey, true);
                 d.setColumnVisibility(columnVisibility);
-                
+
                 entry.forEach(base -> d.put(base.getMetadata().getRow().toString(), base));
                 NumberType type = new NumberType();
                 type.setDelegate(new BigDecimal(countingMap.get(entry)));
@@ -169,12 +169,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 documents.add(d);
             }
         }
-        
+
         if (!documents.isEmpty()) {
             log.trace("{} will flush first of {} documents: {}", this.hashCode(), documents.size(), documents);
             document = documents.pop();
         }
-        
+
         if (document != null) {
             Key key = document.getMetadata();
             Entry<Key,Document> entry = Maps.immutableEntry(key, document);
@@ -182,8 +182,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             countingMap.clear();
             return entry;
         }
-        
+
         return null;
     }
-    
+
 }

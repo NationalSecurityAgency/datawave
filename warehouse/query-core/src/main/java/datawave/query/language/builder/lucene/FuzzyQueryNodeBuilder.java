@@ -28,9 +28,9 @@ import org.apache.lucene.search.FuzzyQuery;
  */
 @Deprecated
 public class FuzzyQueryNodeBuilder implements QueryBuilder {
-    
+
     public FuzzyQuery build(QueryNode queryNode) throws QueryNodeException {
         throw new UnsupportedOperationException(getClass().getName() + " not implemented");
     }
-    
+
 }

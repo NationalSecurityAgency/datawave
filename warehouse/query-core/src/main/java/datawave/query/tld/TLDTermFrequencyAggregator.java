@@ -11,11 +11,11 @@ import java.util.Set;
  * TermFrequencyAggregator which will treat all TF uid's as the TLD uid for the purposes of aggregation
  */
 public class TLDTermFrequencyAggregator extends TermFrequencyAggregator {
-    
+
     public TLDTermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter attrFilter, int maxNextCount) {
         super(fieldsToKeep, attrFilter, maxNextCount);
     }
-    
+
     @Override
     protected ByteSequence parsePointer(ByteSequence qualifier) {
         ArrayList<Integer> deezNulls = TLD.instancesOf(0, qualifier, -1);

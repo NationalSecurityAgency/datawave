@@ -10,7 +10,7 @@ import org.apache.hadoop.conf.Configuration;
 import com.google.common.collect.Multimap;
 
 public interface TextNormalizer {
-    
+
     /**
      * A method used to setup this normalizer. Normally properties that are used to configure this normalizer start with type.name() + '.' +
      * this.getClass().getSimpleName() + '.' + instance.
@@ -23,7 +23,7 @@ public interface TextNormalizer {
      *            The configuration
      */
     void setup(Type type, String instance, Configuration config);
-    
+
     /**
      * Creates normalized content for ingest based upon implemented logic.
      *
@@ -36,7 +36,7 @@ public interface TextNormalizer {
      *             if there are issues with the normalization
      */
     String normalizeFieldValue(String field, String value) throws NormalizationException;
-    
+
     /**
      * Creates normalized content for ingest based upon implemented logic.
      *
@@ -49,7 +49,7 @@ public interface TextNormalizer {
      *             if there are issues with the normalization
      */
     String normalizeFieldRegex(String field, String regex) throws NormalizationException;
-    
+
     /**
      * Creates normalized content for ingest based upon implemented logic.
      *
@@ -58,7 +58,7 @@ public interface TextNormalizer {
      * @return a normalized content object.
      */
     NormalizedContentInterface normalize(NormalizedContentInterface field);
-    
+
     /**
      * Creates normalized content for ingest based upon implemented logic.
      *
@@ -67,7 +67,7 @@ public interface TextNormalizer {
      * @return a multimap of normalized content objects.
      */
     Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields);
-    
+
     /**
      * Creates normalized content for ingest based upon implemented logic.
      *
@@ -76,5 +76,5 @@ public interface TextNormalizer {
      * @return a multimap of normalized content objects.
      */
     Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields);
-    
+
 }

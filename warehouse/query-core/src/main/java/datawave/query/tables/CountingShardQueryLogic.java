@@ -15,41 +15,41 @@ import org.apache.log4j.Logger;
 
 /**
  * A simple extension of the basic ShardQueryTable which applies a counting iterator on top of the "normal" iterator stack.
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class CountingShardQueryLogic extends ShardQueryLogic {
     private static final Logger log = Logger.getLogger(CountingShardQueryLogic.class);
-    
+
     public CountingShardQueryLogic() {
         super();
     }
-    
+
     public CountingShardQueryLogic(CountingShardQueryLogic other) {
         super(other);
     }
-    
+
     @Override
     public CountingShardQueryLogic clone() {
         return new CountingShardQueryLogic(this);
     }
-    
+
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         return new ShardQueryCountTableTransformer(settings, this.markingFunctions, this.responseObjectFactory);
     }
-    
+
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         return new CountAggregatingIterator(this.iterator(), getTransformer(settings));
     }
-    
+
     @Override
     public Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         PushdownScheduler scheduler = new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
         scheduler.addSetting(new IteratorSetting(config.getBaseIteratorPriority() + 50, "counter", ResultCountingIterator.class.getName()));
         return scheduler;
     }
-    
+
 }
