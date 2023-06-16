@@ -12,7 +12,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      * Add a new token with its TTL to the the structure.
      */
     public abstract B addToken(byte[] token, long ttl);
-    
+
     /**
      * Parse additional token configurations from a string.
      */
@@ -21,7 +21,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
         parser.parseTo(this);
         return (B) this;
     }
-    
+
     /**
      * Minimal grammar for parsing tokens specs:
      *
@@ -39,7 +39,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
      * </pre>
      */
     protected static class ParserState {
-        
+
         private enum ParseTokenType {
             //@formatter:off
             SEPARATION("[\\s\\n,]+"),
@@ -54,45 +54,45 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                     AgeOffTtlUnits.MINUTES + "|" +
                     AgeOffTtlUnits.SECONDS);
             //@formatter:on
-            
+
             private final Pattern matchPattern;
-            
+
             ParseTokenType(String matchExpr) {
                 this.matchPattern = Pattern.compile(matchExpr);
             }
         }
-        
+
         private static class ParseToken {
-            
+
             public ParseTokenType type;
             public String content;
             public int offset;
-            
+
             public ParseToken(ParseTokenType type, String content, int offset) {
                 this.type = type;
                 this.content = content;
                 this.offset = offset;
             }
         }
-        
+
         private final String input;
         private final List<ParseToken> parseTokens;
         private int nextTokenPos;
-        
+
         protected ParserState(String input) {
             this.input = input;
             this.parseTokens = tokenize(input);
             nextTokenPos = 0;
         }
-        
+
         private IllegalArgumentException error(String message, int posn) {
             return error(message, posn, null);
         }
-        
+
         private IllegalArgumentException error(String message, int posn, Throwable cause) {
             return new IllegalArgumentException(message + " near ..." + input.substring(posn, Math.min(input.length(), posn + 20)) + "...", cause);
         }
-        
+
         private List<ParseToken> tokenize(String input) {
             List<ParseToken> result = new ArrayList<>();
             int curPos = 0;
@@ -126,7 +126,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
             return result;
         }
-        
+
         /**
          * Return the next token without advancing.
          */
@@ -136,7 +136,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
             return parseTokens.get(nextTokenPos);
         }
-        
+
         /**
          * Consume the next token, assuming it's of the specified type, and return its content.
          */
@@ -148,7 +148,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             nextTokenPos++;
             return next.content;
         }
-        
+
         /**
          * Parse the entire input and add it to the TtlTrieBuilder.
          */
@@ -156,7 +156,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             ParseToken initialToken;
             while ((initialToken = peek()) != null) {
                 String tokenStr = parseStrliteral();
-                
+
                 long ttl = -1;
                 if (peek() != null && peek().type == ParseTokenType.COLON) {
                     ttl = parseTtl(ParseTokenType.COLON);
@@ -170,14 +170,14 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                 }
             }
         }
-        
+
         /**
          * Read a string literal.
          */
         protected String parseStrliteral() {
             ParseToken token = peek();
             String literalContent = null;
-            
+
             if (token.type == ParseTokenType.STRLITERAL) {
                 literalContent = expect(ParseTokenType.STRLITERAL);
                 literalContent = literalContent.substring(1, literalContent.length() - 1);
@@ -186,7 +186,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
                 String[] parts = literalContent.trim().split("\\s");
                 literalContent = parts[parts.length - 1];
             }
-            
+
             StringBuilder sb = new StringBuilder();
             for (int charPos = 0; charPos < literalContent.length(); charPos++) {
                 char c = literalContent.charAt(charPos);
@@ -257,7 +257,7 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
             return sb.toString();
         }
-        
+
         protected long parseTtl(ParseTokenType type) {
             ParseToken token = peek();
             expect(type);
@@ -270,5 +270,5 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
             }
         }
     }
-    
+
 }

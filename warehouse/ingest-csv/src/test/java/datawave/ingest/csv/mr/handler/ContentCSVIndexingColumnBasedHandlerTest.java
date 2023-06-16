@@ -39,12 +39,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ContentCSVIndexingColumnBasedHandlerTest {
-    
+
     private Configuration conf;
     private static Path edgeKeyVersionCachePath = Paths.get(System.getProperty("user.dir"), "edge-key-version.txt");
     private static Logger log = Logger.getLogger(ContentCSVIndexingColumnBasedHandlerTest.class);
     private static Enumeration rootAppenders = Logger.getRootLogger().getAllAppenders();
-    
+
     @BeforeClass
     public static void setupSystemSettings() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -56,7 +56,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
             log.fatal("Could not create " + edgeKeyVersionCachePath);
         }
     }
-    
+
     @AfterClass
     public static void tearDown() {
         Logger.getRootLogger().removeAllAppenders();
@@ -70,7 +70,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
             log.error("Could not delete " + edgeKeyVersionCachePath);
         }
     }
-    
+
     private CSVRecordReader getCSVRecordReader(String file) throws IOException, URISyntaxException {
         InputSplit split = ColumnBasedHandlerTestUtil.getSplit(file);
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
@@ -81,7 +81,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         reader.initialize(split, ctx);
         return reader;
     }
-    
+
     private static void enableLogging() {
         Logger.getRootLogger().removeAllAppenders();
         ConsoleAppender ca = new ConsoleAppender();
@@ -92,14 +92,14 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.TRACE);
         Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.TRACE);
     }
-    
+
     private static void disableLogging() {
         log.setLevel(Level.OFF);
         Logger.getLogger(ColumnBasedHandlerTestUtil.class).setLevel(Level.OFF);
         Logger.getLogger(ContentIndexingColumnBasedHandler.class).setLevel(Level.OFF);
         Logger.getLogger(ContentBaseIngestHelper.class).setLevel(Level.OFF);
     }
-    
+
     @Before
     public void setup() {
         TypeRegistry.reset();
@@ -109,7 +109,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         conf.set(ShardedDataTypeHandler.SHARD_GIDX_TNAME, TableName.SHARD_INDEX);
         conf.set(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, TableName.SHARD_RINDEX);
     }
-    
+
     @Test
     public void testCsv01() throws Exception {
         log.debug("---testCsv01---");
@@ -120,44 +120,44 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         TypeRegistry.getInstance(conf);
         ExtendedCSVHelper helper = new ExtendedCSVHelper();
         helper.setup(conf);
-        
+
         // Set up the IngestHelper
         ExtendedCSVIngestHelper ingestHelper = new ExtendedCSVIngestHelper();
         ingestHelper.setup(conf);
-        
+
         // Set up the ColumnBasedHandler
         TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         ContentCSVColumnBasedHandler<Text> csvHandler = new ContentCSVColumnBasedHandler<>();
         csvHandler.setup(context);
-        
+
         // Set up the Reader
         CSVRecordReader reader = getCSVRecordReader("/input/my.csv");
-        
+
         // ----------------------------------------------------------------------
         // EVENT 1
         Assert.assertTrue("First Record did not read properly?", reader.nextKeyValue());
         RawRecordContainer event = reader.getEvent();
         Assert.assertNotNull("Event 1 was null.", event);
         Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
-        
+
         // Set up the edge
         ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         edgeHandler.setup(context);
-        
+
         ColumnBasedHandlerTestUtil.processEvent(csvHandler, edgeHandler, event, 73, 29, 25, 4, true);
-        
+
         // ----------------------------------------------------------------------
         // EVENT 2
         Assert.assertTrue("Second Record did not read properly?", reader.nextKeyValue());
         event = reader.getEvent();
         Assert.assertNotNull("Event 2 was null.", event);
         Assert.assertTrue("Event 2 has parsing errors", event.getErrors().isEmpty());
-        
+
         edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         edgeHandler.setup(context);
-        
+
         ColumnBasedHandlerTestUtil.processEvent(csvHandler, edgeHandler, event, 77, 31, 24, 4, true);
-        
+
         reader.close();
     }
 }

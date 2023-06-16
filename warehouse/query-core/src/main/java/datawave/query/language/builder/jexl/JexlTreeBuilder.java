@@ -25,10 +25,10 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.core.type.filter.AssignableTypeFilter;
 
 public class JexlTreeBuilder extends QueryTreeBuilder {
-    
+
     public static final JexlQueryFunction[] DEFAULT_ALLOWED_FUNCTIONS;
     public static final List<JexlQueryFunction> DEFAULT_ALLOWED_FUNCTION_LIST;
-    
+
     static {
         ClassPathScanningCandidateComponentProvider p = new ClassPathScanningCandidateComponentProvider(false);
         p.addIncludeFilter(new AssignableTypeFilter(JexlQueryFunction.class));
@@ -42,11 +42,11 @@ public class JexlTreeBuilder extends QueryTreeBuilder {
         }).filter(b -> b != null).collect(Collectors.toList());
         DEFAULT_ALLOWED_FUNCTIONS = DEFAULT_ALLOWED_FUNCTION_LIST.toArray(new JexlQueryFunction[0]);
     }
-    
+
     public JexlTreeBuilder() {
         this(DEFAULT_ALLOWED_FUNCTION_LIST);
     }
-    
+
     public JexlTreeBuilder(List<JexlQueryFunction> allowedFunctions) {
         setBuilder(GroupQueryNode.class, new GroupQueryNodeBuilder());
         setBuilder(FunctionQueryNode.class, new FunctionQueryNodeBuilder(allowedFunctions));
@@ -58,7 +58,7 @@ public class JexlTreeBuilder extends QueryTreeBuilder {
         setBuilder(RegexpQueryNode.class, new RegexpQueryNodeBuilder());
         setBuilder(SlopQueryNode.class, new SlopQueryNodeBuilder());
     }
-    
+
     @Override
     public JexlNode build(QueryNode queryNode) throws QueryNodeException {
         return (JexlNode) super.build(queryNode);

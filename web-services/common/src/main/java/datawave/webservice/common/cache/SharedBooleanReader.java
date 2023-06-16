@@ -12,7 +12,7 @@ import org.apache.curator.framework.listen.Listenable;
  *
  */
 public interface SharedBooleanReader extends Listenable<SharedBooleanListener> {
-    
+
     boolean getBoolean();
-    
+
 }

@@ -35,12 +35,12 @@ import org.jboss.resteasy.annotations.GZIP;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class MapReduceStatusUpdateBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private MapReduceStatePersisterBean mapReduceState;
-    
+
     /**
      * This method is meant to be a callback from the Hadoop infrastructure and is not protected. When a BulkResults job is submitted the
      * "job.end.notification.url" property is set to public URL endpoint for this servlet. The Hadoop infrastructure will call back to this servlet. If the call
@@ -68,7 +68,7 @@ public class MapReduceStatusUpdateBean {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     public VoidResponse updateState(@Required("jobId") @QueryParam("jobId") String jobId, @Required("jobStatus") @QueryParam("jobStatus") String jobStatus) {
         log.info("Received MapReduce status update for job: " + jobId + ", new status: " + jobStatus);
-        
+
         VoidResponse response = new VoidResponse();
         try {
             mapReduceState.updateState(jobId, MapReduceState.valueOf(jobStatus));
@@ -80,5 +80,5 @@ public class MapReduceStatusUpdateBean {
             throw new DatawaveWebApplicationException(qe, response);
         }
     }
-    
+
 }

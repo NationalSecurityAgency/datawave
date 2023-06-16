@@ -6,7 +6,7 @@ import datawave.query.config.ShardQueryConfiguration;
  * An index lookup which does no work and returns an empty IndexLookupMap
  */
 public class EmptyIndexLookup extends IndexLookup {
-    
+
     /**
      *
      * @param config
@@ -15,7 +15,7 @@ public class EmptyIndexLookup extends IndexLookup {
     public EmptyIndexLookup(ShardQueryConfiguration config) {
         super(config, null);
     }
-    
+
     @Override
     public IndexLookupMap lookup() {
         return new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());

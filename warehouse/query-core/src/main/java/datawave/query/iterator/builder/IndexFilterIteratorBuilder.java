@@ -17,22 +17,22 @@ import java.io.IOException;
 /**
  * A convenience class that aggregates a field, filter, range, source iterator, normalizer mappings, index only fields, data type filter and key transformer
  * when traversing a subtree in a query. This allows arbitrary ordering of the arguments.
- * 
+ *
  */
 public class IndexFilterIteratorBuilder extends IvaratorBuilder implements IteratorBuilder {
     private static Logger log = Logger.getLogger(IndexFilterIteratorBuilder.class);
-    
+
     protected LiteralRange range;
     protected Filter filter;
-    
+
     public LiteralRange getRange() {
         return range;
     }
-    
+
     public Filter getFilter() {
         return filter;
     }
-    
+
     public void setRangeAndFunction(LiteralRange range, Filter filter) {
         this.range = range;
         this.filter = filter;
@@ -42,7 +42,7 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
         builder.append(range.getLower()).append("-").append(range.getUpper());
         setValue(builder.toString());
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public NestedIterator<Key> build() {
@@ -50,14 +50,14 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
             if (log.isTraceEnabled()) {
                 log.trace("Generating ivarator (caching field index iterator) for " + filter + " over " + range);
             }
-            
+
             // we can't build an ivarator if no ivarator directories have been defined
             if (ivaratorCacheDirs.isEmpty())
                 throw new IllegalStateException("No ivarator cache dirs defined");
-            
+
             // ensure that we are able to create the first ivarator cache dir (the control dir)
             validateIvaratorControlDir(ivaratorCacheDirs.get(0));
-            
+
             DocumentIterator docIterator = null;
             try {
                 // create a field index caching ivarator
@@ -92,26 +92,26 @@ public class IndexFilterIteratorBuilder extends IvaratorBuilder implements Itera
                         .withIvaratorSourcePool(ivaratorSourcePool)
                         .build();
                 // @formatter:on
-                
+
                 if (collectTimingDetails) {
                     rangeIterator.setCollectTimingDetails(true);
                     rangeIterator.setQuerySpanCollector(this.querySpanCollector);
                 }
                 rangeIterator.init(source, null, env);
                 log.debug("Created a DatawaveFieldIndexFilterIteratorJexl: " + rangeIterator);
-                
+
                 // Add an interator to aggregate documents. This is needed for index only fields.
                 DocumentAggregatingIterator aggregatingIterator = new DocumentAggregatingIterator(true, // this.fieldsToKeep == null ? false
                                                                                                         // :this.fieldsToKeep.contains(field),
                                 this.typeMetadata, keyTform);
                 aggregatingIterator.init(rangeIterator, null, null);
-                
+
                 docIterator = aggregatingIterator;
-                
+
             } catch (IOException e) {
                 throw new IllegalStateException("Unable to initialize regex iterator stack", e);
             }
-            
+
             IndexIteratorBridge itr = new IndexIteratorBridge(docIterator, getNode(), getField());
             range = null;
             filter = null;

@@ -26,20 +26,20 @@ import java.io.IOException;
 @Provider
 @Priority(Priorities.HEADER_DECORATOR)
 public class ResponseInterceptor implements ContainerResponseFilter {
-    
+
     private static String ORIGIN = null;
-    
+
     @AroundInvoke
     public Object invoke(InvocationContext ctx) throws Exception {
         long start = System.currentTimeMillis();
         Object r = ctx.proceed();
         boolean isResponseObject = r instanceof Response;
         boolean isBaseResponseObject = r instanceof BaseResponse;
-        
+
         // If response type is not BaseResponse or subclass, then move on
         if (!isResponseObject && !isBaseResponseObject)
             return r;
-        
+
         // Invoke the method
         if (isResponseObject) {
             Response result = (Response) r;
@@ -62,13 +62,13 @@ public class ResponseInterceptor implements ContainerResponseFilter {
             return result;
         }
     }
-    
+
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
         if (null == ORIGIN) {
             ORIGIN = System.getProperty("cluster.name") + "/" + System.getProperty("jboss.host.name");
         }
-        
+
         if (response.getEntity() instanceof BaseResponse) {
             BaseResponse br = (BaseResponse) response.getEntity();
             response.getHeaders().add(Constants.OPERATION_TIME, br.getOperationTimeMS());

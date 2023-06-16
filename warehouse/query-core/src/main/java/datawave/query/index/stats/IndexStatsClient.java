@@ -36,36 +36,36 @@ import org.apache.log4j.Logger;
 
 /**
  * API for getting stats for field names and data types.
- * 
+ *
  */
 public class IndexStatsClient {
     public static final String DEFAULT_STRING = "default";
     public static final Double DEFAULT_VALUE = Double.MAX_VALUE;
     public static final ImmutableMap<String,Double> EMPTY_STATS = ImmutableMap.of(DEFAULT_STRING, DEFAULT_VALUE);
-    
+
     private static final Logger log = Logger.getLogger(IndexStatsClient.class);
-    
+
     private AccumuloClient client;
     private String table;
     private DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-    
+
     public IndexStatsClient(AccumuloClient client) {
         this(client, TableName.INDEX_STATS);
     }
-    
+
     public IndexStatsClient(AccumuloClient client, String tableName) {
         this.client = client;
         table = tableName;
     }
-    
+
     public void setTable(String table) {
         this.table = table;
     }
-    
+
     public void setDateFormatter(SimpleDateFormat f) {
         this.dateFormat = new SimpleDateFormat(f.toPattern());
     }
-    
+
     /**
      * If getStat throws any exceptions, return the default EMPTY_STATS instead of throwing the exception.
      *
@@ -88,7 +88,7 @@ public class IndexStatsClient {
             return EMPTY_STATS;
         }
     }
-    
+
     public Map<String,Double> getStat(Set<String> fields, Set<String> dataTypes, Date start, Date end) throws IOException {
         if (client.tableOperations().exists(this.table)) {
             TreeSet<String> dates = new TreeSet<>();
@@ -102,7 +102,7 @@ public class IndexStatsClient {
             return EMPTY_STATS;
         }
     }
-    
+
     public Map<String,Double> getStat(Set<String> fields, Set<String> dataTypes, SortedSet<String> dates) throws IOException {
         final ScannerBase scanner;
         try {
@@ -118,20 +118,20 @@ public class IndexStatsClient {
             log.error(e);
             throw new IOException(e);
         }
-        
+
         configureScanIterators(scanner, dataTypes, dates);
-        
+
         Map<String,Double> results = scanResults(scanner);
-        
+
         if (scanner instanceof BatchScanner) {
             scanner.close();
         }
-        
+
         return results;
     }
-    
+
     public void configureScanIterators(ScannerBase scanner, Collection<String> dataTypes, SortedSet<String> dates) throws IOException {
-        
+
         if (!dates.isEmpty()) {
             // Filters out sub sections of the column families for me
             IteratorSetting cfg = new IteratorSetting(IteratorSettingHelper.BASE_ITERATOR_PRIORITY + 30, MinMaxIterator.class);
@@ -139,7 +139,7 @@ public class IndexStatsClient {
             cfg.addOption(MinMaxIterator.MAX_OPT, dates.last());
             scanner.addScanIterator(cfg);
         }
-        
+
         // only want these data types
         if (!dataTypes.isEmpty()) {
             IteratorSetting cfg = new IteratorSetting(IteratorSettingHelper.BASE_ITERATOR_PRIORITY + 31, CsvKeyFilter.class);
@@ -149,13 +149,13 @@ public class IndexStatsClient {
             cfg.addOption(CsvKeyFilter.KEY_PART_OPT, "colq");
             scanner.addScanIterator(cfg);
         }
-        
+
         /*
          * considers the date ranges and datatypes when calculating a weight for a given field
          */
         scanner.addScanIterator(new IteratorSetting(IteratorSettingHelper.BASE_ITERATOR_PRIORITY + 32, IndexStatsCombiningIterator.class));
     }
-    
+
     public HashMap<String,Double> scanResults(Iterable<Entry<Key,Value>> data) {
         HashMap<String,Double> fieldWeights = new HashMap<>();
         final DoubleWritable vWeight = new DoubleWritable();
@@ -176,7 +176,7 @@ public class IndexStatsClient {
         }
         return fieldWeights;
     }
-    
+
     public SortedSet<Range> buildRanges(Collection<String> fields) {
         TreeSet<Range> ranges = new TreeSet<>();
         for (String field : fields) {

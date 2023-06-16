@@ -9,7 +9,7 @@ import org.apache.accumulo.core.data.Value;
 public class ColumnFamilyRegexFilter extends RegexFilterBase {
     /**
      * This method returns a {@code String} object containing the column family for {@code Key} object {@code k}
-     * 
+     *
      * @param k
      *            {@code Key} object containing the row, column family, and column family.
      * @param v
@@ -20,5 +20,5 @@ public class ColumnFamilyRegexFilter extends RegexFilterBase {
     protected String getKeyField(Key k, Value v) {
         return k.getColumnFamily().toString();
     }
-    
+
 }

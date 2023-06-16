@@ -14,7 +14,7 @@ import java.util.Set;
  * JexlArgumentDescriptor, and reprocess the new node and it's children.
  */
 public interface RebuildingJexlArgumentDescriptor extends JexlArgumentDescriptor {
-    
+
     /**
      * Conditionally rebuilds the ASTFunctionNode that this JexlArgumentDescriptor was created from. If no changes to the original ASTFunctionNode are required,
      * the original node should be returned.

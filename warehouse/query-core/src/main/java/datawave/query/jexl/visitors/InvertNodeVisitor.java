@@ -18,12 +18,12 @@ import static datawave.query.jexl.JexlASTHelper.isLiteral;
  * Detect and correct cases where an identifier is on the left and the field is on the right.
  */
 public class InvertNodeVisitor extends RebuildingVisitor {
-    
+
     public static <T extends JexlNode> T invertSwappedNodes(T script) {
         InvertNodeVisitor visitor = new InvertNodeVisitor();
         return (T) script.jjtAccept(visitor, null);
     }
-    
+
     /**
      * Determines if a node's left child is a literal
      *
@@ -38,7 +38,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return false;
     }
-    
+
     /**
      * Reparent a JexlNode's children similar to JexlNodes.children(), but respects the RebuildingVisitor's method contract by copying the children.
      *
@@ -58,7 +58,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return out;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (leftChildIsLiteral(node)) {
@@ -66,7 +66,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         if (leftChildIsLiteral(node)) {
@@ -74,7 +74,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         if (leftChildIsLiteral(node)) {
@@ -82,7 +82,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         if (leftChildIsLiteral(node)) {
@@ -90,7 +90,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         if (leftChildIsLiteral(node)) {
@@ -98,7 +98,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         if (leftChildIsLiteral(node)) {
@@ -106,7 +106,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         if (leftChildIsLiteral(node)) {
@@ -114,7 +114,7 @@ public class InvertNodeVisitor extends RebuildingVisitor {
         }
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         if (leftChildIsLiteral(node)) {

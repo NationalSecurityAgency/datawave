@@ -34,11 +34,11 @@ public class ZookeeperQueryLock implements QueryLock {
     private Lock clientLock = new ReentrantLock();
     private CuratorFramework client = null;
     private DistributedAtomicLong atomicLong = null;
-    
+
     public ZookeeperQueryLock(String zookeeperConfig, long clientCleanupInterval, String queryId) throws ConfigException {
         this.queryId = queryId;
         this.clientCleanupInterval = clientCleanupInterval;
-        
+
         URI zookeeperConfigFile = null;
         try {
             zookeeperConfigFile = new Path(zookeeperConfig).toUri();
@@ -62,7 +62,7 @@ public class ZookeeperQueryLock implements QueryLock {
         }
         this.zookeeperConfig = zookeeperConfig;
     }
-    
+
     private CuratorFramework getClient() {
         if (client == null) {
             clientLock.lock();
@@ -88,12 +88,12 @@ public class ZookeeperQueryLock implements QueryLock {
         }
         return client;
     }
-    
+
     private DistributedAtomicLong getLong() {
         getClient();
         return atomicLong;
     }
-    
+
     private void createCleanupTimer() {
         if (timer == null) {
             timer = new Timer("Zookeeper Client Cleanup");
@@ -110,11 +110,11 @@ public class ZookeeperQueryLock implements QueryLock {
             }
         }, clientCleanupInterval, clientCleanupInterval);
     }
-    
+
     private String getQueryFile() {
         return "/query/" + queryId;
     }
-    
+
     private void closeClient() {
         if (client != null) {
             clientLock.lock();
@@ -132,7 +132,7 @@ public class ZookeeperQueryLock implements QueryLock {
             }
         }
     }
-    
+
     private void closeClientAndTimer() {
         if (client != null) {
             clientLock.lock();
@@ -154,12 +154,12 @@ public class ZookeeperQueryLock implements QueryLock {
             }
         }
     }
-    
+
     @Override
     public void cleanup() {
         closeClientAndTimer();
     }
-    
+
     @Override
     public void startQuery() throws Exception {
         // increment the zookeeper query file
@@ -179,7 +179,7 @@ public class ZookeeperQueryLock implements QueryLock {
             clientLock.unlock();
         }
     }
-    
+
     public void stopQuery() throws Exception {
         // decrement the zookeeper query file and delete if 0
         clientLock.lock();
@@ -201,7 +201,7 @@ public class ZookeeperQueryLock implements QueryLock {
             clientLock.unlock();
         }
     }
-    
+
     @Override
     public boolean isQueryRunning() {
         // check existence of the query file
@@ -225,33 +225,33 @@ public class ZookeeperQueryLock implements QueryLock {
             clientLock.unlock();
         }
     }
-    
+
     @Override
     protected void finalize() throws Throwable {
         cleanup();
     }
-    
+
     public static class ZookeeperLockException extends Exception {
-        
+
         public ZookeeperLockException() {
             super();
         }
-        
+
         public ZookeeperLockException(String message) {
             super(message);
         }
-        
+
         public ZookeeperLockException(String message, Throwable cause) {
             super(message, cause);
         }
-        
+
         public ZookeeperLockException(Throwable cause) {
             super(cause);
         }
-        
+
         protected ZookeeperLockException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
             super(message, cause, enableSuppression, writableStackTrace);
         }
     }
-    
+
 }

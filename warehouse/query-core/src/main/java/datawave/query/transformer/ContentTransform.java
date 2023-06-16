@@ -15,12 +15,12 @@ import java.util.Map;
 public class ContentTransform extends DocumentTransform.DefaultDocumentTransform {
     private final Boolean reducedResponse;
     private final List<String> contentFieldNames;
-    
+
     public ContentTransform(List<String> contentFieldNames, Boolean reducedResponse) {
         this.contentFieldNames = contentFieldNames;
         this.reducedResponse = reducedResponse;
     }
-    
+
     @Nullable
     @Override
     public Map.Entry<Key,Document> apply(@Nullable Map.Entry<Key,Document> keyDocumentEntry) {
@@ -30,7 +30,7 @@ public class ContentTransform extends DocumentTransform.DefaultDocumentTransform
             String colf = documentKey.getColumnFamily().toString();
             int index = colf.indexOf("\0");
             String uid = colf.substring(index + 1);
-            
+
             for (String contentFieldName : this.contentFieldNames) {
                 if (document.containsKey(contentFieldName)) {
                     Attribute<?> contentField = document.remove(contentFieldName);
@@ -41,7 +41,7 @@ public class ContentTransform extends DocumentTransform.DefaultDocumentTransform
                 }
             }
         }
-        
+
         return keyDocumentEntry;
     }
 }

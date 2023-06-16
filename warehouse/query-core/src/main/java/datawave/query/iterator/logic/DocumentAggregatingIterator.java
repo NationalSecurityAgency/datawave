@@ -21,7 +21,7 @@ import java.util.Collection;
  * This iterator is a regex ivarator that enables datatype filtering, time filtering, and field index document aggregation
  */
 public class DocumentAggregatingIterator extends WrappingIterator implements DocumentIterator {
-    
+
     protected Range seekRange;
     protected Collection<ByteSequence> seekColumnFamilies;
     boolean seekInclusive;
@@ -31,7 +31,7 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
     protected Document document;
     protected boolean buildDocument = false;
     protected final FieldIndexAggregator aggregation;
-    
+
     public DocumentAggregatingIterator(DocumentAggregatingIterator other, IteratorEnvironment env) {
         setSource(other.getSource().deepCopy(env));
         this.seekRange = other.seekRange;
@@ -44,11 +44,11 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
         this.buildDocument = other.buildDocument;
         this.aggregation = other.aggregation;
     }
-    
+
     public DocumentAggregatingIterator(boolean buildDocument, // Map<String,Set<String>> fieldToNormalizers,
                     TypeMetadata typeMetadata, FieldIndexAggregator aggregator) {
         document = new Document();
-        
+
         // Only when this source is running over an indexOnlyField
         // do we want to add it to the Document
         this.buildDocument = buildDocument;
@@ -61,10 +61,10 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
             // double normalization
             attributeFactory = new PreNormalizedAttributeFactory(typeMetadata);
         }
-        
+
         this.aggregation = aggregator;
     }
-    
+
     @Override
     public void seek(Range r, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         this.seekRange = new Range(r);
@@ -73,7 +73,7 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
         super.seek(r, columnFamilies, inclusive);
         next();
     }
-    
+
     @Override
     public void next() throws IOException {
         if (getSource().hasTop()) {
@@ -91,43 +91,43 @@ public class DocumentAggregatingIterator extends WrappingIterator implements Doc
             document = null;
         }
     }
-    
+
     @Override
     public boolean hasTop() {
         return nextKey != null;
     }
-    
+
     @Override
     public Key getTopKey() {
         return nextKey;
     }
-    
+
     @Override
     public Value getTopValue() {
         return nextValue;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new DocumentAggregatingIterator(this, env);
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.query.iterator.IndexDocumentIterator#document()
      */
     @Override
     public Document document() {
         return document;
     }
-    
+
     public void move(Key pointer) throws IOException {
         // check the current position
         if (nextKey != null && nextKey.compareTo(pointer) >= 0) {
             throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + nextKey + ", movekey=" + pointer);
         }
-        
+
         if (!getSource().hasTop()) {
             // there is nothing beyond the current key
             nextKey = null;

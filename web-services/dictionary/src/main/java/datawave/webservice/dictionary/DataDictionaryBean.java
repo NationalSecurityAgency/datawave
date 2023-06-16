@@ -25,10 +25,10 @@ import java.net.URISyntaxException;
 @Stateless
 @PermitAll
 public class DataDictionaryBean {
-    
+
     @Inject
     private RemoteDataDictionary remoteDataDictionary;
-    
+
     /*
      * Capture and redirect GET requests to the root path for the data dictionary.
      */
@@ -37,7 +37,7 @@ public class DataDictionaryBean {
     public Response getDataDictionary(@Context UriInfo uriInfo) throws TextParseException, URISyntaxException {
         return sendRedirect("", uriInfo);
     }
-    
+
     /*
      * Capture and redirect GET requests to any sub-path for the data dictionary.
      */
@@ -46,7 +46,7 @@ public class DataDictionaryBean {
     public Response getDataDictionaryWithSuffix(@PathParam("suffix") String suffix, @Context UriInfo uriInfo) throws TextParseException, URISyntaxException {
         return sendRedirect(suffix, uriInfo);
     }
-    
+
     private Response sendRedirect(String suffix, UriInfo uriInfo) throws TextParseException, URISyntaxException {
         URIBuilder builder = remoteDataDictionary.buildURI(suffix);
         uriInfo.getQueryParameters().forEach((pname, valueList) -> valueList.forEach(pvalue -> builder.addParameter(pname, pvalue)));

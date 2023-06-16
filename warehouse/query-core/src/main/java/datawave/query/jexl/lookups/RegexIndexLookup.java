@@ -44,14 +44,14 @@ import java.util.concurrent.Future;
  */
 public class RegexIndexLookup extends AsyncIndexLookup {
     private static final Logger log = ThreadConfigurableLogger.getLogger(RegexIndexLookup.class);
-    
+
     protected MetadataHelper helper;
     protected Set<String> reverseFields;
     protected final Set<String> patterns;
-    
+
     protected RegexLookupData forwardLookupData = new RegexLookupData();
     protected RegexLookupData reverseLookupData = new RegexLookupData();
-    
+
     /**
      *
      * @param config
@@ -79,7 +79,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         this.patterns = patterns;
         this.helper = helper;
     }
-    
+
     /**
      *
      * @param config
@@ -99,29 +99,29 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     ExecutorService execService) {
         this(config, scannerFactory, Collections.singleton(fieldName), Collections.singleton(fieldName), patterns, helper, false, execService);
     }
-    
+
     @Override
     public synchronized void submit() {
         if (indexLookupMap == null) {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
             indexLookupMap.setPatterns(patterns);
-            
+
             Multimap<String,Range> forwardMap = ArrayListMultimap.create(), reverseMap = ArrayListMultimap.create();
-            
+
             // Loop over all the patterns, classifying them as forward or reverse index satisfiable
             Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
-            
+
             ScannerSession bs;
-            
+
             IteratorSetting fairnessIterator = null;
             if (config.getMaxIndexScanTimeMillis() > 0) {
                 // The fairness iterator solves the problem whereby we have runaway iterators as a result of an evaluation that never finds anything
                 fairnessIterator = new IteratorSetting(1, TimeoutIterator.class);
-                
+
                 long maxTime = (long) (config.getMaxIndexScanTimeMillis() * 1.25);
                 fairnessIterator.addOption(TimeoutIterator.MAX_SESSION_TIME, Long.valueOf(maxTime).toString());
             }
-            
+
             for (String pattern : patterns) {
                 if (config.getDisallowedRegexPatterns().contains(pattern)) {
                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
@@ -129,7 +129,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     log.debug(qe);
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }
-                
+
                 ShardIndexQueryTableStaticMethods.RefactoredRangeDescription rangeDescription;
                 try {
                     rangeDescription = ShardIndexQueryTableStaticMethods.getRegexRange(null, pattern, config.getFullTableScanEnabled(), helper, config);
@@ -152,14 +152,14 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     forwardMap.put(pattern, rangeDescription.range);
                 }
             }
-            
+
             if (!fields.isEmpty() && !forwardMap.isEmpty()) {
                 for (String key : forwardMap.keySet()) {
                     Collection<Range> ranges = forwardMap.get(key);
                     try {
                         bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
                                         Collections.emptySet(), Collections.singleton(key), false, true);
-                        
+
                         bs.setResourceClass(BatchResource.class);
                     } catch (Exception e) {
                         throw new DatawaveFatalQueryException(e);
@@ -167,23 +167,23 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     SessionOptions opts = bs.getOptions();
                     if (null != fairnessIterator) {
                         opts.addScanIterator(fairnessIterator);
-                        
+
                         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class);
                         opts.addScanIterator(cfg);
-                        
+
                     }
-                    
+
                     for (String field : fields) {
                         opts.fetchColumnFamily(new Text(field));
                     }
-                    
+
                     forwardLookupData.getSessions().add(bs);
                     iter = Iterators.concat(iter, bs);
                 }
-                
+
                 forwardLookupData.setTimedScanFuture(execService.submit(createTimedCallable(iter, fields, forwardLookupData, indexLookupMap)));
             }
-            
+
             if (!reverseFields.isEmpty() && !reverseMap.isEmpty()) {
                 for (String key : reverseMap.keySet()) {
                     Collection<Range> ranges = reverseMap.get(key);
@@ -193,7 +193,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     try {
                         bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
                                         Collections.emptySet(), Collections.singleton(key), true, true);
-                        
+
                         bs.setResourceClass(BatchResource.class);
                     } catch (Exception e) {
                         throw new DatawaveFatalQueryException(e);
@@ -203,20 +203,20 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                         opts.addScanIterator(fairnessIterator);
                         opts.addScanIterator(new IteratorSetting(config.getBaseIteratorPriority() + 100, TimeoutExceptionIterator.class));
                     }
-                    
+
                     for (String field : reverseFields) {
                         opts.fetchColumnFamily(new Text(field));
                     }
-                    
+
                     reverseLookupData.getSessions().add(bs);
                     iter = Iterators.concat(iter, bs);
                 }
-                
+
                 reverseLookupData.setTimedScanFuture(execService.submit(createTimedCallable(iter, reverseFields, reverseLookupData, indexLookupMap)));
             }
         }
     }
-    
+
     @Override
     public synchronized IndexLookupMap lookup() {
         if (!forwardLookupData.getSessions().isEmpty()) {
@@ -230,7 +230,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                 forwardLookupData.getSessions().clear();
             }
         }
-        
+
         if (!reverseLookupData.getSessions().isEmpty()) {
             try {
                 timedScanWait(reverseLookupData.getTimedScanFuture(), reverseLookupData.getLookupStartedLatch(), reverseLookupData.getLookupStartTimeMillis(),
@@ -242,55 +242,55 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                 reverseLookupData.getSessions().clear();
             }
         }
-        
+
         return indexLookupMap;
     }
-    
+
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final Set<String> fields, RegexLookupData regexLookupData,
                     final IndexLookupMap indexLookupMap) {
         regexLookupData.setLookupStartedLatch(new CountDownLatch(1));
-        
+
         return () -> {
             regexLookupData.setLookupStartTimeMillis(System.currentTimeMillis());
             regexLookupData.getLookupStartedLatch().countDown();
-            
+
             Text holder = new Text();
             try {
                 if (log.isTraceEnabled()) {
                     log.trace("Do we have next? " + iter.hasNext());
                 }
-                
+
                 while (iter.hasNext()) {
-                    
+
                     Entry<Key,Value> entry = iter.next();
-                    
+
                     if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                         throw new Exception("Exceeded fair threshold");
                     }
-                    
+
                     Key topKey = entry.getKey();
-                    
+
                     if (log.isTraceEnabled()) {
                         log.trace("Foward Index entry: " + entry.getKey());
                     }
-                    
+
                     // Get the column qualifier from the key. It contains the datatype and normalizer class
                     if (null != topKey.getColumnQualifier()) {
                         String colq = topKey.getColumnQualifier().toString();
                         int idx = colq.indexOf(Constants.NULL);
-                        
+
                         if (idx != -1) {
                             String type = colq.substring(idx + 1);
-                            
+
                             // If types are specified and this type is not in the list, skip it.
                             if (null != config.getDatatypeFilter() && !config.getDatatypeFilter().isEmpty() && !config.getDatatypeFilter().contains(type)) {
-                                
+
                                 if (log.isTraceEnabled()) {
                                     log.trace(config.getDatatypeFilter() + " does not contain " + type);
                                 }
                                 continue;
                             }
-                            
+
                             topKey.getRow(holder);
                             String term;
                             if (regexLookupData == forwardLookupData) {
@@ -298,10 +298,10 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                             } else {
                                 term = (new StringBuilder(holder.toString())).reverse().toString();
                             }
-                            
+
                             topKey.getColumnFamily(holder);
                             String field = holder.toString();
-                            
+
                             // synchronize access to fieldsToValues
                             synchronized (indexLookupMap) {
                                 // We are only returning a mapping of field value to field name, no need to
@@ -319,7 +319,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                         }
                     }
                 }
-                
+
             } catch (Exception e) {
                 log.info("Failed or Timed out expanding regex: " + e.getMessage());
                 if (log.isDebugEnabled()) {
@@ -345,41 +345,41 @@ public class RegexIndexLookup extends AsyncIndexLookup {
             return true;
         };
     }
-    
+
     private static class RegexLookupData {
         private Collection<ScannerSession> sessions = Lists.newArrayList();
         private Future<Boolean> timedScanFuture;
         private CountDownLatch lookupStartedLatch;
         private long lookupStartTimeMillis = Long.MAX_VALUE;
-        
+
         public Collection<ScannerSession> getSessions() {
             return sessions;
         }
-        
+
         public void setSessions(Collection<ScannerSession> sessions) {
             this.sessions = sessions;
         }
-        
+
         public Future<Boolean> getTimedScanFuture() {
             return timedScanFuture;
         }
-        
+
         public void setTimedScanFuture(Future<Boolean> timedScanFuture) {
             this.timedScanFuture = timedScanFuture;
         }
-        
+
         public CountDownLatch getLookupStartedLatch() {
             return lookupStartedLatch;
         }
-        
+
         public void setLookupStartedLatch(CountDownLatch lookupStartedLatch) {
             this.lookupStartedLatch = lookupStartedLatch;
         }
-        
+
         public long getLookupStartTimeMillis() {
             return lookupStartTimeMillis;
         }
-        
+
         public void setLookupStartTimeMillis(long lookupStartTimeMillis) {
             this.lookupStartTimeMillis = lookupStartTimeMillis;
         }

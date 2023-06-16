@@ -34,18 +34,18 @@ import static org.junit.Assert.assertThat;
 
 @RunWith(EasyMockRunner.class)
 public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
-    
+
     private static long MILLIS_IN_DAY = 1000L * 60 * 60 * 24L;
     // reused in tests but contents never accessed
     private static Value VALUE = new Value();
-    
+
     @Mock
     private IteratorEnvironment env;
     @Mock
     private SortedKeyValueIterator<Key,Value> source;
-    
+
     private AccumuloConfiguration conf = DefaultConfiguration.getInstance();
-    
+
     @Before
     public void setUp() throws Exception {
         expect(env.getConfig()).andReturn(conf).anyTimes();
@@ -54,60 +54,60 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         expect(env.isFullMajorCompaction()).andReturn(false).anyTimes();
         replay(env);
     }
-    
+
     @Test
     public void testAcceptKeyValue_DisabledFullMajc() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
         options.put(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC, "true");
-        
+
         filter.init(source, options, env);
-        
+
         assertThat(filter.accept(new Key(), VALUE), is(true));
         // 1970 is older than 30 days, but filter is disable so should be true
         assertThat(filter.accept(getKey(0), VALUE), is(true));
     }
-    
+
     @Test
     public void testAcceptKeyValue_OnlyTtlNoInnerFilters() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
-        
+
         // no file or other delegate filters configured, so only the ttl are used
         filter.init(source, options, env);
-        
+
         assertThat(filter.accept(getKey(daysAgo(10)), VALUE), is(true));
         // 100 is older than 30 days
         assertThat(filter.accept(getKey(daysAgo(100)), VALUE), is(false));
     }
-    
+
     @Test
     public void testAcceptKeyValue_WithFile() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
         options.put(AgeOffConfigParams.FILTER_CONFIG, pathFromClassloader("/test-root-rules.xml"));
         filter.init(source, options, env);
-        
+
         // the file uses TestFilter which always returns false for accept and filter applied
         // so only ttl is uses for acceptance
         assertThat(filter.accept(getKey(daysAgo(15)), VALUE), is(true));
         assertThat(filter.accept(getKey(daysAgo(123)), VALUE), is(false));
     }
-    
+
     @Test
     public void testAcceptKeyValue_TtlSet() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
         // don't start applying this filter unless the data is at least this old?
         options.put(AgeOffConfigParams.TTL_SHORT_CIRCUIT, "5");
-        
+
         Collection<AppliedRule> rules = singleRowMatcher("foo", options);
         // for holding the filters
         FilterWrapper wrapper = getWrappedFilterWithRules(rules, source, options, env);
-        
+
         // copy cofigs to actual filter we are testing
         filter.initialize(wrapper);
-        
+
         // brand new key should be good
         assertThat(filter.accept(new Key(), VALUE), is(true));
         // first five will hit the ttl short circuit
@@ -117,7 +117,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         assertThat(filter.accept(getKey(daysAgo(4)), VALUE), is(true));
         assertThat("If this fails it may be an edge case due to date rollover, try again in a minute", //
                         filter.accept(getKey(daysAgo(5)), VALUE), is(true));
-        
+
         // these will not hit the ttl short circuit and the single applied rule
         assertThat(filter.accept(getKey("foo", daysAgo(6)), VALUE), is(true));
         // will not match so should be true
@@ -125,26 +125,26 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         assertThat(filter.accept(getKey("foo", daysAgo(8)), VALUE), is(true));
         // this is really old and matches so should not be accepted
         assertThat(filter.accept(getKey("foo", daysAgo(365)), VALUE), is(false));
-        
+
     }
-    
+
     @Test
     public void testAcceptKeyValue_MultipleFilters() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
-        
+
         Collection<AppliedRule> rules = singleRowMatcher("foo", options);
         rules.addAll(singleColumnFamilyMatcher("bar", options));
         // for holding the filters
         FilterWrapper wrapper = getWrappedFilterWithRules(rules, source, options, env);
         // copy cofigs to actual filter we are testing
         filter.initialize(wrapper);
-        
+
         // created two rules
         // one looks at the row for "foo"
         // two looks at the column family for "bar"
         // only if they match do they then test the age off
-        
+
         // want to create a scenario where one filter accepts and a second rejects
         // the ttl is set to 30 days
         // test data is:
@@ -156,24 +156,24 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         // | bar | tab | 100d | reject | <= no matches for either filter, but over default ttl
         // | low | bar | 32d  | reject | <= second filter rejects due to age
         // @formatter:on
-        
+
         Key fooWee = getKey("foo", "wee", daysAgo(5));
         Key newBarTab = getKey("bar", "tab", daysAgo(29));
         Key oldBarTab = getKey("bar", "tab", daysAgo(100));
         Key lowBar = getKey("low", "bar", daysAgo(32));
-        
+
         assertThat(filter.accept(fooWee, VALUE), is(true));
         assertThat(filter.accept(newBarTab, VALUE), is(true));
         assertThat(filter.accept(oldBarTab, VALUE), is(false));
         assertThat(filter.accept(lowBar, VALUE), is(false));
     }
-    
+
     @Test(expected = NullPointerException.class)
     public void testInitWithNoTtl() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
         filter.init(source, new HashMap<>(), env);
     }
-    
+
     @Test(expected = NullPointerException.class)
     public void testInitWithNoTtlUnits() throws Exception {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
@@ -181,7 +181,7 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         options.put(AgeOffConfigParams.TTL, "31");
         filter.init(source, options, env);
     }
-    
+
     @Test
     public void testValidateOptions() {
         ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
@@ -197,31 +197,31 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         }
         options.put(AgeOffConfigParams.TTL_UNITS, "parsecs");
         assertThat(filter.validateOptions(options), is(false));
-        
+
         options.put(AgeOffConfigParams.TTL, "0x143");
         options.put(AgeOffConfigParams.TTL_UNITS, AgeOffTtlUnits.DAYS);
         assertThat(filter.validateOptions(options), is(false));
     }
-    
+
     // --------------------------------------------
     // Test helper methods and classes
     // --------------------------------------------
-    
+
     private static Map<String,String> getOptionsMap(int ttl, String unit) {
         Map<String,String> options = new HashMap<>();
         options.put(AgeOffConfigParams.TTL, Integer.toString(ttl));
         options.put(AgeOffConfigParams.TTL_UNITS, unit);
         return options;
     }
-    
+
     private Collection<AppliedRule> singleRowMatcher(String pattern, Map<String,String> options) {
         return singleAppliedRule(pattern, options, new TestRowFilter());
     }
-    
+
     private Collection<AppliedRule> singleColumnFamilyMatcher(String pattern, Map<String,String> options) {
         return singleAppliedRule(pattern, options, new TestColFamFilter());
     }
-    
+
     private Collection<AppliedRule> singleAppliedRule(String pattern, Map<String,String> options, AppliedRule inner) {
         FilterOptions filterOpts = new FilterOptions();
         filterOpts.setOption(AgeOffConfigParams.MATCHPATTERN, pattern);
@@ -234,40 +234,40 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         list.add(copyWithCorrectTimestamp);
         return list;
     }
-    
+
     private static long daysAgo(int n) {
         return System.currentTimeMillis() - (MILLIS_IN_DAY * n);
     }
-    
+
     private static Key getKey(long ts) {
         return getKey("", ts);
     }
-    
+
     private static Key getKey(String row, long ts) {
         return getKey(row, "", ts);
     }
-    
+
     private static Key getKey(String row, String cf, long ts) {
         return new Key(row, cf, "", ts);
     }
-    
+
     private String pathFromClassloader(String name) {
         URL resource = this.getClass().getResource(name);
         assertNotNull("Unable to get resource with name: " + name, resource);
         return resource.getPath();
     }
-    
+
     /**
      * Only so we can inject the filterList without using a file to load them from
      */
     private static class FilterWrapper extends ConfigurableAgeOffFilter {
         public FilterWrapper() {}
-        
+
         void setFilterList(Collection<AppliedRule> filterList) {
             this.filterList = filterList;
         }
     }
-    
+
     /**
      * Initilizes the filter with the supplied options, then overwrites the filterList with the ones provided
      */
@@ -280,21 +280,21 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         wrapper.setFilterList(filterList);
         return wrapper;
     }
-    
+
     public static class TestRowFilter extends RegexFilterBase {
-        
+
         @Override
         protected String getKeyField(Key k, Value v) {
             return k.getRow().toString();
         }
     }
-    
+
     public static class TestColFamFilter extends RegexFilterBase {
-        
+
         @Override
         protected String getKeyField(Key k, Value v) {
             return k.getColumnFamily().toString();
         }
     }
-    
+
 }

@@ -41,7 +41,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public String produceStringConfiguration(InjectionPoint injectionPoint) {
         return super.produceStringConfiguration(injectionPoint);
     }
-    
+
     @Override
     @Alternative
     @Specializes
@@ -52,7 +52,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public Integer produceIntegerConfiguration(InjectionPoint injectionPoint) {
         return super.produceIntegerConfiguration(injectionPoint);
     }
-    
+
     @Override
     @Alternative
     @Specializes
@@ -63,7 +63,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public Long produceLongConfiguration(InjectionPoint injectionPoint) {
         return super.produceLongConfiguration(injectionPoint);
     }
-    
+
     @Override
     @Alternative
     @Specializes
@@ -74,7 +74,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public Boolean produceBooleanConfiguration(InjectionPoint injectionPoint) {
         return super.produceBooleanConfiguration(injectionPoint);
     }
-    
+
     @Override
     @Alternative
     @Specializes
@@ -85,7 +85,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public Float produceFloatConfiguration(InjectionPoint injectionPoint) {
         return super.produceFloatConfiguration(injectionPoint);
     }
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -95,7 +95,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
         String[] values = StringUtils.split(propertyValue, ",");
         return values == null ? Collections.emptyList() : Arrays.asList(values);
     }
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -105,7 +105,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
         String[] values = StringUtils.split(propertyValue, ",");
         return values == null ? Collections.emptySet() : new HashSet<>(Arrays.asList(values));
     }
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -113,7 +113,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public List<Integer> produceIntegerListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] values = StringUtils.split(propertyValue, ",");
-        
+
         ArrayList<Integer> list = new ArrayList<>();
         if (values != null) {
             for (String value : values) {
@@ -124,12 +124,12 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
                     throw new RuntimeException("Error while converting Integer property '" + configProperty.name() + "' value: " + value + " of "
                                     + propertyValue + " happening in bean " + injectionPoint.getBean(), nfe);
                 }
-                
+
             }
         }
         return list;
     }
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -137,7 +137,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public List<Long> produceLongListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] values = StringUtils.split(propertyValue, ",");
-        
+
         ArrayList<Long> list = new ArrayList<>();
         if (values != null) {
             for (String value : values) {
@@ -148,12 +148,12 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
                     throw new RuntimeException("Error while converting Long property '" + configProperty.name() + "' value: " + value + " of " + propertyValue
                                     + " happening in bean " + injectionPoint.getBean(), nfe);
                 }
-                
+
             }
         }
         return list;
     }
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -161,7 +161,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public List<Float> produceFloatListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] values = StringUtils.split(propertyValue, ",");
-        
+
         ArrayList<Float> list = new ArrayList<>();
         if (values != null) {
             for (String value : values) {
@@ -172,12 +172,12 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
                     throw new RuntimeException("Error while converting Float property '" + configProperty.name() + "' value: " + value + " of " + propertyValue
                                     + " happening in bean " + injectionPoint.getBean(), nfe);
                 }
-                
+
             }
         }
         return list;
     }
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -185,7 +185,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public List<Double> produceDoubleListConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] values = StringUtils.split(propertyValue, ",");
-        
+
         ArrayList<Double> list = new ArrayList<>();
         if (values != null) {
             for (String value : values) {
@@ -193,15 +193,15 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
                     list.add(Double.parseDouble(value));
                 } catch (NumberFormatException nfe) {
                     ConfigProperty configProperty = getAnnotation(injectionPoint, ConfigProperty.class);
-                    throw new RuntimeException("Error while converting Double property '" + configProperty.name() + "' value: " + value + " of "
-                                    + propertyValue + " happening in bean " + injectionPoint.getBean(), nfe);
+                    throw new RuntimeException("Error while converting Double property '" + configProperty.name() + "' value: " + value + " of " + propertyValue
+                                    + " happening in bean " + injectionPoint.getBean(), nfe);
                 }
-                
+
             }
         }
         return list;
     }
-    
+
     @Produces
     @Dependent
     @ConfigProperty(name = "ignored")
@@ -209,7 +209,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
     public Map<String,String> produceStringStringMapConfiguration(InjectionPoint injectionPoint) {
         String propertyValue = getStringPropertyValue(injectionPoint);
         String[] pairs = StringUtils.split(propertyValue, "|");
-        
+
         Map<String,String> map = new LinkedHashMap<>();
         if (pairs != null) {
             for (String pair : pairs) {
@@ -225,7 +225,7 @@ public class DatawaveConfigPropertyProducer extends DefaultConfigPropertyProduce
         }
         return map;
     }
-    
+
     @Override
     protected String getPropertyValue(String propertyName, String defaultValue) {
         String value = super.getPropertyValue(propertyName, defaultValue);

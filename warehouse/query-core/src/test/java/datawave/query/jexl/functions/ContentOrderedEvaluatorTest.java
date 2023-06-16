@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Set;
 
 public class ContentOrderedEvaluatorTest {
-    
+
     private static final String EVENT_ID = "shard\u0000dt\u0000uid";
     private TermOffsetMap termOffsetMap;
     private final List<List<TermWeightPosition>> offsets = new ArrayList<>();
@@ -23,15 +23,15 @@ public class ContentOrderedEvaluatorTest {
     private String eventId = EVENT_ID;
     private int distance;
     private String[] terms;
-    
+
     private WrappedContentOrderedEvaluator evaluator;
-    
+
     @Before
     public void setup() {
         termOffsetMap = new TermOffsetMap();
         termOffsetMap.setGatherPhraseOffsets(true);
     }
-    
+
     @After
     public void teardown() {
         field = null;
@@ -39,7 +39,7 @@ public class ContentOrderedEvaluatorTest {
         offsets.clear();
         terms = null;
     }
-    
+
     /**
      * Issue #659
      * <p>
@@ -54,20 +54,20 @@ public class ContentOrderedEvaluatorTest {
     public void evaluate_traverseFailureFORWARDTest() {
         // offsets[0].size() <= offsets[N-1].size() will trigger forward-order traversal,
         // evaluating the document for the phrase "a b c", starting with 'a' at offset 10
-        
+
         givenField("CONTENT");
         givenDistance(1);
         givenOffsets(10, 19);
         givenOffsets(11, 20);
         givenOffsets(3, 21, 100);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 19, 21);
     }
-    
+
     /**
      * Issue #659
      * <p>
@@ -82,20 +82,20 @@ public class ContentOrderedEvaluatorTest {
     public void evaluate_traverseFailureREVERSETest() {
         // offsets[0].size() > offsets[N-1].size() will trigger reverse-order traversal,
         // evaluating the document for the phrase "c b a", starting with 'c' at offset 21
-        
+
         givenField("BODY");
         givenDistance(1);
         givenOffsets(1, 10, 100);
         givenOffsets(2, 20);
         givenOffsets(3, 21);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("BODY", 1, 3);
     }
-    
+
     /**
      * Assert that a match for the terms is found for offsets 20->21->22.
      */
@@ -107,13 +107,13 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(21, 24, 30);
         givenOffsets(3, 8, 12, 19, 22);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 20, 22);
     }
-    
+
     /**
      * Assert that a match for the terms is found for offsets 102->101->100.
      */
@@ -125,25 +125,25 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(1, 5, 29, 87, 101);
         givenOffsets(102, 400, 434);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 100, 102);
     }
-    
+
     @Test
     public void evaluate_notEnoughOffsetsTest() {
         givenField("CONTENT");
         givenDistance(1);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(false);
         assertPhraseOffsetsEmpty();
     }
-    
+
     @Test
     public void evaluate_pruneAllTest() {
         givenField("BODY");
@@ -152,29 +152,29 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(5);
         givenOffsets(11);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(false);
         assertPhraseOffsetsEmpty();
     }
-    
+
     @Test
     public void evaluate_simpleSuccessDistance1Test() {
         givenField("CONTENT");
-        
+
         givenDistance(1);
         givenOffsets(1);
         givenOffsets(2);
         givenOffsets(3);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 1, 3);
     }
-    
+
     @Test
     public void evaluate_simpleSuccessDistance3Test() {
         givenField("CONTENT");
@@ -183,13 +183,13 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(2);
         givenOffsets(3);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 1, 3);
     }
-    
+
     @Test
     public void evaluate_simpleSuccessDistance3FailTest() {
         givenField("CONTENT");
@@ -198,13 +198,13 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(5);
         givenOffsets(7);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(false);
         assertPhraseOffsetsEmpty();
     }
-    
+
     @Test
     public void evaluate_pruneTopTest() {
         givenField("CONTENT");
@@ -213,13 +213,13 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(10, 11);
         givenOffsets(4, 12);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 10, 12);
     }
-    
+
     @Test
     public void evaluate_pruneBottomTest() {
         givenField("BODY");
@@ -228,13 +228,13 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(3, 4, 44);
         givenOffsets(4, 5, 35);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("BODY", 3, 4); // TODO - do we want the end offset to be 5 in order to be consecutive?
     }
-    
+
     @Test
     public void evaluate_pruneTopAndBottomTest() {
         givenField("CONTENT");
@@ -243,13 +243,13 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(7, 9, 22);
         givenOffsets(8, 11, 13);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 6, 8);
     }
-    
+
     @Test
     public void evaluate_livePruneTest() {
         givenField("CONTENT");
@@ -258,21 +258,21 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(2, 4);
         givenOffsets(5, 6);
         givenTerms("a", "b", "c");
-        
+
         initEvaluator();
-        
+
         assertEvaluate(true);
         assertPhraseOffsetsContain("CONTENT", 3, 5);
     }
-    
+
     private void givenField(String field) {
         this.field = field;
     }
-    
+
     private void givenEventId(String eventId) {
         this.eventId = eventId;
     }
-    
+
     private void givenOffsets(int... offsets) {
         List<TermWeightPosition> list = new ArrayList<>();
         for (int offset : offsets) {
@@ -280,41 +280,41 @@ public class ContentOrderedEvaluatorTest {
         }
         this.offsets.add(list);
     }
-    
+
     private void givenDistance(int distance) {
         this.distance = distance;
     }
-    
+
     private void givenTerms(String... terms) {
         this.terms = terms;
     }
-    
+
     private void initEvaluator() {
         evaluator = new WrappedContentOrderedEvaluator(null, distance, termOffsetMap, terms);
     }
-    
+
     private void assertEvaluate(boolean expected) {
         Assert.assertEquals("Expected evaluate() to return " + expected, expected, evaluator.evaluate(field, eventId, offsets));
     }
-    
+
     private void assertPhraseOffsetsContain(String field, int startOffset, int endOffset) {
         Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffsetMap.getPhraseIndexes(field);
-        boolean found = phraseOffsets.stream().anyMatch(
-                        (pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
+        boolean found = phraseOffsets.stream()
+                        .anyMatch((pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
         Assert.assertTrue(
                         "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
                         found);
     }
-    
+
     private void assertPhraseOffsetsEmpty() {
         Assert.assertTrue("Expected empty phrase offset map", termOffsetMap.getPhraseIndexes().isEmpty());
     }
-    
+
     private static class WrappedContentOrderedEvaluator extends ContentOrderedEvaluator {
         public WrappedContentOrderedEvaluator(Set<String> fields, int distance, TermOffsetMap termOffsetMap, String... terms) {
             super(fields, distance, Float.MIN_VALUE, termOffsetMap, terms);
         }
-        
+
         @Override
         protected boolean evaluate(String field, String eventId, List<List<TermWeightPosition>> offsets) {
             return super.evaluate(field, eventId, offsets);

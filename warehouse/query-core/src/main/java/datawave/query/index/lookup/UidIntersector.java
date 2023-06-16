@@ -11,7 +11,7 @@ import java.util.Set;
 public interface UidIntersector {
     /**
      * Merge two index infos into one.
-     * 
+     *
      * @param uids1
      *            first set of uids
      * @param uids2
@@ -21,5 +21,5 @@ public interface UidIntersector {
      * @return A intersected IndexInfo
      */
     Set<IndexMatch> intersect(Set<IndexMatch> uids1, Set<IndexMatch> uids2, List<JexlNode> delayedNodes);
-    
+
 }

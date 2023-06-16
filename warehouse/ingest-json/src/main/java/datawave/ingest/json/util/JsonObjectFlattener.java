@@ -18,7 +18,7 @@ import java.util.Set;
  *
  */
 public interface JsonObjectFlattener {
-    
+
     /**
      * <p>
      * Supported modes: {@link #SIMPLE}, {@link #NORMAL}, {@link #GROUPED}, {@link #GROUPED_AND_NORMAL}
@@ -34,7 +34,7 @@ public interface JsonObjectFlattener {
          * If you require complete tree traversal, see {@link #NORMAL} and {@link #GROUPED} modes.
          */
         SIMPLE,
-        
+
         /**
          * <p>
          * Traverses and flattens the entire Json tree, unlike {@link #SIMPLE} mode. Given a nested <b>fieldname</b> property @ level 4 in the tree and path
@@ -43,7 +43,7 @@ public interface JsonObjectFlattener {
          * <blockquote> <b>greatgrandparent.grandparent.parent.fieldname = value</b> </blockquote>
          */
         NORMAL,
-        
+
         /**
          * <p>
          * Same as {@link #NORMAL} mode, but instead we append the hierarchical context onto 'FIELDNAME' as a suffix, with additional information to identify
@@ -59,7 +59,7 @@ public interface JsonObjectFlattener {
          * hierarchy, then you should probably use this option
          */
         GROUPED,
-        
+
         /**
          * <p>
          * Creates both {@link #NORMAL} and {@link #GROUPED} keys for maximum flexibility in terms of indexing and query options, at the expense of greater
@@ -71,10 +71,10 @@ public interface JsonObjectFlattener {
          */
         GROUPED_AND_NORMAL;
     }
-    
+
     /**
      * Flattens the specified json
-     * 
+     *
      * @param object
      *            {@link JsonObject} instance to flatten
      * @return {@link com.google.common.collect.Multimap} instance with the flattened keys and associated values
@@ -82,10 +82,10 @@ public interface JsonObjectFlattener {
      *             if {@link FlattenMode#GROUPED} is used and {@link Builder#pathDelimiter} value is found to exist already within the object's key names
      */
     Multimap<String,String> flatten(JsonObject object) throws IllegalStateException;
-    
+
     /**
      * Flattens the specified json
-     * 
+     *
      * @param object
      *            {@link JsonObject} instance to flatten
      * @param map
@@ -96,7 +96,7 @@ public interface JsonObjectFlattener {
      *             if map is null
      */
     void flatten(JsonObject object, Multimap<String,String> map) throws IllegalStateException, NullPointerException;
-    
+
     /**
      * <p>
      * Allows clients to specify custom normalization behavior per their needs to affect the final presentation of flattened keys and their values to the
@@ -107,10 +107,10 @@ public interface JsonObjectFlattener {
      * normalization applied as close to the actual {@link Multimap#put(Object, Object)} operation as possible
      */
     interface MapKeyValueNormalizer {
-        
+
         /**
          * Takes a candidate key and its associated value and returns the "normalized" version of the key.
-         * 
+         *
          * @param key
          *            candidate {@link Multimap} key, non-normalized
          * @param value
@@ -120,10 +120,10 @@ public interface JsonObjectFlattener {
          *             if the key, or key/value combination, represents an invalid state per the client
          */
         String normalizeMapKey(String key, String value) throws IllegalStateException;
-        
+
         /**
          * Takes a candidate value and its associated key and returns the "normalized" version of the value.
-         * 
+         *
          * @param value
          *            value for the key
          * @param key
@@ -133,18 +133,18 @@ public interface JsonObjectFlattener {
          *             if the value, or key/value combination, represents an invalid state per the client
          */
         String normalizeMapValue(String value, String key) throws IllegalStateException;
-        
+
         /**
          * No op impl for convenience
          */
         class NoOp implements MapKeyValueNormalizer {
-            
+
             @Override
             public String normalizeMapKey(String key, String value) throws IllegalStateException {
                 // No op
                 return key;
             }
-            
+
             @Override
             public String normalizeMapValue(String value, String key) throws IllegalStateException {
                 // No op
@@ -152,17 +152,17 @@ public interface JsonObjectFlattener {
             }
         }
     }
-    
+
     /**
      * <p>
      * Gives clients the ability to validate and/or transform an individual json element name at the earliest point possible, ie, at the point that it is first
      * encountered during traversal of the tree
      */
     interface JsonElementNameNormalizer {
-        
+
         /**
          * Takes a json element key name and returns its "normalized" version
-         * 
+         *
          * @param elementName
          *            json element name, non-normalized
          * @param parentKey
@@ -172,7 +172,7 @@ public interface JsonObjectFlattener {
          *             if the element name represents an invalid state for the client for whatever reason
          */
         String normalizeElementName(String elementName, String parentKey) throws IllegalStateException;
-        
+
         /**
          * No op impl for convenience
          */
@@ -184,14 +184,14 @@ public interface JsonObjectFlattener {
             }
         }
     }
-    
+
     /**
      * Gets the current flatten mode
-     * 
+     *
      * @return current mode
      */
     FlattenMode getFlattenMode();
-    
+
     interface Builder<T extends JsonObjectFlattener> {
         /**
          * Sets delimiter to be used as the path separator in field names.
@@ -203,7 +203,7 @@ public interface JsonObjectFlattener {
          *             if delimiter argument is null
          */
         Builder<T> pathDelimiter(String pathDelimiter) throws NullPointerException;
-        
+
         /**
          * Only map keys matching those in whitelist will be added to the flattened map. If used in conjunction with blacklist, blacklist takes precedence
          *
@@ -212,7 +212,7 @@ public interface JsonObjectFlattener {
          * @return builder instance
          */
         Builder<T> mapKeyWhitelist(Set<String> mapKeyWhitelist);
-        
+
         /**
          * Map keys within blacklist will be excluded from the flattened map. If used in conjunction with whitelist, blacklist takes precedence
          *
@@ -221,7 +221,7 @@ public interface JsonObjectFlattener {
          * @return builder instance
          */
         Builder<T> mapKeyBlacklist(Set<String> mapKeyBlacklist);
-        
+
         /**
          * <p>
          * Sets the {@link FlattenMode} to be used. If {@link FlattenMode#GROUPED} is used, the raw json property names may be validated within
@@ -236,7 +236,7 @@ public interface JsonObjectFlattener {
          * @return builder instance
          */
         Builder<T> flattenMode(FlattenMode mode);
-        
+
         /**
          * Ignored unless {@link FlattenMode#GROUPED} is applied. The separator to use between a field name and its ordinal position within its given parent
          * grouping.
@@ -248,7 +248,7 @@ public interface JsonObjectFlattener {
          *             if delimiter argument is null
          */
         Builder<T> occurrenceInGroupDelimiter(String delimiter) throws NullPointerException;
-        
+
         /**
          * <p>
          * Sets the {@link MapKeyValueNormalizer} to be applied to flattened keys just prior to {@link Multimap#put(Object, Object)} and also prior to
@@ -259,7 +259,7 @@ public interface JsonObjectFlattener {
          * @return builder instance
          */
         Builder<T> mapKeyValueNormalizer(MapKeyValueNormalizer normalizer);
-        
+
         /**
          * Sets the {@link JsonElementNameNormalizer} to be applied to individual element names as they are encountered during tree traversal, for the purposes
          * of validation and/or transformation
@@ -269,17 +269,17 @@ public interface JsonObjectFlattener {
          * @return builder instance
          */
         Builder<T> jsonElementNameNormalizer(JsonElementNameNormalizer normalizer);
-        
+
         /**
          * Set to true if you want an element's array index to be added to the flattened field name, for uniqueness. If set to false, then all array element
          * values will be added to the Multimap under the same key
-         * 
+         *
          * @param addArrayIndexToFieldName
          *            true or false
          * @return builder instance
          */
         Builder<T> addArrayIndexToFieldName(boolean addArrayIndexToFieldName);
-        
+
         /**
          * Creates the flattener instance
          *

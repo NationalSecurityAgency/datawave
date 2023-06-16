@@ -11,13 +11,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class Geowave extends JexlQueryFunction {
-    
+
     private static final Logger log = LoggerFactory.getLogger(Geowave.class);
-    
+
     public Geowave(String functionName) {
         super(functionName, new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 2) {
@@ -25,7 +25,7 @@ public abstract class Geowave extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -42,7 +42,7 @@ public abstract class Geowave extends JexlQueryFunction {
         sb.append(")");
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         QueryFunction queryFunction = null;
@@ -53,43 +53,43 @@ public abstract class Geowave extends JexlQueryFunction {
         }
         return queryFunction;
     }
-    
+
     public static class Contains extends Geowave {
         public Contains() {
             super("contains");
         }
     }
-    
+
     public static class CoveredBy extends Geowave {
         public CoveredBy() {
             super("covered_by");
         }
     }
-    
+
     public static class Covers extends Geowave {
         public Covers() {
             super("covers");
         }
     }
-    
+
     public static class Crosses extends Geowave {
         public Crosses() {
             super("crosses");
         }
     }
-    
+
     public static class Intersects extends Geowave {
         public Intersects() {
             super("intersects");
         }
     }
-    
+
     public static class Overlaps extends Geowave {
         public Overlaps() {
             super("overlaps");
         }
     }
-    
+
     public static class Within extends Geowave {
         public Within() {
             super("within");

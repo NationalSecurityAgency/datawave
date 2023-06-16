@@ -20,11 +20,11 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-public class LiteralRangeMultimapSerializer implements JsonSerializer<Multimap<String,LiteralRange<String>>>,
-                JsonDeserializer<Multimap<String,LiteralRange<String>>> {
-    
+public class LiteralRangeMultimapSerializer
+                implements JsonSerializer<Multimap<String,LiteralRange<String>>>, JsonDeserializer<Multimap<String,LiteralRange<String>>> {
+
     private final LiteralRangeSerializer lrSerializer = new LiteralRangeSerializer();
-    
+
     @Override
     public Multimap<String,LiteralRange<String>> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
         ArrayListMultimap<String,LiteralRange<String>> mm = ArrayListMultimap.create();
@@ -39,7 +39,7 @@ public class LiteralRangeMultimapSerializer implements JsonSerializer<Multimap<S
         }
         return mm;
     }
-    
+
     @Override
     public JsonElement serialize(Multimap<String,LiteralRange<String>> src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject mm = new JsonObject();
@@ -52,5 +52,5 @@ public class LiteralRangeMultimapSerializer implements JsonSerializer<Multimap<S
         }
         return mm;
     }
-    
+
 }

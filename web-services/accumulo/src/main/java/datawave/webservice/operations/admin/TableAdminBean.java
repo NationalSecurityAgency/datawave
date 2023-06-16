@@ -26,24 +26,24 @@ import javax.ws.rs.Produces;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class TableAdminBean {
-    
+
     @Inject
     private RemoteAdminService remoteAdminService;
-    
+
     @Path("/CreateTable/{tableName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
     public VoidResponse createTable(@Required("tableName") @PathParam("tableName") String tableName) {
         return remoteAdminService.createTable(tableName);
     }
-    
+
     @Path("/FlushTable/{tableName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
     public VoidResponse flushTable(@PathParam("tableName") String tableName) {
         return remoteAdminService.flushTable(tableName);
     }
-    
+
     @Path("/SetTableProperty/{tableName}/{propertyName}/{propertyValue}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST
@@ -51,7 +51,7 @@ public class TableAdminBean {
                     @PathParam("propertyValue") String propertyValue) {
         return remoteAdminService.setTableProperty(tableName, propertyName, propertyValue);
     }
-    
+
     @Path("/RemoveTableProperty/{tableName}/{propertyName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @POST

@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class RegexPushdownTransformRule implements NodeTransformRule {
     private static final Logger log = Logger.getLogger(RegexPushdownTransformRule.class);
     private List<Pattern> patterns = null;
-    
+
     @Override
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         try {
@@ -42,11 +42,11 @@ public class RegexPushdownTransformRule implements NodeTransformRule {
             throw new DatawaveFatalQueryException("Failure to apply node transform rule", tnfe);
         }
     }
-    
+
     public void setRegexPatterns(List<String> patterns) {
         this.patterns = patterns.stream().map(Pattern::compile).collect(Collectors.toList());
     }
-    
+
     public List<String> getPatterns() {
         return this.patterns.stream().map(p -> p.toString()).collect(Collectors.toList());
     }

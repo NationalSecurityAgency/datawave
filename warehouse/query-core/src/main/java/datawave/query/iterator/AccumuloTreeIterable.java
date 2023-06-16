@@ -18,7 +18,7 @@ import com.google.common.collect.Maps;
 /**
  * An iterable interface for wrapping a tree of iterators. This class provides a convenience mechanism for holding on to a tree, allowing clients to use Java's
  * enhanced for loop with the tree, as well as tracking Accumulo's initialization sequence by deferring full initialization until seek is called.
- * 
+ *
  * @param <T>
  *            the type of the tree
  */
@@ -26,16 +26,16 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
     public NestedIterator<S> tree;
     protected boolean seenSeek;
     protected Function<Entry<S,Document>,Entry<T,Document>> func;
-    
+
     public AccumuloTreeIterable() {
         tree = null;
     }
-    
+
     public AccumuloTreeIterable(NestedIterator<S> tree, Function<Entry<S,Document>,Entry<T,Document>> func) {
         this.tree = tree;
         this.func = func;
     }
-    
+
     @Override
     public Iterator<Entry<T,Document>> iterator() {
         if (seenSeek) {
@@ -44,7 +44,7 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
             Iterator<Entry<S,Document>> wrapper = TraceIterators.transform(tree, from -> {
                 return Maps.immutableEntry(from, tree.document());
             }, "Field Index");
-            
+
             return Iterators.transform(wrapper, func);
         } else {
             throw new IllegalStateException("You have to seek this tree.");

@@ -25,251 +25,251 @@ import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge> {
-    
+
     private static final String COLUMN_VISIBILITY = "columnVisibility";
-    
+
     private static final long serialVersionUID = -1621626861385080614L;
-    
+
     protected Map<String,String> markings;
-    
+
     // The visibility of this edge
     @XmlElement(name = "ColumnVisibility", required = true, nillable = false)
     private String columnVisibility;
-    
+
     // The identifier for this edge
     @XmlElement(name = "Identifier", required = true, nillable = false)
     @XmlJavaTypeAdapter(OptionallyEncodedStringAdapter.class)
     private String source;
-    
+
     // The related identifier for this edge, or NULL if this is a stats edge.
     @XmlElement(name = "RelatedIdentifier", required = false)
     @XmlJavaTypeAdapter(OptionallyEncodedStringAdapter.class)
     private String sink;
-    
+
     @XmlAttribute
     private String edgeType;
-    
+
     @XmlAttribute(required = true)
     private String edgeRelationship;
-    
+
     @XmlAttribute(required = true)
     private String edgeAttribute1Source;
-    
+
     // The type of stats edge, or NULL if this is not a stats edge
     @XmlAttribute(required = false)
     private String statsType;
-    
+
     // The date to which this edge applies
     @XmlAttribute(required = true)
     private String date;
-    
+
     // The number of events collected between source and sink on date.
     // If this is a stats edge, this will be null.
     @XmlElement(name = "Count", required = false)
     private Long count;
-    
+
     @JsonProperty("Counts")
     // work-around for bug in jackson-databind
     @XmlElementWrapper(name = "Counts", required = false)
     @XmlElement(name = "Count", required = false)
     private List<Long> counts;
-    
+
     @XmlAttribute(required = false)
     private String edgeAttribute3;
-    
+
     @XmlAttribute(required = false)
     private String edgeAttribute2;
-    
+
     @XmlElement(name = "LoadDate", required = false)
     private String loadDate;
-    
+
     @XmlElement(name = "ActivityDate", required = false)
     private String activityDate;
-    
+
     public String getColumnVisibility() {
         return columnVisibility;
     }
-    
+
     public void setColumnVisibility(String cv) {
         this.columnVisibility = cv;
     }
-    
+
     @Override
     public String getSource() {
         return source;
     }
-    
+
     @Override
     public String getSink() {
         return sink;
     }
-    
+
     @Override
     public void setSource(String source) {
         this.source = source;
     }
-    
+
     @Override
     public void setSink(String sink) {
         this.sink = sink;
     }
-    
+
     @Override
     public String getEdgeType() {
         return edgeType;
     }
-    
+
     @Override
     public void setEdgeType(String edgeType) {
         this.edgeType = edgeType;
     }
-    
+
     @Override
     public String getEdgeRelationship() {
         return edgeRelationship;
     }
-    
+
     @Override
     public void setEdgeRelationship(String edgeRelationship) {
         this.edgeRelationship = edgeRelationship;
     }
-    
+
     @Override
     public String getEdgeAttribute1Source() {
         return edgeAttribute1Source;
     }
-    
+
     @Override
     public void setEdgeAttribute1Source(String edgeAttribute1Source) {
         this.edgeAttribute1Source = edgeAttribute1Source;
     }
-    
+
     @Override
     public String getStatsType() {
         return statsType;
     }
-    
+
     @Override
     public void setStatsType(String statsType) {
         this.statsType = statsType;
     }
-    
+
     @Override
     public String getDate() {
         return date;
     }
-    
+
     @Override
     public void setDate(String date) {
         this.date = date;
     }
-    
+
     @Override
     public Long getCount() {
         return count;
     }
-    
+
     @Override
     public void setCount(Long count) {
         this.count = count;
     }
-    
+
     @Override
     public List<Long> getCounts() {
         return counts;
     }
-    
+
     @Override
     public void setCounts(List<Long> counts) {
         this.counts = counts;
     }
-    
+
     public static Schema<DefaultEdge> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public String getLoadDate() {
         return loadDate;
     }
-    
+
     @Override
     public void setLoadDate(String loadDate) {
         this.loadDate = loadDate;
     }
-    
+
     public String getActivityDate() {
         return this.activityDate;
     }
-    
+
     @Override
     public void setActivityDate(String activityDate) {
         this.activityDate = activityDate;
     }
-    
+
     @Override
     public void setMarkings(Map<String,String> markings) {
         this.markings = markings;
         this.setColumnVisibility(markings.get(COLUMN_VISIBILITY));
     }
-    
+
     public Map<String,String> getMarkings() {
         return this.markings;
     }
-    
+
     @Override
     public String getEdgeAttribute2() {
         return edgeAttribute2;
     }
-    
+
     @Override
     public void setEdgeAttribute2(String edgeAttribute2) {
         this.edgeAttribute2 = edgeAttribute2;
     }
-    
+
     @Override
     public String getEdgeAttribute3() {
         return edgeAttribute3;
     }
-    
+
     @Override
     public void setEdgeAttribute3(String edgeAttribute3) {
         this.edgeAttribute3 = edgeAttribute3;
     }
-    
+
     @Override
     public Schema<DefaultEdge> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<DefaultEdge> SCHEMA = new Schema<DefaultEdge>() {
-        
+
         @Override
         public DefaultEdge newMessage() {
             return new DefaultEdge();
         }
-        
+
         @Override
         public Class<? super DefaultEdge> typeClass() {
             return DefaultEdge.class;
         }
-        
+
         @Override
         public String messageName() {
             return DefaultEdge.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return DefaultEdge.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(DefaultEdge message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, DefaultEdge message) throws IOException {
             if (message.columnVisibility != null)
@@ -306,7 +306,7 @@ public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge>
                 output.writeString(14, message.activityDate, false);
             }
         }
-        
+
         @Override
         public void mergeFrom(Input input, DefaultEdge message) throws IOException {
             ArrayList<Long> counts = new ArrayList<Long>();
@@ -367,7 +367,7 @@ public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge>
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -403,13 +403,13 @@ public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge>
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
             fieldMap.put(COLUMN_VISIBILITY, 1);
