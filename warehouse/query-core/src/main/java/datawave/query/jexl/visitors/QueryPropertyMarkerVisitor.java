@@ -17,7 +17,7 @@ import java.util.List;
 
 /**
  * This class is used to determine whether the specified node is an instance of a query marker. The reason for this functionality is that if the query is
- * serialized and deserialized, then only the underlying assignment will persist. This class will identify the Reference, ReferenceExpression, or And nodes,
+ * serialized and deserialized, then only the underlying assignment will persist. This class will identify the ReferenceExpression, or And nodes,
  * created by the original QueryPropertyMarker instance, as the marked node. Children of the marker node will not be identified as marked.
  */
 public class QueryPropertyMarkerVisitor extends BaseVisitor {

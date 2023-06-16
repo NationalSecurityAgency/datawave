@@ -19,7 +19,7 @@ import java.util.Set;
 import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
 
 /**
- * This is a node that can be put in place of an underlying reference node to place a property on an underlying query sub-tree (e.g. ExceededValueThreshold)
+ * This is a node that can be put in place of a given node to place a property on an underlying query sub-tree (e.g. ExceededValueThreshold)
  */
 public class QueryPropertyMarker {
     
