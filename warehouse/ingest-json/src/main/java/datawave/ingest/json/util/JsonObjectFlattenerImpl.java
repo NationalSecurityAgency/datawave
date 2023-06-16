@@ -51,7 +51,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         // context is redundant in those cases. The property is really only relevant for NORMAL mode usage
 
         this.addArrayIndexToFieldName = (this.flattenMode == FlattenMode.GROUPED || this.flattenMode == FlattenMode.GROUPED_AND_NORMAL) ? false
-                : builder.addArrayIndexToFieldName;
+                        : builder.addArrayIndexToFieldName;
 
         if (this.flattenMode == FlattenMode.GROUPED) {
             if (this.pathDelimiter.equals(this.occurrenceDelimiter)) {
@@ -84,16 +84,16 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     }
 
     @Override
-    public Multimap<String, String> flatten(JsonObject object) throws IllegalStateException {
-        Multimap<String, String> map = HashMultimap.create();
+    public Multimap<String,String> flatten(JsonObject object) throws IllegalStateException {
+        Multimap<String,String> map = HashMultimap.create();
         flatten(object, map);
         return map;
     }
 
     @Override
-    public void flatten(JsonObject object, Multimap<String, String> map) throws NullPointerException, IllegalStateException {
+    public void flatten(JsonObject object, Multimap<String,String> map) throws NullPointerException, IllegalStateException {
         Preconditions.checkNotNull(map, "'map' argument cannot be null");
-        Map<String, Integer> occurrenceCounts = null;
+        Map<String,Integer> occurrenceCounts = null;
         if (this.flattenMode == FlattenMode.GROUPED || this.flattenMode == FlattenMode.GROUPED_AND_NORMAL) {
             occurrenceCounts = new HashMap<>();
         }
@@ -105,7 +105,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         return this.flattenMode;
     }
 
-    protected void addKeysToMap(String currentPath, JsonElement element, Multimap<String, String> map, Map<String, Integer> occurrenceCounts) {
+    protected void addKeysToMap(String currentPath, JsonElement element, Multimap<String,String> map, Map<String,Integer> occurrenceCounts) {
 
         if (null == element || element.isJsonNull()) {
             // Don't add nulls
@@ -130,11 +130,11 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
             }
 
             JsonObject jsonObject = element.getAsJsonObject();
-            Iterator<Map.Entry<String, JsonElement>> iter = jsonObject.entrySet().iterator();
+            Iterator<Map.Entry<String,JsonElement>> iter = jsonObject.entrySet().iterator();
             String pathPrefix = currentPath.isEmpty() ? currentPath : currentPath + this.pathDelimiter;
 
             while (iter.hasNext()) {
-                Map.Entry<String, JsonElement> entry = iter.next();
+                Map.Entry<String,JsonElement> entry = iter.next();
                 addKeysToMap(pathPrefix + this.nameNormalizer.normalizeElementName(entry.getKey(), currentPath), entry.getValue(), map, occurrenceCounts);
             }
         } else if (element.isJsonArray()) {
@@ -175,7 +175,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         return name;
     }
 
-    protected void mapPut(String currentPath, String currentValue, Multimap<String, String> map, Map<String, Integer> occurrenceCounts) {
+    protected void mapPut(String currentPath, String currentValue, Multimap<String,String> map, Map<String,Integer> occurrenceCounts) {
         String key = this.keyValueNormalizer.normalizeMapKey(currentPath, currentValue);
         String value = this.keyValueNormalizer.normalizeMapValue(currentValue, key);
         if (!ignoreKeyValue(key, value)) {
@@ -203,9 +203,12 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     /**
      * Returns the fully-qualified fieldname + grouping suffix for the specified fieldPath
      *
-     * @param fieldPath  path to the field, not including the trailing 'occurrence' identifier
-     * @param value      value associated with the specified field. Ignored here, but may be important to subclasses
-     * @param occurrence ordinal position of the field within its current tree level
+     * @param fieldPath
+     *            path to the field, not including the trailing 'occurrence' identifier
+     * @param value
+     *            value associated with the specified field. Ignored here, but may be important to subclasses
+     * @param occurrence
+     *            ordinal position of the field within its current tree level
      * @return field name + context suffix for the specified value
      */
     protected String getFieldAndContextSuffix(String fieldPath, String value, int occurrence) {
@@ -234,8 +237,10 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
     /**
      * Uses disallowlist and allowlist to determine whether or not the key/value pair should be ignored
      *
-     * @param key   key to evaluate
-     * @param value value to evaluate. Ignored here, but may be important for subclasses
+     * @param key
+     *            key to evaluate
+     * @param value
+     *            value to evaluate. Ignored here, but may be important for subclasses
      * @return true, if key/value pair should be ignored
      */
     protected boolean ignoreKeyValue(String key, String value) {
@@ -255,7 +260,7 @@ public class JsonObjectFlattenerImpl implements JsonObjectFlattener {
         return false;
     }
 
-    protected int incrementCount(String elementName, Map<String, Integer> occurrenceCounts) {
+    protected int incrementCount(String elementName, Map<String,Integer> occurrenceCounts) {
         int count = 0;
         if (occurrenceCounts.containsKey(elementName)) {
             count = occurrenceCounts.get(elementName) + 1;

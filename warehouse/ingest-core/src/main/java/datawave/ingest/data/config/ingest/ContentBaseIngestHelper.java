@@ -95,15 +95,17 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         indexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + INDEX_LIST_FIELDS));
         reverseIndexListEntriesFields.addAll(trimConfigStrings(config, getType().typeName() + REV_INDEX_LIST_FIELDS));
 
-        this.saveRawDataOption = (null != config.get(getType().typeName() + SAVE_RAW_DATA_AS_DOCUMENT)) ? Boolean.parseBoolean(config.get(getType().typeName()
-                + SAVE_RAW_DATA_AS_DOCUMENT)) : saveRawDataOption;
+        this.saveRawDataOption = (null != config.get(getType().typeName() + SAVE_RAW_DATA_AS_DOCUMENT))
+                        ? Boolean.parseBoolean(config.get(getType().typeName() + SAVE_RAW_DATA_AS_DOCUMENT))
+                        : saveRawDataOption;
 
         // If we're saving the raw data in the document column, we need a view name.
         // retrieve this view name if it has been specified, else use default if we
         // are saving the raw record in the doc column.
         if (this.saveRawDataOption) {
-            this.rawDocumentViewName = (null != config.get(getType().typeName() + RAW_DOCUMENT_VIEW_NAME)) ? config.get(getType().typeName()
-                    + RAW_DOCUMENT_VIEW_NAME) : rawDocumentViewName;
+            this.rawDocumentViewName = (null != config.get(getType().typeName() + RAW_DOCUMENT_VIEW_NAME))
+                            ? config.get(getType().typeName() + RAW_DOCUMENT_VIEW_NAME)
+                            : rawDocumentViewName;
             if (log.isTraceEnabled()) {
                 log.trace("saveRawDataOption was true");
                 log.trace("getType().typeName()+RAW_DOCUMENT_VIEW_NAME: " + getType().typeName() + RAW_DOCUMENT_VIEW_NAME);
@@ -179,7 +181,8 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
     /**
      * Utility method to take a {@code String[]} and return a {@code Set<String>} where the values are trimmed
      *
-     * @param items String[] of items to trim and turn into a set
+     * @param items
+     *            String[] of items to trim and turn into a set
      * @return unique Set of strings where whitespace has been trimmed.
      */
     public static Set<String> cleanSet(Collection<String> items) {

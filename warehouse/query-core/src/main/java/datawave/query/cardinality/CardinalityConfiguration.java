@@ -16,7 +16,7 @@ import java.util.TreeSet;
 public class CardinalityConfiguration {
 
     private Set<String> cardinalityFields = null;
-    private Map<String, String> cardinalityFieldReverseMapping = null;
+    private Map<String,String> cardinalityFieldReverseMapping = null;
     private String cardinalityUidField = null;
     private String outputFileDirectory = null;
     private int flushThreshold = 50000;
@@ -55,11 +55,11 @@ public class CardinalityConfiguration {
         return flushThreshold;
     }
 
-    public void setCardinalityFieldReverseMapping(Map<String, String> cardinalityFieldReverseMapping) {
+    public void setCardinalityFieldReverseMapping(Map<String,String> cardinalityFieldReverseMapping) {
         this.cardinalityFieldReverseMapping = cardinalityFieldReverseMapping;
     }
 
-    public Map<String, String> getCardinalityFieldReverseMapping() {
+    public Map<String,String> getCardinalityFieldReverseMapping() {
         return cardinalityFieldReverseMapping;
     }
 
@@ -87,8 +87,8 @@ public class CardinalityConfiguration {
         initialProjectionFields.removeAll(Arrays.asList(nonDocumentFields));
 
         // map local model names to the stored names that the tserver will find
-        Multimap<String, String> forwardMap = HashMultimap.create();
-        for (Map.Entry<String, String> entry : cardinalityFieldReverseMapping.entrySet()) {
+        Multimap<String,String> forwardMap = HashMultimap.create();
+        for (Map.Entry<String,String> entry : cardinalityFieldReverseMapping.entrySet()) {
             forwardMap.put(entry.getValue(), entry.getKey());
         }
         for (String f : initialProjectionFields) {
@@ -109,7 +109,7 @@ public class CardinalityConfiguration {
                 // the disallowlisted fields will be mapped to their stored values in the DefaultQueryPlanner, so we will remove
                 // both the stored version and the model version of the must return field
 
-                Multimap<String, String> queryMapping = invertMultimap(queryModel.getForwardQueryMapping());
+                Multimap<String,String> queryMapping = invertMultimap(queryModel.getForwardQueryMapping());
                 for (String bl : storedDisallowlistedFieldsToRemove) {
                     if (queryMapping.containsKey(bl)) {
                         revisedDisallowlistFields.removeAll(queryMapping.get(bl));
@@ -133,7 +133,8 @@ public class CardinalityConfiguration {
             Set<String> disallowlistedFieldsToRemove = getStoredProjectionFields();
             if (queryModel != null) {
                 // using the stored version of the cardinality fields, find out what they would be called in the model that's being used
-                Collection<String> storedOriginaldisallowlistedFields = queryModel.remapParameter(originalDisallowlistedFields, queryModel.getForwardQueryMapping());
+                Collection<String> storedOriginaldisallowlistedFields = queryModel.remapParameter(originalDisallowlistedFields,
+                                queryModel.getForwardQueryMapping());
                 // retain all fields that are both in the disallowlisted fields and being used for cardinalities
                 disallowlistedFieldsToRemove.retainAll(storedOriginaldisallowlistedFields);
             } else {
@@ -154,7 +155,7 @@ public class CardinalityConfiguration {
 
                 // if the DefaultQueryPlanner is fixed to use the forwardMapping instead of the inverse reverseMapping,
                 // then we should change this to use the inverseForward mapping to catch all possible model fields for that on-disk field
-                Map<String, String> reverseQueryMapping = queryModel.getReverseQueryMapping();
+                Map<String,String> reverseQueryMapping = queryModel.getReverseQueryMapping();
                 for (String pf : storedProjectFieldsToAdd) {
                     if (reverseQueryMapping.containsKey(pf)) {
                         revisedProjectFields.add(reverseQueryMapping.get(pf));
@@ -190,25 +191,25 @@ public class CardinalityConfiguration {
         }
     }
 
-    private Multimap<String, String> invertMap(Map<String, String> map) {
-        Multimap<String, String> inverse = HashMultimap.create();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
+    private Multimap<String,String> invertMap(Map<String,String> map) {
+        Multimap<String,String> inverse = HashMultimap.create();
+        for (Map.Entry<String,String> entry : map.entrySet()) {
             inverse.put(entry.getValue(), entry.getKey());
         }
         return inverse;
     }
 
-    private Multimap<String, String> invertMultimap(Multimap<String, String> multi) {
-        Multimap<String, String> inverse = HashMultimap.create();
-        for (Map.Entry<String, String> entry : multi.entries()) {
+    private Multimap<String,String> invertMultimap(Multimap<String,String> multi) {
+        Multimap<String,String> inverse = HashMultimap.create();
+        for (Map.Entry<String,String> entry : multi.entries()) {
             inverse.put(entry.getValue(), entry.getKey());
         }
         return inverse;
     }
 
-    private Multimap<String, String> toMultiMap(Map<String, String> map) {
-        Multimap<String, String> mmap = HashMultimap.create();
-        for (Map.Entry<String, String> entry : map.entrySet()) {
+    private Multimap<String,String> toMultiMap(Map<String,String> map) {
+        Multimap<String,String> mmap = HashMultimap.create();
+        for (Map.Entry<String,String> entry : map.entrySet()) {
             mmap.put(entry.getKey(), entry.getValue());
         }
         return mmap;

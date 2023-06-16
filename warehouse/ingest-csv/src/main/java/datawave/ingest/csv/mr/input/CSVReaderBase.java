@@ -110,7 +110,8 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     /**
      * Gets the Event and this RecordReader ready for reading.
      *
-     * @param conf the configuration
+     * @param conf
+     *            the configuration
      */
     @Override
     public void initializeEvent(Configuration conf) throws IOException {
@@ -126,7 +127,8 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     /**
      * Creates a CVSHelper for the RecordReader.
      *
-     * @param conf a configuration
+     * @param conf
+     *            a configuration
      * @return a CSVHelper object
      */
     @Override
@@ -247,7 +249,8 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     /**
      * Used to process extra fields. The PROCESS_EXTRA_FIELDS configuration parameter must be set to enable this processing.
      *
-     * @param fieldValue field value
+     * @param fieldValue
+     *            field value
      */
     protected void processExtraField(String fieldValue) {
         if (fieldValue == null) {
@@ -274,8 +277,10 @@ public class CSVReaderBase extends LongLineEventRecordReader implements EventRec
     /**
      * Process a field. This will split multi-valued fields as necessary and call checkField on each part.
      *
-     * @param fieldName  field name
-     * @param fieldValue field value
+     * @param fieldName
+     *            field name
+     * @param fieldValue
+     *            field value
      */
     protected void processPreSplitField(String fieldName, final String fieldValue) {
         if (csvHelper.isMultiValuedField(fieldName)) {

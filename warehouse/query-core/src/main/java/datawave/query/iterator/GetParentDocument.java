@@ -20,17 +20,17 @@ public class GetParentDocument implements Function<Entry<Key,Document>,Tuple2<Ke
     private final Aggregation makeDocument;
     private final EntryToTuple<Key,Document> convert = new EntryToTuple<>();
     private static final Logger log = Logger.getLogger(GetParentDocument.class);
-    
+
     public GetParentDocument(KeyToDocumentData fetchDocData, Aggregation makeDocument) {
         this.fetchDocData = fetchDocData;
         this.makeDocument = makeDocument;
     }
-    
+
     public Tuple2<Key,Document> apply(Entry<Key,Document> from) {
         if (log.isTraceEnabled())
             log.trace("Apply parent key " + from.getKey());
-        Key parentKey = TLD.buildParentKey(from.getKey().getRow(), TLD.parseParentPointerFromId(from.getKey().getColumnFamilyData()), from.getKey()
-                        .getColumnQualifierData(), from.getKey().getColumnVisibility(), from.getKey().getTimestamp());
+        Key parentKey = TLD.buildParentKey(from.getKey().getRow(), TLD.parseParentPointerFromId(from.getKey().getColumnFamilyData()),
+                        from.getKey().getColumnQualifierData(), from.getKey().getColumnVisibility(), from.getKey().getTimestamp());
         if (log.isTraceEnabled())
             log.trace("parent key " + parentKey);
         Entry<Key,Document> parentEntry = Maps.immutableEntry(parentKey, new Document());

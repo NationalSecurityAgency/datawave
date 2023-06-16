@@ -52,7 +52,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         if (type.equals(EDGE_SOURCE) || type.equals(EDGE_SINK)) {
             buildRowContexts(identityContexts, enforceRules);
         } else if (type.equals(EDGE_TYPE) || type.equals(EDGE_RELATIONSHIP) || type.equals(EDGE_ATTRIBUTE1) || type.equals(EDGE_ATTRIBUTE2)
-                || type.equals(EDGE_ATTRIBUTE3) || type.equals(FUNCTION)) {
+                        || type.equals(EDGE_ATTRIBUTE3) || type.equals(FUNCTION)) {
             buildColumnContexts(identityContexts, enforceRules);
         } else {
             throw new RuntimeException("Invalid identifier: " + type);
@@ -137,10 +137,12 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
      * context). Depending on when this method is used that can be good or bad. (During an AND node this qruey context needs to have sources, during an OR node
      * this query context may or may not have sources)
      *
-     * @param other              all query contexts in this must all have row context = null
-     * @param optionalSourceInfo choose to enforce this query context to have its list of sources set or not in order to combine
+     * @param other
+     *            all query contexts in this must all have row context = null
+     * @param optionalSourceInfo
+     *            choose to enforce this query context to have its list of sources set or not in order to combine
      * @return Return true if successful. Along the way if a rule is broken return false. If false is returned this query context should no longer be used (it
-     * may have partially combined)
+     *         may have partially combined)
      */
     public boolean combineQueryContexts(List<QueryContext> other, boolean optionalSourceInfo) {
 
@@ -283,7 +285,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
      * get away with excluding source and sink if the
      */
     public void buildStrings(StringBuilder normalizedQuery, StringBuilder normalizedStatsQuery, boolean includeStats, boolean includeSource,
-                             boolean includeSink, HashMultimap<String, String> preFilterValues, boolean includeColumnFamilyTerms, boolean updateAllowlist) {
+                    boolean includeSink, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms, boolean updateAllowlist) {
         StringBuilder trimmedQuery = new StringBuilder();
         StringBuilder trimmedStatsQuery = new StringBuilder();
 
@@ -349,8 +351,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         }
     }
 
-    private NormalizedQuery toString(boolean includeStats, boolean includeSource, boolean includeSink, HashMultimap<String, String> preFilterValues,
-                                     boolean includeColumnFamilyTerms, boolean updateAllowlist) {
+    private NormalizedQuery toString(boolean includeStats, boolean includeSource, boolean includeSink, HashMultimap<String,String> preFilterValues,
+                    boolean includeColumnFamilyTerms, boolean updateAllowlist) {
 
         NormalizedQuery rowString = null, colString = null;
 
@@ -419,7 +421,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
         return otherContexts;
     }
 
-    private void updateAllowList(IdentityContext expression, HashMultimap<String, String> preFilterValues) {
+    private void updateAllowList(IdentityContext expression, HashMultimap<String,String> preFilterValues) {
         /*
          * A allowlist is a list of things that you allow, therefore, there is no reason to check for things that you do not allow. This means there is no
          * reason to check for NOT_EQUALS or NOT_EQUALS_REGEX, because they won't be allowed by default.
@@ -434,7 +436,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
     }
 
     private int populateQuery(List<IdentityContext> terms, StringBuilder trimmedQuery, StringBuilder trimmedStatsQuery, String operator, boolean includeStats,
-                              HashMultimap<String, String> preFilterValues, boolean addToPrefilter) {
+                    HashMultimap<String,String> preFilterValues, boolean addToPrefilter) {
         int numTermsAdded = 0;
         boolean createStats = includeStats;
         boolean expandStats = false;
@@ -472,7 +474,7 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                 if (createStats) {
                     if (expandStats) {
                         tempStatsStringBuilder.append(splitCompoundValue(iContext.getIdentity(), iContext.getOperation(), iContext.getEscapedLiteral(),
-                                preFilterValues, addToPrefilter));
+                                        preFilterValues, addToPrefilter));
                     } else {
                         tempStatsStringBuilder.append(iContext.getIdentity() + " " + iContext.getOperation() + " " + "'" + iContext.getEscapedLiteral() + "'");
                     }
@@ -506,8 +508,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
     /*
      * Used for creating the stats query. Splits up EDGE_RELATIONSHIP=A-B into (EDGE_RELATIONSHIP=A)
      */
-    private static StringBuilder splitCompoundValue(String name, String operator, String value, HashMultimap<String, String> preFilterValues,
-                                                    boolean updateAllowlist) {
+    private static StringBuilder splitCompoundValue(String name, String operator, String value, HashMultimap<String,String> preFilterValues,
+                    boolean updateAllowlist) {
         StringBuilder sb = new StringBuilder();
 
         String[] parts = value.split("-");
@@ -673,8 +675,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
             return columnFamilies;
         }
 
-        public NormalizedQuery toString(boolean includeStats, HashMultimap<String, String> preFilterValues, boolean includeColumnFamilyTerms,
-                                        boolean updateAllowlist) {
+        public NormalizedQuery toString(boolean includeStats, HashMultimap<String,String> preFilterValues, boolean includeColumnFamilyTerms,
+                        boolean updateAllowlist) {
             StringBuilder trimmedQuery = new StringBuilder();
             StringBuilder trimmedStatsQuery = new StringBuilder();
             int numTermsAdded = 0;
@@ -700,7 +702,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateAllowlist));
+                numTermsAdded += populateQuery(getEdgeAttribute1Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                                (updateAllowlist));
             }
 
             if (getEdgeAttribute2Values() != null) {
@@ -708,7 +711,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateAllowlist));
+                numTermsAdded += populateQuery(getEdgeAttribute2Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                                (updateAllowlist));
             }
 
             if (getEdgeAttribute3Values() != null) {
@@ -716,7 +720,8 @@ public class QueryContext implements EdgeModelAware, EdgeContext {
                     trimmedQuery.append(AND);
                 }
                 // if (includeStats && trimmedStatsQuery.length() > 7) {trimmedStatsQuery.append(AND);}
-                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues, (updateAllowlist));
+                numTermsAdded += populateQuery(getEdgeAttribute3Values(), trimmedQuery, trimmedStatsQuery, OR, includeStats, preFilterValues,
+                                (updateAllowlist));
             }
 
             if (getExclusions() != null) {

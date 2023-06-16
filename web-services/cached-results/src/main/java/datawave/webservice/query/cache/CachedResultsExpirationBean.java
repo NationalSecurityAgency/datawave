@@ -34,20 +34,20 @@ import java.util.Map;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class CachedResultsExpirationBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private CachedResultsQueryCache cachedRunningQueryCache;
-    
+
     // reference datawave/query/CachedResultsExpiration.xml
     @Inject
     @SpringBean(required = false, refreshable = true)
     private CachedResultsExpirationConfiguration cachedResultsExpirationConfiguration;
-    
+
     @Inject
     private CachedResultsBean crb;
-    
+
     @PreDestroy
     public void close() {
         // This is not a pre-destroy hook in CachedResultsBean because many
@@ -71,7 +71,7 @@ public class CachedResultsExpirationBean {
         }
         log.debug("Shutdown method completed.");
     }
-    
+
     @Schedule(hour = "*", minute = "*", second = "*/30", persistent = false)
     public void removeIdleOrExpired() {
         int closeCount = 0;
@@ -108,7 +108,7 @@ public class CachedResultsExpirationBean {
                 closeCount++;
                 log.debug("CachedRunningQuery " + cacheId + " connections returned");
             }
-            
+
         }
         if (closeCount > 0) {
             log.debug(closeCount + " entries closed");

@@ -20,14 +20,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class AccumuloTableIterableTest {
-    
+
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
-    
+
     private final int numEvents = 3;
     private final int numFields = 5;
-    
+
     private SortedMapIterator source;
-    
+
     @Before
     public void beforeEach() {
         TreeMap<Key,Value> data = new TreeMap<>();
@@ -38,18 +38,18 @@ public class AccumuloTableIterableTest {
         }
         source = new SortedMapIterator(data);
     }
-    
+
     @Test
     public void testSeek() throws IOException {
         AccumuloTableIterable iter = new AccumuloTableIterable(source, Predicates.alwaysTrue(), false, false);
-        
+
         iter.seek(new Range(), Collections.emptySet(), false);
-        
+
         Iterator<Map.Entry<DocumentData,Document>> data = iter.iterator();
         assertTrue(data.hasNext());
         Key k = data.next().getKey().getKey();
         assertEquals(new Key("row", "datatype\u0000uid0", "FIELD_0\u0000value_0"), k);
-        
+
         // second seek
         iter.seek(new Range(k, false, null, false), Collections.emptySet(), false);
         assertTrue(data.hasNext());

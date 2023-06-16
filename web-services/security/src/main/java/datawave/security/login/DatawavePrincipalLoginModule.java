@@ -83,7 +83,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
     }
 
     @Override
-    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String, ?> sharedState, Map<String, ?> options) {
+    public void initialize(Subject subject, CallbackHandler callbackHandler, Map<String,?> sharedState, Map<String,?> options) {
 
         trace = log.isTraceEnabled();
 
@@ -245,14 +245,14 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             Group callerGroup = getCallerPrincipalGroup(subject.getPrincipals());
             if (callerGroup != null) {
                 Set<Principal> principalsToRemove = new HashSet<>();
-                for (Enumeration<? extends Principal> e = callerGroup.members(); e.hasMoreElements(); ) {
+                for (Enumeration<? extends Principal> e = callerGroup.members(); e.hasMoreElements();) {
                     Principal p = e.nextElement();
                     if (p instanceof DatawavePrincipal) {
                         if (dp.getName().equals(p.getName())) {
                             principalsToRemove.add(p);
                         } else {
                             log.trace("Skipping from CallerPrincipal group " + p + "@" + System.identityHashCode(p) + " since [" + p.getName() + "] != ["
-                                    + p.getName() + "]");
+                                            + p.getName() + "]");
                         }
                     }
                 }

@@ -13,24 +13,24 @@ public class VoidResponseHtmlMessageBodyWriter extends AbstractHtmlProviderMessa
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
         return VoidResponse.class.isAssignableFrom(type);
     }
-    
+
     @Override
     public String getTitle(VoidResponse voidResponse) {
         return "Void Response";
     }
-    
+
     @Override
     public String getHeadContent(VoidResponse voidResponse) {
         return "";
     }
-    
+
     @Override
     public String getPageHeader(VoidResponse voidResponse) {
         return VoidResponse.class.getName();
     }
-    
+
     public static final String BR = "<br/>";
-    
+
     @Override
     public String getMainContent(VoidResponse voidResponse) {
         StringBuilder builder = new StringBuilder();
@@ -42,7 +42,7 @@ public class VoidResponseHtmlMessageBodyWriter extends AbstractHtmlProviderMessa
                     builder.append(msg).append(BR);
             }
         }
-        
+
         builder.append("<b>EXCEPTIONS:</b>").append(BR);
         List<QueryExceptionType> exceptions = voidResponse.getExceptions();
         if (exceptions != null) {

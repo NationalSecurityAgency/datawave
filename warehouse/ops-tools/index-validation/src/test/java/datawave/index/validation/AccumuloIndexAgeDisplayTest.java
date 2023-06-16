@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AccumuloIndexAgeDisplayTest {
     private static final Logger log = Logger.getLogger(AccumuloIndexAgeDisplayTest.class);
-    
+
     private static final long MILLIS_IN_DAY = 86400000;
     private static final long ONE_HOUR = 3600000;
     private static final long ONE_MINUTE = 6000;
@@ -44,23 +44,23 @@ public class AccumuloIndexAgeDisplayTest {
     private static final long EIGHT_DAYS = MILLIS_IN_DAY * 8 + ONE_MINUTE;
     private static final long FIFTEEN_DAYS = MILLIS_IN_DAY * 15 + ONE_MINUTE;
     private static final long THIRTYONE_DAYS = MILLIS_IN_DAY * 31 + ONE_MINUTE;
-    
+
     // our fake accumulo instance
     private AccumuloClient client = null;
-    
+
     // name of the table we'll be scanning
     private final String tableName = "DatawaveMetadata";
     private final String columns = "indx";
-    
+
     private final String userName = "datawave";
     private final PasswordToken password = new PasswordToken("");
-    
+
     private String fileName = "/tmp/aiad.txt";
-    
+
     private Authorizations auths = new Authorizations("X,Y,Z".split(","));
-    
+
     private AccumuloIndexAgeDisplay aiad = null;
-    
+
     @Before
     public void setup() throws AccumuloException, AccumuloSecurityException, TableExistsException, TableNotFoundException {
         // set hadoop.home.dir so we don't get an IOException about it. Doesn't appear to be used though
@@ -70,10 +70,10 @@ public class AccumuloIndexAgeDisplayTest {
         client.securityOperations().changeUserAuthorizations(userName, auths);
         client.tableOperations().create(tableName);
     }
-    
+
     /**
      * This method completes the setup process and was redundant in all but of the tests.
-     * 
+     *
      * @param bucketsToUse
      *            - the array of buckets to use
      */
@@ -84,10 +84,10 @@ public class AccumuloIndexAgeDisplayTest {
         aiad.logAgeSummary();
         aiad.createAccumuloShellScript(fileName);
     }
-    
+
     /**
      * Delete the file specified
-     * 
+     *
      * @param fn
      *            the filename to delete
      */
@@ -100,12 +100,12 @@ public class AccumuloIndexAgeDisplayTest {
             }
         }
     }
-    
+
     @After
     public void tearDown() {
         deleteFile(fileName);
     }
-    
+
     /**
      * A test verifying the buckets are sorted in reverse order.
      */
@@ -116,14 +116,14 @@ public class AccumuloIndexAgeDisplayTest {
         Integer[] expected = {180, 90, 60, 30, 14, 7, 2};
         Integer[] actual = aiad.getBuckets();
         Assert.assertArrayEquals(expected, actual);
-        
+
         Integer[] useExpectedWithTooSmallNumber = {1, 2, 3, 4, 5};
         expected = new Integer[] {5, 4, 3, 2};
         aiad.setBuckets(useExpectedWithTooSmallNumber);
         actual = aiad.getBuckets();
         Assert.assertArrayEquals(expected, actual);
     }
-    
+
     /**
      * A test that has an assorted of rowws with different timestamps
      */
@@ -133,12 +133,12 @@ public class AccumuloIndexAgeDisplayTest {
         // and 2 thirty one days old. The last eight should be removed by the default buckets
         loadAssortedData();
         completeSetup(new Integer[0]);
-        
+
         String expectedLogSummary = getAssortedSimulatedLogOutput();
         String actualLogSummary = aiad.logAgeSummary();
         Assert.assertEquals(expectedLogSummary, actualLogSummary);
     }
-    
+
     /**
      * A test that has an assorted of rowws with different timestamps
      */
@@ -148,12 +148,12 @@ public class AccumuloIndexAgeDisplayTest {
         // and two thirty one days old. The last eight should be removed by the default buckets
         loadAssortedData();
         completeSetup(new Integer[0]);
-        
+
         String expectedFileOutput = getAssortedSimulatedFileOutput();
         String generatedOutput = readGeneratedFile();
         Assert.assertEquals(expectedFileOutput, generatedOutput);
     }
-    
+
     /**
      * A test with data with a timestamp one hour ago. No data should be identified as being deleteable
      */
@@ -162,12 +162,12 @@ public class AccumuloIndexAgeDisplayTest {
         // All the data is "new" so none should be ready to be aged-off
         loadOneHourData();
         completeSetup(new Integer[0]);
-        
+
         String expectedLogSummary = getOneHourSimulatedLogOutput();
         String actualLogSummary = aiad.logAgeSummary();
         Assert.assertEquals(expectedLogSummary, actualLogSummary);
     }
-    
+
     /**
      * A test with data with a timestamp one hour ago. No data should be identified as being deleteable
      */
@@ -176,12 +176,12 @@ public class AccumuloIndexAgeDisplayTest {
         // All the data is "new" so none should be ready to be aged-off
         loadOneHourData();
         completeSetup(new Integer[0]);
-        
+
         String expectedFileOutput = getOneHourOldDataSimulatedFileOutput();
         String generatedOutput = readGeneratedFile();
         Assert.assertEquals(expectedFileOutput, generatedOutput);
     }
-    
+
     /**
      * A test using the assorted data, 2 - 31 days old, using one bucket of three days. So all day older than three days should have a delete statement.
      */
@@ -190,12 +190,12 @@ public class AccumuloIndexAgeDisplayTest {
         // Should identify data more than three days old in the log and deletion script
         loadAssortedData();
         completeSetup(new Integer[] {3});
-        
+
         String expectedLogSummary = getAssortedDataThreeDaySimulatedLogOutput();
         String actualLogSummary = aiad.logAgeSummary();
         Assert.assertEquals(expectedLogSummary, actualLogSummary);
     }
-    
+
     /**
      * A test using the assorted data, 2 - 31 days old, using one bucket of three days. So all day older than three days should have a delete statement.
      */
@@ -204,63 +204,63 @@ public class AccumuloIndexAgeDisplayTest {
         // Should identify data more than three days old in the log and deletion script
         loadAssortedData();
         completeSetup(new Integer[] {3});
-        
+
         String expectedFileOutput = getAssortedDataThreeDayBucketSimulatedFileOutput();
         String generatedOutput = readGeneratedFile();
         Assert.assertEquals(expectedFileOutput, generatedOutput);
     }
-    
+
     /**
      * Loads data into accumulo with timestamps of 1, 2, 8, 15, and 31 days old.
      */
     private void loadAssortedData() {
         try {
-            BatchWriter bw = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
-                            .setMaxWriteThreads(4));
-            
+            BatchWriter bw = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(4));
+
             long currentTime = System.currentTimeMillis();
-            
+
             int ii = 0;
             Mutation m = new Mutation("Row" + ii);
             m.put(new Text(columns), new Text("D01_" + ii), new ColumnVisibility("X"), currentTime - ONE_DAY, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D01_" + ii), new ColumnVisibility("X"), currentTime - ONE_DAY, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D02_" + ii), new ColumnVisibility("X"), currentTime - TWO_DAYs, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D02_" + ii), new ColumnVisibility("X"), currentTime - TWO_DAYs, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D08_" + ii), new ColumnVisibility("X"), currentTime - EIGHT_DAYS, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D08_" + ii), new ColumnVisibility("X"), currentTime - EIGHT_DAYS, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D15_" + ii), new ColumnVisibility("X"), currentTime - FIFTEEN_DAYS, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D15_" + ii), new ColumnVisibility("X"), currentTime - FIFTEEN_DAYS, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D31_NoVis_" + ii), currentTime - THIRTYONE_DAYS, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("D31_NoVis_" + ii), currentTime - THIRTYONE_DAYS, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             bw.close();
         } catch (TableNotFoundException tnfe) {
             log.error("Unable to find mock accumulo table");
@@ -268,38 +268,38 @@ public class AccumuloIndexAgeDisplayTest {
             log.error("Unable to write to mock accumulo instance.");
         }
     }
-    
+
     /**
      * Loads data into accumulo with a timestamp from one hour ago We shouldn't find any data from this group.
      */
     private void loadOneHourData() {
         try {
-            BatchWriter bw = client.createBatchWriter(tableName, new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L)
-                            .setMaxWriteThreads(4));
-            
+            BatchWriter bw = client.createBatchWriter(tableName,
+                            new BatchWriterConfig().setMaxLatency(1, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(4));
+
             long currentTime = System.currentTimeMillis();
-            
+
             int ii = 0;
             Mutation m = new Mutation("Row" + ii);
             m.put(new Text(columns), new Text("H01" + ii), new ColumnVisibility("X"), currentTime - ONE_HOUR, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("H01" + ii), new ColumnVisibility("X"), currentTime - ONE_HOUR, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("H01" + ii), new ColumnVisibility("X"), currentTime - ONE_HOUR, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("H01" + ii), new ColumnVisibility("X"), currentTime - ONE_HOUR, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             m = new Mutation("Row" + ++ii);
             m.put(new Text(columns), new Text("H01" + ii), new ColumnVisibility("X"), currentTime - ONE_HOUR, new Value("value".getBytes()));
             bw.addMutation(m);
-            
+
             bw.close();
         } catch (TableNotFoundException tnfe) {
             log.error("Unable to find mock accumulo table");
@@ -307,10 +307,10 @@ public class AccumuloIndexAgeDisplayTest {
             log.error("Unable to write to mock accumulo instance.");
         }
     }
-    
+
     /**
      * Read the generated file containing the accummulo shell commands
-     * 
+     *
      * @return A String containing the contents of the file
      */
     private String readGeneratedFile() {
@@ -322,7 +322,7 @@ public class AccumuloIndexAgeDisplayTest {
             while ((line = br.readLine()) != null) {
                 sb.append(line).append("\n");
             }
-            
+
             br.close();
         } catch (FileNotFoundException nfne) {
             System.err.println("Error: Could not find " + fileName);
@@ -337,46 +337,45 @@ public class AccumuloIndexAgeDisplayTest {
                 }
             }
         }
-        
+
         return (sb.toString());
     }
-    
+
     public String getAssortedSimulatedFileOutput() {
-        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n"
-                        + "table DatawaveMetadata\n" + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n"
-                        + "# Indexes older than 60 days:\n" + "# Indexes older than 30 days:\n" + "    delete Row8 indx D31_NoVis_8\n"
-                        + "    delete Row9 indx D31_NoVis_9\n" + "# Indexes older than 14 days:\n" + "    delete Row6 indx D15_6 -l X\n"
-                        + "    delete Row7 indx D15_7 -l X\n" + "# Indexes older than 7 days:\n" + "    delete Row4 indx D08_4 -l X\n"
-                        + "    delete Row5 indx D08_5 -l X\n" + "# Indexes older than 2 days:\n" + "    delete Row2 indx D02_2 -l X\n"
-                        + "    delete Row3 indx D02_3 -l X\n" + "\n");
+        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n" + "table DatawaveMetadata\n"
+                        + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n" + "# Indexes older than 60 days:\n"
+                        + "# Indexes older than 30 days:\n" + "    delete Row8 indx D31_NoVis_8\n" + "    delete Row9 indx D31_NoVis_9\n"
+                        + "# Indexes older than 14 days:\n" + "    delete Row6 indx D15_6 -l X\n" + "    delete Row7 indx D15_7 -l X\n"
+                        + "# Indexes older than 7 days:\n" + "    delete Row4 indx D08_4 -l X\n" + "    delete Row5 indx D08_5 -l X\n"
+                        + "# Indexes older than 2 days:\n" + "    delete Row2 indx D02_2 -l X\n" + "    delete Row3 indx D02_3 -l X\n" + "\n");
     }
-    
+
     private String getOneHourOldDataSimulatedFileOutput() {
-        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n"
-                        + "table DatawaveMetadata\n" + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n"
-                        + "# Indexes older than 60 days:\n" + "# Indexes older than 30 days:\n" + "# Indexes older than 14 days:\n"
-                        + "# Indexes older than 7 days:\n" + "# Indexes older than 2 days:\n" + "\n");
+        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n" + "table DatawaveMetadata\n"
+                        + "# Indexes older than 180 days:\n" + "# Indexes older than 90 days:\n" + "# Indexes older than 60 days:\n"
+                        + "# Indexes older than 30 days:\n" + "# Indexes older than 14 days:\n" + "# Indexes older than 7 days:\n"
+                        + "# Indexes older than 2 days:\n" + "\n");
     }
-    
+
     public String getAssortedDataThreeDayBucketSimulatedFileOutput() {
-        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n"
-                        + "table DatawaveMetadata\n" + "# Indexes older than 3 days:\n" + "    delete Row4 indx D08_4 -l X\n"
-                        + "    delete Row5 indx D08_5 -l X\n" + "    delete Row6 indx D15_6 -l X\n" + "    delete Row7 indx D15_7 -l X\n"
-                        + "    delete Row8 indx D31_NoVis_8\n" + "    delete Row9 indx D31_NoVis_9\n" + "\n");
+        return ("# Run the following commands in an accummulo shell.\n" + "# The lines starting with '#' will be ignored.\n" + "\n" + "table DatawaveMetadata\n"
+                        + "# Indexes older than 3 days:\n" + "    delete Row4 indx D08_4 -l X\n" + "    delete Row5 indx D08_5 -l X\n"
+                        + "    delete Row6 indx D15_6 -l X\n" + "    delete Row7 indx D15_7 -l X\n" + "    delete Row8 indx D31_NoVis_8\n"
+                        + "    delete Row9 indx D31_NoVis_9\n" + "\n");
     }
-    
+
     private String getAssortedSimulatedLogOutput() {
         return ("\nIndexes older than 2   days:           2\n" + "Indexes older than 7   days:           2\n" + "Indexes older than 14  days:           2\n"
                         + "Indexes older than 30  days:           2\n" + "Indexes older than 60  days:           0\n"
                         + "Indexes older than 90  days:           0\n" + "Indexes older than 180 days:           0\n");
     }
-    
+
     private String getOneHourSimulatedLogOutput() {
         return ("\nIndexes older than 2   days:           0\n" + "Indexes older than 7   days:           0\n" + "Indexes older than 14  days:           0\n"
                         + "Indexes older than 30  days:           0\n" + "Indexes older than 60  days:           0\n"
                         + "Indexes older than 90  days:           0\n" + "Indexes older than 180 days:           0\n");
     }
-    
+
     private String getAssortedDataThreeDaySimulatedLogOutput() {
         return ("\nIndexes older than 3   days:           6\n");
     }

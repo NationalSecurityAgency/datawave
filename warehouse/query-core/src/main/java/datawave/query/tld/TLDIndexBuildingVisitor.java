@@ -63,7 +63,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
         if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                && !excludeReferences.contains(builder.getField())) {
+                        && !excludeReferences.contains(builder.getField())) {
             iterators.addExclude(builder.build());
         } else {
             if (isQueryFullySatisfied == true) {
@@ -75,7 +75,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     }
 
     @Override
-    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key, Value> kvIter, ASTEQNode node) throws IOException {
+    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
 
             Key newStartKey = getKey(node);
@@ -86,7 +86,7 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     }
 
     @Override
-    protected SortedKeyValueIterator<Key, Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
+    protected SortedKeyValueIterator<Key,Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
         Key newStartKey = getKey(node);
 
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
@@ -101,12 +101,12 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
         if (log.isTraceEnabled()) {
             log.trace("createIndexOnlyKey for " + fn + " " + literal + " " + newStartKey);
         }
-        List<Entry<Key, Value>> kv = Lists.newArrayList();
+        List<Entry<Key,Value>> kv = Lists.newArrayList();
         if (null != limitedMap.get(Maps.immutableEntry(fn, literal))) {
             kv.add(limitedMap.get(Maps.immutableEntry(fn, literal)));
         } else {
 
-            SortedKeyValueIterator<Key, Value> mySource = limitedSource;
+            SortedKeyValueIterator<Key,Value> mySource = limitedSource;
             // if source size > 0, we are free to use up to that number for this query
             if (source.getSourceSize() > 0)
                 mySource = source.deepCopy(env);
@@ -165,12 +165,12 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                    && !excludeReferences.contains(builder.getField())) {
+                            && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
                 if (isQueryFullySatisfied == true) {
                     throw new RuntimeException(
-                            "Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
+                                    "Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
                 }
             }
         }
@@ -186,9 +186,12 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     /**
      * Use fieldsToAggregate instead of indexOnlyFields because this enables TLDs to return non-event tokens as part of the user document
      *
-     * @param identifier   the field to be aggregated
-     * @param filter       a {@link ChainableEventDataQueryFilter}
-     * @param maxNextCount the maximum number of next calls before a seek is issued
+     * @param identifier
+     *            the field to be aggregated
+     * @param filter
+     *            a {@link ChainableEventDataQueryFilter}
+     * @param maxNextCount
+     *            the maximum number of next calls before a seek is issued
      * @return a {@link TermFrequencyAggregator} loaded with the provided filter
      */
     @Override
@@ -204,7 +207,8 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     /**
      * Range should be build to encompass the entire TLD
      *
-     * @param range non-null literal range to generate an FI range from
+     * @param range
+     *            non-null literal range to generate an FI range from
      * @return a range
      */
     @Override

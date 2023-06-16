@@ -1253,14 +1253,14 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>net.revelc.code</groupId>
+                    <groupId>net.revelc.code.formatter</groupId>
                     <artifactId>formatter-maven-plugin</artifactId>
-                    <version>0.5.2</version>
+                    <version>2.18.0</version>
                     <configuration>
+                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
                         <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>
-                        <compilerSource>${maven.compiler.source}</compilerSource>
                         <compilerCompliance>${maven.compiler.source}</compilerCompliance>
                         <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
                     </configuration>
@@ -1633,7 +1633,7 @@
                         <artifactId>sortpom-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>net.revelc.code</groupId>
+                        <groupId>net.revelc.code.formatter</groupId>
                         <artifactId>formatter-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
@@ -1876,9 +1876,8 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <groupId>net.revelc.code</groupId>
+                                                <groupId>net.revelc.code.formatter</groupId>
                                                 <artifactId>formatter-maven-plugin</artifactId>
-                                                <versionRange>[0.5.0,)</versionRange>
                                                 <goals>
                                                     <goal>format</goal>
                                                 </goals>

@@ -130,23 +130,23 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(BaseIngestHelper.class);
 
-    private Multimap<String, datawave.data.type.Type<?>> typeFieldMap = null;
-    private Multimap<String, datawave.data.type.Type<?>> typePatternMap = null;
-    private Multimap<Matcher, datawave.data.type.Type<?>> typeCompiledPatternMap = null;
+    private Multimap<String,datawave.data.type.Type<?>> typeFieldMap = null;
+    private Multimap<String,datawave.data.type.Type<?>> typePatternMap = null;
+    private Multimap<Matcher,datawave.data.type.Type<?>> typeCompiledPatternMap = null;
     protected Set<String> indexOnlyFields = Sets.newHashSet();
 
     protected Set<String> indexedFields = Sets.newHashSet();
-    protected Map<String, Pattern> indexedPatterns = Maps.newHashMap();
+    protected Map<String,Pattern> indexedPatterns = Maps.newHashMap();
     protected Set<String> unindexedFields = Sets.newHashSet();
 
     protected Set<String> reverseIndexedFields = Sets.newHashSet();
-    protected Map<String, Pattern> reverseIndexedPatterns = Maps.newHashMap();
+    protected Map<String,Pattern> reverseIndexedPatterns = Maps.newHashMap();
     protected Set<String> reverseUnindexedFields = Sets.newHashSet();
 
     // for all the atoms that are normalized, but not indexed
     protected Set<String> normalizedFields = Sets.newHashSet();
     protected Set<String> unNormalizedFields = Sets.newHashSet();
-    protected Map<String, Pattern> normalizedPatterns = Maps.newHashMap();
+    protected Map<String,Pattern> normalizedPatterns = Maps.newHashMap();
 
     protected Set<String> allIndexFields = Sets.newTreeSet(); // the indexed
     // fields across
@@ -166,9 +166,9 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     protected FailurePolicy defaultFailedFieldPolicy = FailurePolicy.FAIL;
-    protected Map<String, FailurePolicy> failedFieldPolicy = null;
-    protected Map<String, FailurePolicy> failedFieldPatternPolicy = null;
-    protected Map<Matcher, FailurePolicy> failedFieldCompiledPatternPolicy = null;
+    protected Map<String,FailurePolicy> failedFieldPolicy = null;
+    protected Map<String,FailurePolicy> failedFieldPatternPolicy = null;
+    protected Map<Matcher,FailurePolicy> failedFieldCompiledPatternPolicy = null;
     protected String failedNormalizationField = "FAILED_NORMALIZATION_FIELD";
 
     protected MarkingsHelper markingsHelper = null;
@@ -202,16 +202,16 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         deleteMode = config.getBoolean(INGEST_MODE_DELETE, false);
         replaceMalformedUTF8 = config.getBoolean(this.getType().typeName() + REPLACE_MALFORMED_CHAR, false);
 
-        defaultFailedFieldPolicy = FailurePolicy.valueOf(config.get(this.getType().typeName() + DEFAULT_FAILED_NORMALIZATION_POLICY,
-                defaultFailedFieldPolicy.name()));
+        defaultFailedFieldPolicy = FailurePolicy
+                        .valueOf(config.get(this.getType().typeName() + DEFAULT_FAILED_NORMALIZATION_POLICY, defaultFailedFieldPolicy.name()));
         failedNormalizationField = config.get(this.getType().typeName() + FAILED_NORMALIZATION_FIELD, failedNormalizationField);
 
         // Ensure that we have only an allowlist or a disallowedlist of fields to
         // index
         if (config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) != null && config.get(this.getType().typeName() + INDEX_FIELDS) != null) {
             throw new RuntimeException("Configuration contains Disallowlist and Allowlist for indexed fields, " + "it specifies both.  Type: "
-                    + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) + " and "
-                    + config.get(this.getType().typeName() + INDEX_FIELDS));
+                            + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + DISALLOWLIST_INDEX_FIELDS) + " and "
+                            + config.get(this.getType().typeName() + INDEX_FIELDS));
         }
 
         String configProperty = null;
@@ -259,10 +259,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // Ensure that we have only an allowlist or a disallowlist of fields to
         // reverse index
         if (config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) != null
-                && config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
+                        && config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS) != null) {
             throw new RuntimeException("Configuration contains Disallowlist and Allowlist for indexed fields, it specifies both.  Type: "
-                    + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) + "  "
-                    + config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS));
+                            + this.getType().typeName() + ", parameters: " + config.get(this.getType().typeName() + DISALLOWLIST_REVERSE_INDEX_FIELDS) + "  "
+                            + config.get(this.getType().typeName() + REVERSE_INDEX_FIELDS));
         }
 
         configProperty = null;
@@ -287,7 +287,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         // Load the proper list of fields to (not) reverse index
         if (configProperty == null) {
             log.warn("No reverse index fields or disallowlist reverse index fields specified, not generating reverse index fields for "
-                    + this.getType().typeName());
+                            + this.getType().typeName());
         } else {
             reverseIndexedFields = Sets.newHashSet();
             Collection<String> reverseIndexedStrings = config.getStringCollection(this.getType().typeName() + configProperty);
@@ -323,7 +323,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
         }
 
-        for (Entry<String, String> property : config) {
+        for (Entry<String,String> property : config) {
 
             // Make sure we are only processing normalizers for this type
             if (!property.getKey().startsWith(this.getType().typeName() + '.')) {
@@ -412,8 +412,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         }
     }
 
-    private void moveToPatternMap(Set<String> in, Map<String, Pattern> out) {
-        for (Iterator<String> itr = in.iterator(); itr.hasNext(); ) {
+    private void moveToPatternMap(Set<String> in, Map<String,Pattern> out) {
+        for (Iterator<String> itr = in.iterator(); itr.hasNext();) {
             String str = itr.next();
             if (str.indexOf('*') != -1) {
                 itr.remove();
@@ -471,8 +471,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * Get a field name from a property name given the pattern, or null if no field name is found
      *
-     * @param property        a property that contains a field name
-     * @param propertyPattern a pattern used to extract a field name from a property
+     * @param property
+     *            a property that contains a field name
+     * @param propertyPattern
+     *            a pattern used to extract a field name from a property
      * @return the field name extracted from the property name
      */
     protected String getFieldName(String property, String propertyPattern) {
@@ -570,7 +572,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     private void compilePatterns() {
-        Multimap<Matcher, datawave.data.type.Type<?>> patterns = HashMultimap.create();
+        Multimap<Matcher,datawave.data.type.Type<?>> patterns = HashMultimap.create();
         if (typePatternMap != null) {
             for (String pattern : typePatternMap.keySet()) {
                 patterns.putAll(compileFieldNamePattern(pattern), typePatternMap.get(pattern));
@@ -615,7 +617,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * This is a helper routine that will return a normalized field value using the configured normalizer
      *
-     * @param fieldValue the field value
+     * @param fieldValue
+     *            the field value
      * @return the normalized field values
      */
     @Override
@@ -631,8 +634,10 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * This is a helper routine that will create a normalized field out of a name and value pair
      *
-     * @param field the field
-     * @param value the value
+     * @param field
+     *            the field
+     * @param value
+     *            the value
      * @return The normalized field and value
      */
     protected Set<NormalizedContentInterface> normalize(String field, String value) {
@@ -651,7 +656,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     protected List<NormalizedContentInterface> normalize(NormalizedContentInterface normalizedContent,
-                                                         datawave.data.type.OneToManyNormalizerType<?> datawaveType) {
+                    datawave.data.type.OneToManyNormalizerType<?> datawaveType) {
         List<NormalizedContentInterface> list = Lists.newArrayList();
         // copy it
         NormalizedContentInterface copy = new NormalizedFieldAndValue(normalizedContent);
@@ -698,7 +703,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * This is a helper routine that will create and normalize a field out of a base normalized field.
      *
-     * @param normalizedContent a {@link NormalizedContentInterface}
+     * @param normalizedContent
+     *            a {@link NormalizedContentInterface}
      * @return the normalized field
      */
     protected Set<NormalizedContentInterface> normalize(NormalizedContentInterface normalizedContent) {
@@ -715,7 +721,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (this.isIndexedField(eventFieldName) || this.isIndexedField(indexedFieldName)) {
             if (log.isDebugEnabled()) {
                 log.debug("eventFieldName=" + eventFieldName + ", indexedFieldName =" + indexedFieldName + " we have an indexed field here "
-                        + normalizedContent);
+                                + normalizedContent);
             }
             Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(normalizedContent.getIndexedFieldName());
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
@@ -736,7 +742,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         if (this.isNormalizedField(eventFieldName) || this.isNormalizedField(indexedFieldName)) {
             if (log.isDebugEnabled()) {
                 log.debug("eventFieldName=" + eventFieldName + ", indexedFieldName =" + indexedFieldName + " we have a normalized field here "
-                        + normalizedContent);
+                                + normalizedContent);
             }
             Collection<datawave.data.type.Type<?>> dataTypes = getDataTypes(normalizedContent.getIndexedFieldName());
             HashSet<NormalizedContentInterface> values = new HashSet<>(dataTypes.size());
@@ -854,12 +860,13 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * This is a helper routine that will create the normalized forms of a value given a set of fields
      *
-     * @param fields A map of the original field name to the original value
+     * @param fields
+     *            A map of the original field name to the original value
      */
-    public Multimap<String, NormalizedContentInterface> normalize(Multimap<String, String> fields) {
-        Multimap<String, NormalizedContentInterface> results = HashMultimap.create();
+    public Multimap<String,NormalizedContentInterface> normalize(Multimap<String,String> fields) {
+        Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
 
-        for (Entry<String, String> e : fields.entries()) {
+        for (Entry<String,String> e : fields.entries()) {
             if (e.getValue() != null) {
                 applyNormalizationAndAddToResults(results, new NormalizedFieldAndValue(e.getKey(), e.getValue()));
             } else
@@ -871,12 +878,13 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * This is a helper routine that will create the normalized forms of a value given a set of fields
      *
-     * @param fields A map of the original field name to a field
+     * @param fields
+     *            A map of the original field name to a field
      */
-    public Multimap<String, NormalizedContentInterface> normalizeMap(Multimap<String, NormalizedContentInterface> fields) {
-        Multimap<String, NormalizedContentInterface> results = HashMultimap.create();
+    public Multimap<String,NormalizedContentInterface> normalizeMap(Multimap<String,NormalizedContentInterface> fields) {
+        Multimap<String,NormalizedContentInterface> results = HashMultimap.create();
 
-        for (Entry<String, NormalizedContentInterface> e : fields.entries()) {
+        for (Entry<String,NormalizedContentInterface> e : fields.entries()) {
             if (e.getValue() != null) {
                 applyNormalizationAndAddToResults(results, e.getValue());
             } else
@@ -891,10 +899,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * the field name as the value FAIL: The non-normalized form is put in the map with the error set allowing the caller to fail out the event with appropriate
      * error handling
      *
-     * @param results a MultiMap of {@link NormalizedContentInterface}
-     * @param nArg    current data to be normalized
+     * @param results
+     *            a MultiMap of {@link NormalizedContentInterface}
+     * @param nArg
+     *            current data to be normalized
      */
-    protected void applyNormalizationAndAddToResults(Multimap<String, NormalizedContentInterface> results, NormalizedContentInterface nArg) {
+    protected void applyNormalizationAndAddToResults(Multimap<String,NormalizedContentInterface> results, NormalizedContentInterface nArg) {
         // If an alias exists, then we want to use the alias as the key in the
         // map.
         // We don't want to use the normalized form of the alias.
@@ -931,7 +941,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     /**
      * Normalize and alias a field
      *
-     * @param nArg a field value pair encapsulated within a {@link NormalizedContentInterface}
+     * @param nArg
+     *            a field value pair encapsulated within a {@link NormalizedContentInterface}
      * @return the normalized field, or the non-normalized field with an appropriate error set
      */
     protected Set<NormalizedContentInterface> normalizeAndAlias(NormalizedContentInterface nArg) {
@@ -955,7 +966,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     private void compilePolicyPatterns() {
-        Map<Matcher, FailurePolicy> patterns = new HashMap<>();
+        Map<Matcher,FailurePolicy> patterns = new HashMap<>();
         if (failedFieldPatternPolicy != null) {
             for (String pattern : failedFieldPatternPolicy.keySet()) {
                 patterns.put(Pattern.compile(pattern.replace("*", ".*")).matcher(""), failedFieldPatternPolicy.get(pattern));
@@ -1063,17 +1074,17 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     @Override
-    public Multimap<String, String> getCompositeFieldDefinitions() {
+    public Multimap<String,String> getCompositeFieldDefinitions() {
         return getCompositeIngest().getCompositeFieldDefinitions();
     }
 
     @Override
-    public Map<String, String> getCompositeFieldSeparators() {
+    public Map<String,String> getCompositeFieldSeparators() {
         return getCompositeIngest().getCompositeFieldSeparators();
     }
 
     @Override
-    public void setCompositeFieldDefinitions(Multimap<String, String> compositeFieldDefinitions) {
+    public void setCompositeFieldDefinitions(Multimap<String,String> compositeFieldDefinitions) {
         getCompositeIngest().setCompositeFieldDefinitions(compositeFieldDefinitions);
     }
 
@@ -1088,7 +1099,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     @Override
-    public Multimap<String, NormalizedContentInterface> getCompositeFields(Multimap<String, NormalizedContentInterface> fields) {
+    public Multimap<String,NormalizedContentInterface> getCompositeFields(Multimap<String,NormalizedContentInterface> fields) {
         return getCompositeIngest().getCompositeFields(fields);
     }
 
@@ -1098,30 +1109,32 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     @Override
-    public Map<String, String[]> getVirtualNameAndIndex(String virtualFieldName) {
+    public Map<String,String[]> getVirtualNameAndIndex(String virtualFieldName) {
         return getVirtualIngest().getVirtualNameAndIndex(virtualFieldName);
     }
 
     @Override
-    public Map<String, String[]> getVirtualFieldDefinitions() {
+    public Map<String,String[]> getVirtualFieldDefinitions() {
         return getVirtualIngest().getVirtualFieldDefinitions();
     }
 
     @Override
-    public void setVirtualFieldDefinitions(Map<String, String[]> virtualFieldDefinitions) {
+    public void setVirtualFieldDefinitions(Map<String,String[]> virtualFieldDefinitions) {
         getVirtualIngest().setVirtualFieldDefinitions(virtualFieldDefinitions);
     }
 
     @Override
-    public Multimap<String, NormalizedContentInterface> getVirtualFields(Multimap<String, NormalizedContentInterface> values) {
+    public Multimap<String,NormalizedContentInterface> getVirtualFields(Multimap<String,NormalizedContentInterface> values) {
         return normalizeMap(getVirtualIngest().getVirtualFields(values));
     }
 
     /**
      * This method allows updating the typeFieldMap from a derived helper.
      *
-     * @param fieldName   the field name
-     * @param typeClasses a comma-delimited string of {@link Type} classes
+     * @param fieldName
+     *            the field name
+     * @param typeClasses
+     *            a comma-delimited string of {@link Type} classes
      */
     public void updateDatawaveTypes(String fieldName, String typeClasses) {
 

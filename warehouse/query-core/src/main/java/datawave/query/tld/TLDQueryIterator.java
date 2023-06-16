@@ -51,8 +51,7 @@ public class TLDQueryIterator extends QueryIterator {
     protected int maxFieldHitsBeforeSeek = -1;
     protected int maxKeysBeforeSeek = -1;
 
-    public TLDQueryIterator() {
-    }
+    public TLDQueryIterator() {}
 
     public TLDQueryIterator(TLDQueryIterator other, IteratorEnvironment env) {
         super(other, env);
@@ -64,14 +63,14 @@ public class TLDQueryIterator extends QueryIterator {
     }
 
     @Override
-    public boolean validateOptions(Map<String, String> options) {
+    public boolean validateOptions(Map<String,String> options) {
         boolean success = super.validateOptions(options);
         super.getDocumentKey = GetStartKeyForRoot.instance();
         return success;
     }
 
     @Override
-    public void init(SortedKeyValueIterator<Key, Value> source, Map<String, String> options, IteratorEnvironment env) throws IOException {
+    public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (log.isTraceEnabled()) {
             log.trace("TLDQueryIterator init()");
         }
@@ -130,19 +129,19 @@ public class TLDQueryIterator extends QueryIterator {
         if (this.evaluationFilter == null && script != null) {
             // setup an evaluation filter to avoid loading every single child key into the event
             this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useAllowListedFields ? allowListedFields : null,
-                    useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
-                    limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
     }
 
     @Override
-    protected NestedIterator<Key> getEventDataNestedIterator(SortedKeyValueIterator<Key, Value> source) {
+    protected NestedIterator<Key> getEventDataNestedIterator(SortedKeyValueIterator<Key,Value> source) {
         return new TLDEventDataScanNestedIterator(source, getEventEntryKeyDataTypeFilter());
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private Predicate<Key> parseIndexFilteringChain(final Map<String, String> options) {
+    private Predicate<Key> parseIndexFilteringChain(final Map<String,String> options) {
         // Create a list to gather up the predicates
         List<Predicate<Key>> predicates = Collections.emptyList();
 
@@ -216,13 +215,13 @@ public class TLDQueryIterator extends QueryIterator {
 
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
-            throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
-        return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs).setIteratorBuilder(
-                TLDIndexIteratorBuilder.class);
+                    throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
+        return createIteratorBuildingVisitor(TLDIndexBuildingVisitor.class, documentRange, isQueryFullySatisfied, sortedUIDs)
+                        .setIteratorBuilder(TLDIndexIteratorBuilder.class);
     }
 
     @Override
-    protected Function<Tuple2<Key, Document>, Tuple3<Key, Document, Map<String, Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
+    protected Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> buildTfFunction(TermFrequencyConfig tfConfig) {
         tfConfig.setTld(true);
         return TFFactory.getFunction(tfConfig);
     }

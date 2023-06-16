@@ -29,28 +29,28 @@ import java.util.Map;
 
 public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQueryService {
     private static final Logger log = LoggerFactory.getLogger(RemoteQueryServiceImpl.class);
-    
+
     public static final String PROXIED_ENTITIES_HEADER = DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
     public static final String PROXIED_ISSUERS_HEADER = DatawaveAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
-    
+
     private static final String CREATE = "%s/create";
-    
+
     private static final String NEXT = "%s/next";
-    
+
     private static final String CLOSE = "%s/close";
-    
+
     private static final String PLAN = "%s/plan";
-    
+
     private static final String METRICS = "Metrics/id/%s";
-    
+
     private ObjectReader genericResponseReader;
-    
+
     private ObjectReader baseQueryResponseReader;
-    
+
     private ObjectReader eventQueryResponseReader;
-    
+
     private boolean initialized = false;
-    
+
     @Override
     @PostConstruct
     public void init() {
@@ -62,34 +62,34 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             initialized = true;
         }
     }
-    
+
     @Override
     public GenericResponse<String> createQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
         return query(CREATE, queryLogicName, queryParameters, callerObject);
     }
-    
+
     @Override
     public GenericResponse<String> planQuery(String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
         return query(PLAN, queryLogicName, queryParameters, callerObject);
     }
-    
+
     private GenericResponse<String> query(String endPoint, String queryLogicName, Map<String,List<String>> queryParameters, Object callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
-        
+
         final List<NameValuePair> nameValuePairs = new ArrayList<>();
         queryParameters.entrySet().stream().forEach(e -> e.getValue().stream().forEach(v -> nameValuePairs.add(new BasicNameValuePair(e.getKey(), v))));
-        
+
         final HttpEntity postBody;
         try {
             postBody = new UrlEncodedFormEntity(nameValuePairs, "UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
-        
+
         log.info("query Parameters : " + queryParameters);
         log.info("post body : " + postBody);
-        
+
         final String suffix = String.format(endPoint, queryLogicName);
         // @formatter:off
         return executePostMethodWithRuntimeException(
@@ -107,12 +107,12 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
                 () -> suffix);
         // @formatter:on
     }
-    
+
     @Override
     public BaseQueryResponse next(String id, Object callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
-        
+
         final String suffix = String.format(NEXT, id);
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {}, httpGet -> {
             httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
@@ -122,12 +122,12 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             return readResponse(entity, eventQueryResponseReader, baseQueryResponseReader);
         }, () -> suffix);
     }
-    
+
     @Override
     public VoidResponse close(String id, Object callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
-        
+
         final String suffix = String.format(CLOSE, id);
         return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
             httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
@@ -137,12 +137,12 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             return readVoidResponse(entity);
         }, () -> suffix);
     }
-    
+
     @Override
     public GenericResponse<String> planQuery(String id, Object callerObject) {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
-        
+
         final String suffix = String.format(PLAN, id);
         return executePostMethodWithRuntimeException(suffix, uriBuilder -> {}, httpPost -> {
             httpPost.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
@@ -152,7 +152,7 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
     }
-    
+
     @Override
     public URI getQueryMetricsURI(String id) {
         try {
@@ -162,14 +162,14 @@ public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQ
         } catch (TextParseException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
-        
+
     }
-    
+
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             return (DatawavePrincipal) callerObject;
         }
         throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
-    
+
 }

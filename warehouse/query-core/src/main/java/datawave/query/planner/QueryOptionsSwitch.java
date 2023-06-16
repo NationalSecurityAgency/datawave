@@ -13,9 +13,9 @@ import org.apache.log4j.Logger;
 import java.util.Map;
 
 public class QueryOptionsSwitch {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(QueryOptionsSwitch.class);
-    
+
     public static void apply(Map<String,String> optionsMap, ShardQueryConfiguration config) {
         for (Map.Entry<String,String> entry : optionsMap.entrySet()) {
             String key = entry.getKey();

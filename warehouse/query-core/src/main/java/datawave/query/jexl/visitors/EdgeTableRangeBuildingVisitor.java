@@ -264,8 +264,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      * <p>
      * Or node will return either a list of IdentityContexts or QueryContexts
      *
-     * @param node the node
-     * @param data the data
+     * @param node
+     *            the node
+     * @param data
+     *            the data
      * @return list of IdentityContexts or QueryContexts
      */
     @Override
@@ -398,8 +400,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      * <p>
      * Returns a list of 1 or more IdentityContexts
      *
-     * @param node the node
-     * @param data the data
+     * @param node
+     *            the node
+     * @param data
+     *            the data
      * @return list of IdentityContexts or QueryContexts
      */
     @Override
@@ -414,8 +418,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      * <p>
      * Returns a list of 1 or more IdentityContexts
      *
-     * @param node the node
-     * @param data the data
+     * @param node
+     *            the node
+     * @param data
+     *            the data
      * @return list of IdentityContexts
      */
     @Override
@@ -459,10 +465,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
             if (operator.equals(EQUALS_REGEX) || operator.equals(NOT_EQUALS_REGEX)) {
                 for (String normalizedLiteral : EdgeKeyUtil.normalizeRegexSource(literal, regexDataTypes, true)) {
                     try { // verify that the normalized regex is valid here instead of letting it fail on tserver
-                        // TODO: right now the edge filter iterator calls toLowerCase on the query string by default
-                        // some valid regex characters need to be uppercase and will fail to be valid regex after being lowercased
-                        // so for right now throw out any regex's that would cause the edge filter iterator to fail but this should probably change in the
-                        // future
+                          // TODO: right now the edge filter iterator calls toLowerCase on the query string by default
+                          // some valid regex characters need to be uppercase and will fail to be valid regex after being lowercased
+                          // so for right now throw out any regex's that would cause the edge filter iterator to fail but this should probably change in the
+                          // future
                         Pattern.compile(normalizedLiteral.toLowerCase());
                         IdentityContext iContext = new IdentityContext(identifier, normalizedLiteral, operator);
                         contexts.add(iContext);
@@ -492,7 +498,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     /**
      * Gets the Identity of an expression eg. SOURCE
      *
-     * @param referenceNode a reference node
+     * @param referenceNode
+     *            a reference node
      * @return the identity
      */
     private String getIdentity(SimpleNode referenceNode) {
@@ -508,7 +515,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
     /**
      * Gets the string literal
      *
-     * @param referenceNode reference node
+     * @param referenceNode
+     *            reference node
      * @return string literal
      */
     private String getLiteral(SimpleNode referenceNode) {
@@ -525,8 +533,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      * list with a single Identity context is returned in the following format: Identity = FUNCTION Opperator = FUNCTION LITER = "{function string}" //eg
      * source.has_all(SINK, "t1", "t2", ...)
      *
-     * @param node the node
-     * @param data the data
+     * @param node
+     *            the node
+     * @param data
+     *            the data
      * @return list of IdentityContexts
      */
     public Object visit(ASTFunctionNode node, Object data) {
@@ -542,8 +552,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
                 sb.append(node.jjtGetChild(i).image);
             } else if (1 == i) {
                 if (!allowedFunctions.contains(node.jjtGetChild(i).image.toLowerCase())) {
-                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND, node.jjtGetChild(i).image
-                            + " not supported function for EdgeQuery");
+                    BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.FUNCTION_NOT_FOUND,
+                                    node.jjtGetChild(i).image + " not supported function for EdgeQuery");
                     throw new UnsupportedOperationException(qe);
                 }
                 sb.append(":");
@@ -572,7 +582,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor implements EdgeMo
      * problem when there are multiple query contexts because the allowlist will exclude certain column family values, which will affect what gets returned by
      * the query. This is addressed by the columnFamilyAreDifferent boolean which is passed down to populateQuery()
      *
-     * @param queryContexts query contexts
+     * @param queryContexts
+     *            query contexts
      * @return a visitation context
      */
     private VisitationContext computeVisitaionContext(List<QueryContext> queryContexts) {

@@ -48,10 +48,10 @@ public class EdgeFilterIterator extends Filter {
     private Expression statsExpression = null;
     private JexlContext ctx = new MapContext();
 
-    private HashMultimap<String, String> preFilterValues;
+    private HashMultimap<String,String> preFilterValues;
 
     @Override
-    public SortedKeyValueIterator<Key, Value> deepCopy(IteratorEnvironment env) {
+    public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         EdgeFilterIterator result = (EdgeFilterIterator) super.deepCopy(env);
         result.protobuffFormat = this.protobuffFormat;
         result.expression = this.expression;
@@ -87,10 +87,12 @@ public class EdgeFilterIterator extends Filter {
      * <p>
      * Converts them all to lowercase for case-insensitive queries.
      *
-     * @param ctx           the context
-     * @param keyComponents mapping of key components
+     * @param ctx
+     *            the context
+     * @param keyComponents
+     *            mapping of key components
      */
-    private void setupContext(JexlContext ctx, Map<FieldKey, String> keyComponents) {
+    private void setupContext(JexlContext ctx, Map<FieldKey,String> keyComponents) {
 
         String source = keyComponents.get(FieldKey.EDGE_SOURCE);
         String sink = keyComponents.get(FieldKey.EDGE_SINK);
@@ -132,13 +134,14 @@ public class EdgeFilterIterator extends Filter {
     /**
      * Method to setup the jexl query expression from the iterator options for evaulation.
      *
-     * @param options mapping of options
+     * @param options
+     *            mapping of options
      */
-    private void initOptions(Map<String, String> options) {
+    private void initOptions(Map<String,String> options) {
         String jexl = options.get(JEXL_OPTION);
         if (null == jexl) {
-            throw new IllegalArgumentException("Edge filter not configured with query string! Please configure parameter: " + JEXL_OPTION
-                    + " with the JEXL query.");
+            throw new IllegalArgumentException(
+                            "Edge filter not configured with query string! Please configure parameter: " + JEXL_OPTION + " with the JEXL query.");
         }
         // to stay consistent with the rest of the query engine, support case-insensitive boolean operators.
         String caseFixQuery = jexl.toLowerCase();
@@ -170,7 +173,7 @@ public class EdgeFilterIterator extends Filter {
             try {
                 ois = new ObjectInputStream(new ByteArrayInputStream(data));
                 Object o = ois.readObject();
-                preFilterValues = (HashMultimap<String, String>) o;
+                preFilterValues = (HashMultimap<String,String>) o;
             } catch (IOException ex) {
                 // we can work without it
                 log.error("Invalid allowlist value supplied to iterator.");
@@ -183,13 +186,14 @@ public class EdgeFilterIterator extends Filter {
     /**
      * Method to perform prefilter against a allowlist to see if we can quickly ignore the key
      *
-     * @param keyComponents mapping of key components
+     * @param keyComponents
+     *            mapping of key components
      * @return if we can ignore the key
      */
-    private boolean prefilter(Map<FieldKey, String> keyComponents) {
+    private boolean prefilter(Map<FieldKey,String> keyComponents) {
         boolean retVal = true;
         if (preFilterValues != null) {
-            for (Map.Entry<FieldKey, String> entry : keyComponents.entrySet()) {
+            for (Map.Entry<FieldKey,String> entry : keyComponents.entrySet()) {
                 String fieldName = Fields.getInstance().getFieldName(entry.getKey());
                 Set<String> values = preFilterValues.get(fieldName);
                 if (values == null || values.size() < 1) {
@@ -208,9 +212,9 @@ public class EdgeFilterIterator extends Filter {
     }
 
     @Override
-    public void init(org.apache.accumulo.core.iterators.SortedKeyValueIterator<org.apache.accumulo.core.data.Key, org.apache.accumulo.core.data.Value> source,
-                     java.util.Map<java.lang.String, java.lang.String> options, org.apache.accumulo.core.iterators.IteratorEnvironment env)
-            throws java.io.IOException {
+    public void init(org.apache.accumulo.core.iterators.SortedKeyValueIterator<org.apache.accumulo.core.data.Key,org.apache.accumulo.core.data.Value> source,
+                    java.util.Map<java.lang.String,java.lang.String> options, org.apache.accumulo.core.iterators.IteratorEnvironment env)
+                    throws java.io.IOException {
         super.init(source, options, env);
         initOptions(options);
     }
@@ -218,27 +222,32 @@ public class EdgeFilterIterator extends Filter {
     /**
      * For testing purposes only. Does nothing with super.
      *
-     * @param source  a source
-     * @param options map of options
-     * @throws java.io.IOException for issues with read/write
+     * @param source
+     *            a source
+     * @param options
+     *            map of options
+     * @throws java.io.IOException
+     *             for issues with read/write
      */
-    public void init(org.apache.accumulo.core.iterators.SortedKeyValueIterator<org.apache.accumulo.core.data.Key, org.apache.accumulo.core.data.Value> source,
-                     java.util.Map<java.lang.String, java.lang.String> options) throws java.io.IOException {
+    public void init(org.apache.accumulo.core.iterators.SortedKeyValueIterator<org.apache.accumulo.core.data.Key,org.apache.accumulo.core.data.Value> source,
+                    java.util.Map<java.lang.String,java.lang.String> options) throws java.io.IOException {
         initOptions(options);
     }
 
     /**
      * Determines if the edge key satisfies the conditions expressed in the supplied JEXL query string.
      *
-     * @param k a key
-     * @param V a value
+     * @param k
+     *            a key
+     * @param V
+     *            a value
      * @return boolean - true if it is a match.
      */
     @Override
     public boolean accept(Key k, Value V) {
         boolean value = false;
 
-        Map<FieldKey, String> keyComponents = EdgeKeyUtil.dissasembleKey(k, protobuffFormat);
+        Map<FieldKey,String> keyComponents = EdgeKeyUtil.dissasembleKey(k, protobuffFormat);
 
         if (!prefilter(keyComponents)) {
             value = false;

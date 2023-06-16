@@ -100,7 +100,7 @@ import java.util.zip.GZIPOutputStream;
 public class QueryOptions implements OptionDescriber {
     private static final Logger log = Logger.getLogger(QueryOptions.class);
 
-    protected static Cache<String, FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
+    protected static Cache<String,FileSystem> fileSystemCache = CacheBuilder.newBuilder().concurrencyLevel(10).maximumSize(100).build();
 
     public static final Charset UTF8 = StandardCharsets.UTF_8;
 
@@ -268,9 +268,9 @@ public class QueryOptions implements OptionDescriber {
     public static final String DOC_AGGREGATION_THRESHOLD_MS = "doc.agg.threshold";
 
     public static final String TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS = "tf.agg.threshold";
-    
+
     protected Map<String,String> options;
-    
+
     protected String scanId;
     protected String query;
     protected String queryId;
@@ -292,7 +292,7 @@ public class QueryOptions implements OptionDescriber {
     protected Set<String> allowListedFields = new HashSet<>();
     protected boolean useDisallowListedFields = false;
     protected Set<String> disallowListedFields = new HashSet<>();
-    protected Map<String, Integer> limitFieldsMap = new HashMap<>();
+    protected Map<String,Integer> limitFieldsMap = new HashMap<>();
     protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
@@ -303,7 +303,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected Set<String> hitsOnlySet = new HashSet<>();
 
-    protected Function<Range, Key> getDocumentKey;
+    protected Function<Range,Key> getDocumentKey;
 
     protected FieldIndexAggregator fiAggregator;
     protected Equality equality;
@@ -370,7 +370,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected String postProcessingFunctions = "";
 
-    protected Map<String, Set<String>> nonIndexedDataTypeMap = Maps.newHashMap();
+    protected Map<String,Set<String>> nonIndexedDataTypeMap = Maps.newHashMap();
 
     protected boolean termFrequenciesRequired = false;
     protected Set<String> termFrequencyFields = Collections.emptySet();
@@ -395,7 +395,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected boolean serialEvaluationPipeline = false;
 
-    protected Queue<Entry<Range, String>> batchStack;
+    protected Queue<Entry<Range,String>> batchStack;
 
     protected int batchedQueries = 0;
 
@@ -417,7 +417,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected ExcerptFields excerptFields;
 
-    protected Class<? extends SortedKeyValueIterator<Key, Value>> excerptIterator = TermFrequencyExcerptIterator.class;
+    protected Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
     // off by default, controls when to issue a seek
     private int fiFieldSeek = -1;
@@ -427,10 +427,10 @@ public class QueryOptions implements OptionDescriber {
     private int tfFieldSeek = -1;
     private int tfNextSeek = -1;
 
-    //  aggregation thresholds
+    // aggregation thresholds
     private int docAggregationThresholdMs = -1;
     private int tfAggregationThresholdMs = -1;
-    
+
     public void deepCopy(QueryOptions other) {
         this.options = other.options;
         this.query = other.query;
@@ -748,11 +748,11 @@ public class QueryOptions implements OptionDescriber {
         this.timeFilter = timeFilter;
     }
 
-    public Map<String, Set<String>> getNonIndexedDataTypeMap() {
+    public Map<String,Set<String>> getNonIndexedDataTypeMap() {
         return nonIndexedDataTypeMap;
     }
 
-    public void setNonIndexedDataTypeMap(Map<String, Set<String>> nonIndexedDataTypeMap) {
+    public void setNonIndexedDataTypeMap(Map<String,Set<String>> nonIndexedDataTypeMap) {
         this.nonIndexedDataTypeMap = nonIndexedDataTypeMap;
     }
 
@@ -772,7 +772,7 @@ public class QueryOptions implements OptionDescriber {
         }
         // composite fields are index only as well, unless they are overloaded composites
         if (compositeMetadata != null) {
-            for (Multimap<String, String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values()) {
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values()) {
                 for (String compositeField : compositeFieldMap.keySet()) {
                     if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField)) {
                         allIndexOnlyFields.add(compositeField);
@@ -800,7 +800,7 @@ public class QueryOptions implements OptionDescriber {
         }
         // composite metadata contains combined fields that are not in the event in the same form
         if (compositeMetadata != null) {
-            for (Multimap<String, String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values()) {
+            for (Multimap<String,String> compositeFieldMap : compositeMetadata.getCompositeFieldMapByType().values()) {
                 for (String compositeField : compositeFieldMap.keySet()) {
                     if (!CompositeIngest.isOverloadedCompositeField(compositeFieldMap, compositeField)) {
                         nonEventFields.add(compositeField);
@@ -877,8 +877,8 @@ public class QueryOptions implements OptionDescriber {
 
     public QueryLock getQueryLock() throws MalformedURLException, ConfigException {
         return new QueryLock.Builder().forQueryId(getQueryId()).forFSCache(getFileSystemCache())
-                .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
-                .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
+                        .forIvaratorDirs(ivaratorCacheDirConfigs.stream().map(IvaratorCacheDirConfig::getBasePathURI).collect(Collectors.joining(",")))
+                        .forZookeeper(getZookeeperConfig(), HdfsBackedControl.CANCELLED_CHECK_INTERVAL * 2).build();
     }
 
     public String getHdfsFileCompressionCodec() {
@@ -993,14 +993,14 @@ public class QueryOptions implements OptionDescriber {
         this.compressResults = compressResults;
     }
 
-    public Map<String, Integer> getLimitFieldsMap() {
+    public Map<String,Integer> getLimitFieldsMap() {
         return limitFieldsMap;
     }
 
-    public void setLimitFieldsMap(Map<String, Integer> limitFieldsMap) {
+    public void setLimitFieldsMap(Map<String,Integer> limitFieldsMap) {
         this.limitFieldsMap = limitFieldsMap;
     }
-    
+
     public Set<Set<String>> getMatchingFieldSets() {
         return matchingFieldSets;
     }
@@ -1008,11 +1008,11 @@ public class QueryOptions implements OptionDescriber {
     public List<String> getMatchingFieldList() {
         return this.matchingFieldSets.stream().flatMap(s -> s.stream()).collect(Collectors.toList());
     }
-    
+
     public void setMatchingFieldSets(Set<Set<String>> matchingFieldSets) {
         this.matchingFieldSets = matchingFieldSets;
     }
-    
+
     public boolean isLimitFieldsPreQueryEvaluation() {
         return limitFieldsPreQueryEvaluation;
     }
@@ -1101,21 +1101,21 @@ public class QueryOptions implements OptionDescriber {
         this.excerptFields = excerptFields;
     }
 
-    public Class<? extends SortedKeyValueIterator<Key, Value>> getExcerptIterator() {
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
         return excerptIterator;
     }
 
-    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key, Value>> excerptIterator) {
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
         this.excerptIterator = excerptIterator;
     }
 
     @Override
     public IteratorOptions describeOptions() {
-        Map<String, String> options = new HashMap<>();
+        Map<String,String> options = new HashMap<>();
 
         options.put(DISABLE_EVALUATION, "If provided, JEXL evaluation is not performed against any document.");
         options.put(DISABLE_FIELD_INDEX_EVAL,
-                "If provided, a query tree is not evaluated against the field index. Only used in the case of doc specific ranges");
+                        "If provided, a query tree is not evaluated against the field index. Only used in the case of doc specific ranges");
         options.put(LIMIT_OVERRIDE, "If provided, we will not assume the FI ranges can be constructed from the query");
         options.put(LIMIT_SOURCES, "Allows client to limit the number of sources used for this scan");
         options.put(DISABLE_DOCUMENTS_WITHOUT_EVENTS, "Removes documents in which only hits against the index were found, and no event");
@@ -1133,7 +1133,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(INCLUDE_RECORD_ID, "Include the record id as a field in the document.");
         options.put(COLLECT_TIMING_DETAILS, "Collect timing details about the underlying iterators");
         options.put(STATSD_HOST_COLON_PORT,
-                "A configured statsd host:port which will be used to send resource and timing details from the underlying iterators if configured");
+                        "A configured statsd host:port which will be used to send resource and timing details from the underlying iterators if configured");
         options.put(STATSD_MAX_QUEUE_SIZE, "Max queued metrics before statsd metrics are flushed");
         options.put(INCLUDE_HIERARCHY_FIELDS, "Include the hierarchy fields (CHILD_COUNT and PARENT_UID) as document fields.");
         options.put(DATATYPE_FIELDNAME, "The field name to use when inserting the fieldname into the document.");
@@ -1147,7 +1147,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(IndexIterator.INDEX_FILTERING_CLASSES, "CSV of predicates to apply to keys that pass the original field index (fi) scan.");
         options.put(INCLUDE_GROUPING_CONTEXT, "Keep the grouping context on the final returned document");
         options.put(DOCUMENT_PERMUTATION_CLASSES,
-                "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
+                        "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
         options.put(LIMIT_FIELDS, "limit fields");
         options.put(MATCHING_FIELD_SETS, "matching field sets (used along with limit fields)");
         options.put(GROUP_FIELDS, "group fields");
@@ -1157,7 +1157,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(NON_INDEXED_DATATYPES, "Normalizers to apply only at aggregation time");
         options.put(CONTAINS_INDEX_ONLY_TERMS, "Does the query being evaluated contain any terms which are index-only");
         options.put(ALLOW_FIELD_INDEX_EVALUATION,
-                "Allow the evaluation to occur purely on values pulled from the field index for queries only accessing indexed fields (default is true)");
+                        "Allow the evaluation to occur purely on values pulled from the field index for queries only accessing indexed fields (default is true)");
         options.put(ALLOW_TERM_FREQUENCY_LOOKUP, "Allow the evaluation to use the term frequencies in lieu of the field index when appropriate");
         options.put(TERM_FREQUENCIES_REQUIRED, "Does the query require gathering term frequencies");
         options.put(TERM_FREQUENCY_FIELDS, "comma-delimited list of fields that contain term frequencies");
@@ -1165,22 +1165,22 @@ public class QueryOptions implements OptionDescriber {
         options.put(HDFS_SITE_CONFIG_URLS, "URLs (comma delimited) of where to find the hadoop hdfs and core site configuration files");
         options.put(HDFS_FILE_COMPRESSION_CODEC, "A hadoop compression codec to use for files if supported");
         options.put(IVARATOR_CACHE_DIR_CONFIG,
-                "A JSON-formatted array of ivarator cache config objects.  Each config object MUST specify a pathURI to use when caching field index iterator output.");
+                        "A JSON-formatted array of ivarator cache config objects.  Each config object MUST specify a pathURI to use when caching field index iterator output.");
         options.put(IVARATOR_CACHE_BUFFER_SIZE, "The size of the hdfs cache buffer size (items held in memory before dumping to hdfs).  Default is 10000.");
         options.put(IVARATOR_SCAN_PERSIST_THRESHOLD,
-                "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
+                        "The number of underlying field index keys scanned before the hdfs cache buffer is forced to persist).  Default is 100000.");
         options.put(IVARATOR_SCAN_TIMEOUT, "The time after which the hdfs cache buffer is forced to persist.  Default is 60 minutes.");
         options.put(RESULT_TIMEOUT, "The time out after which an intermediate result is returned for a groupby or unique query.  Default is 60 minutes.");
         options.put(MAX_INDEX_RANGE_SPLIT,
-                "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
+                        "The maximum number of ranges to split a field index scan (ivarator) range into for multithreading.  Note the thread pool size is controlled via an accumulo property.");
         options.put(MAX_IVARATOR_OPEN_FILES,
-                "The maximum number of files that can be opened at one time during a merge sort.  If more that this number of files are created, then compactions will occur");
+                        "The maximum number of files that can be opened at one time during a merge sort.  If more that this number of files are created, then compactions will occur");
         options.put(IVARATOR_NUM_RETRIES,
-                "The number of times an ivarator should attempt to persist a sorted set to a given ivarator cache directory.  We will use the specified number of retries for each of the configured ivarator cache directories.");
+                        "The number of times an ivarator should attempt to persist a sorted set to a given ivarator cache directory.  We will use the specified number of retries for each of the configured ivarator cache directories.");
         options.put(MAX_IVARATOR_SOURCES,
-                " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
+                        " The maximum number of sources to use for ivarators across all ivarated terms within the query.  Note the thread pool size is controlled via an accumulo property.");
         options.put(YIELD_THRESHOLD_MS,
-                "The threshold in milliseconds that the query iterator will evaluate consecutive documents to false before yielding the scan.");
+                        "The threshold in milliseconds that the query iterator will evaluate consecutive documents to false before yielding the scan.");
         options.put(COMPRESS_SERVER_SIDE_RESULTS, "GZIP compress the serialized Documents before returning to the webserver");
         options.put(MAX_EVALUATION_PIPELINES, "The max number of evaluation pipelines");
         options.put(SERIAL_EVALUATION_PIPELINE, "Forces us to use the serial pipeline. Allows us to still have a single thread for evaluation");
@@ -1188,7 +1188,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(DATE_INDEX_TIME_TRAVEL, "Whether the shards from before the event should be gathered from the dateIndex");
 
         options.put(SORTED_UIDS,
-                "Whether the UIDs need to be sorted.  Normally this is true, however in limited circumstances it could be false which allows ivarators to avoid pre-fetching all UIDs and sorting before returning the first one.");
+                        "Whether the UIDs need to be sorted.  Normally this is true, however in limited circumstances it could be false which allows ivarators to avoid pre-fetching all UIDs and sorting before returning the first one.");
 
         options.put(RANGES, "The ranges associated with this scan.  Intended to be used for investigative purposes.");
 
@@ -1196,11 +1196,9 @@ public class QueryOptions implements OptionDescriber {
 
         options.put(METADATA_TABLE_NAME, this.metadataTableName);
         options.put(LIMIT_FIELDS_PRE_QUERY_EVALUATION, "If true, non-query fields limits will be applied immediately off the iterator");
-        options.put(LIMIT_FIELDS_FIELD, "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION
-                + " is set to true this field will contain all fields that were limited immediately");
-        options.put(ACTIVE_QUERY_LOG_NAME,
-                "If not provided or set to '"
-                        + ActiveQueryLog.DEFAULT_NAME
+        options.put(LIMIT_FIELDS_FIELD,
+                        "When " + LIMIT_FIELDS_PRE_QUERY_EVALUATION + " is set to true this field will contain all fields that were limited immediately");
+        options.put(ACTIVE_QUERY_LOG_NAME, "If not provided or set to '" + ActiveQueryLog.DEFAULT_NAME
                         + "', will use the default shared Active Query Log instance. If provided otherwise, uses a separate distinct Active Query Log that will include the unique name in log messages.");
         options.put(EXCERPT_FIELDS, "excerpt fields");
         options.put(EXCERPT_ITERATOR, "excerpt iterator class (default datawave.query.iterator.logic.TermFrequencyExcerptIterator");
@@ -1216,7 +1214,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     @Override
-    public boolean validateOptions(Map<String, String> options) {
+    public boolean validateOptions(Map<String,String> options) {
         if (log.isTraceEnabled()) {
             log.trace("Options: " + options);
         }
@@ -1408,7 +1406,7 @@ public class QueryOptions implements OptionDescriber {
         if (options.containsKey(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS)) {
             this.tfAggregationThresholdMs = Integer.parseInt(options.get(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS));
         }
-        
+
         if (options.containsKey(DATATYPE_FILTER)) {
             String filterCsv = options.get(DATATYPE_FILTER);
             if (filterCsv != null && !filterCsv.isEmpty()) {
@@ -1484,7 +1482,7 @@ public class QueryOptions implements OptionDescriber {
                 }
             }
         }
-        
+
         if (options.containsKey(MATCHING_FIELD_SETS)) {
             String matchingFieldSets = options.get(MATCHING_FIELD_SETS);
             for (String fieldSet : Splitter.on(',').omitEmptyStrings().trimResults().split(matchingFieldSets)) {
@@ -1494,7 +1492,7 @@ public class QueryOptions implements OptionDescriber {
                 }
             }
         }
-        
+
         if (options.containsKey(LIMIT_FIELDS_PRE_QUERY_EVALUATION)) {
             this.setLimitFieldsPreQueryEvaluation(Boolean.parseBoolean(options.get(LIMIT_FIELDS_PRE_QUERY_EVALUATION)));
         }
@@ -1715,7 +1713,7 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(EXCERPT_ITERATOR)) {
             try {
-                setExcerptIterator((Class<? extends SortedKeyValueIterator<Key, Value>>) Class.forName(options.get(EXCERPT_ITERATOR)));
+                setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(options.get(EXCERPT_ITERATOR)));
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Could not get class for " + options.get(EXCERPT_ITERATOR), e);
             }
@@ -1728,15 +1726,15 @@ public class QueryOptions implements OptionDescriber {
         this.serialEvaluationPipeline = serialEvaluationPipeline;
     }
 
-    protected void validateTypeMetadata(Map<String, String> options) {
+    protected void validateTypeMetadata(Map<String,String> options) {
         if (options.containsKey(TYPE_METADATA_AUTHS)) {
             String typeMetadataAuthsString = options.get(TYPE_METADATA_AUTHS);
             try {
                 if (typeMetadataAuthsString != null && compressedMappings) {
                     typeMetadataAuthsString = decompressOption(typeMetadataAuthsString, QueryOptions.UTF8);
                 }
-                this.typeMetadataAuthsKey = Sets.newHashSet(Splitter.on(CharMatcher.anyOf(",& ")).omitEmptyStrings().trimResults()
-                        .split(typeMetadataAuthsString));
+                this.typeMetadataAuthsKey = Sets
+                                .newHashSet(Splitter.on(CharMatcher.anyOf(",& ")).omitEmptyStrings().trimResults().split(typeMetadataAuthsString));
             } catch (IOException e) {
                 log.warn("could not set typeMetadataAuthsKey from: \"" + typeMetadataAuthsString + "\"");
             }
@@ -1789,12 +1787,13 @@ public class QueryOptions implements OptionDescriber {
     /**
      * Restore the mapping of field name to dataTypes from a String-ified representation
      *
-     * @param data the data
+     * @param data
+     *            the data
      * @return a mapping of field name to data types
      */
-    public static Map<String, Set<String>> buildFieldDataTypeMap(String data) {
+    public static Map<String,Set<String>> buildFieldDataTypeMap(String data) {
 
-        Map<String, Set<String>> mapping = new HashMap<>();
+        Map<String,Set<String>> mapping = new HashMap<>();
 
         if (org.apache.commons.lang3.StringUtils.isNotBlank(data)) {
             String[] entries = StringUtils.split(data, ';');
@@ -1850,13 +1849,14 @@ public class QueryOptions implements OptionDescriber {
     /**
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
-     * @param map a map to normalize
+     * @param map
+     *            a map to normalize
      * @return the string representation of the map
      */
-    public static String buildFieldNormalizerString(Map<String, Set<String>> map) {
+    public static String buildFieldNormalizerString(Map<String,Set<String>> map) {
         StringBuilder sb = new StringBuilder();
 
-        for (Entry<String, Set<String>> entry : map.entrySet()) {
+        for (Entry<String,Set<String>> entry : map.entrySet()) {
             if (sb.length() > 0) {
                 sb.append(';');
             }
@@ -1880,10 +1880,11 @@ public class QueryOptions implements OptionDescriber {
     /**
      * Build a String-ified version of the Map to serialize to this SKVI.
      *
-     * @param map a map to normalize
+     * @param map
+     *            a map to normalize
      * @return the string representation of the map
      */
-    public static String buildFieldNormalizerString(Multimap<String, Type<?>> map) {
+    public static String buildFieldNormalizerString(Multimap<String,Type<?>> map) {
         StringBuilder sb = new StringBuilder();
 
         for (String fieldName : map.keySet()) {
@@ -1965,7 +1966,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public Iterator<Entry<Key, Document>> getPostProcessingChain(Iterator<Entry<Key, Document>> postProcessingBase) {
+    public Iterator<Entry<Key,Document>> getPostProcessingChain(Iterator<Entry<Key,Document>> postProcessingBase) {
         String functions = postProcessingFunctions;
         if (functions != null && !functions.isEmpty()) {
             try {
@@ -1977,7 +1978,7 @@ public class QueryOptions implements OptionDescriber {
                     Class<?> fClass = Class.forName(fClassName);
                     if (Function.class.isAssignableFrom(fClass)) {
                         Function f = (Function) fClass.getDeclaredConstructor().newInstance();
-                        
+
                         if (f instanceof ConfiguredFunction) {
                             ((ConfiguredFunction) f).configure(options);
                         }
@@ -1985,7 +1986,7 @@ public class QueryOptions implements OptionDescriber {
                         tforms = Iterators.transform(tforms, f);
                     } else if (Predicate.class.isAssignableFrom(fClass)) {
                         Predicate p = (Predicate) fClass.getDeclaredConstructor().newInstance();
-                        
+
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
                         }
@@ -1997,8 +1998,7 @@ public class QueryOptions implements OptionDescriber {
                     }
                 }
                 return tforms;
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
-                     InvocationTargetException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
                 throw new RuntimeException("Could not instantiate postprocessing chain!", e);
             }
@@ -2014,7 +2014,7 @@ public class QueryOptions implements OptionDescriber {
         this.termFrequenciesRequired = termFrequenciesRequired;
     }
 
-    public Set<String> parseTermFrequencyFields(Map<String, String> options) {
+    public Set<String> parseTermFrequencyFields(Map<String,String> options) {
         String val = options.get(TERM_FREQUENCY_FIELDS);
         if (val == null) {
             return Collections.emptySet();
@@ -2031,7 +2031,7 @@ public class QueryOptions implements OptionDescriber {
         this.termFrequencyFields = termFrequencyFields;
     }
 
-    public Set<String> parseContentExpansionFields(Map<String, String> options) {
+    public Set<String> parseContentExpansionFields(Map<String,String> options) {
         String val = options.get(CONTENT_EXPANSION_FIELDS);
         if (val == null) {
             return Collections.emptySet();
@@ -2078,7 +2078,7 @@ public class QueryOptions implements OptionDescriber {
                 synchronized (queryId) {
                     if (statsdClient == null) {
                         setStatsdClient(new QueryStatsDClient(queryId, getStatsdHost(statsdHostAndPort), getStatsdPort(statsdHostAndPort),
-                                getStatsdMaxQueueSize()));
+                                        getStatsdMaxQueueSize()));
                     }
                 }
             }
@@ -2176,19 +2176,19 @@ public class QueryOptions implements OptionDescriber {
         this.tfNextSeek = tfNextSeek;
     }
 
-    public int getDocAggregationThresholdMs(){
+    public int getDocAggregationThresholdMs() {
         return docAggregationThresholdMs;
     }
 
-    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs) {
         this.docAggregationThresholdMs = docAggregationThresholdMs;
     }
 
-    public int getTfAggregationThresholdMs(){
+    public int getTfAggregationThresholdMs() {
         return tfAggregationThresholdMs;
     }
 
-    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
 

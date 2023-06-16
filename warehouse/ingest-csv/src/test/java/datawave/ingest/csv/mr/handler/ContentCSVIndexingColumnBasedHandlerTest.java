@@ -140,7 +140,7 @@ public class ContentCSVIndexingColumnBasedHandlerTest {
         Assert.assertTrue("Event 1 has parsing errors", event.getErrors().isEmpty());
 
         // Set up the edge
-        ProtobufEdgeDataTypeHandler<Text, BulkIngestKey, Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
         edgeHandler.setup(context);
 
         ColumnBasedHandlerTestUtil.processEvent(csvHandler, edgeHandler, event, 73, 29, 25, 4, true);

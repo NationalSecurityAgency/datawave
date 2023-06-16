@@ -16,8 +16,10 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
     private final Set<String> missing;
 
     /**
-     * @param respFields    list of fields that should be in the response document
-     * @param missingFields fields that should not be included in the response
+     * @param respFields
+     *            list of fields that should be in the response document
+     * @param missingFields
+     *            fields that should not be included in the response
      */
     public ResponseFieldChecker(final Set<String> respFields, final Set<String> missingFields) {
         this.fields = respFields;
@@ -27,7 +29,8 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
     /**
      * Verifies the query response document contains all of the return fields.
      *
-     * @param doc query response document
+     * @param doc
+     *            query response document
      */
     @Override
     public void assertValid(final Document doc) {

@@ -37,29 +37,29 @@ import java.util.stream.Collectors;
  * be reduced by this set of auths.
  */
 public class AuthorizationsUtil {
-    
+
     public static Authorizations union(Iterable<byte[]> authorizations1, Iterable<byte[]> authorizations2) {
         LinkedList<byte[]> aggregatedAuthorizations = Lists.newLinkedList();
         addTo(aggregatedAuthorizations, authorizations1);
         addTo(aggregatedAuthorizations, authorizations2);
         return new Authorizations(aggregatedAuthorizations);
     }
-    
+
     private static void addTo(LinkedList<byte[]> aggregatedAuthorizations, Iterable<byte[]> authsToAdd) {
         for (byte[] auth : authsToAdd) {
             aggregatedAuthorizations.add(auth);
         }
     }
-    
+
     public static Set<Authorizations> mergeAuthorizations(String requestedAuths, Collection<? extends Collection<String>> userAuths) {
         HashSet<String> requested = null;
         if (!StringUtils.isEmpty(requestedAuths)) {
             requested = new HashSet<>(splitAuths(requestedAuths));
         }
-        
+
         if (null == userAuths)
             return Collections.singleton(new Authorizations());
-        
+
         HashSet<Authorizations> mergedAuths = new HashSet<>();
         HashSet<String> missingAuths = (requested == null) ? new HashSet<>() : new HashSet<>(requested);
         for (Collection<String> auths : userAuths) {
@@ -68,22 +68,22 @@ public class AuthorizationsUtil {
                 auths = new HashSet<>(auths);
                 auths.retainAll(requested);
             }
-            
+
             mergedAuths.add(new Authorizations(auths.toArray(new String[auths.size()])));
         }
-        
+
         if (!missingAuths.isEmpty()) {
             throw new IllegalArgumentException("User requested authorizations that they don't have. Missing: " + missingAuths + ", Requested: " + requested
                             + ", User: " + userAuths);
         }
         return mergedAuths;
     }
-    
+
     public static DatawaveUser mergeAuths(DatawaveUser user, Set<String> auths) {
         return new DatawaveUser(user.getDn(), user.getUserType(), user.getEmail(), Sets.union(new HashSet<>(user.getAuths()), auths), user.getRoles(),
                         user.getRoleToAuthMapping(), user.getCreationTime(), user.getExpirationTime());
     }
-    
+
     /**
      * Retrieves a set of "downgraded" authorizations. This retrieves all authorizations from {@code principal} and intersects the user auths (the
      * authorizations retrieved from {@code principal} for {@link DatawavePrincipal#getUserDN()}) with {@code requestedAuths}. All other entity auths retrieved
@@ -107,7 +107,7 @@ public class AuthorizationsUtil {
                     throws AuthorizationException {
         return getDowngradedAuthorizations(requestedAuths, (DatawavePrincipal) overallPrincipal, (DatawavePrincipal) queryPrincipal);
     }
-    
+
     /**
      * Retrieves a set of "downgraded" authorizations. This will first validate that the requested auths are a subset of the {@code overallPrincipal} users's
      * authorizations. If not a subset then an {@link AuthorizationException} will be thrown. If a subset, then the requested auths will be subsequently reduced
@@ -136,15 +136,15 @@ public class AuthorizationsUtil {
         if (overallPrincipal == null || queryPrincipal == null) {
             return Collections.singleton(new Authorizations());
         }
-        
+
         final UserAuthFunctions uaf = UserAuthFunctions.getInstance();
         final DatawaveUser queryUser = queryPrincipal.getPrimaryUser();
-        
+
         // now return auths that are a reduced by what the query can handle.
         return uaf.mergeAuthorizations(getUserAuthorizations(requestedAuths, overallPrincipal, queryPrincipal), queryPrincipal.getProxiedUsers(),
                         u -> u != queryUser);
     }
-    
+
     /**
      * Similar functionality to the above getDowngradedAuths, but returns in a String as opposed to a Set, and only returns the user's auths and not those for
      * any chained entity. This makes it easier to swap out queryParameters to use for createQueryAndNext(). Uses buildAuthorizationString to find the
@@ -167,13 +167,13 @@ public class AuthorizationsUtil {
         if (StringUtils.isEmpty(requestedAuths)) {
             throw new IllegalArgumentException("Requested authorizations must not be empty");
         }
-        
+
         return getUserAuthorizations(requestedAuths, overallPrincipal, queryPrincipal).toString();
     }
-    
+
     /**
      * Common functionality for the downgrading of user authorizations above.
-     * 
+     *
      * @param overallPrincipal
      *            The principal from which to retrieve entity authorizations overall. The authorizations will be validated against this principal's auths.
      * @param queryPrincipal
@@ -190,51 +190,51 @@ public class AuthorizationsUtil {
         final UserAuthFunctions uaf = UserAuthFunctions.getInstance();
         final DatawaveUser primaryUser = overallPrincipal.getPrimaryUser();
         final DatawaveUser queryUser = queryPrincipal.getPrimaryUser();
-        
+
         // validate that the query user is actually a subset of the primary user
         if (!primaryUser.getAuths().containsAll(queryUser.getAuths())) {
             throw new IllegalArgumentException("System Error.  Unexpected authorization mismatch.  Please try again.");
         }
-        
+
         // validate that the requestedAuths do not include anything outside of the principal's auths
         uaf.validateRequestedAuthorizations(requestedAuths, primaryUser);
-        
+
         // now return auths that are a reduced by what the query can handle.
         return uaf.getRequestedAuthorizations(requestedAuths, queryUser, false);
     }
-    
+
     public static List<String> splitAuths(String requestedAuths) {
         return Arrays.asList(Iterables.toArray(Splitter.on(',').omitEmptyStrings().trimResults().split(requestedAuths), String.class));
     }
-    
+
     public static Set<Authorizations> buildAuthorizations(Collection<? extends Collection<String>> userAuths) {
         if (null == userAuths) {
             return Collections.singleton(new Authorizations());
         }
-        
+
         HashSet<Authorizations> auths = Sets.newHashSet();
         for (Collection<String> userAuth : userAuths) {
             auths.add(new Authorizations(userAuth.toArray(new String[userAuth.size()])));
         }
-        
+
         return auths;
     }
-    
+
     public static String buildAuthorizationString(Collection<? extends Collection<String>> userAuths) {
         if (null == userAuths) {
             return "";
         }
-        
+
         HashSet<byte[]> b = new HashSet<>();
         for (Collection<String> userAuth : userAuths) {
             for (String string : userAuth) {
                 b.add(string.getBytes());
             }
         }
-        
+
         return new Authorizations(b).toString();
     }
-    
+
     /**
      * Build the authorization string for a principal.
      *
@@ -246,23 +246,23 @@ public class AuthorizationsUtil {
         String auths = "";
         if (principal != null && (principal instanceof DatawavePrincipal)) {
             DatawavePrincipal datawavePrincipal = (DatawavePrincipal) principal;
-            
+
             auths = new Authorizations(datawavePrincipal.getPrimaryUser().getAuths().toArray(new String[0])).toString();
         }
         return auths;
     }
-    
+
     public static Collection<Authorizations> minimize(Collection<Authorizations> authorizations) {
         return AuthorizationsMinimizer.minimize(authorizations);
     }
-    
+
     public static Collection<? extends Collection<String>> prepareAuthsForMerge(Authorizations authorizations) {
         return Collections.singleton(new HashSet<>(Arrays.asList(authorizations.toString().split(","))));
     }
-    
+
     /**
      * Merge principals. This can be used to create a composite view of a principal when including remote systems
-     * 
+     *
      * @param principals
      *            the principals representing the users
      * @return The merge principal
@@ -278,13 +278,13 @@ public class AuthorizationsUtil {
                     throw new IllegalArgumentException("Cannot merge principals with different primary users: " + datawavePrincipal.getPrimaryUser().getDn()
                                     + " vs " + principal.getPrimaryUser().getDn());
                 }
-                
+
                 // create a map of our users in the correct order
                 LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> users = datawavePrincipal.getProxiedUsers().stream()
                                 .collect(Collectors.toMap(DatawaveUser::getDn, Function.identity(), (e1, e2) -> e1, LinkedHashMap::new));
                 // keep track of extras
                 LinkedHashMap<SubjectIssuerDNPair,DatawaveUser> extraProxies = new LinkedHashMap<>();
-                
+
                 // for each user, merge or add to extras
                 for (DatawaveUser user : principal.getProxiedUsers()) {
                     if (users.containsKey(user.getDn())) {
@@ -293,7 +293,7 @@ public class AuthorizationsUtil {
                         extraProxies.put(user.getDn(), user);
                     }
                 }
-                
+
                 // and create a merged principal
                 List<DatawaveUser> mergedUsers = new ArrayList<>(users.values());
                 mergedUsers.addAll(extraProxies.values());
@@ -302,7 +302,7 @@ public class AuthorizationsUtil {
         }
         return datawavePrincipal;
     }
-    
+
     public static DatawaveUser mergeUsers(DatawaveUser... users) {
         DatawaveUser datawaveUser = null;
         for (DatawaveUser user : users) {
@@ -320,12 +320,13 @@ public class AuthorizationsUtil {
                 Multimap<String,String> mergedRoleToAuth = HashMultimap.create(datawaveUser.getRoleToAuthMapping());
                 mergedRoleToAuth.putAll(user.getRoleToAuthMapping());
                 // create merged user
-                datawaveUser = new DatawaveUser(user.getDn(), user.getUserType(), Sets.union(new HashSet<>(user.getAuths()),
-                                new HashSet<>(datawaveUser.getAuths())), Sets.union(new HashSet<>(user.getRoles()), new HashSet<>(datawaveUser.getRoles())),
-                                mergedRoleToAuth, System.currentTimeMillis());
+                datawaveUser = new DatawaveUser(user.getDn(), user.getUserType(),
+                                Sets.union(new HashSet<>(user.getAuths()), new HashSet<>(datawaveUser.getAuths())),
+                                Sets.union(new HashSet<>(user.getRoles()), new HashSet<>(datawaveUser.getRoles())), mergedRoleToAuth,
+                                System.currentTimeMillis());
             }
         }
         return datawaveUser;
     }
-    
+
 }

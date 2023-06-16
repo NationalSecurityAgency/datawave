@@ -89,15 +89,15 @@ import java.util.Collection;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class DatabaseUserService implements DatawaveUserService {
     private final Logger log = LoggerFactory.getLogger(getClass());
-    
+
     @Resource(lookup = "java:jboss/datasources/DatabaseUserServiceDS")
     protected DataSource ds;
-    
+
     protected final HashMultimap<String,String> roleToAuthorizationMap;
-    
+
     private final String usersTableName;
     private final String mappingTableName;
-    
+
     /**
      * Constructs a new DatabaseUserService.
      *
@@ -107,16 +107,18 @@ public class DatabaseUserService implements DatawaveUserService {
      *            the name of the table that contains mapping from roles to authorization (for populating {@link DatawaveUser}s)
      */
     @Inject
-    public DatabaseUserService(@ConfigProperty(name = "dw.databaseUsersService.usersTableName", defaultValue = "users") String usersTableName, @ConfigProperty(
-                    name = "dw.databaseUsersService.mappingTableName", defaultValue = "roleToAuthMapping") String mappingTableName) {
+    public DatabaseUserService(@ConfigProperty(name = "dw.databaseUsersService.usersTableName", defaultValue = "users") String usersTableName,
+                    @ConfigProperty(name = "dw.databaseUsersService.mappingTableName", defaultValue = "roleToAuthMapping") String mappingTableName) {
         this.usersTableName = usersTableName;
         this.mappingTableName = mappingTableName;
         this.roleToAuthorizationMap = HashMultimap.create();
     }
-    
+
     @PostConstruct
     public void setup() {
-        try (Connection c = ds.getConnection(); Statement s = c.createStatement(); ResultSet rs = s.executeQuery("SELECT role, auth FROM " + mappingTableName)) {
+        try (Connection c = ds.getConnection();
+                        Statement s = c.createStatement();
+                        ResultSet rs = s.executeQuery("SELECT role, auth FROM " + mappingTableName)) {
             while (rs.next()) {
                 roleToAuthorizationMap.put(rs.getString("role"), rs.getString("auth"));
             }
@@ -125,7 +127,7 @@ public class DatabaseUserService implements DatawaveUserService {
             throw new IllegalStateException("Unable to read roleToAuthorizationMap.", e);
         }
     }
-    
+
     @Override
     public Collection<DatawaveUser> lookup(Collection<SubjectIssuerDNPair> dns) throws AuthorizationException {
         try (Connection c = ds.getConnection();
@@ -139,7 +141,7 @@ public class DatabaseUserService implements DatawaveUserService {
             throw new AuthorizationException("Unable to lookup users " + dns + ": " + e.getMessage(), e);
         }
     }
-    
+
     private DatawaveUser lookup(PreparedStatement ps, SubjectIssuerDNPair dn) throws AuthorizationException {
         try {
             ps.setString(1, dn.subjectDN());

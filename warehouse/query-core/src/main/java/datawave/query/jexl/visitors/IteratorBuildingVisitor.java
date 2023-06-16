@@ -132,8 +132,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     @SuppressWarnings("rawtypes")
     protected NestedIterator root;
     protected SourceManager source;
-    protected SortedKeyValueIterator<Key, Value> limitedSource = null;
-    protected Map<Entry<String, String>, Entry<Key, Value>> limitedMap = null;
+    protected SortedKeyValueIterator<Key,Value> limitedSource = null;
+    protected Map<Entry<String,String>,Entry<Key,Value>> limitedMap = null;
     protected Collection<String> includeReferences = UniversalSet.instance();
     protected Collection<String> excludeReferences = Collections.emptyList();
     protected Predicate<Key> datatypeFilter;
@@ -154,9 +154,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected long maxIvaratorResults = -1;
     protected int ivaratorNumRetries = 2;
     protected FileSortedSet.PersistOptions ivaratorPersistOptions = new FileSortedSet.PersistOptions();
-    protected SortedKeyValueIterator<Key, Value> unsortedIvaratorSource = null;
+    protected SortedKeyValueIterator<Key,Value> unsortedIvaratorSource = null;
     protected int ivaratorCount = 0;
-    protected GenericObjectPool<SortedKeyValueIterator<Key, Value>> ivaratorSourcePool = null;
+    protected GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool = null;
 
     protected TypeMetadata typeMetadata;
     protected EventDataQueryFilter attrFilter;
@@ -209,7 +209,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     protected Set<JexlNode> delayedEqNodes = Sets.newHashSet();
 
-    protected Map<String, Object> exceededOrEvaluationCache;
+    protected Map<String,Object> exceededOrEvaluationCache;
 
     public boolean isQueryFullySatisfied() {
         if (limitLookup) {
@@ -251,8 +251,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     throw new DatawaveFatalQueryException(ioe);
                 }
             } else {
-                QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}",
-                        "Limited ExceededOrThresholdMarkerJexlNode"));
+                QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
+                                MessageFormat.format("{0}", "Limited ExceededOrThresholdMarkerJexlNode"));
                 throw new DatawaveFatalQueryException(qe);
             }
         } else if (data instanceof IndexRangeIteratorBuilder) {
@@ -296,8 +296,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 if (source instanceof ASTAndNode) {
                     try {
                         List<ASTFunctionNode> functionNodes = JexlASTHelper.getFunctionNodes(source).stream()
-                                .filter(node -> JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node).allowIvaratorFiltering())
-                                .collect(Collectors.toList());
+                                        .filter(node -> JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node).allowIvaratorFiltering())
+                                        .collect(Collectors.toList());
                         if (functionNodes.isEmpty()) {
                             ivarateRange(and, source, data);
                         } else {
@@ -313,8 +313,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         throw new DatawaveFatalQueryException("Unable to ivarate", ioe);
                     }
                 } else {
-                    QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}",
-                            "ExceededValueThresholdMarkerJexlNode"));
+                    QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
+                                    MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
                     throw new DatawaveFatalQueryException(qe);
                 }
             } else {
@@ -377,7 +377,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
             if (log.isTraceEnabled()) {
                 log.trace("ASTAndNode visit: pretty formatting of:\nparent.includes:" + formatIncludesOrExcludes(andItr.includes()) + "\nparent.excludes:"
-                        + formatIncludesOrExcludes(andItr.excludes()));
+                                + formatIncludesOrExcludes(andItr.excludes()));
             }
 
         }
@@ -437,8 +437,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
             ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
-            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier, new AttributeFactory(
-                    this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
+            NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier,
+                            new AttributeFactory(this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
             builder.setSource(source.deepCopy(env));
             builder.setTypeMetadata(typeMetadata);
@@ -472,7 +472,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Range should be built from the start key of the rangeLimiter only, as the end key likely doesn't parse properly so don't rely on it. rangeLimiter must be
      * non-null (limitLookup == true)
      *
-     * @param range non-null literal range to generate an FI range from
+     * @param range
+     *            non-null literal range to generate an FI range from
      * @return non-null FI based range for the literal range provided
      */
     protected Range getFiRangeForTF(LiteralRange<?> range) {
@@ -524,7 +525,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 }
                 if (log.isTraceEnabled()) {
                     log.trace("ASTOrNode visit: pretty formatting of:\nparent.includes:" + formatIncludesOrExcludes(orItr.includes()) + "\nparent.excludes:"
-                            + formatIncludesOrExcludes(orItr.excludes()));
+                                    + formatIncludesOrExcludes(orItr.excludes()));
                 }
             }
         }
@@ -556,7 +557,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         if (log.isTraceEnabled()) {
             log.trace("pretty formatting of:\nparent.includes:" + formatIncludesOrExcludes(parent.includes()) + "\nparent.excludes:"
-                    + formatIncludesOrExcludes(parent.excludes()));
+                            + formatIncludesOrExcludes(parent.excludes()));
         }
         return null;
     }
@@ -598,8 +599,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
             if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, MessageFormat.format("{0} {1} {2}",
-                        "Unable to compare index only field", builder.getField(), "against null"));
+                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
+                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
                 throw new DatawaveFatalQueryException(qe);
             }
 
@@ -613,7 +614,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
         // Add the negated IndexIteratorBuilder to the parent as an *exclude*
         if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                && !excludeReferences.contains(builder.getField())) {
+                        && !excludeReferences.contains(builder.getField())) {
             iterators.addExclude(builder.build());
         } else {
             // SatisfactionVisitor should have already initialized this to false
@@ -678,8 +679,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
             if (this.indexOnlyFields.contains(builder.getField())) {
-                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, MessageFormat.format("{0} {1} {2}",
-                        "Unable to compare index only field", builder.getField(), "against null"));
+                QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR,
+                                MessageFormat.format("{0} {1} {2}", "Unable to compare index only field", builder.getField(), "against null"));
                 throw new DatawaveFatalQueryException(qe);
             }
             return null;
@@ -726,9 +727,9 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     }
 
-    protected SortedKeyValueIterator<Key, Value> getSourceIterator(final ASTEQNode node, boolean negation) {
+    protected SortedKeyValueIterator<Key,Value> getSourceIterator(final ASTEQNode node, boolean negation) {
 
-        SortedKeyValueIterator<Key, Value> kvIter = null;
+        SortedKeyValueIterator<Key,Value> kvIter = null;
         String identifier = JexlASTHelper.getIdentifier(node);
         try {
             if (limitLookup && !negation) {
@@ -756,7 +757,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return kvIter;
     }
 
-    protected SortedKeyValueIterator<Key, Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
+    protected SortedKeyValueIterator<Key,Value> createIndexOnlyKey(ASTEQNode node) throws IOException {
         Key newStartKey = getKey(node);
 
         IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
@@ -771,12 +772,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         if (log.isTraceEnabled()) {
             log.trace("createIndexOnlyKey for " + fn + " " + literal + " " + newStartKey);
         }
-        List<Entry<Key, Value>> kv = Lists.newArrayList();
+        List<Entry<Key,Value>> kv = Lists.newArrayList();
         if (null != limitedMap.get(Maps.immutableEntry(fn, literal))) {
             kv.add(limitedMap.get(Maps.immutableEntry(fn, literal)));
         } else {
 
-            SortedKeyValueIterator<Key, Value> mySource = limitedSource;
+            SortedKeyValueIterator<Key,Value> mySource = limitedSource;
             // if source size > 0, we are free to use up to that number for this query
             if (source.getSourceSize() > 0)
                 mySource = source.deepCopy(env);
@@ -793,11 +794,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     /**
-     * @param kvIter the key value iterator
-     * @param node   the node
-     * @throws IOException for issues with read/write
+     * @param kvIter
+     *            the key value iterator
+     * @param node
+     *            the node
+     * @throws IOException
+     *             for issues with read/write
      */
-    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key, Value> kvIter, ASTEQNode node) throws IOException {
+    protected void seekIndexOnlyDocument(SortedKeyValueIterator<Key,Value> kvIter, ASTEQNode node) throws IOException {
         if (null != rangeLimiter && limitLookup) {
 
             Key newStartKey = getKey(node);
@@ -808,21 +812,24 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     /**
-     * @param node a node
+     * @param node
+     *            a node
      * @return a collection of entries
      */
-    protected Collection<Entry<Key, Value>> getNodeEntry(ASTEQNode node) {
+    protected Collection<Entry<Key,Value>> getNodeEntry(ASTEQNode node) {
         Key key = getKey(node);
         return Collections.singleton(Maps.immutableEntry(key, Constants.NULL_VALUE));
 
     }
 
     /**
-     * @param identifier the identifier
-     * @param range      a range
+     * @param identifier
+     *            the identifier
+     * @param range
+     *            a range
      * @return a collection of entries
      */
-    protected Collection<Entry<Key, Value>> getExceededEntry(String identifier, LiteralRange<?> range) {
+    protected Collection<Entry<Key,Value>> getExceededEntry(String identifier, LiteralRange<?> range) {
 
         Key key = getIvaratorKey(identifier, range);
         return Collections.singleton(Maps.immutableEntry(key, Constants.NULL_VALUE));
@@ -890,9 +897,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * This method should only be used when we know it is not a term frequency or index only in the limited case, as we will subsequently evaluate this
      * expression during final evaluation
      *
-     * @param identifier an identifier
-     * @param range      the range
-     * @param rootNode   the root node
+     * @param identifier
+     *            an identifier
+     * @param range
+     *            the range
+     * @param rootNode
+     *            the root node
      * @return a key iterator
      */
     protected NestedIterator<Key> createExceededCheck(String identifier, LiteralRange<?> range, JexlNode rootNode) {
@@ -1042,7 +1052,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      * Build a list of potential hdfs directories based on each ivarator cache dir configs.
      *
      * @return A path
-     * @throws IOException for issues with read/write
+     * @throws IOException
+     *             for issues with read/write
      */
     private List<IvaratorCacheDir> getIvaratorCacheDirs() throws IOException {
         List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
@@ -1077,10 +1088,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Build the iterator stack using the regex ivarator (field index caching regex iterator)
      *
-     * @param rootNode   the node that was processed to generated this builder
-     * @param sourceNode the source node derived from the root
-     * @param data       the node data
-     * @throws IOException for issues with read/write
+     * @param rootNode
+     *            the node that was processed to generated this builder
+     * @param sourceNode
+     *            the source node derived from the root
+     * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateRegex(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IndexRegexIteratorBuilder builder = new IndexRegexIteratorBuilder();
@@ -1090,7 +1105,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setValue(String.valueOf(JexlASTHelper.getLiteralValue(sourceNode)));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
-                    MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
+                            MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
             throw new DatawaveFatalQueryException(qe);
         }
         builder.negateAsNeeded(data);
@@ -1101,10 +1116,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Build the iterator stack using the regex ivarator (field index caching regex iterator)
      *
-     * @param rootNode   the node that was processed to generated this builder
-     * @param sourceNode the source node derived from the root
-     * @param data       the node data
-     * @throws IOException for issues with read/write
+     * @param rootNode
+     *            the node that was processed to generated this builder
+     * @param sourceNode
+     *            the source node derived from the root
+     * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateList(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IvaratorBuilder builder = null;
@@ -1126,7 +1145,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                     exceededOrEvaluationCache.put(id, ranges);
 
                 LiteralRange<?> fullRange = new LiteralRange<>(String.valueOf(ranges.first().getStartKey().getRow()), ranges.first().isStartKeyInclusive(),
-                        String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(), field, NodeOperand.AND);
+                                String.valueOf(ranges.last().getEndKey().getRow()), ranges.last().isEndKeyInclusive(), field, NodeOperand.AND);
 
                 rangeIterBuilder.setRange(fullRange);
             } else {
@@ -1148,7 +1167,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         fst = (FST) exceededOrEvaluationCache.get(id);
                     } else {
                         fst = DatawaveFieldIndexListIteratorJexl.FSTManager.get(new Path(fstUri), hdfsFileCompressionCodec,
-                                hdfsFileSystem.getFileSystem(fstUri));
+                                        hdfsFileSystem.getFileSystem(fstUri));
                     }
                     listIterBuilder.setFst(fst);
 
@@ -1163,8 +1182,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
             builder.setField(field);
         } catch (IOException | URISyntaxException | NullPointerException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e, MessageFormat.format("Class: {0}",
-                    ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
+            QueryException qe = new QueryException(DatawaveErrorCode.UNPARSEABLE_EXCEEDED_OR_PARAMS, e,
+                            MessageFormat.format("Class: {0}", ExceededOrThresholdMarkerJexlNode.class.getSimpleName()));
             throw new DatawaveFatalQueryException(qe);
         }
 
@@ -1177,8 +1196,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Build the iterator stack using the regex ivarator (field index caching regex iterator)
      *
-     * @param source the jexl node
-     * @param data   the node data
+     * @param source
+     *            the jexl node
+     * @param data
+     *            the node data
      * @return a range
      */
     public LiteralRange<?> buildLiteralRange(JexlNode source, Object data) {
@@ -1194,7 +1215,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             return range;
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
-                    MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
+                            MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
             throw new DatawaveFatalQueryException(qe);
         }
     }
@@ -1202,10 +1223,14 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Build the iterator stack using the regex ivarator (field index caching regex iterator)
      *
-     * @param rootNode   the node that was processed to generated this builder
-     * @param sourceNode the source node derived from the root
-     * @param data       the node data
-     * @throws IOException for issues with read/write
+     * @param rootNode
+     *            the node that was processed to generated this builder
+     * @param sourceNode
+     *            the source node derived from the root
+     * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateRange(JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         IndexRangeIteratorBuilder builder = new IndexRangeIteratorBuilder();
@@ -1222,7 +1247,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setRange(range);
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE,
-                    MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
+                            MessageFormat.format("{0}", "ExceededValueThresholdMarkerJexlNode"));
             throw new DatawaveFatalQueryException(qe);
         }
         builder.forceDocumentBuild(!limitLookup && this.isQueryFullySatisfied);
@@ -1232,11 +1257,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Build the iterator stack using the filter ivarator (field index caching filter iterator)
      *
-     * @param rootNode      the node that was processed to generated this builder
-     * @param sourceNode    the source node derived from the root
-     * @param functionNodes list of function nodes
-     * @param data          the node data
-     * @throws IOException for issues with read/write
+     * @param rootNode
+     *            the node that was processed to generated this builder
+     * @param sourceNode
+     *            the source node derived from the root
+     * @param functionNodes
+     *            list of function nodes
+     * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarateFilter(JexlNode rootNode, JexlNode sourceNode, Object data, List<ASTFunctionNode> functionNodes) throws IOException {
         IndexFilterIteratorBuilder builder = new IndexFilterIteratorBuilder();
@@ -1277,9 +1307,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Wrap an existing {@link EventDataQueryFilter} with a {@link TermFrequencyDataFilter}
      *
-     * @param identifier the field
-     * @param node       a node in the query
-     * @param existing   an existing EventDataQueryFilter
+     * @param identifier
+     *            the field
+     * @param node
+     *            a node in the query
+     * @param existing
+     *            an existing EventDataQueryFilter
      * @return a ChainableEventDataQueryFilter
      */
     protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(String identifier, JexlNode node, EventDataQueryFilter existing) {
@@ -1361,11 +1394,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Set up a builder for an ivarator
      *
-     * @param builder    the ivarator builder
-     * @param rootNode   the node that was processed to generated this builder
-     * @param sourceNode the source node derived from the root
-     * @param data       the node data
-     * @throws IOException for issues with read/write
+     * @param builder
+     *            the ivarator builder
+     * @param rootNode
+     *            the node that was processed to generated this builder
+     * @param sourceNode
+     *            the source node derived from the root
+     * @param data
+     *            the node data
+     * @throws IOException
+     *             for issues with read/write
      */
     public void ivarate(IvaratorBuilder builder, JexlNode rootNode, JexlNode sourceNode, Object data) throws IOException {
         builder.setQueryId(queryId);
@@ -1411,7 +1449,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
             // Add this IndexIterator to the parent
             if (!iterators.hasSeen(builder.getField(), builder.getValue()) && includeReferences.contains(builder.getField())
-                    && !excludeReferences.contains(builder.getField())) {
+                            && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
                 if (isQueryFullySatisfied == true) {
@@ -1451,7 +1489,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     /**
-     * @param documentRange the document range
+     * @param documentRange
+     *            the document range
      * @return an iterator visitor
      */
     public IteratorBuildingVisitor limit(Range documentRange) {
@@ -1461,7 +1500,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Limits the number of source counts.
      *
-     * @param sourceCount the source count
+     * @param sourceCount
+     *            the source count
      * @return an iterator visitor
      */
     public IteratorBuildingVisitor limit(long sourceCount) {
@@ -1470,7 +1510,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     /**
-     * @param limitLookup the limit lookup to set
+     * @param limitLookup
+     *            the limit lookup to set
      * @return the iterator visitor
      */
     public IteratorBuildingVisitor setLimitLookup(boolean limitLookup) {
@@ -1526,10 +1567,10 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     public IteratorBuildingVisitor setSource(SourceFactory sourceFactory, IteratorEnvironment env) {
-        SortedKeyValueIterator<Key, Value> skvi = sourceFactory.getSourceDeepCopy();
+        SortedKeyValueIterator<Key,Value> skvi = sourceFactory.getSourceDeepCopy();
         this.source = new SourceManager(skvi);
         this.env = env;
-        Map<String, String> options = Maps.newHashMap();
+        Map<String,String> options = Maps.newHashMap();
         try {
             this.source.init(skvi, options, env);
         } catch (IOException e) {
@@ -1581,7 +1622,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Builder-style method of setting the 'next' seek threshold
      *
-     * @param fiNextSeek next calls before a seek is issued
+     * @param fiNextSeek
+     *            next calls before a seek is issued
      * @return the IteratorBuildingVisitor
      */
     public IteratorBuildingVisitor setFiNextSeek(int fiNextSeek) {
@@ -1592,7 +1634,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Builder-style method of setting the 'next' seek threshold
      *
-     * @param eventNextSeek next calls before a seek is issued
+     * @param eventNextSeek
+     *            next calls before a seek is issued
      * @return the IteratorBuildingVisitor
      */
     public IteratorBuildingVisitor setEventNextSeek(int eventNextSeek) {
@@ -1603,7 +1646,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     /**
      * Builder-style method of setting the 'next' seek threshold
      *
-     * @param tfNextSeek next calls before a seek is issued
+     * @param tfNextSeek
+     *            next calls before a seek is issued
      * @return the IteratorBuildingVisitor
      */
     public IteratorBuildingVisitor setTfNextSeek(int tfNextSeek) {
@@ -1686,12 +1730,12 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
 
-    public IteratorBuildingVisitor setUnsortedIvaratorSource(SortedKeyValueIterator<Key, Value> unsortedIvaratorSource) {
+    public IteratorBuildingVisitor setUnsortedIvaratorSource(SortedKeyValueIterator<Key,Value> unsortedIvaratorSource) {
         this.unsortedIvaratorSource = unsortedIvaratorSource;
         return this;
     }
 
-    public IteratorBuildingVisitor setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key, Value>> ivaratorSourcePool) {
+    public IteratorBuildingVisitor setIvaratorSourcePool(GenericObjectPool<SortedKeyValueIterator<Key,Value>> ivaratorSourcePool) {
         this.ivaratorSourcePool = ivaratorSourcePool;
         return this;
     }
@@ -1727,7 +1771,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return this;
     }
 
-    public IteratorBuildingVisitor setExceededOrEvaluationCache(Map<String, Object> exceededOrEvaluationCache) {
+    public IteratorBuildingVisitor setExceededOrEvaluationCache(Map<String,Object> exceededOrEvaluationCache) {
         this.exceededOrEvaluationCache = exceededOrEvaluationCache;
         return this;
     }

@@ -203,7 +203,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void test() throws Exception {
         String originalQuery = "FOO == 'abc'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
 
         Key p1 = createKey("FOO", "abc");
@@ -221,7 +221,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testFieldToFieldComparison() throws Exception {
         String originalQuery = "FOO == FOO2";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("FOO2"));
 
@@ -237,7 +237,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testMultipleFieldsToLiteralComparison() throws Exception {
         String originalQuery = "(FOO || FOO2).min().hashCode() == 0";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("FOO2"));
 
@@ -253,7 +253,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testFieldToFieldNEComparison() throws Exception {
         String originalQuery = "FOO != FOO2";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("FOO2"));
 
@@ -269,7 +269,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testLT() throws Exception {
         String originalQuery = "FOO < 'abc'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
 
         Key p1 = createKey("FOO", "abc");
@@ -286,7 +286,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testNegation() throws Exception {
         String originalQuery = "FOO != 'abc'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
 
         Key p1 = createKey("FOO", "abc");
@@ -303,7 +303,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testNotNull() throws Exception {
         String originalQuery = "FOO != null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
 
         Key p1 = createKey("FOO", "abc");
@@ -321,7 +321,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testNull() throws Exception {
         String originalQuery = "FOO == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
 
         Key p1 = createKey("FOO", "abc");
@@ -343,7 +343,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndNegation() throws Exception {
         String originalQuery = "FOO != 'abc' && BAR == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
@@ -363,7 +363,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndNull() throws Exception {
         String originalQuery = "FOO == 'abc' && BAR == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
@@ -396,7 +396,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndNullSameField() throws Exception {
         String originalQuery = "FOO != 'abc' && FOO == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
@@ -419,7 +419,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndNullSameFieldRegex() throws Exception {
         String originalQuery = "FOO =~ 'a.*' && FOO == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
@@ -442,7 +442,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndNegationTwo() throws Exception {
         String originalQuery = "FOO == 'abc' && !(BAR == 'def')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key n1 = createKey("FOO", "def");
@@ -462,7 +462,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testOrSame() throws Exception {
         String originalQuery = "FOO == 'abc' || FOO == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "def");
@@ -481,7 +481,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndSame() throws Exception {
         String originalQuery = "FOO == 'abc' && FOO == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "def");
@@ -500,7 +500,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndSameInvert() throws Exception {
         String originalQuery = "'abc' == FOO && 'def' == FOO";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "def");
@@ -519,7 +519,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndNotInvert() throws Exception {
         String originalQuery = "'abc' == FOO and not ('def' == FOO)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "def");
@@ -538,7 +538,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testRange1() throws Exception {
         String originalQuery = "((_Bounded_ = true) && (BAZ >= '+aE5' AND BAZ <= '+bE1.2'))";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // printJexlScript(script);
 
@@ -564,7 +564,7 @@ public class EventDataQueryExpressionVisitorTest {
         // @TODO, use ExpandMultiNormalizedTerms to normalize this query?
 
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // printJexlScript(script);
 
@@ -594,7 +594,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testRangeFunction() throws Exception {
         String originalQuery = "f:between(BAZ,5,12)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // printJexlScript(script);
 
@@ -615,7 +615,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndSameGroupingOnKey() throws Exception {
         String originalQuery = "FOO == 'abc' && FOO == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO.1", "abc");
         Key p2 = createKey("FOO.2", "def");
@@ -637,7 +637,7 @@ public class EventDataQueryExpressionVisitorTest {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
 
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "def");
@@ -658,7 +658,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testAndSameGroupingOnBoth() throws Exception {
         String originalQuery = "FOO.1 == 'abc' && FOO.2 == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "def");
@@ -677,7 +677,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testGroupingFunction() throws Exception {
         String originalQuery = "grouping:matchesInGroup(FOO, 'abc')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // @formatter:off
         Object[][] testData = {
@@ -700,7 +700,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testGroupingFunctionRegex() throws Exception {
         String originalQuery = "grouping:matchesInGroup(FOO, 'abc.*')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // @formatter:off
         Object[][] testData = {
@@ -723,7 +723,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testGroupingFunctionMulti() throws Exception {
         String originalQuery = "grouping:matchesInGroup(FOO, 'abc.*', BAR, 'def')";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // @formatter:off
         Object[][] testData = {
@@ -754,7 +754,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testGroupingFunctionMultiZone() throws Exception {
         String originalQuery = "grouping:matchesInGroupLeft(FOO, 'abc.*', BAR, 'def', 2)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // @formatter:off
         Object[][] testData = {
@@ -785,7 +785,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testGroupingFunctionAtomValuesMatch() throws Exception {
         String originalQuery = "grouping:atomValuesMatch(FOO, BAR)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         // @formatter:off
         Object[][] testData = {
@@ -812,7 +812,7 @@ public class EventDataQueryExpressionVisitorTest {
 
     }
 
-    private void assertFilters(Object[][] testData, Map<String, ExpressionFilter> filter) {
+    private void assertFilters(Object[][] testData, Map<String,ExpressionFilter> filter) {
         for (Object[] item : testData) {
             String field = (String) item[0];
             Key key = (Key) item[1];
@@ -826,7 +826,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testMultiple() throws Exception {
         String originalQuery = "FOO == 'abc' || BAR == 'def'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
         assertNotNull(filter.get("FOO"));
         assertNotNull(filter.get("BAR"));
 
@@ -857,7 +857,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testRegexHead() throws Exception {
         String originalQuery = "FOO =~ 'abc.*'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "abc123");
@@ -872,7 +872,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testRegexHeadTail() throws Exception {
         String originalQuery = "FOO =~ '.*abc'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "123abc");
@@ -887,7 +887,7 @@ public class EventDataQueryExpressionVisitorTest {
     public void testRegexHeadTailNegation() throws Exception {
         String originalQuery = "FOO !~ '.*abc'";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "123abc");
@@ -930,7 +930,7 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
         assertEquals(originalQuery, newQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "123abc");
@@ -949,7 +949,7 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
         assertEquals(originalQuery, newQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "123abc");
@@ -968,7 +968,7 @@ public class EventDataQueryExpressionVisitorTest {
         ASTJexlScript newScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, helper, helper2, script);
         String newQuery = JexlStringBuildingVisitor.buildQuery(newScript);
         assertEquals(originalQuery, newQuery);
-        final Map<String, ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
+        final Map<String,ExpressionFilter> filter = EventDataQueryExpressionVisitor.getExpressionFilters(newScript, attrFactory);
 
         Key p1 = createKey("FOO", "abc");
         Key p2 = createKey("FOO", "123abc");
@@ -991,7 +991,7 @@ public class EventDataQueryExpressionVisitorTest {
         Thread[] threads = new Thread[256];
         String originalQuery = "FOO =~ 'a.*' && FOO == null";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(originalQuery);
-        final Map<String, ExpressionFilter> base = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
+        final Map<String,ExpressionFilter> base = EventDataQueryExpressionVisitor.getExpressionFilters(script, attrFactory);
 
         final Key p1 = createKey("FOO", "abc");
         final Key n1 = createKey("FOO", "def");
@@ -1001,7 +1001,7 @@ public class EventDataQueryExpressionVisitorTest {
         final AtomicInteger completed = new AtomicInteger();
         Runnable runnable = () -> {
             try {
-                final Map<String, ? extends PeekingPredicate<Key>> filter = ExpressionFilter.clone(base);
+                final Map<String,? extends PeekingPredicate<Key>> filter = ExpressionFilter.clone(base);
                 started.getAndIncrement();
                 synchronized (gate) {
                     gate.wait();
@@ -1015,8 +1015,7 @@ public class EventDataQueryExpressionVisitorTest {
 
                     ExpressionFilter.reset(filter);
                 }
-            } catch (InterruptedException e) {
-            } catch (Throwable t) {
+            } catch (InterruptedException e) {} catch (Throwable t) {
                 exceptions.add(t);
             }
             completed.getAndIncrement();

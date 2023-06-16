@@ -9,18 +9,18 @@ import java.util.Map;
  * Intended to be dependency-injected
  */
 public class WiredQueryModelProvider implements QueryModelProvider {
-    
+
     protected QueryModel queryModel;
-    
+
     @Override
     public QueryModel getQueryModel() {
         return queryModel;
     }
-    
+
     // public void setQueryModel(QueryModel queryModel) {
     // this.queryModel = queryModel;
     // }
-    
+
     public void setQueryModel(Map<String,String> mappings) {
         QueryModel model = new QueryModel();
         for (Map.Entry<String,String> mapping : mappings.entrySet()) {

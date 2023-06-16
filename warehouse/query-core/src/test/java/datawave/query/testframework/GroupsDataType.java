@@ -78,7 +78,7 @@ public class GroupsDataType extends AbstractDataTypeConfig {
             return headers;
         }
 
-        private static final Map<String, RawMetaData> metadataMapping = new HashMap<>();
+        private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
 
         static {
             for (GroupField field : GroupField.values()) {
@@ -86,14 +86,15 @@ public class GroupsDataType extends AbstractDataTypeConfig {
             }
         }
 
-        public static Map<String, RawMetaData> getMetadata() {
+        public static Map<String,RawMetaData> getMetadata() {
             return metadataMapping;
         }
 
         /**
          * Retrieves the query field based upon the header field name.
          *
-         * @param header header field name
+         * @param header
+         *            header field name
          * @return query field name
          */
         static String getQueryField(final String header) {
@@ -109,7 +110,8 @@ public class GroupsDataType extends AbstractDataTypeConfig {
         /**
          * Returns true when a field should be tokenized.
          *
-         * @param header header field value
+         * @param header
+         *            header field value
          * @return true for tokenized field
          */
         public static boolean isTokenField(final String header) {
@@ -150,10 +152,14 @@ public class GroupsDataType extends AbstractDataTypeConfig {
     /**
      * Creates a groups datatype entry with all of the key/value configuration settings.
      *
-     * @param group  entry for ingest containing datatype and ingest file
-     * @param config hadoop field configuration
-     * @throws IOException        unable to load ingest file
-     * @throws URISyntaxException unable to resolve ingest file
+     * @param group
+     *            entry for ingest containing datatype and ingest file
+     * @param config
+     *            hadoop field configuration
+     * @throws IOException
+     *             unable to load ingest file
+     * @throws URISyntaxException
+     *             unable to resolve ingest file
      */
     public GroupsDataType(final GroupsEntry group, final FieldConfig config) throws IOException, URISyntaxException {
         this(group.getDatatype(), group.getIngestFile(), config);
@@ -162,11 +168,16 @@ public class GroupsDataType extends AbstractDataTypeConfig {
     /**
      * Constructor for groups ingest files that are not defined in the class {@link GroupsEntry}.
      *
-     * @param datatype   name of the datatype
-     * @param ingestFile ingest file path
-     * @param config     hadoop field configuration
-     * @throws IOException        error loading ingest data
-     * @throws URISyntaxException ingest file name error
+     * @param datatype
+     *            name of the datatype
+     * @param ingestFile
+     *            ingest file path
+     * @param config
+     *            hadoop field configuration
+     * @throws IOException
+     *             error loading ingest data
+     * @throws URISyntaxException
+     *             ingest file name error
      */
     public GroupsDataType(final String datatype, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
         super(datatype, ingestFile, config, manager);

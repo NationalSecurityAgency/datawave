@@ -135,12 +135,12 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         };
 
         expect(securityDomain.getKeyStore()).andReturn(keystore);
-        expect(securityDomain.getKeyManagers()).andReturn(new KeyManager[]{keyManager});
+        expect(securityDomain.getKeyManagers()).andReturn(new KeyManager[] {keyManager});
 
         replayAll();
 
-        HashMap<String, String> sharedState = new HashMap<>();
-        HashMap<String, String> options = new HashMap<>();
+        HashMap<String,String> sharedState = new HashMap<>();
+        HashMap<String,String> options = new HashMap<>();
         options.put("principalClass", "datawave.security.authorization.DatawavePrincipal");
         options.put("verifier", MockDatawaveCertVerifier.class.getName());
         options.put("passwordStacking", "useFirstPass");
@@ -184,10 +184,10 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
         callbackHandler.name = datawaveCredential.getUserName();
         callbackHandler.credential = datawaveCredential;
 
-        String[] expectedRoles = new String[]{"Role1", "Role2", "Role3"};
+        String[] expectedRoles = new String[] {"Role1", "Role2", "Role3"};
 
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Arrays.asList("a", "b", "c"), Arrays.asList(expectedRoles), null,
-                System.currentTimeMillis());
+                        System.currentTimeMillis());
         DatawavePrincipal expected = new DatawavePrincipal(Lists.newArrayList(user));
 
         expect(securityDomain.getKeyStore()).andReturn(keystore);

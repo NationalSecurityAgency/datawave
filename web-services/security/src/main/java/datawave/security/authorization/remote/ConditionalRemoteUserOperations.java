@@ -22,21 +22,21 @@ import java.util.function.Function;
  */
 public class ConditionalRemoteUserOperations implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(ConditionalRemoteUserOperations.class);
-    
+
     private UserOperations delegate;
     private Function<DatawavePrincipal,Boolean> condition;
     private ResponseObjectFactory responseObjectFactory;
-    
+
     private static final GenericResponse<String> EMPTY_RESPONSE = new GenericResponse<>();
-    
+
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
         assert (delegate != null);
         assert (condition != null);
         assert (responseObjectFactory != null);
-        
+
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
-        
+
         if (condition.apply(principal)) {
             return delegate.listEffectiveAuthorizations(callerObject);
         } else {
@@ -45,49 +45,49 @@ public class ConditionalRemoteUserOperations implements UserOperations {
             return response;
         }
     }
-    
+
     @Override
     public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
         assert (delegate != null);
         assert (condition != null);
         assert (responseObjectFactory != null);
-        
+
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
-        
+
         if (condition.apply(principal)) {
             return delegate.flushCachedCredentials(callerObject);
         } else {
             return EMPTY_RESPONSE;
         }
     }
-    
+
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             return (DatawavePrincipal) callerObject;
         }
         throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
-    
+
     public UserOperations getDelegate() {
         return delegate;
     }
-    
+
     public void setDelegate(UserOperations delegate) {
         this.delegate = delegate;
     }
-    
+
     public Function<DatawavePrincipal,Boolean> getCondition() {
         return condition;
     }
-    
+
     public void setCondition(Function<DatawavePrincipal,Boolean> condition) {
         this.condition = condition;
     }
-    
+
     public ResponseObjectFactory getResponseObjectFactory() {
         return responseObjectFactory;
     }
-    
+
     public void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
     }

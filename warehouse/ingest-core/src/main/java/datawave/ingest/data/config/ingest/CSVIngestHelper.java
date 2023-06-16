@@ -38,7 +38,8 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Allow classes extending this class to modify the StrTokenizer being used.
      *
-     * @param tokenizer The StrTokenizer that will be used on each Event
+     * @param tokenizer
+     *            The StrTokenizer that will be used on each Event
      * @return the tokenizer to be used
      */
     protected StrTokenizer configureTokenizer(StrTokenizer tokenizer) {
@@ -48,7 +49,8 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Allow classes extending this class to modify the raw data before setting it on the StrTokenizer
      *
-     * @param data The raw data from the Event
+     * @param data
+     *            The raw data from the Event
      * @return the raw data in String form
      */
     protected String preProcessRawData(byte[] data) {
@@ -58,12 +60,13 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * This method uses the header and the csv string in raw bytes of the Event to create key value pairs.
      *
-     * @param event the event
+     * @param event
+     *            the event
      * @return map of event fields
      */
     @Override
-    public Multimap<String, NormalizedContentInterface> getEventFields(RawRecordContainer event) {
-        HashMultimap<String, String> fields = HashMultimap.create();
+    public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
+        HashMultimap<String,String> fields = HashMultimap.create();
 
         String data = preProcessRawData(event.getRawData());
 
@@ -90,7 +93,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         return normalize(fields);
     }
 
-    protected void processFields(HashMultimap<String, String> fields, String[] dataFields) {
+    protected void processFields(HashMultimap<String,String> fields, String[] dataFields) {
         for (int i = 0; i < Math.max(dataFields.length, helper.getHeader().length); i++) {
 
             if (i < helper.getHeader().length) {
@@ -121,10 +124,12 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Used to process extra fields. The PROCESS_EXTRA_FIELDS configuration parameter must be set to enable this processing.
      *
-     * @param fields     extra fields to process
-     * @param fieldValue the field value
+     * @param fields
+     *            extra fields to process
+     * @param fieldValue
+     *            the field value
      */
-    protected void processExtraField(Multimap<String, String> fields, String fieldValue) {
+    protected void processExtraField(Multimap<String,String> fields, String fieldValue) {
         int equalsIndex = fieldValue.indexOf('=');
         if (equalsIndex > 0) {
             String fieldName = fieldValue.substring(0, equalsIndex);
@@ -144,11 +149,14 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Process a field. This will split multi-valued fields as necessary and call processField on each part.
      *
-     * @param fields     list of fields
-     * @param fieldName  name of the field
-     * @param fieldValue value of the field
+     * @param fields
+     *            list of fields
+     * @param fieldName
+     *            name of the field
+     * @param fieldValue
+     *            value of the field
      */
-    protected void processPreSplitField(Multimap<String, String> fields, String fieldName, String fieldValue) {
+    protected void processPreSplitField(Multimap<String,String> fields, String fieldName, String fieldValue) {
         if (fieldValue != null) {
             if (helper.isMultiValuedField(fieldName)) {
                 // Value can be multiple parts, need to break on semi-colon
@@ -173,7 +181,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         }
     }
 
-    protected void applyThresholdAction(Multimap<String, String> fields, String fieldName, String value, int sizeLimit) {
+    protected void applyThresholdAction(Multimap<String,String> fields, String fieldName, String value, int sizeLimit) {
         switch (helper.getThresholdAction()) {
             case DROP:
                 processField(fields, helper.getDropField(), aliaser.normalizeAndAlias(fieldName));
@@ -190,7 +198,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         }
     }
 
-    protected void applyMultiValuedThresholdAction(Multimap<String, String> fields, String fieldName, String singleFieldName) {
+    protected void applyMultiValuedThresholdAction(Multimap<String,String> fields, String fieldName, String singleFieldName) {
         switch (helper.getThresholdAction()) {
             case DROP:
                 if (singleFieldName != null) {
@@ -215,11 +223,14 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     /**
      * Process a name, value pair and add to the event fields
      *
-     * @param fields     list of fields
-     * @param fieldName  name of the field
-     * @param fieldValue value of the field
+     * @param fields
+     *            list of fields
+     * @param fieldName
+     *            name of the field
+     * @param fieldValue
+     *            value of the field
      */
-    protected void processField(Multimap<String, String> fields, String fieldName, String fieldValue) {
+    protected void processField(Multimap<String,String> fields, String fieldName, String fieldValue) {
         int sizeLimit = helper.getFieldSizeThreshold();
         if (fieldValue.length() > sizeLimit) {
             applyThresholdAction(fields, fieldName, fieldValue, sizeLimit);
@@ -230,10 +241,11 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     }
 
     /**
-     * Test whether the field should be kept by checking against the disallowlist and allowlist. Presence in the disallowlist takes precedence over presence on the
-     * allowlist.
+     * Test whether the field should be kept by checking against the disallowlist and allowlist. Presence in the disallowlist takes precedence over presence on
+     * the allowlist.
      *
-     * @param fieldName the field name
+     * @param fieldName
+     *            the field name
      * @return whether field should be kept or not
      */
     protected boolean keepField(String fieldName) {

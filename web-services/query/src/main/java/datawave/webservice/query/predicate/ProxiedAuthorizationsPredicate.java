@@ -11,29 +11,29 @@ import java.util.function.Predicate;
  * can specify that only the first of the authorizations is matched (presumably the user).
  */
 public class ProxiedAuthorizationsPredicate implements Predicate<List<Authorizations>> {
-    
+
     public static enum MatchType {
         // match only the first of the Authorizations (presumably the user)
         FIRST,
         // match all of the Authorizations (the user and proxies)
         ALL,
     }
-    
+
     private MatchType matchType = MatchType.ALL;
-    
+
     private final AuthorizationsPredicate authsTest = new AuthorizationsPredicate();
-    
+
     public ProxiedAuthorizationsPredicate() {}
-    
+
     public ProxiedAuthorizationsPredicate(String visibility) {
         setVisibility(visibility);
     }
-    
+
     public ProxiedAuthorizationsPredicate(String visibility, MatchType matchType) {
         this(visibility);
         setMatchType(matchType);
     }
-    
+
     @Override
     public boolean test(List<Authorizations> auths) {
         // match the visibility against the auths.
@@ -49,25 +49,25 @@ public class ProxiedAuthorizationsPredicate implements Predicate<List<Authorizat
         }
         return true;
     }
-    
+
     public MatchType getMatchType() {
         return matchType;
     }
-    
+
     public void setMatchType(MatchType matchType) {
         this.matchType = matchType;
     }
-    
+
     public ColumnVisibility getVisibility() {
         return authsTest.getVisibility();
     }
-    
+
     public void setVisibility(ColumnVisibility visibility) {
         authsTest.setVisibility(visibility);
     }
-    
+
     public void setVisibility(String visibility) {
         authsTest.setVisibility(visibility);
     }
-    
+
 }

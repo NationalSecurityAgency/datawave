@@ -24,11 +24,11 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
     private FileSKVIterator fileIterator;
     private boolean readFirstKeyValue = false;
     private long start, end, pos;
-    
+
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
         FileSplit fileSplit = (FileSplit) split;
-        
+
         // Note that the RFileInputFormat returns false for "isSplittable", so this should ALWAYS be 0
         start = fileSplit.getStart();
         if (start != 0) {
@@ -36,15 +36,16 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         }
         end = fileSplit.getLength() - start;
         pos = start;
-        
+
         FileOperations ops = RFileOperations.getInstance();
         String file = fileSplit.getPath().toString();
         FileSystem fs = fileSplit.getPath().getFileSystem(context.getConfiguration());
-        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
-        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), cs)
-                        .withTableConfiguration(DefaultConfiguration.getInstance()).seekToBeginning().build();
+        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
+                        context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+        fileIterator = ops.newReaderBuilder().forFile(file, fs, context.getConfiguration(), cs).withTableConfiguration(DefaultConfiguration.getInstance())
+                        .seekToBeginning().build();
     }
-    
+
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         // Iterators start out on the first key, whereas record readers are
@@ -57,17 +58,17 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
         readFirstKeyValue = true;
         return fileIterator.hasTop();
     }
-    
+
     @Override
     public Key getCurrentKey() throws IOException, InterruptedException {
         return fileIterator.getTopKey();
     }
-    
+
     @Override
     public Value getCurrentValue() throws IOException, InterruptedException {
         return fileIterator.getTopValue();
     }
-    
+
     @Override
     public float getProgress() throws IOException, InterruptedException {
         if (start == end) {
@@ -76,10 +77,10 @@ public class RFileRecordReader extends RecordReader<Key,Value> {
             return Math.min(1.0f, (pos - start) / (float) (end - start));
         }
     }
-    
+
     @Override
     public void close() throws IOException {
         fileIterator.close();
     }
-    
+
 }

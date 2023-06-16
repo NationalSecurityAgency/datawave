@@ -9,7 +9,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 public class SecureEventSequenceFileInputFormat<K> extends EventSequenceFileInputFormat<K> {
-    
+
     @Override
     public RecordReader<K,RawRecordContainer> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
         SecureEventSequenceFileRecordReader<K> reader = new SecureEventSequenceFileRecordReader<>();
@@ -20,5 +20,5 @@ public class SecureEventSequenceFileInputFormat<K> extends EventSequenceFileInpu
         }
         return reader;
     }
-    
+
 }

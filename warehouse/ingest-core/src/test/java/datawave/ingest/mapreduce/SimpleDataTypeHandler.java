@@ -25,7 +25,7 @@ import java.util.Map;
  * A {@link DataTypeHandler} used for unit testing.
  * <p/>
  * The processBulk method will generate mutations with the following format:
- * 
+ *
  * <pre>
  *     table = 'accumulo_table'
  *     row = date (yyyyMMdd)
@@ -35,52 +35,52 @@ import java.util.Map;
  * </pre>
  */
 public class SimpleDataTypeHandler<IK> implements DataTypeHandler<IK> {
-    
+
     public static Text TABLE = new Text("accumulo_table");
-    
+
     private DateFormat df = new SimpleDateFormat("yyyyMMdd");
-    
+
     @Override
     public void setup(TaskAttemptContext context) {
-        
+
     }
-    
+
     @Override
     public String[] getTableNames(Configuration conf) {
         return new String[0];
     }
-    
+
     @Override
     public int[] getTableLoaderPriorities(Configuration conf) {
         return new int[0];
     }
-    
+
     @Override
     public Multimap<BulkIngestKey,Value> processBulk(IK key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                     StatusReporter reporter) {
         String date = df.format(new Date());
         Text table = new Text(TABLE);
         Value value = new Value("1".getBytes());
-        
+
         Multimap<BulkIngestKey,Value> pairs = HashMultimap.create();
         for (Map.Entry<String,NormalizedContentInterface> entry : fields.entries()) {
             BulkIngestKey bik = new BulkIngestKey(table, new Key(date, entry.getKey(), entry.getValue().getEventFieldValue()));
             pairs.put(bik, value);
         }
-        
+
         return pairs;
     }
-    
+
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
         return SimpleDataTypeHelper.create();
     }
-    
+
     @Override
     public void close(TaskAttemptContext context) {
-        
+
     }
-    
+
     @Override
     public RawRecordMetadata getMetadata() {
         return null;

@@ -16,9 +16,9 @@ import java.util.Set;
  * Keeps any FI key that is index only and part of the TLD or is not part of the TLD
  */
 public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
-    
+
     private final Set<String> indexOnlyFields;
-    
+
     /**
      * Default constructor
      *
@@ -28,7 +28,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public TLDFieldIndexQueryFilter(Set<String> indexOnlyFields) {
         this.indexOnlyFields = indexOnlyFields;
     }
-    
+
     /**
      * This method is a no-op
      *
@@ -39,7 +39,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public void startNewDocument(Key documentKey) {
         // no-op
     }
-    
+
     /**
      * Always returns true.
      *
@@ -51,7 +51,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public boolean apply(@Nullable Map.Entry<Key,String> var1) {
         return true;
     }
-    
+
     /**
      * Always returns true
      *
@@ -63,7 +63,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public boolean peek(@Nullable Map.Entry<Key,String> var1) {
         return true;
     }
-    
+
     /**
      * Keep any FI that is index only and part of the TLD or is not part of the TLD
      *
@@ -79,7 +79,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
         }
         return true;
     }
-    
+
     /**
      * Clones this query filter
      *
@@ -89,7 +89,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public EventDataQueryFilter clone() {
         return new TLDFieldIndexQueryFilter(Sets.newHashSet(indexOnlyFields));
     }
-    
+
     /**
      * Not supported.
      *
@@ -105,7 +105,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
         throw new UnsupportedOperationException();
     }
-    
+
     /**
      * Effectively a no-op
      *
@@ -115,7 +115,7 @@ public class TLDFieldIndexQueryFilter implements EventDataQueryFilter {
     public int getMaxNextCount() {
         return -1;
     }
-    
+
     /**
      * A no-op.
      * <p>

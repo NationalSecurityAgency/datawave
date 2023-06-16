@@ -30,67 +30,67 @@ public class IndexOnlyContextCreatorBuilder {
     private SortedKeyValueIterator<Key,Value> source;
     private JexlContextCreator.JexlContextValueComparator comparatorFactory;
     private QueryOptions options;
-    
+
     public IndexOnlyContextCreator build() {
-        return new IndexOnlyContextCreator(source, range, typeMetadata, compositeMetadata, options, variables, iteratorBuildingVisitor,
-                        delayedNonEventFieldMap, equality, columnFamilies, inclusive, comparatorFactory);
+        return new IndexOnlyContextCreator(source, range, typeMetadata, compositeMetadata, options, variables, iteratorBuildingVisitor, delayedNonEventFieldMap,
+                        equality, columnFamilies, inclusive, comparatorFactory);
     }
-    
+
     public IndexOnlyContextCreatorBuilder setVariables(Collection<String> variables) {
         this.variables = variables;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setComparatorFactory(JexlContextCreator.JexlContextValueComparator comparatorFactory) {
         this.comparatorFactory = comparatorFactory;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setOptions(QueryOptions options) {
         this.options = options;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setSource(SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setTypeMetadata(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setCompositeMetadata(CompositeMetadata compositeMetadata) {
         this.compositeMetadata = compositeMetadata;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setRange(Range range) {
         this.range = range;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setIteratorBuildingVisitor(IteratorBuildingVisitor iteratorBuildingVisitor) {
         this.iteratorBuildingVisitor = iteratorBuildingVisitor;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setDelayedNonEventFieldMap(Multimap<String,JexlNode> delayedNonEventFieldMap) {
         this.delayedNonEventFieldMap = delayedNonEventFieldMap;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setEquality(Equality equality) {
         this.equality = equality;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setColumnFamilies(Collection<ByteSequence> columnFamilies) {
         this.columnFamilies = columnFamilies;
         return this;
     }
-    
+
     public IndexOnlyContextCreatorBuilder setInclusive(boolean inclusive) {
         this.inclusive = inclusive;
         return this;

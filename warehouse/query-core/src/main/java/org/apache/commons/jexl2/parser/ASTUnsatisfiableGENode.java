@@ -9,17 +9,17 @@ public class ASTUnsatisfiableGENode extends ASTGENode {
     public ASTUnsatisfiableGENode(int id) {
         super(id);
     }
-    
+
     public ASTUnsatisfiableGENode(Parser p, int id) {
         super(p, id);
     }
-    
+
     /** Accept the visitor. **/
     @Override
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
-    
+
     public static ASTUnsatisfiableGENode create() {
         return new ASTUnsatisfiableGENode(ParserTreeConstants.JJTGENODE);
     }

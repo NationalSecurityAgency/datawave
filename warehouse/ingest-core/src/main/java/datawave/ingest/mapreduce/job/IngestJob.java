@@ -561,8 +561,7 @@ public class IngestJob implements Tool {
                             conf.set(DataTypeHelper.Properties.DATA_NAME, t.typeName());
                             setupHandler.setup(conf);
                         }
-                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                             NoSuchMethodException | InvocationTargetException e) {
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
                         log.warn("Could not setup handler: " + handler, e);
                     }
                 }
@@ -586,11 +585,15 @@ public class IngestJob implements Tool {
     /**
      * Parse the arguments and update the configuration as needed
      *
-     * @param args the args
-     * @param conf the config
+     * @param args
+     *            the args
+     * @param conf
+     *            the config
      * @return the configuration
-     * @throws ClassNotFoundException if class is not found
-     * @throws URISyntaxException     if there are issues with URI syntax
+     * @throws ClassNotFoundException
+     *             if class is not found
+     * @throws URISyntaxException
+     *             if there are issues with URI syntax
      */
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         List<String> activeResources = new ArrayList<>();
@@ -810,19 +813,29 @@ public class IngestJob implements Tool {
     /**
      * Configure the partitioner and the output formatter.
      *
-     * @param job      the job
-     * @param cbHelper the accumulo helper
-     * @param conf     the config
-     * @param outputFs the file system
-     * @throws AccumuloSecurityException for issues with accumulo security
-     * @throws AccumuloException         for general accumulo issues
-     * @throws IOException               for issues with read or write
-     * @throws URISyntaxException        for issues with URI syntax
-     * @throws TableExistsException      if the table already exists
-     * @throws TableNotFoundException    if the table is not found
+     * @param job
+     *            the job
+     * @param cbHelper
+     *            the accumulo helper
+     * @param conf
+     *            the config
+     * @param outputFs
+     *            the file system
+     * @throws AccumuloSecurityException
+     *             for issues with accumulo security
+     * @throws AccumuloException
+     *             for general accumulo issues
+     * @throws IOException
+     *             for issues with read or write
+     * @throws URISyntaxException
+     *             for issues with URI syntax
+     * @throws TableExistsException
+     *             if the table already exists
+     * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected void configureBulkPartitionerAndOutputFormatter(Job job, AccumuloHelper cbHelper, Configuration conf, FileSystem outputFs)
-            throws AccumuloSecurityException, AccumuloException, IOException, URISyntaxException, TableExistsException, TableNotFoundException {
+                    throws AccumuloSecurityException, AccumuloException, IOException, URISyntaxException, TableExistsException, TableNotFoundException {
         if (null == conf.get("split.work.dir")) {
             conf.set("split.work.dir", conf.get("ingest.work.dir.qualified"));
         }
@@ -1008,8 +1021,8 @@ public class IngestJob implements Tool {
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
             CBMutationOutputFormatter.configure()
-                    .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
-                    .createTables(true).store(job);
+                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
+                            .createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));
@@ -1040,7 +1053,8 @@ public class IngestJob implements Tool {
     }
 
     /**
-     * @param keyValue of format 'key=value'
+     * @param keyValue
+     *            of format 'key=value'
      */
     protected void addConfOverride(String keyValue) {
         String[] strArr = keyValue.split("=", 2);
@@ -1122,12 +1136,17 @@ public class IngestJob implements Tool {
     /**
      * Get the files to process
      *
-     * @param fs                  used by extending classes such as MapFileMergeJob
-     * @param inputFileLists      the input file lists
-     * @param inputFileListMarker the input file list marker
-     * @param inputPaths          the input paths
+     * @param fs
+     *            used by extending classes such as MapFileMergeJob
+     * @param inputFileLists
+     *            the input file lists
+     * @param inputFileListMarker
+     *            the input file list marker
+     * @param inputPaths
+     *            the input paths
      * @return a list of paths
-     * @throws IOException if there is an issue with read or write
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     protected Path[] getFilesToProcess(FileSystem fs, boolean inputFileLists, String inputFileListMarker, String inputPaths) throws IOException {
         String[] paths = StringUtils.trimAndRemoveEmptyStrings(StringUtils.split(inputPaths, ','));
@@ -1170,10 +1189,14 @@ public class IngestJob implements Tool {
     /**
      * Writes the input paths for this job into the work directory in a file named "job.paths"
      *
-     * @param fs         the filesystem
-     * @param workDir    the work directory
-     * @param inputPaths the input paths
-     * @throws IOException for issues with read or write
+     * @param fs
+     *            the filesystem
+     * @param workDir
+     *            the work directory
+     * @param inputPaths
+     *            the input paths
+     * @throws IOException
+     *             for issues with read or write
      */
     protected void writeInputPathsFile(FileSystem fs, Path workDir, Path[] inputPaths) throws IOException {
         FSDataOutputStream os = fs.create(new Path(workDir, "job.paths"));
@@ -1187,10 +1210,14 @@ public class IngestJob implements Tool {
     /**
      * Writes the flag file for this job into the work directory in a file with the same name
      *
-     * @param fs           the file system
-     * @param workDir      the work directory
-     * @param flagFileName the flag file name
-     * @throws IOException for read or write related issues
+     * @param fs
+     *            the file system
+     * @param workDir
+     *            the work directory
+     * @param flagFileName
+     *            the flag file name
+     * @throws IOException
+     *             for read or write related issues
      */
 
     protected void writeFlagFile(FileSystem fs, Path workDir, String flagFileName) throws IOException {
@@ -1236,10 +1263,14 @@ public class IngestJob implements Tool {
     /**
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
      *
-     * @param fs         the filesystem
-     * @param inputPaths the input paths
-     * @param jobID      the job id
-     * @throws IOException if there is an issue with read or write
+     * @param fs
+     *            the filesystem
+     * @param inputPaths
+     *            the input paths
+     * @param jobID
+     *            the job id
+     * @throws IOException
+     *             if there is an issue with read or write
      */
     protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
         for (Path src : inputPaths) {
@@ -1267,8 +1298,10 @@ public class IngestJob implements Tool {
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
      *
-     * @param conf  the configuration
-     * @param value a boolean value
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setMapSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1282,8 +1315,10 @@ public class IngestJob implements Tool {
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
      *
-     * @param conf  the configuration
-     * @param value a boolean value
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setReduceSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1295,19 +1330,24 @@ public class IngestJob implements Tool {
     /**
      * Configures the output formatter with the correct accumulo instance information, splits file, and shard table.
      *
-     * @param config                       hadoop configuration
-     * @param compressionType              type of compression to use for the output format
-     * @param compressionTableDisallowList a set of table names for which we will not compress the rfile output
-     * @param maxEntries                   the max entries
-     * @param maxSize                      the max size
+     * @param config
+     *            hadoop configuration
+     * @param compressionType
+     *            type of compression to use for the output format
+     * @param compressionTableDisallowList
+     *            a set of table names for which we will not compress the rfile output
+     * @param maxEntries
+     *            the max entries
+     * @param maxSize
+     *            the max size
      */
-    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableDisallowList, int maxEntries,
-                                                          long maxSize) {
+    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableDisallowList,
+                    int maxEntries, long maxSize) {
         IngestJob.configureMultiRFileOutputFormatter(config, compressionType, compressionTableDisallowList, maxEntries, maxSize, false);
     }
 
-    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableDisallowList, int maxEntries,
-                                                          long maxSize, boolean generateMapFileRowKeys) {
+    public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableDisallowList,
+                    int maxEntries, long maxSize, boolean generateMapFileRowKeys) {
         MultiRFileOutputFormatter.setAccumuloConfiguration(config);
         if (compressionType != null) {
             MultiRFileOutputFormatter.setCompressionType(config, compressionType);
@@ -1336,8 +1376,7 @@ public class IngestJob implements Tool {
                 Thread daemonThread = new Thread(daemon);
                 daemonThread.setDaemon(true);
                 daemonThread.start();
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
-                     InvocationTargetException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 throw new IllegalArgumentException(e);
             }
         }
@@ -1383,7 +1422,7 @@ public class IngestJob implements Tool {
             throw new RuntimeException("Distcp failed.", e);
         }
         // verify the data was copied
-        Map<String, FileStatus> destFiles = new HashMap<>();
+        Map<String,FileStatus> destFiles = new HashMap<>();
         for (FileStatus destFile : dest.listStatus(destPath)) {
             destFiles.put(destFile.getPath().getName(), destFile);
         }
@@ -1402,7 +1441,7 @@ public class IngestJob implements Tool {
     }
 
     protected boolean writeStats(Logger log, Job job, JobID jobId, Counters counters, long start, long stop, boolean outputMutations, FileSystem fs,
-                                 Path statsDir, String metricsLabelOverride) throws IOException, InterruptedException {
+                    Path statsDir, String metricsLabelOverride) throws IOException, InterruptedException {
 
         Configuration conf = job.getConfiguration();
 
@@ -1431,7 +1470,7 @@ public class IngestJob implements Tool {
             src = rawFS.makeQualified(src);
             createFileWithRetries(rawFS, src);
             try (Writer writer = SequenceFile.createWriter(conf, Writer.file(src), Writer.keyClass(Text.class), Writer.valueClass(Counters.class),
-                    Writer.compression(ct, cc))) {
+                            Writer.compression(ct, cc))) {
                 writer.append(new Text(jobId.toString()), counters);
             }
 
@@ -1475,26 +1514,34 @@ public class IngestJob implements Tool {
     /**
      * Output some verbose counters
      *
-     * @param context   hadoop task context for writing counter values
-     * @param tableName the table name to write in the counter
-     * @param mutation  a Mutation containing the key-value pairs to log to counters
-     * @param location  the location
+     * @param context
+     *            hadoop task context for writing counter values
+     * @param tableName
+     *            the table name to write in the counter
+     * @param mutation
+     *            a Mutation containing the key-value pairs to log to counters
+     * @param location
+     *            the location
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, Text tableName, Mutation mutation) {
         for (KeyValue keyValue : getKeyValues(mutation)) {
-            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(), keyValue
-                    .getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
+            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(),
+                            keyValue.getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
         }
     }
 
     /**
      * Output some verbose counters. Since the input is an iterable, this will cache the values in a list and return the new iterable.
      *
-     * @param context  the task context
-     * @param key      the ingest key
-     * @param location the location
-     * @param values   the value
+     * @param context
+     *            the task context
+     * @param key
+     *            the ingest key
+     * @param location
+     *            the location
+     * @param values
+     *            the value
      * @return the iterable for the value list
      */
     @SuppressWarnings("rawtypes")
@@ -1510,37 +1557,49 @@ public class IngestJob implements Tool {
     /**
      * Output some verbose counters
      *
-     * @param context  hadoop task context for writing counter values
-     * @param location the location
-     * @param key      hadoop key to log all key-value pairs to counters
-     * @param value    the value that goes with {@code key}
+     * @param context
+     *            hadoop task context for writing counter values
+     * @param location
+     *            the location
+     * @param key
+     *            hadoop key to log all key-value pairs to counters
+     * @param value
+     *            the value that goes with {@code key}
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Value value) {
-        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(), key.getKey()
-                .getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
+        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(),
+                        key.getKey().getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
     }
 
     /**
      * Output a verbose counter
      *
-     * @param context      hadoop task context for writing counter values
-     * @param location     the location string
-     * @param tableName    the table name to write in the counter
-     * @param row          the row of the key to writer in the counter
-     * @param colFamily    the column family of the key to write in the counter
-     * @param colQualifier the column qualifier of the key to write in the counter
-     * @param colVis       the column visibility of the key to write in the counter
-     * @param val          the value that goes with the supplied key
+     * @param context
+     *            hadoop task context for writing counter values
+     * @param location
+     *            the location string
+     * @param tableName
+     *            the table name to write in the counter
+     * @param row
+     *            the row of the key to writer in the counter
+     * @param colFamily
+     *            the column family of the key to write in the counter
+     * @param colQualifier
+     *            the column qualifier of the key to write in the counter
+     * @param colVis
+     *            the column visibility of the key to write in the counter
+     * @param val
+     *            the value that goes with the supplied key
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounter(TaskInputOutputContext context, String location, Text tableName, byte[] row, byte[] colFamily, byte[] colQualifier,
-                                      Text colVis, byte[] val) {
+                    Text colVis, byte[] val) {
         String labelString = new ColumnVisibility(colVis).toString();
         String s = Key.toPrintableString(row, 0, row.length, Constants.MAX_DATA_TO_PRINT) + " "
-                + Key.toPrintableString(colFamily, 0, colFamily.length, Constants.MAX_DATA_TO_PRINT) + ":"
-                + Key.toPrintableString(colQualifier, 0, colQualifier.length, Constants.MAX_DATA_TO_PRINT) + " " + labelString + " "
-                + (val == null ? "null" : String.valueOf(val.length) + " value bytes");
+                        + Key.toPrintableString(colFamily, 0, colFamily.length, Constants.MAX_DATA_TO_PRINT) + ":"
+                        + Key.toPrintableString(colQualifier, 0, colQualifier.length, Constants.MAX_DATA_TO_PRINT) + " " + labelString + " "
+                        + (val == null ? "null" : String.valueOf(val.length) + " value bytes");
 
         s = s.replace('\n', ' ');
 
@@ -1550,14 +1609,15 @@ public class IngestJob implements Tool {
     /**
      * Turn a mutation's column update into a key
      *
-     * @param m the Mutation from which KeyValue pairs should be extracted
+     * @param m
+     *            the Mutation from which KeyValue pairs should be extracted
      * @return a List of KeyValue pairs representing the contents of {@code m}
      */
     public static List<KeyValue> getKeyValues(Mutation m) {
         List<KeyValue> values = new ArrayList<>();
         for (ColumnUpdate update : m.getUpdates()) {
-            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(), (update
-                    .hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
+            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(),
+                            (update.hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
         }
         return values;
     }

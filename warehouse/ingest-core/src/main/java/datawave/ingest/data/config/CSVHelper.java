@@ -133,8 +133,8 @@ public class CSVHelper extends DataTypeHelperImpl {
     private String separator = null;
     private boolean skipHeaderRow = false;
     private boolean processExtraFields = false;
-    private Map<String, String> multiValuedFields = new HashMap<>();
-    private Map<String, String> multiValuedFieldsDisallowlist = new HashMap<>();
+    private Map<String,String> multiValuedFields = new HashMap<>();
+    private Map<String,String> multiValuedFieldsDisallowlist = new HashMap<>();
     private boolean hasMultiValuedFieldsDisallowlist = false;
     private String multiValueSeparator = null;
     private int fieldSizeThreshold = Integer.MAX_VALUE;
@@ -201,7 +201,7 @@ public class CSVHelper extends DataTypeHelperImpl {
 
         if (!headerEnabled && !processExtraFields) {
             throw new IllegalArgumentException("Both " + this.getType().typeName() + DATA_HEADER_ENABLED + " or " + this.getType().typeName()
-                    + PROCESS_EXTRA_FIELDS + " are " + "configured to 'false', either or both must be 'true'");
+                            + PROCESS_EXTRA_FIELDS + " are " + "configured to 'false', either or both must be 'true'");
         }
 
         // Get the multi-valued fields disallowlist configuration
@@ -238,10 +238,10 @@ public class CSVHelper extends DataTypeHelperImpl {
         this.dropField = config.get(this.getType().typeName() + DROP_FIELD, this.dropField);
 
         this.multiFieldSizeThreshold = config.getInt(this.getType().typeName() + MULTI_VALUED_THRESHOLD, this.multiFieldSizeThreshold);
-        this.multiValuedThresholdAction = ThresholdAction.valueOf(config.get(this.getType().typeName() + MULTI_VALUED_THRESHOLD_ACTION,
-                this.multiValuedThresholdAction.name()).toUpperCase());
+        this.multiValuedThresholdAction = ThresholdAction
+                        .valueOf(config.get(this.getType().typeName() + MULTI_VALUED_THRESHOLD_ACTION, this.multiValuedThresholdAction.name()).toUpperCase());
         this.multiValuedThresholdReplacement = config.get(this.getType().typeName() + MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT,
-                this.multiValuedThresholdReplacement);
+                        this.multiValuedThresholdReplacement);
         this.multiValuedTruncateField = config.get(this.getType().typeName() + MULTI_VALUED_TRUNCATE_FIELD, this.multiValuedTruncateField);
         this.multiValuedDropField = config.get(this.getType().typeName() + MULTI_VALUED_DROP_FIELD, this.multiValuedDropField);
     }
@@ -258,7 +258,8 @@ public class CSVHelper extends DataTypeHelperImpl {
     /**
      * Whether or not the data format has required fields.
      *
-     * @param fieldName the field name
+     * @param fieldName
+     *            the field name
      * @return flag if field is required or not
      */
     public boolean isFieldRequired(final String fieldName) {
@@ -287,11 +288,11 @@ public class CSVHelper extends DataTypeHelperImpl {
         return processExtraFields;
     }
 
-    public Map<String, String> getMultiValuedFields() {
+    public Map<String,String> getMultiValuedFields() {
         return multiValuedFields;
     }
 
-    public Map<String, String> getMultiValuedFieldsDisallowlist() {
+    public Map<String,String> getMultiValuedFieldsDisallowlist() {
         return multiValuedFieldsDisallowlist;
     }
 
@@ -309,7 +310,7 @@ public class CSVHelper extends DataTypeHelperImpl {
 
     /**
      * @return a pattern based on the multivalueseparator value that will not match that value preceeded by a '\\' (backslash) character. Useful as an argument
-     * to the String.split(..) function or similar methods
+     *         to the String.split(..) function or similar methods
      */
     public String getEscapeSafeMultiValueSeparatorPattern() {
         return BACKSLASH_ESCAPE_LOOKBEHIND_PATTERN + getMultiValueSeparator();
@@ -366,7 +367,8 @@ public class CSVHelper extends DataTypeHelperImpl {
     /**
      * Remove the escape characters from escaped multi value separators in field value
      *
-     * @param fieldValue the field value to clean
+     * @param fieldValue
+     *            the field value to clean
      * @return the cleaned field value
      */
     public String cleanEscapedMultivalueSeparators(String fieldValue) {

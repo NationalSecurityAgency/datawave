@@ -82,6 +82,6 @@ public class JsonDataTypeHelper extends CSVHelper {
         }
 
         return new JsonIngestFlattener.Builder().jsonDataTypeHelper(this).mapKeyAllowlist(allowlistFields).mapKeyDisallowlist(disallowlistFields)
-                .flattenMode(getJsonObjectFlattenMode()).addArrayIndexToFieldName(false).build();
+                        .flattenMode(getJsonObjectFlattenMode()).addArrayIndexToFieldName(false).build();
     }
 }

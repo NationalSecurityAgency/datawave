@@ -128,16 +128,15 @@ public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
             throw new IllegalStateException("Query string is empty after initial processing, no ranges or filters can be generated to execute.");
         }
 
-        addIterators(qData,
-                getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
+        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
                         dateFilterType));
 
         if (!normalizedQuery.equals("")) {
             if (log.isTraceEnabled()) {
                 log.trace("Query being sent to the filter iterator: " + normalizedQuery);
             }
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getSimpleName() + "_"
-                    + currentIteratorPriority, EdgeFilterIterator.class);
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority,
+                            EdgeFilterIterator.class.getSimpleName() + "_" + currentIteratorPriority, EdgeFilterIterator.class);
             edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
             edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
 

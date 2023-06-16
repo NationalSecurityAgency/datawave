@@ -63,7 +63,7 @@ public class JsonObjectFlattenerImplTest {
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -80,7 +80,7 @@ public class JsonObjectFlattenerImplTest {
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -94,12 +94,12 @@ public class JsonObjectFlattenerImplTest {
     @Test
     public void testFlattenWithDisallowlist() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder()
-                .mapKeyDisallowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
-                .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
+                        .mapKeyDisallowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
+                        .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -113,12 +113,12 @@ public class JsonObjectFlattenerImplTest {
     @Test
     public void testFlattenWithAllowlist() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder()
-                .mapKeyAllowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
-                .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
+                        .mapKeyAllowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
+                        .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -131,13 +131,13 @@ public class JsonObjectFlattenerImplTest {
     @Test
     public void testFlattenWithAllowlistDisallowlistConflict() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder()
-                .mapKeyAllowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2")))
-                .mapKeyDisallowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2"))).pathDelimiter(".").mapKeyValueNormalizer(toUpperCaseNormalizer)
-                .build();
+                        .mapKeyAllowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2")))
+                        .mapKeyDisallowlist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2"))).pathDelimiter(".").mapKeyValueNormalizer(toUpperCaseNormalizer)
+                        .build();
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -151,7 +151,7 @@ public class JsonObjectFlattenerImplTest {
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -167,7 +167,7 @@ public class JsonObjectFlattenerImplTest {
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -184,11 +184,11 @@ public class JsonObjectFlattenerImplTest {
     @Test
     public void testFlattenWithGroupingContext() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().flattenMode(FlattenMode.GROUPED).occurrenceInGroupDelimiter("#")
-                .mapKeyValueNormalizer(noOpNormalizer).build();
+                        .mapKeyValueNormalizer(noOpNormalizer).build();
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -205,11 +205,11 @@ public class JsonObjectFlattenerImplTest {
     @Test
     public void testFlattenGROUPED_AND_NORMAL() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().flattenMode(FlattenMode.GROUPED_AND_NORMAL).occurrenceInGroupDelimiter("_")
-                .pathDelimiter(".").mapKeyValueNormalizer(noOpNormalizer).build();
+                        .pathDelimiter(".").mapKeyValueNormalizer(noOpNormalizer).build();
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
-        Multimap<String, String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
+        Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
         // printMap(fieldMap);
@@ -251,7 +251,7 @@ public class JsonObjectFlattenerImplTest {
     @Test(expected = IllegalStateException.class)
     public void testGroupingContextWithBadDelimiterConfig() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").occurrenceInGroupDelimiter(".")
-                .flattenMode(FlattenMode.GROUPED).build();
+                        .flattenMode(FlattenMode.GROUPED).build();
 
         JsonParser parser = new JsonParser();
         JsonElement jsonElement = parser.parse(json);
@@ -265,8 +265,8 @@ public class JsonObjectFlattenerImplTest {
         }
     }
 
-    private void printMap(Multimap<String, String> fieldMap) {
-        TreeMultimap<String, String> sorted = TreeMultimap.create(fieldMap);
+    private void printMap(Multimap<String,String> fieldMap) {
+        TreeMultimap<String,String> sorted = TreeMultimap.create(fieldMap);
         for (String key : sorted.keySet()) {
             System.out.print(key + ": ");
             Collection<String> values = fieldMap.get(key);

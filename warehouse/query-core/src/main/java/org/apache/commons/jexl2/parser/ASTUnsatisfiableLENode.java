@@ -9,17 +9,17 @@ public class ASTUnsatisfiableLENode extends ASTLENode {
     public ASTUnsatisfiableLENode(int id) {
         super(id);
     }
-    
+
     public ASTUnsatisfiableLENode(Parser p, int id) {
         super(p, id);
     }
-    
+
     /** Accept the visitor. **/
     @Override
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
-    
+
     public static ASTUnsatisfiableLENode create() {
         return new ASTUnsatisfiableLENode(ParserTreeConstants.JJTLENODE);
     }

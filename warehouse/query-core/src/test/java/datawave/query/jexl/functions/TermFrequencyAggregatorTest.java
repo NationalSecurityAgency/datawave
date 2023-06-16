@@ -41,11 +41,11 @@ public class TermFrequencyAggregatorTest {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
 
-        TreeMap<Key, Value> treeMap = Maps.newTreeMap();
+        TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         treeMap.put(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10), new Value());
 
-        SortedKeyValueIterator<Key, Value> itr = new SortedMapIterator(treeMap);
+        SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
 
         Set<String> keepFields = new HashSet<>();
@@ -75,11 +75,11 @@ public class TermFrequencyAggregatorTest {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
 
-        TreeMap<Key, Value> treeMap = Maps.newTreeMap();
+        TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         treeMap.put(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10), new Value());
 
-        SortedKeyValueIterator<Key, Value> itr = new SortedMapIterator(treeMap);
+        SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
 
         Set<String> keepFields = new HashSet<>();
@@ -112,11 +112,11 @@ public class TermFrequencyAggregatorTest {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
 
-        TreeMap<Key, Value> treeMap = Maps.newTreeMap();
+        TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         treeMap.put(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10), new Value());
 
-        SortedKeyValueIterator<Key, Value> itr = new SortedMapIterator(treeMap);
+        SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
 
         Set<String> keepFields = new HashSet<>();
@@ -139,10 +139,10 @@ public class TermFrequencyAggregatorTest {
 
     @Test
     public void apply_testNormal() throws IOException {
-        TreeMap<Key, Value> treeMap = Maps.newTreeMap();
+        TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
 
-        SortedKeyValueIterator<Key, Value> itr = new SortedMapIterator(treeMap);
+        SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         Key result = aggregator.apply(itr);
 
@@ -158,13 +158,13 @@ public class TermFrequencyAggregatorTest {
     @Test
     public void apply_testSeek() throws IOException {
         aggregator = new TermFrequencyAggregator(null, null, 1);
-        TreeMap<Key, Value> treeMap = Maps.newTreeMap();
+        TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 9), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 8), new Value());
         treeMap.put(getTF("1234", "FIELD1", "VALUE1", "dataType1", "123.345.456", 7), new Value());
 
-        SortedKeyValueIterator<Key, Value> itr = new SortedMapIterator(treeMap);
+        SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         Key result = aggregator.apply(itr);
 
@@ -219,6 +219,6 @@ public class TermFrequencyAggregatorTest {
     private Key getTF(String row, String field, String value, String dataType, String uid, long timestamp) {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
-                timestamp);
+                        timestamp);
     }
 }

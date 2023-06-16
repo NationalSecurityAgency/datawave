@@ -235,30 +235,30 @@ public class ShardQueryConfigurationTest {
         Set<String> nonEventKeyPrefixes = Sets.newHashSet("nonEventKeyPrefixA");
         Set<String> unevaluatedFields = Sets.newHashSet("unevaluatedFieldA");
         Set<String> dataTypeFilter = Sets.newHashSet("dataTypeFilterA");
-        IndexHole indexHole = new IndexHole(new String[]{"0", "1"}, new String[]{"2", "3"});
+        IndexHole indexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
         List<IndexHole> indexHoles = Lists.newArrayList(indexHole);
         Set<String> projectFields = Sets.newHashSet("projectFieldA");
         Set<String> disallowlistedFields = Sets.newHashSet("disallowlistedFieldA");
         Set<String> indexedFields = Sets.newHashSet("indexedFieldA");
         Set<String> normalizedFields = Sets.newHashSet("normalizedFieldA");
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("K001", new NoOpType("V"));
-        Multimap<String, Type<?>> queryFieldsDatatypes = HashMultimap.create();
+        Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
         queryFieldsDatatypes.put("K002", new NoOpType("V"));
-        Multimap<String, Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
+        Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
         normalizedFieldsDatatypes.put("K003", new NoOpType("V"));
-        Multimap<String, String> compositeToFieldMap = HashMultimap.create();
+        Multimap<String,String> compositeToFieldMap = HashMultimap.create();
         compositeToFieldMap.put("K004", "V");
-        Map<String, DiscreteIndexType<?>> fieldToDiscreteIndexType = Maps.newHashMap();
+        Map<String,DiscreteIndexType<?>> fieldToDiscreteIndexType = Maps.newHashMap();
         fieldToDiscreteIndexType.put("GEO", new GeometryType());
-        Map<String, Date> compositeTransitionDates = Maps.newHashMap();
+        Map<String,Date> compositeTransitionDates = Maps.newHashMap();
         Date transitionDate = new Date();
         compositeTransitionDates.put("K005", transitionDate);
-        Map<String, String> compositeFieldSeparators = Maps.newHashMap();
+        Map<String,String> compositeFieldSeparators = Maps.newHashMap();
         compositeFieldSeparators.put("GEO", " ");
         Set<String> queryTermFrequencyFields = Sets.newHashSet("fieldA");
         Set<String> limitFields = Sets.newHashSet("limitFieldA");
-        Map<String, String> hierarchyFieldOptions = Maps.newHashMap();
+        Map<String,String> hierarchyFieldOptions = Maps.newHashMap();
         hierarchyFieldOptions.put("K006", "V");
         List<String> documentPermutations = Lists.newArrayList(DocumentPermutation.class.getName());
         QueryModel queryModel = new QueryModel();
@@ -328,7 +328,7 @@ public class ShardQueryConfigurationTest {
         nonEventKeyPrefixes.add("nonEventKeyPrefixB");
         unevaluatedFields.add("unevaluatedFieldB");
         dataTypeFilter.add("dataTypeFilterB");
-        IndexHole otherIndexHole = new IndexHole(new String[]{"4", "5"}, new String[]{"6", "7"});
+        IndexHole otherIndexHole = new IndexHole(new String[] {"4", "5"}, new String[] {"6", "7"});
         indexHoles.add(otherIndexHole);
         projectFields.add("projectFieldB");
         disallowlistedFields.add("disallowlistedFieldB");
@@ -358,7 +358,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Sets.newHashSet("nonEventKeyPrefixA"), config.getNonEventKeyPrefixes());
         Assert.assertEquals(Sets.newHashSet("unevaluatedFieldA"), config.getUnevaluatedFields());
         Assert.assertEquals(Sets.newHashSet("dataTypeFilterA"), config.getDatatypeFilter());
-        IndexHole expectedIndexHole = new IndexHole(new String[]{"0", "1"}, new String[]{"2", "3"});
+        IndexHole expectedIndexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
         Assert.assertEquals(Lists.newArrayList(expectedIndexHole), config.getIndexHoles());
         Assert.assertEquals(Sets.newHashSet("projectFieldA"), config.getProjectFields());
         Assert.assertEquals(Sets.newHashSet("disallowlistedFieldA"), config.getDisallowlistedFields());
@@ -366,30 +366,30 @@ public class ShardQueryConfigurationTest {
         // This assert is different from the setter as setNormalizedFieldsAsDatatypes will overwrite the normalizedFields with
         // a new keyset.
         Assert.assertEquals(Sets.newHashSet("K003"), config.getNormalizedFields());
-        Multimap<String, Type<?>> expectedDataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> expectedDataTypes = HashMultimap.create();
         expectedDataTypes.put("K001", new NoOpType("V"));
         Assert.assertEquals(expectedDataTypes, config.getDataTypes());
-        Multimap<String, Type<?>> expectedQueryFieldsDatatypes = HashMultimap.create();
+        Multimap<String,Type<?>> expectedQueryFieldsDatatypes = HashMultimap.create();
         expectedQueryFieldsDatatypes.put("K002", new NoOpType("V"));
         Assert.assertEquals(expectedQueryFieldsDatatypes, config.getQueryFieldsDatatypes());
-        Multimap<String, Type<?>> expectedNormalizedFieldsDatatypes = HashMultimap.create();
+        Multimap<String,Type<?>> expectedNormalizedFieldsDatatypes = HashMultimap.create();
         expectedNormalizedFieldsDatatypes.put("K003", new NoOpType("V"));
         Assert.assertEquals(expectedNormalizedFieldsDatatypes, config.getNormalizedFieldsDatatypes());
-        Multimap<String, String> expectedCompositeToFieldMap = ArrayListMultimap.create();
+        Multimap<String,String> expectedCompositeToFieldMap = ArrayListMultimap.create();
         expectedCompositeToFieldMap.put("K004", "V");
         Assert.assertEquals(expectedCompositeToFieldMap, config.getCompositeToFieldMap());
-        Map<String, DiscreteIndexType<?>> expectedFieldToDiscreteIndexType = Maps.newHashMap();
+        Map<String,DiscreteIndexType<?>> expectedFieldToDiscreteIndexType = Maps.newHashMap();
         expectedFieldToDiscreteIndexType.put("GEO", new GeometryType());
         Assert.assertEquals(expectedFieldToDiscreteIndexType, config.getFieldToDiscreteIndexTypes());
-        Map<String, Date> expectedCompositeTransitionDates = Maps.newHashMap();
+        Map<String,Date> expectedCompositeTransitionDates = Maps.newHashMap();
         expectedCompositeTransitionDates.put("K005", transitionDate);
         Assert.assertEquals(expectedCompositeTransitionDates, config.getCompositeTransitionDates());
-        Map<String, String> expectedCompositeFieldSeparators = Maps.newHashMap();
+        Map<String,String> expectedCompositeFieldSeparators = Maps.newHashMap();
         expectedCompositeFieldSeparators.put("GEO", " ");
         Assert.assertEquals(expectedCompositeFieldSeparators, config.getCompositeFieldSeparators());
         Assert.assertEquals(Sets.newHashSet("fieldA"), config.getQueryTermFrequencyFields());
         Assert.assertEquals(Sets.newHashSet("limitFieldA"), config.getLimitFields());
-        Map<String, String> expectedHierarchyFieldOptions = Maps.newHashMap();
+        Map<String,String> expectedHierarchyFieldOptions = Maps.newHashMap();
         expectedHierarchyFieldOptions.put("K006", "V");
         Assert.assertEquals(expectedHierarchyFieldOptions, config.getHierarchyFieldOptions());
         Assert.assertEquals(Lists.newArrayList(DocumentPermutation.class.getName()), config.getDocumentPermutations());
@@ -468,7 +468,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals("", config.getIndexedFieldDataTypesAsString());
 
         Set<String> indexedFields = Sets.newHashSet("fieldA", "fieldB");
-        Multimap<String, Type<?>> queryFieldsDatatypes = ArrayListMultimap.create();
+        Multimap<String,Type<?>> queryFieldsDatatypes = ArrayListMultimap.create();
         queryFieldsDatatypes.put("fieldA", new DateType());
         queryFieldsDatatypes.put("fieldB", new StringType());
 
@@ -484,7 +484,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals("", config.getNormalizedFieldNormalizersAsString());
 
         Set<String> normalizedFields = Sets.newHashSet("fieldA", "fieldB");
-        Multimap<String, Type<?>> normalizedFieldsDatatypes = ArrayListMultimap.create();
+        Multimap<String,Type<?>> normalizedFieldsDatatypes = ArrayListMultimap.create();
         normalizedFieldsDatatypes.put("fieldA", new DateType());
         normalizedFieldsDatatypes.put("fieldB", new StringType());
 
@@ -506,7 +506,8 @@ public class ShardQueryConfigurationTest {
     /**
      * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
      *
-     * @throws IOException if something went wrong
+     * @throws IOException
+     *             if something went wrong
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {

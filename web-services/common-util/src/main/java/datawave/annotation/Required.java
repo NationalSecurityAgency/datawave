@@ -12,9 +12,9 @@ import org.jboss.resteasy.annotations.StringParameterUnmarshallerBinder;
 @StringParameterUnmarshallerBinder(RequiredProcessor.class)
 @Documented
 public @interface Required {
-    
+
     String value();
-    
+
     String[] validValues() default {};
-    
+
 }

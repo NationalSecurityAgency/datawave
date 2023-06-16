@@ -26,10 +26,10 @@ import java.util.List;
  *
  * <p>
  * Example:
- * 
+ *
  * <pre>
  * {@code
- * 
+ *
  *     <property>
  *         <name>datatype1.data.fieldname.filter</name>
  *         <value>KEEP1:DROP1,KEEP2&KEEP3:DROP2</value>
@@ -38,31 +38,31 @@ import java.util.List;
  *         <name>datatype1.data.fieldvalue.filter</name>
  *         <value>KEEP1:DROP1,KEEP2&KEEP3:DROP2&DROP3</value>
  *     </property>
- * 
+ *
  * }
  * </pre>
  */
 public class IngestFieldFilter {
-    
+
     private static final Logger logger = Logger.getLogger(IngestFieldFilter.class);
-    
+
     @Deprecated
     public static final String FILTER_FIELD_SUFFIX = ".data.field.filter";
-    
+
     public static final String FILTER_FIELD_NAME_SUFFIX = ".data.fieldname.filter";
     public static final String FILTER_FIELD_VALUE_SUFFIX = ".data.fieldvalue.filter";
     public static final char PAIR_DELIM = ',';
     public static final char VALUE_DELIM = ':';
     public static final char FIELD_DELIM = '&';
-    
+
     private final Type dataType;
     private FieldConfiguration fieldNameFilters;
     private FieldConfiguration fieldValueFilters;
-    
+
     public IngestFieldFilter(Type dataType) {
         this.dataType = dataType;
     }
-    
+
     /**
      * Configures the field filter.
      *
@@ -74,11 +74,11 @@ public class IngestFieldFilter {
         fieldNameFilters.load(conf.get(dataType.typeName() + FILTER_FIELD_SUFFIX), false);
         fieldNameFilters.load(conf.get(dataType.typeName() + FILTER_FIELD_NAME_SUFFIX), false);
         logger.info("Field Name Filters for " + dataType.typeName() + ": " + fieldNameFilters);
-        
+
         fieldValueFilters = new FieldConfiguration(conf.get(dataType.typeName() + FILTER_FIELD_VALUE_SUFFIX), true);
         logger.info("Field Value Filters for " + dataType.typeName() + ": " + fieldValueFilters);
     }
-    
+
     /**
      * Applies the configured filter rules to the given fields.
      *
@@ -113,10 +113,10 @@ public class IngestFieldFilter {
             }
         }
     }
-    
+
     /**
      * Determine if two sets of field values are the same
-     * 
+     *
      * @param left
      *            first field value
      * @param right
@@ -125,7 +125,7 @@ public class IngestFieldFilter {
      */
     private boolean equalValues(List<FieldValue> left, List<FieldValue> right) {
         boolean matches = true;
-        
+
         if (left.size() != right.size()) {
             matches = false;
         } else {
@@ -133,15 +133,15 @@ public class IngestFieldFilter {
                 matches = left.get(i).equalRawValue(right.get(i));
             }
         }
-        
+
         return matches;
     }
-    
+
     /**
      * Gather sets of values for the fields specified. This is basically the dot product of the values for each field to gather, with the complexity that we
      * need to keep groups together. So if one of the fields' values contains a group (or the group is specified) then only those other fields' values with the
      * same group should be considered in the dot product.
-     * 
+     *
      * @param fieldValues
      *            The field values
      * @param fieldsToGather
@@ -154,17 +154,17 @@ public class IngestFieldFilter {
      */
     private Collection<List<FieldValue>> gatherValueLists(Multimap<String,?> fieldValues, List<String> fieldsToGather, int index, String group) {
         List<List<FieldValue>> valueLists = Lists.newArrayList();
-        
+
         if (fieldsToGather.isEmpty()) {
             return valueLists;
         }
-        
+
         // since we are adding the entries starting at the tail of the recursion, we will start with the last field and work backwards
         if (index < 0) {
             index = fieldsToGather.size() - 1;
         }
         String field = fieldsToGather.get(index);
-        
+
         // for each of the values for the current field
         for (FieldValue value : getValues(fieldValues, field, group)) {
             // if this is the last field, then simply create a value set per value
@@ -177,20 +177,20 @@ public class IngestFieldFilter {
             // else add this value to each of the value sets found recursively for the remaining fields
             else {
                 for (List<FieldValue> singleValueList : gatherValueLists(fieldValues, fieldsToGather, index - 1,
-                // restrict to the group already determined, or the group of this value if not yet determined
+                                // restrict to the group already determined, or the group of this value if not yet determined
                                 (group == null ? value.getGroup() : group))) {
                     singleValueList.add(value);
                     valueLists.add(singleValueList);
                 }
             }
         }
-        
+
         return valueLists;
     }
-    
+
     /**
      * Get the values for a given field and optionally specified group
-     * 
+     *
      * @param fieldValues
      *            The field values to pull from
      * @param field
@@ -201,7 +201,7 @@ public class IngestFieldFilter {
      */
     private Collection<FieldValue> getValues(Multimap<String,?> fieldValues, String field, String group) {
         List<FieldValue> values = Lists.newArrayList();
-        
+
         if (group == null) {
             for (Object value : fieldValues.get(field)) {
                 values.add(new FieldValue(field, value));
@@ -216,7 +216,7 @@ public class IngestFieldFilter {
         }
         return values;
     }
-    
+
     /***************************************************************************
      * An unmodifiable field value
      ***************************************************************************/
@@ -224,18 +224,18 @@ public class IngestFieldFilter {
         public FieldValue(String field, Object value) {
             super(field, value);
         }
-        
+
         public String getField() {
             return (String) getKey();
         }
-        
+
         public Object setValue(Object value) {
             throw new UnsupportedOperationException("Unmodifiable value");
         }
-        
+
         /**
          * Get the raw value
-         * 
+         *
          * @return The raw value which is the same as getValue() unless that is a NormalizedContentInterface
          */
         public Object getRawValue() {
@@ -245,11 +245,11 @@ public class IngestFieldFilter {
             }
             return value;
         }
-        
+
         /**
          * Get the group for this value. This will only actually return a group if the value is a GroupedNormalizedContentInterface in which case it contains
          * the field name with its grouping info.
-         * 
+         *
          * @return the group
          */
         public String getGroup() {
@@ -262,10 +262,10 @@ public class IngestFieldFilter {
             }
             return null;
         }
-        
+
         /**
          * Determine if the raw value in this matches the raw value in another
-         * 
+         *
          * @param other
          *            the field value to check
          * @return true of equal
@@ -279,9 +279,9 @@ public class IngestFieldFilter {
                 return left.toString().equals(right.toString());
             }
         }
-        
+
     }
-    
+
     /***************************************************************************
      * An unmodifiable field filter
      ***************************************************************************/
@@ -289,33 +289,33 @@ public class IngestFieldFilter {
         public FieldFilter(List<String> keep, List<String> drop) {
             super(keep, drop);
         }
-        
+
         public List<String> getKeepFields() {
             return (List<String>) getKey();
         }
-        
+
         public List<String> getDropFields() {
             return (List<String>) getValue();
         }
-        
+
         public Object setValue(Object value) {
             throw new UnsupportedOperationException("Unmodifiable value");
         }
     }
-    
+
     /***************************************************************************
      * A parsed field configuration
      ***************************************************************************/
     class FieldConfiguration extends ArrayList<FieldFilter> implements List<FieldFilter> {
-        
+
         public FieldConfiguration() {
-            
+
         }
-        
+
         public FieldConfiguration(String fieldStr, boolean fieldCountMustMatch) {
             load(fieldStr, fieldCountMustMatch);
         }
-        
+
         /**
          * load a field configuration
          *
@@ -339,17 +339,17 @@ public class IngestFieldFilter {
                             }
                             super.add(new FieldFilter(left, right));
                         } else {
-                            throw new IllegalArgumentException("Expected a " + VALUE_DELIM + " delimited pair but received: " + pair
-                                            + ", ignoring this config.");
+                            throw new IllegalArgumentException(
+                                            "Expected a " + VALUE_DELIM + " delimited pair but received: " + pair + ", ignoring this config.");
                         }
                     }
                 }
             }
         }
-        
+
         /**
          * Parse a fields spec into a list of fields
-         * 
+         *
          * @param fields
          *            fields delimited by '|'
          * @return a list of fields
@@ -357,6 +357,6 @@ public class IngestFieldFilter {
         private List<String> parseFields(String fields) {
             return Collections.unmodifiableList(Arrays.asList(StringUtils.split(fields, FIELD_DELIM)));
         }
-        
+
     }
 }

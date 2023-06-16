@@ -66,7 +66,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 
-public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
+public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public static final String PRE_FILTER_DISABLE_KEYWORD = "__DISABLE_PREFILTER__";
     private static final int DEFAULT_SKIP_LIMIT = 10;
@@ -76,7 +76,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     protected boolean protobufEdgeFormat = true;
     protected EdgeQueryConfiguration config;
 
-    protected Map<Integer, IteratorSetting> iteratorDiscriptors = new HashMap<>();
+    protected Map<Integer,IteratorSetting> iteratorDiscriptors = new HashMap<>();
     protected int currentIteratorPriority;
 
     protected ScannerFactory scannerFactory;
@@ -94,7 +94,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
 
     private Collection<Range> ranges;
 
-    protected HashMultimap<String, String> prefilterValues = null;
+    protected HashMultimap<String,String> prefilterValues = null;
 
     private long maxQueryTerms = 10000;
     private long maxPrefilterValues = 100000;
@@ -108,8 +108,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
 
     protected MetadataHelperFactory metadataHelperFactory = null;
 
-    private Map<String, QueryParser> querySyntaxParsers = new HashMap<>();
-    protected Function<String, String> queryMacroFunction;
+    private Map<String,QueryParser> querySyntaxParsers = new HashMap<>();
+    protected Function<String,String> queryMacroFunction;
     private Set<String> mandatoryQuerySyntax = null;
     private QueryParser parser = null;
 
@@ -181,8 +181,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
                 throw new IllegalStateException("Must specify one of the following syntax options: " + this.mandatoryQuerySyntax);
             } else {
                 if (!this.mandatoryQuerySyntax.contains(querySyntax)) {
-                    throw new IllegalStateException("Syntax not supported, must be one of the following: " + this.mandatoryQuerySyntax + ", submitted: "
-                            + querySyntax);
+                    throw new IllegalStateException(
+                                    "Syntax not supported, must be one of the following: " + this.mandatoryQuerySyntax + ", submitted: " + querySyntax);
                 }
             }
         }
@@ -245,8 +245,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Loads the query model specified by the current configuration, to be applied to the incoming query.
      *
-     * @param helper the metadata helper
-     * @param config the edge query config
+     * @param helper
+     *            the metadata helper
+     * @param config
+     *            the edge query config
      */
     protected void loadQueryModel(MetadataHelper helper, EdgeQueryConfiguration config) {
         String model = config.getModelName() == null ? "" : config.getModelName();
@@ -263,9 +265,12 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Get an instance of MetadataHelper for the given params
      *
-     * @param client            the client
-     * @param metadataTableName the metadata table name
-     * @param auths             a set of auths
+     * @param client
+     *            the client
+     * @param metadataTableName
+     *            the metadata table name
+     * @param auths
+     *            a set of auths
      * @return MetadataHelper
      */
     protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
@@ -278,7 +283,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
      * Parses the Jexl Query string into an ASTJexlScript and then uses QueryModelVisitor to apply queryModel to the query string, and then rewrites the
      * translated ASTJexlScript back to a query string using JexlStringBuildingVisitor.
      *
-     * @param queryString the query string
+     * @param queryString
+     *            the query string
      * @return the query string
      */
     protected String applyQueryModel(String queryString) {
@@ -308,7 +314,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Set whether we are querying the protobuf edge format. Default is true.
      *
-     * @param protobufedge the flag for the protobuf edge format
+     * @param protobufedge
+     *            the flag for the protobuf edge format
      */
     public void setProtobufEdgeFormat(boolean protobufedge) {
         this.protobufEdgeFormat = protobufedge;
@@ -317,9 +324,11 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Parses JEXL in query string to create ranges and column family filters
      *
-     * @param queryString jexl string for the query
+     * @param queryString
+     *            jexl string for the query
      * @return QueryData
-     * @throws ParseException for issues with parsing
+     * @throws ParseException
+     *             for issues with parsing
      */
     protected QueryData configureRanges(String queryString) throws ParseException {
         queryString = EdgeQueryLogic.fixQueryString(queryString);
@@ -346,8 +355,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Method to expand the values supplied for SOURCE or SINK into all of the permutations after normalizing
      *
-     * @param query                  the query
-     * @param getFullNormalizedQuery flag for getting the normalized query
+     * @param query
+     *            the query
+     * @param getFullNormalizedQuery
+     *            flag for getting the normalized query
      * @return VisitationContext
      */
     protected VisitationContext normalizeJexlQuery(String query, boolean getFullNormalizedQuery) {
@@ -364,7 +375,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
 
             } catch (ParseException e) {
                 log.error("Could not parse JEXL AST after performing transformations to run the query. Normalized Stats Query: "
-                        + visitationContext.getNormalizedStatsQuery(), e);
+                                + visitationContext.getNormalizedStatsQuery(), e);
 
                 throw new DatawaveFatalQueryException("Something went wrong running your query", e);
             }
@@ -375,7 +386,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
                 JexlASTHelper.parseJexlQuery(visitationContext.getNormalizedStatsQuery().toString());
             } catch (ParseException e) {
                 log.error("Could not parse JEXL AST after performing transformations to run the query. Normalized Stats Query: "
-                        + visitationContext.getNormalizedStatsQuery(), e);
+                                + visitationContext.getNormalizedStatsQuery(), e);
 
                 throw new DatawaveFatalQueryException("Something went wrong running your query", e);
             }
@@ -391,8 +402,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
 
     }
 
-    void pruneAndSetPreFilterValues(HashMultimap<String, String> prefilters) {
-        HashMultimap<String, String> newMap = HashMultimap.create();
+    void pruneAndSetPreFilterValues(HashMultimap<String,String> prefilters) {
+        HashMultimap<String,String> newMap = HashMultimap.create();
         long count = 0;
         for (String field : prefilters.keySet()) {
             Set<String> values = prefilters.get(field);
@@ -443,10 +454,14 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Create iterator to filter on event/activity date in the column qualifier or the load date in the value.
      *
-     * @param beginDate      lower bound for date range filter
-     * @param endDate        upper bound for date range filter
-     * @param priority       priority to associate with this iterator
-     * @param dateFilterType type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     * @param beginDate
+     *            lower bound for date range filter
+     * @param endDate
+     *            upper bound for date range filter
+     * @param priority
+     *            priority to associate with this iterator
+     * @param dateFilterType
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
     public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, EdgeQueryConfiguration.dateType dateFilterType) {
@@ -456,26 +471,33 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Create iterator to filter on event/activity date in the column qualifier or the load date in the value.
      *
-     * @param beginDate      lower bound for date range filter
-     * @param endDate        upper bound for date range filter
-     * @param priority       priority to associate with this iterator
-     * @param skipLimit      amount of keys for the iterator to skip before calling seek
-     * @param scanLimit      number of keys for the iterator to scan before giving up
-     * @param dateFilterType type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     * @param beginDate
+     *            lower bound for date range filter
+     * @param endDate
+     *            upper bound for date range filter
+     * @param priority
+     *            priority to associate with this iterator
+     * @param skipLimit
+     *            amount of keys for the iterator to skip before calling seek
+     * @param scanLimit
+     *            number of keys for the iterator to scan before giving up
+     * @param dateFilterType
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterator (or null if no iterator needed, i.e. dates not specified)
      */
     public static IteratorSetting getDateFilter(Date beginDate, Date endDate, int priority, int skipLimit, long scanLimit,
-                                                EdgeQueryConfiguration.dateType dateFilterType) {
+                    EdgeQueryConfiguration.dateType dateFilterType) {
         IteratorSetting setting = null;
         if (null != beginDate && null != endDate) {
             log.debug("Creating daterange filter: " + beginDate + " " + endDate);
             Key beginDateKey = new Key(DateHelper.format(beginDate));
             Key endDateKey = new Key(DateHelper.format(endDate) + Constants.MAX_UNICODE_STRING);
             if ((dateFilterType == EdgeQueryConfiguration.dateType.EVENT) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY)
-                    || (dateFilterType == EdgeQueryConfiguration.dateType.ANY)) {
-                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getSimpleName() + "_" + priority, ColumnQualifierRangeIterator.class);
+                            || (dateFilterType == EdgeQueryConfiguration.dateType.ANY)) {
+                setting = new IteratorSetting(priority, ColumnQualifierRangeIterator.class.getSimpleName() + "_" + priority,
+                                ColumnQualifierRangeIterator.class);
             } else if ((dateFilterType == EdgeQueryConfiguration.dateType.LOAD) || (dateFilterType == EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
-                    || (dateFilterType == EdgeQueryConfiguration.dateType.ANY_LOAD)) {
+                            || (dateFilterType == EdgeQueryConfiguration.dateType.ANY_LOAD)) {
                 setting = new IteratorSetting(priority, LoadDateFilter.class.getSimpleName() + "_" + priority, LoadDateFilter.class);
                 // we also want to set the date range type parameter when using the LoadDateFilter
                 setting.addOption(EdgeQueryConfiguration.DATE_RANGE_TYPE, dateFilterType.name());
@@ -499,8 +521,10 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Create iterator to filter on date type.
      *
-     * @param priority       priority to associate with this iterator
-     * @param dateFilterType type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     * @param priority
+     *            priority to associate with this iterator
+     * @param dateFilterType
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterator
      */
     public static IteratorSetting getDateTypeFilter(int priority, EdgeQueryConfiguration.dateType dateFilterType) {
@@ -513,7 +537,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     }
 
     public static List<IteratorSetting> getDateBasedIterators(Date beginDate, Date endDate, int priority, int skipLimit, long scanLimit,
-                                                              EdgeQueryConfiguration.dateType dateFilterType) {
+                    EdgeQueryConfiguration.dateType dateFilterType) {
         List<IteratorSetting> settings = Lists.newArrayList();
 
         // the following iterator will filter out edges outside of our date range
@@ -528,8 +552,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
         // if we have a load date iterator (from above call) then no further iterator needed as it filters out by date type and by date range
         // but if we have no iterator or only date range iterator then we still may need a date type filter
         // @note we won't get an iterator in the above call if either/both dates are null regardless of dateFilterType
-        if ((iter == null)
-                || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
+        if ((iter == null) || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
+                        && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
             if ((dateFilterType != EdgeQueryConfiguration.dateType.ANY) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD)) {
                 // of the edges remaining we only want the correct type (activity date or event date)
                 iter = getDateTypeFilter(priority, dateFilterType);
@@ -546,17 +570,21 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Create set of iterators to filter and combine appropriate edges based on specified date type.
      *
-     * @param beginDate      lower bound for date range filter
-     * @param endDate        upper bound for date range filter
-     * @param priority       priority to associate with the first created iterator; subsequent iterators will have increasing 1-up values
-     * @param dateFilterType type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
+     * @param beginDate
+     *            lower bound for date range filter
+     * @param endDate
+     *            upper bound for date range filter
+     * @param priority
+     *            priority to associate with the first created iterator; subsequent iterators will have increasing 1-up values
+     * @param dateFilterType
+     *            type of filtering (EVENT, LOAD, ACTIVITY, ACTIVITY_LOAD, ANY, ANY_LOAD)
      * @return created iterators
-     * <p>
-     * There can now be one or more edges with matching keys other than a date type distinction in the column qualifier. Old-style edges have no date
-     * type marking but always used event date. New-style edges may indicate an event date-based edge, both, or activity date-based edge. Hence, based
-     * on whether the query is for event date-based edges or activity date-based edges the appropriate types of edges must be returned. Additionally,
-     * the results should combine like-type edges that only differ in the date type. Consequently, this function creates one or more iterators to
-     * perform the appropriate filtering/combining.
+     *         <p>
+     *         There can now be one or more edges with matching keys other than a date type distinction in the column qualifier. Old-style edges have no date
+     *         type marking but always used event date. New-style edges may indicate an event date-based edge, both, or activity date-based edge. Hence, based
+     *         on whether the query is for event date-based edges or activity date-based edges the appropriate types of edges must be returned. Additionally,
+     *         the results should combine like-type edges that only differ in the date type. Consequently, this function creates one or more iterators to
+     *         perform the appropriate filtering/combining.
      */
     public static List<IteratorSetting> getDateBasedIterators(Date beginDate, Date endDate, int priority, EdgeQueryConfiguration.dateType dateFilterType) {
         List<IteratorSetting> settings = Lists.newArrayList();
@@ -573,8 +601,8 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
         // if we have a load date iterator (from above call) then no further iterator needed as it filters out by date type and by date range
         // but if we have no iterator or only date range iterator then we still may need a date type filter
         // @note we won't get an iterator in the above call if either/both dates are null regardless of dateFilterType
-        if ((iter == null)
-                || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
+        if ((iter == null) || ((dateFilterType != EdgeQueryConfiguration.dateType.LOAD) && (dateFilterType != EdgeQueryConfiguration.dateType.ACTIVITY_LOAD)
+                        && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD))) {
             if ((dateFilterType != EdgeQueryConfiguration.dateType.ANY) && (dateFilterType != EdgeQueryConfiguration.dateType.ANY_LOAD)) {
                 // of the edges remaining we only want the correct type (activity date or event date)
                 iter = getDateTypeFilter(priority, dateFilterType);
@@ -638,14 +666,13 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
             throw new IllegalStateException("Query string is empty after initial processing, no ranges or filters can be generated to execute.");
         }
 
-        addIterators(qData,
-                getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
+        addIterators(qData, getDateBasedIterators(config.getBeginDate(), config.getEndDate(), currentIteratorPriority, dateFilterSkipLimit, dateFilterScanLimit,
                         dateFilterType));
 
         if (!normalizedQuery.equals("")) {
             log.debug("Query being sent to the filter iterator: " + normalizedQuery);
-            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority, EdgeFilterIterator.class.getSimpleName() + "_"
-                    + currentIteratorPriority, EdgeFilterIterator.class);
+            IteratorSetting edgeIteratorSetting = new IteratorSetting(currentIteratorPriority,
+                            EdgeFilterIterator.class.getSimpleName() + "_" + currentIteratorPriority, EdgeFilterIterator.class);
             edgeIteratorSetting.addOption(EdgeFilterIterator.JEXL_OPTION, normalizedQuery);
             edgeIteratorSetting.addOption(EdgeFilterIterator.PROTOBUF_OPTION, "TRUE");
 
@@ -715,11 +742,12 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     /**
      * Configures a column filters for the logic scanner to apply custom logic
      *
-     * @param data     the QueryData for the query logic to be configured
-     * @param priority the priority for the first of iterator filters
+     * @param data
+     *            the QueryData for the query logic to be configured
+     * @param priority
+     *            the priority for the first of iterator filters
      */
-    protected void addCustomFilters(QueryData data, int priority) {
-    }
+    protected void addCustomFilters(QueryData data, int priority) {}
 
     @Override
     public Priority getConnectionPriority() {
@@ -853,7 +881,7 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
     public void setMetadataHelperFactory(MetadataHelperFactory metadataHelperFactory) {
         if (log.isTraceEnabled())
             log.trace("setting MetadataHelperFactory on " + this + " - " + this.getClass() + " to " + metadataHelperFactory + " - "
-                    + metadataHelperFactory.getClass());
+                            + metadataHelperFactory.getClass());
         this.metadataHelperFactory = metadataHelperFactory;
     }
 
@@ -873,11 +901,11 @@ public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key, Value>> {
         this.dateFilterScanLimit = dateFilterScanLimit;
     }
 
-    public Map<String, QueryParser> getQuerySyntaxParsers() {
+    public Map<String,QueryParser> getQuerySyntaxParsers() {
         return querySyntaxParsers;
     }
 
-    public void setQuerySyntaxParsers(Map<String, QueryParser> querySyntaxParsers) {
+    public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
         this.querySyntaxParsers = querySyntaxParsers;
     }
 

@@ -56,7 +56,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * track count limits per field, _ANYFIELD_ implies a constraint on all fields
      */
-    private Map<String, Integer> limitFieldsMap;
+    private Map<String,Integer> limitFieldsMap;
 
     /**
      * if _ANYFIELD_ appears in the limitFieldsMap this will be set to that value or -1 if not configured
@@ -66,9 +66,9 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     private Set<String> nonEventFields;
 
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> allowlist, Set<String> disallowlist,
-                              long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
         this(script, queryFields, attributeFactory, allowlist, disallowlist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null,
-                Collections.EMPTY_SET);
+                        Collections.EMPTY_SET);
     }
 
     /**
@@ -79,19 +79,29 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
      *
-     * @param script              - script
-     * @param attributeFactory    - attributeFactory
-     * @param disallowlist        - disallowlist
-     * @param limitFieldsField    - limitFieldsField
-     * @param limitFieldsMap      - limitFieldsMap
-     * @param maxFieldsBeforeSeek - maxFieldsBeforeSeek
-     * @param maxKeysBeforeSeek   - maxFieldsBeforeSeek
-     * @param nonEventFields      - nonEventFields
-     * @param queryFields         - queryFields
-     * @param allowlist           - allowlist
+     * @param script
+     *            - script
+     * @param attributeFactory
+     *            - attributeFactory
+     * @param disallowlist
+     *            - disallowlist
+     * @param limitFieldsField
+     *            - limitFieldsField
+     * @param limitFieldsMap
+     *            - limitFieldsMap
+     * @param maxFieldsBeforeSeek
+     *            - maxFieldsBeforeSeek
+     * @param maxKeysBeforeSeek
+     *            - maxFieldsBeforeSeek
+     * @param nonEventFields
+     *            - nonEventFields
+     * @param queryFields
+     *            - queryFields
+     * @param allowlist
+     *            - allowlist
      */
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> allowlist, Set<String> disallowlist,
-                              long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String, Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
+                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
         super(script, attributeFactory, nonEventFields);
 
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
@@ -142,20 +152,21 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * client. If a Key returns true but keep() returns false the document will be used for context evaluation, but will not be returned to the client. If a Key
      * returns true and keep() returns true the key will be used for context evaluation and returned to the client.
      *
-     * @param input an input
+     * @param input
+     *            an input
      * @return true if Key should be added to context, false otherwise
      */
     @Override
-    public boolean apply(Entry<Key, String> input) {
+    public boolean apply(Entry<Key,String> input) {
         return apply(input, true);
     }
 
     @Override
-    public boolean peek(Entry<Key, String> input) {
+    public boolean peek(Entry<Key,String> input) {
         return apply(input, false);
     }
 
-    private boolean apply(Entry<Key, String> input, boolean update) {
+    private boolean apply(Entry<Key,String> input, boolean update) {
         // if a TLD, then accept em all, other wise defer to the query field
         // filter
         Key current = input.getKey();
@@ -184,7 +195,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * field if limits are enabled. Otherwise all TLD Key's will be kept. For a non-TLD the Key will only be kept if it is a nonEvent field which will be used
      * for query evaluation (apply()==true)
      *
-     * @param k a key
+     * @param k
+     *            a key
      * @return true to keep, false otherwise
      * @see datawave.query.predicate.Filter#keep(Key)
      */
@@ -204,7 +216,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Test a key against the last parsed key. Return a new parsedInfo if the cached version is not the same, otherwise reuse the existing ParseInfo
      *
-     * @param current the key to get ParseInfo for
+     * @param current
+     *            the key to get ParseInfo for
      * @return the non-null ParseInfo for the Key
      */
     protected ParseInfo getParseInfo(Key current) {
@@ -256,7 +269,7 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     private boolean isEventKey(Key k) {
         ByteSequence cf = k.getColumnFamilyData();
         return !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, FI_CF, 0, 2) == 0)
-                && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 00);
+                        && !(WritableComparator.compareBytes(cf.getBackingArray(), 0, 2, TF_CF, 0, 2) == 00);
     }
 
     public static boolean isRootPointer(Key k) {
@@ -329,9 +342,12 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * When dealing with a root pointer, seek through any field that should be returned in the result, when dealing with a child seek to the next query field in
      * the current child
      *
-     * @param current         the current key at the top of the source iterator
-     * @param endKey          the current range endKey
-     * @param endKeyInclusive the endKeyInclusive flag from the current range
+     * @param current
+     *            the current key at the top of the source iterator
+     * @param endKey
+     *            the current range endKey
+     * @param endKeyInclusive
+     *            the endKeyInclusive flag from the current range
      * @return the new range or null if a seek should not be performed
      */
     @Override
@@ -351,9 +367,12 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Look in the query fields only, regardless of allowlist or disallowlist configuration
      *
-     * @param current         the current key
-     * @param endKey          the end range key
-     * @param endKeyInclusive the end inclusive flag
+     * @param current
+     *            the current key
+     * @param endKey
+     *            the end range key
+     * @param endKeyInclusive
+     *            the end inclusive flag
      * @return the new range or null if a seek should not be performed
      */
     protected Range getQueryFieldRange(Key current, Key endKey, boolean endKeyInclusive) {
@@ -374,9 +393,12 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * As long as a seek should not be bypassed, generate either a allowlist or disallowlist range
      *
-     * @param current         the current key
-     * @param endKey          the end key
-     * @param endKeyInclusive the end key inclusive flag
+     * @param current
+     *            the current key
+     * @param endKey
+     *            the end key
+     * @param endKeyInclusive
+     *            the end key inclusive flag
      * @return if a seek should be performed return a non-null range, otherwise return null
      */
     protected Range getListSeek(Key current, Key endKey, boolean endKeyInclusive) {
@@ -408,10 +430,14 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Seek starting from the end of the current field
      *
-     * @param current         the current key
-     * @param fieldName       the field name to be seeked
-     * @param endKey          the current seek end key
-     * @param endKeyInclusive the current seek end key inclusive flag
+     * @param current
+     *            the current key
+     * @param fieldName
+     *            the field name to be seeked
+     * @param endKey
+     *            the current seek end key
+     * @param endKeyInclusive
+     *            the current seek end key inclusive flag
      * @return a new range that begins at the end of the current field
      */
     private Range getFieldSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive) {
@@ -422,10 +448,14 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Seek using the main sorted allowlist and lastListSeekIndex
      *
-     * @param current         the current key
-     * @param fieldName       the current fieldname
-     * @param endKey          the end key of the range
-     * @param endKeyInclusive the range end inclusive flag
+     * @param current
+     *            the current key
+     * @param fieldName
+     *            the current fieldname
+     * @param endKey
+     *            the end key of the range
+     * @param endKeyInclusive
+     *            the range end inclusive flag
      * @return the new range to be seek()
      * @see #getAllowlistSeek(Key, String, Key, boolean, List, int) getAllowlistSeek
      */
@@ -436,12 +466,18 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Moving through the allowlist from the lastHit index create a start key for the next acceptable field/uid
      *
-     * @param current         the current key
-     * @param fieldName       the current field
-     * @param endKey          the range endKey
-     * @param endKeyInclusive the range end inclusive flag
-     * @param sortedAllowlist the sortedAllowlist to use
-     * @param lastHit         the starting index to search the allowlist
+     * @param current
+     *            the current key
+     * @param fieldName
+     *            the current field
+     * @param endKey
+     *            the range endKey
+     * @param endKeyInclusive
+     *            the range end inclusive flag
+     * @param sortedAllowlist
+     *            the sortedAllowlist to use
+     * @param lastHit
+     *            the starting index to search the allowlist
      * @return the new range can be used to seek to the next key, bypassing irrelevant keys
      */
     private Range getAllowlistSeek(Key current, String fieldName, Key endKey, boolean endKeyInclusive, List<String> sortedAllowlist, int lastHit) {
@@ -482,9 +518,12 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Get a rollover range that skips to the next child uid
      *
-     * @param current      the current key
-     * @param end          the end key
-     * @param endInclusive is end key inclusive flag
+     * @param current
+     *            the current key
+     * @param end
+     *            the end key
+     * @param endInclusive
+     *            is end key inclusive flag
      * @return a rollover range, or an empty range if the rollover range would extend beyond the end key
      */
     private Range getRolloverRange(Key current, Key end, boolean endInclusive) {
@@ -503,8 +542,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     }
 
     /**
-     * @param end          the end key
-     * @param endInclusive end inclusive flag
+     * @param end
+     *            the end key
+     * @param endInclusive
+     *            end inclusive flag
      * @return return an empty range based to be seeked
      */
     protected Range getEmptyRange(Key end, boolean endInclusive) {
@@ -577,7 +618,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Extract the query fields from the script and sort them
      *
-     * @param script the query script
+     * @param script
+     *            the query script
      * @return a set of identifiers
      */
     private Set<String> extractIdentifiersFromScript(ASTJexlScript script) {
@@ -594,8 +636,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Intersect the fields serialized along with the query iterator with the identifiers in the query
      *
-     * @param fields the serialized fields
-     * @param script the query script
+     * @param fields
+     *            the serialized fields
+     * @param script
+     *            the query script
      */
     private void setQueryFields(Set<String> fields, ASTJexlScript script) {
 
@@ -611,8 +655,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Ensure that if using a allowlist that all the queryFields are on it and that if using a disallowlist none of the queryFields are on it. The allowlist and
      * disallowlist sets will be modified
      *
-     * @param allowlist    the list of allowlist queryFields or null if not using an allowlist
-     * @param disallowlist the list of disallowlist queryFields or null if not using a disallowlist
+     * @param allowlist
+     *            the list of allowlist queryFields or null if not using an allowlist
+     * @param disallowlist
+     *            the list of disallowlist queryFields or null if not using a disallowlist
      */
     private void updateLists(Set<String> allowlist, Set<String> disallowlist) {
         if (allowlist != null && !allowlist.isEmpty()) {
@@ -637,8 +683,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Set the sortedAllowlist and sortedDisallowlist from the queryFields modified versions and sort them
      *
-     * @param allowlist    the allowlist modified by queryFields
-     * @param disallowlist the disallowlist modified by queryFields
+     * @param allowlist
+     *            the allowlist modified by queryFields
+     * @param disallowlist
+     *            the disallowlist modified by queryFields
      */
     private void setSortedLists(Set<String> allowlist, Set<String> disallowlist) {
         if (allowlist != null && !allowlist.isEmpty()) {
@@ -657,9 +705,12 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Test if a field should be kept and keep state for seeking. Track internal counters for seeking
      *
-     * @param current    the current key
-     * @param applyCount true if seeking state should be modified as a result of this call, false otherwise
-     * @param isTld      set to true if the key represents a TLD, false otherwise
+     * @param current
+     *            the current key
+     * @param applyCount
+     *            true if seeking state should be modified as a result of this call, false otherwise
+     * @param isTld
+     *            set to true if the key represents a TLD, false otherwise
      * @return true if the key has a field that should be kept, false otherwise
      */
     protected boolean keepField(Key current, boolean applyCount, boolean isTld) {
@@ -697,8 +748,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Test a field against the allowlist and disallowlist
      *
-     * @param field the field to test
-     * @param isTld set to true if the key is from a tld, false otherwise
+     * @param field
+     *            the field to test
+     * @param isTld
+     *            set to true if the key is from a tld, false otherwise
      * @return true if the field should be kept based on the allowlist/disallowlist, false otherwise
      */
     private boolean keep(String field, boolean isTld) {
@@ -723,7 +776,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Parse the field from a key. The field will always be stripped of grouping notation since that is how they have been parsed from the original query
      *
-     * @param current the current key
+     * @param current
+     *            the current key
      * @return the field string
      */
     protected String getCurrentField(Key current) {
@@ -772,18 +826,20 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Test if the field is limited by anyField or specific field limitations and is not a query field
      *
-     * @param field the field to test
+     * @param field
+     *            the field to test
      * @return true if the field limit has been reached for this field, false otherwise
      */
     private boolean isFieldLimit(String field) {
         return ((anyFieldLimit != -1 && fieldCount > anyFieldLimit) || (limitFieldsMap.get(field) != null && fieldCount > limitFieldsMap.get(field)))
-                && !queryFields.contains(field);
+                        && !queryFields.contains(field);
     }
 
     /**
      * If the current key is rejected due to a field limit and a field limit field is specified generate a value with the field in it
      *
-     * @param key the key to limit
+     * @param key
+     *            the key to limit
      * @return a key with the limit field specified, or null if no limit was configured
      */
     @Override

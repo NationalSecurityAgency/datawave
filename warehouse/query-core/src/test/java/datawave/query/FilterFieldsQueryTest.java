@@ -217,7 +217,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String state = "'mississippi'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP
-                    + CityField.STATE.name() + EQ_OP + state + ")";
+                            + CityField.STATE.name() + EQ_OP + state + ")";
             final Set<String> fields = CityField.getRandomReturnFields(false);
             // remove CITY field
             fields.remove(CityField.CITY.name());
@@ -235,7 +235,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String state = "'mississippi'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.CONTINENT.name() + EQ_OP + cont + OR_OP
-                    + CityField.STATE.name() + EQ_OP + state + ")";
+                            + CityField.STATE.name() + EQ_OP + state + ")";
             final Set<String> fields = CityField.getRandomReturnFields(false);
             // include CITY field
             fields.add(CityField.CITY.name());
@@ -253,7 +253,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String mizzu = "'missouri'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.STATE.name() + EQ_OP + state + OR_OP
-                    + CityField.STATE.name() + EQ_OP + mizzu + ")";
+                            + CityField.STATE.name() + EQ_OP + mizzu + ")";
             // make sure we have a fresh query logic instance
             querySetUp();
             runTest(query, false, false);
@@ -294,7 +294,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String state = "'missouri'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + "(" + CityField.STATE.name() + EQ_OP + state + OR_OP
-                    + CityField.CONTINENT.name() + EQ_OP + cont + ")";
+                            + CityField.CONTINENT.name() + EQ_OP + cont + ")";
             // make sure we have a fresh query logic instance
             querySetUp();
             runTest(query, false, true);
@@ -366,19 +366,27 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
     /**
      * Base helper method for execution of a unit test.
      *
-     * @param query       query string for execution
-     * @param expectQuery query string to use to calculate expected results
-     * @param startDate   start date of query
-     * @param endDate     end date of query
-     * @param Allowlist   true to return specific fields; false to specify disallowlist fields
-     * @param hitList     when true the option {@link QueryParameters#HIT_LIST} is set to true
-     * @param fields      return fields or disallowlist fields
-     * @throws Exception something failed - go figure it out
+     * @param query
+     *            query string for execution
+     * @param expectQuery
+     *            query string to use to calculate expected results
+     * @param startDate
+     *            start date of query
+     * @param endDate
+     *            end date of query
+     * @param Allowlist
+     *            true to return specific fields; false to specify disallowlist fields
+     * @param hitList
+     *            when true the option {@link QueryParameters#HIT_LIST} is set to true
+     * @param fields
+     *            return fields or disallowlist fields
+     * @throws Exception
+     *             something failed - go figure it out
      */
-    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean Allowlist,
-                         final boolean hitList, final Set<String> fields) throws Exception {
+    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean Allowlist, final boolean hitList,
+                    final Set<String> fields) throws Exception {
         QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
-        final Set<Map<String, String>> allData = jexl.evaluate();
+        final Set<Map<String,String>> allData = jexl.evaluate();
         final Set<String> expected = this.dataManager.getKeys(allData);
 
         final Set<String> otherFields = new HashSet<>(this.dataManager.getHeaders());
@@ -386,7 +394,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
 
         final String queryFields = String.join(",", fields);
 
-        Map<String, String> options = new HashMap<>();
+        Map<String,String> options = new HashMap<>();
         final List<QueryLogicTestHarness.DocumentChecker> queryChecker = new ArrayList<>();
         if (fields.isEmpty()) {
             queryChecker.add(new ResponseFieldChecker(otherFields, fields));

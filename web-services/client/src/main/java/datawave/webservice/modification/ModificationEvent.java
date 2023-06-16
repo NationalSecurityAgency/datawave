@@ -16,32 +16,32 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class ModificationEvent extends ModificationEventBase<ModificationOperationImpl> implements Serializable {
-    
+
     private static final long serialVersionUID = 6L;
-    
+
     @XmlElement(name = "user", required = true)
     private String user = null;
-    
+
     @XmlElementWrapper(name = "operations", required = true)
     @XmlElement(name = "operation", required = true)
     protected List<ModificationOperationImpl> operations = null;
-    
+
     public String getUser() {
         return user;
     }
-    
+
     public void setUser(String user) {
         this.user = user;
     }
-    
+
     public List<ModificationOperationImpl> getOperations() {
         return operations;
     }
-    
+
     public void setOperations(List<ModificationOperationImpl> operations) {
         this.operations = operations;
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);

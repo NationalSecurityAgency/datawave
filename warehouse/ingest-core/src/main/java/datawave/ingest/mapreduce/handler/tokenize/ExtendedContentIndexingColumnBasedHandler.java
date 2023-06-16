@@ -98,12 +98,15 @@ import java.util.zip.GZIPOutputStream;
  * RawRecordContainer objects. Placing them into their own column family also allows a locality group to be set so that they will all be located within the same
  * RFiles and not add additional bloat to the RFiles containing the rest of the shard table.
  *
- * @param <KEYIN>    type of the input key
- * @param <KEYOUT>   type of the output key
- * @param <VALUEOUT> type of the output value
+ * @param <KEYIN>
+ *            type of the input key
+ * @param <KEYOUT>
+ *            type of the output key
+ * @param <VALUEOUT>
+ *            type of the output value
  */
-public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, VALUEOUT> extends AbstractColumnBasedHandler<KEYIN> implements
-        ExtendedDataTypeHandler<KEYIN, KEYOUT, VALUEOUT> {
+public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
+                implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
     /*
      * "Offline" mode allows for documents to be written to the context rather than directly to Accumulo. This allows content indexing to run without needing to
      * connect to an active Accumulo instance.
@@ -179,27 +182,23 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
 
                 log.debug("Attempting to create Accumulo connection.");
                 docWriter = accumuloHelper.newClient().createBatchWriter(conf.get("shard.table.name"),
-                        new BatchWriterConfig().setMaxLatency(60, TimeUnit.SECONDS).setMaxMemory(100000000L).setMaxWriteThreads(10));
+                                new BatchWriterConfig().setMaxLatency(60, TimeUnit.SECONDS).setMaxMemory(100000000L).setMaxWriteThreads(10));
                 log.debug("Created connection to Accumulo for asynchronous document storage.");
             } catch (Exception e) {
                 log.warn("No document payloads will be written to Accumulo.", e);
                 // giving a stub batchwriter means I don't have a bunch of "if(writer != null)"s lying around
                 docWriter = new BatchWriter() {
                     @Override
-                    public void addMutation(Mutation m) {
-                    }
+                    public void addMutation(Mutation m) {}
 
                     @Override
-                    public void addMutations(Iterable<Mutation> iterable) throws MutationsRejectedException {
-                    }
+                    public void addMutations(Iterable<Mutation> iterable) throws MutationsRejectedException {}
 
                     @Override
-                    public void flush() throws MutationsRejectedException {
-                    }
+                    public void flush() throws MutationsRejectedException {}
 
                     @Override
-                    public void close() throws MutationsRejectedException {
-                    }
+                    public void close() throws MutationsRejectedException {}
                 };
             }
         }
@@ -237,9 +236,9 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
     }
 
     @Override
-    public long process(KEYIN key, RawRecordContainer event, Multimap<String, NormalizedContentInterface> eventFields,
-                        TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, ContextWriter<KEYOUT, VALUEOUT> contextWriter)
-            throws IOException, InterruptedException {
+    public long process(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
+                    throws IOException, InterruptedException {
 
         // Hold some event-specific variables to avoid re-processing
         this.shardId = getShardId(event);
@@ -252,7 +251,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
         this.eventUid = event.getId().toString();
 
         // write the standard set of keys
-        Multimap<BulkIngestKey, Value> keys = super.processBulk(key, event, eventFields, new ContextWrappedStatusReporter(context));
+        Multimap<BulkIngestKey,Value> keys = super.processBulk(key, event, eventFields, new ContextWrappedStatusReporter(context));
         long count = keys.size();
         contextWriter.write(keys, context);
 
@@ -275,33 +274,48 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
     /**
      * Tokenize the event, and write all of the shard, shardIndex, and shardReverseIndex keys out to the context
      *
-     * @param event         the event
-     * @param context       the context
-     * @param contextWriter context writer
-     * @param reporter      the reporter
+     * @param event
+     *            the event
+     * @param context
+     *            the context
+     * @param contextWriter
+     *            context writer
+     * @param reporter
+     *            the reporter
      * @return value of tokenized event
-     * @throws IOException          if there is an issue reading the event
-     * @throws InterruptedException if the thread is interrupted
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
-    protected abstract long tokenizeEvent(RawRecordContainer event, TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context,
-                                          ContextWriter<KEYOUT, VALUEOUT> contextWriter, StatusReporter reporter) throws IOException, InterruptedException;
+    protected abstract long tokenizeEvent(RawRecordContainer event, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, StatusReporter reporter) throws IOException, InterruptedException;
 
     /**
      * Process a term and zone by writting all applicable keys to the context.
      *
-     * @param event               the event
-     * @param position            position
-     * @param termAndZone         the termandzone
-     * @param alreadyIndexedTerms the already indexed terms
-     * @param context             the context
-     * @param contextWriter       the context writer
-     * @param reporter            the reporter
-     * @throws IOException          if there is an issue reading the event
-     * @throws InterruptedException if the thread is interrupted
+     * @param event
+     *            the event
+     * @param position
+     *            position
+     * @param termAndZone
+     *            the termandzone
+     * @param alreadyIndexedTerms
+     *            the already indexed terms
+     * @param context
+     *            the context
+     * @param contextWriter
+     *            the context writer
+     * @param reporter
+     *            the reporter
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
     private void processTermAndZone(RawRecordContainer event, int position, TermAndZone termAndZone, BloomFilter alreadyIndexedTerms,
-                                    TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                    StatusReporter reporter) throws IOException, InterruptedException {
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    StatusReporter reporter) throws IOException, InterruptedException {
 
         // Make sure the term length is greater than the minimum allowed length
         if (termAndZone.term.length() < tokenHelper.getTermLengthMinimum()) {
@@ -332,8 +346,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
             TermAndZone indexedTermAndZone = new TermAndZone(nfv.getIndexedFieldValue(), nfv.getIndexedFieldName());
 
             org.apache.hadoop.util.bloom.Key alreadySeen = null;
-            if ((alreadyIndexedTerms != null)
-                    && alreadyIndexedTerms.membershipTest(alreadySeen = new org.apache.hadoop.util.bloom.Key(indexedTermAndZone.getToken().getBytes()))) {
+            if ((alreadyIndexedTerms != null) && alreadyIndexedTerms
+                            .membershipTest(alreadySeen = new org.apache.hadoop.util.bloom.Key(indexedTermAndZone.getToken().getBytes()))) {
                 if (log.isDebugEnabled()) {
                     log.debug("Not creating index mutations for " + termAndZone + " as we've already created mutations for it.");
                 }
@@ -363,20 +377,20 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
 
                     // Build the field index key/value
                     createTermFrequencyIndex(event, contextWriter, context, this.shardId, overflowNfv, overflow.offsets, overflowFieldVisibility,
-                            this.ingestHelper.getDeleteMode());
+                                    this.ingestHelper.getDeleteMode());
                     counters.increment(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_OVERFLOWS, reporter);
                     counters.incrementValue(ContentIndexCounters.TOKENIZER_OFFSET_CACHE_POSITIONS_OVERFLOWED, overflow.offsets.size(), reporter);
                 }
             } else {
                 createTermFrequencyIndex(event, contextWriter, context, this.shardId, nfv, Arrays.asList(position), fieldVisibility,
-                        this.ingestHelper.getDeleteMode());
+                                this.ingestHelper.getDeleteMode());
             }
         }
     }
 
     protected void buildAllPhrases(ArrayList<Collection<String>> terms, String zone, RawRecordContainer event, int position, BloomFilter alreadyIndexedTerms,
-                                   TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                   StatusReporter reporter) throws IOException, InterruptedException {
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    StatusReporter reporter) throws IOException, InterruptedException {
         if (terms.size() < 2) {
             // An empty list has no tokens/phrases to emit and phrases of length one
             // were already handled
@@ -391,15 +405,15 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
             // Need to move the position pointer back by the amount of the phrase lengths
             // accounting for zero-indexing
             completePhrase(sb, terms.subList(1, terms.size()), zone, event, position - (terms.size() - 1), alreadyIndexedTerms, context, contextWriter,
-                    reporter);
+                            reporter);
 
             sb.setLength(0);
         }
     }
 
     private void completePhrase(StringBuilder baseTerm, List<Collection<String>> terms, String zone, RawRecordContainer event, int position,
-                                BloomFilter alreadyIndexedTerms, TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context,
-                                ContextWriter<KEYOUT, VALUEOUT> contextWriter, StatusReporter reporter) throws IOException, InterruptedException {
+                    BloomFilter alreadyIndexedTerms, TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context,
+                    ContextWriter<KEYOUT,VALUEOUT> contextWriter, StatusReporter reporter) throws IOException, InterruptedException {
         if (terms.isEmpty()) {
             return;
         }
@@ -435,7 +449,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
     /**
      * Return true if this term appears to be empty (all spaces)
      *
-     * @param term the term
+     * @param term
+     *            the term
      * @return true if term is zero or more spaces
      */
     protected static boolean isEmptyTerm(String term) {
@@ -446,18 +461,26 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
      * Creates and writes the BulkIngestKey for the event's field/value to the ContextWriter (instead of the Multimap that the {@link ShardedDataTypeHandler}
      * uses).
      *
-     * @param event         the event
-     * @param contextWriter the context writer
-     * @param context       the context
-     * @param nFV           the normalized field value interface
-     * @param shardId       the shard id
-     * @param visibility    the visibility
-     * @throws IOException          if there is an issue reading the event
-     * @throws InterruptedException if the thread is interrupted
+     * @param event
+     *            the event
+     * @param contextWriter
+     *            the context writer
+     * @param context
+     *            the context
+     * @param nFV
+     *            the normalized field value interface
+     * @param shardId
+     *            the shard id
+     * @param visibility
+     *            the visibility
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
-    protected void createShardEventColumn(RawRecordContainer event, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                          TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
-                                          byte[] visibility) throws IOException, InterruptedException {
+    protected void createShardEventColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
+                    byte[] visibility) throws IOException, InterruptedException {
 
         String fieldName = nFV.getEventFieldName();
         String fieldValue = nFV.getEventFieldValue();
@@ -481,18 +504,26 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
     /**
      * Creates and writes the BulkIngestKey for the event's field and global indexes to the ContextWriter
      *
-     * @param event           the event
-     * @param contextWriter   the context writer
-     * @param context         the context
-     * @param nFV             the normalized content interface
-     * @param shardId         the shard id
-     * @param fieldVisibility the field visibility
-     * @throws IOException          if there is an issue reading the event
-     * @throws InterruptedException if the thread is interrupted
+     * @param event
+     *            the event
+     * @param contextWriter
+     *            the context writer
+     * @param context
+     *            the context
+     * @param nFV
+     *            the normalized content interface
+     * @param shardId
+     *            the shard id
+     * @param fieldVisibility
+     *            the field visibility
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
-    protected void createShardIndexColumns(RawRecordContainer event, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                           TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
-                                           byte[] fieldVisibility) throws IOException, InterruptedException {
+    protected void createShardIndexColumns(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
+                    byte[] fieldVisibility) throws IOException, InterruptedException {
 
         if (log.isDebugEnabled()) {
             log.debug("Creating a mutation for " + nFV.getIndexedFieldValue() + ':' + nFV.getIndexedFieldName());
@@ -500,14 +531,14 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
 
         // Still need the field index record for the token
         createShardFieldIndexColumn(event, contextWriter, context, nFV, shardId, null, fieldVisibility, this.ingestHelper.getReplaceMalformedUTF8(),
-                this.ingestHelper.getDeleteMode());
+                        this.ingestHelper.getDeleteMode());
 
         // If we're creating index terms
         if ((null != this.getShardIndexTableName()) && this.ingestHelper != null) {
             if (this.ingestHelper.isIndexedField(nFV.getIndexedFieldName())) {
                 // Throw it into the index
                 createIndexColumn(event, contextWriter, context, nFV, shardId, this.getShardIndexTableName(), fieldVisibility,
-                        this.ingestHelper.getReplaceMalformedUTF8(), this.ingestHelper.getDeleteMode());
+                                this.ingestHelper.getReplaceMalformedUTF8(), this.ingestHelper.getDeleteMode());
             }
         }
 
@@ -518,7 +549,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
                 NormalizedContentInterface reverseNfv = new NormalizedFieldAndValue(nFV);
                 reverseNfv.setIndexedFieldValue(new StringBuilder(nFV.getIndexedFieldValue()).reverse().toString());
                 createIndexColumn(event, contextWriter, context, reverseNfv, shardId, this.getShardReverseIndexTableName(), fieldVisibility,
-                        this.ingestHelper.getReplaceMalformedUTF8(), this.ingestHelper.getDeleteMode());
+                                this.ingestHelper.getReplaceMalformedUTF8(), this.ingestHelper.getDeleteMode());
             }
         }
     }
@@ -527,24 +558,35 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
      * Writes the document's content into the {@link #FULL_CONTENT_COLUMN_FAMILY} column family. The data is compressed (GZIP) and Base64 encoded before being
      * placed into the value.
      *
-     * @param event         the event
-     * @param contextWriter the context writer
-     * @param context       the context
-     * @param reporter      the reporter
-     * @param uid           the uid
-     * @param visibility    the visibility
-     * @param shardId       the shard id
-     * @param rawValue      the raw value
-     * @throws IOException                if there is an issue reading the event
-     * @throws InterruptedException       if the thread is interrupted
-     * @throws MutationsRejectedException if there is a problem writing the mutation
+     * @param event
+     *            the event
+     * @param contextWriter
+     *            the context writer
+     * @param context
+     *            the context
+     * @param reporter
+     *            the reporter
+     * @param uid
+     *            the uid
+     * @param visibility
+     *            the visibility
+     * @param shardId
+     *            the shard id
+     * @param rawValue
+     *            the raw value
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
+     * @throws MutationsRejectedException
+     *             if there is a problem writing the mutation
      */
-    protected void createContentRecord(RawRecordContainer event, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                       TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
-                                       byte[] shardId, byte[] rawValue) throws IOException, InterruptedException, MutationsRejectedException {
+    protected void createContentRecord(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, StatusReporter reporter, Text uid, byte[] visibility,
+                    byte[] shardId, byte[] rawValue) throws IOException, InterruptedException, MutationsRejectedException {
 
         Key k = createKey(shardId, new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), uid, visibility, event.getDate(),
-                this.ingestHelper.getDeleteMode());
+                        this.ingestHelper.getDeleteMode());
 
         ByteArrayOutputStream baos = null;
         Base64.OutputStream b64os = null;
@@ -586,7 +628,8 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
     /**
      * Ensures all of the output streams are closed
      *
-     * @param streams order to attempt closing: outermost first, innermost last
+     * @param streams
+     *            order to attempt closing: outermost first, innermost last
      */
     public static void closeOutputStreams(OutputStream... streams) {
         for (OutputStream stream : streams) {
@@ -675,21 +718,32 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
     /**
      * Creates and writes the BulkIngestKey for the field index to the ContextWriter (instead of the Multimap that the {@link ShardedDataTypeHandler} uses).
      *
-     * @param event                the event
-     * @param contextWriter        the context writer
-     * @param context              the context
-     * @param nFV                  the normalized content interface
-     * @param shardId              the shard id
-     * @param value                the event value
-     * @param visibility           the visibility
-     * @param replaceMalformedUTF8 flag to replace malformed UTF8
-     * @param deleteMode           deletion flag to set
-     * @throws IOException          if there is an issue reading the event
-     * @throws InterruptedException if the thread is interrupted
+     * @param event
+     *            the event
+     * @param contextWriter
+     *            the context writer
+     * @param context
+     *            the context
+     * @param nFV
+     *            the normalized content interface
+     * @param shardId
+     *            the shard id
+     * @param value
+     *            the event value
+     * @param visibility
+     *            the visibility
+     * @param replaceMalformedUTF8
+     *            flag to replace malformed UTF8
+     * @param deleteMode
+     *            deletion flag to set
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
-    protected void createShardFieldIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                               TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
-                                               Value value, byte[] visibility, boolean replaceMalformedUTF8, boolean deleteMode) throws IOException, InterruptedException {
+    protected void createShardFieldIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
+                    Value value, byte[] visibility, boolean replaceMalformedUTF8, boolean deleteMode) throws IOException, InterruptedException {
         Text colf = new Text("fi");
         TextUtil.textAppend(colf, nFV.getIndexedFieldName(), replaceMalformedUTF8);
         Text colq = new Text(nFV.getIndexedFieldValue());
@@ -708,20 +762,30 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
     /**
      * Creates a Term Frequency index key in the "tf" column family.
      *
-     * @param event         the event
-     * @param contextWriter the context writer
-     * @param context       the context
-     * @param shardId       the shard id
-     * @param nfv           the normalized content interface
-     * @param offsets       the term offsets
-     * @param visibility    the visibility
-     * @param deleteMode    the deletion flag
-     * @throws IOException          if there is an issue reading the event
-     * @throws InterruptedException if the thread is interrupted
+     * @param event
+     *            the event
+     * @param contextWriter
+     *            the context writer
+     * @param context
+     *            the context
+     * @param shardId
+     *            the shard id
+     * @param nfv
+     *            the normalized content interface
+     * @param offsets
+     *            the term offsets
+     * @param visibility
+     *            the visibility
+     * @param deleteMode
+     *            the deletion flag
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
-    protected void createTermFrequencyIndex(RawRecordContainer event, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                            TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, byte[] shardId, NormalizedFieldAndValue nfv,
-                                            List<Integer> offsets, byte[] visibility, boolean deleteMode) throws IOException, InterruptedException {
+    protected void createTermFrequencyIndex(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, byte[] shardId, NormalizedFieldAndValue nfv,
+                    List<Integer> offsets, byte[] visibility, boolean deleteMode) throws IOException, InterruptedException {
 
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
         for (Integer offset : offsets) {
@@ -730,12 +794,12 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
         Value value = new Value(builder.build().toByteArray());
 
         StringBuilder colq = new StringBuilder(this.eventDataTypeName.length() + this.eventUid.length() + nfv.getIndexedFieldName().length()
-                + nfv.getIndexedFieldValue().length() + 3);
+                        + nfv.getIndexedFieldValue().length() + 3);
         colq.append(this.eventDataTypeName).append('\u0000').append(this.eventUid).append('\u0000').append(nfv.getIndexedFieldValue()).append('\u0000')
-                .append(nfv.getIndexedFieldName());
+                        .append(nfv.getIndexedFieldName());
 
         BulkIngestKey bKey = new BulkIngestKey(new Text(this.getShardTableName()), new Key(shardId,
-                ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility, event.getDate(), deleteMode));
+                        ExtendedDataTypeHandler.TERM_FREQUENCY_COLUMN_FAMILY.getBytes(), colq.toString().getBytes(), visibility, event.getDate(), deleteMode));
 
         contextWriter.write(bKey, value, context);
     }
@@ -744,21 +808,32 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
      * Creates and writes the BulkIngestKey for the global (reverse) index to the ContextWriter (instead of the Multimap that the {@link ShardedDataTypeHandler}
      * uses).
      *
-     * @param event                 the event
-     * @param contextWriter         the context writer
-     * @param context               the context
-     * @param nFV                   the normalized content interface
-     * @param shardId               the shard id
-     * @param tableName             the name of the table
-     * @param visibility            the visibility
-     * @param replacedMalformedUTF8 flag to replace malformed UTF8
-     * @param deleteMode            the deletion flag
-     * @throws IOException          if there is an issue reading the event
-     * @throws InterruptedException if the thread is interrupted
+     * @param event
+     *            the event
+     * @param contextWriter
+     *            the context writer
+     * @param context
+     *            the context
+     * @param nFV
+     *            the normalized content interface
+     * @param shardId
+     *            the shard id
+     * @param tableName
+     *            the name of the table
+     * @param visibility
+     *            the visibility
+     * @param replacedMalformedUTF8
+     *            flag to replace malformed UTF8
+     * @param deleteMode
+     *            the deletion flag
+     * @throws IOException
+     *             if there is an issue reading the event
+     * @throws InterruptedException
+     *             if the thread is interrupted
      */
-    protected void createIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT, VALUEOUT> contextWriter,
-                                     TaskInputOutputContext<KEYIN, ? extends RawRecordContainer, KEYOUT, VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
-                                     Text tableName, byte[] visibility, boolean replacedMalformedUTF8, boolean deleteMode) throws IOException, InterruptedException {
+    protected void createIndexColumn(RawRecordContainer event, ContextWriter<KEYOUT,VALUEOUT> contextWriter,
+                    TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, NormalizedContentInterface nFV, byte[] shardId,
+                    Text tableName, byte[] visibility, boolean replacedMalformedUTF8, boolean deleteMode) throws IOException, InterruptedException {
 
         // Shard Global Index Table Structure
         // Row: Field Value
@@ -773,7 +848,7 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN, KEYOUT, V
 
         // Create a UID object for the Value
         Value val = createUidArray(eventUid, deleteMode);
-        
+
         BulkIngestKey bKey = new BulkIngestKey(tableName, k);
         contextWriter.write(bKey, val, context);
     }

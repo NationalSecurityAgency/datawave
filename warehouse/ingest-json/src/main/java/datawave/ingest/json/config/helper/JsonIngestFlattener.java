@@ -51,7 +51,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
     }
 
     @Override
-    protected void mapPut(String currentPath, String currentValue, Multimap<String, String> map, Map<String, Integer> occurrenceCounts) {
+    protected void mapPut(String currentPath, String currentValue, Multimap<String,String> map, Map<String,Integer> occurrenceCounts) {
         String key = this.keyValueNormalizer.normalizeMapKey(currentPath, currentValue);
         String value = this.keyValueNormalizer.normalizeMapValue(currentValue, key);
         if (!ignoreKeyValue(key, value)) {
@@ -144,8 +144,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
 
         private JsonDataTypeHelper jsonDataTypeHelper;
 
-        private DefaultMapKeyValueNormalizer() {
-        }
+        private DefaultMapKeyValueNormalizer() {}
 
         public DefaultMapKeyValueNormalizer(JsonDataTypeHelper jsonDataTypeHelper) {
             this.jsonDataTypeHelper = jsonDataTypeHelper;
@@ -166,8 +165,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
 
         private JsonDataTypeHelper jsonDataTypeHelper;
 
-        private DefaultJsonElementNameNormalizer() {
-        }
+        private DefaultJsonElementNameNormalizer() {}
 
         public DefaultJsonElementNameNormalizer(JsonDataTypeHelper jsonDataTypeHelper) {
             this.jsonDataTypeHelper = jsonDataTypeHelper;
@@ -207,7 +205,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
         private Configuration jsonIngestConfig = null;
         private JsonObjectFlattener jsonIngestFlattener = null;
         private Iterator<JsonElement> jsonIterator;
-        private TreeMultimap<String, String> sortedMap = TreeMultimap.create();
+        private TreeMultimap<String,String> sortedMap = TreeMultimap.create();
         private int objectCounter = 0;
 
         /**
@@ -219,15 +217,16 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
          * used to create and configure the {@link JsonIngestFlattener}. See {@link JsonDataTypeHelper#newFlattener()}. Config file paths should be
          * comma-delimited
          *
-         * @param args --file(-f) /path/to/json/file; --config(-c) /path/to/ingest/config/file1,/path/to/ingest/config/file2,...; --help(-h,?)
-         * @throws IOException on IO error
+         * @param args
+         *            --file(-f) /path/to/json/file; --config(-c) /path/to/ingest/config/file1,/path/to/ingest/config/file2,...; --help(-h,?)
+         * @throws IOException
+         *             on IO error
          */
         public static void main(String[] args) throws IOException {
             (new Test(args)).run();
         }
 
-        private Test() {
-        }
+        private Test() {}
 
         private Test(String[] args) throws MalformedURLException {
             processArgs(args);
@@ -267,7 +266,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
             jsonIngestFlattener.flatten(jsonObject, sortedMap);
 
             System.out.println("*********************** BEGIN JSON OBJECT #" + (++objectCounter) + " - FLATTEN MODE: " + jsonIngestFlattener.getFlattenMode()
-                    + " ***********************");
+                            + " ***********************");
             System.out.println();
 
             for (String key : sortedMap.keySet()) {
@@ -281,7 +280,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
 
             System.out.println();
             System.out.println("*********************** END JSON OBJECT #" + objectCounter + " - FLATTEN MODE: " + jsonIngestFlattener.getFlattenMode()
-                    + " *************************");
+                            + " *************************");
             System.out.println();
         }
 
@@ -349,7 +348,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
             // configured in all-config.xml as a global setting for all data types...
 
             jsonIngestConfig.set("all" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS,
-                    "datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer");
+                            "datawave.policy.IngestPolicyEnforcer$NoOpIngestPolicyEnforcer");
 
             JsonDataTypeHelper helper = new JsonDataTypeHelper();
             helper.setup(jsonIngestConfig);
@@ -360,7 +359,7 @@ public class JsonIngestFlattener extends JsonObjectFlattenerImpl {
         private void printUsage() {
             System.out.println("Usage:");
             System.out.println("   " + getClass().getName()
-                    + " --file (-f) /path/to/input/json/file --config (-c) /path/to/ingest/config/file1,...,/path/to/ingest/config/fileN");
+                            + " --file (-f) /path/to/input/json/file --config (-c) /path/to/ingest/config/file1,...,/path/to/ingest/config/fileN");
             System.out.println("Optional args:");
             System.out.println("   --help (-h, ?)");
         }

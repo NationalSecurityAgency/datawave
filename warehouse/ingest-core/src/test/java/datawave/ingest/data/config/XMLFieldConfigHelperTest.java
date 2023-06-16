@@ -39,7 +39,7 @@ public class XMLFieldConfigHelperTest {
         conf.set("test" + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
         conf.set("test" + BaseIngestHelper.DEFAULT_TYPE, NoOpType.class.getName());
 
-        datawave.ingest.data.Type type = new datawave.ingest.data.Type("test", null, null, new String[]{SimpleDataTypeHandler.class.getName()}, 10, null);
+        datawave.ingest.data.Type type = new datawave.ingest.data.Type("test", null, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
         TypeRegistry.reset();
         TypeRegistry.getInstance(conf).put("test", type);
 
@@ -95,61 +95,56 @@ public class XMLFieldConfigHelperTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testBadTag() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
-                + "    <orange name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
+                        + "    <orange name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
         XMLFieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testDuplicateField() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
-                + "    <field name=\"H\" indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n"
+                        + "    <field name=\"H\" indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
     }
 
     @Test(expected = IllegalStateException.class)
     public void testMissingDefault() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "    <field name=\"A\" indexed=\"true\"/>\n" + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <field name=\"A\" indexed=\"true\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testIncompleteDefault() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <field name=\"A\" indexed=\"true\"/>\n" +
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" indexed=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <field name=\"A\" indexed=\"true\"/>\n" +
 
-                "</fieldConfig>";
+                        "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
     }
 
     @Test
     public void testMissingNomatch() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
         // ok.
@@ -157,23 +152,21 @@ public class XMLFieldConfigHelperTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testIncompleteNomatch() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <nomatch stored=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <nomatch stored=\"true\" reverseIndexed=\"true\" tokenized=\"true\"  reverseTokenized=\"true\" indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <field name=\"H\" indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
     }
 
     @Test
     public void testMultiType() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <field name=\"H\" indexType=\"datawave.data.type.DateType,datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"*J\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <field name=\"H\" indexType=\"datawave.data.type.DateType,datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
 

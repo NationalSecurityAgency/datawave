@@ -8,12 +8,12 @@ import org.apache.commons.lang.builder.CompareToBuilder;
 import java.util.Collection;
 
 /**
- * 
+ *
  */
 public class ValueTuple extends Tuple3<String,Object,Object> implements Comparable<ValueTuple> {
-    
+
     private Attribute<?> source = null;
-    
+
     /**
      * @param fieldname
      *            the field name
@@ -28,34 +28,34 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
         super(fieldname, value, normalizedValue);
         this.source = source;
     }
-    
+
     public ValueTuple(Collection<String> fieldnames, Object value, Object normalizedValue, Attribute<?> source) {
         this((fieldnames != null && !fieldnames.isEmpty()) ? fieldnames.iterator().next() : "", value, normalizedValue, source);
     }
-    
+
     public String getFieldName() {
         return first();
     }
-    
+
     public Object getValue() {
         return second();
     }
-    
+
     public Object getNormalizedValue() {
         return third();
     }
-    
+
     public Attribute<?> getSource() {
         return source;
     }
-    
+
     public static Object getValue(Object value) {
         if (value instanceof ValueTuple) {
             return ((ValueTuple) value).getValue();
         }
         return value;
     }
-    
+
     public static Object getNormalizedValue(Object value) {
         if (value instanceof ValueTuple) {
             return ((ValueTuple) value).getNormalizedValue();
@@ -64,7 +64,7 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
         }
         return value;
     }
-    
+
     public static String getStringValue(Object value) {
         if (value instanceof ValueTuple) {
             Object o = ((ValueTuple) value).getValue();
@@ -72,7 +72,7 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
         }
         return (value == null ? null : value.toString());
     }
-    
+
     public static String getNormalizedStringValue(Object value) {
         if (value instanceof ValueTuple) {
             Object o = ((ValueTuple) value).getNormalizedValue();
@@ -80,7 +80,7 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
         }
         return (value == null ? null : value.toString());
     }
-    
+
     public static String getFieldName(Object value) {
         if (value instanceof ValueTuple) {
             Object o = ((ValueTuple) value).getFieldName();
@@ -88,7 +88,7 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
         }
         return (value == null ? null : value.toString());
     }
-    
+
     public static ValueTuple toValueTuple(Object value) {
         if (value instanceof ValueTuple) {
             return ((ValueTuple) value);
@@ -96,24 +96,24 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
             return new ValueTuple(value.toString(), value, value, null);
         }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         return (o instanceof ValueTuple) && super.equals(o) && Objects.equal(source, ((ValueTuple) o).source);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hashCode(super.hashCode(), source);
     }
-    
+
     @Override
     public int compareTo(ValueTuple o) {
         CompareToBuilder builder = new CompareToBuilder().append(first(), o.first());
-        
+
         // for the values, lets compare the string variants as the actual values could be of differing types
         builder.append(stringOf(second()), stringOf(o.second())).append(stringOf(third()), stringOf(o.third()));
-        
+
         // for the source, we cannot append(getSource, o.getSource()) because they may be different attribute types
         // and as a result the underlying compareTo method will throw an exception.
         if (getSource() == null || o.getSource() == null) {
@@ -125,7 +125,7 @@ public class ValueTuple extends Tuple3<String,Object,Object> implements Comparab
         }
         return builder.toComparison();
     }
-    
+
     public String stringOf(Object x) {
         return x == null ? null : x.toString();
     }

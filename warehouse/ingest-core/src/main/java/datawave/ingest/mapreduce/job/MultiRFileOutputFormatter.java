@@ -50,15 +50,15 @@ import java.util.Set;
 
 import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
-public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, Value> {
+public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey,Value> {
 
     private static final Logger log = Logger.getLogger(MultiRFileOutputFormatter.class);
 
-    protected Map<String, SizeTrackingWriter> writers = null;
-    protected Map<String, Path> unusedWriterPaths = null;
-    protected Map<String, Path> usedWriterPaths = null;
-    protected Map<String, String> writerTableNames = null;
-    protected Map<String, MutableInt> writerCounts = null;
+    protected Map<String,SizeTrackingWriter> writers = null;
+    protected Map<String,Path> unusedWriterPaths = null;
+    protected Map<String,Path> usedWriterPaths = null;
+    protected Map<String,String> writerTableNames = null;
+    protected Map<String,MutableInt> writerCounts = null;
 
     protected static final String PREFIX = MultiRFileOutputFormatter.class.getName();
 
@@ -83,16 +83,16 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
     public static final String LOCATION_PARTITION_COUNT = BASE + "Location";
 
     protected FileSystem fs = null;
-    protected Map<String, Map<Text, String>> tableShardLocations;
-    protected Map<String, Set<Text>> shardMapFileRowKeys = new HashMap<>();
-    protected Map<String, Path> shardMapFiles = new HashMap<>();
+    protected Map<String,Map<Text,String>> tableShardLocations;
+    protected Map<String,Set<Text>> shardMapFileRowKeys = new HashMap<>();
+    protected Map<String,Path> shardMapFiles = new HashMap<>();
     protected Set<String> shardedTableNames = null;
     protected Set<String> shardedTablesConfigured = null;
     protected String eventTable = null;
     protected Path workDir;
     protected String extension;
     protected Configuration conf;
-    protected Map<String, ConfigurationCopy> tableConfigs;
+    protected Map<String,ConfigurationCopy> tableConfigs;
     protected Set<String> tableIds = null;
     protected long maxRFileSize = 0;
     protected int maxRFileEntries = 0;
@@ -100,9 +100,9 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
     protected boolean generateMapFilePerShardLocation = false;
     private long startWriteTime = 0L;
 
-    protected Map<String, Map<Text, String>> columnFamilyToLocalityGroup;
+    protected Map<String,Map<Text,String>> columnFamilyToLocalityGroup;
 
-    protected Map<String, Map<String, Set<ByteSequence>>> localityGroupToColumnFamilies;
+    protected Map<String,Map<String,Set<ByteSequence>>> localityGroupToColumnFamilies;
 
     public static final String CONFIGURED_TABLE_NAMES = PREFIX + ".configTableNames";
 
@@ -176,8 +176,10 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
     /**
      * Insert a count into the filename. The filename is expected to end with our extension.
      *
-     * @param filename file name
-     * @param count    the count
+     * @param filename
+     *            file name
+     * @param count
+     *            the count
      * @return filename with the count inserted as follows: {@code path/name + extension -> path/name + _count + extension}
      */
     protected Path insertFileCount(Path filename, int count) {
@@ -190,7 +192,8 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
     /**
      * Remove a count from a filename. The filename is expected to end with _count.extension.
      *
-     * @param filename file name
+     * @param filename
+     *            file name
      * @return filename with the count removed as follows: {@code path/name + _count + extension -> path/name + extension}
      */
     protected Path removeFileCount(Path filename) {
@@ -204,12 +207,18 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
     /**
      * create and register a writer for retrieval later
      *
-     * @param key       The key used for later retrieval
-     * @param table     The table name
-     * @param filename  The path of the file being written to
-     * @param tableConf the table accumulo configuration
-     * @throws IOException       if there is an issue with read or write
-     * @throws AccumuloException if there is an issue accumulo
+     * @param key
+     *            The key used for later retrieval
+     * @param table
+     *            The table name
+     * @param filename
+     *            The path of the file being written to
+     * @param tableConf
+     *            the table accumulo configuration
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue accumulo
      */
     protected void createAndRegisterWriter(String key, String table, Path filename, AccumuloConfiguration tableConf) throws IOException, AccumuloException {
         // first get the writer count (how many writers have we made for this key)
@@ -239,16 +248,19 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
     protected SizeTrackingWriter openWriter(String filename, AccumuloConfiguration tableConf) throws IOException {
         startWriteTime = System.currentTimeMillis();
         CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, tableConf.getAllCryptoProperties());
-        return new SizeTrackingWriter(FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs)
-                .withTableConfiguration(tableConf).build());
+        return new SizeTrackingWriter(
+                        FileOperations.getInstance().newWriterBuilder().forFile(filename, fs, conf, cs).withTableConfiguration(tableConf).build());
     }
 
     /**
      * Close the current writer for the specified key, and create the next writer. The index encoded in the filename will be appropriately updated.
      *
-     * @param key a key
-     * @throws IOException       if there is an issue with read or write
-     * @throws AccumuloException if there is an issue with accumulo
+     * @param key
+     *            a key
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected void closeAndUpdateWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -318,10 +330,13 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
     /**
      * Get a writer that was previously registered. This will mark the writer as being used.
      *
-     * @param key a key
+     * @param key
+     *            a key
      * @return the writer
-     * @throws IOException       if there is an issue with read or write
-     * @throws AccumuloException if there is an issue with accumulo
+     * @throws IOException
+     *             if there is an issue with read or write
+     * @throws AccumuloException
+     *             if there is an issue with accumulo
      */
     protected SizeTrackingWriter getRegisteredWriter(String key) throws IOException, AccumuloException {
         SizeTrackingWriter writer = writers.get(key);
@@ -384,21 +399,21 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
         Set<String> compressionTableDisallowList = getCompressionTableDisallowList(conf);
         String compressionType = getCompressionType(conf);
         for (String tableName : tableIds) {
-            Map<String, String> properties = tcu.getTableProperties(tableName);
+            Map<String,String> properties = tcu.getTableProperties(tableName);
             if (null == properties || properties.isEmpty()) {
                 log.error("No properties found for table " + tableName);
             } else {
                 ConfigurationCopy tableConfig = new ConfigurationCopy(properties);
-                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(), (compressionTableDisallowList.contains(tableName) ? new NoCompression().getName()
-                        : compressionType));
+                tableConfig.set(Property.TABLE_FILE_COMPRESSION_TYPE.getKey(),
+                                (compressionTableDisallowList.contains(tableName) ? new NoCompression().getName() : compressionType));
 
                 // the locality groups feature is broken and will be removed in a future MR
                 if (Iterables.contains(localityGroupTables, tableName)) {
-                    Map<String, Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
+                    Map<String,Set<Text>> localityGroups = tcu.getLocalityGroups(tableName);
                     // pull the locality groups for this table.
-                    Map<Text, String> cftlg = Maps.newHashMap();
-                    Map<String, Set<ByteSequence>> lgtcf = Maps.newHashMap();
-                    for (Entry<String, Set<Text>> locs : localityGroups.entrySet()) {
+                    Map<Text,String> cftlg = Maps.newHashMap();
+                    Map<String,Set<ByteSequence>> lgtcf = Maps.newHashMap();
+                    for (Entry<String,Set<Text>> locs : localityGroups.entrySet()) {
                         lgtcf.put(locs.getKey(), new HashSet<>());
                         for (Text loc : locs.getValue()) {
                             cftlg.put(loc, locs.getKey());
@@ -427,7 +442,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
 
     // Return the record writer
     @Override
-    public RecordWriter<BulkIngestKey, Value> getRecordWriter(final TaskAttemptContext context) throws IOException, InterruptedException {
+    public RecordWriter<BulkIngestKey,Value> getRecordWriter(final TaskAttemptContext context) throws IOException, InterruptedException {
         MarkingFunctions.Factory.createMarkingFunctions();
         // get the task output path
         FileOutputCommitter committer = (FileOutputCommitter) getOutputCommitter(context);
@@ -504,7 +519,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
             }
         }
 
-        return new RecordWriter<BulkIngestKey, Value>() {
+        return new RecordWriter<BulkIngestKey,Value>() {
             private String currentLocalityGroup = null;
 
             @Override
@@ -521,7 +536,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
                 }
 
                 final Text keyCf = key.getKey().getColumnFamily();
-                final Map<Text, String> cftlg = columnFamilyToLocalityGroup.get(tableName);
+                final Map<Text,String> cftlg = columnFamilyToLocalityGroup.get(tableName);
                 if (null != cftlg) {
                     String localityGroup = cftlg.get(keyCf);
                     boolean create = false;
@@ -550,18 +565,19 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
                 // To verify the file was actually written successfully, we need to reopen it which will reread
                 // the index at the end and verify its integrity.
                 FileOperations fops = FileOperations.getInstance();
-                for (Map.Entry<String, Path> entry : usedWriterPaths.entrySet()) {
+                for (Map.Entry<String,Path> entry : usedWriterPaths.entrySet()) {
                     Path path = entry.getValue();
                     String table = writerTableNames.get(entry.getKey());
                     try {
-                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE, context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
+                        CryptoService cs = CryptoFactoryLoader.getServiceForClient(CryptoEnvironment.Scope.TABLE,
+                                        context.getConfiguration().getPropsWithPrefix(TABLE_CRYPTO_PREFIX.name()));
                         FileSKVIterator openReader = fops.newReaderBuilder().forFile(path.toString(), fs, conf, cs)
-                                .withTableConfiguration(tableConfigs.get(table)).build();
+                                        .withTableConfiguration(tableConfigs.get(table)).build();
                         FileStatus fileStatus = fs.getFileStatus(path);
                         long fileSize = fileStatus.getLen();
                         openReader.close();
-                        log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: "
-                                + (System.currentTimeMillis() - startWriteTime) + " ms.");
+                        log.info("Successfully wrote " + path + ". Total size: " + fileSize + " B. Total time: " + (System.currentTimeMillis() - startWriteTime)
+                                        + " ms.");
                     } catch (Exception ex) {
                         log.error("Verification of successful RFile completion failed!!! " + path, ex);
                         throw new IOException(ex);
@@ -575,7 +591,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
                     log.info("Writing mapFileRowKeys");
                     Path shardMapFilePath = new Path(workDir, getUniqueFile(context, "mapFileRowKeys", ".lst"));
                     try (SequenceFile.Writer output = SequenceFile.createWriter(fs, conf, shardMapFilePath, Text.class, Text.class)) {
-                        for (Map.Entry<String, Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
+                        for (Map.Entry<String,Set<Text>> entry : shardMapFileRowKeys.entrySet()) {
                             Path path = shardMapFiles.get(entry.getKey());
                             Text pathText = new Text(path.getParent().getName() + "/" + path.getName());
                             for (Text rowKey : entry.getValue()) {
@@ -591,7 +607,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
                 if (shardedTableNames.contains(tableName)) {
                     if (!shardedTablesConfigured.contains(tableName)) {
                         throw new IOException("Asked to create writer for sharded table " + tableName
-                                + ", however this table was not in the configured set of ingest job tables");
+                                        + ", however this table was not in the configured set of ingest job tables");
                     }
                     // By default, throw all shards for a table into one output rfile. If the number of tservers is small enough, we may want to
                     // produce one rfile per shard location (tserver) in order to be more efficient. However, when the number of tservers is large
@@ -601,7 +617,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
                     if (generateMapFilePerShardLocation) {
                         // Look up the shard location (tablet server serving shard ID rowKey)
                         // If we don't have a location, then just use the rowKey itself.
-                        Map<Text, String> shardLocs = getShardLocations(tableName);
+                        Map<Text,String> shardLocs = getShardLocations(tableName);
                         shardLocation = shardLocs.containsKey(rowKey) ? shardLocs.get(rowKey) : null;
                         if (shardLocation == null) {
                             // in this case we have a shard id that has no split. Lets put this in one "extra" file
@@ -625,7 +641,7 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
                     writer = getRegisteredWriter(tableName);
                     if (writer == null) {
                         throw new IOException("Asked to create writer for table " + tableName
-                                + ", however this table was not in the configured set of ingest job tables");
+                                        + ", however this table was not in the configured set of ingest job tables");
                     }
                 }
                 return writer;
@@ -637,11 +653,13 @@ public class MultiRFileOutputFormatter extends FileOutputFormat<BulkIngestKey, V
      * Read in the sequence file (that was created at job startup) for the given table that contains a list of shard IDs and the corresponding tablet server to
      * which that shard is assigned.
      *
-     * @param tableName the table name
+     * @param tableName
+     *            the table name
      * @return a mapping of the shard ids and tablet server
-     * @throws IOException if there is an issue with read or write
+     * @throws IOException
+     *             if there is an issue with read or write
      */
-    protected Map<Text, String> getShardLocations(String tableName) throws IOException {
+    protected Map<Text,String> getShardLocations(String tableName) throws IOException {
         // Create the Map of sharded table name to [shardId -> server]
         if (this.tableShardLocations == null) {
             this.tableShardLocations = new HashMap<>();

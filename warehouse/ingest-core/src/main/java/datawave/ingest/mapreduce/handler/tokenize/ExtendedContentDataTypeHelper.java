@@ -122,8 +122,8 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
 
     private boolean reverseIndexing = false;
     private List<MetadataIdParser> metadataKeyParsers = new ArrayList<>();
-    private Multimap<String, MetadataIdParser> metadataFieldParsers = HashMultimap.create();
-    private Multimap<String, MetadataIdParser> metadataFieldUuidParsers = HashMultimap.create();
+    private Multimap<String,MetadataIdParser> metadataFieldParsers = HashMultimap.create();
+    private Multimap<String,MetadataIdParser> metadataFieldUuidParsers = HashMultimap.create();
     private Set<String> uuidMetadata = new HashSet<>();
     private boolean expectUuid = true;
     private String[] ignoredFields = new String[0];
@@ -134,12 +134,12 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     // default is to use the token offset cache which reduces the number of
     // mutations (BulkIngestKeys) generated
     private boolean useTokenOffsetCache = true;
-    private Map<String, String> eventSecurityMarkingFieldDomainMap = new HashMap<>();
+    private Map<String,String> eventSecurityMarkingFieldDomainMap = new HashMap<>();
     private List<EventValidator> validators = null;
     private boolean sessionMetadataPropagationEnabled = false;
     private Set<String> sessionMetadataPropagationDisallowlist = new HashSet<>();
     private Set<String> sessionMetadataPropagationAllowlist = new HashSet<>();
-    private Map<String, String> multiValuedFields = new HashMap<>();
+    private Map<String,String> multiValuedFields = new HashMap<>();
     private String multiValueSeparator = null;
     private int multiFieldSizeThreshold = -1;
     private ThresholdAction multiValuedThresholdAction = ThresholdAction.FAIL;
@@ -177,10 +177,10 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         thresholdReplacement = conf.get(this.getType().typeName() + Properties.THRESHOLD_FIELD_REPLACEMENT, thresholdReplacement);
         truncateField = conf.get(this.getType().typeName() + Properties.TRUNCATE_FIELD, truncateField);
         dropField = conf.get(this.getType().typeName() + Properties.DROP_FIELD, dropField);
-        multiValuedThresholdAction = ThresholdAction.valueOf(conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_ACTION,
-                multiValuedThresholdAction.name()).toUpperCase());
+        multiValuedThresholdAction = ThresholdAction.valueOf(
+                        conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_ACTION, multiValuedThresholdAction.name()).toUpperCase());
         multiValuedThresholdReplacement = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT,
-                multiValuedThresholdReplacement);
+                        multiValuedThresholdReplacement);
         multiValuedTruncateField = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_TRUNCATE_FIELD, multiValuedTruncateField);
         multiValuedDropField = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_DROP_FIELD, multiValuedDropField);
         validators = ConfigurationHelper.getInstances(conf, this.getType().typeName() + Properties.EVENT_VALIDATORS, EventValidator.class);
@@ -189,7 +189,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         }
 
         String prefix = this.getType().typeName() + Properties.KEY_METADATA_PARSERS;
-        Map<String, String> keyParsers = getValues(conf, prefix);
+        Map<String,String> keyParsers = getValues(conf, prefix);
         for (String value : keyParsers.values()) {
             metadataKeyParsers.add(MetadataIdParser.createParser(value));
         }
@@ -218,7 +218,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         }
 
         sessionMetadataPropagationEnabled = conf.getBoolean(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_ENABLED,
-                sessionMetadataPropagationEnabled);
+                        sessionMetadataPropagationEnabled);
 
         for (String field : conf.getStrings(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_DISALLOWLIST, new String[0])) {
             this.sessionMetadataPropagationDisallowlist.add(field.trim());
@@ -235,7 +235,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
 
         if (eventSecurityMarkingFieldNames.length != eventSecurityMarkingFieldDomains.length) {
             throw new IllegalArgumentException("Both " + this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_NAMES + " and "
-                    + this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS + " must contain the same number of values.");
+                            + this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS + " must contain the same number of values.");
         }
 
         for (int i = 0; i < eventSecurityMarkingFieldNames.length; i++) {
@@ -264,16 +264,19 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
      * Populates the provided metadata parser map from the configuration. This allows different metadata parser maps to be populated based on different
      * configuration keys.
      *
-     * @param conf              Configuration
-     * @param keySuffix         The configuration key suffix
-     * @param metadataParserMap The metadata parser map to populate.
+     * @param conf
+     *            Configuration
+     * @param keySuffix
+     *            The configuration key suffix
+     * @param metadataParserMap
+     *            The metadata parser map to populate.
      */
-    protected void putMetadataParsers(Configuration conf, String keySuffix, Multimap<String, MetadataIdParser> metadataParserMap) {
+    protected void putMetadataParsers(Configuration conf, String keySuffix, Multimap<String,MetadataIdParser> metadataParserMap) {
         String prefix;
-        Map<String, String> keyParsers;
+        Map<String,String> keyParsers;
         prefix = this.getType().typeName() + keySuffix;
         keyParsers = getValues(conf, prefix);
-        for (Map.Entry<String, String> entry : keyParsers.entrySet()) {
+        for (Map.Entry<String,String> entry : keyParsers.entrySet()) {
             String field = entry.getKey();
             if (field.length() <= (prefix.length() + 1)) {
                 throw new IllegalArgumentException("Field metadata parser key is invalid: missing fieldname: " + field);
@@ -290,9 +293,9 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         }
     }
 
-    protected Map<String, String> getValues(Configuration conf, String prefix) {
-        Map<String, String> values = new HashMap<>();
-        for (Map.Entry<String, String> entry : conf) {
+    protected Map<String,String> getValues(Configuration conf, String prefix) {
+        Map<String,String> values = new HashMap<>();
+        for (Map.Entry<String,String> entry : conf) {
             String key = entry.getKey();
             if (key.startsWith(prefix)) {
                 // if the property is longer than the prefix, then ensure the
@@ -317,11 +320,11 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         return metadataKeyParsers;
     }
 
-    public Multimap<String, MetadataIdParser> getMetadataFieldUuidParsers() {
+    public Multimap<String,MetadataIdParser> getMetadataFieldUuidParsers() {
         return metadataFieldUuidParsers;
     }
 
-    public Multimap<String, MetadataIdParser> getMetadataFieldParsers() {
+    public Multimap<String,MetadataIdParser> getMetadataFieldParsers() {
         return metadataFieldParsers;
     }
 
@@ -345,7 +348,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         return validMetadataKey.matcher(key).matches();
     }
 
-    public Map<String, String> getMultiValuedFields() {
+    public Map<String,String> getMultiValuedFields() {
         return multiValuedFields;
     }
 
@@ -411,8 +414,10 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     /**
      * Lowercase MD5,SHA1,SHA256 but do *not* remove any whitespace
      *
-     * @param fieldName  the field name
-     * @param fieldValue the field value
+     * @param fieldName
+     *            the field name
+     * @param fieldValue
+     *            the field value
      * @return a string of the field value
      */
     public String clean(String fieldName, String fieldValue) {
@@ -432,7 +437,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         return validators;
     }
 
-    public Map<String, String> getSecurityMarkingFieldDomainMap() {
+    public Map<String,String> getSecurityMarkingFieldDomainMap() {
         return eventSecurityMarkingFieldDomainMap;
     }
 }

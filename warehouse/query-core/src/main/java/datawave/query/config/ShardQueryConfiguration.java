@@ -71,7 +71,7 @@ import java.util.stream.Collectors;
  */
 public class ShardQueryConfiguration extends GenericQueryConfiguration implements Serializable {
 
-    public static final String PARAM_VALUE_SEP_STR = new String(new char[]{Constants.PARAM_VALUE_SEP});
+    public static final String PARAM_VALUE_SEP_STR = new String(new char[] {Constants.PARAM_VALUE_SEP});
     public static final String TABLE_NAME_SOURCE = "tableName";
     public static final String QUERY_LOGIC_NAME_SOURCE = "queryLogic";
 
@@ -80,7 +80,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private static final Logger log = Logger.getLogger(ShardQueryConfiguration.class);
     // is this a tld query, explicitly default to false
     private boolean tldQuery = false;
-    private Map<String, String> filterOptions = new HashMap<>();
+    private Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;
     @JsonIgnore
     private transient QueryStopwatch timers = new QueryStopwatch();
@@ -220,14 +220,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Set<String> indexedFields = Sets.newHashSet();
     private Set<String> reverseIndexedFields = Sets.newHashSet();
     private Set<String> normalizedFields = Sets.newHashSet();
-    private Multimap<String, Type<?>> dataTypes = HashMultimap.create();
-    private Multimap<String, Type<?>> queryFieldsDatatypes = HashMultimap.create();
-    private Multimap<String, Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
-    private Map<String, DiscreteIndexType<?>> fieldToDiscreteIndexTypes = new HashMap<>();
-    private Multimap<String, String> compositeToFieldMap = ArrayListMultimap.create();
-    private Map<String, Date> compositeTransitionDates = new HashMap<>();
-    private Map<String, String> compositeFieldSeparators = new HashMap<>();
-    private Map<String, Date> whindexCreationDates = new HashMap<>();
+    private Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+    private Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
+    private Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
+    private Map<String,DiscreteIndexType<?>> fieldToDiscreteIndexTypes = new HashMap<>();
+    private Multimap<String,String> compositeToFieldMap = ArrayListMultimap.create();
+    private Map<String,Date> compositeTransitionDates = new HashMap<>();
+    private Map<String,String> compositeFieldSeparators = new HashMap<>();
+    private Map<String,Date> whindexCreationDates = new HashMap<>();
 
     private Set<String> evaluationOnlyFields = new HashSet<>(0);
     private Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
@@ -239,7 +239,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean disableWhindexFieldMappings = false;
     private Set<String> whindexMappingFields = new HashSet<>();
-    private Map<String, Map<String, String>> whindexFieldMappings = new HashMap<>();
+    private Map<String,Map<String,String>> whindexFieldMappings = new HashMap<>();
 
     private boolean sortedUIDs = true;
     // The fields in the the query that are tf fields
@@ -273,7 +273,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // PARENT_UID as event fields,
     // plus various options for output and optimization
     private boolean includeHierarchyFields = false;
-    private Map<String, String> hierarchyFieldOptions = Collections.emptyMap();
+    private Map<String,String> hierarchyFieldOptions = Collections.emptyMap();
     // Used to set the ShardEventEvaluating iterator INCLUDE_GROUPING_CONTEXT
     private boolean includeGroupingContext = false;
     // Used to create arbitrary document permutations prior to evaluation and/or returning documents.
@@ -394,7 +394,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private ExcerptFields excerptFields = new ExcerptFields();
 
     // The class for the excerpt iterator
-    private Class<? extends SortedKeyValueIterator<Key, Value>> excerptIterator = TermFrequencyExcerptIterator.class;
+    private Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator = TermFrequencyExcerptIterator.class;
 
     // controls when to issue a seek. disabled by default.
     private int fiFieldSeek = -1;
@@ -422,7 +422,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Term Frequency aggregations that exceed this threshold in milliseconds are logged as a warning
      */
     private int tfAggregationThresholdMs = -1;
-    
+
     /**
      * Default constructor
      */
@@ -434,7 +434,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Performs a deep copy of the provided ShardQueryConfiguration into a new instance
      *
-     * @param other - another ShardQueryConfiguration instance
+     * @param other
+     *            - another ShardQueryConfiguration instance
      */
     public ShardQueryConfiguration(ShardQueryConfiguration other) {
 
@@ -493,8 +494,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setFstCount(other.getFstCount());
         this.setCollapseDatePercentThreshold(other.getCollapseDatePercentThreshold());
         this.setFullTableScanEnabled(other.getFullTableScanEnabled());
-        this.setRealmSuffixExclusionPatterns(null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other
-                .getRealmSuffixExclusionPatterns()));
+        this.setRealmSuffixExclusionPatterns(
+                        null == other.getRealmSuffixExclusionPatterns() ? null : Lists.newArrayList(other.getRealmSuffixExclusionPatterns()));
         this.setDefaultType(other.getDefaultType());
         this.setShardDateFormatter(null == other.getShardDateFormatter() ? null : new SimpleDateFormat(other.getShardDateFormatter().toPattern())); // TODO --
         // deep copy
@@ -626,7 +627,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Delegates deep copy work to appropriate constructor, sets additional values specific to the provided ShardQueryLogic
      *
-     * @param logic - a ShardQueryLogic instance or subclass
+     * @param logic
+     *            - a ShardQueryLogic instance or subclass
      */
     public ShardQueryConfiguration(ShardQueryLogic logic) {
         this(logic.getConfig());
@@ -644,7 +646,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Factory method that returns a deep copy of the provided ShardQueryConfiguration
      *
-     * @param other - another instance of a ShardQueryConfiguration
+     * @param other
+     *            - another instance of a ShardQueryConfiguration
      * @return - copy of provided ShardQueryConfiguration
      */
     public static ShardQueryConfiguration create(ShardQueryConfiguration other) {
@@ -654,7 +657,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Factory method that creates a ShardQueryConfiguration deep copy from a ShardQueryLogic
      *
-     * @param shardQueryLogic - a configured ShardQueryLogic
+     * @param shardQueryLogic
+     *            - a configured ShardQueryLogic
      * @return - a ShardQueryConfiguration
      */
     public static ShardQueryConfiguration create(ShardQueryLogic shardQueryLogic) {
@@ -683,8 +687,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Factory method that creates a ShardQueryConfiguration from a ShardQueryLogic and a Query
      *
-     * @param shardQueryLogic - a configured ShardQueryLogic
-     * @param query           - a configured Query object
+     * @param shardQueryLogic
+     *            - a configured ShardQueryLogic
+     * @param query
+     *            - a configured Query object
      * @return - a ShardQueryConfiguration
      */
     public static ShardQueryConfiguration create(ShardQueryLogic shardQueryLogic, Query query) {
@@ -1005,8 +1011,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Add a filter option
      *
-     * @param option filter option
-     * @param value  filter value
+     * @param option
+     *            filter option
+     * @param value
+     *            filter value
      */
     public void putFilterOptions(final String option, final String value) {
         if (StringUtils.isNotBlank(option) && StringUtils.isNotBlank(value)) {
@@ -1017,17 +1025,18 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     /**
      * Add filter options
      *
-     * @param options filter options
+     * @param options
+     *            filter options
      */
-    public void putFilterOptions(final Map<String, String> options) {
+    public void putFilterOptions(final Map<String,String> options) {
         if (null != options) {
-            for (final Entry<String, String> entry : options.entrySet()) {
+            for (final Entry<String,String> entry : options.entrySet()) {
                 putFilterOptions(entry.getKey(), entry.getValue());
             }
         }
     }
 
-    public Map<String, String> getFilterOptions() {
+    public Map<String,String> getFilterOptions() {
         return Collections.unmodifiableMap(filterOptions);
     }
 
@@ -1056,7 +1065,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Gets any predicate-based filters to apply when scanning through the field index. These filters will be "anded" with the default data type filter, if any,
      * used to construct the IndexIterator (particularly via the TLDQueryIterator).
      *
-     * @param classNames the names of predicate-implemented classes to use when scanning the field index
+     * @param classNames
+     *            the names of predicate-implemented classes to use when scanning the field index
      */
     @SuppressWarnings("unchecked")
     public void setIndexFilteringClassNames(List<String> classNames) {
@@ -1410,7 +1420,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        Multimap<String, Type<?>> mmap = getQueryFieldsDatatypes();
+        Multimap<String,Type<?>> mmap = getQueryFieldsDatatypes();
         for (String fieldName : mmap.keySet()) {
             sb.append(fieldName);
             for (Type<?> tn : mmap.get(fieldName)) {
@@ -1428,7 +1438,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             return "";
         }
         StringBuilder sb = new StringBuilder();
-        Multimap<String, Type<?>> mmap = getNormalizedFieldsDatatypes();
+        Multimap<String,Type<?>> mmap = getNormalizedFieldsDatatypes();
         for (String fieldName : mmap.keySet()) {
             sb.append(fieldName);
             for (Type<?> tn : mmap.get(fieldName)) {
@@ -1444,7 +1454,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return indexedFields;
     }
 
-    public void setIndexedFields(Multimap<String, Type<?>> indexedFieldsAndTypes) {
+    public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
     }
 
@@ -1456,7 +1466,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return reverseIndexedFields;
     }
 
-    public void setReverseIndexedFields(Multimap<String, Type<?>> reverseIndexedFieldsAndTypes) {
+    public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
         this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
     }
 
@@ -1472,7 +1482,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.normalizedFields = normalizedFields;
     }
 
-    public Multimap<String, Type<?>> getDataTypes() {
+    public Multimap<String,Type<?>> getDataTypes() {
         if (dataTypes == null) {
             dataTypes = HashMultimap.create();
         }
@@ -1483,64 +1493,64 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return dataTypes;
     }
 
-    public void setDataTypes(Multimap<String, Type<?>> dataTypes) {
+    public void setDataTypes(Multimap<String,Type<?>> dataTypes) {
         log.warn("setDataTypes to " + dataTypes);
         this.dataTypes = dataTypes;
     }
 
-    public Multimap<String, Type<?>> getQueryFieldsDatatypes() {
+    public Multimap<String,Type<?>> getQueryFieldsDatatypes() {
         return queryFieldsDatatypes;
     }
 
-    public void setQueryFieldsDatatypes(Multimap<String, Type<?>> queryFieldsDatatypes) {
+    public void setQueryFieldsDatatypes(Multimap<String,Type<?>> queryFieldsDatatypes) {
         this.queryFieldsDatatypes = queryFieldsDatatypes;
     }
 
-    public Map<String, DiscreteIndexType<?>> getFieldToDiscreteIndexTypes() {
+    public Map<String,DiscreteIndexType<?>> getFieldToDiscreteIndexTypes() {
         return fieldToDiscreteIndexTypes;
     }
 
-    public void setFieldToDiscreteIndexTypes(Map<String, DiscreteIndexType<?>> fieldToDiscreteIndexTypes) {
+    public void setFieldToDiscreteIndexTypes(Map<String,DiscreteIndexType<?>> fieldToDiscreteIndexTypes) {
         this.fieldToDiscreteIndexTypes = fieldToDiscreteIndexTypes;
     }
 
-    public Multimap<String, String> getCompositeToFieldMap() {
+    public Multimap<String,String> getCompositeToFieldMap() {
         return compositeToFieldMap;
     }
 
-    public void setCompositeToFieldMap(Multimap<String, String> compositeToFieldMap) {
+    public void setCompositeToFieldMap(Multimap<String,String> compositeToFieldMap) {
         this.compositeToFieldMap = compositeToFieldMap;
     }
 
-    public Map<String, Date> getCompositeTransitionDates() {
+    public Map<String,Date> getCompositeTransitionDates() {
         return compositeTransitionDates;
     }
 
-    public void setCompositeTransitionDates(Map<String, Date> compositeTransitionDates) {
+    public void setCompositeTransitionDates(Map<String,Date> compositeTransitionDates) {
         this.compositeTransitionDates = compositeTransitionDates;
     }
 
-    public Map<String, String> getCompositeFieldSeparators() {
+    public Map<String,String> getCompositeFieldSeparators() {
         return compositeFieldSeparators;
     }
 
-    public void setCompositeFieldSeparators(Map<String, String> compositeFieldSeparators) {
+    public void setCompositeFieldSeparators(Map<String,String> compositeFieldSeparators) {
         this.compositeFieldSeparators = compositeFieldSeparators;
     }
 
-    public Map<String, Date> getWhindexCreationDates() {
+    public Map<String,Date> getWhindexCreationDates() {
         return whindexCreationDates;
     }
 
-    public void setWhindexCreationDates(Map<String, Date> whindexCreationDates) {
+    public void setWhindexCreationDates(Map<String,Date> whindexCreationDates) {
         this.whindexCreationDates = whindexCreationDates;
     }
 
-    public Multimap<String, Type<?>> getNormalizedFieldsDatatypes() {
+    public Multimap<String,Type<?>> getNormalizedFieldsDatatypes() {
         return normalizedFieldsDatatypes;
     }
 
-    public void setNormalizedFieldsDatatypes(Multimap<String, Type<?>> normalizedFieldsDatatypes) {
+    public void setNormalizedFieldsDatatypes(Multimap<String,Type<?>> normalizedFieldsDatatypes) {
         this.normalizedFieldsDatatypes = (null == normalizedFieldsDatatypes) ? HashMultimap.create() : normalizedFieldsDatatypes;
         this.normalizedFields = Sets.newHashSet(this.normalizedFieldsDatatypes.keySet());
     }
@@ -1556,19 +1566,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public String getLimitFieldsAsString() {
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
-    
+
     public Set<String> getMatchingFieldSets() {
         return matchingFieldSets;
     }
-    
+
     public void setMatchingFieldSets(Set<String> matchingFieldSets) {
         this.matchingFieldSets = matchingFieldSets;
     }
-    
+
     public String getMatchingFieldSetsAsString() {
         return StringUtils.join(this.getMatchingFieldSets(), Constants.PARAM_VALUE_SEP);
     }
-    
+
     public boolean isLimitFieldsPreQueryEvaluation() {
         return limitFieldsPreQueryEvaluation;
     }
@@ -1716,12 +1726,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.includeHierarchyFields = includeHierarchyFields;
     }
 
-    public Map<String, String> getHierarchyFieldOptions() {
+    public Map<String,String> getHierarchyFieldOptions() {
         return this.hierarchyFieldOptions;
     }
 
-    public void setHierarchyFieldOptions(final Map<String, String> options) {
-        final Map<String, String> emptyOptions = Collections.emptyMap();
+    public void setHierarchyFieldOptions(final Map<String,String> options) {
+        final Map<String,String> emptyOptions = Collections.emptyMap();
         this.hierarchyFieldOptions = (null != options) ? options : emptyOptions;
     }
 
@@ -1914,7 +1924,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      * Sets a value indicating whether index-only filter functions (e.g., #INCLUDE, #EXCLUDE) should be enabled. If true, the use of such filters can
      * potentially consume a LOT of memory.
      *
-     * @param enabled flags whether or not to enable index-only filter functions
+     * @param enabled
+     *            flags whether or not to enable index-only filter functions
      */
     public void setIndexOnlyFilterFunctionsEnabled(boolean enabled) {
         this.indexOnlyFilterFunctionsEnabled = enabled;
@@ -2263,11 +2274,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.whindexMappingFields = whindexMappingFields;
     }
 
-    public Map<String, Map<String, String>> getWhindexFieldMappings() {
+    public Map<String,Map<String,String>> getWhindexFieldMappings() {
         return whindexFieldMappings;
     }
 
-    public void setWhindexFieldMappings(Map<String, Map<String, String>> whindexFieldMappings) {
+    public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         this.whindexFieldMappings = whindexFieldMappings;
     }
 
@@ -2314,11 +2325,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.excerptFields = excerptFields;
     }
 
-    public Class<? extends SortedKeyValueIterator<Key, Value>> getExcerptIterator() {
+    public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {
         return excerptIterator;
     }
 
-    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key, Value>> excerptIterator) {
+    public void setExcerptIterator(Class<? extends SortedKeyValueIterator<Key,Value>> excerptIterator) {
         this.excerptIterator = excerptIterator;
     }
 
@@ -2394,19 +2405,19 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.lazySetMechanismEnabled = lazySetMechanismEnabled;
     }
 
-    public int getDocAggregationThresholdMs(){
+    public int getDocAggregationThresholdMs() {
         return docAggregationThresholdMs;
     }
 
-    public void setDocAggregationThresholdMs(int docAggregationThresholdMs){
+    public void setDocAggregationThresholdMs(int docAggregationThresholdMs) {
         this.docAggregationThresholdMs = docAggregationThresholdMs;
     }
 
-    public int getTfAggregationThresholdMs(){
+    public int getTfAggregationThresholdMs() {
         return tfAggregationThresholdMs;
     }
 
-    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs){
+    public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
 }

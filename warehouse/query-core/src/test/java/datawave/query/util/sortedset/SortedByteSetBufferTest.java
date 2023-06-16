@@ -26,8 +26,8 @@ public class SortedByteSetBufferTest {
         byte[] template = new byte[] {5, 2, 78, 4, 8, 3, 54, 23, 6, 21, 7, 16};
         int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
         data = new byte[template.length * 2][];
-        for (int i = 0; i <template.length; i++) {
-            data[i] = new byte[i +11];
+        for (int i = 0; i < template.length; i++) {
+            data[i] = new byte[i + 11];
             Arrays.fill(data[i], template[i]);
         }
         for (int i = 0; i < template.length; i++) {

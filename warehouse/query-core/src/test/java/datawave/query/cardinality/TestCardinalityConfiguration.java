@@ -21,7 +21,7 @@ import java.util.Set;
 public class TestCardinalityConfiguration {
 
     private QueryModel QUERY_MODEL = null;
-    Map<String, String> reverseMap = null;
+    Map<String,String> reverseMap = null;
 
     @Before
     public void init() throws Exception {
@@ -59,11 +59,11 @@ public class TestCardinalityConfiguration {
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
         config.setCardinalityFieldReverseMapping(reverseMap);
-        config.setCardinalityFields(asSet(new String[]{"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
+        config.setCardinalityFields(asSet(new String[] {"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
                 "FIELD_4B", "QUERY_USER|PROTOCOL"}));
 
         // FIELD_2A is in the forward AND reverse model for field FIELD_2
-        Set<String> originalDisallowlistFieldsSet = asSet(new String[]{"FIELD1", "FIELD2", "FIELD_2A", "FIELD3"});
+        Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2A", "FIELD3"});
         Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
         Assert.assertEquals(3, revisedDisallowlist.size());
@@ -76,11 +76,11 @@ public class TestCardinalityConfiguration {
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
         config.setCardinalityFieldReverseMapping(reverseMap);
-        config.setCardinalityFields(asSet(new String[]{"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
+        config.setCardinalityFields(asSet(new String[] {"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
                 "FIELD_4B", "QUERY_USER|PROTOCOL"}));
 
         // FIELD_2B is only in the forward model for field FIELD_2
-        Set<String> originalDisallowlistFieldsSet = asSet(new String[]{"FIELD1", "FIELD2", "FIELD_2B", "FIELD3"});
+        Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_2B", "FIELD3"});
         Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
         Assert.assertEquals(3, revisedDisallowlist.size());
@@ -93,13 +93,13 @@ public class TestCardinalityConfiguration {
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
         config.setCardinalityFieldReverseMapping(reverseMap);
-        config.setCardinalityFields(asSet(new String[]{"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
+        config.setCardinalityFields(asSet(new String[] {"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
                 "FIELD_4B", "QUERY_USER|PROTOCOL"}));
 
         // FIELD_2B is only in the forward model for field FIELD_2
         // FIELD_3A is only in the forward model for FIELD_3
         // FIELD_3 included twice -- once directly and once by model
-        Set<String> originalDisallowlistFieldsSet = asSet(new String[]{"FIELD1", "FIELD2", "FIELD_3", "FIELD_2B", "FIELD_3A", "FIELD3"});
+        Set<String> originalDisallowlistFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD_3", "FIELD_2B", "FIELD_3A", "FIELD3"});
         Set<String> revisedDisallowlist = config.getRevisedDisallowlistFields(QUERY_MODEL, originalDisallowlistFieldsSet);
 
         Assert.assertEquals(3, revisedDisallowlist.size());
@@ -114,10 +114,10 @@ public class TestCardinalityConfiguration {
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
         config.setCardinalityFieldReverseMapping(reverseMap);
-        config.setCardinalityFields(asSet(new String[]{"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
+        config.setCardinalityFields(asSet(new String[] {"QUERY_USER", "QUERY_SYSTEM_FROM", "QUERY_LOGIC_NAME", "RESULT_DATA_AGE", "RESULT_DATATYPE", "R_LABEL",
                 "FIELD_4B", "QUERY_USER|PROTOCOL"}));
 
-        Set<String> originalProjectFieldsSet = asSet(new String[]{"FIELD1", "FIELD2", "FIELD3"});
+        Set<String> originalProjectFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD3"});
         Set<String> revisedProjectFields = config.getRevisedProjectFields(QUERY_MODEL, originalProjectFieldsSet);
 
         Assert.assertEquals(7, revisedProjectFields.size());
@@ -133,9 +133,9 @@ public class TestCardinalityConfiguration {
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
         config.setCardinalityFieldReverseMapping(reverseMap);
-        config.setCardinalityFields(asSet(new String[]{"R_LABEL", "QUERY_USER|PROTOCOL"}));
+        config.setCardinalityFields(asSet(new String[] {"R_LABEL", "QUERY_USER|PROTOCOL"}));
 
-        Set<String> originalProjectFieldsSet = asSet(new String[]{"FIELD1", "FIELD2", "FIELD3"});
+        Set<String> originalProjectFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD3"});
         Set<String> revisedProjectFields = config.getRevisedProjectFields(QUERY_MODEL, originalProjectFieldsSet);
 
         Assert.assertEquals(6, revisedProjectFields.size());
@@ -150,9 +150,9 @@ public class TestCardinalityConfiguration {
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
         config.setCardinalityFieldReverseMapping(reverseMap);
-        config.setCardinalityFields(asSet(new String[]{"R_LABEL", "QUERY_USER|PROTOCOL"}));
+        config.setCardinalityFields(asSet(new String[] {"R_LABEL", "QUERY_USER|PROTOCOL"}));
 
-        Set<String> originalProjectFieldsSet = asSet(new String[]{"FIELD1", "FIELD2", "FIELD3"});
+        Set<String> originalProjectFieldsSet = asSet(new String[] {"FIELD1", "FIELD2", "FIELD3"});
         Set<String> revisedProjectFields = config.getRevisedProjectFields(null, originalProjectFieldsSet);
 
         Assert.assertEquals(6, revisedProjectFields.size());
@@ -167,7 +167,7 @@ public class TestCardinalityConfiguration {
         CardinalityConfiguration config = new CardinalityConfiguration();
         config.setCardinalityUidField("UUID");
         config.setCardinalityFieldReverseMapping(reverseMap);
-        config.setCardinalityFields(asSet(new String[]{"R_LABEL", "QUERY_USER|PROTOCOL"}));
+        config.setCardinalityFields(asSet(new String[] {"R_LABEL", "QUERY_USER|PROTOCOL"}));
 
         Set<String> originalProjectFieldsSet = Collections.emptySet();
         Set<String> revisedProjectFields = config.getRevisedProjectFields(QUERY_MODEL, originalProjectFieldsSet);
