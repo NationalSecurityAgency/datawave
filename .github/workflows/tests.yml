@@ -147,10 +147,21 @@ jobs:
           ${{ runner.os }}-maven-build-
           ${{ runner.os }}-maven-format-
           ${{ runner.os }}-maven-
+    - name: Free up some space
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf $AGENT_TOOLSDIRECTORY
     # Builds the quickstart and microservice docker images and runs a query test
     - name: Docker Compose Query Tests
       run: |
         mvn -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean install
+        
+        # free up some space so that we don't run out
+        docker system prune -f
+        mvn -B -V -e -Pcompose -Dmicroservice-docker -Dquickstart-docker -Ddeploy -Dtar -DskipTests clean
+        
         cd docker
         ./bootstrap.sh
 
