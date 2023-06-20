@@ -1,5 +1,6 @@
 package datawave.test;
 
+import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
 
 import java.util.Comparator;
@@ -30,6 +31,23 @@ public class ShallowJexlNodeComparator implements Comparator<JexlNode> {
         }
         if (first.jjtGetNumChildren() != second.jjtGetNumChildren()) {
             return 1;
+        }
+        if (!first.getClass().equals(second.getClass())) {
+            return 1;
+        }
+        if (first instanceof ASTIdentifier && second instanceof ASTIdentifier) {
+            ASTIdentifier firstIdentifier = (ASTIdentifier) first;
+            ASTIdentifier secondIdentifier = (ASTIdentifier) second;
+            if (!(firstIdentifier.getNamespace().equals(secondIdentifier.getNamespace()) && firstIdentifier.getName().equals(secondIdentifier.getName()))) {
+                return 1;
+            }
+        }
+        if (first instanceof JexlNode.Constant && second instanceof JexlNode.Constant) {
+            JexlNode.Constant<?> firstLiteral = (JexlNode.Constant<?>) first;
+            JexlNode.Constant<?> secondLiteral = (JexlNode.Constant<?>) second;
+            if (!firstLiteral.getLiteral().equals(secondLiteral.getLiteral())) {
+                return 1;
+            }
         }
         return 0;
     }

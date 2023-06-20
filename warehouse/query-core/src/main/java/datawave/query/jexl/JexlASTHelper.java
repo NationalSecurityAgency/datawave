@@ -205,7 +205,8 @@ public class JexlASTHelper {
             JexlNode node = workingStack.pop();
             
             if (node instanceof ASTStringLiteral) {
-                int numToReplace = StringUtils.countMatches(((ASTStringLiteral) node).getLiteral(), placeholder);
+                ASTStringLiteral stringLiteralNode = (ASTStringLiteral) node;
+                int numToReplace = StringUtils.countMatches(stringLiteralNode.getLiteral(), placeholder);
                 if (numToReplace > 0) {
                     // get the parent node
                     JexlNode parent = node.jjtGetParent();
@@ -215,9 +216,9 @@ public class JexlASTHelper {
                     // value when determining equality, and to ensure that regex nodes
                     // use the pre-compiled form of the string literal.
                     if (!(parent instanceof ASTERNode || parent instanceof ASTNRNode))
-                        JexlNodes.setLiteral((ASTStringLiteral) node, String.valueOf(JexlNodes.getImage(node)).replace(placeholder, SINGLE_BACKSLASH));
+                        JexlNodes.setLiteral(stringLiteralNode, stringLiteralNode.getLiteral().replace(placeholder, SINGLE_BACKSLASH));
                     else
-                        JexlNodes.setLiteral((ASTStringLiteral) node, String.valueOf(JexlNodes.getImage(node)).replace(placeholder, DOUBLE_BACKSLASH));
+                        JexlNodes.setLiteral(stringLiteralNode, stringLiteralNode.getLiteral().replace(placeholder, DOUBLE_BACKSLASH));
                     
                     numReplaced += numToReplace;
                 }
