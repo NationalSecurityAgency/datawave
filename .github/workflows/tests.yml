@@ -159,6 +159,8 @@ jobs:
         cd docker
         ./bootstrap.sh
 
+        docker compose version
+
         attempt=0
         max_attempts=5
         while [ $attempt -lt $max_attempts ]; do
@@ -166,7 +168,7 @@ jobs:
           exit_code=0
 
           echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
-          timeout 2m docker compose up -d --no-recreate || exit_code=$?
+          docker compose up -d --no-recreate --wait --wait-timeout 120 || exit_code=$?
 
           if [ $exit_code -eq 0 ] ; then
             echo "Docker compose started successfully"
