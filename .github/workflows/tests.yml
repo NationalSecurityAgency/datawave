@@ -168,15 +168,20 @@ jobs:
           exit_code=0
 
           echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
-          docker compose up -d --no-recreate --wait --wait-timeout 120 || exit_code=$?
+          nohup docker compose up -d --no-recreate > compose.out 2>&1 &
 
-          if [ $exit_code -eq 0 ] ; then
+          # check to see if the query service is running
+          QUERY="$(docker compose ps --status running --services | grep query)"
+
+          if [ "$QUERY" -eq "query" ] ; then
             echo "Docker compose started successfully"
             break
           elif [ $attempt -lt $max_attempts ] ; then
-            sleep 60s
+            cat compose.out 
+            sleep 120s
           else
             echo "Failed to start docker compose"
+            cat compose.out
             exit 1
           fi
         done
