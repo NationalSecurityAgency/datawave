@@ -1,11 +1,15 @@
 package datawave.query.scheduler;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
@@ -13,6 +17,7 @@ import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.configuration.QueryData;
 
 import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -129,9 +134,25 @@ public class SequentialScheduler extends Scheduler {
                     if (null != qd.getRanges())
                         rangesSeen += qd.getRanges().size();
                     count.incrementAndGet();
-                    if (null == newQueryData)
+                    if (null == newQueryData) {
                         newQueryData = new QueryData(qd);
-                    else {
+                        String transformedQuery = JexlStringBuildingVisitor.buildQuery(config.getQueryTree());
+                        if (log.isTraceEnabled()) {
+                            log.trace("Changing newQueryData query from " + qd.getQuery() + " to " + transformedQuery);
+                        }
+                        newQueryData.setQuery(transformedQuery);
+                        
+                        List<IteratorSetting> newSettings = new ArrayList<>();
+                        for (IteratorSetting setting : newQueryData.getSettings()) {
+                            IteratorSetting newSetting = new IteratorSetting(setting.getPriority(), setting.getName(), setting.getIteratorClass());
+                            newSetting.addOptions(setting.getOptions());
+                            if (newSetting.getOptions().containsKey(QueryOptions.QUERY)) {
+                                newSetting.addOption(QueryOptions.QUERY, transformedQuery);
+                            }
+                            newSettings.add(newSetting);
+                        }
+                        newQueryData.setSettings(newSettings);
+                    } else {
                         newQueryData.getRanges().addAll(qd.getRanges());
                     }
 
