@@ -1,6 +1,5 @@
 package datawave.query.data.parsers;
 
-import datawave.ingest.util.GenerateMultipleNumShardsCacheFile;
 import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -39,7 +38,7 @@ public class TermFrequencyKey implements KeyParser {
     public void parse(Key k) {
         if (this.key != null && this.key.equals(k)) {
             if (log.isDebugEnabled()) {
-                log.debug("Same key given to parse call. Skipping re-load: " + this.key.toString());
+                log.debug("Same key given to parse call. Skipping re-load: " + this.key.toStringNoTruncate());
             }
         } else {
             clearState();

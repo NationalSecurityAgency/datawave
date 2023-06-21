@@ -173,9 +173,9 @@ public class TermFrequencyKeyTest {
 
         Key dupeKey = new Key("row", "tf", "datatype\0d8zay2.-3pnndm.-anolok\0value\0FIELD");
         parser.parse(dupeKey);
-        assertNotNull(parser.getDatatype());
-        assertNotNull(parser.getValue());
-        assertNotNull(parser.getField());
+        assertTrue(parser.getDatatype().equals("datatype"));
+        assertTrue(parser.getValue().equals("value"));
+        assertTrue(parser.getField().equals("FIELD"));
         assertTrue(parser.getKey() != dupeKey);
         assertTrue(parser.getKey() == tfKey);
     }

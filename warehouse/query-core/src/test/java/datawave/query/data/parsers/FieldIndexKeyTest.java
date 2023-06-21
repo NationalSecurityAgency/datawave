@@ -58,9 +58,9 @@ public class FieldIndexKeyTest {
 
         Key dupeKey = new Key("row", "fi\0FIELD", "value\0datatype\0d8zay2.-3pnndm.-anolok");
         parser.parse(dupeKey);
-        assertNotNull(parser.getDatatype());
-        assertNotNull(parser.getValue());
-        assertNotNull(parser.getField());
+        assertTrue(parser.getDatatype().equals("datatype"));
+        assertTrue(parser.getValue().equals("value"));
+        assertTrue(parser.getField().equals("FIELD"));
         assertTrue(parser.getKey() != dupeKey);
         assertTrue(parser.getKey() == fiKey);
         assertNormalKey();
