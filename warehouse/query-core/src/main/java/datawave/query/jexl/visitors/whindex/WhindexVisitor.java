@@ -899,7 +899,7 @@ public class WhindexVisitor extends RebuildingVisitor {
                             JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) leafKid);
                             if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor
                                             || descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-                                kidFieldNames.addAll(descriptor.fields(metadataHelper, Collections.emptySet()));
+                                kidFieldNames.addAll(descriptor.fields(metadataHelper, null));
                             } else {
                                 if (otherNodes != null) {
                                     otherNodes.add(child);

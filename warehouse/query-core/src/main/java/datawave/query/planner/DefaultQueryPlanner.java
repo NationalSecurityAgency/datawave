@@ -1766,7 +1766,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields = null;
         try {
-            String dataTypeHash = String.valueOf(dataTypes.hashCode());
+            String dataTypeHash = dataTypes == null ? "" : String.valueOf(dataTypes.hashCode());
             if (cacheDataTypes) {
                 allFields = allFieldTypeMap.getIfPresent(dataTypeHash);
             }

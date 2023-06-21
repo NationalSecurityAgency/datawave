@@ -552,9 +552,11 @@ public class ShardIndexQueryTableStaticMethods {
 
         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 22, "dataTypeFilter", GlobalIndexDataTypeFilter.class);
         int i = 1;
-        for (String dataType : dataTypes) {
-            cfg.addOption(GlobalIndexDataTypeFilter.DATA_TYPE + i, dataType);
-            i++;
+        if (dataTypes != null) {
+            for (String dataType : dataTypes) {
+                cfg.addOption(GlobalIndexDataTypeFilter.DATA_TYPE + i, dataType);
+                i++;
+            }
         }
         return cfg;
     }
