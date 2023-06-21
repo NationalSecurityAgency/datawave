@@ -82,7 +82,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         }
 
         private JexlNode getShardsAndDaysQuery(FunctionJexlNodeVisitor functionMetadata, ShardQueryConfiguration config, DateIndexHelper dateIndexHelper,
-                                               Set<String> datatypeFilter) {
+                        Set<String> datatypeFilter) {
             try {
                 List<JexlNode> arguments = functionMetadata.args();
                 JexlNode node0 = arguments.get(0);
@@ -106,7 +106,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                         log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
                     }
                     String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
-                            datatypeFilter);
+                                    datatypeFilter);
                     // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
                     if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
                         log.info("Found no index for field " + field + " and data types " + datatypeFilter);
@@ -130,7 +130,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
                             log.debug("Evaluating date index with " + field + ", [" + begin + "," + end + "], " + datatypeFilter);
                         }
                         String shardsAndDaysHint = dateIndexHelper.getShardsAndDaysHint(field, begin, end, config.getBeginDate(), config.getEndDate(),
-                                datatypeFilter);
+                                        datatypeFilter);
                         // if we did not get any shards or days, then we have a field that is not indexed for the specified datatypes
                         if (shardsAndDaysHint == null || shardsAndDaysHint.isEmpty()) {
                             log.info("Found no index for field " + field + " and data types " + datatypeFilter);
@@ -163,7 +163,7 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         }
 
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             // Since the getIndexQuery does not supply actual filters on the fields, we need to add those filters here
             Set<String> queryFields = fields(null, null);
             // argument 0 (child 2) is the fieldname, argument 1 (child 3) is the regex
@@ -282,7 +282,8 @@ public class EvaluationPhaseFilterFunctionsDescriptor implements JexlFunctionArg
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!EvaluationPhaseFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException(
+                                "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
             FunctionJexlNodeVisitor fvis = new FunctionJexlNodeVisitor();
             fvis.visit(node, null);

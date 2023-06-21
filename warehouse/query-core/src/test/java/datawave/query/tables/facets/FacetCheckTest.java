@@ -35,7 +35,7 @@ public class FacetCheckTest {
 
     @Before
     public void before() throws TableNotFoundException, IllegalAccessException, InstantiationException {
-        Multimap<String, String> facets = HashMultimap.create();
+        Multimap<String,String> facets = HashMultimap.create();
         facets.put("FACET1", "VALUE");
         facets.put("FACET2", "VALUE");
         facets.put("FACET3", "VALUE");

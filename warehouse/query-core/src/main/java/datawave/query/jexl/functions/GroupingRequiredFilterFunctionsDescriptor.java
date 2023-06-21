@@ -31,7 +31,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
      */
     public static class GroupingRequiredFilterJexlArgumentDescriptor implements JexlArgumentDescriptor {
         private static final ImmutableSet<String> groupingRequiredFunctions = ImmutableSet.of("atomValuesMatch", "matchesInGroup", "matchesInGroupLeft",
-                "getGroupsForMatchesInGroup");
+                        "getGroupsForMatchesInGroup");
 
         private final ASTFunctionNode node;
 
@@ -52,7 +52,7 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         }
 
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             FunctionJexlNodeVisitor functionMetadata = new FunctionJexlNodeVisitor();
             node.jjtAccept(functionMetadata, null);
 
@@ -220,7 +220,8 @@ public class GroupingRequiredFilterFunctionsDescriptor implements JexlFunctionAr
         try {
             Class<?> clazz = GetFunctionClass.get(node);
             if (!GroupingRequiredFilterFunctions.class.equals(clazz)) {
-                throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
+                throw new IllegalArgumentException(
+                                "Calling " + this.getClass().getSimpleName() + ".getArgumentDescriptor with node for a function in " + clazz);
             }
             return new GroupingRequiredFilterJexlArgumentDescriptor(node);
         } catch (ClassNotFoundException e) {

@@ -47,7 +47,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
     protected Boolean normalizationFailed = false;
 
     public FunctionNormalizationRebuildingVisitor(List<Type<?>> normalizers, JexlArgumentDescriptor descriptor, MetadataHelper helper,
-                                                  Set<String> datatypeFilter) {
+                    Set<String> datatypeFilter) {
         Preconditions.checkNotNull(normalizers);
         Preconditions.checkNotNull(descriptor);
         Preconditions.checkNotNull(helper);
@@ -58,7 +58,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         this.datatypeFilter = datatypeFilter;
     }
 
-    public static JexlNode normalize(ASTFunctionNode function, Multimap<String, Type<?>> allNormalizers, MetadataHelper helper, Set<String> datatypeFilter) {
+    public static JexlNode normalize(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers, MetadataHelper helper, Set<String> datatypeFilter) {
         Preconditions.checkNotNull(function);
         Preconditions.checkNotNull(allNormalizers);
         Preconditions.checkNotNull(helper);
@@ -85,7 +85,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         Comparator<ASTFunctionNode> comparator = new ASTFunctionNodeComparator();
         Collections.sort(functions, comparator);
         ASTFunctionNode last = null;
-        for (Iterator<ASTFunctionNode> it = functions.iterator(); it.hasNext(); ) {
+        for (Iterator<ASTFunctionNode> it = functions.iterator(); it.hasNext();) {
             ASTFunctionNode test = it.next();
             if (last != null && comparator.compare(last, test) == 0) {
                 it.remove();
@@ -156,15 +156,20 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
      * Create lists of normalizers that maps to the function arguments. Each list is a unique list of normalizers. Each list will be applied to the arguments to
      * produce a separate function instance.
      *
-     * @param function       a function
-     * @param allNormalizers the normalizers
-     * @param descriptor     a descriptor
-     * @param helper         a helper
-     * @param datatypeFilter a datatype filter
+     * @param function
+     *            a function
+     * @param allNormalizers
+     *            the normalizers
+     * @param descriptor
+     *            a descriptor
+     * @param helper
+     *            a helper
+     * @param datatypeFilter
+     *            a datatype filter
      * @return the list of normalizer lists
      */
-    private static List<List<Type<?>>> getNormalizerListsForArgs(ASTFunctionNode function, Multimap<String, Type<?>> allNormalizers,
-                                                                 JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
+    private static List<List<Type<?>>> getNormalizerListsForArgs(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers,
+                    JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
         List<List<Type<?>>> lists = new ArrayList<>();
 
         lists.add(new ArrayList<>(Arrays.asList(new Type<?>[function.jjtGetNumChildren()])));
@@ -177,7 +182,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         // for those arguments we want a cross-product of normalizations. However for content functions,
         // all of the arguments will refer to the same set of fields so we assume that the content
         // functions will be applied to each field in turn instead of every combination thereof.
-        Map<Set<String>, Set<Integer>> fieldGroups = new HashMap<>();
+        Map<Set<String>,Set<Integer>> fieldGroups = new HashMap<>();
         Set<String> EMPTY_SET = new HashSet<>();
         for (int i = 0; i < function.jjtGetNumChildren(); i++) {
             // get the fields that go with this argument IFF this is a string literal argument
@@ -197,7 +202,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
 
         // now for each group of fields, get the set of normalizers and create the cross-product with
         // the other groups.
-        for (Map.Entry<Set<String>, Set<Integer>> argGroup : fieldGroups.entrySet()) {
+        for (Map.Entry<Set<String>,Set<Integer>> argGroup : fieldGroups.entrySet()) {
             // now compile all of the possible normalizers for this argument group
             Set<Type<?>> normalizers = new HashSet<>();
             if (argGroup.getKey().isEmpty()) {

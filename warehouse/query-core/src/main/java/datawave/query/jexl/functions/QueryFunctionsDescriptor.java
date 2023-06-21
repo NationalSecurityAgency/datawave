@@ -67,8 +67,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
                         return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
                     case LENGTH:
                         // Return a regex node with the appropriate number of matching characters
-                        return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0), ".{" + args.get(1).image + ','
-                                + args.get(2).image + '}');
+                        return JexlNodeFactory.buildNode(new ASTERNode(ParserTreeConstants.JJTERNODE), args.get(0),
+                                        ".{" + args.get(1).image + ',' + args.get(2).image + '}');
                     case QueryFunctions.MATCH_REGEX:
                         // Return an index query.
                         return getIndexQuery(allFields);
@@ -138,7 +138,7 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
         }
 
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             // noop, covered by getIndexQuery (see comments on interface)
         }
 
@@ -239,10 +239,10 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
 
         if (!QueryFunctions.QUERY_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image))
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
-                    + node.jjtGetChild(0).image);
+                            + node.jjtGetChild(0).image);
         if (!functionClass.equals(QueryFunctions.class))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in "
-                    + functionClass);
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
 
         verify(visitor.name(), visitor.args().size());
 

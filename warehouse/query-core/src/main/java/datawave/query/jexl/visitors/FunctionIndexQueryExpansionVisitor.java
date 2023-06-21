@@ -48,16 +48,21 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
     /**
      * Expand functions to be AND'ed with their index query equivalents.
      *
-     * @param script          script
-     * @param <T>             the type cast
-     * @param config          config
-     * @param dateIndexHelper dateIndexHelper
-     * @param metadataHelper  metadataHelper
+     * @param script
+     *            script
+     * @param <T>
+     *            the type cast
+     * @param config
+     *            config
+     * @param dateIndexHelper
+     *            dateIndexHelper
+     * @param metadataHelper
+     *            metadataHelper
      * @return The tree with additional index query portions
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T expandFunctions(ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper,
-                                                         T script) {
+                    T script) {
         JexlNode copy = copy(script);
 
         FunctionIndexQueryExpansionVisitor visitor = new FunctionIndexQueryExpansionVisitor(config, metadataHelper, dateIndexHelper);
@@ -103,7 +108,7 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
 
         if (desc instanceof RebuildingJexlArgumentDescriptor) {
             JexlNode rebuiltNode = ((RebuildingJexlArgumentDescriptor) desc).rebuildNode(config, this.metadataHelper, this.dateIndexHelper,
-                    this.config.getDatatypeFilter(), node);
+                            this.config.getDatatypeFilter(), node);
 
             // if the node changed, visit the rebuilt node
             if (rebuiltNode != node)

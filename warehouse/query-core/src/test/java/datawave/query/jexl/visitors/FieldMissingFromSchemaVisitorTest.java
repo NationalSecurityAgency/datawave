@@ -38,7 +38,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatype1");
         fieldsToDatatypes.put("FOO2", "datatype2");
 
@@ -68,7 +68,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatype1");
         fieldsToDatatypes.put("FOO2", "datatype2");
 
@@ -100,7 +100,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatype1");
 
         // Setup MockMetadataHelper
@@ -130,7 +130,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatype1");
         fieldsToDatatypes.put("FOO2", "datatype2");
 
@@ -161,7 +161,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatype1");
 
         // Setup MockMetadataHelper
@@ -215,7 +215,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatype1");
 
         // Setup MockMetadataHelper
@@ -244,7 +244,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatype1");
         fieldsToDatatypes.put("FOO2", "datatype1");
         fieldsToDatatypes.put("BAZ", "datatype1");
@@ -278,7 +278,7 @@ public class FieldMissingFromSchemaVisitorTest {
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
         // Fields to datatypes for our MetadataHelper
-        Multimap<String, String> fieldsToDatatypes = HashMultimap.create();
+        Multimap<String,String> fieldsToDatatypes = HashMultimap.create();
         fieldsToDatatypes.put("FOO", "datatypeX");
         fieldsToDatatypes.put("FOO2", "datatype1");
         fieldsToDatatypes.put("BAZ", "datatype1");

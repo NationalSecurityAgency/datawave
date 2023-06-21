@@ -357,7 +357,7 @@ public class FunctionIndexQueryExpansionVisitorTest {
     }
 
     private void runTest(String originalQuery, String expected, ShardQueryConfiguration config, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper)
-            throws ParseException {
+                    throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseAndFlattenJexlQuery(originalQuery);
 
         ASTJexlScript actualScript = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, originalScript);

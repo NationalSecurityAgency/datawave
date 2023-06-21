@@ -61,8 +61,7 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     private DateIndexHelperFactory dateIndexHelperFactory;
 
     @Before
-    public void setup() throws Exception {
-    }
+    public void setup() throws Exception {}
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -85,9 +84,9 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         recordWriter.addWriter(new Text(TableName.DATE_INDEX), client.createBatchWriter(TableName.DATE_INDEX, bwCfg));
 
         // intialize some mappings
-        write("20100101", new int[]{1}, "test", "LOADED", "LOAD_DATE", "20100102", "A");
-        write("20100102", new int[]{5}, "test", "LOADED", "LOAD_DATE", "20100102", "BB");
-        write("20100103", new int[]{1, 3}, "test", "LOADED", "LOAD_DATE", "20100104", "CCCC");
+        write("20100101", new int[] {1}, "test", "LOADED", "LOAD_DATE", "20100102", "A");
+        write("20100102", new int[] {5}, "test", "LOADED", "LOAD_DATE", "20100102", "BB");
+        write("20100103", new int[] {1, 3}, "test", "LOADED", "LOAD_DATE", "20100104", "CCCC");
 
         dumpTable(auths);
     }
@@ -95,10 +94,10 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     public static void dumpTable(Authorizations auths) throws TableNotFoundException {
         TableOperations tops = client.tableOperations();
         org.apache.accumulo.core.client.Scanner scanner = client.createScanner(TableName.DATE_INDEX, auths);
-        Iterator<Map.Entry<Key, Value>> iterator = scanner.iterator();
+        Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
         System.out.println("*************** " + TableName.DATE_INDEX + " ********************");
         while (iterator.hasNext()) {
-            Map.Entry<Key, Value> entry = iterator.next();
+            Map.Entry<Key,Value> entry = iterator.next();
             System.out.println(entry);
         }
         System.out.println("*******************************************************************");
@@ -106,7 +105,7 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     }
 
     private static void write(String shardDate, int[] shardIndicies, String dataType, String type, String dateField, String dateValue, String visibility)
-            throws ParseException, IOException, InterruptedException {
+                    throws ParseException, IOException, InterruptedException {
         ColumnVisibility vis = new ColumnVisibility(visibility);
         KeyValue kv = getDateIndexEntry(shardDate, shardIndicies, dataType, type, dateField, dateValue, vis);
         Mutation m = new Mutation(kv.getKey().getRow());
@@ -115,7 +114,7 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     }
 
     public static KeyValue getDateIndexEntry(String shardDate, int[] shardIndicies, String dataType, String type, String dateField, String dateValue,
-                                             ColumnVisibility visibility) throws ParseException {
+                    ColumnVisibility visibility) throws ParseException {
         // The row is the date to index yyyyMMdd
 
         // the colf is the type (e.g. LOAD or ACTIVITY)
@@ -139,10 +138,10 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     @Test
     public void testDateIndexHelperDescription() throws Exception {
         DateIndexHelper helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
-                0.9f);
+                        0.9f);
 
         DateIndexHelper.DateTypeDescription dtd = helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"),
-                DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+                        DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
         Assert.assertEquals(Collections.singleton("LOAD_DATE"), dtd.getFields());
         Assert.assertEquals(DateIndexUtil.getBeginDate("20100101"), dtd.getBeginDate());
         Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());
@@ -175,8 +174,8 @@ public class DateIndexHelperTest implements ApplicationContextAware {
         Assert.assertEquals(3, countCacheEntries());
 
         // call with different auths, there should be one more map entry in the cache
-        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(new Authorizations("Z")),
-                2, 0.9f);
+        helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(new Authorizations("Z")), 2,
+                        0.9f);
         helper.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
         Assert.assertEquals(4, countCacheEntries());
 
@@ -188,12 +187,12 @@ public class DateIndexHelperTest implements ApplicationContextAware {
 
     @Test
     public void testDateIndexHelperDescription2() throws Exception {
-        DateIndexHelper helper2 = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths),
-                2, 0.9f);
+        DateIndexHelper helper2 = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
+                        0.9f);
 
         // if a filter is present, fields should be returned as such - in this case no fields returned since there isn't a match
         DateIndexHelper.DateTypeDescription dtd = helper2.getTypeDescription("LOADED", DateIndexUtil.getBeginDate("20100102"),
-                DateIndexUtil.getEndDate("20100102"), Collections.singleton("foo"));
+                        DateIndexUtil.getEndDate("20100102"), Collections.singleton("foo"));
         Assert.assertEquals(Collections.EMPTY_SET, dtd.getFields());
         Assert.assertEquals(DateIndexUtil.getBeginDate("20100102"), dtd.getBeginDate());
         Assert.assertEquals(DateIndexUtil.getEndDate("20100102"), dtd.getEndDate());
@@ -235,45 +234,45 @@ public class DateIndexHelperTest implements ApplicationContextAware {
     @Test
     public void testDateIndexHelperHint() throws Exception {
         DateIndexHelper helper = this.dateIndexHelperFactory.createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
-                0.9f);
+                        0.9f);
 
         String hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
+                        DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
         Assert.assertEquals("20100101_1,20100102_5", hint);
 
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
         Assert.assertEquals("20100101_1,20100102_5", hint);
 
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
+                        DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("test"));
         Assert.assertEquals("20100102_5", hint);
 
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"),
-                DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
+                        DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
         Assert.assertEquals("20100103_1,20100103_3", hint);
 
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"),
-                DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"), Collections.singleton("test"));
+                        DateIndexUtil.getBeginDate("20100104"), DateIndexUtil.getEndDate("20100104"), Collections.singleton("test"));
         Assert.assertEquals("", hint);
 
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100103"), DateIndexUtil.getEndDate("20100103"),
-                DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
+                        DateIndexUtil.getBeginDate("20090101"), DateIndexUtil.getEndDate("20120101"), Collections.singleton("test"));
         Assert.assertEquals("", hint);
 
         // expect empty filter to allow nothing
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton(""));
+                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton(""));
         Assert.assertEquals("", hint);
 
         // expect non-matching filter to allow nothing
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("foo"));
+                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), Collections.singleton("foo"));
         Assert.assertEquals("", hint);
 
         // except null filter to allow all the things
         hint = helper.getShardsAndDaysHint("LOAD_DATE", DateIndexUtil.getBeginDate("20100102"), DateIndexUtil.getEndDate("20100102"),
-                DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), null);
+                        DateIndexUtil.getBeginDate("20100101"), DateIndexUtil.getEndDate("20100102"), null);
         Assert.assertEquals("20100101_1,20100102_5", hint);
     }
 }

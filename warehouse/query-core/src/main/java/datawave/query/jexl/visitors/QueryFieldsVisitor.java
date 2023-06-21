@@ -150,8 +150,10 @@ public class QueryFieldsVisitor extends BaseVisitor {
     /**
      * Have to handle JexlArg, GeoFunctions, and GeoWaveFunctions
      *
-     * @param node the node
-     * @param data the data
+     * @param node
+     *            the node
+     * @param data
+     *            the data
      * @return list of IdentityContexts or QueryContexts
      */
     @Override

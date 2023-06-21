@@ -72,7 +72,7 @@ public class CostEstimator {
                     }
 
                     return new Cost(helper.getCountsByFieldForDays(fieldName, config.getBeginDate(), config.getEndDate(), config.getDatatypeFilter())
-                            * Cost.ER_COST_MULTIPLIER, 0l);
+                                    * Cost.ER_COST_MULTIPLIER, 0l);
                 } catch (NoSuchElementException e) {
                     log.trace("Could not find field name for ER node, ignoring for cost");
                     return new Cost();
