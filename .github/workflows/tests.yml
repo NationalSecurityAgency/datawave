@@ -169,7 +169,7 @@ jobs:
           sleep 60s
 
           # check to see if the query service is running
-          QUERY="$(docker compose ps --status running --services | grep query)"
+          QUERY="$(docker compose ps --status running --services | grep query || true)"
 
           if [ "$QUERY" == "query" ] ; then
             echo "Docker compose started successfully"
