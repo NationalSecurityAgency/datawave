@@ -60,7 +60,7 @@ import java.util.Iterator;
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryMetricsBean {
-    
+
     private static final Logger log = Logger.getLogger(QueryMetricsBean.class);
     @Inject
     private JMSContext jmsContext;
@@ -83,13 +83,13 @@ public class QueryMetricsBean {
 
     /*
      * @PermitAll is necessary because this method is called indirectly from the @PreDestroy method of the QueryExpirationBean and the QueryExpirationBean's
-     * 
+     *
      * @RunAs annotation is not being honored in the @PreDestroy hook
      */
     @PermitAll
     public void updateMetric(BaseQueryMetric metric) throws Exception {
         DatawavePrincipal dp = getPrincipal();
-        
+
         if (metric.getLastWrittenHash() != metric.hashCode()) {
             metric.setLastWrittenHash(metric.hashCode());
             try {
@@ -108,7 +108,7 @@ public class QueryMetricsBean {
             }
         }
     }
-    
+
     /**
      * Returns metrics for the current users queries that are identified by the id
      *
@@ -215,8 +215,8 @@ public class QueryMetricsBean {
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
     public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated1(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
             return remoteQueryMetricService.summaryAll(begin, end);
         } else {
@@ -246,8 +246,8 @@ public class QueryMetricsBean {
     @Interceptors(ResponseInterceptor.class)
     @RolesAllowed({"Administrator", "MetricsAdministrator"})
     public QueryMetricsSummaryResponse getQueryMetricsSummaryDeprecated2(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
             return remoteQueryMetricService.summaryAll(begin, end);
         } else {
@@ -304,8 +304,8 @@ public class QueryMetricsBean {
     @Path("/summaryCounts/user")
     @Interceptors(ResponseInterceptor.class)
     public QueryMetricsSummaryResponse getQueryMetricsUserSummaryDeprecated(
-                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin, @QueryParam("end") @DateFormat(
-                                    defaultTime = "235959", defaultMillisec = "999") Date end) {
+                    @QueryParam("begin") @DateFormat(defaultTime = "000000", defaultMillisec = "000") Date begin,
+                    @QueryParam("end") @DateFormat(defaultTime = "235959", defaultMillisec = "999") Date end) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
             return remoteQueryMetricService.summaryUser(begin, end);
         } else {
@@ -314,7 +314,7 @@ public class QueryMetricsBean {
     }
 
     private QueryMetricsSummaryResponse queryMetricsSummary(Date begin, Date end, boolean onlyCurrentUser) {
-        
+
         if (null == end) {
             end = new Date();
         } else {
@@ -344,7 +344,7 @@ public class QueryMetricsBean {
         }
         return response;
     }
-    
+
     /**
      * Find out who/what called this method
      *
@@ -358,12 +358,12 @@ public class QueryMetricsBean {
         }
         return dp;
     }
-    
+
     public void sendQueryMetric(DatawavePrincipal principal, BaseQueryMetric queryMetric) throws Exception {
-        
+
         QueryMetricHolder queryMetricHolder = new QueryMetricHolder(principal, queryMetric);
         QueryMetricMessage msg = new QueryMetricMessage(queryMetricHolder);
-        
+
         jmsContext.createProducer().send(dest, msg);
     }
 }

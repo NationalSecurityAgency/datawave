@@ -38,26 +38,26 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     protected SortedSet<E> set = null;
     // A null entry placeholder
     public static final NullObject NULL_OBJECT = new NullObject();
-    
+
     // The file handler that handles the underlying io
     public TypedSortedSetFileHandler handler;
     // The sort set factory
     public FileSortedSetFactory factory;
-    
+
     /**
      * A class that represents a null object within the set
-     * 
-     * 
-     * 
+     *
+     *
+     *
      */
     public static class NullObject implements Serializable {
         private static final long serialVersionUID = -5528112099317370355L;
-        
+
     }
-    
+
     /**
      * Create a file sorted set from another one
-     * 
+     *
      * @param other
      *            the other sorted set
      */
@@ -68,7 +68,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         this.persisted = other.persisted;
         this.range = other.range;
     }
-    
+
     /**
      * Create a file sorted subset from another one
      *
@@ -93,7 +93,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             }
         }
     }
-    
+
     /**
      * Create a persisted sorted set
      *
@@ -110,7 +110,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         this.set = new TreeSet<>();
         this.persisted = persisted;
     }
-    
+
     /**
      * Create a persisted sorted set
      *
@@ -129,10 +129,10 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         this.set = new TreeSet<>(comparator);
         this.persisted = persisted;
     }
-    
+
     /**
      * Create an unpersisted sorted set (still in memory)
-     * 
+     *
      * @param set
      *            a sorted set
      * @param handler
@@ -146,7 +146,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         this.set = new TreeSet<>(set);
         this.persisted = false;
     }
-    
+
     /**
      * Create an sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoid pulling
      * all of its entries into memory at once.
@@ -174,7 +174,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             persisted = true;
         }
     }
-    
+
     /**
      * This will revert this set to whatever contents are in the underlying file, making the set "persisted". This is intended to be used following a load
      * command when no changes were actually made the the set If the persist options included verification, then the files will be verified prior to unloading.
@@ -189,7 +189,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             persisted = true;
         }
     }
-    
+
     /**
      * This will dump the set to the file, making the set "persisted"
      *
@@ -199,10 +199,10 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     public void persist() throws IOException {
         persist(this.handler);
     }
-    
+
     /**
      * This will dump the set to the file, making the set "persisted"
-     * 
+     *
      * @param handler
      *            the handler
      * @throws IOException
@@ -215,21 +215,21 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             persisted = true;
         }
     }
-    
+
     /**
      * This will dump the set to a file, making the set "persisted" The implementation is expected to wrap the handler with a TypedSortedSetFileHandler and the
      * call persist(TypedSortedSetFileHandler handler)
-     * 
+     *
      * @param handler
      *            the sorted set file handler
      * @throws IOException
      *             for issues with read/write
      */
     public abstract void persist(SortedSetFileHandler handler) throws IOException;
-    
+
     /**
      * Persist the supplied set to a file as defined by this classes sorted set file handler.
-     * 
+     *
      * @param set
      *            the set
      * @param handler
@@ -242,13 +242,13 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         if (log.isDebugEnabled()) {
             log.debug("Persisting " + handler);
         }
-        
+
         long start = System.currentTimeMillis();
         try {
             // assign the passed in file handler
             // if we can't persist, we will reset to null
             this.handler = handler;
-            
+
             int actualSize = 0;
             PersistOptions persistOptions = handler.getPersistOptions();
             List<E> setToVerify = new ArrayList<>();
@@ -264,19 +264,19 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             }
             // now verify the written file
             verifyPersistance(handler, actualSize, setToVerify);
-            
+
         } catch (IOException e) {
             handler.deleteFile();
             this.handler = null;
             throw e;
         }
-        
+
         if (log.isDebugEnabled()) {
             long delta = System.currentTimeMillis() - start;
             log.debug("Persisting " + handler + " took " + delta + "ms");
         }
     }
-    
+
     private void verifyPersistance(TypedSortedSetFileHandler handler, int size, List<E> setToVerify) throws IOException {
         // verify we wrote at least the size....
         if (handler.getSize() == 0) {
@@ -296,7 +296,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                 }
             }
         }
-        
+
         // now verify the size was written at the end
         if (persistOptions.isVerifySize()) {
             if (readSize() != size) {
@@ -304,10 +304,10 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             }
         }
     }
-    
+
     /**
      * Read the size from the file which is in the last 4 bytes.
-     * 
+     *
      * @return the size (in terms of objects)
      * @throws IOException
      *             for issues with read/write
@@ -318,10 +318,10 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return inStream.readSize();
         }
     }
-    
+
     /**
      * This will read the file into an in-memory set, making this file "unpersisted"
-     * 
+     *
      * @throws IOException
      *             for issues with read/write
      * @throws ClassNotFoundException
@@ -339,7 +339,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             persisted = false;
         }
     }
-    
+
     protected E readObject(ObjectInputStream stream) {
         try {
             return (E) stream.readObject();
@@ -347,21 +347,21 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return null;
         }
     }
-    
+
     protected void writeObject(ObjectOutputStream stream, E obj) throws IOException {
         stream.writeObject(obj);
     }
-    
+
     /*
      * Is this set persisted?
      */
     public boolean isPersisted() {
         return persisted;
     }
-    
+
     /**
      * Get the size of the set. Note if the set has been persisted, then this may be an upper bound on the size.
-     * 
+     *
      * @return the size upper bound
      */
     @Override
@@ -379,7 +379,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.size();
         }
     }
-    
+
     @Override
     public boolean isEmpty() {
         // must attempt to read the first element to be sure if persisted
@@ -390,7 +390,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return true;
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public boolean contains(Object o) {
@@ -409,7 +409,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.contains(o);
         }
     }
-    
+
     @Override
     public Iterator<E> iterator() {
         if (persisted) {
@@ -418,7 +418,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.iterator();
         }
     }
-    
+
     @Override
     public Object[] toArray() {
         if (persisted) {
@@ -443,7 +443,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.toArray();
         }
     }
-    
+
     @SuppressWarnings({"unchecked"})
     @Override
     public <T> T[] toArray(T[] a) {
@@ -480,7 +480,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.toArray(a);
         }
     }
-    
+
     @Override
     public boolean add(E e) {
         if (persisted) {
@@ -489,7 +489,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.add(e);
         }
     }
-    
+
     @Override
     public boolean remove(Object o) {
         if (persisted) {
@@ -498,7 +498,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.remove(o);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public boolean containsAll(Collection<?> c) {
@@ -530,7 +530,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.containsAll(c);
         }
     }
-    
+
     @Override
     public boolean addAll(Collection<? extends E> c) {
         if (persisted) {
@@ -539,7 +539,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.addAll(c);
         }
     }
-    
+
     @Override
     public boolean retainAll(Collection<?> c) {
         if (persisted) {
@@ -548,7 +548,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.retainAll(c);
         }
     }
-    
+
     @Override
     public boolean removeAll(Collection<?> c) {
         if (persisted) {
@@ -557,7 +557,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.removeAll(c);
         }
     }
-    
+
     @Override
     public boolean removeIf(Predicate<? super E> filter) {
         if (persisted) {
@@ -566,7 +566,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.removeIf(filter);
         }
     }
-    
+
     @Override
     public void clear() {
         if (persisted) {
@@ -576,27 +576,27 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             set.clear();
         }
     }
-    
+
     @Override
     public Comparator<? super E> comparator() {
         return set.comparator();
     }
-    
+
     @Override
     public SortedSet<E> subSet(E fromElement, E toElement) {
         return factory.newInstance(this, fromElement, toElement);
     }
-    
+
     @Override
     public SortedSet<E> headSet(E toElement) {
         return factory.newInstance(this, null, toElement);
     }
-    
+
     @Override
     public SortedSet<E> tailSet(E fromElement) {
         return factory.newInstance(this, fromElement, null);
     }
-    
+
     @Override
     public E first() {
         boolean gotFirst = false;
@@ -620,7 +620,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return first;
         }
     }
-    
+
     @Override
     public E last() {
         boolean gotLast = false;
@@ -648,7 +648,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return last;
         }
     }
-    
+
     @Override
     public String toString() {
         if (persisted) {
@@ -657,7 +657,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return set.toString();
         }
     }
-    
+
     /**
      * Extending classes must implement cloneable
      *
@@ -666,7 +666,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     public FileSortedSet<E> clone() {
         return factory.newInstance(this);
     }
-    
+
     /* Some utilities */
     private boolean equals(E o1, E o2) {
         if (o1 == null) {
@@ -681,11 +681,11 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             }
         }
     }
-    
+
     private E getStart() {
         return (isSubset() ? range[0] : null);
     }
-    
+
     private E getStart(E from) {
         E start = getStart();
         if (start == null) {
@@ -698,11 +698,11 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return from;
         }
     }
-    
+
     private E getEnd() {
         return (isSubset() ? range[1] : null);
     }
-    
+
     private E getEnd(E to) {
         E end = getEnd();
         if (end == null) {
@@ -715,11 +715,11 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return to;
         }
     }
-    
+
     private boolean isSubset() {
         return (range != null);
     }
-    
+
     private int compare(E a, E b) {
         if (this.set.comparator() != null) {
             return this.set.comparator().compare(a, b);
@@ -727,20 +727,20 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
             return ((Comparable<E>) a).compareTo(b);
         }
     }
-    
+
     public BoundedTypedSortedSetFileHandler<E> getBoundedFileHandler() {
         return new DefaultBoundedTypedSortedSetFileHandler();
     }
-    
+
     /********* Some sub classes ***********/
-    
+
     /**
      * This is the iterator for a persisted FileSortedSet
      */
     protected class FileIterator implements Iterator<E> {
         private SortedSetInputStream<E> stream = null;
         private E next = null;
-        
+
         public FileIterator() {
             try {
                 this.stream = getBoundedFileHandler().getInputStream(getStart(), getEnd());
@@ -753,7 +753,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                 throw new IllegalStateException("Unable to read file", e);
             }
         }
-        
+
         public void cleanup() {
             if (stream != null) {
                 try {
@@ -764,12 +764,12 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                 stream = null;
             }
         }
-        
+
         @Override
         public boolean hasNext() {
             return (next != null);
         }
-        
+
         @Override
         public E next() {
             if (!hasNext()) {
@@ -788,23 +788,23 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                 throw new IllegalStateException("Unable to get next element from file", e);
             }
         }
-        
+
         @Override
         public void remove() {
             throw new UnsupportedOperationException("Iterator.remove() not supported.");
         }
-        
+
         @Override
         protected void finalize() throws Throwable {
             cleanup();
             super.finalize();
         }
-        
+
     }
-    
+
     /**
      * An interface for a sorted set factory
-     * 
+     *
      * @param <E>
      *            type of the factory
      */
@@ -817,7 +817,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          * @return a new instance
          */
         FileSortedSet<E> newInstance(FileSortedSet<E> other);
-        
+
         /**
          * factory method
          *
@@ -830,7 +830,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          * @return a new instance
          */
         FileSortedSet<E> newInstance(FileSortedSet<E> other, E from, E to);
-        
+
         /**
          * factory method
          *
@@ -841,7 +841,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          * @return a new instance
          */
         FileSortedSet<E> newInstance(SortedSetFileHandler handler, boolean persisted);
-        
+
         /**
          * Factory method
          *
@@ -854,7 +854,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          * @return a new instance
          */
         FileSortedSet<E> newInstance(Comparator<? super E> comparator, SortedSetFileHandler handler, boolean persisted);
-        
+
         /**
          * Create an unpersisted sorted set (still in memory)
          *
@@ -865,7 +865,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          * @return a new instance
          */
         FileSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler);
-        
+
         /**
          * factory method
          *
@@ -881,35 +881,35 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          */
         FileSortedSet<E> newInstance(SortedSet<E> set, SortedSetFileHandler handler, boolean persist) throws IOException;
     }
-    
+
     /**
      * A sorted set input stream
-     * 
+     *
      * @param <E>
      *            type of the stream
      */
     public interface SortedSetInputStream<E> extends AutoCloseable {
         E readObject() throws IOException;
-        
+
         int readSize() throws IOException;
-        
+
         void close();
     }
-    
+
     /**
      * A sorted set output stream
-     * 
+     *
      * @param <E>
      *            type of the stream
      */
     public interface SortedSetOutputStream<E> extends AutoCloseable {
         void writeObject(E obj) throws IOException;
-        
+
         void writeSize(int size) throws IOException;
-        
+
         void close() throws IOException;
     }
-    
+
     /**
      * A factory that will provide the input stream and output stream to the same underlying file.
      *
@@ -923,7 +923,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          *             for problems with read/write
          */
         InputStream getInputStream() throws IOException;
-        
+
         /**
          * Return the output stream
          *
@@ -932,19 +932,19 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          *             for problems with read/write
          */
         OutputStream getOutputStream() throws IOException;
-        
+
         /**
          * Get the persistent verification options
-         * 
+         *
          * @return the persistent verification options
          */
         PersistOptions getPersistOptions();
-        
+
         long getSize();
-        
+
         void deleteFile();
     }
-    
+
     /**
      * A factory that will provide the input stream and output stream to the same underlying file.
      *
@@ -958,7 +958,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          *             for problems with read/write
          */
         SortedSetInputStream<E> getInputStream() throws IOException;
-        
+
         /**
          * Return the output stream
          *
@@ -967,19 +967,19 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          *             for problems with read/write
          */
         SortedSetOutputStream<E> getOutputStream() throws IOException;
-        
+
         /**
          * Get the persistent verification options
-         * 
+         *
          * @return persistent verification options
          */
         PersistOptions getPersistOptions();
-        
+
         long getSize();
-        
+
         void deleteFile();
     }
-    
+
     /**
      * A factory that will provide the input stream and output stream to the same underlying file. An additional input stream method allows for creating a
      * stream subset.
@@ -999,7 +999,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
          */
         SortedSetInputStream<E> getInputStream(E start, E end) throws IOException;
     }
-    
+
     /**
      * A default implementation for a bounded typed sorted set
      */
@@ -1012,33 +1012,33 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                 return new BoundedInputStream(handler.getInputStream(), start, end);
             }
         }
-        
+
         @Override
         public SortedSetInputStream<E> getInputStream() throws IOException {
             return handler.getInputStream();
         }
-        
+
         @Override
         public SortedSetOutputStream<E> getOutputStream() throws IOException {
             return handler.getOutputStream();
         }
-        
+
         @Override
         public PersistOptions getPersistOptions() {
             return handler.getPersistOptions();
         }
-        
+
         @Override
         public long getSize() {
             return handler.getSize();
         }
-        
+
         @Override
         public void deleteFile() {
             handler.deleteFile();
         }
     }
-    
+
     /**
      * An input stream that supports bounding the objects. Used when the underlying stream does not already support bounding.
      */
@@ -1046,13 +1046,13 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         private SortedSetInputStream<E> delegate;
         private E from;
         private E to;
-        
+
         public BoundedInputStream(SortedSetInputStream<E> stream, E from, E to) {
             this.delegate = stream;
             this.from = from;
             this.to = to;
         }
-        
+
         @Override
         public E readObject() throws IOException {
             E o = delegate.readObject();
@@ -1065,47 +1065,47 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                 return o;
             }
         }
-        
+
         @Override
         public int readSize() throws IOException {
             return delegate.readSize();
         }
-        
+
         @Override
         public void close() {
             delegate.close();
         }
     }
-    
+
     public static class PersistOptions {
         private boolean verifySize = true;
         private boolean verifyElements = true;
         private int numElementsToVerify = 100;
-        
+
         public PersistOptions() {}
-        
+
         public PersistOptions(boolean verify) {
             this.verifySize = this.verifyElements = verify;
         }
-        
+
         public PersistOptions(boolean verifySize, boolean verifyElements) {
             this.verifySize = verifySize;
             this.verifyElements = verifyElements;
         }
-        
+
         public PersistOptions(boolean verifySize, boolean verifyElements, int numElementsToVerify) {
             this(verifySize, verifyElements);
             this.numElementsToVerify = numElementsToVerify;
         }
-        
+
         public boolean isVerifySize() {
             return verifySize;
         }
-        
+
         public boolean isVerifyElements() {
             return verifyElements;
         }
-        
+
         public int getNumElementsToVerify() {
             return numElementsToVerify;
         }

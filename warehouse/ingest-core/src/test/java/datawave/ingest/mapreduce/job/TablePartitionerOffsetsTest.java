@@ -15,13 +15,13 @@ import java.util.List;
 public class TablePartitionerOffsetsTest {
     private static final Integer NUM_REDUCERS = 54;
     private Configuration conf;
-    
+
     @Before
     public void before() {
         conf = new Configuration();
         conf.setInt("splits.num.reduce", NUM_REDUCERS);
     }
-    
+
     @Test
     public void testNoConfigurationIsAOk() throws ClassNotFoundException {
         List<Text> tableNames = Arrays.asList();
@@ -29,12 +29,12 @@ public class TablePartitionerOffsetsTest {
         TablePartitionerOffsets offsets = new TablePartitionerOffsets(conf, tableNames, partitionerCache);
         assertOffset(offsets, "table1", null);
     }
-    
+
     private void assertOffset(TablePartitionerOffsets offsets, String tableName, Integer i) {
         Integer expected = (i == null ? null : (Integer) (NUM_REDUCERS - 1 - i));
         Assert.assertEquals(expected, offsets.get(new Text(tableName)));
     }
-    
+
     @Test
     public void testNoOffsets() throws ClassNotFoundException {
         conf.set(DelegatingPartitioner.DEFAULT_DELEGATE_PARTITIONER, RowHashingPartitioner.class.getName());
@@ -43,7 +43,7 @@ public class TablePartitionerOffsetsTest {
         TablePartitionerOffsets offsets = new TablePartitionerOffsets(conf, tableNames, partitionerCache);
         assertOffset(offsets, "table1", null);
     }
-    
+
     @Test
     public void testTableOnly() throws ClassNotFoundException {
         conf.set(DelegatingPartitioner.DEFAULT_DELEGATE_PARTITIONER, RowHashingPartitioner.class.getName());
@@ -59,7 +59,7 @@ public class TablePartitionerOffsetsTest {
         assertOffset(offsets, "table2", 7); // 5 through 7
         assertOffset(offsets, "table3", null);
     }
-    
+
     @Test
     public void testWithCategoryMixedIn() throws ClassNotFoundException {
         conf.set(DelegatingPartitioner.DEFAULT_DELEGATE_PARTITIONER, RowHashingPartitioner.class.getName());

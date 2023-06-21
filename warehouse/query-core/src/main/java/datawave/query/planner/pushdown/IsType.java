@@ -8,16 +8,16 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 
 /**
- * 
+ *
  */
 public class IsType implements Predicate<JexlNode> {
-    
+
     private Class<? extends JexlNode> type;
-    
+
     public IsType(Class<? extends JexlNode> type) {
         this.type = type;
     }
-    
+
     @Override
     public boolean apply(JexlNode node) {
         Preconditions.checkNotNull(node);

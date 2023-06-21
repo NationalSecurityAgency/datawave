@@ -15,50 +15,50 @@ import org.apache.accumulo.core.data.Key;
  * </ul>
  */
 public class EventKey implements KeyParser {
-    
+
     private Key key;
-    
+
     private ByteSequence cf;
     private ByteSequence cq;
-    
+
     private int cfSplit;
     private int cqSplit;
-    
+
     private String datatype;
     private String uid;
     private String rootUid;
     private String value;
     private String field;
-    
+
     @Override
     public void parse(Key k) {
         clearState();
         this.key = k;
     }
-    
+
     public void clearState() {
         this.cf = null;
         this.cq = null;
-        
+
         this.cfSplit = -1;
         this.cqSplit = -1;
-        
+
         this.datatype = null;
         this.uid = null;
         this.rootUid = null;
         this.value = null;
         this.field = null;
     }
-    
+
     /**
      * Helper method that scans the column family to find the split points
      */
     private void scanColumnFamily() {
-        
+
         if (key == null) {
             return;
         }
-        
+
         this.cf = key.getColumnFamilyData();
         for (int i = 0; i < cf.length(); i++) {
             if (cf.byteAt(i) == 0x00) {
@@ -67,7 +67,7 @@ public class EventKey implements KeyParser {
             }
         }
     }
-    
+
     /**
      * Helper method that scans the column qualifier to find the split points
      */
@@ -75,7 +75,7 @@ public class EventKey implements KeyParser {
         if (key == null) {
             return;
         }
-        
+
         cq = key.getColumnQualifierData();
         for (int i = 0; i < cq.length(); i++) {
             if (cq.byteAt(i) == 0x00) {
@@ -84,7 +84,7 @@ public class EventKey implements KeyParser {
             }
         }
     }
-    
+
     @Override
     public String getDatatype() {
         if (datatype == null) {
@@ -99,7 +99,7 @@ public class EventKey implements KeyParser {
         }
         return datatype;
     }
-    
+
     @Override
     public String getUid() {
         if (uid == null) {
@@ -114,23 +114,23 @@ public class EventKey implements KeyParser {
         }
         return uid;
     }
-    
+
     @Override
     public String getRootUid() {
         if (rootUid == null) {
             if (uid == null) {
                 getUid();
             }
-            
+
             if (uid == null) {
                 throw new IllegalArgumentException("Failed to parse root uid from event key");
             }
-            
+
             rootUid = TLD.getRootUid(uid);
         }
         return rootUid;
     }
-    
+
     @Override
     public String getValue() {
         if (value == null) {
@@ -145,7 +145,7 @@ public class EventKey implements KeyParser {
         }
         return value;
     }
-    
+
     @Override
     public String getField() {
         if (field == null) {
@@ -160,7 +160,7 @@ public class EventKey implements KeyParser {
         }
         return field;
     }
-    
+
     /**
      * Get the key
      *

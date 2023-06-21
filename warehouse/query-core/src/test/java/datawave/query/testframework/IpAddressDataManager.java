@@ -19,18 +19,18 @@ import java.util.Set;
  * Data manager for IP address data.
  */
 public class IpAddressDataManager extends AbstractDataManager {
-    
+
     private static final Logger log = Logger.getLogger(IpAddressDataManager.class);
-    
+
     public IpAddressDataManager() {
         super(IpAddrField.EVENT_ID.name(), IpAddrField.START_DATE.name(), IpAddrField.getFieldsMetadata());
     }
-    
+
     @Override
     public List<String> getHeaders() {
         return IpAddrField.headers();
     }
-    
+
     @Override
     public void addTestData(URI file, String datatype, Set<String> indexes) throws IOException {
         Assert.assertFalse("datatype has already been configured(" + datatype + ")", this.rawData.containsKey(datatype));
@@ -48,9 +48,9 @@ public class IpAddressDataManager extends AbstractDataManager {
             log.info("ip address test data(" + file + ") count(" + count + ")");
         }
     }
-    
+
     static class IpAddrRawData extends BaseRawData {
-        
+
         IpAddrRawData(final String datatype, final String fields[]) {
             super(datatype, fields, IpAddrField.headers(), IpAddrField.getFieldsMetadata());
             Assert.assertEquals("ingest data field count is invalid", IpAddrField.headers().size(), fields.length);

@@ -1,11 +1,14 @@
 package datawave.query.index.lookup;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterators;
-import datawave.query.CloseableIterable;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.IndexStream.StreamContext;
+import datawave.query.CloseableIterable;
+import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.iterator.FieldIndexOnlyQueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.errors.ErrorKey;
@@ -15,6 +18,7 @@ import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.util.time.DateHelper;
+
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -25,10 +29,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.util.PeekingIterator;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map.Entry;
+import com.google.common.base.Function;
+import com.google.common.collect.Iterators;
 
 public class ShardRangeStream extends RangeStream {
 
@@ -43,7 +45,7 @@ public class ShardRangeStream extends RangeStream {
 
             int stackStart = config.getBaseIteratorPriority() + 40;
             BatchScanner scanner = scanners.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery(),
-                    true);
+                            true);
 
             IteratorSetting cfg = new IteratorSetting(stackStart++, "query", FieldIndexOnlyQueryIterator.class);
 
@@ -52,9 +54,9 @@ public class ShardRangeStream extends RangeStream {
 
             try {
                 DefaultQueryPlanner.addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS,
-                        QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
+                                QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexOnlyFields(config.getDatatypeFilter())), true);
                 DefaultQueryPlanner.addOption(cfg, QueryOptions.INDEXED_FIELDS,
-                        QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
+                                QueryOptions.buildFieldStringFromSet(metadataHelper.getIndexedFields(config.getDatatypeFilter())), true);
             } catch (TableNotFoundException e) {
                 throw new RuntimeException(e);
             }
@@ -69,13 +71,13 @@ public class ShardRangeStream extends RangeStream {
 
             scanner.addScanIterator(cfg);
 
-            Iterator<Entry<Key, Value>> kvIter = scanner.iterator();
+            Iterator<Entry<Key,Value>> kvIter = scanner.iterator();
 
             itr = Collections.emptyIterator();
 
             if (kvIter.hasNext()) {
-                PeekingIterator<Entry<Key, Value>> peeking = new PeekingIterator<>(kvIter);
-                Entry<Key, Value> peekKey = peeking.peek();
+                PeekingIterator<Entry<Key,Value>> peeking = new PeekingIterator<>(kvIter);
+                Entry<Key,Value> peekKey = peeking.peek();
                 ErrorKey errorKey = ErrorKey.getErrorKey(peekKey.getKey());
                 if (errorKey != null) {
                     switch (errorKey.getErrorType()) {
@@ -112,16 +114,16 @@ public class ShardRangeStream extends RangeStream {
         return new Range(startKey, false, endKey, false);
     }
 
-    public class FieldIndexParser implements Function<Entry<Key, Value>, QueryPlan> {
+    public class FieldIndexParser implements Function<Entry<Key,Value>,QueryPlan> {
         protected JexlNode node;
 
         public FieldIndexParser(JexlNode node) {
             this.node = node;
         }
 
-        public QueryPlan apply(Entry<Key, Value> entry) {
-            return new QueryPlan(node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true, entry.getKey().followingKey(
-                    PartialKey.ROW_COLFAM), false));
+        public QueryPlan apply(Entry<Key,Value> entry) {
+            return new QueryPlan(node, new Range(new Key(entry.getKey().getRow(), entry.getKey().getColumnFamily()), true,
+                            entry.getKey().followingKey(PartialKey.ROW_COLFAM), false));
         }
     }
 }

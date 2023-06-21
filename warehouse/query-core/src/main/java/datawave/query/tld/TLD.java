@@ -22,9 +22,9 @@ import static datawave.query.Constants.NULL;
  * </ul>
  */
 public class TLD {
-    
+
     private TLD() {}
-    
+
     /**
      * Parses the pointer (document id) from the local Field Index key's ColumnQualifier
      *
@@ -41,7 +41,7 @@ public class TLD {
         final int start = nulls.get(1) + 1, stop = cq.length();
         return cq.subSequence(start, stop);
     }
-    
+
     /**
      * Parse the parent pointer from a document id.
      *
@@ -66,12 +66,12 @@ public class TLD {
         }
         return id.subSequence(0, stop);
     }
-    
+
     /**
      * Parses the FIELD and VALUE from a local Field Index
      *
      * FI Key Structure (row, cf='fi\0field', cq='value\0datatype\0uid')
-     * 
+     *
      * @param cf
      *            - the field index key's ColumnFamily
      * @param cq
@@ -81,17 +81,17 @@ public class TLD {
     public static ByteSequence parseFieldAndValueFromFI(ByteSequence cf, ByteSequence cq) {
         ArrayList<Integer> nulls = instancesOf(0, cf, 1);
         final int startFn = nulls.get(0) + 1, stopFn = cf.length();
-        
+
         nulls = lastInstancesOf(0, cq, 2);
         final int startFv = 0, stopFv = nulls.get(1);
-        
+
         byte[] fnFv = new byte[stopFn - startFn + 1 + stopFv - startFv];
-        
+
         System.arraycopy(cf.getBackingArray(), startFn + cf.offset(), fnFv, 0, stopFn - startFn);
         System.arraycopy(cq.getBackingArray(), startFv + cq.offset(), fnFv, stopFn - startFn + 1, stopFv - startFv);
         return new ArrayByteSequence(fnFv);
     }
-    
+
     /**
      * Parses the FIELD and VALUE from a Term Frequency key.
      *
@@ -104,14 +104,14 @@ public class TLD {
         ArrayList<Integer> otherNulls = lastInstancesOf(0, cq, 1);
         final int startFn = otherNulls.get(0) + 1, stopFn = cq.length();
         final int startFv = nulls.get(1) + 1, stopFv = otherNulls.get(0);
-        
+
         byte[] fnFv = new byte[stopFn - startFn + 1 + stopFv - startFv];
-        
+
         System.arraycopy(cq.getBackingArray(), startFn + cq.offset(), fnFv, 0, stopFn - startFn);
         System.arraycopy(cq.getBackingArray(), startFv + cq.offset(), fnFv, stopFn - startFn + 1, stopFv - startFv);
         return new ArrayByteSequence(fnFv);
     }
-    
+
     /**
      * Parses the root pointer (parent document id) from the local Field Index key's ColumnQualifier
      *
@@ -128,10 +128,10 @@ public class TLD {
         final int start = nulls.get(1) + 1, stop = cq.length();
         return parseRootPointerFromId(cq.subSequence(start, stop));
     }
-    
+
     /**
      * Parse a root pointer (parent document id) from a ByteSequence
-     * 
+     *
      * @param id
      *            - a ByteSequence containing a dot-delimited document id.
      * @return - a ByteSequence containing the parent document id.
@@ -146,7 +146,7 @@ public class TLD {
         }
         return id.subSequence(0, stop);
     }
-    
+
     /**
      * Parse the root pointer (parent document id) from a document id
      *
@@ -165,7 +165,7 @@ public class TLD {
         }
         return id.substring(0, index - 1);
     }
-    
+
     /**
      * Extracts an estimated root pointer from the provided id.
      *
@@ -186,7 +186,7 @@ public class TLD {
         }
         return parseParentPointerFromId(id);
     }
-    
+
     /**
      * Method to get the root pointer from an uid, if it exists.
      *
@@ -195,17 +195,17 @@ public class TLD {
      * @return the root uid, or the original uid
      */
     public static String getRootUid(String uid) {
-        
+
         int dotCount = 0;
         for (int i = 0; i < uid.length(); i++) {
             if (uid.charAt(i) == '.' && ++dotCount == 3) {
                 return uid.substring(0, i);
             }
         }
-        
+
         return uid; // no root uid detected, return the original uid
     }
-    
+
     /**
      * Determines if the provided ByteSequence contains an id with a root pointer (parent document id)
      *
@@ -217,15 +217,15 @@ public class TLD {
         ArrayList<Integer> dots = instancesOf('.', id);
         return dots.size() <= 2;
     }
-    
+
     public static ByteSequence fromString(String s) {
         return new ArrayByteSequence(s.getBytes());
     }
-    
+
     public static ArrayList<Integer> instancesOf(int b, ByteSequence sequence) {
         return instancesOf(b, sequence, -1);
     }
-    
+
     public static ArrayList<Integer> instancesOf(int b, ByteSequence sequence, int repeat) {
         ArrayList<Integer> positions = Lists.newArrayList();
         for (int i = 0; i < sequence.length() && positions.size() != repeat; ++i) {
@@ -235,7 +235,7 @@ public class TLD {
         }
         return positions;
     }
-    
+
     public static ArrayList<Integer> lastInstancesOf(int b, ByteSequence sequence, int repeat) {
         ArrayList<Integer> positions = Lists.newArrayList();
         for (int i = sequence.length() - 1; i >= 0 && positions.size() != repeat; --i) {
@@ -245,7 +245,7 @@ public class TLD {
         }
         return positions;
     }
-    
+
     public static Key buildParentKey(Text shard, ByteSequence id, ByteSequence cq, Text cv, long ts) {
         Text ptr = new Text();
         ptr.set(id.getBackingArray(), id.offset(), id.length());
@@ -253,7 +253,7 @@ public class TLD {
         cqt.set(cq.getBackingArray(), cq.offset(), cq.length());
         return new Key(shard, ptr, cqt, cv, ts);
     }
-    
+
     /**
      * In a rebuild situation build the start key for the next TLD.
      *

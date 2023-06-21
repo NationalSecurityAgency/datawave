@@ -35,15 +35,15 @@ public class ExpandCompositeTermsTest {
 
     private static final Set<String> INDEX_FIELDS = Sets.newHashSet("MAKE", "COLOR", "WHEELS", "TEAM", "NAME", "POINTS");
 
-    private static Multimap<String, String> compositeToFieldMap;
+    private static Multimap<String,String> compositeToFieldMap;
 
-    private static Map<String, String> compositeFieldSeparators;
+    private static Map<String,String> compositeFieldSeparators;
 
     private ShardQueryConfiguration conf;
 
     @BeforeClass
     public static void beforeClass() {
-        Multimap<String, String> multimap = LinkedListMultimap.create();
+        Multimap<String,String> multimap = LinkedListMultimap.create();
         multimap.put("MAKE_COLOR", "MAKE");
         multimap.put("MAKE_COLOR", "COLOR");
         multimap.put("COLOR_WHEELS", "COLOR");
@@ -55,7 +55,7 @@ public class ExpandCompositeTermsTest {
         multimap.put("TEAM_POINTS", "POINTS");
         compositeToFieldMap = Multimaps.unmodifiableMultimap(multimap);
 
-        Map<String, String> sepMap = new HashMap<>();
+        Map<String,String> sepMap = new HashMap<>();
         sepMap.put("MAKE_COLOR", ",");
         sepMap.put("COLOR_WHEELS", ",");
         sepMap.put("TEAM_NAME_POINTS", ",");
@@ -195,13 +195,13 @@ public class ExpandCompositeTermsTest {
     public void test12() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -211,7 +211,7 @@ public class ExpandCompositeTermsTest {
         conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
 
         String query = "(((_Bounded_ = true) && (GEO >= '1f0155640000000000' && GEO <= '1f01556bffffffffff')) || GEO == '00' || ((_Bounded_ = true) && (GEO >= '0100' && GEO <= '0103'))) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '"
-                + Normalizer.NUMBER_NORMALIZER.normalize("0") + "' && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'))";
+                        + Normalizer.NUMBER_NORMALIZER.normalize("0") + "' && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "'))";
         String expected = "((((_Bounded_ = true) && (GEO >= '1f0155640000000000,+AE0' && GEO <= '1f01556bffffffffff,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0155640000000000' && GEO <= '1f01556bffffffffff')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))) || (((_Bounded_ = true) && (GEO >= '00,+AE0' && GEO <= '00,+eE1.2345')) && ((_Eval_ = true) && (GEO == '00' && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))) || (((_Bounded_ = true) && (GEO >= '0100,+AE0' && GEO <= '0103,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0100' && GEO <= '0103')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))";
 
         runTestQuery(query, expected, indexedFields, conf);
@@ -221,13 +221,13 @@ public class ExpandCompositeTermsTest {
     public void test13() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -246,13 +246,13 @@ public class ExpandCompositeTermsTest {
     public void test14() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -262,7 +262,7 @@ public class ExpandCompositeTermsTest {
         conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
 
         String query = "((_Bounded_ = true) && (GEO >= '0100' && GEO <= '0103')) && WKT_BYTE_LENGTH <= '" + Normalizer.NUMBER_NORMALIZER.normalize("12345")
-                + "'";
+                        + "'";
         String expected = "((_Bounded_ = true) && (GEO >= '0100' && GEO <= '0103,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0100' && GEO <= '0103')) && WKT_BYTE_LENGTH <= '+eE1.2345'))";
 
         runTestQuery(query, expected, indexedFields, conf);
@@ -272,7 +272,7 @@ public class ExpandCompositeTermsTest {
     public void test15() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
@@ -293,7 +293,7 @@ public class ExpandCompositeTermsTest {
     public void test16() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
@@ -314,13 +314,13 @@ public class ExpandCompositeTermsTest {
     public void test17() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT_BYTE_LENGTH");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -330,7 +330,7 @@ public class ExpandCompositeTermsTest {
         conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
 
         String query = "(((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) || ((((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')))) || ((((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')))) || ((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7'))))) && (((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '"
-                + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "')))";
+                        + Normalizer.NUMBER_NORMALIZER.normalize("12345") + "')))";
         String expected = "((((((_Bounded_ = true) && (GEO >= '0202,+AE0' && GEO <= '020d,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0202' && GEO <= '020d')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '030a,+AE0' && GEO <= '0335,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '0428,+AE0' && GEO <= '0483,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0428' && GEO <= '0483')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '0500aa,+AE0' && GEO <= '050355,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '0500aa' && GEO <= '050355')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))) || (((((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa,+AE0' && GEO <= '1f36c71c71c71c71c7,+eE1.2345')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '1f0aaaaaaaaaaaaaaa' && GEO <= '1f36c71c71c71c71c7')) && ((_Bounded_ = true) && (WKT_BYTE_LENGTH >= '+AE0' && WKT_BYTE_LENGTH <= '+eE1.2345'))))))))";
 
         runTestQuery(query, expected, indexedFields, conf);
@@ -341,12 +341,12 @@ public class ExpandCompositeTermsTest {
     public void test18a() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -541,13 +541,13 @@ public class ExpandCompositeTermsTest {
         conf.setBeginDate(new Date(0));
         conf.setEndDate(new Date(TimeUnit.DAYS.toMillis(30)));
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -556,7 +556,7 @@ public class ExpandCompositeTermsTest {
 
         conf.getFieldToDiscreteIndexTypes().put("GEO", new GeometryType());
 
-        Map<String, Date> compositeWithOldDataMap = new HashMap<>();
+        Map<String,Date> compositeWithOldDataMap = new HashMap<>();
         compositeWithOldDataMap.put("GEO", new Date(TimeUnit.DAYS.toMillis(15)));
         conf.setCompositeTransitionDates(compositeWithOldDataMap);
 
@@ -744,13 +744,13 @@ public class ExpandCompositeTermsTest {
     public void test19() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO_WKT", "GEO");
         compositeToFieldMap.put("GEO_WKT", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO_WKT", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -942,13 +942,13 @@ public class ExpandCompositeTermsTest {
     public void test20() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -967,13 +967,13 @@ public class ExpandCompositeTermsTest {
     public void test21() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -992,13 +992,13 @@ public class ExpandCompositeTermsTest {
     public void test22() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -1015,13 +1015,13 @@ public class ExpandCompositeTermsTest {
     public void test23() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO_WKT", "GEO");
         compositeToFieldMap.put("GEO_WKT", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO_WKT", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -1040,7 +1040,7 @@ public class ExpandCompositeTermsTest {
     public void test24() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO_WKT", "GEO");
         compositeToFieldMap.put("GEO_WKT", "WKT");
@@ -1061,13 +1061,13 @@ public class ExpandCompositeTermsTest {
     public void test25() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO_WKT", "GEO");
         compositeToFieldMap.put("GEO_WKT", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO_WKT", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -1084,13 +1084,13 @@ public class ExpandCompositeTermsTest {
     public void test26() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -1102,7 +1102,7 @@ public class ExpandCompositeTermsTest {
         conf.setBeginDate(new Date(0));
         conf.setEndDate(new Date(TimeUnit.DAYS.toMillis(30)));
 
-        Map<String, Date> compositeWithOldDataMap = new HashMap<>();
+        Map<String,Date> compositeWithOldDataMap = new HashMap<>();
         compositeWithOldDataMap.put("GEO", new Date(TimeUnit.DAYS.toMillis(15)));
         conf.setCompositeTransitionDates(compositeWithOldDataMap);
 
@@ -1110,8 +1110,8 @@ public class ExpandCompositeTermsTest {
 
         String query = "(GEO == '0202' || (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')))) && WKT == '" + normNum + "'";
         String expected = "((((_Bounded_ = true) && (GEO >= '0202' && GEO <= '0202," + normNum + "')) && ((_Eval_ = true) && (GEO == '0202' && WKT == '"
-                + normNum + "'))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335," + normNum
-                + "')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && WKT == '" + normNum + "')))))";
+                        + normNum + "'))) || ((((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335," + normNum
+                        + "')) && ((_Eval_ = true) && (((_Bounded_ = true) && (GEO >= '030a' && GEO <= '0335')) && WKT == '" + normNum + "')))))";
 
         runTestQuery(query, expected, indexedFields, conf);
     }
@@ -1120,13 +1120,13 @@ public class ExpandCompositeTermsTest {
     public void test27() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -1147,13 +1147,13 @@ public class ExpandCompositeTermsTest {
     public void test28() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 
@@ -1165,7 +1165,7 @@ public class ExpandCompositeTermsTest {
         conf.setBeginDate(new Date(0));
         conf.setEndDate(new Date(TimeUnit.DAYS.toMillis(30)));
 
-        Map<String, Date> compositeWithOldDataMap = new HashMap<>();
+        Map<String,Date> compositeWithOldDataMap = new HashMap<>();
         compositeWithOldDataMap.put("GEO", new Date(TimeUnit.DAYS.toMillis(15)));
         conf.setCompositeTransitionDates(compositeWithOldDataMap);
 
@@ -1181,13 +1181,13 @@ public class ExpandCompositeTermsTest {
     public void test29() throws Exception {
         ShardQueryConfiguration conf = new ShardQueryConfiguration();
 
-        Multimap<String, String> compositeToFieldMap = LinkedListMultimap.create();
+        Multimap<String,String> compositeToFieldMap = LinkedListMultimap.create();
 
         compositeToFieldMap.put("GEO", "GEO");
         compositeToFieldMap.put("GEO", "WKT");
         conf.setCompositeToFieldMap(compositeToFieldMap);
 
-        Map<String, String> compositeToSeparatorMap = new HashMap<>();
+        Map<String,String> compositeToSeparatorMap = new HashMap<>();
         compositeToSeparatorMap.put("GEO", ",");
         conf.setCompositeFieldSeparators(compositeToSeparatorMap);
 

@@ -53,17 +53,26 @@ public class RegexIndexLookup extends AsyncIndexLookup {
     protected RegexLookupData reverseLookupData = new RegexLookupData();
 
     /**
-     * @param config          the shard query configuration, not null
-     * @param scannerFactory  the scanner factory, not null
-     * @param fields          the fields to lookup, not null
-     * @param reverseFields   the reverse fields to lookup, not null
-     * @param patterns        the regex patterns to lookup, not null
-     * @param helper          the metadata helper, not null
-     * @param unfieldedLookup whether this is an unfielded lookup
-     * @param execService     the executor service, not null
+     *
+     * @param config
+     *            the shard query configuration, not null
+     * @param scannerFactory
+     *            the scanner factory, not null
+     * @param fields
+     *            the fields to lookup, not null
+     * @param reverseFields
+     *            the reverse fields to lookup, not null
+     * @param patterns
+     *            the regex patterns to lookup, not null
+     * @param helper
+     *            the metadata helper, not null
+     * @param unfieldedLookup
+     *            whether this is an unfielded lookup
+     * @param execService
+     *            the executor service, not null
      */
     public RegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, Set<String> fields, Set<String> reverseFields, Set<String> patterns,
-                            MetadataHelper helper, boolean unfieldedLookup, ExecutorService execService) {
+                    MetadataHelper helper, boolean unfieldedLookup, ExecutorService execService) {
         super(config, scannerFactory, unfieldedLookup, execService);
         this.fields = fields;
         this.reverseFields = reverseFields;
@@ -72,15 +81,22 @@ public class RegexIndexLookup extends AsyncIndexLookup {
     }
 
     /**
-     * @param config         the shard query configuration, not null
-     * @param scannerFactory the scanner factory, not null
-     * @param fieldName      the field to lookup, not null
-     * @param patterns       the regex patterns to lookup, not null
-     * @param helper         the metadata helper, not null
-     * @param execService    the executor service, not null
+     *
+     * @param config
+     *            the shard query configuration, not null
+     * @param scannerFactory
+     *            the scanner factory, not null
+     * @param fieldName
+     *            the field to lookup, not null
+     * @param patterns
+     *            the regex patterns to lookup, not null
+     * @param helper
+     *            the metadata helper, not null
+     * @param execService
+     *            the executor service, not null
      */
     public RegexIndexLookup(ShardQueryConfiguration config, ScannerFactory scannerFactory, String fieldName, Set<String> patterns, MetadataHelper helper,
-                            ExecutorService execService) {
+                    ExecutorService execService) {
         this(config, scannerFactory, Collections.singleton(fieldName), Collections.singleton(fieldName), patterns, helper, false, execService);
     }
 
@@ -90,10 +106,10 @@ public class RegexIndexLookup extends AsyncIndexLookup {
             indexLookupMap = new IndexLookupMap(config.getMaxUnfieldedExpansionThreshold(), config.getMaxValueExpansionThreshold());
             indexLookupMap.setPatterns(patterns);
 
-            Multimap<String, Range> forwardMap = ArrayListMultimap.create(), reverseMap = ArrayListMultimap.create();
+            Multimap<String,Range> forwardMap = ArrayListMultimap.create(), reverseMap = ArrayListMultimap.create();
 
             // Loop over all the patterns, classifying them as forward or reverse index satisfiable
-            Iterator<Entry<Key, Value>> iter = Collections.emptyIterator();
+            Iterator<Entry<Key,Value>> iter = Collections.emptyIterator();
 
             ScannerSession bs;
 
@@ -109,7 +125,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
             for (String pattern : patterns) {
                 if (config.getDisallowedRegexPatterns().contains(pattern)) {
                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.IGNORE_PATTERN_FOR_INDEX_LOOKUP,
-                            MessageFormat.format("Pattern: {0}", pattern));
+                                    MessageFormat.format("Pattern: {0}", pattern));
                     log.debug(qe);
                     throw new DoNotPerformOptimizedQueryException(qe);
                 }
@@ -142,7 +158,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     Collection<Range> ranges = forwardMap.get(key);
                     try {
                         bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getIndexTableName(), ranges,
-                                Collections.emptySet(), Collections.singleton(key), false, true);
+                                        Collections.emptySet(), Collections.singleton(key), false, true);
 
                         bs.setResourceClass(BatchResource.class);
                     } catch (Exception e) {
@@ -176,7 +192,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                     }
                     try {
                         bs = ShardIndexQueryTableStaticMethods.configureLimitedDiscovery(config, scannerFactory, config.getReverseIndexTableName(), ranges,
-                                Collections.emptySet(), Collections.singleton(key), true, true);
+                                        Collections.emptySet(), Collections.singleton(key), true, true);
 
                         bs.setResourceClass(BatchResource.class);
                     } catch (Exception e) {
@@ -206,7 +222,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         if (!forwardLookupData.getSessions().isEmpty()) {
             try {
                 timedScanWait(forwardLookupData.getTimedScanFuture(), forwardLookupData.getLookupStartedLatch(), forwardLookupData.getLookupStartTimeMillis(),
-                        config.getMaxIndexScanTimeMillis());
+                                config.getMaxIndexScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : forwardLookupData.getSessions()) {
                     scannerFactory.close(sesh);
@@ -218,7 +234,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         if (!reverseLookupData.getSessions().isEmpty()) {
             try {
                 timedScanWait(reverseLookupData.getTimedScanFuture(), reverseLookupData.getLookupStartedLatch(), reverseLookupData.getLookupStartTimeMillis(),
-                        config.getMaxIndexScanTimeMillis());
+                                config.getMaxIndexScanTimeMillis());
             } finally {
                 for (ScannerSession sesh : reverseLookupData.getSessions()) {
                     scannerFactory.close(sesh);
@@ -230,8 +246,8 @@ public class RegexIndexLookup extends AsyncIndexLookup {
         return indexLookupMap;
     }
 
-    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key, Value>> iter, final Set<String> fields, RegexLookupData regexLookupData,
-                                                    final IndexLookupMap indexLookupMap) {
+    protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter, final Set<String> fields, RegexLookupData regexLookupData,
+                    final IndexLookupMap indexLookupMap) {
         regexLookupData.setLookupStartedLatch(new CountDownLatch(1));
 
         return () -> {
@@ -246,7 +262,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
 
                 while (iter.hasNext()) {
 
-                    Entry<Key, Value> entry = iter.next();
+                    Entry<Key,Value> entry = iter.next();
 
                     if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
                         throw new Exception("Exceeded fair threshold");

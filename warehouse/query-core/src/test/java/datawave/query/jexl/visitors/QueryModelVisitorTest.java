@@ -17,6 +17,7 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -120,14 +121,13 @@ public class QueryModelVisitorTest {
     public void testEmptyExpansion() throws Exception {
         this.model = new QueryModel();
 
-        ASTJexlScript script = JexlASTHelper
-                .parseJexlQuery("ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
                         + "((_Bounded_ = true) && (DATE <= '2013-04-10 12:01:24' && DATE >= '2013-04-10 03:01:24'))");
         ASTJexlScript groomed = InvertNodeVisitor.invertSwappedNodes(script);
         ASTJexlScript result = QueryModelVisitor.applyModel(groomed, model, allFields);
 
         String expected = "ID1 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' || (ID2 == 'abcdefgh-1234-abcd-1234-abcdefghijkl' && "
-                + "((_Bounded_ = true) && (DATE >= '2013-04-10 03:01:24' && DATE <= '2013-04-10 12:01:24')))";
+                        + "((_Bounded_ = true) && (DATE >= '2013-04-10 03:01:24' && DATE <= '2013-04-10 12:01:24')))";
         String actual = JexlStringBuildingVisitor.buildQuery(result);
 
         assertResult(expected, actual);
@@ -373,10 +373,10 @@ public class QueryModelVisitorTest {
 
         MockMetadataHelper helper = new MockMetadataHelper();
         helper.addNormalizers("FOO1", Sets.newHashSet(new LcNoDiacriticsType()));
-        Multimap<String, String> maps = ArrayListMultimap.create();
+        Multimap<String,String> maps = ArrayListMultimap.create();
         maps.put("9_2", "datatype1");
         helper.addFieldsToDatatypes(maps);
-        Multimap<String, Type<?>> types = FetchDataTypesVisitor.fetchDataTypes(helper, Collections.singleton("datatype1"), actualScript);
+        Multimap<String,Type<?>> types = FetchDataTypesVisitor.fetchDataTypes(helper, Collections.singleton("datatype1"), actualScript);
         assertEquals(types.size(), 4);
 
         assertTrue(types.values().stream().allMatch((o) -> o instanceof LcNoDiacriticsType || o instanceof NoOpType));

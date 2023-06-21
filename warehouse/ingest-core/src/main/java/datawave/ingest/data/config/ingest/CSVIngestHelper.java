@@ -14,10 +14,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 public class CSVIngestHelper extends ContentBaseIngestHelper {
-    
+
     private static final Logger log = Logger.getLogger(CSVIngestHelper.class);
     protected CSVHelper helper = null;
-    
+
     @Override
     public void setup(Configuration config) {
         super.setup(config);
@@ -25,31 +25,31 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         helper.setup(config);
         this.setEmbeddedHelper(helper);
     }
-    
+
     /**
      * Create the helper for this class to use. Can be overriden to supply an alternate helper class
-     * 
+     *
      * @return a csvhelper
      */
     protected CSVHelper createHelper() {
         return new CSVHelper();
     }
-    
+
     /**
      * Allow classes extending this class to modify the StrTokenizer being used.
-     * 
+     *
      * @return the tokenizer to be used
-     * 
+     *
      * @param tokenizer
      *            The StrTokenizer that will be used on each Event
      */
     protected StrTokenizer configureTokenizer(StrTokenizer tokenizer) {
         return tokenizer;
     }
-    
+
     /**
      * Allow classes extending this class to modify the raw data before setting it on the StrTokenizer
-     * 
+     *
      * @param data
      *            The raw data from the Event
      * @return the raw data in String form
@@ -57,10 +57,10 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     protected String preProcessRawData(byte[] data) {
         return new String(data);
     }
-    
+
     /**
      * This method uses the header and the csv string in raw bytes of the Event to create key value pairs.
-     * 
+     *
      * @param event
      *            the event
      * @return map of event fields
@@ -68,9 +68,9 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
         HashMultimap<String,String> fields = HashMultimap.create();
-        
+
         String data = preProcessRawData(event.getRawData());
-        
+
         StrTokenizer tokenizer;
         if (helper.getSeparator().equals(","))
             tokenizer = StrTokenizer.getCSVInstance();
@@ -78,28 +78,28 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
             tokenizer = StrTokenizer.getTSVInstance();
         else
             tokenizer = new StrTokenizer(data, helper.getSeparator());
-        
+
         tokenizer.setIgnoreEmptyTokens(false);
         tokenizer.setEmptyTokenAsNull(true);
-        
+
         // Allow subclasses to override the tokenizer
         tokenizer = configureTokenizer(tokenizer);
-        
+
         tokenizer.reset(data);
-        
+
         String[] dataFields = tokenizer.getTokenArray();
         processFields(fields, dataFields);
-        
+
         // and return the normalized fields
         return normalize(fields);
     }
-    
+
     protected void processFields(HashMultimap<String,String> fields, String[] dataFields) {
         for (int i = 0; i < Math.max(dataFields.length, helper.getHeader().length); i++) {
-            
+
             if (i < helper.getHeader().length) {
                 String fieldName = helper.getHeader()[i];
-                
+
                 if (keepField(fieldName) && dataFields[i] != null) {
                     String fieldValue = StringEscapeUtils.unescapeCsv(dataFields[i]);
                     fieldValue = helper.clean(fieldName, fieldValue);
@@ -118,13 +118,13 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
             } else {
                 break;
             }
-            
+
         }
     }
-    
+
     /**
      * Used to process extra fields. The PROCESS_EXTRA_FIELDS configuration parameter must be set to enable this processing.
-     * 
+     *
      * @param fields
      *            extra fields to process
      * @param fieldValue
@@ -134,7 +134,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
         int equalsIndex = fieldValue.indexOf('=');
         if (equalsIndex > 0) {
             String fieldName = fieldValue.substring(0, equalsIndex);
-            
+
             if (keepField(fieldName)) {
                 fieldValue = fieldValue.substring(equalsIndex + 1);
                 fieldValue = helper.clean(fieldName, fieldValue);
@@ -146,10 +146,10 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
             log.error("Unable to process the following as a name=value pair: " + fieldValue);
         }
     }
-    
+
     /**
      * Process a field. This will split multi-valued fields as necessary and call processField on each part.
-     * 
+     *
      * @param fields
      *            list of fields
      * @param fieldName
@@ -181,7 +181,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
             }
         }
     }
-    
+
     protected void applyThresholdAction(Multimap<String,String> fields, String fieldName, String value, int sizeLimit) {
         switch (helper.getThresholdAction()) {
             case DROP:
@@ -198,7 +198,7 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
                 throw new IllegalArgumentException("A field : " + fieldName + " was too large to process");
         }
     }
-    
+
     protected void applyMultiValuedThresholdAction(Multimap<String,String> fields, String fieldName, String singleFieldName) {
         switch (helper.getThresholdAction()) {
             case DROP:
@@ -220,10 +220,10 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
                 throw new IllegalArgumentException("A field : " + fieldName + " was too large to process");
         }
     }
-    
+
     /**
      * Process a name, value pair and add to the event fields
-     * 
+     *
      * @param fields
      *            list of fields
      * @param fieldName
@@ -240,11 +240,11 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
             fields.put(fieldName, fieldValue);
         }
     }
-    
+
     /**
      * Test whether the field should be kept by checking against the blacklist and whitelist. Presence in the blacklist takes precedence over presence on the
      * whitelist.
-     * 
+     *
      * @param fieldName
      *            the field name
      * @return whether field should be kept or not
@@ -252,17 +252,17 @@ public class CSVIngestHelper extends ContentBaseIngestHelper {
     protected boolean keepField(String fieldName) {
         final Set<String> blacklist = helper.getFieldBlacklist();
         final Set<String> whitelist = helper.getFieldWhitelist();
-        
+
         if (blacklist != null && blacklist.contains(fieldName)) {
             return false; // drop the field that is in the blacklist.
         } // else keep the non-blacklisted field.
-        
+
         if (whitelist != null) { // whitelist exists
             if (!whitelist.contains(fieldName)) {
                 return false; // drop the field not in the whitelist.
             } // else keep the whitelisted field.
         } // else keep field.
-        
+
         return true;
     }
 }

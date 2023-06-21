@@ -11,10 +11,10 @@ import java.util.Objects;
  * assertions.
  */
 public class ShallowJexlNodeComparator implements Comparator<JexlNode> {
-    
+
     /**
      * Returns whether the two nodes are either the same, or have equal types, number of children, images, and values.
-     * 
+     *
      * @param first
      *            the first node to compare
      * @param second

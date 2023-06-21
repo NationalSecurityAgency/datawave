@@ -13,42 +13,42 @@ import java.io.Serializable;
 import java.util.Collection;
 
 public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
     private static final Logger log = Logger.getLogger(AttributeBag.class);
     protected long shardTimestamp = Long.MAX_VALUE;
     protected boolean validMetadata = false;
-    
+
     private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
-    
+
     protected static final MarkingFunctions markingFunctions = MarkingFunctionsFactory.createMarkingFunctions();
-    
+
     public MarkingFunctions getMarkingFunctions() {
         return markingFunctions;
     }
-    
+
     protected AttributeBag() {
         this(true);
     }
-    
+
     public AttributeBag(boolean toKeep) {
         super(null, toKeep);
     }
-    
+
     public AttributeBag(Key metadata, boolean toKeep) {
         super(metadata, toKeep);
     }
-    
+
     public void invalidateMetadata() {
         this.validMetadata = false;
     }
-    
+
     public boolean isValidMetadata() {
         return (this.validMetadata && isMetadataSet());
     }
-    
+
     public abstract Collection<Attribute<? extends Comparable<?>>> getAttributes();
-    
+
     @Override
     public long getTimestamp() {
         // calling isMetadataSet first to update the metadata as needed
@@ -56,14 +56,14 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
             this.updateMetadata();
         return super.getTimestamp();
     }
-    
+
     @Override
     public ColumnVisibility getColumnVisibility() {
         if (isValidMetadata() == false)
             this.updateMetadata();
         return super.getColumnVisibility();
     }
-    
+
     private void updateMetadata() {
         long ts = updateTimestamps();
         ColumnVisibility vis = super.getColumnVisibility();
@@ -75,7 +75,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         setMetadata(vis, ts);
         validMetadata = true;
     }
-    
+
     protected ColumnVisibility combineAndSetColumnVisibilities(Collection<Attribute<? extends Comparable<?>>> attributes) throws Exception {
         Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
         for (Attribute<?> attr : attributes) {
@@ -83,7 +83,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         }
         return AttributeBag.markingFunctions.combine(columnVisibilities);
     }
-    
+
     private long updateTimestamps() {
         MutableLong ts = new MutableLong(Long.MAX_VALUE);
         for (Attribute<?> attribute : getAttributes()) {
@@ -91,7 +91,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
         }
         return ts.longValue();
     }
-    
+
     private void mergeTimestamps(Attribute<?> other, MutableLong ts) {
         // if this is a set of attributes, then examine each one. Note not recursing on a Document as it should have already applied the shard time.
         if (other instanceof AttributeBag) {
@@ -140,7 +140,7 @@ public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T>
             }
         }
     }
-    
+
     @Override
     public void setToKeep(boolean toKeep) {
         super.setToKeep(toKeep);

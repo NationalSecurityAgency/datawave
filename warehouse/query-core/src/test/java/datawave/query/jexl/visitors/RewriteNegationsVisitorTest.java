@@ -16,16 +16,16 @@ import static org.junit.Assert.fail;
  * operators.
  */
 public class RewriteNegationsVisitorTest {
-    
+
     private final ASTValidator validator = new ASTValidator();
-    
+
     // Test AST such that (A)
     @Test
     public void testSingleEQ() throws ParseException {
         String query = "FOO == 'bar'";
         test(query, query);
     }
-    
+
     // Test AST such that (!A)
     @Test
     public void testSingleNE() throws ParseException {
@@ -33,7 +33,7 @@ public class RewriteNegationsVisitorTest {
         String expected = "!(FOO == 'bar')";
         test(query, expected);
     }
-    
+
     // Test AST such that (!A && !B)
     @Test
     public void testConjunctionTwoNE() throws ParseException {
@@ -41,7 +41,7 @@ public class RewriteNegationsVisitorTest {
         String expected = "!(FOO == 'bar') && !(FOO2 == 'bar2')";
         test(query, expected);
     }
-    
+
     // Test AST such that ((!A && !B))
     @Test
     public void testConjunctionTwoNestedNE() throws ParseException {
@@ -49,7 +49,7 @@ public class RewriteNegationsVisitorTest {
         String expected = "(!(FOO == 'bar') && !(FOO2 == 'bar2'))";
         test(query, expected);
     }
-    
+
     // Test AST such that (!A & B)
     @Test
     public void testConjunctionOfSingleNEAndEQ() throws ParseException {
@@ -57,7 +57,7 @@ public class RewriteNegationsVisitorTest {
         String expected = "!(FOO == 'bar') && FOO2 == 'bar2'";
         test(query, expected);
     }
-    
+
     // Test AST such that (!A && !B && C)
     @Test
     public void testConjunctionOfTwoNEAndSingleEQ() throws ParseException {
@@ -65,7 +65,7 @@ public class RewriteNegationsVisitorTest {
         String expected = "!(FOO == 'bar') && !(FOO2 == 'bar2') && FOO3 == 'bar3'";
         test(query, expected);
     }
-    
+
     // Test AST such that (!A && (!B && C))
     @Test
     public void testConjunctionOfNEAndNestedNeAndEQ() throws ParseException {
@@ -73,7 +73,7 @@ public class RewriteNegationsVisitorTest {
         String expected = "!(FOO == 'bar') && !(FOO2 == 'bar2') && FOO3 == 'bar3'";
         test(query, expected);
     }
-    
+
     // Test AST such that (A && (!B && !C))
     @Test
     public void testSingleEQWithNestedConjunctionOfTwoNE() throws ParseException {
@@ -81,31 +81,31 @@ public class RewriteNegationsVisitorTest {
         String expected = "FOO == 'bar' && !(FOO == 'bar2') && !(FOO == 'bar3')";
         test(query, expected);
     }
-    
+
     @Test
     public void testSingleGT() throws ParseException {
         String query = "FOO > 'bar'";
         test(query, query);
     }
-    
+
     @Test
     public void testSingleGE() throws ParseException {
         String query = "FOO >= 'bar'";
         test(query, query);
     }
-    
+
     @Test
     public void testSingleLT() throws ParseException {
         String query = "FOO < BAR";
         test(query, query);
     }
-    
+
     @Test
     public void testSingleLE() throws ParseException {
         String query = "FOO <= 'bar'";
         test(query, query);
     }
-    
+
     // Test a Negated Regex node
     @Test
     public void testSingleNR() throws ParseException {
@@ -113,7 +113,7 @@ public class RewriteNegationsVisitorTest {
         String expected = "!(FOO =~ 'bar')";
         test(query, expected);
     }
-    
+
     // Test a conjunction of two Negated Regex nodes
     @Test
     public void testConjunctionOfTwoNR() throws ParseException {
@@ -121,19 +121,19 @@ public class RewriteNegationsVisitorTest {
         String expected = "!(FOO =~ 'bar') && !(FOO2 =~ 'bar2')";
         test(query, expected);
     }
-    
+
     private void test(String query, String expected) throws ParseException {
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
         ASTJexlScript negatedScript = RewriteNegationsVisitor.rewrite(script);
-        
+
         // assert raw query strings match
         String negatedQuery = JexlStringBuildingVisitor.buildQuery(negatedScript);
         assertEquals(expected, negatedQuery);
-        
+
         // assert script equality
         ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
         assertTrue(TreeEqualityVisitor.checkEquality(expectedScript, negatedScript).isEqual());
-        
+
         try {
             assertTrue(validator.isValid(negatedScript, RewriteNegationsVisitorTest.class.getSimpleName(), false));
         } catch (InvalidQueryTreeException e) {

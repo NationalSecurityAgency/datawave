@@ -21,14 +21,14 @@ public class TestJSSESecurityDomain implements JSSESecurityDomain {
     private final X509Certificate[] chain;
     private final String alias;
     private final char[] keyPass;
-    
+
     public TestJSSESecurityDomain(String alias, PrivateKey privKey, char[] keyPass, X509Certificate[] chain) {
         this.privKey = privKey;
         this.chain = chain;
         this.alias = alias;
         this.keyPass = keyPass;
     }
-    
+
     @Override
     public KeyStore getKeyStore() throws SecurityException {
         try {
@@ -43,7 +43,7 @@ public class TestJSSESecurityDomain implements JSSESecurityDomain {
             throw new SecurityException(e);
         }
     }
-    
+
     @Override
     public KeyManager[] getKeyManagers() throws SecurityException {
         KeyManager[] managers = new KeyManager[1];
@@ -52,27 +52,27 @@ public class TestJSSESecurityDomain implements JSSESecurityDomain {
             public String[] getClientAliases(String keyType, Principal[] issuers) {
                 return new String[0];
             }
-            
+
             @Override
             public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
                 return null;
             }
-            
+
             @Override
             public String[] getServerAliases(String keyType, Principal[] issuers) {
                 return new String[0];
             }
-            
+
             @Override
             public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
                 return null;
             }
-            
+
             @Override
             public X509Certificate[] getCertificateChain(String alias) {
                 return chain;
             }
-            
+
             @Override
             public PrivateKey getPrivateKey(String alias) {
                 return privKey;
@@ -80,7 +80,7 @@ public class TestJSSESecurityDomain implements JSSESecurityDomain {
         };
         return managers;
     }
-    
+
     @Override
     public KeyStore getTrustStore() throws SecurityException {
         try {
@@ -93,57 +93,57 @@ public class TestJSSESecurityDomain implements JSSESecurityDomain {
             throw new SecurityException(e);
         }
     }
-    
+
     @Override
     public TrustManager[] getTrustManagers() throws SecurityException {
         return new TrustManager[0];
     }
-    
+
     @Override
     public void reloadKeyAndTrustStore() throws Exception {
-        
+
     }
-    
+
     @Override
     public String getServerAlias() {
         return null;
     }
-    
+
     @Override
     public String getClientAlias() {
         return null;
     }
-    
+
     @Override
     public boolean isClientAuth() {
         return false;
     }
-    
+
     @Override
     public Key getKey(String s, String s1) throws Exception {
         return null;
     }
-    
+
     @Override
     public Certificate getCertificate(String s) throws Exception {
         return null;
     }
-    
+
     @Override
     public String[] getCipherSuites() {
         return new String[0];
     }
-    
+
     @Override
     public String[] getProtocols() {
         return new String[0];
     }
-    
+
     @Override
     public Properties getAdditionalProperties() {
         return null;
     }
-    
+
     @Override
     public String getSecurityDomain() {
         return null;

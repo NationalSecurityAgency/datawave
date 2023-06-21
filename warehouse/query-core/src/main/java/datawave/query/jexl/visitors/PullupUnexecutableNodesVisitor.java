@@ -82,7 +82,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     protected boolean forFieldIndex;
 
     public PullupUnexecutableNodesVisitor(ShardQueryConfiguration config, boolean forFieldIndex, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                          Set<String> nonEventFields, MetadataHelper helper) {
+                    Set<String> nonEventFields, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
         this.forFieldIndex = forFieldIndex;
@@ -122,9 +122,9 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(PullupUnexecutableNodesVisitor.class);
 
     public static JexlNode pullupDelayedPredicates(JexlNode queryTree, boolean forFieldIndex, ShardQueryConfiguration config, Set<String> indexedFields,
-                                                   Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
+                    Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
         PullupUnexecutableNodesVisitor visitor = new PullupUnexecutableNodesVisitor(config, forFieldIndex, indexedFields, indexOnlyFields, nonEventFields,
-                helper);
+                        helper);
 
         // rewrite the trees by pushing down all negations first
         JexlNode pushDownTree = PushdownNegationVisitor.pushdownNegations(queryTree);
@@ -167,7 +167,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                        nonEventFields, forFieldIndex, null, helper);
+                                nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.ERROR) {
                     child.jjtAccept(this, data);
                     state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
@@ -181,7 +181,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
                 JexlNode child = node.jjtGetChild(i);
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                        nonEventFields, forFieldIndex, null, helper);
+                                nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
                     child.jjtAccept(this, data);
                     state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
@@ -195,7 +195,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
                 JexlNode child = node.jjtGetChild(i);
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                        nonEventFields, forFieldIndex, null, helper);
+                                nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.NON_EXECUTABLE) {
                     child.jjtAccept(this, data);
                     state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper);
@@ -264,7 +264,8 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
     /**
      * When pulling up a delayed marker that is negated a reference expression must be persisted for correct query evaluation
      *
-     * @param node a JexlNode
+     * @param node
+     *            a JexlNode
      * @return the node, possible wrapped in a reference expression
      */
     private JexlNode wrapIfNeeded(JexlNode node) {

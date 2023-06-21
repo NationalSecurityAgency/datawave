@@ -19,16 +19,16 @@ import com.google.common.collect.Lists;
  * We are not concerned about the threads in this pool as we are simply building a scanner session when we call hasNext(), if records exist.
  */
 public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
-    
+
     private BaseIndexStream stream;
-    
+
     public ConcurrentScannerInitializer(BaseIndexStream stream) {
         this.stream = stream;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.util.concurrent.Callable#call()
      */
     @Override
@@ -48,25 +48,25 @@ public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
             return stream;
         }
     }
-    
+
     public static Collection<BaseIndexStream> initializeScannerStreams(List<ConcurrentScannerInitializer> todo, ExecutorService executor) {
-        
+
         List<Future<BaseIndexStream>> futures;
         List<BaseIndexStream> streams = Lists.newArrayList();
         try {
             futures = executor.invokeAll(todo);
-            
+
             for (Future<BaseIndexStream> future : futures) {
                 Exception sawException = null;
                 try {
                     BaseIndexStream newStream = null;
-                    
+
                     while (!executor.isShutdown()) {
                         try {
                             newStream = future.get(1, TimeUnit.SECONDS);
                             break;
                         } catch (TimeoutException e) {
-                            
+
                         }
                     }
                     if (executor.isShutdown())
@@ -77,7 +77,7 @@ public class ConcurrentScannerInitializer implements Callable<BaseIndexStream> {
                 } catch (InterruptedException | ExecutionException e) {
                     sawException = (Exception) e.getCause();
                 }
-                
+
                 if (null != sawException) {
                     throw new RuntimeException(sawException);
                 }

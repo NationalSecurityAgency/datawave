@@ -37,22 +37,22 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * and META). Otherwise, it defers to its parent {@link JexlContextCreator} to create a standard {@link JexlContext}. <br>
  * <br>
  * For example, the following query would result in the creation of an ordinary {@link JexlContext}: <br>
- * 
+ *
  * <pre>
  *     REGULAR_FIELD=='value1' AND filter:includeRegex(OTHER_REGULAR_FIELD,'.*value2.*')
  * </pre>
- * 
+ *
  * <br>
  * In contrast, the following query would result in the creation of an {@link IndexOnlyJexlContext}: <br>
- * 
+ *
  * <pre>
  *     REGULAR_FIELD=='value1' AND filter:includeRegex(BODY@LAZY_SET_FOR_INDEX_ONLY_FUNCTION_EVALUATION,'.*value2.*')
  * </pre>
- * 
+ *
  * <br>
  * Notice that the index-only field name must be appended with a special suffix. Such a suffix is not contained in the original query, but is added by the
  * {@link DefaultQueryPlanner} in the JBoss process when it calls the {@code IndexOnlyVisitor} as part of the process to update the JEXL query tree. <br>
- * 
+ *
  * @see IndexOnlyJexlContext
  * @see DefaultQueryPlanner
  */
@@ -66,22 +66,22 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
     private final TypeMetadata typeMetadata;
     private final CompositeMetadata compositeMetadata;
     private final Range range;
-    
+
     private final IteratorBuildingVisitor iteratorBuildingVisitor;
     private final Multimap<String,JexlNode> delayedNonEventFieldMap;
     private final Equality equality;
     private final Collection<ByteSequence> columnFamilies;
     private final boolean inclusive;
-    
+
     private static final String SIMPLE_NAME = IndexOnlyContextCreator.class.getSimpleName();
     private static final String SKVI_SIMPLE_NAME = SortedKeyValueIterator.class.getSimpleName();
     private static final String QO_SIMPLE_NAME = QueryOptions.class.getSimpleName();
-    
+
     private final TimeFilter timeFilter;
-    
+
     /**
      * Constructor
-     * 
+     *
      * @param source
      *            The iterator used to fetch index-only records, as applicable, from the shard table
      * @param range
@@ -122,20 +122,20 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         this.includeGroupingContext = options.isIncludeGroupingContext();
         this.includeRecordId = options.isIncludeRecordId();
         this.indexOnlyFields = options.getIndexOnlyFields();
-        
+
         // for delayed index lookup
         this.iteratorBuildingVisitor = iteratorBuildingVisitor;
         this.delayedNonEventFieldMap = delayedNonEventFieldMap;
         this.equality = equality;
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
-        
+
         this.range = range;
         this.timeFilter = options.getTimeFilter();
         final String query = options.getQuery();
         this.createIndexOnlyJexlContext = (null != query) && query.contains(SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX);
     }
-    
+
     @Override
     public Tuple3<Key,Document,DatawaveJexlContext> apply(Tuple3<Key,Document,Map<String,Object>> from) {
         final Tuple3<Key,Document,DatawaveJexlContext> tuple;
@@ -147,11 +147,11 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         }
         return tuple;
     }
-    
+
     public Function<Range,Key> getGetDocumentKey() {
         return this.getDocumentKey;
     }
-    
+
     public Collection<String> getIndexOnlyFields() {
         if (null != this.indexOnlyFields) {
             return new HashSet<>(this.indexOnlyFields);
@@ -159,7 +159,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             return Collections.emptySet();
         }
     }
-    
+
     public TypeMetadata getTypeMetadata() {
         if (null != this.typeMetadata) {
             return new TypeMetadata(this.typeMetadata);
@@ -167,27 +167,27 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             return new TypeMetadata();
         }
     }
-    
+
     public CompositeMetadata getCompositeMetadata() {
         return compositeMetadata;
     }
-    
+
     public Range getRange() {
         return this.range;
     }
-    
+
     public TimeFilter getTimeFilter() {
         return this.timeFilter;
     }
-    
+
     public boolean isIncludeGroupingContext() {
         return this.includeGroupingContext;
     }
-    
+
     public boolean isIncludeRecordId() {
         return includeRecordId;
     }
-    
+
     @Override
     protected DatawaveJexlContext newDatawaveJexlContext(final Tuple3<Key,Document,Map<String,Object>> from) {
         final DatawaveJexlContext parentContext = super.newDatawaveJexlContext(from);
@@ -200,7 +200,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         } else {
             newContext = parentContext;
         }
-        
+
         // see if there are any delayed nodes that need to be processed
         if (delayedNonEventFieldMap != null && !delayedNonEventFieldMap.isEmpty()) {
             // build the current document range from the document Key to end of the document, even though for some query logics this may be too large a range,
@@ -208,17 +208,17 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             Key startKey = new Key(from.first().getRow(), from.first().getColumnFamily());
             Key endKey = new Key(startKey.getRow().toString(), startKey.getColumnFamily() + Constants.MAX_UNICODE_STRING);
             Range docRange = new Range(startKey, true, endKey, false);
-            
+
             newContext = new DelayedNonEventIndexContext(newContext, iteratorBuildingVisitor, delayedNonEventFieldMap, docRange, columnFamilies, inclusive,
                             equality);
         }
-        
+
         return newContext;
     }
-    
+
     /**
      * Ensures that downstream expectations are met with regard to the state of the given context
-     * 
+     *
      * @param context
      *            jexl context to verify, assumed to be non-null
      */
@@ -231,7 +231,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
             }
         }
     }
-    
+
     /*
      * Deep copy of standard QueryOptions that adds a getter for obtaining the value of the "getDocumentKey"
      */
@@ -239,7 +239,7 @@ public class IndexOnlyContextCreator extends JexlContextCreator {
         public CreatorOptions(final QueryOptions other) {
             this.deepCopy(other);
         }
-        
+
         public Function<Range,Key> getDocumentKey() {
             return super.getDocumentKey;
         }

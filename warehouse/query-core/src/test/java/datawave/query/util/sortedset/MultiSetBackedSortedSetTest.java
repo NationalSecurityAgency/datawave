@@ -32,11 +32,11 @@ public class MultiSetBackedSortedSetTest {
         int[] sortedTemplate = new int[] {1, 5, 3, 0, 8, 10, 4, 11, 9, 7, 6, 2};
         data = new byte[template.length * 2][];
         for (int i = 0; i < template.length; i++) {
-            data[i] = new byte[i +11];
+            data[i] = new byte[i + 11];
             Arrays.fill(data[i], template[i]);
         }
         for (int i = 0; i < template.length; i++) {
-            data[i +template.length] = new byte[10];
+            data[i + template.length] = new byte[10];
             Arrays.fill(data[i + template.length], template[i]);
         }
         sortedOrder = new int[data.length];
@@ -56,7 +56,7 @@ public class MultiSetBackedSortedSetTest {
             TreeSet<byte[]> subset = new TreeSet<>(new ByteArrayComparator());
             for (int i = 0; i < 10; i++) {
                 int index = random.nextInt(data.length);
-                if(!used[index]) {
+                if (!used[index]) {
                     usedCount++;
                     used[index] = true;
                 }
@@ -101,6 +101,7 @@ public class MultiSetBackedSortedSetTest {
             assertEquals(expectedSize, set.size());
         }
     }
+
     /**
      * Test method for {@link datawave.query.util.sortedset.MultiSetBackedSortedSet#isEmpty()}.
      */
@@ -287,7 +288,7 @@ public class MultiSetBackedSortedSetTest {
         }
         try {
             @SuppressWarnings("unused")
-            SortedSet<byte[]> subSubSet = subSet.subSet(data[sortedOrder[start]], data[sortedOrder[end +  1]]);
+            SortedSet<byte[]> subSubSet = subSet.subSet(data[sortedOrder[start]], data[sortedOrder[end + 1]]);
             fail("Expected to not be able to create a supper set out of a sub set");
         } catch (IllegalArgumentException iae) {
             // ok
@@ -338,6 +339,7 @@ public class MultiSetBackedSortedSetTest {
             }
         }
     }
+
     /**
      * Test method for {@link datwave.query.util.sortedset.MultiSetBackedSortedSet#headSet(byte[])}.
      */

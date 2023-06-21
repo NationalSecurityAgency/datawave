@@ -60,11 +60,11 @@ import java.util.TreeMap;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
- * <p>
+ *
  * Justification: The benefit of using this Function is that we can perform necessary transformations in the context of a thread about to send a request to
  * tablet servers. This parallelizes requests sent to the tablet servers.
  */
-public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
+public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     protected static FileSystemCache fileSystemCache = null;
 
@@ -75,7 +75,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
     protected Set<String> nonEventFields;
 
     // thread-safe cache where the key is the original query, and the value is the expanded query
-    private Cache<String, String> queryCache;
+    private Cache<String,String> queryCache;
 
     private static final Logger log = Logger.getLogger(VisitorFunction.class);
 
@@ -191,7 +191,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                         // if the query changed, save it, and mark it as such
                         if (!TreeEqualityVisitor.isEqual(script, rebuiltScript)) {
                             log.debug("[" + config.getQuery().getId() + "] The WhindexVisitor updated the query: "
-                                    + JexlStringBuildingVisitor.buildQuery(script));
+                                            + JexlStringBuildingVisitor.buildQuery(script));
                             script = rebuiltScript;
                             madeChange = true;
                         }
@@ -206,7 +206,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                         }
 
                         if (!ExecutableDeterminationVisitor.isExecutable(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
-                                this.metadataHelper)) {
+                                        this.metadataHelper)) {
 
                             if (log.isTraceEnabled()) {
                                 log.trace("Need to pull up non-executable query: " + JexlStringBuildingVisitor.buildQuery(script));
@@ -216,11 +216,11 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                                 DefaultQueryPlanner.logQuery(script, "Failing query:");
                             }
                             script = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, true, config, indexedFields,
-                                    indexOnlyFields, nonEventFields, metadataHelper);
+                                            indexOnlyFields, nonEventFields, metadataHelper);
                             madeChange = true;
 
                             STATE state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
-                                    metadataHelper);
+                                            metadataHelper);
 
                             /**
                              * We could achieve better performance if we live with the small number of queries that error due to the full table scan exception.
@@ -235,11 +235,11 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                                     }
                                 }
                                 script = (ASTJexlScript) PushdownUnexecutableNodesVisitor.pushdownPredicates(script, true, config, indexedFields,
-                                        indexOnlyFields, nonEventFields, metadataHelper);
+                                                indexOnlyFields, nonEventFields, metadataHelper);
                             }
 
                             state = ExecutableDeterminationVisitor.getState(script, config, indexedFields, indexOnlyFields, nonEventFields, true, debug,
-                                    metadataHelper);
+                                            metadataHelper);
 
                             if (state != STATE.EXECUTABLE) {
                                 if (state == STATE.ERROR) {
@@ -258,7 +258,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                                         DefaultQueryPlanner.logQuery(script, "Failing query:");
                                     }
                                     PreConditionFailedQueryException qe = new PreConditionFailedQueryException(
-                                            DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
+                                                    DatawaveErrorCode.FULL_TABLE_SCAN_REQUIRED_BUT_DISABLED);
                                     throw new DatawaveFatalQueryException(qe);
                                 }
                             }
@@ -275,18 +275,16 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                     if (config.getSerializeQueryIterator()) {
                         serializeQuery(newIteratorSetting);
                     } else {
-                        if (!evaluatedPreviously) {
+                        if (!evaluatedPreviously && config.getHdfsSiteConfigURLs() != null) {
                             // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
-                            if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
-                                if (null == script) {
-                                    script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                                }
-                                try {
-                                    script = pushdownLargeFieldedLists(config, script);
-                                    madeChange = true;
-                                } catch (IOException ioe) {
-                                    log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
-                                }
+                            if (null == script) {
+                                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                            }
+                            try {
+                                script = pushdownLargeFieldedLists(config, script);
+                                madeChange = true;
+                            } catch (IOException ioe) {
+                                log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
                             }
                         }
                     }
@@ -308,7 +306,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                         queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
                         throw new DatawaveFatalQueryException(String.format("New query is null! madeChange: %b, qid: %s", madeChange,
-                                setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
+                                        setting.getOptions().get(QueryOptions.QUERY_ID)), npe);
                     }
 
                     // test the final script for thresholds
@@ -326,7 +324,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
                         DefaultQueryPlanner.logTrace(PrintingVisitor.formattedQueryStringList(script), "VistorFunction::apply method");
                     } else if (log.isDebugEnabled()) {
                         DefaultQueryPlanner.logDebug(PrintingVisitor.formattedQueryStringList(script, DefaultQueryPlanner.maxChildNodesToPrint),
-                                "VistorFunction::apply method");
+                                        "VistorFunction::apply method");
                     }
 
                 } catch (ParseException e) {
@@ -343,7 +341,8 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
     /**
      * Serializes the query iterator
      *
-     * @param newIteratorSetting an instance of {@link IteratorSetting}
+     * @param newIteratorSetting
+     *            an instance of {@link IteratorSetting}
      */
     private void serializeQuery(IteratorSetting newIteratorSetting) {
         newIteratorSetting.addOption(QueryOptions.SERIAL_EVALUATION_PIPELINE, "true");
@@ -354,11 +353,12 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
     /**
      * Prune empty options from the iterator settings
      *
-     * @param settings an instance of {@link IteratorSetting}
+     * @param settings
+     *            an instance of {@link IteratorSetting}
      */
     protected void pruneEmptyOptions(IteratorSetting settings) {
         Set<String> optionsToRemove = new HashSet<>();
-        for (Map.Entry<String, String> entry : settings.getOptions().entrySet()) {
+        for (Map.Entry<String,String> entry : settings.getOptions().entrySet()) {
             switch (entry.getKey()) {
                 case QueryOptions.INDEX_ONLY_FIELDS:
                 case QueryOptions.INDEXED_FIELDS:
@@ -381,8 +381,10 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
     /**
      * If the query does not require an Ivarator, remove Ivarator options from the query settings
      *
-     * @param script   the query script
-     * @param settings an {@link IteratorSetting}
+     * @param script
+     *            the query script
+     * @param settings
+     *            an {@link IteratorSetting}
      */
     protected void pruneIvaratorConfigs(ASTJexlScript script, IteratorSetting settings) {
         if (script != null && !IvaratorRequiredVisitor.isIvaratorRequired(script)) {
@@ -403,8 +405,10 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
     /**
      * Reduce the serialized query fields via intersection with fields in the reduced script
      *
-     * @param script   the query, potentially reduced via RangeStream pruning
-     * @param settings the iterator settings
+     * @param script
+     *            the query, potentially reduced via RangeStream pruning
+     * @param settings
+     *            the iterator settings
      */
     protected void reduceQueryFields(ASTJexlScript script, IteratorSetting settings) {
         Set<String> queryFields = ReduceFields.getQueryFields(script);
@@ -425,7 +429,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
         if (config.canHandleExceededValueThreshold()) {
             URI hdfsQueryCacheUri = getFstHdfsQueryCacheUri(config, settings);
 
-            Map<String, Integer> pushdownCapacity = new HashMap<>();
+            Map<String,Integer> pushdownCapacity = new HashMap<>();
             ASTJexlScript script;
             if (hdfsQueryCacheUri != null) {
                 FileSystem fs = VisitorFunction.fileSystemCache.getFileSystem(hdfsQueryCacheUri);
@@ -455,7 +459,7 @@ public class VisitorFunction implements Function<ScannerChunk, ScannerChunk> {
 
                     try {
                         // invert pushdownCapacity to get the largest payoffs first
-                        SortedMap<Integer, List<String>> sortedMap = new TreeMap<>();
+                        SortedMap<Integer,List<String>> sortedMap = new TreeMap<>();
                         for (String fieldName : pushdownCapacity.keySet()) {
                             Integer reduction = pushdownCapacity.get(fieldName);
                             List<String> fields = sortedMap.computeIfAbsent(reduction, k -> new ArrayList<>());

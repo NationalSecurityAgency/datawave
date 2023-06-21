@@ -17,12 +17,12 @@ public class Unique extends LuceneQueryFunction {
     public Unique() {
         super(QueryFunctions.UNIQUE_FUNCTION, new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.isEmpty()) {
@@ -36,7 +36,7 @@ public class Unique extends LuceneQueryFunction {
             throw new IllegalArgumentException("function: " + this.name + " must be part of an AND expression");
         }
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Unique();

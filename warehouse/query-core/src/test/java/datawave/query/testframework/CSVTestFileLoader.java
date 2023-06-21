@@ -20,15 +20,15 @@ import java.net.URI;
  * Loads a CSV test file for ingestion.
  */
 public class CSVTestFileLoader implements TestFileLoader {
-    
+
     private final URI uri;
     private final Configuration conf;
-    
+
     CSVTestFileLoader(URI u, Configuration cf) {
         this.uri = u;
         this.conf = cf;
     }
-    
+
     @Override
     public void loadTestData(SequenceFile.Writer seqFile) throws IOException {
         TypeRegistry.reset();
@@ -37,7 +37,7 @@ public class CSVTestFileLoader implements TestFileLoader {
         File file = new File(this.uri);
         FileSplit split = new FileSplit(path, 0, file.length(), null);
         TaskAttemptContext ctx = new TaskAttemptContextImpl(this.conf, new TaskAttemptID());
-        
+
         try (CSVRecordReader reader = new CSVRecordReader()) {
             reader.initialize(split, ctx);
             while (reader.nextKeyValue()) {
@@ -46,5 +46,5 @@ public class CSVTestFileLoader implements TestFileLoader {
             }
         }
     }
-    
+
 }

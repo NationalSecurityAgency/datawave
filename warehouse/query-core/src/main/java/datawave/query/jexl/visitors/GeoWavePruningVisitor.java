@@ -41,10 +41,10 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(GeoWavePruningVisitor.class);
 
-    private final Multimap<String, String> prunedTerms;
+    private final Multimap<String,String> prunedTerms;
     private final MetadataHelper metadataHelper;
 
-    private GeoWavePruningVisitor(Multimap<String, String> prunedTerms, MetadataHelper metadataHelper) {
+    private GeoWavePruningVisitor(Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
         this.prunedTerms = prunedTerms;
         this.metadataHelper = metadataHelper;
     }
@@ -53,14 +53,14 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         return pruneTree(node, null, null);
     }
 
-    public static <T extends JexlNode> T pruneTree(JexlNode node, Multimap<String, String> prunedTerms, MetadataHelper metadataHelper) {
+    public static <T extends JexlNode> T pruneTree(JexlNode node, Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
         GeoWavePruningVisitor pruningVisitor = new GeoWavePruningVisitor(prunedTerms, metadataHelper);
         return (T) node.jjtAccept(pruningVisitor, null);
     }
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        Multimap<String, Geometry> fieldToGeometryMap = (data instanceof Multimap) ? (Multimap<String, Geometry>) data : HashMultimap.create();
+        Multimap<String,Geometry> fieldToGeometryMap = (data instanceof Multimap) ? (Multimap<String,Geometry>) data : HashMultimap.create();
 
         // if one of the anded nodes is a geowave function, pass down the geometry and field name in the multimap
         for (JexlNode child : children(node)) {
@@ -72,10 +72,8 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                     if (isPrunable(geoWaveDesc)) {
                         Geometry geom = GeometryNormalizer.parseGeometry(geoWaveDesc.getWkt());
                         Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
-                        if (fields != null) {
-                            for (String field : fields) {
-                                fieldToGeometryMap.put(field, geom);
-                            }
+                        for (String field : fields) {
+                            fieldToGeometryMap.put(field, geom);
                         }
                     }
                 }
@@ -138,7 +136,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (data instanceof Multimap) {
-            Multimap<String, Geometry> fieldToGeometryMap = (Multimap<String, Geometry>) data;
+            Multimap<String,Geometry> fieldToGeometryMap = (Multimap<String,Geometry>) data;
 
             String field = JexlASTHelper.getIdentifier(node);
 

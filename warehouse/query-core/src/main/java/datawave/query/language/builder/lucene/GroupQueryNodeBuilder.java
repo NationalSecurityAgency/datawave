@@ -30,12 +30,12 @@ import org.apache.lucene.search.Query;
  */
 @Deprecated
 public class GroupQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         GroupQueryNode groupNode = (GroupQueryNode) queryNode;
-        
+
         return (datawave.query.language.tree.QueryNode) (groupNode).getChild().getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
-        
+
     }
-    
+
 }

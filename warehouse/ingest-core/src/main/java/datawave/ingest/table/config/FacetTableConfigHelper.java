@@ -12,35 +12,35 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 public class FacetTableConfigHelper extends AbstractTableConfigHelper {
-    
+
     protected Logger log;
-    
+
     public enum FacetTableType {
         FACET, HASH, META
     }
-    
+
     protected Configuration conf;
     protected String tableName;
     protected String facetTableName;
     protected String facetMetadataTableName;
     protected String facetHashTableName;
     protected FacetTableType tableType;
-    
+
     @Override
     public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {
         this.log = log;
         this.conf = config;
-        
+
         facetTableName = conf.get(FacetHandler.FACET_TABLE_NAME, null);
         facetMetadataTableName = conf.get(FacetHandler.FACET_METADATA_TABLE_NAME, null);
         facetHashTableName = conf.get(FacetHandler.FACET_HASH_TABLE_NAME, null);
-        
+
         if (facetTableName == null && facetMetadataTableName == null && facetHashTableName == null) {
             throw new IllegalArgumentException("No Facet Table names are defined");
         }
-        
+
         // TODO: generic balancer, markings, bloom filters, locality groups.
-        
+
         if (tableName.equals(facetTableName)) {
             this.tableType = FacetTableType.FACET;
         } else if (tableName.equals(facetMetadataTableName)) {
@@ -52,7 +52,7 @@ public class FacetTableConfigHelper extends AbstractTableConfigHelper {
         }
         this.tableName = tableName;
     }
-    
+
     @Override
     public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         switch (this.tableType) {
@@ -73,7 +73,7 @@ public class FacetTableConfigHelper extends AbstractTableConfigHelper {
                 throw new TableNotFoundException(null, tableName, "Table is not a Facet Type Table");
         }
     }
-    
+
     protected void configureFacetTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         // Add the facet cardinality aggregator
         for (IteratorUtil.IteratorScope scope : IteratorUtil.IteratorScope.values()) {
@@ -83,11 +83,11 @@ public class FacetTableConfigHelper extends AbstractTableConfigHelper {
             setPropertyIfNecessary(tableName, stem + "*", "datawave.ingest.table.aggregator.CardinalityAggregator", tops, log);
         }
     }
-    
+
     protected void configureFacetMetadataTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         // TODO:
     }
-    
+
     protected void configureFacedHashTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         // TODO:
     }

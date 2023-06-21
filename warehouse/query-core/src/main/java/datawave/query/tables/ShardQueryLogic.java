@@ -110,13 +110,13 @@ import java.util.concurrent.TimeUnit;
  *                   querying the metadata table. Depending on the conjunctions in the query (or, and, not) and the
  *                   eventFields that are indexed, the query may be sent down the optimized path or the full scan path.
  * </pre>
- * <p>
+ *
  * We are not supporting all of the operators that JEXL supports at this time. We are supporting the following operators:
  *
  * <pre>
  *  ==, !=, &gt;, &ge;, &lt;, &le;, =~, !~, and the reserved word 'null'
  * </pre>
- * <p>
+ *
  * Custom functions can be created and registered with the Jexl engine. The functions can be used in the queries in conjunction with other supported operators.
  * A sample function has been created, called between, and is bound to the 'f' namespace. An example using this function is : "f:between(LATITUDE,60.0, 70.0)"
  *
@@ -158,7 +158,7 @@ import java.util.concurrent.TimeUnit;
  * @see datawave.query.enrich
  */
 public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
-    
+
     public static final String NULL_BYTE = "\0";
     public static final Class<? extends ShardQueryConfiguration> tableConfigurationType = ShardQueryConfiguration.class;
     protected static final Logger log = ThreadConfigurableLogger.getLogger(ShardQueryLogic.class);
@@ -185,9 +185,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryPlanner planner = null;
     private QueryParser parser = null;
     private QueryLogicTransformer transformerInstance = null;
-    
+
     private CardinalityConfiguration cardinalityConfiguration = null;
-    
+
     /**
      * Basic constructor
      */
@@ -196,7 +196,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (log.isTraceEnabled())
             log.trace("Creating ShardQueryLogic: " + System.identityHashCode(this));
     }
-    
+
     /**
      * Copy constructor
      *
@@ -205,10 +205,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
      */
     public ShardQueryLogic(ShardQueryLogic other) {
         super(other);
-        
+
         if (log.isTraceEnabled())
             log.trace("Creating Cloned ShardQueryLogic: " + System.identityHashCode(this) + " from " + System.identityHashCode(other));
-        
+
         // Set ShardQueryConfiguration variables
         this.config = ShardQueryConfiguration.create(other);
         this.setQuerySyntaxParsers(other.getQuerySyntaxParsers());
@@ -216,13 +216,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setQueryPlanner(other.getQueryPlanner().clone());
         this.setCreateUidsIteratorClass(other.getCreateUidsIteratorClass());
         this.setUidIntersector(other.getUidIntersector());
-        
+
         this.setQueries(other.getQueries());
         this.setParser(other.getParser());
         this.setQueryModel(other.getQueryModel());
         this.setScannerFactory(other.getScannerFactory());
         this.setScheduler(other.getScheduler());
-        
+
         log.trace("copy CTOR setting metadataHelperFactory to " + other.getMetadataHelperFactory());
         this.setMetadataHelperFactory(other.getMetadataHelperFactory());
         this.setDateIndexHelperFactory(other.getDateIndexHelperFactory());
@@ -231,32 +231,32 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setConfiguredProfiles(other.getConfiguredProfiles());
         this.setSelectedProfile(other.getSelectedProfile());
         this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
-        
+
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
     }
-    
+
     public static BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
         final BatchScanner bs = scannerFactory.newScanner(config.getShardTableName(), config.getAuthorizations(), config.getNumQueryThreads(),
                         config.getQuery());
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Running with " + config.getAuthorizations() + " and " + config.getNumQueryThreads() + " threads: " + qd);
         }
-        
+
         bs.setRanges(qd.getRanges());
-        
+
         for (IteratorSetting cfg : qd.getSettings()) {
             bs.addScanIterator(cfg);
         }
-        
+
         return bs;
     }
-    
+
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
-        
+
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic: " + System.identityHashCode(this) + '('
@@ -266,10 +266,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         initialize(config, client, settings, auths);
         return config;
     }
-    
+
     @Override
     public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
-        
+
         this.config = ShardQueryConfiguration.create(this, settings);
         if (log.isTraceEnabled())
             log.trace("Initializing ShardQueryLogic for plan: " + System.identityHashCode(this) + '('
@@ -283,7 +283,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         initialize(config, client, settings, auths);
         return config.getQueryString();
     }
-    
+
     protected String expandQueryMacros(String query) throws ParseException {
         log.trace("query macros are :" + this.queryMacroFunction);
         if (this.queryMacroFunction != null) {
@@ -291,17 +291,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         return query;
     }
-    
+
     public String getJexlQueryString(Query settings) throws ParseException {
         // queryString should be JEXl after all query parsers are applied
         String queryString;
         String originalQuery = settings.getQuery();
-        
+
         originalQuery = this.expandQueryMacros(originalQuery);
-        
+
         // Determine query syntax (i.e. JEXL, LUCENE, etc.)
         String querySyntax = settings.findParameter(QueryParameters.QUERY_SYNTAX).getParameterValue();
-        
+
         // enforce mandatoryQuerySyntax if set
         if (null != this.mandatoryQuerySyntax) {
             if (StringUtils.isEmpty(querySyntax)) {
@@ -313,9 +313,9 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 }
             }
         }
-        
+
         QueryParser querySyntaxParser = getParser();
-        
+
         if (StringUtils.isBlank(querySyntax)) {
             // Default to the class's query parser when one is not provided
             // Falling back to Jexl when one is not set on this class
@@ -326,20 +326,20 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             if (null == querySyntaxParsers) {
                 throw new IllegalStateException("Query syntax parsers not configured");
             }
-            
+
             querySyntaxParser = querySyntaxParsers.get(querySyntax);
-            
+
             if (null == querySyntaxParser) {
                 // No parser was specified, try to default to the parser on the
                 // class
                 querySyntaxParser = getParser();
-                
+
                 if (null == querySyntaxParser) {
                     throw new IllegalArgumentException("QueryParser not configured for syntax: " + querySyntax);
                 }
             }
         }
-        
+
         if (null == originalQuery) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
@@ -355,82 +355,82 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
         return queryString;
     }
-    
+
     public void initialize(ShardQueryConfiguration config, AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         // Set the connector and the authorizations into the config object
         config.setClient(client);
         config.setAuthorizations(auths);
         config.setMaxScannerBatchSize(getMaxScannerBatchSize());
         config.setMaxIndexBatchSize(getMaxIndexBatchSize());
-        
+
         setScannerFactory(new ScannerFactory(config));
-        
+
         // load params before parsing jexl string so these can be injected
         loadQueryParameters(config, settings);
-        
+
         String jexlQueryString = getJexlQueryString(settings);
-        
+
         if (null == jexlQueryString) {
             throw new IllegalArgumentException("Query cannot be null");
         } else {
             config.setQueryString(jexlQueryString);
         }
-        
+
         final Date beginDate = settings.getBeginDate();
         if (null == beginDate) {
             throw new IllegalArgumentException("Begin date cannot be null");
         } else {
             config.setBeginDate(beginDate);
         }
-        
+
         final Date endDate = settings.getEndDate();
         if (null == endDate) {
             throw new IllegalArgumentException("End date cannot be null");
         } else {
             config.setEndDate(endDate);
         }
-        
+
         MetadataHelper metadataHelper = prepareMetadataHelper(client, this.getMetadataTableName(), auths, config.isRawTypes());
-        
+
         DateIndexHelper dateIndexHelper = prepareDateIndexHelper(client, this.getDateIndexTableName(), auths);
         if (config.isDateIndexTimeTravel()) {
             dateIndexHelper.setTimeTravel(config.isDateIndexTimeTravel());
         }
-        
+
         QueryPlanner queryPlanner = getQueryPlanner();
         if (queryPlanner instanceof DefaultQueryPlanner) {
             DefaultQueryPlanner currentQueryPlanner = (DefaultQueryPlanner) queryPlanner;
-            
+
             currentQueryPlanner.setMetadataHelper(metadataHelper);
             currentQueryPlanner.setDateIndexHelper(dateIndexHelper);
-            
+
             QueryModelProvider queryModelProvider = currentQueryPlanner.getQueryModelProviderFactory().createQueryModelProvider();
             if (queryModelProvider instanceof MetadataHelperQueryModelProvider) {
                 ((MetadataHelperQueryModelProvider) queryModelProvider).setMetadataHelper(metadataHelper);
                 ((MetadataHelperQueryModelProvider) queryModelProvider).setConfig(config);
             }
-            
+
             if (null != queryModelProvider.getQueryModel()) {
                 queryModel = queryModelProvider.getQueryModel();
-                
+
             }
         }
-        
+
         if (this.queryModel == null)
             loadQueryModel(metadataHelper, config);
-        
+
         getQueryPlanner().setCreateUidsIteratorClass(createUidsIteratorClass);
         getQueryPlanner().setUidIntersector(uidIntersector);
-        
+
         validateConfiguration(config);
-        
+
         if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
             // Not advisable to create a copy of the config object due to the embedded timers.
             Set<String> originalBlacklistedFields = new HashSet<>(config.getBlacklistedFields());
             Set<String> originalProjectFields = new HashSet<>(config.getProjectFields());
-            
+
             // either projectFields or blacklistedFields can be used, but not both
             // this will be caught when loadQueryParameters is called
             if (!config.getBlacklistedFields().isEmpty()) {
@@ -439,26 +439,26 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             if (!config.getProjectFields().isEmpty()) {
                 config.setProjectFields(getCardinalityConfiguration().getRevisedProjectFields(queryModel, originalProjectFields));
             }
-            
+
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
-            
+
             config.setBlacklistedFields(originalBlacklistedFields);
             config.setProjectFields(originalProjectFields);
         } else {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
         }
-        
+
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
-        
+
         if (this.queries != null) {
             config.setQueries(this.queries.iterator());
         }
-        
+
         config.setQueryString(getQueryPlanner().getPlannedScript());
-        
+
         stopwatch.stop();
     }
-    
+
     /**
      * Validate that the configuration is in a consistent state
      *
@@ -473,11 +473,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new IllegalArgumentException("trackSizes cannot be disabled with a page size greater than 1");
         }
     }
-    
+
     protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
         return prepareMetadataHelper(client, metadataTableName, auths, false);
     }
-    
+
     protected MetadataHelper prepareMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths, boolean rawTypes) {
         if (log.isTraceEnabled())
             log.trace("prepareMetadataHelper with " + client);
@@ -485,110 +485,110 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         helper.setEvaluationOnlyFields(config.getEvaluationOnlyFields());
         return helper;
     }
-    
+
     public MetadataHelperFactory getMetadataHelperFactory() {
         return metadataHelperFactory;
     }
-    
+
     public void setMetadataHelperFactory(MetadataHelperFactory metadataHelperFactory) {
         if (log.isTraceEnabled())
             log.trace("setting MetadataHelperFactory on " + this + " - " + this.getClass() + " to " + metadataHelperFactory + " - "
                             + metadataHelperFactory.getClass());
         this.metadataHelperFactory = metadataHelperFactory;
     }
-    
+
     public DateIndexHelperFactory getDateIndexHelperFactory() {
         return dateIndexHelperFactory;
     }
-    
+
     public void setDateIndexHelperFactory(DateIndexHelperFactory dateIndexHelperFactory) {
         this.dateIndexHelperFactory = dateIndexHelperFactory;
     }
-    
+
     private DateIndexHelper prepareDateIndexHelper(AccumuloClient client, String dateIndexTableName, Set<Authorizations> auths) {
         DateIndexHelper dateIndexHelper = this.dateIndexHelperFactory.createDateIndexHelper();
         return dateIndexHelper.initialize(client, dateIndexTableName, auths, getDateIndexThreads(), getCollapseDatePercentThreshold());
     }
-    
+
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {
         if (!ShardQueryConfiguration.class.isAssignableFrom(genericConfig.getClass())) {
             throw new QueryException("Did not receive a ShardQueryConfiguration instance!!");
         }
-        
+
         ShardQueryConfiguration config = (ShardQueryConfiguration) genericConfig;
-        
+
         final QueryStopwatch timers = config.getTimers();
         TraceStopwatch stopwatch = timers.newStartedStopwatch("ShardQueryLogic - Setup Query");
-        
+
         // Ensure we have all of the information needed to run a query
         if (!config.canRunQuery()) {
             log.warn("The given query '" + config + "' could not be run, most likely due to not matching any records in the global index.");
-            
+
             // Stub out an iterator to correctly present "no results"
             this.iterator = new Iterator<Map.Entry<Key,Value>>() {
                 @Override
                 public boolean hasNext() {
                     return false;
                 }
-                
+
                 @Override
                 public Map.Entry<Key,Value> next() {
                     return null;
                 }
-                
+
                 @Override
                 public void remove() {
                     return;
                 }
             };
-            
+
             this.scanner = null;
-            
+
             stopwatch.stop();
-            
+
             log.info(getStopwatchHeader(config));
             List<String> timings = timers.summarizeAsList();
             for (String timing : timings) {
                 log.info(timing);
             }
-            
+
             return;
         }
-        
+
         // Instantiate the scheduler for the queries
         this.scheduler = getScheduler(config, scannerFactory);
-        
+
         this.scanner = null;
         this.iterator = this.scheduler.iterator();
-        
+
         if (!config.isSortedUIDs()) {
             this.iterator = new DedupingIterator(this.iterator);
         }
-        
+
         stopwatch.stop();
-        
+
         log.info(getStopwatchHeader(config));
         List<String> timings = timers.summarizeAsList();
         for (String timing : timings) {
             log.info(timing);
         }
     }
-    
+
     protected String getStopwatchHeader(ShardQueryConfiguration config) {
         return "ShardQueryLogic: " + config.getQueryString() + ", [" + config.getBeginDate() + ", " + config.getEndDate() + "]";
     }
-    
+
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         if (this.transformerInstance != null) {
             addConfigBasedTransformers();
             return this.transformerInstance;
         }
-        
+
         MarkingFunctions markingFunctions = this.getMarkingFunctions();
         ResponseObjectFactory responseObjectFactory = this.getResponseObjectFactory();
-        
+
         boolean reducedInSettings = false;
         String reducedResponseStr = settings.findParameter(QueryOptions.REDUCED_RESPONSE).getParameterValue().trim();
         if (StringUtils.isNotBlank(reducedResponseStr)) {
@@ -604,14 +604,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         transformer.setQm(queryModel);
         this.transformerInstance = transformer;
         addConfigBasedTransformers();
-        
+
         return this.transformerInstance;
     }
-    
+
     public boolean isLongRunningQuery() {
         return !getConfig().getGroupFields().isEmpty();
     }
-    
+
     /**
      * If the configuration didn't exist, OR IT CHANGED, we need to create or update the transformers that have been added.
      */
@@ -619,7 +619,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (getConfig() != null) {
             ((DocumentTransformer) this.transformerInstance).setProjectFields(getConfig().getProjectFields());
             ((DocumentTransformer) this.transformerInstance).setBlacklistedFields(getConfig().getBlacklistedFields());
-            
+
             if (getConfig().getUniqueFields() != null && !getConfig().getUniqueFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(UniqueTransform.class);
                 if (alreadyExists != null) {
@@ -628,7 +628,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
                 }
             }
-            
+
             if (getConfig().getGroupFields() != null && !getConfig().getGroupFields().isEmpty()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
                 if (alreadyExists != null) {
@@ -643,14 +643,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
         }
     }
-    
+
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
         // we only care about setting the start time if we have an instance already
         if (this.transformerInstance != null) {
             transformerInstance.setQueryExecutionForPageStartTime(pageProcessingStartTime);
         }
     }
-    
+
     protected void loadQueryParameters(ShardQueryConfiguration config, Query settings) throws QueryException {
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Parse query parameters");
         boolean rawDataOnly = false;
@@ -690,30 +690,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setModelName(null);
             }
         }
-        
+
         // Get the datatype set if specified
         String typeList = settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim();
-        
+
         if (StringUtils.isNotBlank(typeList)) {
             HashSet<String> typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
-            
+
             if (log.isDebugEnabled()) {
                 log.debug("Type Filter: " + typeFilter);
             }
-            
+
             config.setDatatypeFilter(typeFilter);
         }
-        
+
         // Get the list of fields to project up the stack. May be null.
         String projectFields = settings.findParameter(QueryParameters.RETURN_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(projectFields)) {
             List<String> projectFieldsList = Arrays.asList(StringUtils.split(projectFields, Constants.PARAM_VALUE_SEP));
-            
+
             // Only set the projection fields if we were actually given some
             if (!projectFieldsList.isEmpty()) {
                 config.setProjectFields(new HashSet<>(projectFieldsList));
-                
+
                 if (log.isDebugEnabled()) {
                     final int maxLen = 100;
                     // Trim down the projection if it's stupid long
@@ -722,7 +722,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 }
             }
         }
-        
+
         // if the TRANSFORM_CONTENT_TO_UID is false, then unset the list of content field names preventing the DocumentTransformer from
         // transforming them.
         String transformContentStr = settings.findParameter(QueryParameters.TRANSFORM_CONTENT_TO_UID).getParameterValue().trim();
@@ -731,66 +731,66 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 setContentFieldNames(Collections.EMPTY_LIST);
             }
         }
-        
+
         // Get the list of blacklisted fields. May be null.
         String tBlacklistedFields = settings.findParameter(QueryParameters.BLACKLISTED_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(tBlacklistedFields)) {
             List<String> blacklistedFieldsList = Arrays.asList(StringUtils.split(tBlacklistedFields, Constants.PARAM_VALUE_SEP));
-            
+
             // Only set the blacklisted fields if we were actually given some
             if (!blacklistedFieldsList.isEmpty()) {
                 if (!config.getProjectFields().isEmpty()) {
                     throw new QueryException("Whitelist and blacklist projection options are mutually exclusive");
                 }
-                
+
                 config.setBlacklistedFields(new HashSet<>(blacklistedFieldsList));
-                
+
                 if (log.isDebugEnabled()) {
                     log.debug("Blacklisted fields: " + tBlacklistedFields);
                 }
             }
         }
-        
+
         // Get the LIMIT_FIELDS parameter if given
         String limitFields = settings.findParameter(QueryParameters.LIMIT_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(limitFields)) {
             List<String> limitFieldsList = Arrays.asList(StringUtils.split(limitFields, Constants.PARAM_VALUE_SEP));
-            
+
             // Only set the limit fields if we were actually given some
             if (!limitFieldsList.isEmpty()) {
                 config.setLimitFields(new HashSet<>(limitFieldsList));
             }
         }
-        
+
         // Get the MATCHING_FIELD_SETS parameter if given
         String matchingFieldSets = settings.findParameter(QueryParameters.MATCHING_FIELD_SETS).getParameterValue().trim();
         if (StringUtils.isNotBlank(matchingFieldSets)) {
             List<String> matchingFieldSetsList = Arrays.asList(StringUtils.split(matchingFieldSets, Constants.PARAM_VALUE_SEP));
-            
+
             // Only set the limit fields if we were actually given some
             if (!matchingFieldSetsList.isEmpty()) {
                 config.setMatchingFieldSets(new HashSet<>(matchingFieldSetsList));
             }
         }
-        
+
         String limitFieldsPreQueryEvaluation = settings.findParameter(QueryOptions.LIMIT_FIELDS_PRE_QUERY_EVALUATION).getParameterValue().trim();
         if (StringUtils.isNotBlank(limitFieldsPreQueryEvaluation)) {
             Boolean limitFieldsPreQueryEvaluationValue = Boolean.parseBoolean(limitFieldsPreQueryEvaluation);
             this.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
             config.setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluationValue);
         }
-        
+
         String limitFieldsField = settings.findParameter(QueryOptions.LIMIT_FIELDS_FIELD).getParameterValue().trim();
         if (StringUtils.isNotBlank(limitFieldsField)) {
             this.setLimitFieldsField(limitFieldsField);
             config.setLimitFieldsField(limitFieldsField);
         }
-        
+
         // Get the GROUP_FIELDS parameter if given
         String groupFields = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(groupFields)) {
             List<String> groupFieldsList = Arrays.asList(StringUtils.split(groupFields, Constants.PARAM_VALUE_SEP));
-            
+
             // Only set the group fields if we were actually given some
             if (!groupFieldsList.isEmpty()) {
                 this.setGroupFields(new HashSet<>(groupFieldsList));
@@ -798,14 +798,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setProjectFields(new HashSet<>(groupFieldsList));
             }
         }
-        
+
         String groupFieldsBatchSizeString = settings.findParameter(QueryParameters.GROUP_FIELDS_BATCH_SIZE).getParameterValue().trim();
         if (StringUtils.isNotBlank(groupFieldsBatchSizeString)) {
             int groupFieldsBatchSize = Integer.parseInt(groupFieldsBatchSizeString);
             this.setGroupFieldsBatchSize(groupFieldsBatchSize);
             config.setGroupFieldsBatchSize(groupFieldsBatchSize);
         }
-        
+
         // Get the UNIQUE_FIELDS parameter if given
         String uniqueFieldsParam = settings.findParameter(QueryParameters.UNIQUE_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(uniqueFieldsParam)) {
@@ -816,7 +816,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setUniqueFields(uniqueFields);
             }
         }
-        
+
         // Get the EXCERPT_FIELDS parameter if given
         String excerptFieldsParam = settings.findParameter(QueryParameters.EXCERPT_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(excerptFieldsParam)) {
@@ -827,35 +827,35 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 config.setExcerptFields(excerptFields);
             }
         }
-        
+
         // Get the HIT_LIST parameter if given
         String hitListString = settings.findParameter(QueryParameters.HIT_LIST).getParameterValue().trim();
         if (StringUtils.isNotBlank(hitListString)) {
             Boolean hitListBool = Boolean.parseBoolean(hitListString);
             config.setHitList(hitListBool);
         }
-        
+
         // Get the BYPASS_ACCUMULO parameter if given
         String bypassAccumuloString = settings.findParameter(BYPASS_ACCUMULO).getParameterValue().trim();
         if (StringUtils.isNotBlank(bypassAccumuloString)) {
             Boolean bypassAccumuloBool = Boolean.parseBoolean(bypassAccumuloString);
             config.setBypassAccumulo(bypassAccumuloBool);
         }
-        
+
         // Get the DATE_INDEX_TIME_TRAVEL parameter if given
         String dateIndexTimeTravelString = settings.findParameter(QueryOptions.DATE_INDEX_TIME_TRAVEL).getParameterValue().trim();
         if (StringUtils.isNotBlank(dateIndexTimeTravelString)) {
             Boolean dateIndexTimeTravel = Boolean.parseBoolean(dateIndexTimeTravelString);
             config.setDateIndexTimeTravel(dateIndexTimeTravel);
         }
-        
+
         // get the RAW_TYPES parameter if given
         String rawTypesString = settings.findParameter(QueryParameters.RAW_TYPES).getParameterValue().trim();
         if (StringUtils.isNotBlank(rawTypesString)) {
             Boolean rawTypesBool = Boolean.parseBoolean(rawTypesString);
             config.setRawTypes(rawTypesBool);
         }
-        
+
         // Get the FILTER_MASKED_VALUES spring setting
         String filterMaskedValuesStr = settings.findParameter(QueryParameters.FILTER_MASKED_VALUES).getParameterValue().trim();
         if (StringUtils.isNotBlank(filterMaskedValuesStr)) {
@@ -863,14 +863,14 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             this.setFilterMaskedValues(filterMaskedValuesBool);
             config.setFilterMaskedValues(filterMaskedValuesBool);
         }
-        
+
         // Get the INCLUDE_DATATYPE_AS_FIELD spring setting
         String includeDatatypeAsFieldStr = settings.findParameter(QueryParameters.INCLUDE_DATATYPE_AS_FIELD).getParameterValue().trim();
         if (((StringUtils.isNotBlank(includeDatatypeAsFieldStr) && Boolean.valueOf(includeDatatypeAsFieldStr)))
                         || (this.getIncludeDataTypeAsField() && !rawDataOnly)) {
             config.setIncludeDataTypeAsField(true);
         }
-        
+
         // Get the INCLUDE_RECORD_ID spring setting
         String includeRecordIdStr = settings.findParameter(QueryParameters.INCLUDE_RECORD_ID).getParameterValue().trim();
         if (StringUtils.isNotBlank(includeRecordIdStr)) {
@@ -878,94 +878,94 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             this.setIncludeRecordId(includeRecordIdBool);
             config.setIncludeRecordId(includeRecordIdBool);
         }
-        
+
         // Get the INCLUDE_HIERARCHY_FIELDS spring setting
         String includeHierarchyFieldsStr = settings.findParameter(QueryParameters.INCLUDE_HIERARCHY_FIELDS).getParameterValue().trim();
         if (((StringUtils.isNotBlank(includeHierarchyFieldsStr) && Boolean.valueOf(includeHierarchyFieldsStr)))
                         || (this.getIncludeHierarchyFields() && !rawDataOnly)) {
             config.setIncludeHierarchyFields(true);
-            
+
             final Map<String,String> options = this.getHierarchyFieldOptions();
             config.setHierarchyFieldOptions(options);
         }
-        
+
         // Get the query profile to allow us to select the tune profile of the query
         String queryProfile = settings.findParameter(QueryParameters.QUERY_PROFILE).getParameterValue().trim();
         if ((StringUtils.isNotBlank(queryProfile))) {
-            
+
             selectedProfile = configuredProfiles.get(queryProfile);
-            
+
             if (null == selectedProfile) {
                 throw new QueryException(QueryParameters.QUERY_PROFILE + " has been specified but " + queryProfile + " is not a selectable profile");
             }
-            
+
         }
-        
+
         // Get the include.grouping.context = true/false spring setting
         String includeGroupingContextStr = settings.findParameter(QueryParameters.INCLUDE_GROUPING_CONTEXT).getParameterValue().trim();
         if (((StringUtils.isNotBlank(includeGroupingContextStr) && Boolean.valueOf(includeGroupingContextStr)))
                         || (this.getIncludeGroupingContext() && !rawDataOnly)) {
             config.setIncludeGroupingContext(true);
         }
-        
+
         // Check if the default modelName and modelTableNames have been overridden by custom parameters.
         String parameterModelName = settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim();
         if (StringUtils.isNotBlank(parameterModelName)) {
             this.setModelName(parameterModelName);
         }
-        
+
         config.setModelName(this.getModelName());
-        
+
         String parameterModelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
         if (StringUtils.isNotBlank(parameterModelTableName)) {
             this.setModelTableName(parameterModelTableName);
         }
-        
+
         if (null != config.getModelName() && null == config.getModelTableName()) {
             throw new IllegalArgumentException(QueryParameters.PARAMETER_MODEL_NAME + " has been specified but " + QueryParameters.PARAMETER_MODEL_TABLE_NAME
                             + " is missing. Both are required to use a model");
         }
-        
+
         String noExpansion = settings.findParameter(QueryParameters.NO_EXPANSION_FIELDS).getParameterValue().trim();
         if (org.apache.commons.lang3.StringUtils.isNotBlank(noExpansion)) {
             Set<String> noExpansionFields = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(noExpansion, ',')));
             config.setNoExpansionFields(noExpansionFields);
             setNoExpansionFields(noExpansionFields);
         }
-        
+
         configureDocumentAggregation(settings);
-        
+
         config.setLimitTermExpansionToModel(this.isExpansionLimitedToModelContents());
-        
+
         String reducedResponseStr = settings.findParameter(QueryOptions.REDUCED_RESPONSE).getParameterValue().trim();
         if (StringUtils.isNotBlank(reducedResponseStr)) {
             Boolean reducedResponseValue = Boolean.parseBoolean(reducedResponseStr);
             this.setReducedResponse(reducedResponseValue);
             config.setReducedResponse(reducedResponseValue);
         }
-        
+
         final String postProcessingClasses = settings.findParameter(QueryOptions.POSTPROCESSING_CLASSES).getParameterValue().trim();
-        
+
         final String postProcessingOptions = settings.findParameter(QueryOptions.POSTPROCESSING_OPTIONS).getParameterValue().trim();
-        
+
         // build the post p
         if (StringUtils.isNotBlank(postProcessingClasses)) {
-            
+
             List<String> filterClasses = config.getFilterClassNames();
             if (null == filterClasses) {
                 filterClasses = new ArrayList<>();
             }
-            
+
             for (String fClassName : new datawave.util.StringUtils.SplitIterable(postProcessingClasses, ',', true)) {
                 filterClasses.add(fClassName);
             }
             config.setFilterClassNames(filterClasses);
-            
+
             final Map<String,String> options = this.getFilterOptions();
             if (null != options) {
                 config.putFilterOptions(options);
             }
-            
+
             if (StringUtils.isNotBlank(postProcessingOptions)) {
                 for (String filterOptionStr : new datawave.util.StringUtils.SplitIterable(postProcessingOptions, ',', true)) {
                     if (StringUtils.isNotBlank(filterOptionStr)) {
@@ -977,26 +977,26 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 }
             }
         }
-        
+
         String tCompressServerSideResults = settings.findParameter(QueryOptions.COMPRESS_SERVER_SIDE_RESULTS).getParameterValue().trim();
         if (StringUtils.isNotBlank(tCompressServerSideResults)) {
             boolean compress = Boolean.parseBoolean(tCompressServerSideResults);
             config.setCompressServerSideResults(compress);
         }
-        
+
         // Configure index-only filter functions to be enabled if not already set to such a state
         config.setIndexOnlyFilterFunctionsEnabled(this.isIndexOnlyFilterFunctionsEnabled());
-        
+
         // Set the ReturnType for Documents coming out of the iterator stack
         config.setReturnType(DocumentSerialization.getReturnType(settings));
-        
+
         // this needs to be configured first in order for FieldMappingTransform to work properly for profiles
         if (null != selectedProfile) {
             selectedProfile.configure(this);
             selectedProfile.configure(config);
             selectedProfile.configure(planner);
         }
-        
+
         QueryLogicTransformer transformer = getTransformer(settings);
         if (transformer instanceof WritesQueryMetrics) {
             String logTimingDetailsStr = settings.findParameter(QueryOptions.LOG_TIMING_DETAILS).getParameterValue().trim();
@@ -1007,7 +1007,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 // we have to collect the timing details on the iterator stack in order to log them
                 setCollectTimingDetails(true);
             } else {
-                
+
                 String collectTimingDetailsStr = settings.findParameter(QueryOptions.COLLECT_TIMING_DETAILS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(collectTimingDetailsStr)) {
                     setCollectTimingDetails(Boolean.valueOf(collectTimingDetailsStr));
@@ -1018,10 +1018,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             setLogTimingDetails(false);
             setCollectTimingDetails(false);
         }
-        
+
         stopwatch.stop();
     }
-    
+
     void configureDocumentAggregation(Query settings) {
         Parameter disabledIndexOnlyDocument = settings.findParameter(QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS);
         if (null != disabledIndexOnlyDocument) {
@@ -1032,7 +1032,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
         }
     }
-    
+
     /**
      * Loads a query Model
      *
@@ -1052,28 +1052,28 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     protected void loadQueryModel(MetadataHelper helper, ShardQueryConfiguration config)
                     throws InstantiationException, IllegalAccessException, TableNotFoundException, ExecutionException {
         TraceStopwatch modelWatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Loading the query model");
-        
+
         int cacheKeyCode = new HashCodeBuilder().append(config.getDatatypeFilter()).append(config.getModelName()).hashCode();
-        
+
         if (config.getCacheModel()) {
             queryModel = queryModelMap.getIfPresent(String.valueOf(cacheKeyCode));
         }
         if (null == queryModel && (null != config.getModelName() && null != config.getModelTableName())) {
-            
+
             queryModel = helper.getQueryModel(config.getModelTableName(), config.getModelName(), helper.getIndexOnlyFields(config.getDatatypeFilter()));
-            
+
             if (config.getCacheModel()) {
-                
+
                 queryModelMap.put(String.valueOf(cacheKeyCode), queryModel);
             }
-            
+
         }
         config.setQueryModel(queryModel);
-        
+
         modelWatch.stop();
-        
+
     }
-    
+
     protected Scheduler getScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory) {
         if (config.getSequentialScheduler()) {
             return new SequentialScheduler(config, scannerFactory);
@@ -1081,27 +1081,27 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             return new PushdownScheduler(config, scannerFactory, this.metadataHelperFactory);
         }
     }
-    
+
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
         return eventQueryDataDecoratorTransformer;
     }
-    
+
     public void setEventQueryDataDecoratorTransformer(EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer) {
         this.eventQueryDataDecoratorTransformer = eventQueryDataDecoratorTransformer;
     }
-    
+
     @Override
     public ShardQueryLogic clone() {
         return new ShardQueryLogic(this);
     }
-    
+
     @Override
     public void close() {
-        
+
         super.close();
-        
+
         log.debug("Closing ShardQueryLogic: " + System.identityHashCode(this));
-        
+
         if (null == scannerFactory) {
             log.debug("ScannerFactory was never initialized because, therefore there are no connections to close: " + System.identityHashCode(this));
         } else {
@@ -1116,24 +1116,24 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 if (log.isDebugEnabled()) {
                     log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
                 }
-                
+
                 nClosed = 0;
-                
+
                 for (ScannerSession bs : scannerFactory.currentSessions()) {
                     scannerFactory.close(bs);
                     ++nClosed;
                 }
-                
+
                 if (log.isDebugEnabled()) {
                     log.debug("Cleaned up " + nClosed + " scanner sessions.");
                 }
-                
+
             } catch (Exception e) {
                 log.error("Caught exception trying to close scannerFactory", e);
             }
-            
+
         }
-        
+
         if (null != this.planner) {
             try {
                 log.debug("Closing ShardQueryLogic planner: " + System.identityHashCode(this) + '('
@@ -1143,7 +1143,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 log.error("Caught exception trying to close QueryPlanner", e);
             }
         }
-        
+
         if (null != this.queries) {
             try {
                 log.debug("Closing ShardQueryLogic queries: " + System.identityHashCode(this));
@@ -1152,191 +1152,191 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                 log.error("Caught exception trying to close CloseableIterable of queries", e);
             }
         }
-        
+
         if (null != this.scheduler) {
             try {
                 log.debug("Closing ShardQueryLogic scheduler: " + System.identityHashCode(this));
                 this.scheduler.close();
-                
+
                 ScanSessionStats stats = this.scheduler.getSchedulerStats();
-                
+
                 if (null != stats) {
                     stats.logSummary(log);
                 }
-                
+
             } catch (IOException e) {
                 log.error("Caught exception trying to close Scheduler", e);
             }
         }
-        
+
     }
-    
+
     @Override
     public ShardQueryConfiguration getConfig() {
         if (config == null) {
             config = ShardQueryConfiguration.create();
         }
-        
+
         return config;
     }
-    
+
     public void setConfig(ShardQueryConfiguration config) {
         this.config = config;
     }
-    
+
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.NORMAL;
     }
-    
+
     public boolean getFilterMaskedValues() {
         return getConfig().getFilterMaskedValues();
     }
-    
+
     public void setFilterMaskedValues(boolean filterMaskedValues) {
         getConfig().setFilterMaskedValues(filterMaskedValues);
     }
-    
+
     public boolean getIncludeDataTypeAsField() {
         return getConfig().getIncludeDataTypeAsField();
     }
-    
+
     public void setIncludeDataTypeAsField(boolean includeDataTypeAsField) {
         getConfig().setIncludeDataTypeAsField(includeDataTypeAsField);
     }
-    
+
     public boolean getIncludeRecordId() {
         return getConfig().getIncludeRecordId();
     }
-    
+
     public void setIncludeRecordId(boolean includeRecordId) {
         getConfig().setIncludeRecordId(includeRecordId);
     }
-    
+
     public boolean getIncludeHierarchyFields() {
         return getConfig().getIncludeHierarchyFields();
     }
-    
+
     public void setIncludeHierarchyFields(boolean includeHierarchyFields) {
         getConfig().setIncludeHierarchyFields(includeHierarchyFields);
     }
-    
+
     public boolean getEnforceUniqueConjunctionsWithinExpression() {
         return getConfig().getEnforceUniqueConjunctionsWithinExpression();
     }
-    
+
     public void setEnforceUniqueConjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
         getConfig().setEnforceUniqueConjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
     }
-    
+
     public boolean getEnforceUniqueDisjunctionsWithinExpression() {
         return getConfig().getEnforceUniqueDisjunctionsWithinExpression();
     }
-    
+
     public void setEnforceUniqueDisjunctionsWithinExpression(boolean enforceUniqueConjunctionsWithinExpression) {
         getConfig().setEnforceUniqueDisjunctionsWithinExpression(enforceUniqueConjunctionsWithinExpression);
     }
-    
+
     public List<String> getDocumentPermutations() {
         return getConfig().getDocumentPermutations();
     }
-    
+
     public void setDocumentPermutations(List<String> documentPermutations) {
         getConfig().setDocumentPermutations(documentPermutations);
     }
-    
+
     public Map<String,String> getHierarchyFieldOptions() {
         return getConfig().getHierarchyFieldOptions();
     }
-    
+
     public void setHierarchyFieldOptions(final Map<String,String> options) {
         getConfig().setHierarchyFieldOptions(options);
     }
-    
+
     public Set<String> getBlacklistedFields() {
         return getConfig().getBlacklistedFields();
     }
-    
+
     public void setBlacklistedFields(Set<String> blacklistedFields) {
         getConfig().setBlacklistedFields(blacklistedFields);
     }
-    
+
     public Set<String> getLimitFields() {
         return getConfig().getLimitFields();
     }
-    
+
     public void setLimitFields(Set<String> limitFields) {
         getConfig().setLimitFields(limitFields);
     }
-    
+
     public Set<String> getMatchingFieldSets() {
         return getConfig().getMatchingFieldSets();
     }
-    
+
     public void setMatchingFieldSets(Set<String> matchingFieldSets) {
         getConfig().setMatchingFieldSets(matchingFieldSets);
     }
-    
+
     public boolean isLimitFieldsPreQueryEvaluation() {
         return getConfig().isLimitFieldsPreQueryEvaluation();
     }
-    
+
     public void setLimitFieldsPreQueryEvaluation(boolean limitFieldsPreQueryEvaluation) {
         getConfig().setLimitFieldsPreQueryEvaluation(limitFieldsPreQueryEvaluation);
     }
-    
+
     public String getLimitFieldsField() {
         return getConfig().getLimitFieldsField();
     }
-    
+
     public void setLimitFieldsField(String limitFieldsField) {
         getConfig().setLimitFieldsField(limitFieldsField);
     }
-    
+
     public Set<String> getGroupFields() {
         return getConfig().getGroupFields();
     }
-    
+
     public void setGroupFields(Set<String> groupFields) {
         getConfig().setGroupFields(groupFields);
     }
-    
+
     public void setGroupFieldsBatchSize(int groupFieldsBatchSize) {
         getConfig().setGroupFieldsBatchSize(groupFieldsBatchSize);
     }
-    
+
     public int getGroupFieldsBatchSize() {
         return getConfig().getGroupFieldsBatchSize();
     }
-    
+
     public UniqueFields getUniqueFields() {
         return getConfig().getUniqueFields();
     }
-    
+
     public void setUniqueFields(UniqueFields uniqueFields) {
         getConfig().setUniqueFields(uniqueFields);
     }
-    
+
     public Set<String> getNoExpansionFields() {
         return getConfig().getNoExpansionFields();
     }
-    
+
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         getConfig().setNoExpansionFields(noExpansionFields);
     }
-    
+
     public ExcerptFields getExcerptFields() {
         return getConfig().getExcerptFields();
     }
-    
+
     public void setExcerptFields(ExcerptFields excerptFields) {
         getConfig().setExcerptFields(excerptFields);
     }
-    
+
     public String getExcerptIterator() {
         return getConfig().getExcerptIterator().getName();
     }
-    
+
     public void setExcerptIterator(String iteratorClass) {
         try {
             getConfig().setExcerptIterator((Class<? extends SortedKeyValueIterator<Key,Value>>) Class.forName(iteratorClass));
@@ -1344,683 +1344,683 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             throw new DatawaveFatalQueryException("Illegal term frequency excerpt iterator class", e);
         }
     }
-    
+
     public int getFiFieldSeek() {
         return getConfig().getFiFieldSeek();
     }
-    
+
     public void setFiFieldSeek(int fiFieldSeek) {
         getConfig().setFiFieldSeek(fiFieldSeek);
     }
-    
+
     public int getFiNextSeek() {
         return getConfig().getFiNextSeek();
     }
-    
+
     public void setFiNextSeek(int fiNextSeek) {
         getConfig().setFiNextSeek(fiNextSeek);
     }
-    
+
     public int getEventFieldSeek() {
         return getConfig().getEventFieldSeek();
     }
-    
+
     public void setEventFieldSeek(int eventFieldSeek) {
         getConfig().setEventFieldSeek(eventFieldSeek);
     }
-    
+
     public int getEventNextSeek() {
         return getConfig().getEventNextSeek();
     }
-    
+
     public void setEventNextSeek(int eventNextSeek) {
         getConfig().setEventNextSeek(eventNextSeek);
     }
-    
+
     public int getTfFieldSeek() {
         return getConfig().getTfFieldSeek();
     }
-    
+
     public void setTfFieldSeek(int tfFieldSeek) {
         getConfig().setTfFieldSeek(tfFieldSeek);
     }
-    
+
     public int getTfNextSeek() {
         return getConfig().getTfNextSeek();
     }
-    
+
     public void setTfNextSeek(int tfNextSeek) {
         getConfig().setTfNextSeek(tfNextSeek);
     }
-    
+
     public String getBlacklistedFieldsString() {
         return getConfig().getBlacklistedFieldsAsString();
     }
-    
+
     public boolean getIncludeGroupingContext() {
         return getConfig().getIncludeGroupingContext();
     }
-    
+
     public void setIncludeGroupingContext(boolean opt) {
         getConfig().setIncludeGroupingContext(opt);
     }
-    
+
     public boolean isReducedResponse() {
         return getConfig().isReducedResponse();
     }
-    
+
     public void setReducedResponse(boolean reducedResponse) {
         getConfig().setReducedResponse(reducedResponse);
     }
-    
+
     public boolean isDisableEvaluation() {
         return getConfig().isDisableEvaluation();
     }
-    
+
     public void setDisableEvaluation(boolean disableEvaluation) {
         getConfig().setDisableEvaluation(disableEvaluation);
     }
-    
+
     public boolean disableIndexOnlyDocuments() {
         return getConfig().isDisableIndexOnlyDocuments();
     }
-    
+
     public void setDisableIndexOnlyDocuments(boolean disableIndexOnlyDocuments) {
         getConfig().setDisableIndexOnlyDocuments(disableIndexOnlyDocuments);
     }
-    
+
     public boolean isHitList() {
         return getConfig().isHitList();
     }
-    
+
     public void setHitList(boolean hitList) {
         getConfig().setHitList(hitList);
     }
-    
+
     public int getEventPerDayThreshold() {
         return getConfig().getEventPerDayThreshold();
     }
-    
+
     public void setEventPerDayThreshold(int eventPerDayThreshold) {
         getConfig().setEventPerDayThreshold(eventPerDayThreshold);
     }
-    
+
     public int getShardsPerDayThreshold() {
         return getConfig().getShardsPerDayThreshold();
     }
-    
+
     public void setShardsPerDayThreshold(int shardsPerDayThreshold) {
         getConfig().setShardsPerDayThreshold(shardsPerDayThreshold);
     }
-    
+
     public int getInitialMaxTermThreshold() {
         return getConfig().getInitialMaxTermThreshold();
     }
-    
+
     public void setInitialMaxTermThreshold(int initialMaxTermThreshold) {
         getConfig().setInitialMaxTermThreshold(initialMaxTermThreshold);
     }
-    
+
     public int getFinalMaxTermThreshold() {
         return getConfig().getFinalMaxTermThreshold();
     }
-    
+
     public void setFinalMaxTermThreshold(int finalMaxTermThreshold) {
         getConfig().setFinalMaxTermThreshold(finalMaxTermThreshold);
     }
-    
+
     public int getMaxDepthThreshold() {
         return getConfig().getMaxDepthThreshold();
     }
-    
+
     public void setMaxDepthThreshold(int maxDepthThreshold) {
         getConfig().setMaxDepthThreshold(maxDepthThreshold);
     }
-    
+
     public int getMaxUnfieldedExpansionThreshold() {
         return getConfig().getMaxUnfieldedExpansionThreshold();
     }
-    
+
     public void setMaxUnfieldedExpansionThreshold(int maxUnfieldedExpansionThreshold) {
         getConfig().setMaxUnfieldedExpansionThreshold(maxUnfieldedExpansionThreshold);
     }
-    
+
     public int getMaxValueExpansionThreshold() {
         return getConfig().getMaxValueExpansionThreshold();
     }
-    
+
     public void setMaxValueExpansionThreshold(int maxValueExpansionThreshold) {
         getConfig().setMaxValueExpansionThreshold(maxValueExpansionThreshold);
     }
-    
+
     public int getMaxOrExpansionThreshold() {
         return getConfig().getMaxOrExpansionThreshold();
     }
-    
+
     public void setMaxOrExpansionThreshold(int maxOrExpansionThreshold) {
         getConfig().setMaxOrExpansionThreshold(maxOrExpansionThreshold);
     }
-    
+
     public int getMaxOrExpansionFstThreshold() {
         return getConfig().getMaxOrExpansionFstThreshold();
     }
-    
+
     public void setMaxOrRangeThreshold(int maxOrRangeThreshold) {
         getConfig().setMaxOrRangeThreshold(maxOrRangeThreshold);
     }
-    
+
     public int getMaxOrRangeThreshold() {
         return getConfig().getMaxOrRangeThreshold();
     }
-    
+
     public void setMaxOrExpansionFstThreshold(int maxOrExpansionFstThreshold) {
         getConfig().setMaxOrExpansionFstThreshold(maxOrExpansionFstThreshold);
     }
-    
+
     public int getMaxRangesPerRangeIvarator() {
         return getConfig().getMaxRangesPerRangeIvarator();
     }
-    
+
     public void setMaxRangesPerRangeIvarator(int maxRangesPerRangeIvarator) {
         getConfig().setMaxRangesPerRangeIvarator(maxRangesPerRangeIvarator);
     }
-    
+
     public int getMaxOrRangeIvarators() {
         return getConfig().getMaxOrRangeIvarators();
     }
-    
+
     public void setMaxOrRangeIvarators(int maxOrRangeIvarators) {
         getConfig().setMaxOrRangeIvarators(maxOrRangeIvarators);
     }
-    
+
     public long getYieldThresholdMs() {
         return getConfig().getYieldThresholdMs();
     }
-    
+
     public void setYieldThresholdMs(long yieldThresholdMs) {
         getConfig().setYieldThresholdMs(yieldThresholdMs);
     }
-    
+
     public boolean isCleanupShardsAndDaysQueryHints() {
         return getConfig().isCleanupShardsAndDaysQueryHints();
     }
-    
+
     public void setCleanupShardsAndDaysQueryHints(boolean cleanupShardsAndDaysQueryHints) {
         getConfig().setCleanupShardsAndDaysQueryHints(cleanupShardsAndDaysQueryHints);
     }
-    
+
     public String getDateIndexTableName() {
         return getConfig().getDateIndexTableName();
     }
-    
+
     public void setDateIndexTableName(String dateIndexTableName) {
         getConfig().setDateIndexTableName(dateIndexTableName);
     }
-    
+
     public String getDefaultDateTypeName() {
         return getConfig().getDefaultDateTypeName();
     }
-    
+
     public void setDefaultDateTypeName(String defaultDateTypeName) {
         getConfig().setDefaultDateTypeName(defaultDateTypeName);
     }
-    
+
     public String getMetadataTableName() {
         return getConfig().getMetadataTableName();
     }
-    
+
     public void setMetadataTableName(String metadataTableName) {
         getConfig().setMetadataTableName(metadataTableName);
     }
-    
+
     public String getIndexTableName() {
         return getConfig().getIndexTableName();
     }
-    
+
     public void setIndexTableName(String indexTableName) {
         getConfig().setIndexTableName(indexTableName);
     }
-    
+
     public String getIndexStatsTableName() {
         return getConfig().getIndexStatsTableName();
     }
-    
+
     public void setIndexStatsTableName(String indexStatsTableName) {
         getConfig().setIndexStatsTableName(indexStatsTableName);
     }
-    
+
     public String getModelTableName() {
         return getConfig().getModelTableName();
     }
-    
+
     public void setModelTableName(String modelTableName) {
         getConfig().setModelTableName(modelTableName);
     }
-    
+
     public String getModelName() {
         return getConfig().getModelName();
     }
-    
+
     public void setModelName(String modelName) {
         getConfig().setModelName(modelName);
     }
-    
+
     public int getQueryThreads() {
         return getConfig().getNumQueryThreads();
     }
-    
+
     public void setQueryThreads(int queryThreads) {
         getConfig().setNumQueryThreads(queryThreads);
     }
-    
+
     public int getIndexLookupThreads() {
         return getConfig().getNumIndexLookupThreads();
     }
-    
+
     public void setIndexLookupThreads(int indexLookupThreads) {
         getConfig().setNumIndexLookupThreads(indexLookupThreads);
     }
-    
+
     public int getDateIndexThreads() {
         return getConfig().getNumDateIndexThreads();
     }
-    
+
     public void setDateIndexThreads(int indexThreads) {
         getConfig().setNumDateIndexThreads(indexThreads);
     }
-    
+
     public int getMaxDocScanTimeout() {
         return getConfig().getMaxDocScanTimeout();
     }
-    
+
     public void setMaxDocScanTimeout(int maxDocScanTimeout) {
         getConfig().setMaxDocScanTimeout(maxDocScanTimeout);
     }
-    
+
     public float getCollapseDatePercentThreshold() {
         return getConfig().getCollapseDatePercentThreshold();
     }
-    
+
     public void setCollapseDatePercentThreshold(float collapseDatePercentThreshold) {
         getConfig().setCollapseDatePercentThreshold(collapseDatePercentThreshold);
     }
-    
+
     public List<String> getEnricherClassNames() {
         return getConfig().getEnricherClassNames();
     }
-    
+
     public void setEnricherClassNames(List<String> enricherClassNames) {
         getConfig().setEnricherClassNames(enricherClassNames);
     }
-    
+
     public boolean isUseEnrichers() {
         return getConfig().getUseEnrichers();
     }
-    
+
     public void setUseEnrichers(boolean useEnrichers) {
         getConfig().setUseEnrichers(useEnrichers);
     }
-    
+
     public boolean isTldQuery() {
         return getConfig().isTldQuery();
     }
-    
+
     public void setIsTldQuery(boolean isTldQuery) {
         getConfig().setTldQuery(isTldQuery);
     }
-    
+
     public boolean isExpandAllTerms() {
         return getConfig().isExpandAllTerms();
     }
-    
+
     public void setExpandAllTerms(boolean expandAllTerms) {
         getConfig().setExpandAllTerms(expandAllTerms);
     }
-    
+
     public List<String> getFilterClassNames() {
         return getConfig().getFilterClassNames();
     }
-    
+
     public void setFilterClassNames(List<String> filterClassNames) {
         getConfig().setFilterClassNames(filterClassNames);
     }
-    
+
     public List<String> getIndexFilteringClassNames() {
         return getConfig().getIndexFilteringClassNames();
     }
-    
+
     public void setIndexFilteringClassNames(List<String> classNames) {
         getConfig().setIndexFilteringClassNames(classNames);
     }
-    
+
     public Map<String,String> getFilterOptions() {
         return getConfig().getFilterOptions();
     }
-    
+
     public void setFilterOptions(final Map<String,String> options) {
         getConfig().putFilterOptions(options);
     }
-    
+
     public boolean isUseFilters() {
         return getConfig().getUseFilters();
     }
-    
+
     public void setUseFilters(boolean useFilters) {
         getConfig().setUseFilters(useFilters);
     }
-    
+
     public String getReverseIndexTableName() {
         return getConfig().getReverseIndexTableName();
     }
-    
+
     public void setReverseIndexTableName(String reverseIndexTableName) {
         getConfig().setReverseIndexTableName(reverseIndexTableName);
     }
-    
+
     public Set<String> getUnevaluatedFields() {
         return getConfig().getUnevaluatedFields();
     }
-    
+
     public void setUnevaluatedFields(String unevaluatedFieldList) {
         getConfig().setUnevaluatedFields(unevaluatedFieldList);
     }
-    
+
     public void setUnevaluatedFields(Collection<String> unevaluatedFields) {
         getConfig().setUnevaluatedFields(unevaluatedFields);
     }
-    
+
     public Class<? extends Type<?>> getDefaultType() {
         return getConfig().getDefaultType();
     }
-    
+
     public void setDefaultType(Class<? extends Type<?>> defaultType) {
         getConfig().setDefaultType(defaultType);
     }
-    
+
     @SuppressWarnings("unchecked")
     public void setDefaultType(String className) {
         getConfig().setDefaultType(className);
     }
-    
+
     public boolean isFullTableScanEnabled() {
         return getConfig().getFullTableScanEnabled();
     }
-    
+
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
         getConfig().setFullTableScanEnabled(fullTableScanEnabled);
     }
-    
+
     public List<IvaratorCacheDirConfig> getIvaratorCacheDirConfigs() {
         return getConfig().getIvaratorCacheDirConfigs();
     }
-    
+
     public void setIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
         getConfig().setIvaratorCacheDirConfigs(ivaratorCacheDirConfigs);
     }
-    
+
     public String getIvaratorFstHdfsBaseURIs() {
         return getConfig().getIvaratorFstHdfsBaseURIs();
     }
-    
+
     public void setIvaratorFstHdfsBaseURIs(String ivaratorFstHdfsBaseURIs) {
         getConfig().setIvaratorFstHdfsBaseURIs(ivaratorFstHdfsBaseURIs);
     }
-    
+
     public int getIvaratorCacheBufferSize() {
         return getConfig().getIvaratorCacheBufferSize();
     }
-    
+
     public void setIvaratorCacheBufferSize(int ivaratorCacheBufferSize) {
         getConfig().setIvaratorCacheBufferSize(ivaratorCacheBufferSize);
     }
-    
+
     public long getIvaratorCacheScanPersistThreshold() {
         return getConfig().getIvaratorCacheScanPersistThreshold();
     }
-    
+
     public void setIvaratorCacheScanPersistThreshold(long ivaratorCacheScanPersistThreshold) {
         getConfig().setIvaratorCacheScanPersistThreshold(ivaratorCacheScanPersistThreshold);
     }
-    
+
     public long getIvaratorCacheScanTimeout() {
         return getConfig().getIvaratorCacheScanTimeout();
     }
-    
+
     public void setIvaratorCacheScanTimeout(long ivaratorCacheScanTimeout) {
         getConfig().setIvaratorCacheScanTimeout(ivaratorCacheScanTimeout);
     }
-    
+
     public void setIvaratorCacheScanTimeoutMinutes(long hdfsCacheScanTimeoutMinutes) {
         getConfig().setIvaratorCacheScanTimeout(hdfsCacheScanTimeoutMinutes * 1000 * 60);
     }
-    
+
     public String getHdfsSiteConfigURLs() {
         return getConfig().getHdfsSiteConfigURLs();
     }
-    
+
     public void setHdfsSiteConfigURLs(String hadoopConfigURLs) {
         getConfig().setHdfsSiteConfigURLs(hadoopConfigURLs);
     }
-    
+
     public String getHdfsFileCompressionCodec() {
         return getConfig().getHdfsFileCompressionCodec();
     }
-    
+
     public void setHdfsFileCompressionCodec(String hdfsFileCompressionCodec) {
         getConfig().setHdfsFileCompressionCodec(hdfsFileCompressionCodec);
     }
-    
+
     public String getZookeeperConfig() {
         return getConfig().getZookeeperConfig();
     }
-    
+
     public void setZookeeperConfig(String zookeeperConfig) {
         getConfig().setZookeeperConfig(zookeeperConfig);
     }
-    
+
     public int getMaxFieldIndexRangeSplit() {
         return getConfig().getMaxFieldIndexRangeSplit();
     }
-    
+
     public void setMaxFieldIndexRangeSplit(int maxFieldIndexRangeSplit) {
         getConfig().setMaxFieldIndexRangeSplit(maxFieldIndexRangeSplit);
     }
-    
+
     public int getIvaratorMaxOpenFiles() {
         return getConfig().getIvaratorMaxOpenFiles();
     }
-    
+
     public void setIvaratorMaxOpenFiles(int ivaratorMaxOpenFiles) {
         getConfig().setIvaratorMaxOpenFiles(ivaratorMaxOpenFiles);
     }
-    
+
     public int getIvaratorNumRetries() {
         return getConfig().getIvaratorNumRetries();
     }
-    
+
     public void setIvaratorNumRetries(int ivaratorNumRetries) {
         getConfig().setIvaratorNumRetries(ivaratorNumRetries);
     }
-    
+
     public boolean isIvaratorPersistVerify() {
         return getConfig().isIvaratorPersistVerify();
     }
-    
+
     public void setIvaratorPersistVerify(boolean ivaratorPersistVerify) {
         getConfig().setIvaratorPersistVerify(ivaratorPersistVerify);
     }
-    
+
     public int getIvaratorPersistVerifyCount() {
         return getConfig().getIvaratorPersistVerifyCount();
     }
-    
+
     public void setIvaratorPersistVerifyCount(int ivaratorPersistVerifyCount) {
         getConfig().setIvaratorPersistVerifyCount(ivaratorPersistVerifyCount);
     }
-    
+
     public int getMaxIvaratorSources() {
         return getConfig().getMaxIvaratorSources();
     }
-    
+
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
     }
-    
+
     public long getMaxIvaratorResults() {
         return getConfig().getMaxIvaratorResults();
     }
-    
+
     public void setMaxIvaratorResults(long maxIvaratorResults) {
         getConfig().setMaxIvaratorResults(maxIvaratorResults);
     }
-    
+
     public int getMaxEvaluationPipelines() {
         return getConfig().getMaxEvaluationPipelines();
     }
-    
+
     public void setMaxEvaluationPipelines(int maxEvaluationPipelines) {
         getConfig().setMaxEvaluationPipelines(maxEvaluationPipelines);
     }
-    
+
     public int getMaxPipelineCachedResults() {
         return getConfig().getMaxPipelineCachedResults();
     }
-    
+
     public void setMaxPipelineCachedResults(int maxCachedResults) {
         getConfig().setMaxPipelineCachedResults(maxCachedResults);
     }
-    
+
     public void setQueryExecutionForPageTimeout(long queryExecutionForPageTimeout) {
         getConfig().setQueryExecutionForPageTimeout(queryExecutionForPageTimeout);
     }
-    
+
     public long getQueryExecutionForPageTimeout() {
         return getConfig().getQueryExecutionForPageTimeout();
     }
-    
+
     public double getMinimumSelectivity() {
         return getConfig().getMinSelectivity();
     }
-    
+
     public void setMinimumSelectivity(double d) {
         getConfig().setMinSelectivity(d);
     }
-    
+
     public Map<String,QueryParser> getQuerySyntaxParsers() {
         return querySyntaxParsers;
     }
-    
+
     public void setQuerySyntaxParsers(Map<String,QueryParser> querySyntaxParsers) {
         this.querySyntaxParsers = querySyntaxParsers;
     }
-    
+
     public QueryParser getParser() {
         return parser;
     }
-    
+
     public void setParser(QueryParser parser) {
         this.parser = parser;
     }
-    
+
     public QueryPlanner getQueryPlanner() {
         if (null == planner) {
             planner = new DefaultQueryPlanner();
         }
-        
+
         return planner;
     }
-    
+
     public void setQueryPlanner(QueryPlanner planner) {
         this.planner = planner;
     }
-    
+
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
         return createUidsIteratorClass;
     }
-    
+
     public void setCreateUidsIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass) {
         this.createUidsIteratorClass = createUidsIteratorClass;
     }
-    
+
     public UidIntersector getUidIntersector() {
         return uidIntersector;
     }
-    
+
     public void setUidIntersector(UidIntersector uidIntersector) {
         this.uidIntersector = uidIntersector;
     }
-    
+
     public List<String> getContentFieldNames() {
         return getConfig().getContentFieldNames();
     }
-    
+
     public void setContentFieldNames(List<String> contentFieldNames) {
         getConfig().setContentFieldNames(contentFieldNames);
     }
-    
+
     public CloseableIterable<QueryData> getQueries() {
         return queries;
     }
-    
+
     public void setQueries(CloseableIterable<QueryData> queries) {
         this.queries = queries;
     }
-    
+
     public QueryModel getQueryModel() {
         return queryModel;
     }
-    
+
     public void setQueryModel(QueryModel queryModel) {
         log.debug("Setting a cached query model");
         this.queryModel = queryModel;
     }
-    
+
     public ScannerFactory getScannerFactory() {
         return scannerFactory;
     }
-    
+
     public void setScannerFactory(ScannerFactory scannerFactory) {
         log.debug("Setting scanner factory on ShardQueryLogic: " + System.identityHashCode(this) + ".setScannerFactory("
                         + System.identityHashCode(scannerFactory) + ')');
         this.scannerFactory = scannerFactory;
     }
-    
+
     public Scheduler getScheduler() {
         return scheduler;
     }
-    
+
     public void setScheduler(Scheduler scheduler) {
         this.scheduler = scheduler;
     }
-    
+
     public int getMaxScannerBatchSize() {
         return getConfig().getMaxScannerBatchSize();
     }
-    
+
     public void setMaxScannerBatchSize(final int size) {
         getConfig().setMaxScannerBatchSize(size);
     }
-    
+
     public int getMaxIndexBatchSize() {
         return getConfig().getMaxIndexBatchSize();
     }
-    
+
     public void setMaxIndexBatchSize(final int size) {
         getConfig().setMaxIndexBatchSize(size);
     }
-    
+
     public boolean getCompressServerSideResults() {
         return getConfig().isCompressServerSideResults();
     }
-    
+
     public boolean isCompressServerSideResults() {
         return getConfig().isCompressServerSideResults();
     }
-    
+
     public void setCompressServerSideResults(boolean compressServerSideResults) {
         getConfig().setCompressServerSideResults(compressServerSideResults);
     }
-    
+
     /**
      * Returns a value indicating whether index-only filter functions (e.g., #INCLUDE, #EXCLUDE) should be enabled. If true, the use of such filters can
      * potentially consume a LOT of memory.
@@ -2030,7 +2030,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public boolean isIndexOnlyFilterFunctionsEnabled() {
         return getConfig().isIndexOnlyFilterFunctionsEnabled();
     }
-    
+
     /**
      * Sets a value indicating whether index-only filter functions (e.g., #INCLUDE and #EXCLUDE) should be enabled. If true, the use of such filters can
      * potentially consume a LOT of memory.
@@ -2041,7 +2041,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setIndexOnlyFilterFunctionsEnabled(boolean enabled) {
         getConfig().setIndexOnlyFilterFunctionsEnabled(enabled);
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = new TreeSet<>();
@@ -2072,7 +2072,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(datawave.webservice.query.QueryParameters.QUERY_MAX_RESULTS_OVERRIDE);
         return optionalParams;
     }
-    
+
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> requiredParams = new TreeSet<>();
@@ -2084,472 +2084,472 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         requiredParams.add(datawave.webservice.query.QueryParameters.QUERY_END);
         return requiredParams;
     }
-    
+
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
     }
-    
+
     public Set<String> getMandatoryQuerySyntax() {
         return mandatoryQuerySyntax;
     }
-    
+
     public void setMandatoryQuerySyntax(Set<String> mandatoryQuerySyntax) {
         this.mandatoryQuerySyntax = mandatoryQuerySyntax;
     }
-    
+
     public List<String> getRealmSuffixExclusionPatterns() {
         return getConfig().getRealmSuffixExclusionPatterns();
     }
-    
+
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
-    
+
     public String getAccumuloPassword() {
         return getConfig().getAccumuloPassword();
     }
-    
+
     public void setAccumuloPassword(String password) {
         getConfig().setAccumuloPassword(password);
     }
-    
+
     public boolean isExpansionLimitedToModelContents() {
         return getConfig().isExpansionLimitedToModelContents();
     }
-    
+
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
         getConfig().setLimitTermExpansionToModel(shouldLimitTermExpansionToModel);
     }
-    
+
     public boolean getSequentialScheduler() {
         return getConfig().getSequentialScheduler();
     }
-    
+
     public void setSequentialScheduler(boolean sequentialScheduler) {
         getConfig().setSequentialScheduler(sequentialScheduler);
     }
-    
+
     public boolean getParseTldUids() {
         return getConfig().getParseTldUids();
     }
-    
+
     public void setParseTldUids(boolean parseRootUids) {
         getConfig().setParseTldUids(parseRootUids);
     }
-    
+
     public boolean getCollapseUids() {
         return getConfig().getCollapseUids();
     }
-    
+
     public void setCollapseUids(boolean collapseUids) {
         getConfig().setCollapseUids(collapseUids);
     }
-    
+
     public int getCollapseUidsThreshold() {
         return getConfig().getCollapseUidsThreshold();
     }
-    
+
     public void setCollapseUidsThreshold(int collapseUidsThreshold) {
         getConfig().setCollapseUidsThreshold(collapseUidsThreshold);
     }
-    
+
     public boolean getEnforceUniqueTermsWithinExpressions() {
         return this.config.getEnforceUniqueTermsWithinExpressions();
     }
-    
+
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.getConfig().setEnforceUniqueTermsWithinExpressions(enforceUniqueTermsWithinExpressions);
     }
-    
+
     public boolean getReduceQueryFields() {
         return this.getConfig().getReduceQueryFields();
     }
-    
+
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
     }
-    
+
     public long getMaxIndexScanTimeMillis() {
         return getConfig().getMaxIndexScanTimeMillis();
     }
-    
+
     public void setMaxIndexScanTimeMillis(long maxTime) {
         getConfig().setMaxIndexScanTimeMillis(maxTime);
     }
-    
+
     public Function getQueryMacroFunction() {
         return queryMacroFunction;
     }
-    
+
     public void setQueryMacroFunction(Function queryMacroFunction) {
         this.queryMacroFunction = queryMacroFunction;
     }
-    
+
     public boolean getLimitAnyFieldLookups() {
         return getConfig().getLimitAnyFieldLookups();
     }
-    
+
     public void setLimitAnyFieldLookups(boolean limitAnyFieldLookups) {
         getConfig().setLimitAnyFieldLookups(limitAnyFieldLookups);
     }
-    
+
     public boolean getSpeculativeScanning() {
         return getConfig().getSpeculativeScanning();
     }
-    
+
     public void setSpeculativeScanning(boolean speculativeScanning) {
         getConfig().setSpeculativeScanning(speculativeScanning);
     }
-    
+
     public boolean getAllowShortcutEvaluation() {
         return getConfig().getAllowShortcutEvaluation();
     }
-    
+
     public void setAllowShortcutEvaluation(boolean allowShortcutEvaluation) {
         getConfig().setAllowShortcutEvaluation(allowShortcutEvaluation);
     }
-    
+
     public boolean isAllowFieldIndexEvaluation() {
         return getConfig().isAllowFieldIndexEvaluation();
     }
-    
+
     public void setAllowFieldIndexEvaluation(boolean allowFieldIndexEvaluation) {
         getConfig().setAllowFieldIndexEvaluation(allowFieldIndexEvaluation);
     }
-    
+
     public boolean isAllowTermFrequencyLookup() {
         return getConfig().isAllowTermFrequencyLookup();
     }
-    
+
     public void setAllowTermFrequencyLookup(boolean allowTermFrequencyLookup) {
         getConfig().setAllowTermFrequencyLookup(allowTermFrequencyLookup);
     }
-    
+
     public boolean isExpandUnfieldedNegations() {
         return getConfig().isExpandUnfieldedNegations();
     }
-    
+
     public void setExpandUnfieldedNegations(boolean expandUnfieldedNegations) {
         getConfig().setExpandUnfieldedNegations(expandUnfieldedNegations);
     }
-    
+
     public boolean getAccrueStats() {
         return getConfig().getAccrueStats();
     }
-    
+
     public void setAccrueStats(final boolean accrueStats) {
         getConfig().setAccrueStats(accrueStats);
     }
-    
+
     public Boolean getCollectTimingDetails() {
         return getConfig().getCollectTimingDetails();
     }
-    
+
     public void setCollectTimingDetails(Boolean collectTimingDetails) {
         getConfig().setCollectTimingDetails(collectTimingDetails);
     }
-    
+
     public Boolean getLogTimingDetails() {
         return getConfig().getLogTimingDetails();
     }
-    
+
     public void setLogTimingDetails(Boolean logTimingDetails) {
         getConfig().setLogTimingDetails(logTimingDetails);
     }
-    
+
     public String getStatsdHost() {
         return getConfig().getStatsdHost();
     }
-    
+
     public void setStatsdHost(String statsdHost) {
         getConfig().setStatsdHost(statsdHost);
     }
-    
+
     public int getStatsdPort() {
         return getConfig().getStatsdPort();
     }
-    
+
     public void setStatsdPort(int statsdPort) {
         getConfig().setStatsdPort(statsdPort);
     }
-    
+
     public int getStatsdMaxQueueSize() {
         return getConfig().getStatsdMaxQueueSize();
     }
-    
+
     public void setStatsdMaxQueueSize(int statsdMaxQueueSize) {
         getConfig().setStatsdMaxQueueSize(statsdMaxQueueSize);
     }
-    
+
     public boolean getSendTimingToStatsd() {
         return getConfig().getSendTimingToStatsd();
     }
-    
+
     public void setSendTimingToStatsd(boolean sendTimingToStatsd) {
         getConfig().setSendTimingToStatsd(sendTimingToStatsd);
     }
-    
+
     public boolean getCacheModel() {
         return getConfig().getCacheModel();
     }
-    
+
     public void setCacheModel(boolean cacheModel) {
         getConfig().setCacheModel(cacheModel);
     }
-    
+
     public List<IndexHole> getIndexHoles() {
         return getConfig().getIndexHoles();
     }
-    
+
     public void setIndexHoles(List<IndexHole> indexHoles) {
         getConfig().setIndexHoles(indexHoles);
     }
-    
+
     public CardinalityConfiguration getCardinalityConfiguration() {
         return cardinalityConfiguration;
     }
-    
+
     public void setCardinalityConfiguration(CardinalityConfiguration cardinalityConfiguration) {
         this.cardinalityConfiguration = cardinalityConfiguration;
     }
-    
+
     public Map<String,Profile> getConfiguredProfiles() {
         return this.configuredProfiles;
     }
-    
+
     public void setConfiguredProfiles(Map<String,Profile> configuredProfiles) {
         this.configuredProfiles.putAll(configuredProfiles);
     }
-    
+
     public boolean getBackoffEnabled() {
         return getConfig().getBackoffEnabled();
     }
-    
+
     public void setBackoffEnabled(boolean backoffEnabled) {
         getConfig().setBackoffEnabled(backoffEnabled);
     }
-    
+
     public boolean getUnsortedUIDsEnabled() {
         return getConfig().getUnsortedUIDsEnabled();
     }
-    
+
     public void setUnsortedUIDsEnabled(boolean unsortedUIDsEnabled) {
         getConfig().setUnsortedUIDsEnabled(unsortedUIDsEnabled);
     }
-    
+
     public boolean isDebugMultithreadedSources() {
         return getConfig().isDebugMultithreadedSources();
     }
-    
+
     public void setDebugMultithreadedSources(boolean debugMultithreadedSources) {
         getConfig().setDebugMultithreadedSources(debugMultithreadedSources);
     }
-    
+
     public boolean isSortGeoWaveQueryRanges() {
         return getConfig().isSortGeoWaveQueryRanges();
     }
-    
+
     public void setSortGeoWaveQueryRanges(boolean sortGeoWaveQueryRanges) {
         getConfig().setSortGeoWaveQueryRanges(sortGeoWaveQueryRanges);
     }
-    
+
     public int getNumRangesToBuffer() {
         return getConfig().getNumRangesToBuffer();
     }
-    
+
     public void setNumRangesToBuffer(int numRangesToBuffer) {
         getConfig().setNumRangesToBuffer(numRangesToBuffer);
     }
-    
+
     public long getRangeBufferTimeoutMillis() {
         return getConfig().getRangeBufferTimeoutMillis();
     }
-    
+
     public void setRangeBufferTimeoutMillis(long rangeBufferTimeoutMillis) {
         getConfig().setRangeBufferTimeoutMillis(rangeBufferTimeoutMillis);
     }
-    
+
     public long getRangeBufferPollMillis() {
         return getConfig().getRangeBufferPollMillis();
     }
-    
+
     public void setRangeBufferPollMillis(long rangeBufferPollMillis) {
         getConfig().setRangeBufferPollMillis(rangeBufferPollMillis);
     }
-    
+
     public int getGeometryMaxExpansion() {
         return getConfig().getGeometryMaxExpansion();
     }
-    
+
     public void setGeometryMaxExpansion(int geometryMaxExpansion) {
         getConfig().setGeometryMaxExpansion(geometryMaxExpansion);
     }
-    
+
     public int getPointMaxExpansion() {
         return getConfig().getPointMaxExpansion();
     }
-    
+
     public void setPointMaxExpansion(int pointMaxExpansion) {
         getConfig().setPointMaxExpansion(pointMaxExpansion);
     }
-    
+
     public int getGeoMaxExpansion() {
         return getConfig().getGeoMaxExpansion();
     }
-    
+
     public void setGeoMaxExpansion(int geoMaxExpansion) {
         getConfig().setGeoMaxExpansion(geoMaxExpansion);
     }
-    
+
     public int getGeoWaveRangeSplitThreshold() {
         return getConfig().getGeoWaveRangeSplitThreshold();
     }
-    
+
     public void setGeoWaveRangeSplitThreshold(int geoWaveRangeSplitThreshold) {
         getConfig().setGeoWaveRangeSplitThreshold(geoWaveRangeSplitThreshold);
     }
-    
+
     public double getGeoWaveMaxRangeOverlap() {
         return getConfig().getGeoWaveMaxRangeOverlap();
     }
-    
+
     public void setGeoWaveMaxRangeOverlap(double geoWaveMaxRangeOverlap) {
         getConfig().setGeoWaveMaxRangeOverlap(geoWaveMaxRangeOverlap);
     }
-    
+
     public boolean isOptimizeGeoWaveRanges() {
         return getConfig().isOptimizeGeoWaveRanges();
     }
-    
+
     public void setOptimizeGeoWaveRanges(boolean optimizeGeoWaveRanges) {
         getConfig().setOptimizeGeoWaveRanges(optimizeGeoWaveRanges);
     }
-    
+
     public int getGeoWaveMaxEnvelopes() {
         return getConfig().getGeoWaveMaxEnvelopes();
     }
-    
+
     public void setGeoWaveMaxEnvelopes(int geoWaveMaxEnvelopes) {
         getConfig().setGeoWaveMaxEnvelopes(geoWaveMaxEnvelopes);
     }
-    
+
     public long getBeginDateCap() {
         return getConfig().getBeginDateCap();
     }
-    
+
     public void setBeginDateCap(long beginDateCap) {
         getConfig().setBeginDateCap(beginDateCap);
     }
-    
+
     public boolean isFailOutsideValidDateRange() {
         return getConfig().isFailOutsideValidDateRange();
     }
-    
+
     public void setFailOutsideValidDateRange(boolean failOutsideValidDateRange) {
         getConfig().setFailOutsideValidDateRange(failOutsideValidDateRange);
     }
-    
+
     public Map<String,List<String>> getPrimaryToSecondaryFieldMap() {
         return primaryToSecondaryFieldMap;
     }
-    
+
     public void setPrimaryToSecondaryFieldMap(Map<String,List<String>> primaryToSecondaryFieldMap) {
         this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
     }
-    
+
     public boolean isTrackSizes() {
         return getConfig().isTrackSizes();
     }
-    
+
     public void setTrackSizes(boolean trackSizes) {
         getConfig().setTrackSizes(trackSizes);
     }
-    
+
     public Profile getSelectedProfile() {
         return this.selectedProfile;
     }
-    
+
     public void setSelectedProfile(Profile profile) {
         this.selectedProfile = profile;
     }
-    
+
     public Query getSettings() {
         return getConfig().getQuery();
     }
-    
+
     public void setSettings(Query settings) {
         getConfig().setQuery(settings);
     }
-    
+
     public void setEvaluationOnlyFields(String evaluationOnlyFields) {
         getConfig().setEvaluationOnlyFields(Sets.newHashSet(evaluationOnlyFields.split(",")));
     }
-    
+
     public Set<String> getEvaluationOnlyFields() {
         return getConfig().getEvaluationOnlyFields();
     }
-    
+
     public Set<String> getDisallowedRegexPatterns() {
         return getConfig().getDisallowedRegexPatterns();
     }
-    
+
     public void setDisallowedRegexPatterns(Set<String> disallowedRegexPatterns) {
         getConfig().setDisallowedRegexPatterns(disallowedRegexPatterns);
     }
-    
+
     public boolean isDisableWhindexFieldMappings() {
         return getConfig().isDisableWhindexFieldMappings();
     }
-    
+
     public void setDisableWhindexFieldMappings(boolean disableWhindexFieldMappings) {
         getConfig().setDisableWhindexFieldMappings(disableWhindexFieldMappings);
     }
-    
+
     public Set<String> getWhindexMappingFields() {
         return getConfig().getWhindexMappingFields();
     }
-    
+
     public void setWhindexMappingFields(Set<String> whindexMappingFields) {
         getConfig().setWhindexMappingFields(whindexMappingFields);
     }
-    
+
     public Map<String,Map<String,String>> getWhindexFieldMappings() {
         return getConfig().getWhindexFieldMappings();
     }
-    
+
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
     }
-    
+
     public boolean isLazySetMechanismEnabled() {
         return getConfig().isLazySetMechanismEnabled();
     }
-    
+
     public void setLazySetMechanismEnabled(boolean lazySetMechanismEnabled) {
         getConfig().setLazySetMechanismEnabled(lazySetMechanismEnabled);
     }
-    
+
     public long getVisitorFunctionMaxWeight() {
         return getConfig().getVisitorFunctionMaxWeight();
     }
-    
+
     public void setVisitorFunctionMaxWeight(long visitorFunctionMaxWeight) {
         getConfig().setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
     }
-    
+
     public int getDocAggregationThresholdMs() {
         return getConfig().getDocAggregationThresholdMs();
     }
-    
+
     public void setDocAggregationThresholdMs(int docAggregationThresholdMs) {
         getConfig().setDocAggregationThresholdMs(docAggregationThresholdMs);
     }
-    
+
     public int getTfAggregationThresholdMs() {
         return getConfig().getTfAggregationThresholdMs();
     }
-    
+
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
     }

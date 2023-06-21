@@ -165,7 +165,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_emptyMapTest() {
-        Map<String, Integer> fieldLimits = Collections.emptyMap();
+        Map<String,Integer> fieldLimits = Collections.emptyMap();
 
         expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
         expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
@@ -175,7 +175,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), mockAttributeFactory, null, null, 1, -1, fieldLimits, "LIMIT_FIELD",
-                Collections.emptySet());
+                        Collections.emptySet());
 
         assertTrue(filter.keep(key));
         assertNull(filter.getSeekRange(key, key.followingKey(PartialKey.ROW), false));
@@ -185,7 +185,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_anyFieldTest() throws ParseException {
-        Map<String, Integer> fieldLimits = new HashMap<>(1);
+        Map<String,Integer> fieldLimits = new HashMap<>(1);
         fieldLimits.put(Constants.ANY_FIELD, 1);
 
         Set<String> blacklist = new HashSet<>();
@@ -198,7 +198,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // expected key structure
         Key key = new Key("row", "datatype" + Constants.NULL + "123.345.456", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), mockAttributeFactory, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD",
-                Collections.emptySet());
+                        Collections.emptySet());
 
         assertTrue(filter.keep(key));
         // increments counts = 1
@@ -223,7 +223,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_limitFieldTest() {
-        Map<String, Integer> fieldLimits = new HashMap<>(1);
+        Map<String,Integer> fieldLimits = new HashMap<>(1);
         fieldLimits.put("FIELD1", 1);
 
         expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
@@ -234,7 +234,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key key1 = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "FIELD2" + Constants.NULL_BYTE_STRING + "value");
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), mockAttributeFactory, null, null, 1, -1, fieldLimits, "LIMIT_FIELD",
-                Collections.emptySet());
+                        Collections.emptySet());
 
         assertTrue(filter.keep(key1));
         // increments counts = 1
@@ -280,7 +280,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void getSeekRange_maxFieldSeekNotEqualToLimit() {
-        Map<String, Integer> fieldLimits = new HashMap<>(1);
+        Map<String,Integer> fieldLimits = new HashMap<>(1);
         fieldLimits.put("FIELD1", 1);
 
         expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
@@ -291,7 +291,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         Key key1 = new Key("row", "column", "FIELD1" + Constants.NULL_BYTE_STRING + "value");
         Key key2 = new Key("row", "column", "FIELD2" + Constants.NULL_BYTE_STRING + "value");
         filter = new TLDEventDataFilter(mockScript, Collections.singleton("FIELD"), mockAttributeFactory, null, null, 3, -1, fieldLimits, "LIMIT_FIELD",
-                Collections.emptySet());
+                        Collections.emptySet());
 
         assertTrue(filter.keep(key1));
         // increments counts = 1
@@ -540,7 +540,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_nonEventApplyBypass() throws ParseException {
-        Map<String, Integer> fieldLimits = new HashMap<>(1);
+        Map<String,Integer> fieldLimits = new HashMap<>(1);
         fieldLimits.put(Constants.ANY_FIELD, 1);
 
         Set<String> blacklist = new HashSet<>();
@@ -560,7 +560,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
         // child key that would normally not be kept
         Key key = new Key("row", "datatype" + Constants.NULL + "123.345.456.1", "FIELD2" + Constants.NULL_BYTE_STRING + "bar");
         filter = new TLDEventDataFilter(query, Collections.singleton("FIELD2"), mockAttributeFactory, null, blacklist, 1, -1, fieldLimits, "LIMIT_FIELD",
-                nonEventFields);
+                        nonEventFields);
 
         // set the parse info correctly
         filter.startNewDocument(rootKey);

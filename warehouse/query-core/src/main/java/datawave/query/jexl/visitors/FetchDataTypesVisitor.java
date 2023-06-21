@@ -1,9 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
@@ -16,6 +16,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple2;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -30,13 +31,15 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.Collections;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * Walk the AST returning a Multimap of String fieldNames to Sets of Types for terms in the query that need normalization for the express purpose of index
  * lookups. Meaning, we don't need to get normalizers to fields which aren't use in index lookups (e.g. FIELD1 op FIELD2, some functions, etc)
+ *
  */
 @SuppressWarnings("unchecked")
 public class FetchDataTypesVisitor extends BaseVisitor {
@@ -46,8 +49,8 @@ public class FetchDataTypesVisitor extends BaseVisitor {
     protected final Set<String> datatypeFilter;
     protected boolean useCache;
 
-    protected static final Cache<Tuple2<String, Set<String>>, Set<Type<?>>> typeCache = CacheBuilder.newBuilder().maximumSize(2000).concurrencyLevel(25)
-            .expireAfterWrite(24, TimeUnit.HOURS).build();
+    protected static final Cache<Tuple2<String,Set<String>>,Set<Type<?>>> typeCache = CacheBuilder.newBuilder().maximumSize(2000).concurrencyLevel(25)
+                    .expireAfterWrite(24, TimeUnit.HOURS).build();
 
     public FetchDataTypesVisitor(MetadataHelper helper, Set<String> datatypeFilter, boolean useCache) {
         this.helper = helper;
@@ -59,22 +62,24 @@ public class FetchDataTypesVisitor extends BaseVisitor {
         this(helper, datatypeFilter, false);
     }
 
-    public static HashMultimap<String, Type<?>> fetchDataTypes(MetadataHelper helper, Set<String> datatypeFilter, ASTJexlScript script, boolean useCache) {
+    public static HashMultimap<String,Type<?>> fetchDataTypes(MetadataHelper helper, Set<String> datatypeFilter, ASTJexlScript script, boolean useCache) {
         FetchDataTypesVisitor visitor = new FetchDataTypesVisitor(helper, datatypeFilter, useCache);
 
-        return (HashMultimap<String, Type<?>>) script.jjtAccept(visitor, HashMultimap.create());
+        return (HashMultimap<String,Type<?>>) script.jjtAccept(visitor, HashMultimap.create());
     }
 
     /**
      * Use the MetadataHelper to fetch the Set&lt;Type&gt;'s for each field specified in a query term. Handle the case of spoofing the NumberType for fields
      * which are numeric but not indexed.
      *
-     * @param node a node
-     * @param data the data for the node
+     * @param node
+     *            a node
+     * @param data
+     *            the data for the node
      * @return the data visited
      */
     private Object genericVisit(JexlNode node, Object data) {
-        HashMultimap<String, Type<?>> dataTypes = (HashMultimap<String, Type<?>>) data;
+        HashMultimap<String,Type<?>> dataTypes = (HashMultimap<String,Type<?>>) data;
 
         JexlASTHelper.IdentifierOpLiteral op = JexlASTHelper.getIdentifierOpLiteral(node);
         if (op == null) {
@@ -88,7 +93,7 @@ public class FetchDataTypesVisitor extends BaseVisitor {
 
             try {
                 if (useCache) {
-                    Tuple2<String, Set<String>> cacheKey = new Tuple2<>(fieldName, datatypeFilter);
+                    Tuple2<String,Set<String>> cacheKey = new Tuple2<>(fieldName, datatypeFilter);
                     Set<Type<?>> types = typeCache.getIfPresent(cacheKey);
                     if (null == types) {
                         dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
@@ -183,13 +188,16 @@ public class FetchDataTypesVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
-        Multimap<String, Type<?>> mm = (Multimap<String, Type<?>>) data;
-        try {
-            for (String field : desc.fields(this.helper, this.datatypeFilter)) {
-                final String fieldName = JexlASTHelper.deconstructIdentifier(field);
-                Set<Type<?>> dataTypesForField;
+        Multimap<String,Type<?>> mm = (Multimap<String,Type<?>>) data;
+        for (String field : desc.fields(this.helper, this.datatypeFilter)) {
+            final String fieldName = JexlASTHelper.deconstructIdentifier(field);
+            try {
+
+                Set<Type<?>> dataTypesForField = Collections.emptySet();
+
                 if (useCache) {
-                    Tuple2<String, Set<String>> cacheKey = new Tuple2<>(fieldName, datatypeFilter);
+
+                    Tuple2<String,Set<String>> cacheKey = new Tuple2<>(fieldName, datatypeFilter);
                     Set<Type<?>> types = typeCache.getIfPresent(cacheKey);
                     if (null == types) {
                         dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
@@ -202,21 +210,22 @@ public class FetchDataTypesVisitor extends BaseVisitor {
                     }
                 } else
                     dataTypesForField = this.helper.getDatatypesForField(fieldName, datatypeFilter);
+
                 mm.putAll(field, dataTypesForField);
+            } catch (TableNotFoundException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
+            } catch (InstantiationException | IllegalAccessException e) {
+                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
+                log.error(qe);
+                throw new DatawaveFatalQueryException(qe);
             }
-        } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
-        } catch (InstantiationException | IllegalAccessException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_RECORD_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
         }
         return data;
     }
 
-    public static Multimap<String, Type<?>> fetchDataTypes(MetadataHelper metadataHelper, Set<String> datatypeFilter, ASTJexlScript queryTree) {
+    public static Multimap<String,Type<?>> fetchDataTypes(MetadataHelper metadataHelper, Set<String> datatypeFilter, ASTJexlScript queryTree) {
         return fetchDataTypes(metadataHelper, datatypeFilter, queryTree, false);
     }
 }

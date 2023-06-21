@@ -15,7 +15,7 @@ public class IngestConfigurationFactory {
         ServiceLoader<IngestConfiguration> loader = ServiceLoader.load(IngestConfiguration.class);
         ArrayList<IngestConfiguration> allConfigurations = new ArrayList<>();
         Iterables.addAll(allConfigurations, loader);
-        
+
         if (allConfigurations.isEmpty()) {
             throw new IllegalStateException("No IngestConfiguration providers found.");
         } else if (allConfigurations.size() > 1) {
@@ -24,7 +24,7 @@ public class IngestConfigurationFactory {
             ingestConfiguration = allConfigurations.get(0);
         }
     }
-    
+
     public static IngestConfiguration getIngestConfiguration() {
         return ingestConfiguration;
     }

@@ -35,6 +35,7 @@ import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
  * Visits an JexlNode tree, pushing functions into exceeded value ranges. This is to enable use of the filtering ivarator instead of simply the range ivarator.
  * The idea is to enable handling ranges for which there are many false positives relative to the matching function. The fields for the functions must match
  * that of the range. Presumably the range was created by the getIndexQuery on the function descriptor.
+ *
  */
 public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushFunctionsIntoExceededValueRanges.class);
@@ -50,10 +51,14 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     /**
      * push functions into exceeded value threshold ranges.
      *
-     * @param script         a script
-     * @param helper         the metadata helper
-     * @param datatypeFilter the datatype filter
-     * @param <T>            type of the script
+     * @param script
+     *            a script
+     * @param helper
+     *            the metadata helper
+     * @param datatypeFilter
+     *            the datatype filter
+     * @param <T>
+     *            type of the script
      * @return the modified node tree
      */
     @SuppressWarnings("unchecked")
@@ -76,8 +81,8 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         // find all of the single field function nodes, and all of the exceeded value threshold range nodes and map by field name
         // place all other nodes into the children list
         Set<JexlNode> functionNodes = new HashSet<>();
-        Multimap<String, JexlNode> functionNodesByField = HashMultimap.create();
-        Multimap<String, JexlNode> exceededValueRangeNodes = HashMultimap.create();
+        Multimap<String,JexlNode> functionNodesByField = HashMultimap.create();
+        Multimap<String,JexlNode> exceededValueRangeNodes = HashMultimap.create();
         List<JexlNode> children = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
@@ -98,7 +103,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         if (fields.isEmpty()) {
             return node;
         } else {
-            // we have a cross-section, so for each of those fields, push the functions into the exceeded value threshold along side of the range
+            // we have a cross section, so for each of those fields, push the functions into the exceeded value threshold along side of the range
             ASTAndNode newNode = newInstanceOfType(node);
             newNode.image = node.image;
             for (String field : fields) {
@@ -106,14 +111,11 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
                 for (JexlNode range : exceededValueRangeNodes.removeAll(field)) {
 
                     // filter out functions which disallow ivarator filtering
-                    Collection<JexlNode> filterableFunctions = functionNodesByField
-                            .get(field)
-                            .stream()
-                            .filter(functionNode -> {
-                                JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
+                    Collection<JexlNode> filterableFunctions = functionNodesByField.get(field).stream().filter(functionNode -> {
+                        JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
                                         .getArgumentDescriptor((ASTFunctionNode) JexlASTHelper.dereference(functionNode));
-                                return argDesc != null && argDesc.allowIvaratorFiltering();
-                            }).collect(Collectors.toList());
+                        return argDesc != null && argDesc.allowIvaratorFiltering();
+                    }).collect(Collectors.toList());
 
                     functionNodes.removeAll(filterableFunctions);
                     if (copyFunction) {
@@ -169,10 +171,10 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
             if (source instanceof ASTAndNode && source.jjtGetNumChildren() == 2) {
                 JexlNode sourceChild = JexlASTHelper.dereference(source.jjtGetChild(0));
                 if (sourceChild instanceof ASTLENode || sourceChild instanceof ASTLTNode || sourceChild instanceof ASTGENode
-                        || sourceChild instanceof ASTGTNode) {
+                                || sourceChild instanceof ASTGTNode) {
                     sourceChild = JexlASTHelper.dereference(source.jjtGetChild(1));
                     if (sourceChild instanceof ASTLENode || sourceChild instanceof ASTLTNode || sourceChild instanceof ASTGENode
-                            || sourceChild instanceof ASTGTNode) {
+                                    || sourceChild instanceof ASTGTNode) {
                         return true;
                     }
                 }

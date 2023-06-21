@@ -18,7 +18,7 @@ public class IsNotNull extends LuceneQueryFunction {
     public IsNotNull() {
         super("isnotnull", new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
@@ -26,7 +26,7 @@ public class IsNotNull extends LuceneQueryFunction {
         this.fieldedFilter = new WildcardFieldedFilter(true, WildcardFieldedFilter.BooleanType.AND);
         this.fieldedFilter.addCondition(parameterList.get(0), ".+");
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 1) {
@@ -40,12 +40,12 @@ public class IsNotNull extends LuceneQueryFunction {
             throw new IllegalArgumentException("function: " + this.name + " must be part of an AND expression");
         }
     }
-    
+
     @Override
     public String toString() {
         return this.fieldedFilter.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new IsNotNull();

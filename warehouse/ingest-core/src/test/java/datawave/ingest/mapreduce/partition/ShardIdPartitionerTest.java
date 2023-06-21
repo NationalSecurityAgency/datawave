@@ -22,7 +22,7 @@ import java.util.Map;
 public class ShardIdPartitionerTest {
     Configuration conf = new Configuration();
     ShardIdPartitioner partitioner = null;
-    
+
     @Before
     public void setUp() {
         conf = new Configuration();
@@ -30,19 +30,19 @@ public class ShardIdPartitionerTest {
         partitioner = new ShardIdPartitioner();
         partitioner.setConf(conf);
     }
-    
+
     @After
     public void tearDown() {
         conf.clear();
         conf = null;
         partitioner = null;
     }
-    
+
     @Test
     public void testShardIdScheme() throws ParseException {
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         shardedTableMapFiles.put("shard", new Path("/path/that/is/fake/to/make/the/test/pass"));
-        
+
         // now generate keys and ensure we have even distribution of the partitions
         int shardCount = 0;
         int[] partitions = new int[58];
@@ -77,5 +77,5 @@ public class ShardIdPartitionerTest {
             Assert.fail("Failed to get expected distribution.  See console for unexpected entries");
         }
     }
-    
+
 }

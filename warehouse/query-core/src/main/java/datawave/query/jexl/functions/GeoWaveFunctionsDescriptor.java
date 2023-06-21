@@ -2,7 +2,6 @@ package datawave.query.jexl.functions;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.normalizer.PointNormalizer;
@@ -12,7 +11,6 @@ import datawave.data.type.PointType;
 import datawave.data.type.Type;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -22,8 +20,6 @@ import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -55,6 +51,7 @@ import java.util.stream.Collectors;
 /**
  * This is the descriptor class for performing geowave functions. It supports basic spatial relationships, and decomposes the bounding box of the relationship
  * geometry into a set of geowave ranges. It currently caps this range decomposition to 8 ranges per tier for GeometryType and 32 ranges total for PointType.
+ *
  */
 public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescriptorFactory {
 
@@ -64,8 +61,9 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
     /**
      * This is the argument descriptor which can be used to normalize and optimize function node queries
+     *
      */
-    protected static final String[] SPATIAL_RELATION_OPERATIONS = new String[]{"contains", "covers", "covered_by", "crosses", "intersects", "overlaps",
+    protected static final String[] SPATIAL_RELATION_OPERATIONS = new String[] {"contains", "covers", "covered_by", "crosses", "intersects", "overlaps",
             "within"};
 
     private static final Logger LOGGER = Logger.getLogger(GeoWaveFunctionsDescriptor.class);
@@ -167,7 +165,8 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
             return getIndexNode(fieldName, geometry, envs, config, helper);
         }
 
-        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, MetadataHelper helper) {
+        protected static JexlNode getIndexNode(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config,
+                        MetadataHelper helper) {
             List<JexlNode> indexNodes = new ArrayList<>();
             Set<IndexType> indexTypes = getIndexTypes(fieldName, helper);
             // generate ranges for geowave geometries and points
@@ -175,7 +174,9 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 // point index ranges are covered by geometry index
                 // ranges so we can remove GEOWAVE_POINT
                 indexTypes.remove(IndexType.GEOWAVE_POINT);
-                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, GeometryNormalizer.getGeometryIndex(), config.getGeometryMaxExpansion()));
+
+                indexNodes.add(generateGeoWaveRanges(fieldName, geometry, envs, config, GeometryNormalizer.getGeometryIndex(),
+                                config.getGeometryMaxExpansion()));
             }
             // generate ranges for geowave points
             else if (indexTypes.remove(IndexType.GEOWAVE_POINT)) {
@@ -201,7 +202,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         protected static JexlNode generateGeoWaveRanges(String fieldName, Geometry geometry, List<Envelope> envs, ShardQueryConfiguration config, Index index,
-                                                        int maxExpansion) {
+                        int maxExpansion) {
             Collection<ByteArrayRange> allRanges = new ArrayList<>();
             int maxRanges = maxExpansion / envs.size();
             for (Envelope env : envs) {
@@ -209,7 +210,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     List<ByteArrayRange> byteArrayRanges = index.getIndexStrategy().getQueryRanges(range, maxRanges).getCompositeQueryRanges();
                     if (config.isOptimizeGeoWaveRanges()) {
                         byteArrayRanges = GeoWaveUtils.optimizeByteArrayRanges(geometry, byteArrayRanges, config.getGeoWaveRangeSplitThreshold(),
-                                config.getGeoWaveMaxRangeOverlap());
+                                        config.getGeoWaveMaxRangeOverlap());
                     }
                     allRanges.addAll(byteArrayRanges);
                 }
@@ -250,7 +251,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             // noop, covered by getIndexQuery (see comments on interface)
         }
 
@@ -262,48 +263,12 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         @Override
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
-            try {
-                Set<String> allFields = helper.getAllFields(datatypeFilter);
-                return datatypeFilter == null ? JexlASTHelper.getIdentifierNames(args.get(0)) : filterSet(allFields, JexlASTHelper.getIdentifierNames(args.get(0)));
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            }
+            return JexlASTHelper.getIdentifierNames(args.get(0));
         }
 
         @Override
         public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
-            try {
-                Set<String> allFields = helper.getAllFields(datatypeFilter);
-                Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());
-
-                for (Set<String> aFieldSet : Fields.product(args.get(0))) {
-                    filteredSets.add(filterSet(allFields, aFieldSet));
-                }
-                return filteredSets;
-            } catch (TableNotFoundException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-                LOGGER.error(qe);
-                throw new DatawaveFatalQueryException(qe);
-            }
-        }
-
-        /**
-         * Given a list of all possible fields, filters out fields based on the given datatype(s)
-         *
-         * @param allFields
-         * @param fields
-         */
-        private Set<String> filterSet(Set<String> allFields, Set<String> fields) {
-            if (allFields != null) {
-                Set<String> returnedFields = Sets.newHashSet();
-                returnedFields.addAll(allFields);
-                returnedFields.retainAll(fields);
-                return returnedFields;
-            } else {
-                return fields;
-            }
+            return Fields.product(args.get(0));
         }
 
         @Override
@@ -335,10 +300,10 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         if (!GeoWaveFunctions.GEOWAVE_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image))
             throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with an unexpected namespace of "
-                    + node.jjtGetChild(0).image);
+                            + node.jjtGetChild(0).image);
         if (!functionClass.equals(GeoWaveFunctions.class))
-            throw new IllegalArgumentException("Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in "
-                    + functionClass);
+            throw new IllegalArgumentException(
+                            "Calling " + this.getClass().getSimpleName() + ".getJexlNodeDescriptor with node for a function in " + functionClass);
 
         verify(fvis.name(), fvis.args().size());
 
@@ -349,7 +314,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         if (isSpatialRelationship(name)) {
             // two arguments in the form <spatial_relation_function>(fieldName,
             // geometryString
-            verify(name, numArgs, new String[]{"fieldName", "geometryString"});
+            verify(name, numArgs, new String[] {"fieldName", "geometryString"});
         } else {
             throw new IllegalArgumentException("Unknown GeoWave function: " + name);
         }
@@ -379,7 +344,7 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
     }
 
-    private static class ByteArrayRangeToJexlNode implements com.google.common.base.Function<ByteArrayRange, JexlNode> {
+    private static class ByteArrayRangeToJexlNode implements com.google.common.base.Function<ByteArrayRange,JexlNode> {
         private final String fieldName;
 
         public ByteArrayRangeToJexlNode(String fieldName) {
@@ -390,12 +355,12 @@ public class GeoWaveFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public JexlNode apply(ByteArrayRange input) {
             if (Arrays.equals(input.getStart(), input.getEnd())) {
                 return JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), fieldName,
-                        AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
+                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
             } else {
                 JexlNode geNode = JexlNodeFactory.buildNode(new ASTGENode(ParserTreeConstants.JJTGENODE), fieldName,
-                        AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
+                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getStart()));
                 JexlNode leNode = JexlNodeFactory.buildNode(new ASTLENode(ParserTreeConstants.JJTLENODE), fieldName,
-                        AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
+                                AbstractGeometryNormalizer.getEncodedStringFromIndexBytes(input.getEnd()));
                 // now link em up
                 return BoundedRange.create(JexlNodeFactory.createAndNode(Arrays.asList(geNode, leNode)));
             }

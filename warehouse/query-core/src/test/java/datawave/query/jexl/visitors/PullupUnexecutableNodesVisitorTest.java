@@ -149,7 +149,7 @@ public class PullupUnexecutableNodesVisitorTest {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ASTJexlScript visitedScript = (ASTJexlScript) PullupUnexecutableNodesVisitor.pullupDelayedPredicates(script, false, config, indexedFields,
-                    indexOnlyFields, nonEventFields, helper);
+                            indexOnlyFields, nonEventFields, helper);
 
             String visitedString = JexlStringBuildingVisitor.buildQuery(visitedScript);
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);

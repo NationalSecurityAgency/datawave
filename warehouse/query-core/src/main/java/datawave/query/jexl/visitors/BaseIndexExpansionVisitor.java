@@ -46,17 +46,17 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     protected CostEstimator costAnalysis;
 
     protected ExecutorService executor;
-    protected Map<String, IndexLookup> lookupMap;
+    protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
 
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
-            throws TableNotFoundException {
+                    throws TableNotFoundException {
         this(config, scannerFactory, helper, null, threadName);
     }
 
     // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
-    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper,
-                                        Map<String, IndexLookup> lookupMap, String threadName) throws TableNotFoundException {
+    protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap,
+                    String threadName) throws TableNotFoundException {
         this.config = config;
         this.scannerFactory = scannerFactory;
         this.helper = helper;
@@ -75,8 +75,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
 
     protected void setupExecutor() {
         int threads = Math.max(this.config.getNumIndexLookupThreads(), MIN_THREADS);
-        executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(), new IndexExpansionThreadFactory(this.config,
-                this.threadName));
+        executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
+                        new IndexExpansionThreadFactory(this.config, this.threadName));
     }
 
     protected void shutdownExecutor() {
@@ -88,8 +88,10 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     /**
      * The expand method is the entrypoint which should be called to run index expansion on a given Jexl tree.
      *
-     * @param script the Jexl tree to expand, not null
-     * @param <T>    the Jexl node type
+     * @param script
+     *            the Jexl tree to expand, not null
+     * @param <T>
+     *            the Jexl node type
      * @return a rebuilt Jexl tree with applicable fields/terms expanded
      */
     @SuppressWarnings("unchecked")
@@ -117,10 +119,15 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     }
 
     /**
-     * @param node                the jexl node to expand, not null
-     * @param ignoreComposites    whether composite fields should be kept
-     * @param keepOriginalNode    whether the original node should be replaced
-     * @param indexLookupSupplier the method used to create the index lookup, not null
+     *
+     * @param node
+     *            the jexl node to expand, not null
+     * @param ignoreComposites
+     *            whether composite fields should be kept
+     * @param keepOriginalNode
+     *            whether the original node should be replaced
+     * @param indexLookupSupplier
+     *            the method used to create the index lookup, not null
      * @return the original Jexl node if keepOriginalNode is false, otherwise the expanded Jexl node
      */
     protected JexlNode buildIndexLookup(JexlNode node, boolean ignoreComposites, boolean keepOriginalNode, Supplier<IndexLookup> indexLookupSupplier) {
@@ -134,10 +141,14 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     /**
      * Creates a special Jexl node which serves as an intermediate placeholder for the node which will be expanded
      *
-     * @param lookup           the index lookup, not null
-     * @param node             the jexl node to expand, not null
-     * @param ignoreComposites whether composite fields should be kept
-     * @param keepOriginalNode whether the original node should be replaced
+     * @param lookup
+     *            the index lookup, not null
+     * @param node
+     *            the jexl node to expand, not null
+     * @param ignoreComposites
+     *            whether composite fields should be kept
+     * @param keepOriginalNode
+     *            whether the original node should be replaced
      * @return a FutureJexlNode
      */
     protected FutureJexlNode createFutureJexlNode(IndexLookup lookup, JexlNode node, boolean ignoreComposites, boolean keepOriginalNode) {
@@ -175,7 +186,8 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     /**
      * Each Index Expansion visitor should define its own method for creating a final expanded node from a FutureJexlNode
      *
-     * @param futureJexlNode the future jexl
+     * @param futureJexlNode
+     *            the future jexl
      */
     protected abstract void rebuildFutureJexlNode(FutureJexlNode futureJexlNode);
 

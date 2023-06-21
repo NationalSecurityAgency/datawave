@@ -17,15 +17,15 @@ import org.apache.log4j.Logger;
  *
  */
 public class FlagSocket extends Observable implements Runnable, Observer {
-    
+
     private static final Logger log = Logger.getLogger(FlagSocket.class);
     private ServerSocket serverSocket;
     private volatile boolean running = true;
-    
+
     public FlagSocket(int port) throws IOException {
         serverSocket = new ServerSocket(port);
     }
-    
+
     @Override
     public void run() {
         // register ourselves to observe...
@@ -57,7 +57,7 @@ public class FlagSocket extends Observable implements Runnable, Observer {
             }
         }
     }
-    
+
     @Override
     public void update(Observable o, Object arg) {
         if (this == o) {
@@ -72,5 +72,5 @@ public class FlagSocket extends Observable implements Runnable, Observer {
             }
         }
     }
-    
+
 }

@@ -65,28 +65,28 @@ import static java.util.Map.Entry;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ModificationBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     private ModificationCacheBean cache;
-    
+
     @Inject
     private QueryExecutorBean queryService;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private ModificationConfiguration modificationConfiguration;
-    
+
     @Inject
     private AuditParameterBuilder auditParameterBuilder;
-    
+
     /**
      * Returns a list of the Modification service names and their configurations
      *
@@ -113,7 +113,7 @@ public class ModificationBean {
         }
         return configs;
     }
-    
+
     /**
      * Execute a Modification service with the given name and runtime parameters
      *
@@ -140,7 +140,7 @@ public class ModificationBean {
     public VoidResponse submit(@Required("modificationServiceName") @PathParam("serviceName") String modificationServiceName,
                     @Required("request") ModificationRequestBase request) {
         VoidResponse response = new VoidResponse();
-        
+
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String user;
@@ -157,33 +157,33 @@ public class ModificationBean {
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
         try {
             // Get the Modification Service from the configuration
             ModificationServiceConfiguration service = modificationConfiguration.getConfiguration(modificationServiceName);
             if (!request.getClass().equals(service.getRequestClass())) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REQUEST_CLASS, MessageFormat.format("Requires: {0}",
-                                service.getRequestClass().getName()));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_REQUEST_CLASS,
+                                MessageFormat.format("Requires: {0}", service.getRequestClass().getName()));
                 response.addException(qe);
                 throw new BadRequestException(qe, response);
             }
-            
+
             priority = service.getPriority();
-            
+
             // Ensure that the user is in the list of authorized roles
             if (null != service.getAuthorizedRoles()) {
                 boolean authorized = !Collections.disjoint(userRoles, service.getAuthorizedRoles());
                 if (!authorized) {
                     // Then the user does not have any of the authorized roles
-                    UnauthorizedQueryException qe = new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(
-                                    "Requires one of: {0}", service.getAuthorizedRoles()));
+                    UnauthorizedQueryException qe = new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED,
+                                    MessageFormat.format("Requires one of: {0}", service.getAuthorizedRoles()));
                     response.addException(qe);
                     throw new UnauthorizedException(qe, response);
                 }
             }
-            
+
             if (service.getRequiresAudit()) {
                 try {
                     MultivaluedMap<String,String> requestMap = new MultivaluedMapImpl<>();
@@ -195,7 +195,7 @@ public class ModificationBean {
                     response.addException(qe.getBottomQueryException());
                 }
             }
-            
+
             // Process the modification
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(modificationConfiguration.getPoolName(), priority, trackingMap);
@@ -219,5 +219,5 @@ public class ModificationBean {
                 }
         }
     }
-    
+
 }

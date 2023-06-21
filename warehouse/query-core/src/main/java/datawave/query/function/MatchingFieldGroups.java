@@ -11,11 +11,11 @@ import java.util.Map;
 import java.util.Set;
 
 public class MatchingFieldGroups {
-    
-    private final Multimap<String, MatchingFieldHits> matchingFieldGroups;
+
+    private final Multimap<String,MatchingFieldHits> matchingFieldGroups;
     private final Set<String> matchingGroups;
     private final Multimap<String,String[]> potentialMatches;
-    
+
     public MatchingFieldGroups(Set<Set<String>> matchingFieldSets) {
         matchingFieldGroups = HashMultimap.create();
         if (matchingFieldSets != null) {
@@ -29,7 +29,7 @@ public class MatchingFieldGroups {
         matchingGroups = new HashSet<>();
         potentialMatches = ArrayListMultimap.create();
     }
-    
+
     public void addHit(String keyNoGrouping, Attribute attr) {
         if (matchingFieldGroups.containsKey(keyNoGrouping)) {
             for (MatchingFieldHits matchingFieldGroup : matchingFieldGroups.get(keyNoGrouping)) {
@@ -37,7 +37,7 @@ public class MatchingFieldGroups {
             }
         }
     }
-    
+
     public void addPotential(String keyNoGrouping, String keyWithGrouping, Attribute attr) {
         if (matchingFieldGroups.containsKey(keyNoGrouping)) {
             String group = getGroup(keyWithGrouping);
@@ -46,7 +46,7 @@ public class MatchingFieldGroups {
             }
         }
     }
-    
+
     public void processMatches() {
         for (Map.Entry<String,String[]> potentialEntry : potentialMatches.entries()) {
             String keyNoGrouping = potentialEntry.getKey();
@@ -62,11 +62,11 @@ public class MatchingFieldGroups {
             }
         }
     }
-    
+
     public boolean hasMatches() {
         return !matchingGroups.isEmpty();
     }
-    
+
     public boolean isMatchingGroup(String keyWithGrouping) {
         String group = getGroup(keyWithGrouping);
         if (group != null) {
@@ -74,11 +74,11 @@ public class MatchingFieldGroups {
         }
         return false;
     }
-    
+
     static String getStringValue(Attribute attr) {
         return String.valueOf(attr.getData());
     }
-    
+
     static String getGroup(String keyWithGrouping) {
         String[] keyTokens = LimitFields.getCommonalityAndGroupingContext(keyWithGrouping);
         if (keyTokens != null) {
@@ -86,5 +86,5 @@ public class MatchingFieldGroups {
         }
         return null;
     }
-    
+
 }

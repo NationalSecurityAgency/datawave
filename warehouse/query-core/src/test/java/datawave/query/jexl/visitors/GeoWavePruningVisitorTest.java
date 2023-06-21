@@ -39,7 +39,7 @@ public class GeoWavePruningVisitorTest {
         String query = function + " && (GEO_FIELD == '0100' || " + indexQuery + ")";
         String expected = function + " && (false || " + indexQuery + ")";
 
-        Multimap<String, String> expectedPrunedTerms = HashMultimap.create();
+        Multimap<String,String> expectedPrunedTerms = HashMultimap.create();
         expectedPrunedTerms.put("GEO_FIELD", "0100");
 
         assertResult(query, expected, expectedPrunedTerms);
@@ -55,7 +55,7 @@ public class GeoWavePruningVisitorTest {
         String query = function + " && ((GEO_FIELD == '0100') || " + indexQuery + ")";
         String expected = function + " && (false || " + indexQuery + ")";
 
-        Multimap<String, String> expectedPrunedTerms = HashMultimap.create();
+        Multimap<String,String> expectedPrunedTerms = HashMultimap.create();
         expectedPrunedTerms.put("GEO_FIELD", "0100");
 
         assertResult(query, expected, expectedPrunedTerms);
@@ -70,7 +70,7 @@ public class GeoWavePruningVisitorTest {
         // Add a term that should be pruned.
         String query = function + " && (" + indexQuery + ")";
 
-        Multimap<String, String> expectedPrunedTerms = HashMultimap.create();
+        Multimap<String,String> expectedPrunedTerms = HashMultimap.create();
 
         assertResult(query, query, expectedPrunedTerms);
     }
@@ -84,15 +84,15 @@ public class GeoWavePruningVisitorTest {
         // Add a term that should be pruned.
         String query = function + " && (GEO_FIELD == '1f123..456' || " + indexQuery + ")";
 
-        Multimap<String, String> expectedPrunedTerms = HashMultimap.create();
+        Multimap<String,String> expectedPrunedTerms = HashMultimap.create();
 
         assertResult(query, query, expectedPrunedTerms);
     }
 
-    private void assertResult(String original, String expected, Multimap<String, String> expectedPrunedTerms) throws ParseException {
+    private void assertResult(String original, String expected, Multimap<String,String> expectedPrunedTerms) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
 
-        Multimap<String, String> prunedTerms = HashMultimap.create();
+        Multimap<String,String> prunedTerms = HashMultimap.create();
         ASTJexlScript actualScript = GeoWavePruningVisitor.pruneTree(originalScript, prunedTerms, metadataHelper);
 
         // Verify the result is as expected, with a valid lineage.

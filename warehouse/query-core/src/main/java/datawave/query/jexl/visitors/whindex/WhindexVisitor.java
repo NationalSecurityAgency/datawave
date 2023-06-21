@@ -66,17 +66,18 @@ import java.util.stream.Collectors;
  * <p>
  * The update function uses the value-specific geowave field, and drops the anded term (since all of the data indexed under the value-specific geowave field
  * already satisfies that term).
+ *
  */
 public class WhindexVisitor extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(WhindexVisitor.class);
 
     private final Set<String> mappingFields;
-    private final Map<String, Map<String, String>> valueSpecificFieldMappings;
-    private final Multimap<String, String> fieldValueMappings;
-    private final Map<String, Date> creationDates;
+    private final Map<String,Map<String,String>> valueSpecificFieldMappings;
+    private final Multimap<String,String> fieldValueMappings;
+    private final Map<String,Date> creationDates;
     private final MetadataHelper metadataHelper;
 
-    private final HashMap<JexlNode, WhindexTerm> jexlNodeToWhindexMap = new HashMap<>();
+    private final HashMap<JexlNode,WhindexTerm> jexlNodeToWhindexMap = new HashMap<>();
 
     /**
      * This object is used to keep track of the available anded leaf nodes being passed down to each subtree, and also to keep track of the anded leaf nodes
@@ -86,16 +87,16 @@ public class WhindexVisitor extends RebuildingVisitor {
      */
     private static class ExpandData {
         public boolean foundWhindex = false;
-        public Multimap<String, JexlNode> andedNodes = LinkedHashMultimap.create();
-        public Multimap<String, JexlNode> usedAndedNodes = LinkedHashMultimap.create();
+        public Multimap<String,JexlNode> andedNodes = LinkedHashMultimap.create();
+        public Multimap<String,JexlNode> usedAndedNodes = LinkedHashMultimap.create();
     }
 
     private WhindexVisitor(ShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
         this(config.getWhindexMappingFields(), config.getWhindexFieldMappings(), config.getWhindexCreationDates(), beginDate, metadataHelper);
     }
 
-    private WhindexVisitor(Set<String> mappingFields, Map<String, Map<String, String>> fieldMappings, Map<String, Date> creationDates, Date beginDate,
-                           MetadataHelper metadataHelper) {
+    private WhindexVisitor(Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings, Map<String,Date> creationDates, Date beginDate,
+                    MetadataHelper metadataHelper) {
         this.mappingFields = mappingFields;
         this.metadataHelper = metadataHelper;
         this.fieldValueMappings = LinkedHashMultimap.create();
@@ -106,11 +107,16 @@ public class WhindexVisitor extends RebuildingVisitor {
     /**
      * Expand all nodes which have multiple dataTypes for the field.
      *
-     * @param config         Configuration parameters relevant to our query
-     * @param script         The jexl node representing the query
-     * @param <T>            type of script
-     * @param beginDate      the begin date
-     * @param metadataHelper the metadata helper
+     * @param config
+     *            Configuration parameters relevant to our query
+     * @param script
+     *            The jexl node representing the query
+     * @param <T>
+     *            type of script
+     * @param beginDate
+     *            the begin date
+     * @param metadataHelper
+     *            the metadata helper
      * @return An expanded version of the passed-in script containing whindex nodes
      */
     public static <T extends JexlNode> T apply(T script, ShardQueryConfiguration config, Date beginDate, MetadataHelper metadataHelper) {
@@ -122,17 +128,24 @@ public class WhindexVisitor extends RebuildingVisitor {
     /**
      * Expand all nodes which have multiple dataTypes for the field.
      *
-     * @param mappingFields  The value-specific fields required to create a Whindex
-     * @param fieldMappings  The value-specific field mappings which can be used to create a Whindex
-     * @param creationDates  The value-specific field mapping creation dates
-     * @param script         The jexl node representing the query
-     * @param <T>            type of script
-     * @param beginDate      the begin date
-     * @param metadataHelper the metadata helper
+     * @param mappingFields
+     *            The value-specific fields required to create a Whindex
+     * @param fieldMappings
+     *            The value-specific field mappings which can be used to create a Whindex
+     * @param creationDates
+     *            The value-specific field mapping creation dates
+     * @param script
+     *            The jexl node representing the query
+     * @param <T>
+     *            type of script
+     * @param beginDate
+     *            the begin date
+     * @param metadataHelper
+     *            the metadata helper
      * @return An expanded version of the passed-in script containing whindex nodes
      */
-    public static <T extends JexlNode> T apply(T script, Set<String> mappingFields, Map<String, Map<String, String>> fieldMappings,
-                                               Map<String, Date> creationDates, Date beginDate, MetadataHelper metadataHelper) {
+    public static <T extends JexlNode> T apply(T script, Set<String> mappingFields, Map<String,Map<String,String>> fieldMappings,
+                    Map<String,Date> creationDates, Date beginDate, MetadataHelper metadataHelper) {
         WhindexVisitor visitor = new WhindexVisitor(mappingFields, fieldMappings, creationDates, beginDate, metadataHelper);
 
         return apply(script, visitor);
@@ -154,20 +167,22 @@ public class WhindexVisitor extends RebuildingVisitor {
      * exist before the begin date of the query, then we should not allow a mapping to be made. New fields which were created after the begin date, but before
      * the end date of the query will be mapped when this visitor is called in the visitor function. {@link datawave.query.tables.async.event.VisitorFunction}
      *
-     * @param valueSpecificFieldMappings the configured value-specific field mappings
-     * @param beginDate                  the begin date of the query
+     * @param valueSpecificFieldMappings
+     *            the configured value-specific field mappings
+     * @param beginDate
+     *            the begin date of the query
      * @return the reduced set of value-specific field mappings
      */
-    private Map<String, Map<String, String>> pruneFieldMappings(Map<String, Map<String, String>> valueSpecificFieldMappings, Date beginDate) {
-        Map<String, Map<String, String>> prunedFieldMappings = new HashMap<>();
+    private Map<String,Map<String,String>> pruneFieldMappings(Map<String,Map<String,String>> valueSpecificFieldMappings, Date beginDate) {
+        Map<String,Map<String,String>> prunedFieldMappings = new HashMap<>();
         if (beginDate != null) {
             for (String fieldValue : valueSpecificFieldMappings.keySet()) {
-                Map<String, String> mapping = valueSpecificFieldMappings.get(fieldValue);
+                Map<String,String> mapping = valueSpecificFieldMappings.get(fieldValue);
                 for (String origField : mapping.keySet()) {
                     String newField = mapping.get(origField);
                     // if the new field predates the query begin date, we can use this mapping
                     if (fieldPredatesBeginDate(newField, beginDate)) {
-                        Map<String, String> newMapping = prunedFieldMappings.computeIfAbsent(fieldValue.toLowerCase(), k -> new HashMap<>());
+                        Map<String,String> newMapping = prunedFieldMappings.computeIfAbsent(fieldValue.toLowerCase(), k -> new HashMap<>());
                         newMapping.put(origField, newField);
 
                         // save the new field-value mappings
@@ -188,8 +203,10 @@ public class WhindexVisitor extends RebuildingVisitor {
      * Descends into each of the child nodes, and rebuilds the 'or' node with both the unmodified and modified nodes. Ancestor anded nodes are passed down to
      * each child, and the foundWhindex flag is passed up from the children.
      *
-     * @param node An 'or' node from the original script
-     * @param data ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether whindexes were found
+     * @param node
+     *            An 'or' node from the original script
+     * @param data
+     *            ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether whindexes were found
      * @return An expanded version of the 'or' node containing whindex nodes, if found, or the original in node, if not found
      */
     @Override
@@ -261,8 +278,10 @@ public class WhindexVisitor extends RebuildingVisitor {
      * Finally, any leftover, unused leaf nodes are anded at this level, while the used leaf nodes are passed down to the descendants and anded where
      * appropriate.
      *
-     * @param node An 'and' node from the original script
-     * @param data ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether whindexes were found
+     * @param node
+     *            An 'and' node from the original script
+     * @param data
+     *            ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether whindexes were found
      * @return An expanded version of the 'and' node containing whindex nodes, if found, or the original in node, if not found
      */
     @Override
@@ -271,7 +290,7 @@ public class WhindexVisitor extends RebuildingVisitor {
 
         // only process delayed and bounded range predicates
         if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class,
-                BoundedRange.class)) {
+                        BoundedRange.class)) {
             return copy(node);
         }
 
@@ -283,7 +302,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         // first, find all leaf nodes
         // note: an 'and' node defining a range over a single term is considered a leaf node for our purposes
         List<JexlNode> nonLeafNodes = new ArrayList<>();
-        Multimap<String, JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
+        Multimap<String,JexlNode> leafNodes = getLeafNodes(node, nonLeafNodes);
 
         // if any of the non-leaf nodes is an OR with a marker node, distribute all of the sibling nodes into those OR nodes
         List<JexlNode> orNodesWithMarkers = nonLeafNodes.stream().filter(this::isFieldValueMatchOrNode).collect(Collectors.toList());
@@ -314,7 +333,7 @@ public class WhindexVisitor extends RebuildingVisitor {
             // otherwise, process the 'and' node as usual
             else {
 
-                Multimap<String, JexlNode> usedLeafNodes = LinkedHashMultimap.create();
+                Multimap<String,JexlNode> usedLeafNodes = LinkedHashMultimap.create();
 
                 // process the non-leaf nodes first
                 List<JexlNode> processedNonLeafNodes = processNonLeafNodes(parentData, nonLeafNodes, leafNodes, usedLeafNodes);
@@ -340,11 +359,11 @@ public class WhindexVisitor extends RebuildingVisitor {
                         List<JexlNode> leafNodesToDistribute = usedLeafNodes.values().stream().map(this::getLeafNode).collect(Collectors.toList());
 
                         // remove all of the child leaf nodes converted to whindex nodes. they still belong to this AND node, and don't need to be distributed
-                        leafNodesToDistribute.removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode()))
-                                .collect(Collectors.toList()));
+                        leafNodesToDistribute
+                                        .removeAll(whindexTerms.stream().map(x -> JexlASTHelper.dereference(x.getMappableNode())).collect(Collectors.toList()));
 
                         rebuiltNode = DistributeAndedNodesVisitor.distributeAndedNode(rebuiltNode, leafNodesToDistribute, jexlNodeToWhindexMap,
-                                fieldValueMappings);
+                                        fieldValueMappings);
                     }
 
                     return rebuiltNode;
@@ -402,8 +421,8 @@ public class WhindexVisitor extends RebuildingVisitor {
     }
 
     private JexlNode reduceOrNode(ASTOrNode node) {
-        Multimap<String, JexlNode> grandchildToChildMap = LinkedHashMultimap.create();
-        Multimap<String, JexlNode> stringToGrandchildMap = LinkedHashMultimap.create();
+        Multimap<String,JexlNode> grandchildToChildMap = LinkedHashMultimap.create();
+        Multimap<String,JexlNode> stringToGrandchildMap = LinkedHashMultimap.create();
 
         Set<JexlNode> children = new LinkedHashSet<>(Arrays.asList(JexlNodes.children(node)));
 
@@ -419,7 +438,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         }
 
         // find the shared grandchildren
-        Multimap<String, JexlNode> sharedGrandchildMap = LinkedHashMultimap.create();
+        Multimap<String,JexlNode> sharedGrandchildMap = LinkedHashMultimap.create();
         for (String grandchildString : grandchildToChildMap.keySet()) {
             // is this grandchild shared by all children?
             if (grandchildToChildMap.get(grandchildString).containsAll(children)) {
@@ -512,8 +531,8 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(
-                Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node)
+                        .isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
 
@@ -523,8 +542,8 @@ public class WhindexVisitor extends RebuildingVisitor {
     // if the node is marked, only descend into delayed predicates or bounded ranges
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        if (QueryPropertyMarkerVisitor.getInstance(node).isAnyTypeExcept(
-                Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
+        if (QueryPropertyMarkerVisitor.getInstance(node)
+                        .isAnyTypeExcept(Lists.newArrayList(ASTDelayedPredicate.class, ExceededValueThresholdMarkerJexlNode.class, BoundedRange.class))) {
             return RebuildingVisitor.copy(node);
         }
 
@@ -536,14 +555,18 @@ public class WhindexVisitor extends RebuildingVisitor {
      * the leaf nodes in order to be valid. The used leaf nodes are passed back via the usedLeafNodes param. The used anded nodes are passed back via the
      * parentData.
      *
-     * @param parentData    Contains the ancestor anded nodes, anded nodes used to create the returned whindexes, and a flag indicating whether whindexes were found
-     * @param nonLeafNodes  A collection of non-leaf child nodes, from the parent node
-     * @param leafNodes     A multimap of leaf child nodes, keyed by field name, from the parent node
-     * @param usedLeafNodes A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
+     * @param parentData
+     *            Contains the ancestor anded nodes, anded nodes used to create the returned whindexes, and a flag indicating whether whindexes were found
+     * @param nonLeafNodes
+     *            A collection of non-leaf child nodes, from the parent node
+     * @param leafNodes
+     *            A multimap of leaf child nodes, keyed by field name, from the parent node
+     * @param usedLeafNodes
+     *            A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
      * @return A list of modified and unmodified non-leaf child nodes, from the parent node
      */
-    private List<JexlNode> processNonLeafNodes(ExpandData parentData, Collection<JexlNode> nonLeafNodes, Multimap<String, JexlNode> leafNodes,
-                                               Multimap<String, JexlNode> usedLeafNodes) {
+    private List<JexlNode> processNonLeafNodes(ExpandData parentData, Collection<JexlNode> nonLeafNodes, Multimap<String,JexlNode> leafNodes,
+                    Multimap<String,JexlNode> usedLeafNodes) {
         // descend into the child nodes, passing the anded leaf nodes down,
         // in order to determine whether or not whindexes can be made
         List<JexlNode> unmodifiedNodes = new ArrayList<>();
@@ -571,7 +594,7 @@ public class WhindexVisitor extends RebuildingVisitor {
                     parentData.foundWhindex = true;
                     modifiedNodes.add(processedNode);
                     modifiedNodesAsString.add(processedNodeAsString);
-                    for (Map.Entry<String, JexlNode> usedAndedNode : eData.usedAndedNodes.entries())
+                    for (Map.Entry<String,JexlNode> usedAndedNode : eData.usedAndedNodes.entries())
                         if (leafNodes.containsEntry(usedAndedNode.getKey(), usedAndedNode.getValue()))
                             usedLeafNodes.put(usedAndedNode.getKey(), usedAndedNode.getValue());
                         else
@@ -594,14 +617,18 @@ public class WhindexVisitor extends RebuildingVisitor {
      * leaf nodes in order to be valid. The used leaf nodes are passed back via the usedLeafNodes param. The used anded nodes are passed back via the
      * parentData.
      *
-     * @param parentData    Contains the ancestor anded nodes, anded nodes used to create the returned whindexes, and a flag indicating whether whindexes were found
-     * @param leafNodes     A multimap of leaf child nodes, keyed by field name, from the parent node
-     * @param usedLeafNodes A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
-     * @param whindexTerms  list of index terms
+     * @param parentData
+     *            Contains the ancestor anded nodes, anded nodes used to create the returned whindexes, and a flag indicating whether whindexes were found
+     * @param leafNodes
+     *            A multimap of leaf child nodes, keyed by field name, from the parent node
+     * @param usedLeafNodes
+     *            A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
      * @return A list of modified and unmodified leaf child nodes, from the parent node
+     * @param whindexTerms
+     *            list of index terms
      */
-    private List<JexlNode> processUnusedLeafNodes(ExpandData parentData, Multimap<String, JexlNode> leafNodes, Multimap<String, JexlNode> usedLeafNodes,
-                                                  List<WhindexTerm> whindexTerms) {
+    private List<JexlNode> processUnusedLeafNodes(ExpandData parentData, Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> usedLeafNodes,
+                    List<WhindexTerm> whindexTerms) {
         // use the remaining leaf and anded nodes to generate whindexes
         // note: the used leaf and anded nodes are removed in 'processNonLeafNodes'
         List<WhindexTerm> foundWhindexes = findWhindex(leafNodes, parentData.andedNodes, usedLeafNodes, parentData.usedAndedNodes);
@@ -662,8 +689,10 @@ public class WhindexVisitor extends RebuildingVisitor {
     /**
      * The default leaf node visitor, which uses the anded nodes to determine whether a whindex can be formed with this leaf node.
      *
-     * @param node  A leaf node from the original script
-     * @param eData ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether whindexes were found
+     * @param node
+     *            A leaf node from the original script
+     * @param eData
+     *            ExpandData, containing ancestor anded nodes, used anded nodes, and a flag indicating whether whindexes were found
      * @return Returns a whindex node if one can be made, otherwise returns the original node
      */
     private JexlNode visitLeafNode(JexlNode node, ExpandData eData) {
@@ -675,7 +704,7 @@ public class WhindexVisitor extends RebuildingVisitor {
         if (fieldNames.size() == 1) {
             String fieldName = Iterables.getOnlyElement(fieldNames);
 
-            Multimap<String, JexlNode> leafNodes = LinkedHashMultimap.create();
+            Multimap<String,JexlNode> leafNodes = LinkedHashMultimap.create();
             leafNodes.put(fieldName, node);
 
             List<WhindexTerm> foundWhindexes = findWhindex(leafNodes, eData.andedNodes, HashMultimap.create(), eData.usedAndedNodes);
@@ -703,28 +732,32 @@ public class WhindexVisitor extends RebuildingVisitor {
      * Using the leaf nodes and anded nodes passed in, attempts to create whindexes from those nodes. The generated whindexes are required to contain at least
      * one of the leaf nodes.
      *
-     * @param leafNodes      A multimap of leaf child nodes, keyed by field name, from the parent node
-     * @param andedNodes     A multimap of anded nodes, keyed by field name, passed down from our ancestors
-     * @param usedLeafNodes  A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
-     * @param usedAndedNodes A multimap of used anded nodes, keyed by field name, used to create the returned whindexes
+     * @param leafNodes
+     *            A multimap of leaf child nodes, keyed by field name, from the parent node
+     * @param andedNodes
+     *            A multimap of anded nodes, keyed by field name, passed down from our ancestors
+     * @param usedLeafNodes
+     *            A multimap of used leaf child nodes, keyed by field name, used to create the returned whindexes
+     * @param usedAndedNodes
+     *            A multimap of used anded nodes, keyed by field name, used to create the returned whindexes
      * @return A list of whindexes which can be created from the given leaf and anded nodes
      */
-    private List<WhindexTerm> findWhindex(Multimap<String, JexlNode> leafNodes, Multimap<String, JexlNode> andedNodes, Multimap<String, JexlNode> usedLeafNodes,
-                                          Multimap<String, JexlNode> usedAndedNodes) {
+    private List<WhindexTerm> findWhindex(Multimap<String,JexlNode> leafNodes, Multimap<String,JexlNode> andedNodes, Multimap<String,JexlNode> usedLeafNodes,
+                    Multimap<String,JexlNode> usedAndedNodes) {
         List<WhindexTerm> whindexTerms = new ArrayList<>();
 
         // once a leaf node is used to create a whindex, take it out of the rotation
-        Multimap<String, JexlNode> remainingLeafNodes = LinkedHashMultimap.create();
+        Multimap<String,JexlNode> remainingLeafNodes = LinkedHashMultimap.create();
         remainingLeafNodes.putAll(leafNodes);
 
         // once an anded node is used to create a whindex, take it out of the rotation
-        Multimap<String, JexlNode> remainingAndedNodes = LinkedHashMultimap.create();
+        Multimap<String,JexlNode> remainingAndedNodes = LinkedHashMultimap.create();
         remainingAndedNodes.putAll(andedNodes);
 
         Set<String> mappableFields = valueSpecificFieldMappings.entrySet().stream().flatMap(x -> x.getValue().keySet().stream()).collect(Collectors.toSet());
 
         // for each of the leaf nodes, what can we make?
-        for (Map.Entry<String, JexlNode> leafEntry : leafNodes.entries()) {
+        for (Map.Entry<String,JexlNode> leafEntry : leafNodes.entries()) {
             // is it a field/value match?
             if (isFieldValueTerm(leafEntry.getValue())) {
                 String value = getStringValue(leafEntry.getValue());
@@ -735,13 +768,13 @@ public class WhindexVisitor extends RebuildingVisitor {
                     // do we have the required field we need?
                     Set<String> requiredFields = valueSpecificFieldMappings.get(value).keySet();
 
-                    List<Map.Entry<String, JexlNode>> mappedFieldMatches = new ArrayList<>();
+                    List<Map.Entry<String,JexlNode>> mappedFieldMatches = new ArrayList<>();
                     remainingLeafNodes.entries().stream().filter(x -> requiredFields.contains(x.getKey())).forEach(mappedFieldMatches::add);
                     remainingAndedNodes.entries().stream().filter(x -> requiredFields.contains(x.getKey())).forEach(mappedFieldMatches::add);
 
-                    for (Map.Entry<String, JexlNode> mappedFieldMatch : mappedFieldMatches) {
-                        whindexTerms.add(new WhindexTerm(leafEntry.getValue(), mappedFieldMatch.getValue(), valueSpecificFieldMappings.get(value).get(
-                                mappedFieldMatch.getKey())));
+                    for (Map.Entry<String,JexlNode> mappedFieldMatch : mappedFieldMatches) {
+                        whindexTerms.add(new WhindexTerm(leafEntry.getValue(), mappedFieldMatch.getValue(),
+                                        valueSpecificFieldMappings.get(value).get(mappedFieldMatch.getKey())));
 
                         if (leafNodes.containsEntry(mappedFieldMatch.getKey(), mappedFieldMatch.getValue())) {
                             remainingLeafNodes.remove(mappedFieldMatch.getKey(), mappedFieldMatch.getValue());
@@ -759,18 +792,18 @@ public class WhindexVisitor extends RebuildingVisitor {
             // if it's not a term/value match, is it a mappable field?
             else if (mappableFields.contains(leafEntry.getKey())) {
                 // if it's a mappable field, do we have the term/value match needed to map it?
-                List<Map.Entry<String, JexlNode>> fieldValueMatches = new ArrayList<>();
+                List<Map.Entry<String,JexlNode>> fieldValueMatches = new ArrayList<>();
                 remainingLeafNodes.entries().stream().filter(x -> isFieldValueMatch(x.getValue(), leafEntry.getKey())).forEach(fieldValueMatches::add);
                 remainingAndedNodes.entries().stream().filter(x -> isFieldValueMatch(x.getValue(), leafEntry.getKey())).forEach(fieldValueMatches::add);
 
-                for (Map.Entry<String, JexlNode> fieldValueMatch : fieldValueMatches) {
+                for (Map.Entry<String,JexlNode> fieldValueMatch : fieldValueMatches) {
                     String value = getStringValue(fieldValueMatch.getValue());
 
                     if (value != null) {
                         value = value.toLowerCase();
 
-                        whindexTerms.add(new WhindexTerm(fieldValueMatch.getValue(), leafEntry.getValue(), valueSpecificFieldMappings.get(value).get(
-                                leafEntry.getKey())));
+                        whindexTerms.add(new WhindexTerm(fieldValueMatch.getValue(), leafEntry.getValue(),
+                                        valueSpecificFieldMappings.get(value).get(leafEntry.getKey())));
 
                         if (leafNodes.containsEntry(fieldValueMatch.getKey(), fieldValueMatch.getValue())) {
                             remainingLeafNodes.remove(fieldValueMatch.getKey(), fieldValueMatch.getValue());
@@ -803,7 +836,7 @@ public class WhindexVisitor extends RebuildingVisitor {
             }
             // if this is a term/value match
             isFieldValueMatch = mappingFields.contains(field) && valueSpecificFieldMappings.containsKey(value)
-                    && valueSpecificFieldMappings.get(value).containsKey(mappableField);
+                            && valueSpecificFieldMappings.get(value).containsKey(mappableField);
         }
         return isFieldValueMatch;
     }
@@ -831,12 +864,14 @@ public class WhindexVisitor extends RebuildingVisitor {
      * root node is a range node, then that node will be returned. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed
      * through in search of the actual leaf node.
      *
-     * @param rootNode   The node whose children we will check
-     * @param otherNodes Non-leaf child nodes of the root node
+     * @param rootNode
+     *            The node whose children we will check
+     * @param otherNodes
+     *            Non-leaf child nodes of the root node
      * @return A multimap of field name to leaf node
      */
-    private Multimap<String, JexlNode> getLeafNodes(JexlNode rootNode, Collection<JexlNode> otherNodes) {
-        Multimap<String, JexlNode> childrenLeafNodes = ArrayListMultimap.create();
+    private Multimap<String,JexlNode> getLeafNodes(JexlNode rootNode, Collection<JexlNode> otherNodes) {
+        Multimap<String,JexlNode> childrenLeafNodes = ArrayListMultimap.create();
 
         if (rootNode instanceof ASTAndNode) {
             // check to see if this node is a range node, if so, this is our leaf node
@@ -854,7 +889,7 @@ public class WhindexVisitor extends RebuildingVisitor {
                 JexlNode leafKid = getLeafNode(child);
                 if (leafKid != null) {
                     Set<String> kidFieldNames = new LinkedHashSet<>();
-                    LiteralRange<?> range = JexlASTHelper.findRange().getRange(leafKid);
+                    LiteralRange range = JexlASTHelper.findRange().getRange(leafKid);
                     if (range != null) {
                         kidFieldNames.add(range.getFieldName());
                     } else {
@@ -863,8 +898,8 @@ public class WhindexVisitor extends RebuildingVisitor {
                         } else if (leafKid instanceof ASTFunctionNode) {
                             JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor((ASTFunctionNode) leafKid);
                             if (descriptor instanceof GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor
-                                    || descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
-                                kidFieldNames.addAll(descriptor.fields(metadataHelper, null));
+                                            || descriptor instanceof GeoFunctionsDescriptor.GeoJexlArgumentDescriptor) {
+                                kidFieldNames.addAll(descriptor.fields(metadataHelper, Collections.emptySet()));
                             } else {
                                 if (otherNodes != null) {
                                     otherNodes.add(child);
@@ -890,7 +925,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
      * actual leaf node.
      *
-     * @param node The node whose children we will check
+     * @param node
+     *            The node whose children we will check
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(JexlNode node) {
@@ -921,7 +957,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
      * actual leaf node.
      *
-     * @param node The node whose children we will check
+     * @param node
+     *            The node whose children we will check
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(ASTReference node) {
@@ -943,7 +980,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
      * actual leaf node.
      *
-     * @param node The node whose children we will check
+     * @param node
+     *            The node whose children we will check
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(ASTReferenceExpression node) {
@@ -968,7 +1006,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
      * actual leaf node.
      *
-     * @param node The node whose children we will check
+     * @param node
+     *            The node whose children we will check
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(ASTAndNode node) {
@@ -987,7 +1026,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This method is used to find leaf nodes. Reference, ReferenceExpression, and 'and' or 'or' nodes with a single child are passed through in search of the
      * actual leaf node.
      *
-     * @param node The node whose children we will check
+     * @param node
+     *            The node whose children we will check
      * @return The found leaf node, or null
      */
     private JexlNode getLeafNode(ASTOrNode node) {
@@ -1003,7 +1043,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This is a helper method which will attempt to create an 'and' node from the given jexl nodes. If a single node is passed, we will just return that node
      * instead of creating an unnecessary 'and' wrapper node.
      *
-     * @param jexlNodes The nodes to 'and' together
+     * @param jexlNodes
+     *            The nodes to 'and' together
      * @return An 'and' node comprised of the jexlNodes, or if a single jexlNode was passed in, we simply return that node.
      */
     static JexlNode createUnwrappedAndNode(Collection<JexlNode> jexlNodes) {
@@ -1020,7 +1061,8 @@ public class WhindexVisitor extends RebuildingVisitor {
      * This is a helper method which will attempt to create an 'or' node from the given jexl nodes. If a single node is passed, we will just return that node
      * instead of creating an unnecessary 'or' wrapper node.
      *
-     * @param jexlNodes The nodes to 'or' together
+     * @param jexlNodes
+     *            The nodes to 'or' together
      * @return An 'or' node comprised of the jexlNodes, or if a single jexlNode was passed in, we simply return that node.
      */
     static JexlNode createUnwrappedOrNode(Collection<JexlNode> jexlNodes) {

@@ -51,46 +51,32 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
 
     /**
      * ExpressionFilter is used to select those Keys that are required in order to evaluate a query.
-     * <p>
+     *
      * Each instance of this class corresponds to a single field and may contain a set of literal values, patterns, ranges or a nullValueFlag. These are
      * populated by the EventDataQueryExpressionVisitor as it traverses the query parse tree.
-     * <p>
+     *
      * When traversing tables at query time, the apply method is called for the keys encountered. If the field value embedded in the key matches the literal,
      * pattern or range, the key is kept indicating that the key is necessary for evaluating that portion of the query.
-     * <p>
+     *
      * The null value flag is a bit of an unusual case and is generated in cases where a null (or non-null) comparison is performed for a field. It indicates
      * that at least one key for a field must be kept regardless of value. As such, this flag is set to false once its predicate has be satisfied.
      */
     public static class ExpressionFilter implements PeekingPredicate<Key>, Cloneable {
         final AttributeFactory attributeFactory;
 
-        /**
-         * The field this filter apples to
-         */
+        /** The field this filter apples to */
         final String fieldName;
-        /**
-         * fieldValues contains a set of literal values for which we need to keep data in order to satisfy the query
-         */
+        /** fieldValues contains a set of literal values for which we need to keep data in order to satisfy the query */
         final Set<String> fieldValues;
-        /**
-         * fieldPatterns contains a set of patterns for which we need to keep data in order to satisfy the query
-         */
-        final Map<Pattern, Matcher> fieldPatterns;
-        /**
-         * fieldRanges contains a set of ranges for which we need to keep data in order to satisfy the query
-         */
+        /** fieldPatterns contains a set of patterns for which we need to keep data in order to satisfy the query */
+        final Map<Pattern,Matcher> fieldPatterns;
+        /** fieldRanges contains a set of ranges for which we need to keep data in order to satisfy the query */
         final Set<LiteralRange<?>> fieldRanges;
-        /**
-         * nullValueFlag indicates that we need to capture at least one instance of the field in order to satisfy a null value check in the query
-         */
+        /** nullValueFlag indicates that we need to capture at least one instance of the field in order to satisfy a null value check in the query */
         boolean nullValueFlag;
-        /**
-         * nonNullValueSeen indicates that we have seen a nonNullValue. This is used with the nullValueFlag.
-         */
+        /** nonNullValueSeen indicates that we have seen a nonNullValue. This is used with the nullValueFlag. */
         boolean nonNullValueSeen;
-        /**
-         * acceptAll indicates that all values should be returned
-         */
+        /** acceptAll indicates that all values should be returned */
         boolean acceptAll;
 
         public ExpressionFilter(AttributeFactory attributeFactory, String fieldName) {
@@ -108,7 +94,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             this(other.attributeFactory, other.fieldName);
             this.fieldValues.addAll(other.fieldValues);
             // making new Matcher objects as they are not thread safe.
-            for (Map.Entry<Pattern, Matcher> entry : other.fieldPatterns.entrySet()) {
+            for (Map.Entry<Pattern,Matcher> entry : other.fieldPatterns.entrySet()) {
                 this.fieldPatterns.put(entry.getKey(), entry.getKey().matcher(""));
             }
             this.fieldRanges.addAll(other.fieldRanges);
@@ -157,7 +143,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         }
 
         /**
-         * @param key the key to evaluate, must be parsable by DatawaveKey
+         *
+         * @param key
+         *            the key to evaluate, must be parsable by DatawaveKey
          * @return true if the key should be kept in order to evaluare the query, false otherwise
          */
         @Override
@@ -295,12 +283,13 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         /**
          * A helper method to clone a set of filters
          *
-         * @param filters set of filters
+         * @param filters
+         *            set of filters
          * @return a cloned set of filters
          */
-        public static Map<String, ? extends PeekingPredicate<Key>> clone(Map<String, ? extends PeekingPredicate<Key>> filters) {
-            Map<String, PeekingPredicate<Key>> cloned = new HashMap<>();
-            for (Map.Entry<String, ? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
+        public static Map<String,? extends PeekingPredicate<Key>> clone(Map<String,? extends PeekingPredicate<Key>> filters) {
+            Map<String,PeekingPredicate<Key>> cloned = new HashMap<>();
+            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
                 if (entry.getValue() instanceof ExpressionFilter) {
                     cloned.put(entry.getKey(), ((ExpressionFilter) entry.getValue()).clone());
                 } else {
@@ -313,10 +302,11 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         /**
          * A helper method to reset a set of filters
          *
-         * @param filters set of filters
+         * @param filters
+         *            set of filters
          */
-        public static void reset(Map<String, ? extends PeekingPredicate<Key>> filters) {
-            for (Map.Entry<String, ? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
+        public static void reset(Map<String,? extends PeekingPredicate<Key>> filters) {
+            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
                 if (entry.getValue() instanceof ExpressionFilter) {
                     ((ExpressionFilter) entry.getValue()).reset();
                 }
@@ -325,11 +315,14 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     }
 
     /**
-     * @param script  The query that will be used to generate the set of expression filters
-     * @param factory An AttributeFactory used when generating normalized attributes.
+     *
+     * @param script
+     *            The query that will be used to generate the set of expression filters
+     * @param factory
+     *            An AttributeFactory used when generating normalized attributes.
      * @return A Map of field name to ExpressionFilter, suitable for selecting a set of Keys necessary to evaluate a query.
      */
-    public static Map<String, ExpressionFilter> getExpressionFilters(ASTJexlScript script, AttributeFactory factory) {
+    public static Map<String,ExpressionFilter> getExpressionFilters(ASTJexlScript script, AttributeFactory factory) {
         final EventDataQueryExpressionVisitor v = new EventDataQueryExpressionVisitor(factory);
 
         script.jjtAccept(v, "");
@@ -338,11 +331,14 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     }
 
     /**
-     * @param node    the node that should be used to build the expression filters
-     * @param factory An AttributeFactory used when generating normalized attributes.
+     *
+     * @param node
+     *            the node that should be used to build the expression filters
+     * @param factory
+     *            An AttributeFactory used when generating normalized attributes.
      * @return a map of expression filters
      */
-    public static Map<String, ExpressionFilter> getExpressionFilters(JexlNode node, AttributeFactory factory) {
+    public static Map<String,ExpressionFilter> getExpressionFilters(JexlNode node, AttributeFactory factory) {
         final EventDataQueryExpressionVisitor v = new EventDataQueryExpressionVisitor(factory);
 
         node.jjtAccept(v, "");
@@ -351,14 +347,14 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     }
 
     private final AttributeFactory attributeFactory;
-    private final Map<String, ExpressionFilter> filterMap;
+    private final Map<String,ExpressionFilter> filterMap;
 
     private EventDataQueryExpressionVisitor(AttributeFactory factory) {
         this.attributeFactory = factory;
         this.filterMap = new HashMap<>();
     }
 
-    private Map<String, ExpressionFilter> getFilterMap() {
+    private Map<String,ExpressionFilter> getFilterMap() {
         return this.filterMap;
     }
 
@@ -412,7 +408,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        LiteralRange<?> range = JexlASTHelper.findRange().getRange(node);
+        LiteralRange range = JexlASTHelper.findRange().getRange(node);
         if (range != null) {
             simpleRangeFilter(range);
         } else {
@@ -424,8 +420,8 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
 
+        JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(node);
         desc.addFilters(attributeFactory, filterMap);
 
         return null;
@@ -438,7 +434,7 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             // handle the simple case: FIELD == literal, FIELD != literal
             generateValueFilter(iol, false, !isExact);
         } else {
-            // handing non-trivial cases: FIELD = FIELD, (FIELD || FIELD) == literal, FIELD - FIELD == literal, FIELD < FIELD...
+            // handing non trivial cases: FIELD = FIELD, (FIELD || FIELD) == literal, FIELD - FIELD == literal, FIELD < FIELD...
             List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(node);
             for (ASTIdentifier identifier : identifiers) {
                 generateValueFilter(new JexlASTHelper.IdentifierOpLiteral(identifier, null, null), false, true);
@@ -464,8 +460,10 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     /**
      * generate value filter based on IdentifierOpLiteral
      *
-     * @param iol       the op literal
-     * @param isPattern boolean flag to check for a pattern
+     * @param iol
+     *            the op literal
+     * @param isPattern
+     *            boolean flag to check for a pattern
      */
     protected void generateValueFilter(JexlASTHelper.IdentifierOpLiteral iol, boolean isPattern) {
         generateValueFilter(iol, isPattern, false);
@@ -474,9 +472,12 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
     /**
      * conditionally generate value filter based on IdentifierOpLiteral and handle isAcceptAll case
      *
-     * @param iol         the op literal
-     * @param isPattern   boolean flag to check for a pattern
-     * @param isAcceptAll boolean flag for accept all
+     * @param iol
+     *            the op literal
+     * @param isPattern
+     *            boolean flag to check for a pattern
+     * @param isAcceptAll
+     *            boolean flag for accept all
      */
     protected void generateValueFilter(JexlASTHelper.IdentifierOpLiteral iol, boolean isPattern, boolean isAcceptAll) {
         if (iol != null) {

@@ -1,9 +1,15 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.PeekingIterator;
-import com.google.common.collect.Sets;
+import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -21,7 +27,13 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
+
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.PeekingIterator;
+import com.google.common.collect.Sets;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFloatLiteral;
@@ -37,16 +49,6 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.log4j.Logger;
-
-import java.text.MessageFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
@@ -126,7 +128,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         }
 
         @Override
-        public void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
+        public void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap) {
             // noop, covered by getIndexQuery (see comments on interface)
         }
 
@@ -177,8 +179,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
 
             } else {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING, MessageFormat.format(
-                        "Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING,
+                                MessageFormat.format("Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
                 throw new IllegalArgumentException(qe);
             }
 
@@ -193,7 +195,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         public Set<String> fields(MetadataHelper helper, Set<String> datatypeFilter) {
             try {
                 return fieldsAndTerms(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
-                        helper.getContentFields(datatypeFilter), null)[0];
+                                helper.getContentFields(datatypeFilter), null)[0];
             } catch (TableNotFoundException e) {
                 QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
                 throw new DatawaveFatalQueryException(qe);
@@ -206,7 +208,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
             try {
                 MutableBoolean oredFields = new MutableBoolean();
                 Set<String>[] fieldsAndTerms = fieldsAndTerms(helper.getTermFrequencyFields(datatypeFilter), helper.getIndexedFields(datatypeFilter),
-                        helper.getContentFields(datatypeFilter), oredFields);
+                                helper.getContentFields(datatypeFilter), oredFields);
                 Set<Set<String>> fieldSets = new HashSet<>();
                 if (oredFields.booleanValue()) {
                     for (String field : fieldsAndTerms[0]) {
@@ -229,7 +231,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
 
         @SuppressWarnings("unchecked")
         public Set<String>[] fieldsAndTerms(Set<String> termFrequencyFields, Set<String> indexedFields, Set<String> contentFields, MutableBoolean oredFields,
-                                            boolean validateFields) {
+                        boolean validateFields) {
 
             final String funcName = name;
 
@@ -374,7 +376,7 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                         // deconstruct & upcase the fieldname for testing in case we have not normalized the field names yet. Return the unnormalized fieldname.
                         if (!termFreqFields.contains(JexlASTHelper.deconstructIdentifier(field.toUpperCase()))) {
                             PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_PHRASE_QUERY_NOT_INDEXED,
-                                    MessageFormat.format("Field: {0}", field));
+                                            MessageFormat.format("Field: {0}", field));
                             throw new IllegalArgumentException(qe);
                         }
                     }
@@ -387,12 +389,12 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                 }
 
             } else {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING, MessageFormat.format(
-                        "Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JEXL_NODES_MISSING,
+                                MessageFormat.format("Class: {0}, Namespace: {1}, Function: {2}", this.getClass().getSimpleName(), namespace, funcName));
                 throw new IllegalArgumentException(qe);
             }
 
-            return new Set[]{fields, terms};
+            return new Set[] {fields, terms};
         }
 
         /**
@@ -404,15 +406,17 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
          * <pre>
          * content:phrase(termOffsetMap, 'foo', 'bar')
          * </pre>
-         * <p>
+         *
          * becomes
          *
          * <pre>
          * (content:phrase(F1, termOffsetMap, 'foo', 'bar') &amp;&amp; F1 == 'foo' &amp;&amp; F2 == 'bar'))
          * </pre>
          *
-         * @param function   a function of indeterminate namespace
-         * @param indexQuery an intersection of equality nodes or a union of such nodes
+         * @param function
+         *            a function of indeterminate namespace
+         * @param indexQuery
+         *            an intersection of equality nodes or a union of such nodes
          * @return the root of a distributed index query
          */
         public static JexlNode distributeFunctionIntoIndexQuery(JexlNode function, JexlNode indexQuery) {
@@ -432,8 +436,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
                     components.add(JexlASTHelper.dereference(child));
                 }
             } else {
-                throw new IllegalStateException("Expected a dereferenced IndexQuery node to be an AND, OR, or EQ node, but was "
-                        + deref.getClass().getSimpleName());
+                throw new IllegalStateException(
+                                "Expected a dereferenced IndexQuery node to be an AND, OR, or EQ node, but was " + deref.getClass().getSimpleName());
             }
 
             // distribute functions into components
@@ -458,8 +462,10 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         /**
          * Distribute a function into a component of an index query. Update the function with the common field
          *
-         * @param function  an arbitrary function
-         * @param component an ASTAndNode or ASTEqNode
+         * @param function
+         *            an arbitrary function
+         * @param component
+         *            an ASTAndNode or ASTEqNode
          * @return nothing
          */
         public static JexlNode distributeFunctionIntoComponent(JexlNode function, JexlNode component) {
@@ -483,7 +489,8 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         /**
          * Extract the common field from the component. If more than one field exists, or none exist, return null.
          *
-         * @param component a component of an index query
+         * @param component
+         *            a component of an index query
          * @return the common field, or null if no such field exists or more than one field exists
          */
         private static String findCommonField(JexlNode component) {
@@ -503,8 +510,10 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         /**
          * Return a copy of the provided content function, updated to always include the provided field
          *
-         * @param function a content function
-         * @param field    the field common to a query index component
+         * @param function
+         *            a content function
+         * @param field
+         *            the field common to a query index component
          * @return a copy of the original function with the specified field added as an argument
          */
         public static JexlNode updateFunctionWithField(JexlNode function, String field) {
@@ -618,13 +627,13 @@ public class ContentFunctionsDescriptor implements JexlFunctionArgumentDescripto
         Class<?> functionClass = (Class<?>) ArithmeticJexlEngines.functions().get(fvis.namespace());
 
         if (!CONTENT_FUNCTION_NAMESPACE.equals(node.jjtGetChild(0).image)) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED, MessageFormat.format(
-                    "Class: {0}, Namespace: {1}", this.getClass().getSimpleName(), node.jjtGetChild(0).image));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NAMESPACE_UNEXPECTED,
+                            MessageFormat.format("Class: {0}, Namespace: {1}", this.getClass().getSimpleName(), node.jjtGetChild(0).image));
             throw new IllegalArgumentException(qe);
         }
         if (!functionClass.equals(ContentFunctions.class)) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION, MessageFormat.format(
-                    "Class: {0}, Function: {1}", this.getClass().getSimpleName(), functionClass));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.JEXLNODEDESCRIPTOR_NODE_FOR_FUNCTION,
+                            MessageFormat.format("Class: {0}, Function: {1}", this.getClass().getSimpleName(), functionClass));
             throw new IllegalArgumentException(qe);
         }
 

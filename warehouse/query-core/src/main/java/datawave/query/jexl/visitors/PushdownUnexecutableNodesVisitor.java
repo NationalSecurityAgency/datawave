@@ -76,7 +76,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     protected boolean forFieldIndex;
 
     public PushdownUnexecutableNodesVisitor(ShardQueryConfiguration config, boolean forFieldIndex, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                            Set<String> nonEventFields, MetadataHelper helper) {
+                    Set<String> nonEventFields, MetadataHelper helper) {
         this.helper = helper;
         this.config = config;
         this.forFieldIndex = forFieldIndex;
@@ -116,9 +116,9 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(PushdownUnexecutableNodesVisitor.class);
 
     public static JexlNode pushdownPredicates(JexlNode queryTree, boolean forFieldIndex, ShardQueryConfiguration config, Set<String> indexedFields,
-                                              Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
+                    Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
         PushdownUnexecutableNodesVisitor visitor = new PushdownUnexecutableNodesVisitor(config, forFieldIndex, indexedFields, indexOnlyFields, nonEventFields,
-                helper);
+                        helper);
 
         // rewrite the tree to push down all negations before anything else
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(queryTree);
@@ -163,8 +163,10 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
     /**
      * Assumes that node is non-executable and should have delayed nodes apply
      *
-     * @param node a non-executable node that should be delayed if it cannot be executed
-     * @param data null or a string used for tracking negations
+     * @param node
+     *            a non-executable node that should be delayed if it cannot be executed
+     * @param data
+     *            null or a string used for tracking negations
      */
     private void addDelays(JexlNode node, Object data) {
         // if we have a non-executable and node, then we may be able to resolve this by pushing down the partial children
@@ -176,7 +178,7 @@ public class PushdownUnexecutableNodesVisitor extends BaseVisitor {
             for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                 JexlNode child = node.jjtGetChild(i);
                 ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(child, config, indexedFields, indexOnlyFields,
-                        nonEventFields, forFieldIndex, null, helper);
+                                nonEventFields, forFieldIndex, null, helper);
                 if (state == ExecutableDeterminationVisitor.STATE.PARTIAL) {
                     ASTDelayedPredicate.create(child);
                 }

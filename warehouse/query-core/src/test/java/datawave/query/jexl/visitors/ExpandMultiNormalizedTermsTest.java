@@ -50,7 +50,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testSimpleCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -66,7 +66,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNumber() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("MULTI", Sets.newHashSet(new LcNoDiacriticsType(), new NumberType()));
         dataTypes.put("NUM", new NumberType());
 
@@ -87,7 +87,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNoOp() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NOOP", new NoOpType());
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -103,7 +103,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testMixedCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("NAME", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -127,7 +127,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testMixedCaseWithNumber() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NUM", new NumberType());
         dataTypes.putAll("NAME", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
 
@@ -144,7 +144,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testIpAddressCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
         dataTypes.putAll("IP", Sets.newHashSet(new LcNoDiacriticsType(), new IpAddressType()));
 
@@ -161,7 +161,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNullTermCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -177,7 +177,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNormalizedBoundsCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -193,7 +193,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testBoundedNormalizedBoundsCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -209,7 +209,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testMultiNormalizedBounds() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -225,7 +225,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testBoundedMultiNormalizedBounds() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -241,7 +241,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testBoundedMultiNormalizedBounds2() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new TrimLeadingZerosType(), new StringType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -257,7 +257,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testBoundedMultiNormalizedBounds3() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new LcNoDiacriticsType(), new TrimLeadingZerosType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -273,7 +273,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testUnNormalizedBoundsCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -286,7 +286,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testBoundedUnNormalizedBoundsCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -299,7 +299,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNormalizedAndUnNormalizedBoundsCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
 
         config.setQueryFieldsDatatypes(dataTypes);
@@ -311,7 +311,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testBoundedNormalizedAndUnNormalizedBoundsCase() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NEW", new LcNoDiacriticsType());
 
         config.setQueryFieldsDatatypes(dataTypes);
@@ -323,7 +323,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testMultiNormalizedFieldOpField() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -346,7 +346,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNormalizedFunctions() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -362,7 +362,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNormalizedFunctionsWithField() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -377,7 +377,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testWeirdlyNormalizedFunction() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NUM", new NumberType());
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -392,7 +392,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testFilterFunctionNormalization() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("IP", new IpAddressType());
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -408,7 +408,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testFilterFunctionNormalizationWithMultipleNormalizers() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("IP", Sets.newHashSet(new IpAddressType(), new LcNoDiacriticsType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -424,7 +424,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testFilterFunctionNormalizationWithNoPattern() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("IP", Sets.newHashSet(new IpAddressType(), new LcNoDiacriticsType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -440,7 +440,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testFilterFunctionNormalizationWithIndexedNumeric() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.put("NUM", new NumberType());
 
         config.setQueryFieldsDatatypes(dataTypes);
@@ -460,7 +460,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testMultipleNormalizersForExceededRegex() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
 
         config.setQueryFieldsDatatypes(dataTypes);
@@ -471,7 +471,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testMultipleNormalizersForBRExceededThreshold() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new NoOpType()));
 
         config.setQueryFieldsDatatypes(dataTypes);
@@ -483,9 +483,9 @@ public class ExpandMultiNormalizedTermsTest {
     @Test
     public void testQueryThatShouldMakeNoRanges() throws Exception {
         String query = "FOO == 125 " + " AND (BAR).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) >= 35"
-                + " and (BAR).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) <= 36"
-                + " and (BAZ).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) >= 25"
-                + " and (BAZ).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) <= 26" + " and WHATEVER == 'la'";
+                        + " and (BAR).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) <= 36"
+                        + " and (BAZ).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) >= 25"
+                        + " and (BAZ).getValuesForGroups(grouping:getGroupsForMatchesInGroup(FOO,'125')) <= 26" + " and WHATEVER == 'la'";
 
         ASTJexlScript queryTree = JexlASTHelper.parseJexlQuery(query);
         ASTJexlScript smashed = TreeFlatteningRebuildingVisitor.flatten(queryTree);
@@ -497,7 +497,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testDelayedPredicates() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -506,15 +506,15 @@ public class ExpandMultiNormalizedTermsTest {
 
         config.setQueryFieldsDatatypes(dataTypes);
 
-        List<String> markers = Arrays.asList(IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
-                ExceededOrThresholdMarkerJexlNode.label());
+        List<String> markers = Arrays.asList(new String[] {IndexHoleMarkerJexlNode.label(), ASTDelayedPredicate.label(), ASTEvaluationOnly.label(),
+                ExceededOrThresholdMarkerJexlNode.label()});
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'bar'))";
             expandTerms(original, expected);
         }
 
-        markers = Arrays.asList(ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label());
+        markers = Arrays.asList(new String[] {ExceededTermThresholdMarkerJexlNode.label(), ExceededValueThresholdMarkerJexlNode.label()});
         for (String marker : markers) {
             String original = "((" + marker + " = true) && (FOO == 'Bar'))";
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
@@ -524,7 +524,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testFailedRegexNormalizersAndNRNodes() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
 
         helper.setIndexedFields(dataTypes.keySet());
@@ -545,7 +545,7 @@ public class ExpandMultiNormalizedTermsTest {
 
     @Test
     public void testNENodes() throws ParseException {
-        Multimap<String, Type<?>> dataTypes = HashMultimap.create();
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
         dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
 
         helper.setIndexedFields(dataTypes.keySet());

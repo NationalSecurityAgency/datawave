@@ -14,11 +14,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-
 public class MergeSortIteratorTest {
 
     @Test
-    public void testIteration () {
+    public void testIteration() {
         SortedSet<Integer> set1 = new TreeSet<>();
         SortedSet<Integer> set2 = new TreeSet<>();
         SortedSet<Integer> set3 = new TreeSet<>();
@@ -85,6 +84,7 @@ public class MergeSortIteratorTest {
         assertEquals(expected, results);
         assertTrue(set1.isEmpty() && set2.isEmpty() && set3.isEmpty());
     }
+
     @Test
     public void testIterationSansHasNext() {
         SortedSet<Integer> set1 = new TreeSet<>();
@@ -152,6 +152,7 @@ public class MergeSortIteratorTest {
         assertEquals(expected, results);
         assertTrue(set1.isEmpty() && set2.isEmpty() && set3.isEmpty());
     }
+
     @Test
     public void testIterationSansWithNulls() {
         Comparator<Integer> c = new Comparator<Integer>() {
@@ -160,8 +161,8 @@ public class MergeSortIteratorTest {
             public int compare(Integer o1, Integer o2) {
                 if (o1 == null) {
                     return (o2 == null ? 0 : -1);
-                }else{
-                    return (o2 ==null ? 1 : o1.compareTo(o2));
+                } else {
+                    return (o2 == null ? 1 : o1.compareTo(o2));
                 }
             }
         };

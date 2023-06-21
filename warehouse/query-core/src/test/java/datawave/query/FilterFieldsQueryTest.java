@@ -37,30 +37,30 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
  * {@link QueryParameters#BLACKLISTED_FIELDS} parameter.
  */
 public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(FilterFieldsQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
         FieldConfig generic = new GenericCityFields();
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public FilterFieldsQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testEqCityAndEqState() throws Exception {
         log.info("------  testEqCityAndEqContinent  ------");
-        
+
         for (final TestCities city : TestCities.values()) {
             String cont = "'ohio'";
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + EQ_OP + cont;
@@ -69,11 +69,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, true, false);
         }
     }
-    
+
     @Test
     public void testEqCityAndEqContinentHitList() throws Exception {
         log.info("------  testEqCityAndEqContinentHitList  ------");
-        
+
         String cont = "'north america'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.CONTINENT.name() + EQ_OP + cont;
@@ -82,11 +82,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, true, true);
         }
     }
-    
+
     @Test
     public void testAnyField() throws Exception {
         log.info("------  testAnyField  ------");
-        
+
         for (final TestCities city : TestCities.values()) {
             String cityPhrase = EQ_OP + "'" + city.name() + "'";
             String query = Constants.ANY_FIELD + cityPhrase;
@@ -96,7 +96,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, expect, true, false);
         }
     }
-    
+
     @Test
     public void testDisjunctionAnyField() throws Exception {
         log.info("------  testDisjunctionAnyField  ------");
@@ -108,7 +108,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String expect = anyNoMatch + OR_OP + anyNothing;
         runTest(query, expect, true, false);
     }
-    
+
     @Test
     public void testDisjunctionAnyField_withMatch() throws Exception {
         log.info("------  testDisjunctionAnyField with a matching phrase ------");
@@ -120,7 +120,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String expect = anyNoMatch + OR_OP + anyMatch;
         runTest(query, expect, true, false);
     }
-    
+
     @Test
     public void testConjunctionAnyField_noMatch() throws Exception {
         log.info("------  testConjunctionAnyField with no matching phrases ------");
@@ -132,7 +132,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String expect = anyNoMatch + AND_OP + anyNothing;
         runTest(query, expect, true, false);
     }
-    
+
     @Test
     public void testConjunctionAnyField_withMatch() throws Exception {
         log.info("------  testConjunctionAnyField with a matching phrase ------");
@@ -145,7 +145,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String expect = anyNoMatch + op + anyMatch;
         runTest(query, expect, true, false);
     }
-    
+
     @Test
     public void testAnyFieldFilterIncludeRegex() throws Exception {
         log.info("------  testAnyFieldFilterIncludeRegex  ------");
@@ -160,7 +160,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery, true, false);
         }
     }
-    
+
     @Test
     public void testAnyFieldLuceneInclude() throws Exception {
         log.info("------  testAnyFieldLuceneInclude  ------");
@@ -175,7 +175,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery, true, false);
         }
     }
-    
+
     @Test
     public void testAnyFieldLuceneText() throws Exception {
         log.info("------  testAnyFieldLuceneText  ------");
@@ -190,7 +190,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery, true, false);
         }
     }
-    
+
     @Test
     public void testOccurrenceFunction() throws Exception {
         log.info("------  testOccurrenceFunction  ------");
@@ -199,7 +199,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String expectQuery = CityField.CONTINENT.name() + EQ_OP + cont;
         runTest(query, expectQuery, true, false);
     }
-    
+
     @Test
     public void testZeroOccurrenceFunction() throws Exception {
         log.info("------  testZeroOccurrenceFunction  ------");
@@ -208,11 +208,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         String expectQuery = CityField.CONTINENT.name() + EQ_OP + "'no-such-name'";
         runTest(query, expectQuery, true, false);
     }
-    
+
     @Test
     public void testBlackListMultiValueIncluded() throws Exception {
         log.info("------  testBlackListMultiValueIncluded  ------");
-        
+
         String cont = "'europe'";
         String state = "'mississippi'";
         for (final TestCities city : TestCities.values()) {
@@ -226,11 +226,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, false, false, fields);
         }
     }
-    
+
     @Test
     public void testBlackListMultiValueExcluded() throws Exception {
         log.info("------  testBlackListMultiValueExcluded  ------");
-        
+
         String cont = "'europe'";
         String state = "'mississippi'";
         for (final TestCities city : TestCities.values()) {
@@ -244,11 +244,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, false, false, fields);
         }
     }
-    
+
     @Test
     public void testEqCityAndEqContinentBlackList() throws Exception {
         log.info("------  testEqCityAndEqContinentBlackList  ------");
-        
+
         String state = "'ohio'";
         String mizzu = "'missouri'";
         for (final TestCities city : TestCities.values()) {
@@ -259,11 +259,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, false, false);
         }
     }
-    
+
     @Test
     public void testRegexBlacklist() throws Exception {
         log.info("------  testRegexBlacklist  ------");
-        
+
         String regex = "'miss.*'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + RE_OP + regex;
@@ -272,11 +272,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, false, false);
         }
     }
-    
+
     @Test
     public void testRegexWhitelist() throws Exception {
         log.info("------  testRegexWhitelist  ------");
-        
+
         String regex = "'miss.*'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.STATE.name() + RE_OP + regex;
@@ -285,11 +285,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, true, false);
         }
     }
-    
+
     @Test
     public void testEqCityAndEqContinentBlackListWithHitList() throws Exception {
         log.info("------  testEqCityAndEqContinentBlackListWithHitList  ------");
-        
+
         String cont = "'europe'";
         String state = "'missouri'";
         for (final TestCities city : TestCities.values()) {
@@ -300,11 +300,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, false, true);
         }
     }
-    
+
     @Test
     public void testWhiteListWithMultiValueIncluded() throws Exception {
         log.info("------  testWhiteListWithMultiValueIncluded  ------");
-        
+
         String cont = "'north america'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.CONTINENT.name() + EQ_OP + cont;
@@ -316,11 +316,11 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, true, true, fields);
         }
     }
-    
+
     @Test
     public void testWhiteListWithMultiValueExcluded() throws Exception {
         log.info("------  testWhiteListWithMultiValueExcluded  ------");
-        
+
         String cont = "'north america'";
         for (final TestCities city : TestCities.values()) {
             String query = CityField.CITY.name() + EQ_OP + "'" + city.name() + "'" + AND_OP + CityField.CONTINENT.name() + EQ_OP + cont;
@@ -332,37 +332,37 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
             runTest(query, true, true, fields);
         }
     }
-    
+
     // end of unit tests
     // ============================================
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {
         this.auths = CitiesDataType.getTestAuths();
         this.documentKey = CityField.EVENT_ID.name();
     }
-    
+
     // ============================================
     // private methods
-    
+
     private void runTest(final String query, final String expectQuery, final boolean whiteList, final boolean hitList) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         final Set<String> fields = CityField.getRandomReturnFields(whiteList);
         runTest(query, expectQuery, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
     }
-    
+
     private void runTest(final String query, final boolean whiteList, final boolean hitList) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         final Set<String> fields = CityField.getRandomReturnFields(whiteList);
         runTest(query, query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
     }
-    
+
     private void runTest(final String query, final boolean whiteList, final boolean hitList, Set<String> fields) throws Exception {
         Date[] startEndDate = this.dataManager.getShardStartEndDate();
         runTest(query, query, startEndDate[0], startEndDate[1], whiteList, hitList, fields);
     }
-    
+
     /**
      * Base helper method for execution of a unit test.
      *
@@ -383,17 +383,17 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
      * @throws Exception
      *             something failed - go figure it out
      */
-    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList,
-                    final boolean hitList, final Set<String> fields) throws Exception {
+    private void runTest(final String query, final String expectQuery, final Date startDate, final Date endDate, final boolean whiteList, final boolean hitList,
+                    final Set<String> fields) throws Exception {
         QueryJexl jexl = new QueryJexl(expectQuery, this.dataManager, startDate, endDate);
         final Set<Map<String,String>> allData = jexl.evaluate();
         final Set<String> expected = this.dataManager.getKeys(allData);
-        
+
         final Set<String> otherFields = new HashSet<>(this.dataManager.getHeaders());
         otherFields.removeAll(fields);
-        
+
         final String queryFields = String.join(",", fields);
-        
+
         Map<String,String> options = new HashMap<>();
         final List<QueryLogicTestHarness.DocumentChecker> queryChecker = new ArrayList<>();
         if (fields.isEmpty()) {
@@ -410,7 +410,7 @@ public class FilterFieldsQueryTest extends AbstractFunctionalQuery {
         if (hitList) {
             options.put(QueryParameters.HIT_LIST, "true");
         }
-        
+
         runTestQuery(expected, query, startDate, endDate, options, queryChecker);
     }
 }

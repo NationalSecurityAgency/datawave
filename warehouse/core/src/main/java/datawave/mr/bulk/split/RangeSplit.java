@@ -23,37 +23,37 @@ import com.google.common.hash.Hashing;
  * The Class RangeSplit. Encapsulates an Accumulo range for use in Map Reduce jobs.
  */
 public class RangeSplit extends InputSplit implements Writable {
-    
+
     protected SortedSet<Range> ranges;
-    
+
     protected Key startKey = null;
     protected Key endKey = null;
-    
+
     protected String[] locations;
     /**
      * my split strategy
      */
     protected LocationStrategy strategy = new DefaultLocationStrategy();
-    
+
     public RangeSplit() {
         ranges = Sets.newTreeSet();
         locations = new String[0];
     }
-    
+
     public RangeSplit(LocationStrategy strategy) {
         this();
         this.strategy = strategy;
     }
-    
+
     public Collection<Range> getRanges() {
         return ranges;
     }
-    
+
     private int startByte = 0;
     private int endByte = 0;
     private long range = 0;
     private PartialKey depth = PartialKey.ROW;
-    
+
     /**
      * This is called with the endKey and startKey have changed. Determine which part of the keys to compare, and then determine which bytes therein to compare.
      * This will set the startByte, endByte, range, and depth class members.
@@ -74,11 +74,11 @@ public class RangeSplit extends InputSplit implements Writable {
             this.depth = PartialKey.ROW_COLFAM_COLQUAL_COLVIS;
         }
     }
-    
+
     /**
      * Given the start and end of the range, determine a set of bytes therein that are significant enough to provide a reasonable range of progress values. This
      * will set the startByte, endByte, and range class members.
-     * 
+     *
      * @param start
      * @param end
      */
@@ -97,7 +97,7 @@ public class RangeSplit extends InputSplit implements Writable {
             // Add this these values in base 256
             startVal = (startVal * 256) + startByteVal;
             endVal = (endVal * 256) + endByteVal;
-            
+
             if (startVal == endVal) {
                 // the bytes match up until now, up the startByte and continue
                 startVal = endVal = 0;
@@ -112,11 +112,11 @@ public class RangeSplit extends InputSplit implements Writable {
         this.endByte = maxDepth;
         this.range = (endVal - startVal);
     }
-    
+
     /**
      * Determine the progress the end is from the start relative to the overall range. This will use the startByte/endByte range of bytes to calculate the
      * distance. Then the distance is compared to the range to return the overall percentage.
-     * 
+     *
      * @param start
      * @param end
      * @return the progress [0.0, 1.0]
@@ -134,18 +134,18 @@ public class RangeSplit extends InputSplit implements Writable {
         }
         return (float) (endVal - startVal) / this.range;
     }
-    
+
     /**
      * Determine the progress the current key is from the start key relative to the overall range. This will use the depth to determine which part of the key to
      * use, and then use the method above to get the actuall progress value.
-     * 
+     *
      * @param currentKey
      * @return the progress [0.0, 1.0]
      */
     public float getProgress(Key currentKey) {
         if (currentKey == null)
             return 0f;
-        
+
         // if this.range > 0, then we must have a startKey and endKey
         if (this.range > 0) {
             if (depth == PartialKey.ROW) {
@@ -159,23 +159,23 @@ public class RangeSplit extends InputSplit implements Writable {
                 return getProgress(startKey.getColumnQualifierData(), currentKey.getColumnQualifierData());
             }
         }
-        
+
         // if we can't figure it out, then claim no progress
         return 0f;
     }
-    
+
     public RangeSplit(LocationStrategy strategy, String table, String[] locations) {
         this(strategy);
         this.ranges = Sets.newTreeSet(ranges);
         this.locations = locations;
     }
-    
+
     public void addRanges(Collection<Range> ranges) {
         for (Range range : ranges) {
             addRange(range);
         }
     }
-    
+
     protected void addRange(Range range) {
         if (null == startKey) {
             startKey = range.getStartKey();
@@ -184,7 +184,7 @@ public class RangeSplit extends InputSplit implements Writable {
                 startKey = range.getStartKey();
             }
         }
-        
+
         if (null == endKey) {
             endKey = range.getEndKey();
         } else {
@@ -192,12 +192,12 @@ public class RangeSplit extends InputSplit implements Writable {
                 endKey = range.getEndKey();
             }
         }
-        
+
         updateProgressDepth();
-        
+
         this.ranges.add(range);
     }
-    
+
     /**
      * This implementation of length is only an estimate, it does not provide exact values. Do not have your code rely on this return value.
      */
@@ -208,24 +208,24 @@ public class RangeSplit extends InputSplit implements Writable {
         Text stopRow = listRange.isInfiniteStopKey() ? new Text(new byte[] {Byte.MAX_VALUE}) : listRange.getEndKey().getRow();
         int maxCommon = Math.min(7, Math.min(startRow.getLength(), stopRow.getLength()));
         long diff = 0;
-        
+
         byte[] start = startRow.getBytes();
         byte[] stop = stopRow.getBytes();
         for (int i = 0; i < maxCommon; ++i) {
             diff |= 0xff & (start[i] ^ stop[i]);
             diff <<= Byte.SIZE;
         }
-        
+
         if (startRow.getLength() != stopRow.getLength())
             diff |= 0xff;
-        
+
         return diff + 1;
     }
-    
+
     public String[] getLocations() throws IOException {
         return locations;
     }
-    
+
     public void readFields(DataInput in) throws IOException {
         ranges = Sets.newTreeSet();
         int numLocs = in.readInt();
@@ -239,7 +239,7 @@ public class RangeSplit extends InputSplit implements Writable {
         for (int i = 0; i < numLocs; ++i)
             locations[i] = in.readUTF();
     }
-    
+
     public void write(DataOutput out) throws IOException {
         out.writeInt(ranges.size());
         for (Range range : ranges)
@@ -248,18 +248,18 @@ public class RangeSplit extends InputSplit implements Writable {
         for (int i = 0; i < locations.length; ++i)
             out.writeUTF(locations[i]);
     }
-    
+
     @Override
     public Object clone() {
         return new RangeSplit(strategy, null, locations);
     }
-    
+
     @Override
     public int hashCode() {
         HashFunction hf = Hashing.goodFastHash(64);
         return hf.newHasher().putObject(this, strategy).hash().asInt();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof RangeSplit) {
@@ -267,21 +267,21 @@ public class RangeSplit extends InputSplit implements Writable {
         } else
             return false;
     }
-    
+
     public Key getStartKey() {
         return startKey;
     }
-    
+
     public Key getEndKey() {
         return endKey;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
-        
+
         builder.append(startKey).append(endKey).append(ranges);
-        
+
         return builder.toString();
     }
 }

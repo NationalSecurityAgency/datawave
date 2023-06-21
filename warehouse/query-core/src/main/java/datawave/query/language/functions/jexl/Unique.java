@@ -16,39 +16,39 @@ import java.util.stream.Collectors;
  * additional documentation on supported formatting.
  */
 public class Unique extends JexlQueryFunction {
-    
+
     public Unique() {
         super(QueryFunctions.UNIQUE_FUNCTION, new ArrayList<>());
     }
-    
+
     /**
      * query options contain a list of fields. Cannot be the empty list.
-     * 
+     *
      * @throws IllegalArgumentException
      *             for illegal arguments
      */
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.isEmpty()) {
-            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format(
-                            "{0} requires at least one argument", this.name));
+            BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                            MessageFormat.format("{0} requires at least one argument", this.name));
             throw new IllegalArgumentException(qe);
         } else {
             String parameters = String.join(",", parameterList);
             try {
                 UniqueFields.from(parameters);
             } catch (Exception e) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format(
-                                "Unable to parse unique fields from arguments for function {0}", this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("Unable to parse unique fields from arguments for function {0}", this.name));
                 throw new IllegalArgumentException(qe);
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(QueryFunctions.UNIQUE_FUNCTION);
         if (parameterList.isEmpty()) {
             sb.append("()");
@@ -60,13 +60,13 @@ public class Unique extends JexlQueryFunction {
             }
             sb.append(')');
         }
-        
+
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Unique();
     }
-    
+
 }

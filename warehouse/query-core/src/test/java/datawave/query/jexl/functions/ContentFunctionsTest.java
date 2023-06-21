@@ -56,7 +56,7 @@ public class ContentFunctionsTest {
 
     @BeforeClass
     public static void setUp() throws URISyntaxException {
-        Map<String, Object> functions = new HashMap<>();
+        Map<String,Object> functions = new HashMap<>();
         functions.put("f", QueryFunctions.class);
         functions.put("geo", GeoFunctions.class);
         functions.put("content", ContentFunctions.class);
@@ -73,8 +73,10 @@ public class ContentFunctionsTest {
     /**
      * Ensures that result is Boolean and equal to the expected value
      *
-     * @param result   The object in question
-     * @param expected The expected result
+     * @param result
+     *            The object in question
+     * @param expected
+     *            The expected result
      * @return True if result is Boolean and equal to expected
      */
     public static boolean expect(Object result, Boolean expected) {
@@ -162,16 +164,16 @@ public class ContentFunctionsTest {
 
     private TermWeightPosition getPosition(int offset, int prevSkips, float score) {
         return new TermWeightPosition.Builder().setOffset(offset).setPrevSkips(prevSkips).setScore(TermWeightPosition.positionScoreToTermWeightScore(score))
-                .build();
+                        .build();
     }
 
     private void assertPhraseOffset(String field, int startOffset, int endOffset) {
-        Collection<Triplet<String, Integer, Integer>> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
-        boolean found = phraseOffsets.stream().anyMatch(
-                (pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
+        Collection<Triplet<String,Integer,Integer>> phraseOffsets = termOffSetMap.getPhraseIndexes(field);
+        boolean found = phraseOffsets.stream()
+                        .anyMatch((pair) -> pair.getValue0().equals(eventId) && pair.getValue1().equals(startOffset) && pair.getValue2().equals(endOffset));
         Assert.assertTrue(
-                "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
-                found);
+                        "Expected phrase offset [" + startOffset + ", " + endOffset + "] for field " + field + " and eventId " + eventId.replace('\u0000', '/'),
+                        found);
     }
 
     private void assertPhraseOffsetsEmpty() {
@@ -431,7 +433,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationThreeTerms() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "3", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
-                "'rat'");
+                        "'rat'");
         Expression expr = engine.createExpression(query);
 
         // (15-3)-9 <= 3
@@ -454,7 +456,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationThreeTermsTooSmallDistance() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
-                "'rat'");
+                        "'rat'");
         Expression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
@@ -476,7 +478,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationFailedThreeTerms() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "3", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
-                "'rat'");
+                        "'rat'");
         Expression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
@@ -498,7 +500,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationMiddleMatch() {
         String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "2", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'",
-                "'rat'");
+                        "'rat'");
         Expression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3;
@@ -1344,7 +1346,7 @@ public class ContentFunctionsTest {
     @Test
     public void testEvaluationMultipleContentFunctions() {
         String query1 = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "3", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'bat'", "'dog'",
-                "'cat'");
+                        "'cat'");
         String query2 = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "3", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'dog'", "'cat'");
         String query = query1 + "||" + query2;
         Expression expr = engine.createExpression(query);
@@ -1557,7 +1559,7 @@ public class ContentFunctionsTest {
         JexlNode scriptChild = expectedScript.jjtGetChild(0);
 
         Assert.assertTrue("Expected " + JexlStringBuildingVisitor.buildQuery(scriptChild) + " but was " + JexlStringBuildingVisitor.buildQuery(indexQuery),
-                JexlASTHelper.equals(scriptChild, indexQuery));
+                        JexlASTHelper.equals(scriptChild, indexQuery));
     }
 
     @Test
@@ -1593,10 +1595,8 @@ public class ContentFunctionsTest {
 
         termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList(
-                "car",
-                new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3), Maps.immutableEntry(new Zone("META", true, eventId),
-                        list4)));
+        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
+                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
@@ -1609,7 +1609,7 @@ public class ContentFunctionsTest {
     @Test
     public void testSomeEmptyOffsetsAdjacency() {
         String query = buildFunction(ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME, "BODY", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'", "'bar'",
-                "'car'");
+                        "'car'");
         Expression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3, list4;
@@ -1620,10 +1620,8 @@ public class ContentFunctionsTest {
 
         termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList(
-                "car",
-                new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3), Maps.immutableEntry(new Zone("META", true, eventId),
-                        list4)));
+        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
+                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
@@ -1635,8 +1633,8 @@ public class ContentFunctionsTest {
 
     @Test
     public void testSomeEmptyOffsetsWithin() {
-        String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "BODY", "5", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'",
-                "'bar'", "'car'");
+        String query = buildFunction(ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME, "BODY", "5", Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, "'foo'", "'bar'",
+                        "'car'");
         Expression expr = engine.createExpression(query);
 
         List<TermWeightPosition> list1, list2, list3, list4;
@@ -1647,10 +1645,8 @@ public class ContentFunctionsTest {
 
         termOffSetMap.putTermFrequencyList("foo", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list1)));
         termOffSetMap.putTermFrequencyList("bar", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list2)));
-        termOffSetMap.putTermFrequencyList(
-                "car",
-                new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3), Maps.immutableEntry(new Zone("META", true, eventId),
-                        list4)));
+        termOffSetMap.putTermFrequencyList("car", new TermFrequencyList(Maps.immutableEntry(new Zone("BODY", true, eventId), list3),
+                        Maps.immutableEntry(new Zone("META", true, eventId), list4)));
 
         context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, termOffSetMap);
         context.set("BODY", Arrays.asList("foo", "bar", "car"));
@@ -1662,7 +1658,7 @@ public class ContentFunctionsTest {
 
     @Test
     public void testDuplicatePhraseOffset() {
-        TreeMultimap<Zone, TermWeightPosition> multimap = TreeMultimap.create();
+        TreeMultimap<Zone,TermWeightPosition> multimap = TreeMultimap.create();
 
         TermOffsetMap termOffsetMap = new TermOffsetMap();
 
@@ -1724,23 +1720,23 @@ public class ContentFunctionsTest {
 
         // full terms list
         Assert.assertNotNull(termOffsetMap.getTermFrequencyList("his"));
-        String[] terms = new String[]{"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
+        String[] terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // duplicate consecutive terms fail here
-        terms = new String[]{"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
+        terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
         Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // duplicate consecutive terms fail here
-        terms = new String[]{"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
+        terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
         Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // subset(1, end)
-        terms = new String[]{"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
+        terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // subset(1,end-5)
-        terms = new String[]{"and", "tell", "your", "brother", "that", "dinners", "ready", "and"};
+        terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and"};
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.phrase("BODY", termOffsetMap, terms));
 
         // ///////////////////////////
@@ -1748,23 +1744,23 @@ public class ContentFunctionsTest {
         // ///////////////////////////
 
         // full terms list
-        terms = new String[]{"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
+        terms = new String[] {"go", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 14, termOffsetMap, terms));
 
         // duplicate consecutive terms fail here
-        terms = new String[]{"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
+        terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
         Assert.assertEquals(Collections.emptySet(), ContentFunctions.within("BODY", 15, termOffsetMap, terms));
 
         // placement does not matter
-        terms = new String[]{"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
+        terms = new String[] {"go", "and", "and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come"};
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 11, termOffsetMap, terms));
 
         // subset(1, end)
-        terms = new String[]{"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
+        terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and", "wash", "his", "hands"};
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 12, termOffsetMap, terms));
 
         // subset(1,end-5)
-        terms = new String[]{"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and"};
+        terms = new String[] {"and", "tell", "your", "brother", "that", "dinners", "ready", "and", "come", "and"};
         Assert.assertEquals(Collections.singleton("BODY"), ContentFunctions.within("BODY", 10, termOffsetMap, terms));
     }
 
@@ -1781,9 +1777,9 @@ public class ContentFunctionsTest {
         Zone zone1 = genTestZone("ZONE1");
         Zone zone2 = genTestZone("ZONE2");
 
-        String[] terms = new String[]{"some", "phrase"};
+        String[] terms = new String[] {"some", "phrase"};
 
-        TreeMultimap<Zone, TermWeightPosition> multimap;
+        TreeMultimap<Zone,TermWeightPosition> multimap;
         TermOffsetMap termOffsetMap = new TermOffsetMap();
 
         // Build term 1 offsets...
@@ -1818,7 +1814,7 @@ public class ContentFunctionsTest {
 
         // Ensure that we get the hit if we evaluate both zones
         Assert.assertEquals(Collections.singleton(zone2.getZone()),
-                ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termOffsetMap, terms));
+                        ContentFunctions.phrase(Arrays.asList(zone1.getZone(), zone2.getZone()), termOffsetMap, terms));
 
         // Ensure that we get the hit if we evaluate null zone
         Assert.assertEquals(Collections.singleton(zone2.getZone()), ContentFunctions.phrase((Object) null, termOffsetMap, terms));
@@ -1827,7 +1823,7 @@ public class ContentFunctionsTest {
     // Validate intersection of event ids is working properly
     @Test
     public void testAdjacentHitsAcrossChildDocuments() {
-        TreeMultimap<Zone, TermWeightPosition> multimap = TreeMultimap.create();
+        TreeMultimap<Zone,TermWeightPosition> multimap = TreeMultimap.create();
 
         TermOffsetMap termOffsetMap = new TermOffsetMap();
 
@@ -1841,7 +1837,7 @@ public class ContentFunctionsTest {
         // full terms list
         Assert.assertNotNull(termOffsetMap.getTermFrequencyList("blue"));
         Assert.assertNotNull(termOffsetMap.getTermFrequencyList("fish"));
-        String[] terms = new String[]{"blue", "fish"};
+        String[] terms = new String[] {"blue", "fish"};
         Assert.assertEquals(Collections.emptySet(), ContentFunctions.phrase("BODY", termOffsetMap, terms));
     }
 }

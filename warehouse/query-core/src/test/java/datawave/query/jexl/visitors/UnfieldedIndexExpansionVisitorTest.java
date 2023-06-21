@@ -14,14 +14,15 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MockMetadataHelper;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -73,8 +74,8 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
 
     private static void writeShardIndexData() throws TableNotFoundException, MutationsRejectedException {
-        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_INDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
-                .setMaxWriteThreads(1))) {
+        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_INDEX,
+                        new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1))) {
 
             Mutation m = new Mutation("taco");
             m.put(new Text("FIELD1"), new Text("20210101\0datatype"), timestamp, emptyValue);
@@ -125,8 +126,8 @@ public class UnfieldedIndexExpansionVisitorTest {
     }
 
     private static void writeShardReverseIndexData() throws TableNotFoundException, MutationsRejectedException {
-        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_RINDEX, new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L)
-                .setMaxWriteThreads(1))) {
+        try (BatchWriter bw = conn.createBatchWriter(TableName.SHARD_RINDEX,
+                        new BatchWriterConfig().setMaxLatency(10, TimeUnit.SECONDS).setMaxMemory(100000L).setMaxWriteThreads(1))) {
 
             Mutation m = new Mutation(StringUtils.reverse("beautifully"));
             m.put(new Text("FIELD7"), new Text("20210101\0datatype"), timestamp, emptyValue);
@@ -435,7 +436,7 @@ public class UnfieldedIndexExpansionVisitorTest {
         // the order of query terms is non-deterministic so use TreeEqualityVisitor over comparing raw query strings
         ASTJexlScript expectedScript = JexlASTHelper.parseJexlQuery(expected);
         String errMsg = "Expected trees to be equal:\n" + JexlStringBuildingVisitor.buildQueryWithoutParse(expectedScript) + "\n"
-                + JexlStringBuildingVisitor.buildQueryWithoutParse(fixed);
+                        + JexlStringBuildingVisitor.buildQueryWithoutParse(fixed);
         assertTrue(errMsg, TreeEqualityVisitor.isEqual(expectedScript, fixed));
     }
 
@@ -447,7 +448,7 @@ public class UnfieldedIndexExpansionVisitorTest {
         }
 
         @Override
-        public Multimap<String, String> getCompositeToFieldMap() throws TableNotFoundException {
+        public Multimap<String,String> getCompositeToFieldMap() throws TableNotFoundException {
             return null;
         }
 

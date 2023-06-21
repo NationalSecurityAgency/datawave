@@ -35,9 +35,9 @@ import static org.slf4j.LoggerFactory.getLogger;
  * all callers will be able to easily extend this class if they already/need to extend other parents.
  */
 public class GroupingUtil {
-    
+
     private static final Logger log = getLogger(GroupingUtil.class);
-    
+
     public ColumnVisibility combine(Collection<ColumnVisibility> in, MarkingFunctions markingFunctions) {
         try {
             ColumnVisibility columnVisibility = markingFunctions.combine(in);
@@ -48,31 +48,34 @@ public class GroupingUtil {
         }
         return new ColumnVisibility();
     }
-    
+
     /**
      * This method mutates the countingMap argument that is passed into it. The caller may either anticipate that (and hopefully make a comment when this method
      * is called that it is expecting the countingMap to be mutated) or the caller can reset the instance of countingMap by calling getCountingMap on the
      * GroupInfo object (clearer, but relies more on garbage collection)
      *
-     * @param entry the map entry
-     * @param groupFieldsSet group fields set
-     * @param countingMap the counting map
+     * @param entry
+     *            the map entry
+     * @param groupFieldsSet
+     *            group fields set
+     * @param countingMap
+     *            the counting map
      * @return grouping info
      */
     public GroupingInfo getGroupingInfo(Map.Entry<Key,Document> entry, Set<String> groupFieldsSet, GroupCountingHashMap countingMap) {
         return getGroupingInfo(entry, groupFieldsSet, countingMap, null);
     }
-    
+
     public GroupingInfo getGroupingInfo(Map.Entry<Key,Document> entry, Set<String> groupFieldsSet, GroupCountingHashMap countingMap,
                     Map<String,String> reverseModelMapping) {
         log.trace("apply to {}", entry);
-        
+
         // mapping of field name (with grouping context) to value attribute
         Map<String,GroupingTypeAttribute<?>> fieldMap = Maps.newHashMap();
-        
+
         // holds the aggregated column visibilities for each grouped event
         Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> fieldVisibilities = HashMultimap.create();
-        
+
         if (entry != null) {
             Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
             Map<String,Attribute<? extends Comparable<?>>> dictionary = entry.getValue().getDictionary();
@@ -83,7 +86,7 @@ public class GroupingUtil {
                                 int count = ((BigDecimal) countTypeAttribute.getType().getDelegate()).intValue();
                                 countKeyMap.put(countKey, count);
                             });
-            
+
             Multimap<String,String> fieldToFieldWithContextMap = getFieldToFieldWithGroupingContextMap(entry.getValue(), expandedGroupFieldsList, fieldMap,
                             groupFieldsSet, reverseModelMapping);
             log.trace("got a new fieldToFieldWithContextMap: {}", fieldToFieldWithContextMap);
@@ -111,9 +114,9 @@ public class GroupingUtil {
                         fieldCollection.add(fieldMap.get(gtName));
                     }
                 }
-                
+
                 if (fieldCollection.size() == expandedGroupFieldsList.size()) {
-                    
+
                     // get the count out of the countKeyMap
                     Integer count = countKeyMap.get("COUNT." + currentGroupingContext);
                     if (count == null)
@@ -129,16 +132,16 @@ public class GroupingUtil {
                     log.trace("expandedGroupFieldsList: {}", expandedGroupFieldsList);
                 }
             }
-            
+
             log.trace("countingMap: {}", countingMap);
         }
-        
+
         return new GroupingInfo(countingMap, fieldVisibilities);
     }
-    
+
     private Multimap<String,String> getFieldToFieldWithGroupingContextMap(Document d, Set<String> expandedGroupFieldsList,
                     Map<String,GroupingTypeAttribute<?>> fieldMap, Set<String> groupFieldsSet, Map<String,String> reverseModelMapping) {
-        
+
         Multimap<String,String> fieldToFieldWithContextMap = TreeMultimap.create();
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> entry : d.entrySet()) {
             Attribute<?> field = entry.getValue();
@@ -162,7 +165,7 @@ public class GroupingUtil {
             if (groupFieldsSet.contains(shorterName)) {
                 expandedGroupFieldsList.add(shortName);
                 log.trace("{} contains {}", groupFieldsSet, shorterName);
-                
+
                 if (field.getData() instanceof Collection<?>) {
                     // This handles multivalued entries that do not have grouping context
                     // Create GroupingTypeAttribute and put in ordered map ordered on the attribute type
@@ -173,7 +176,7 @@ public class GroupingUtil {
                         created.setColumnVisibility(field.getColumnVisibility());
                         attrSortedMap.put(type, created);
                     }
-                    
+
                     // Add GroupingTypeAttribute to fieldMap with a grouping context that is based on ordered attribute type
                     int i = 0;
                     for (Map.Entry<Type<?>,GroupingTypeAttribute<?>> sortedEntry : attrSortedMap.entries()) {
@@ -197,7 +200,7 @@ public class GroupingUtil {
         log.trace("expandedGroupFieldsList: {}", expandedGroupFieldsList);
         return fieldToFieldWithContextMap;
     }
-    
+
     private static int longestValueList(Multimap<String,String> in) {
         int max = 0;
         for (Collection<String> valueCollection : in.asMap().values()) {
@@ -205,40 +208,40 @@ public class GroupingUtil {
         }
         return max;
     }
-    
+
     /**
      * Provides a clear way to return multiple things related to grouping that are generated from one method.
      */
     public static class GroupingInfo {
-        
+
         private final GroupCountingHashMap countingMap;
-        
+
         private final Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> fieldVisibilities;
-        
+
         GroupingInfo(GroupCountingHashMap countingMap, Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> fieldVisibilities) {
             this.countingMap = countingMap;
             this.fieldVisibilities = fieldVisibilities;
         }
-        
+
         public GroupCountingHashMap getCountsMap() {
             return countingMap;
         }
-        
+
         public Multimap<Collection<GroupingTypeAttribute<?>>,ColumnVisibility> getFieldVisibilities() {
             return fieldVisibilities;
         }
     }
-    
+
     public static class GroupCountingHashMap extends HashMap<Collection<GroupingTypeAttribute<?>>,Integer> {
-        
+
         private static final Logger log = getLogger(GroupCountingHashMap.class);
-        
+
         private MarkingFunctions markingFunctions;
-        
+
         public GroupCountingHashMap(MarkingFunctions markingFunctions) {
             this.markingFunctions = markingFunctions;
         }
-        
+
         public int add(Collection<GroupingTypeAttribute<?>> in) {
             int count = 0;
             if (super.containsKey(in)) {
@@ -250,25 +253,24 @@ public class GroupingUtil {
             super.put(in, count);
             return count;
         }
-        
+
         private void combine(Set<Collection<GroupingTypeAttribute<?>>> existingMapKeys, Collection<? extends Attribute<?>> incomingAttributes) {
-            
+
             // for each Attribute in the incomingAttributes, find the existing map key attribute that matches its data.
             // combine the column visibilities of the incoming attribute and the existing one, and set
             // the column visibility of the EXISTING map key to the new value.
             // Note that the hashCode and equals methods for the GroupingTypeAttribute will ignore the metadata (which contains the column visibility)
             incomingAttributes.forEach(incomingAttribute -> {
-                existingMapKeys.stream()
-                                .flatMap(Collection::stream)
+                existingMapKeys.stream().flatMap(Collection::stream)
                                 // if the existing and incoming attributes are equal (other than the metadata), the incoming attribute's visibility will be
                                 // considered for merging into the existing attribute unless the column visibilities are already equal
                                 .filter(existingAttribute -> existingAttribute.getData().equals(incomingAttribute.getData())
                                                 && !existingAttribute.getColumnVisibility().equals(incomingAttribute.getColumnVisibility()))
-                                .forEach(existingAttribute -> existingAttribute.setColumnVisibility(combine(Arrays.asList(
-                                                existingAttribute.getColumnVisibility(), incomingAttribute.getColumnVisibility()))));
+                                .forEach(existingAttribute -> existingAttribute.setColumnVisibility(
+                                                combine(Arrays.asList(existingAttribute.getColumnVisibility(), incomingAttribute.getColumnVisibility()))));
             });
         }
-        
+
         private ColumnVisibility combine(Collection<ColumnVisibility> in) {
             try {
                 ColumnVisibility columnVisibility = markingFunctions.combine(in);
@@ -279,28 +281,28 @@ public class GroupingUtil {
             }
             return new ColumnVisibility();
         }
-        
+
     }
-    
+
     public static class GroupingTypeAttribute<T extends Comparable<T>> extends TypeAttribute<T> {
-        
+
         public GroupingTypeAttribute(Type type, Key key, boolean toKeep) {
             super(type, key, toKeep);
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (null == o) {
                 return false;
             }
-            
+
             if (o instanceof TypeAttribute) {
                 TypeAttribute other = (TypeAttribute) o;
                 return this.getType().equals(other.getType()) && (0 == this.compareMetadataRow(other));
             }
             return false;
         }
-        
+
         private int compareMetadataRow(Attribute<T> other) {
             if (this.isMetadataSet() != other.isMetadataSet()) {
                 if (this.isMetadataSet()) {
@@ -314,7 +316,7 @@ public class GroupingUtil {
                 return 0;
             }
         }
-        
+
         @Override
         public int hashCode() {
             HashCodeBuilder hcb = new HashCodeBuilder(2099, 2129);
@@ -322,5 +324,5 @@ public class GroupingUtil {
             return hcb.toHashCode();
         }
     }
-    
+
 }

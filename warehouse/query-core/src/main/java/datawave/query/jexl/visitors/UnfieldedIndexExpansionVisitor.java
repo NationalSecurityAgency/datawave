@@ -13,7 +13,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -46,7 +45,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
-            throws TableNotFoundException, IllegalAccessException, InstantiationException {
+                    throws TableNotFoundException, IllegalAccessException, InstantiationException {
         super(config, scannerFactory, helper, null, "FieldNameIndexExpansion");
 
         this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
@@ -60,18 +59,26 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     /**
      * Visits the Jexl script, looks for unfielded terms, and replaces them with fielded terms from the index
      *
-     * @param config         the query configuration, not null
-     * @param scannerFactory the scanner factory, not null
-     * @param helper         the metadata helper, not null
-     * @param script         the Jexl script to expand, not null
-     * @param <T>            the Jexl node type
-     * @return a rebuilt Jexl tree with its unfielded terms expanded
-     * @throws IllegalAccessException if we fail to retrieve all data types from the metadata helper
-     * @throws TableNotFoundException if we fail to retrieve fields from the metadata helper
-     * @throws InstantiationException if we fail to retrieve all data types from the metadata helper
+     * @param config
+     *            the query configuration, not null
+     * @param scannerFactory
+     *            the scanner factory, not null
+     * @param helper
+     *            the metadata helper, not null
+     * @param script
+     *            the Jexl script to expand, not null
+     * @param <T>
+     *            the Jexl node type
+     * @return a rebuilt Jexl tree with it's unfielded terms expanded
+     * @throws IllegalAccessException
+     *             if we fail to retrieve all data types from the metadata helper
+     * @throws TableNotFoundException
+     *             if we fail to retrieve fields from the metadata helper
+     * @throws InstantiationException
+     *             if we fail to retrieve all data types from the metadata helper
      */
     public static <T extends JexlNode> T expandUnfielded(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, T script)
-            throws IllegalAccessException, TableNotFoundException, InstantiationException {
+                    throws IllegalAccessException, TableNotFoundException, InstantiationException {
         // if not expanding fields or values, then this is a noop
         if (config.isExpandFields() || config.isExpandValues()) {
             UnfieldedIndexExpansionVisitor visitor = new UnfieldedIndexExpansionVisitor(config, scannerFactory, helper);
@@ -199,7 +206,8 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     /**
      * Expand if we have an unfielded identifier
      *
-     * @param node the node to consider
+     * @param node
+     *            the node to consider
      * @return true if contains an unfielded identifier
      */
     @Override
@@ -209,14 +217,12 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
 
     @Override
     protected IndexLookup createLookup(JexlNode node) {
-        // Using the datatype filter when expanding this term isn't really
-        // necessary
         try {
+            // Using the datatype filter when expanding this term isn't really
+            // necessary
             return ShardIndexQueryTableStaticMethods.normalizeQueryTerm(node, config, scannerFactory, expansionFields, allTypes, helper, executor);
         } catch (TableNotFoundException e) {
-            QueryException qe = new QueryException(DatawaveErrorCode.METADATA_TABLE_FETCH_ERROR, e);
-            log.error(qe);
-            throw new DatawaveFatalQueryException(qe);
+            throw new DatawaveFatalQueryException(e);
         }
     }
 }

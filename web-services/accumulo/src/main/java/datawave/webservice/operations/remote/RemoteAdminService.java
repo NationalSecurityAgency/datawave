@@ -35,9 +35,9 @@ import java.util.Map;
 @Alternative
 @Priority(Interceptor.Priority.APPLICATION)
 public class RemoteAdminService extends RemoteAccumuloService {
-    
+
     private enum Suffix {
-        
+
         CREATE_TABLE("admin/createTable/%s"),
         FLUSH_TABLE("admin/flushTable/%s"),
         GRANT_SYSTEM_PERM("admin/grantSystemPermission/%s/%s"),
@@ -52,28 +52,28 @@ public class RemoteAdminService extends RemoteAccumuloService {
         SET_TABLE_PROP("admin/setTableProperty/%s/%s/%s"),
         UPDATE("admin/update"),
         VALIDATE_VIZ("admin/validateVisibilities");
-        
+
         final String suffix;
-        
+
         Suffix(String suffix) {
             this.suffix = suffix;
         }
-        
+
         String get() {
             return suffix;
         }
     }
-    
+
     private Map<Suffix,ObjectReader> readers;
-    
+
     @Override
     @PostConstruct
     public void init() {
         super.init();
         readers = new HashMap<>();
-        
+
         ObjectReader voidReader = objectMapper.readerFor(VoidResponse.class);
-        
+
         readers.put(Suffix.GRANT_SYSTEM_PERM, voidReader);
         readers.put(Suffix.REVOKE_SYSTEM_PERM, voidReader);
         readers.put(Suffix.GRANT_TABLE_PERM, voidReader);
@@ -89,77 +89,77 @@ public class RemoteAdminService extends RemoteAccumuloService {
         readers.put(Suffix.LIST_USER_PERM, objectMapper.readerFor(ListUserPermissionsResponse.class));
         readers.put(Suffix.LIST_USERS, objectMapper.readerFor(ListUsersResponse.class));
     }
-    
+
     public VoidResponse grantSystemPermission(String userName, String permission) {
         Preconditions.checkState(StringUtils.isNotBlank(userName), "userName is required");
         Preconditions.checkState(StringUtils.isNotBlank(permission), "permission is required");
         return execPost(String.format(Suffix.GRANT_SYSTEM_PERM.get(), userName, permission), readers.get(Suffix.GRANT_SYSTEM_PERM));
     }
-    
+
     public VoidResponse revokeSystemPermission(String userName, String permission) {
         Preconditions.checkState(StringUtils.isNotBlank(userName), "userName is required");
         Preconditions.checkState(StringUtils.isNotBlank(permission), "permission is required");
         return execPost(String.format(Suffix.REVOKE_SYSTEM_PERM.get(), userName, permission), readers.get(Suffix.REVOKE_SYSTEM_PERM));
     }
-    
+
     public VoidResponse grantTablePermission(String userName, String tableName, String permission) {
         Preconditions.checkState(StringUtils.isNotBlank(userName), "userName is required");
         Preconditions.checkState(StringUtils.isNotBlank(tableName), "tableName is required");
         Preconditions.checkState(StringUtils.isNotBlank(permission), "permission is required");
         return execPost(String.format(Suffix.GRANT_TABLE_PERM.get(), userName, tableName, permission), readers.get(Suffix.GRANT_TABLE_PERM));
     }
-    
+
     public VoidResponse revokeTablePermission(String userName, String tableName, String permission) {
         Preconditions.checkState(StringUtils.isNotBlank(userName), "userName is required");
         Preconditions.checkState(StringUtils.isNotBlank(tableName), "tableName is required");
         Preconditions.checkState(StringUtils.isNotBlank(permission), "permission is required");
         return execPost(String.format(Suffix.REVOKE_TABLE_PERM.get(), userName, tableName, permission), readers.get(Suffix.REVOKE_TABLE_PERM));
     }
-    
+
     public VoidResponse createTable(String tableName) {
         Preconditions.checkState(StringUtils.isNotBlank(tableName), "tableName is required");
         return execPost(String.format(Suffix.CREATE_TABLE.get(), tableName), readers.get(Suffix.CREATE_TABLE));
     }
-    
+
     public VoidResponse flushTable(String tableName) {
         Preconditions.checkState(StringUtils.isNotBlank(tableName), "tableName is required");
         return execPost(String.format(Suffix.FLUSH_TABLE.get(), tableName), readers.get(Suffix.FLUSH_TABLE));
     }
-    
+
     public VoidResponse setTableProperty(String tableName, String propertyName, String propertyValue) {
         Preconditions.checkState(StringUtils.isNotBlank(tableName), "tableName is required");
         Preconditions.checkState(StringUtils.isNotBlank(propertyName), "propertyName is required");
         Preconditions.checkState(StringUtils.isNotBlank(propertyValue), "propertyValue is required");
         return execPost(String.format(Suffix.SET_TABLE_PROP.get(), tableName, propertyName, propertyValue), readers.get(Suffix.SET_TABLE_PROP));
     }
-    
+
     public VoidResponse removeTableProperty(String tableName, String propertyName) {
         Preconditions.checkState(StringUtils.isNotBlank(tableName), "tableName is required");
         Preconditions.checkState(StringUtils.isNotBlank(propertyName), "propertyName is required");
         return execPost(String.format(Suffix.REMOVE_TABLE_PROP.get(), tableName, propertyName), readers.get(Suffix.REMOVE_TABLE_PROP));
     }
-    
+
     public ListTablesResponse listTables() {
         return execGet(Suffix.LIST_TABLES.get(), readers.get(Suffix.LIST_TABLES));
     }
-    
+
     public ListUserAuthorizationsResponse listUserAuthorizations(String userName) {
         Preconditions.checkState(StringUtils.isNotBlank(userName), "userName is required");
         return execGet(String.format(Suffix.LIST_USER_AUTHS.get(), userName), readers.get(Suffix.LIST_USER_AUTHS));
     }
-    
+
     public ListUserPermissionsResponse listUserPermissions(String userName) {
         Preconditions.checkState(StringUtils.isNotBlank(userName), "userName is required");
         return execGet(String.format(Suffix.LIST_USER_PERM.get(), userName), readers.get(Suffix.LIST_USER_PERM));
     }
-    
+
     public ListUsersResponse listUsers() {
         return execGet(Suffix.LIST_USERS.get(), readers.get(Suffix.LIST_USERS));
     }
-    
+
     public UpdateResponse update(UpdateRequest updateRequest) {
         Preconditions.checkNotNull(updateRequest, "updateRequest is required");
-        
+
         final StringEntity putBody;
         try {
             putBody = new StringEntity(objectMapper.writeValueAsString(updateRequest), StandardCharsets.UTF_8);
@@ -181,14 +181,14 @@ public class RemoteAdminService extends RemoteAccumuloService {
         );
         // @formatter:on
     }
-    
+
     public ValidateVisibilityResponse validateVisibilities(String[] visibilities) {
         Preconditions.checkState(null != visibilities && visibilities.length > 0, "visibilities array cannot be null/empty");
-        
+
         final List<NameValuePair> nvpList = new ArrayList<>();
         Arrays.stream(visibilities).forEach(s -> nvpList.add(new BasicNameValuePair("visibility", s)));
         final UrlEncodedFormEntity postBody = new UrlEncodedFormEntity(nvpList::iterator);
-        
+
         // @formatter:off
         return execPost(
             Suffix.VALIDATE_VIZ.get(),

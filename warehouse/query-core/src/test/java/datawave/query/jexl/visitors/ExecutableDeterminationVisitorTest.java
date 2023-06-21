@@ -26,6 +26,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 
+import static org.hamcrest.CoreMatchers.any;
+import static org.hamcrest.CoreMatchers.anything;
+
 public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;
     private MetadataHelper helper;
@@ -239,7 +242,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !(EXECUTABLE && EXECUTABLE) == EXECUTABLE || EXECUTABLE
      * == EXECUTABLE
      *
-     * @throws Exception if there is an issue
+     * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testNegatedAndExecutable() throws Exception {
@@ -285,7 +289,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !!(EXECUTABLE && EXECUTABLE) == EXECUTABLE ||
      * EXECUTABLE == EXECUTABLE
      *
-     * @throws Exception if there is an issue
+     * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testDoubleNegatedAndExecutable() throws Exception {
@@ -331,7 +336,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !(EXECUTABLE && NOT_EXECUTABLE) == EXECUTABLE ||
      * NOT_EXECUTABLE == PARTIAL
      *
-     * @throws Exception if there is an issue
+     * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testNegatedAndNotExecutable() throws Exception {
@@ -377,7 +383,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !!(EXECUTABLE && NOT_EXECUTABLE) == EXECUTABLE ||
      * EXECUTABLE == EXECUTABLE
      *
-     * @throws Exception if there is an issue
+     * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testDoubleNegatedAndNotExecutable() throws Exception {
@@ -423,7 +430,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !(EXECUTABLE || NOT_EXECUTABLE) == EXECUTABLE ||
      * EXECUTABLE == EXECUTABLE
      *
-     * @throws Exception if there is an issue
+     * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testNegatedOrExecutable() throws Exception {
@@ -450,9 +458,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         output.clear();
         boolean fiExecutable = ExecutableDeterminationVisitor.isExecutable(query, config, helper, true, output);
         Assert.assertFalse(fiExecutable);
-        Assert.assertTrue(Arrays.asList(
-                new String[]{"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
-                        "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
+        Assert.assertTrue(Arrays.asList(new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
+                "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
 
         output.clear();
         ExecutableDeterminationVisitor.STATE state = ExecutableDeterminationVisitor.getState(query, config, helper, output);
@@ -462,9 +469,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
         output.clear();
         ExecutableDeterminationVisitor.STATE fiState = ExecutableDeterminationVisitor.getState(query, config, helper, true, output);
         Assert.assertEquals(ExecutableDeterminationVisitor.STATE.NEGATED_EXECUTABLE, fiState);
-        Assert.assertTrue(Arrays.asList(
-                new String[]{"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
-                        "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
+        Assert.assertTrue(Arrays.asList(new String[] {"Summary: EXECUTABLE:[INDEXEDFIELD == 'a']; NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']",
+                "Summary: NEGATED_EXECUTABLE:[INDEXONLYFIELD == 'b']; EXECUTABLE:[INDEXEDFIELD == 'a']"}).contains(output.get(0)));
 
         verifyAll();
     }
@@ -473,7 +479,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
      * Expected outputs Global Index: EXECUTABLE || NOT_EXECUTABLE == PARTIAL Field Index: EXECUTABLE || !!(EXECUTABLE || NOT_EXECUTABLE) == EXECUTABLE ||
      * NON_EXECUTABLE == PARTIAL
      *
-     * @throws Exception if there is an issue
+     * @throws Exception
+     *             if there is an issue
      */
     @Test
     public void testDoubleNegatedOrExecutable() throws Exception {
@@ -533,7 +540,8 @@ public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     /**
      * Copied from JexlNodeFactory without the AND/OR restrictions
      *
-     * @param toWrap the jexl node to wrap
+     * @param toWrap
+     *            the jexl node to wrap
      * @return reference to the wrapped node
      */
     private JexlNode wrap(JexlNode toWrap) {

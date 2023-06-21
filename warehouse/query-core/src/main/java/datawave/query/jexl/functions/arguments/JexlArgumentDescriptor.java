@@ -1,5 +1,10 @@
 package datawave.query.jexl.functions.arguments;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import datawave.core.iterators.DatawaveFieldIndexFilterIteratorJexl;
 import datawave.query.attributes.AttributeFactory;
 import datawave.query.config.ShardQueryConfiguration;
@@ -7,45 +12,52 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This interface will describe the arguments for a jexl function that has implemented (@see JexlArgumentDescriptor). The initial use of this is to determine
  * what fields and values should be queried for in the index for shard range determination.
+ *
+ *
+ *
  */
 public interface JexlArgumentDescriptor {
     /**
      * Get the nodes that can be used to determine ranges from the global index.
      *
-     * @param metadataHelper  the metadata helper
-     * @param dateIndexHelper the date index helper
-     * @param datatypeFilter  the datatype filter
-     * @param settings        the config settings
+     * @param metadataHelper
+     *            the metadata helper
+     * @param dateIndexHelper
+     *            the date index helper
+     * @param datatypeFilter
+     *            the datatype filter
+     * @param settings
+     *            the config settings
      * @return The query which will be used against the global index
      */
     JexlNode getIndexQuery(ShardQueryConfiguration settings, MetadataHelper metadataHelper, DateIndexHelper dateIndexHelper, Set<String> datatypeFilter);
 
     /**
-     * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IF the getIndexQuery does not add appropriate
+     * Get the expression filters for this function. NOTE NOTE NOTE: This only needs to add expression filters IFF the getIndexQuery does not add appropriate
      * expression filters in the first place. This is because addFilters is used after the query had been expanded to include the index query. So for most
      * implementations this function will do nothing. For the EvaluationPhaseFilterFunctions however this will have to be implemented.
      *
-     * @param attributeFactory the attribute factory
-     * @param filterMap        the filter map
+     * @param attributeFactory
+     *            the attribute factory
+     * @param filterMap
+     *            the filter map
      */
-    void addFilters(AttributeFactory attributeFactory, Map<String, EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
+    void addFilters(AttributeFactory attributeFactory, Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filterMap);
 
     /**
      * Get the entire set of fields that are referenced by this function. If you need subsets of fields required to satisfy the function, then use fieldSets()
      *
-     * @param metadata       the metadata helper
-     * @param datatypeFilter the datatype filter
+     * @param metadata
+     *            the metadata helper
+     * @param datatypeFilter
+     *            the datatype filter
      * @return the set of fields
      */
     Set<String> fields(MetadataHelper metadata, Set<String> datatypeFilter);
@@ -54,8 +66,10 @@ public interface JexlArgumentDescriptor {
      * Get the fields separated into sets that are required to satisfy this function. So if one of the identifiers is actually an "OR" expression, then each of
      * the identifiers would be returned in a separate set.
      *
-     * @param metadata       the metadata helper
-     * @param datatypeFilter the datatype filter
+     * @param metadata
+     *            the metadata helper
+     * @param datatypeFilter
+     *            the datatype filter
      * @return the set of fields
      */
     Set<Set<String>> fieldSets(MetadataHelper metadata, Set<String> datatypeFilter);
@@ -65,9 +79,12 @@ public interface JexlArgumentDescriptor {
      * ASTFunctionNode as the first two are the namespace and function name). Note that it is very important for the string literal arguments that the set of
      * fields are correct as this will determine which normalizers are applied to that argument.
      *
-     * @param metadata       the metadata helper
-     * @param datatypeFilter the datatype filter
-     * @param arg            the node argument
+     * @param metadata
+     *            the metadata helper
+     * @param datatypeFilter
+     *            the datatype filter
+     * @param arg
+     *            the node argument
      * @return the set of fields referenced by the specified arg
      */
     Set<String> fieldsForNormalization(MetadataHelper metadata, Set<String> datatypeFilter, int arg);

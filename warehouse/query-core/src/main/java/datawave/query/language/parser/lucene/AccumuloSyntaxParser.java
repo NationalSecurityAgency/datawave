@@ -44,19 +44,19 @@ import java.util.Vector;
 
 @SuppressWarnings("all")
 public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserConstants {
-    
+
     private static final int CONJ_NONE = 0;
     private static final int CONJ_AND = 2;
     private static final int CONJ_OR = 2;
-    
+
     // syntax parser constructor
     public AccumuloSyntaxParser() {
         this(new FastCharStream(new StringReader("")));
     }
-    
+
     /**
      * Parses a query string, returning a {@link org.apache.lucene.queryparser.flexible.core.nodes.QueryNode}.
-     * 
+     *
      * @param query
      *            the query string to be parsed.
      * @throws ParseException
@@ -80,7 +80,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
             throw e;
         }
     }
-    
+
     // * Query ::= ( Clause )*
     // * Clause ::= ["+", "-"] [<TERM> ":"] ( <TERM> | "(" Query ")" )
     final public int Conjunction() throws ParseException {
@@ -113,7 +113,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     final public ModifierQueryNode.Modifier Modifiers() throws ParseException {
         ModifierQueryNode.Modifier ret = ModifierQueryNode.Modifier.MOD_NONE;
         switch ((jj_ntk == -1) ? jj_ntk() : jj_ntk) {
@@ -131,7 +131,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     // This makes sure that there is no garbage after the query string
     final public QueryNode TopLevelQuery(CharSequence field) throws ParseException {
         QueryNode q;
@@ -143,7 +143,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     // These changes were made to introduce operator precedence:
     // - Clause() now returns a QueryNode.
     // - The modifiers are consumed by Clause() and returned as part of the QueryNode Object
@@ -168,7 +168,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
             QueryNode m = new ModifierQueryNode(q, mods);
             clauses.addElement(m);
         }
-        
+
         if (clauses != null) {
             {
                 if (true) {
@@ -186,7 +186,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     final public QueryNode DisjQuery(CharSequence field) throws ParseException {
         QueryNode first, c;
         Vector clauses = null;
@@ -221,7 +221,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     final public QueryNode ConjQuery(CharSequence field) throws ParseException {
         QueryNode first, c;
         Vector clauses = null;
@@ -256,7 +256,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     final public QueryNode Query(CharSequence field) throws ParseException {
         Vector clauses = null;
         QueryNode c, first = null;
@@ -302,7 +302,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     final public QueryNode Clause(CharSequence field) throws ParseException {
         QueryNode q;
         Token fieldToken = null, boost = null;
@@ -331,11 +331,10 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                 q = Term(field);
                 break;
             case NOT:
-                jj_consume_token(NOT);
-                {
-                    if (true)
-                        return null;
-                }
+                jj_consume_token(NOT); {
+                if (true)
+                    return null;
+            }
                 break;
             case LPAREN:
                 jj_consume_token(LPAREN);
@@ -380,7 +379,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     final public QueryNode Term(CharSequence field) throws ParseException {
         Token term, boost = null, fuzzySlop = null, goop1, goop2;
         boolean fuzzy = false;
@@ -542,7 +541,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                 if (goop2.kind == RANGE_QUOTED) {
                     goop2.image = goop2.image.substring(1, goop2.image.length() - 1);
                 }
-                
+
                 qLower = new FieldQueryNode(field, EscapeQuerySyntaxImpl.discardEscapeChar(goop1.image), goop1.beginColumn, goop1.endColumn);
                 qUpper = new FieldQueryNode(field, EscapeQuerySyntaxImpl.discardEscapeChar(goop2.image), goop2.beginColumn, goop2.endColumn);
                 q = new TermRangeQueryNode(qLower, qUpper, startInc ? true : false, endInc ? true : false);
@@ -569,7 +568,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                         ;
                 }
                 int phraseSlop = 0;
-                
+
                 if (fuzzySlop != null) {
                     try {
                         phraseSlop = Float.valueOf(fuzzySlop.image.substring(1)).intValue();
@@ -606,7 +605,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         throw new Error("Missing return statement in function");
     }
-    
+
     final private boolean jj_2_1(int xla) {
         jj_la = xla;
         jj_lastpos = jj_scanpos = token;
@@ -618,7 +617,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
             jj_save(0, xla);
         }
     }
-    
+
     final private boolean jj_3_1() {
         if (jj_scan_token(TERM))
             return true;
@@ -626,7 +625,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
             return true;
         return false;
     }
-    
+
     public AccumuloSyntaxParserTokenManager token_source;
     public Token token, jj_nt;
     private int jj_ntk;
@@ -642,20 +641,20 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         jj_la1_0();
         jj_la1_1();
     }
-    
+
     private static void jj_la1_0() {
         jj_la1_0 = new int[] {0x6000, 0x6000, 0x8000, 0x4000, 0x2000, 0xf638000, 0x100000, 0xf638000, 0x9410000, 0x800000, 0x800000, 0x100000, 0x6000000,
                 0x80000000, 0x10000000, 0x80000000, 0x60000000, 0x100000, 0x800000, 0x100000, 0xf610000,};
     }
-    
+
     private static void jj_la1_1() {
         jj_la1_1 = new int[] {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1, 0x0, 0x1, 0x0, 0x0, 0x0, 0x0, 0x0,};
     }
-    
+
     final private JJCalls[] jj_2_rtns = new JJCalls[1];
     private boolean jj_rescan = false;
     private int jj_gc = 0;
-    
+
     public AccumuloSyntaxParser(CharStream stream) {
         token_source = new AccumuloSyntaxParserTokenManager(stream);
         token = new Token();
@@ -666,7 +665,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         for (int i = 0; i < jj_2_rtns.length; i++)
             jj_2_rtns[i] = new JJCalls();
     }
-    
+
     public void ReInit(CharStream stream) {
         token_source.ReInit(stream);
         token = new Token();
@@ -677,7 +676,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         for (int i = 0; i < jj_2_rtns.length; i++)
             jj_2_rtns[i] = new JJCalls();
     }
-    
+
     public AccumuloSyntaxParser(AccumuloSyntaxParserTokenManager tm) {
         token_source = tm;
         token = new Token();
@@ -688,7 +687,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         for (int i = 0; i < jj_2_rtns.length; i++)
             jj_2_rtns[i] = new JJCalls();
     }
-    
+
     public void ReInit(AccumuloSyntaxParserTokenManager tm) {
         token_source = tm;
         token = new Token();
@@ -699,7 +698,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         for (int i = 0; i < jj_2_rtns.length; i++)
             jj_2_rtns[i] = new JJCalls();
     }
-    
+
     final private Token jj_consume_token(int kind) throws ParseException {
         Token oldToken;
         if ((oldToken = token).next != null)
@@ -726,11 +725,11 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         jj_kind = kind;
         throw generateParseException();
     }
-    
+
     static private final class LookaheadSuccess extends java.lang.Error {}
-    
+
     final private LookaheadSuccess jj_ls = new LookaheadSuccess();
-    
+
     final private boolean jj_scan_token(int kind) {
         if (jj_scanpos == jj_lastpos) {
             jj_la--;
@@ -758,7 +757,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
             throw jj_ls;
         return false;
     }
-    
+
     final public Token getNextToken() {
         if (token.next != null)
             token = token.next;
@@ -768,7 +767,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         jj_gen++;
         return token;
     }
-    
+
     final public Token getToken(int index) {
         Token t = lookingAhead ? jj_scanpos : token;
         for (int i = 0; i < index; i++) {
@@ -779,20 +778,20 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         return t;
     }
-    
+
     final private int jj_ntk() {
         if ((jj_nt = token.next) == null)
             return (jj_ntk = (token.next = token_source.getNextToken()).kind);
         else
             return (jj_ntk = jj_nt.kind);
     }
-    
+
     private java.util.Vector<int[]> jj_expentries = new java.util.Vector<int[]>();
     private int[] jj_expentry;
     private int jj_kind = -1;
     private int[] jj_lasttokens = new int[100];
     private int jj_endpos;
-    
+
     private void jj_add_error_token(int kind, int pos) {
         if (pos >= 100)
             return;
@@ -824,7 +823,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
                 jj_lasttokens[(jj_endpos = pos) - 1] = kind;
         }
     }
-    
+
     public ParseException generateParseException() {
         jj_expentries.removeAllElements();
         boolean[] la1tokens = new boolean[33];
@@ -863,11 +862,11 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         return new ParseException(token, exptokseq, tokenImage);
     }
-    
+
     final public void enable_tracing() {}
-    
+
     final public void disable_tracing() {}
-    
+
     final private void jj_rescan_token() {
         jj_rescan = true;
         for (int i = 0; i < 1; i++) {
@@ -889,7 +888,7 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         }
         jj_rescan = false;
     }
-    
+
     final private void jj_save(int index, int xla) {
         JJCalls p = jj_2_rtns[index];
         while (p.gen > jj_gen) {
@@ -903,12 +902,12 @@ public class AccumuloSyntaxParser implements SyntaxParser, AcumuloSyntaxParserCo
         p.first = token;
         p.arg = xla;
     }
-    
+
     static final class JJCalls {
         int gen;
         Token first;
         int arg;
         JJCalls next;
     }
-    
+
 }

@@ -116,8 +116,8 @@ public class JexlASTHelper {
 
     protected static final Set<Class<?>> NON_RANGE_NODE_CLASSES = Sets.newHashSet(ASTEQNode.class, ASTNENode.class, ASTERNode.class, ASTNRNode.class);
 
-    public static final Map<Class<?>, Class<?>> NEGATED_NON_RANGE_NODE_CLASSES = ImmutableMap.of(ASTEQNode.class, ASTNENode.class, ASTNENode.class,
-            ASTEQNode.class, ASTERNode.class, ASTNRNode.class, ASTNRNode.class, ASTERNode.class);
+    public static final Map<Class<?>,Class<?>> NEGATED_NON_RANGE_NODE_CLASSES = ImmutableMap.of(ASTEQNode.class, ASTNENode.class, ASTNENode.class,
+                    ASTEQNode.class, ASTERNode.class, ASTNRNode.class, ASTNRNode.class, ASTERNode.class);
 
     /**
      * Parses a query tree from a query string and also flattens the query (flattening ORs and ANDs).
@@ -125,7 +125,8 @@ public class JexlASTHelper {
      * Note: Flattening does not remove reference nodes or reference expressions from the query tree. To do so requires explicit call to
      * {@link TreeFlatteningRebuildingVisitor#flattenAll(JexlNode)}.
      *
-     * @param query string representation of a query
+     * @param query
+     *            string representation of a query
      * @return a fully parsed and flattened query tree
      * @throws ParseException
      */
@@ -138,7 +139,8 @@ public class JexlASTHelper {
      * Parse a query string using a JEXL parser and transform it into a parse tree of our RefactoredDatawaveTreeNodes. This also sets all convenience maps that
      * the analyzer provides.
      *
-     * @param query The query string in JEXL syntax to parse
+     * @param query
+     *            The query string in JEXL syntax to parse
      * @return Root node of the query parse tree.
      * @throws ParseException
      */
@@ -237,8 +239,8 @@ public class JexlASTHelper {
         }
 
         if (numFound != numReplaced)
-            throw new ParseException("Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: "
-                    + numReplaced);
+            throw new ParseException(
+                            "Did not find the expected number of backslash placeholders in the query. Expected: " + numFound + ", Actual: " + numReplaced);
 
         return jexlScript;
     }
@@ -390,21 +392,24 @@ public class JexlASTHelper {
     /**
      * Finds all the functions and returns a map indexed by function context name to the function.
      *
-     * @param node a node in the query
+     * @param node
+     *            a node in the query
      * @return a multimap of namespaces to functions
      */
-    public static Multimap<String, Function> getFunctions(JexlNode node) {
+    public static Multimap<String,Function> getFunctions(JexlNode node) {
         return FunctionReferenceVisitor.functions(node);
     }
 
     /**
      * Finds all the functions and returns a map indexed by function context name to the function.
      *
-     * @param node            a node in the query
-     * @param namespaceFilter a filter that limits the returned functions
+     * @param node
+     *            a node in the query
+     * @param namespaceFilter
+     *            a filter that limits the returned functions
      * @return a multimap of namespaces to functions
      */
-    public static Multimap<String, Function> getFunctions(JexlNode node, Set<String> namespaceFilter) {
+    public static Multimap<String,Function> getFunctions(JexlNode node, Set<String> namespaceFilter) {
         return FunctionReferenceVisitor.functions(node, namespaceFilter);
     }
 
@@ -491,7 +496,8 @@ public class JexlASTHelper {
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode
      *
-     * @param node a JexlNode
+     * @param node
+     *            a JexlNode
      * @return an unwrapped JexlNode
      */
     public static JexlNode dereference(JexlNode node) {
@@ -504,7 +510,8 @@ public class JexlASTHelper {
     /**
      * Unwraps ASTReference and ASTReferenceExpressions from a JexlNode. If the final node is a MarkerNode, wrap it
      *
-     * @param node a JexlNode
+     * @param node
+     *            a JexlNode
      * @return an unwrapped JexlNode
      */
     public static JexlNode dereferenceSafely(JexlNode node) {
@@ -526,7 +533,7 @@ public class JexlASTHelper {
      */
     public static JexlNode rereference(JexlNode node) {
         while (node.jjtGetParent() != null && node.jjtGetParent().jjtGetNumChildren() == 1
-                && (node.jjtGetParent() instanceof ASTReference || node.jjtGetParent() instanceof ASTReferenceExpression)) {
+                        && (node.jjtGetParent() instanceof ASTReference || node.jjtGetParent() instanceof ASTReferenceExpression)) {
             node = node.jjtGetParent();
         }
         return node;
@@ -764,7 +771,7 @@ public class JexlASTHelper {
             return numNegations(parent);
         }
     }
-    
+
     /**
      * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTEQNode.
      *
@@ -778,7 +785,7 @@ public class JexlASTHelper {
 
         return eqNodes;
     }
-    
+
     /**
      * Check if the provided node is an instance of ASTEQNode. If yes, then add the node to the provided list.
      *
@@ -794,7 +801,7 @@ public class JexlASTHelper {
             }
         }
     }
-    
+
     /**
      * Iterate through provided node and its children, then return a list of nodes that are an instance of ASTERNode.
      *
@@ -808,7 +815,7 @@ public class JexlASTHelper {
 
         return erNodes;
     }
-    
+
     /**
      * Check if the provided node is an instance of ASTERNode. If yes, then add the node to the provided list.
      *
@@ -824,10 +831,10 @@ public class JexlASTHelper {
             }
         }
     }
-    
+
     /**
      * Iterate through provided node and its children, then return a list of nodes matching the provided class. The provided class must extend JexlNode.
-     * 
+     *
      * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
@@ -836,15 +843,15 @@ public class JexlASTHelper {
      */
     public static <T extends JexlNode> List<T> getNodesOfType(JexlNode node, Class<T> typeKey) {
         List<T> nodes = Lists.newArrayList();
-        
+
         getNodesOfType(node, nodes, typeKey);
-        
+
         return nodes;
     }
-    
+
     /**
      * Check if the provided node is an instance of the provided class. If yes, then add the node to the provided list. The provided class must extend JexlNode.
-     * 
+     *
      * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
@@ -861,7 +868,7 @@ public class JexlASTHelper {
             }
         }
     }
-    
+
     public static List<Object> getLiteralValues(JexlNode node) {
         return getLiterals(node).stream().map(JexlASTHelper::getLiteralValue).collect(Collectors.toList());
     }
@@ -884,11 +891,11 @@ public class JexlASTHelper {
         return literals;
     }
 
-    public static Map<String, Object> getAssignments(JexlNode node) {
+    public static Map<String,Object> getAssignments(JexlNode node) {
         return getAssignments(node, Maps.newHashMap());
     }
 
-    private static Map<String, Object> getAssignments(JexlNode node, Map<String, Object> assignments) {
+    private static Map<String,Object> getAssignments(JexlNode node, Map<String,Object> assignments) {
         if (node instanceof ASTAssignment) {
             assignments.put(getIdentifier(node), getLiteralValue(node));
         } else {
@@ -903,8 +910,6 @@ public class JexlASTHelper {
     /**
      * Ranges: A range prior to being "tagged" must be of the form "(term1 &amp;&amp; term2)" where term1 and term2 refer to the same field and denote two sides
      * of the range ((LE or LT) and (GE or GT)). A tagged range is of the form "(BoundedRange=true) &amp;&amp; (term1 &amp;&amp; term2))"
-     *
-     * @return a new rangefinder
      */
     public static RangeFinder findRange() {
         return new RangeFinder();
@@ -999,8 +1004,7 @@ public class JexlASTHelper {
             try {
                 fieldName1 = JexlASTHelper.getIdentifier(child1);
                 fieldName2 = JexlASTHelper.getIdentifier(child2);
-            } catch (NoSuchElementException ignored) {
-            }
+            } catch (NoSuchElementException ignored) {}
             if (fieldName1 == null || fieldName2 == null || !fieldName1.equals(fieldName2)) {
                 if (marked)
                     throw new DatawaveFatalQueryException("A bounded range must contain two bounds against the same field");
@@ -1022,8 +1026,7 @@ public class JexlASTHelper {
             try {
                 literal1 = JexlASTHelper.getLiteralValue(child1);
                 literal2 = JexlASTHelper.getLiteralValue(child2);
-            } catch (NoSuchElementException ignored) {
-            }
+            } catch (NoSuchElementException ignored) {}
 
             if (literal1 == null || literal2 == null) {
                 if (marked)
@@ -1032,7 +1035,7 @@ public class JexlASTHelper {
             }
 
             LiteralRange<?> range = null;
-            JexlNode[] children = new JexlNode[]{child1, child2};
+            JexlNode[] children = new JexlNode[] {child1, child2};
             if (literal1 instanceof String || literal2 instanceof String) {
                 range = getStringBoundedRange(children, new LiteralRange<>(fieldName1, LiteralRange.NodeOperand.AND));
             } else if (literal1 instanceof BigDecimal || literal2 instanceof BigDecimal) {
@@ -1264,10 +1267,10 @@ public class JexlASTHelper {
 
         return range;
     }
-    
+
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of ASTOrNode.
-     * 
+     *
      * @see org.apache.commons.jexl2.parser.ASTOrNode
      *
      * @param node
@@ -1280,16 +1283,16 @@ public class JexlASTHelper {
             if (parent instanceof ASTOrNode) {
                 return true;
             }
-            
+
             return isDescendantOfOr(parent);
         }
 
         return false;
     }
-    
+
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of ASTNotNode.
-     * 
+     *
      * @see org.apache.commons.jexl2.parser.ASTNotNode
      *
      * @param node
@@ -1302,16 +1305,16 @@ public class JexlASTHelper {
             if (parent instanceof ASTNotNode) {
                 return true;
             }
-            
+
             return isDescendantOfNot(parent);
         }
 
         return false;
     }
-    
+
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of ASTAndNode.
-     * 
+     *
      * @see org.apache.commons.jexl2.parser.ASTAndNode
      *
      * @param node
@@ -1324,16 +1327,16 @@ public class JexlASTHelper {
             if (parent instanceof ASTAndNode) {
                 return true;
             }
-            
+
             return isDescendantOfAnd(parent);
         }
-        
+
         return false;
     }
-    
+
     /**
      * Iterate through provided node's ancestors and return true if any are an instance of the provided class. The provided class must extend JexlNode.
-     * 
+     *
      * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
@@ -1343,21 +1346,21 @@ public class JexlASTHelper {
     public static <T extends JexlNode> boolean isDescendantOfNodeType(JexlNode node, Class<T> typeKey) {
         if (null != node && null != node.jjtGetParent()) {
             JexlNode parent = node.jjtGetParent();
-            
+
             if (typeKey.isInstance(parent)) {
                 return true;
             }
-            
+
             return isDescendantOfNodeType(parent, typeKey);
         }
-        
+
         return false;
     }
-    
+
     /**
      * Iterate through all descendants of the provided node and return true if any are an instance of the provided class. The provided class must extend
      * JexlNode.
-     * 
+     *
      * @see org.apache.commons.jexl2.parser.JexlNode
      *
      * @param node
@@ -1367,10 +1370,10 @@ public class JexlASTHelper {
     public static <T extends JexlNode> boolean descendantsContainNodeType(JexlNode node, Class<T> typeKey) {
         if (node != null) {
             int numChildren = node.jjtGetNumChildren();
-            
+
             for (int i = 0; i < numChildren; i++) {
                 JexlNode child = node.jjtGetChild(i);
-                
+
                 if (typeKey.isInstance(child) || descendantsContainNodeType(child, typeKey)) {
                     return true;
                 }
@@ -1442,7 +1445,8 @@ public class JexlASTHelper {
      * // be duplicating some of our efforts which is bad, m'kay?
      * </code>
      *
-     * @param node - a JexlNode.
+     * @param node
+     *            - a JexlNode.
      * @return - a key for the node.
      */
     public static String nodeToKey(JexlNode node) {
@@ -1523,7 +1527,7 @@ public class JexlASTHelper {
     }
 
     public static List<ASTReferenceExpression> wrapInParens(List<? extends JexlNode> intersections) {
-        return Lists.transform(intersections, (com.google.common.base.Function<JexlNode, ASTReferenceExpression>) JexlNodes::wrap);
+        return Lists.transform(intersections, (com.google.common.base.Function<JexlNode,ASTReferenceExpression>) JexlNodes::wrap);
     }
 
     /**
@@ -1540,7 +1544,7 @@ public class JexlASTHelper {
 
         Class<?> clz = node.getClass();
         return Literal.class.isAssignableFrom(clz) || ASTTrueNode.class.isAssignableFrom(clz) || ASTFalseNode.class.isAssignableFrom(clz)
-                || ASTNullLiteral.class.isAssignableFrom(clz);
+                        || ASTNullLiteral.class.isAssignableFrom(clz);
 
     }
 
@@ -1572,7 +1576,7 @@ public class JexlASTHelper {
     public static boolean isIndexed(JexlNode node, ShardQueryConfiguration config) {
         Preconditions.checkNotNull(config);
 
-        final Multimap<String, Type<?>> indexedFieldsDatatypes = config.getQueryFieldsDatatypes();
+        final Multimap<String,Type<?>> indexedFieldsDatatypes = config.getQueryFieldsDatatypes();
 
         Preconditions.checkNotNull(indexedFieldsDatatypes);
 
@@ -1622,8 +1626,8 @@ public class JexlASTHelper {
 
         Double maxSelectivity = Double.valueOf("-1");
         if (null != config.getIndexStatsTableName()) {
-            Map<String, Double> stat = stats.safeGetStat(fieldNames, config.getDatatypeFilter(), config.getBeginDate(), config.getEndDate());
-            for (Entry<String, Double> entry : stat.entrySet()) {
+            Map<String,Double> stat = stats.safeGetStat(fieldNames, config.getDatatypeFilter(), config.getBeginDate(), config.getEndDate());
+            for (Entry<String,Double> entry : stat.entrySet()) {
                 Double val = entry.getValue();
                 // Should only get DEFAULT_STRING and DEFAULT_VALUE if there was some sort of issue getting the stats,
                 // so skip this entry
@@ -1648,8 +1652,10 @@ public class JexlASTHelper {
     /**
      * Returns whether the tree contains any null children, children with null parents, or children with conflicting parentage.
      *
-     * @param rootNode the tree to validate
-     * @param failHard whether to throw an exception if validation fails
+     * @param rootNode
+     *            the tree to validate
+     * @param failHard
+     *            whether to throw an exception if validation fails
      * @return true if valid, false otherwise
      */
     public static boolean validateLineage(JexlNode rootNode, boolean failHard) {
@@ -1660,8 +1666,10 @@ public class JexlASTHelper {
      * Checks to see if the tree contains any null children, children with null parents, or children with conflicting parentage, and returns a
      * {@link LineageValidation} with any identified violations.
      *
-     * @param rootNode the tree to validate
-     * @param failHard if true, throws an exception when a violation is encountered for the first time
+     * @param rootNode
+     *            the tree to validate
+     * @param failHard
+     *            if true, throws an exception when a violation is encountered for the first time
      * @return the {@link LineageValidation}
      */
     public static LineageValidation validateLineageVerbosely(JexlNode rootNode, boolean failHard) {
@@ -1723,7 +1731,8 @@ public class JexlASTHelper {
         /**
          * Add a message describing an encountered violation.
          *
-         * @param message the description message
+         * @param message
+         *            the description message
          */
         public void addViolation(String message) {
             violations.add(message);
@@ -1751,7 +1760,8 @@ public class JexlASTHelper {
     /**
      * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
      *
-     * @param node the tree to validate
+     * @param node
+     *            the tree to validate
      * @return true if valid, or false otherwise
      */
     public static boolean validateJunctionChildren(JexlNode node) {
@@ -1761,8 +1771,10 @@ public class JexlASTHelper {
     /**
      * Checks to see if the tree contains any AND/OR nodes with less than 2 children.
      *
-     * @param node     the tree to validate
-     * @param failHard if true, throw a {@link RuntimeException} if a violation was found
+     * @param node
+     *            the tree to validate
+     * @param failHard
+     *            if true, throw a {@link RuntimeException} if a violation was found
      * @return true if valid, or false otherwise
      */
     public static boolean validateJunctionChildren(JexlNode node, boolean failHard) {
@@ -1773,8 +1785,7 @@ public class JexlASTHelper {
         return valid;
     }
 
-    private JexlASTHelper() {
-    }
+    private JexlASTHelper() {}
 
     public static JexlNode addEqualityToOr(ASTOrNode lhsSource, ASTEQNode rhsSource) {
         lhsSource.jjtAddChild(rhsSource, lhsSource.jjtGetNumChildren());

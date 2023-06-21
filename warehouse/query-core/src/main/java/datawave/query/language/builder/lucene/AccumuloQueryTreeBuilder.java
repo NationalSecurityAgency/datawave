@@ -28,7 +28,7 @@ public class AccumuloQueryTreeBuilder extends QueryTreeBuilder {
         setBuilder(TokenizedPhraseQueryNode.class, new PhraseQueryNodeBuilder());
         setBuilder(SlopQueryNode.class, new SlopQueryNodeBuilder());
     }
-    
+
     public AccumuloQueryTreeBuilder(List<LuceneQueryFunction> allowedFunctions) {
         setBuilder(TermRangeQueryNode.class, new RangeQueryNodeBuilder());
         setBuilder(GroupQueryNode.class, new GroupQueryNodeBuilder());
@@ -39,7 +39,7 @@ public class AccumuloQueryTreeBuilder extends QueryTreeBuilder {
         setBuilder(TokenizedPhraseQueryNode.class, new PhraseQueryNodeBuilder());
         setBuilder(SlopQueryNode.class, new SlopQueryNodeBuilder());
     }
-    
+
     @Override
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         return (datawave.query.language.tree.QueryNode) super.build(queryNode);

@@ -32,7 +32,7 @@ public class GeoWaveFunctionsDescriptorTest {
     public static void readExpandedWkt() {
         ClassLoader classLoader = GeoWaveFunctionsDescriptor.class.getClassLoader();
         expandedWkt = new BufferedReader(new InputStreamReader(classLoader.getResourceAsStream("datawave/query/jexl/functions/expandedWkt.txt"))).lines()
-                .collect(Collectors.toList());
+                        .collect(Collectors.toList());
     }
 
     @Test
@@ -79,7 +79,7 @@ public class GeoWaveFunctionsDescriptorTest {
         // @formatter:on
 
         List<Envelope> envelopes = (List<Envelope>) Whitebox.invokeMethod(GeoWaveFunctionsDescriptor.class, "getSeparateEnvelopes",
-                AbstractGeometryNormalizer.parseGeometry(wkt), 4);
+                        AbstractGeometryNormalizer.parseGeometry(wkt), 4);
 
         Assert.assertEquals(3, envelopes.size());
 
@@ -113,7 +113,8 @@ public class GeoWaveFunctionsDescriptorTest {
     /**
      * Traverse the node graph to find the first function node in the iteration and returns it. Null is returned if no function node is found.
      *
-     * @param root root node
+     * @param root
+     *            root node
      * @return an AST function node
      */
     public static ASTFunctionNode find(JexlNode root) {

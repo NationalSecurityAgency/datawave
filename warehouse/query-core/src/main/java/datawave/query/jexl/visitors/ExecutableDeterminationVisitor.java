@@ -130,41 +130,58 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         /**
          * Write a line to the output, and potentially add it to the summary contributors
          *
-         * @param prefix        the prefix
-         * @param node          the node
-         * @param state         the state
-         * @param partOfSummary flag for the partOfSummary
+         * @param prefix
+         *            the prefix
+         * @param node
+         *            the node
+         * @param state
+         *            the state
+         * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
 
         /**
          * Write a line to the output, and potentially add it to the summary contributors
          *
-         * @param prefix        the prefix
-         * @param node          the node
-         * @param state         the state
-         * @param extra         an extra string
-         * @param partOfSummary flag for the partOfSummary
+         * @param prefix
+         *            the prefix
+         * @param node
+         *            the node
+         * @param state
+         *            the state
+         * @param extra
+         *            an extra string
+         * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, JexlNode node, String extra, STATE state, boolean partOfSummary);
 
         /**
          * Write a formatted query string for the node to the output, and potentially add it to the summary contributors
          *
-         * @param prefix        the prefix
-         * @param node          the node
-         * @param state         the state
-         * @param partOfSummary flag for the partOfSummary
+         * @param prefix
+         *            the prefix
+         * @param node
+         *            the node
+         * @param state
+         *            the state
+         * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeNode(Object prefix, JexlNode node, STATE state, boolean partOfSummary);
 
         /**
          * Write a line to the output, and potentially add it to the summary contributors
          *
-         * @param prefix        the prefix
-         * @param value         the value
-         * @param state         the state
-         * @param partOfSummary flag for the partOfSummary
+         * @param prefix
+         *            the prefix
+         * @param value
+         *            the value
+         * @param state
+         *            the state
+         * @param partOfSummary
+         *            flag for the partOfSummary
          */
         void writeLine(Object prefix, String value, STATE state, boolean partOfSummary);
 
@@ -178,21 +195,24 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
          *
          * @return the popped off summary contributer map
          */
-        Multimap<STATE, String> pop();
+        Multimap<STATE,String> pop();
 
         /**
          * Pop a map of summary contributors off the stack, adding contained states to the new top-of-stack.
          *
-         * @param states set of states
+         * @param states
+         *            set of states
          * @return the popped off summary contributer map
          */
-        Multimap<STATE, String> pop(Set<STATE> states);
+        Multimap<STATE,String> pop(Set<STATE> states);
 
         /**
          * Move contributors from one state to another
          *
-         * @param state    the first state
-         * @param newState the new state
+         * @param state
+         *            the first state
+         * @param newState
+         *            the new state
          */
         void move(STATE state, STATE newState);
 
@@ -209,7 +229,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     private static class StringListOutput implements Output {
         private boolean enabled = true;
         private final LinkedList<String> outputLines;
-        public LinkedList<Multimap<STATE, String>> summaryContributors = new LinkedList<>();
+        public LinkedList<Multimap<STATE,String>> summaryContributors = new LinkedList<>();
 
         public StringListOutput(LinkedList<String> debugOutput) {
             this.outputLines = debugOutput;
@@ -234,10 +254,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
 
         @Override
-        public Multimap<STATE, String> pop() {
+        public Multimap<STATE,String> pop() {
             if (enabled) {
                 // remove the top of the stack
-                Multimap<STATE, String> last = summaryContributors.removeLast();
+                Multimap<STATE,String> last = summaryContributors.removeLast();
                 // if we still have a contributor map in the stack (this should always be the case)
                 if (!summaryContributors.isEmpty()) {
                     // add the states to the new top-of-stack
@@ -249,10 +269,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
         }
 
         @Override
-        public Multimap<STATE, String> pop(Set<STATE> states) {
+        public Multimap<STATE,String> pop(Set<STATE> states) {
             if (enabled) {
                 // remove the top of the stack
-                Multimap<STATE, String> last = summaryContributors.removeLast();
+                Multimap<STATE,String> last = summaryContributors.removeLast();
                 // if we still have a contributor map in the stack (this should always be the case)
                 if (!summaryContributors.isEmpty()) {
                     // add the relavent states to the new top-of-stack
@@ -309,7 +329,7 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             outputLines.addFirst("Summary: " + summarize(pop()));
         }
 
-        private String summarize(Multimap<STATE, String> contributors) {
+        private String summarize(Multimap<STATE,String> contributors) {
             // create a summary that contains up to 3 contributing terms/values per state
             StringBuilder builder = new StringBuilder();
             String separator = "";
@@ -376,7 +396,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     /**
      * Negate the current data object
      *
-     * @param data the data passed along to the visitor, may be null or a string
+     * @param data
+     *            the data passed along to the visitor, may be null or a string
      * @return NEGATION_PREFIX if the string was null or the old string appended with NEGATION_PREFIX
      */
     public static Object negateData(Object data) {
@@ -390,7 +411,8 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     /**
      * Determine if a node is in a negated state or not
      *
-     * @param data the data passed along to the visitor. Should be either null or a string containing ! for each negation
+     * @param data
+     *            the data passed along to the visitor. Should be either null or a string containing ! for each negation
      * @return true if the statement is negated, false otherwise
      */
     public static boolean isNegated(Object data) {
@@ -446,9 +468,9 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
 
     public static STATE getState(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                 Set<String> nonEventFields, boolean forFieldIndex, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, boolean forFieldIndex, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
         ExecutableDeterminationVisitor visitor = new ExecutableDeterminationVisitor(config, metadataHelper, forFieldIndex, debugOutput)
-                .setNonEventFields(nonEventFields).setIndexOnlyFields(indexOnlyFields).setIndexedFields(indexedFields);
+                        .setNonEventFields(nonEventFields).setIndexOnlyFields(indexOnlyFields).setIndexedFields(indexedFields);
 
         // push down any negations to ensure the state is accurate
         JexlNode pushedDownTree = PushdownNegationVisitor.pushdownNegations(node);
@@ -470,18 +492,18 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     }
 
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                       Set<String> nonEventFields, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
         return isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, false, debugOutput, metadataHelper);
     }
 
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper, boolean forFieldIndex,
-                                       LinkedList<String> debugOutput) {
+                    LinkedList<String> debugOutput) {
         STATE state = getState(node, config, helper, forFieldIndex, debugOutput);
         return state == STATE.EXECUTABLE;
     }
 
     public static boolean isExecutable(JexlNode node, ShardQueryConfiguration config, Set<String> indexedFields, Set<String> indexOnlyFields,
-                                       Set<String> nonEventFields, boolean forFieldIndex, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
+                    Set<String> nonEventFields, boolean forFieldIndex, LinkedList<String> debugOutput, MetadataHelper metadataHelper) {
         STATE state = getState(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, debugOutput, metadataHelper);
         return state == STATE.EXECUTABLE;
     }
@@ -489,8 +511,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
     /**
      * allOrNone means that all contained children must be executable for this node to be executable. Used for expressions, scripts, and or nodes.
      *
-     * @param node the node
-     * @param data data object
+     * @param node
+     *            the node
+     * @param data
+     *            data object
      * @return a state
      */
     protected STATE allOrNone(JexlNode node, Object data) {
@@ -570,8 +594,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
      * allOrSome means that some of the nodes must be executable for this to be executable. Any partial state results in a partial state however. Used for and
      * nodes.
      *
-     * @param node the node
-     * @param data data object
+     * @param node
+     *            the node
+     * @param data
+     *            data object
      * @return a state
      */
     protected STATE allOrSome(JexlNode node, Object data) {
