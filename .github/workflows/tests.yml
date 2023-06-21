@@ -166,13 +166,14 @@ jobs:
         ./bootstrap.sh
 
         attempt=0
-        max_attempts=10
+        max_attempts=20
         while [ $attempt -lt $max_attempts ]; do
           attempt=$((attempt+1))
 
           echo "Starting docker compose (Attempt ${attempt}/${max_attempts})"
           nohup docker compose up -d --no-recreate < /dev/null > compose.out 2>&1 &
           sleep 60s
+          cat compose.out
 
           # check to see if the query service is running
           QUERY="$(docker compose ps --status running --services | grep query || true)"
@@ -180,11 +181,8 @@ jobs:
           if [ "$QUERY" == "query" ] ; then
             echo "Docker compose started successfully"
             break
-          elif [ $attempt -lt $max_attempts ] ; then
-            cat compose.out
-          else
+          elif [ $attempt -eq $max_attempts ] ; then
             echo "Failed to start docker compose"
-            cat compose.out
             exit 1
           fi
         done
