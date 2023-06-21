@@ -22,6 +22,7 @@ import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
@@ -302,6 +303,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
+                    if (config.getPruneQueryOptions()) {
+                        pruneQueryOptions(script, newIteratorSetting);
+                    }
+
                     try {
                         queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
@@ -419,6 +424,22 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         ReduceFields.reduceFieldsForOption(QueryOptions.TERM_FREQUENCY_FIELDS, queryFields, settings);
 
         // might also look at COMPOSITE_FIELDS, EXCERPT_FIELDS, and GROUP_FIELDS
+    }
+
+    /**
+     * Certain query options may be pruned on a per-tablet basis
+     *
+     * @param script
+     *            the query
+     * @param settings
+     *            the iterator settings
+     */
+    protected void pruneQueryOptions(ASTJexlScript script, IteratorSetting settings) {
+
+        if (config.isTermFrequenciesRequired() && TermOffsetPopulator.getContentFunctions(script).isEmpty()) {
+            settings.removeOption(QueryOptions.EXCERPT_FIELDS);
+            settings.removeOption(QueryOptions.EXCERPT_ITERATOR);
+        }
     }
 
     // push down large fielded lists. Assumes that the hdfs query cache uri and
