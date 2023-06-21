@@ -4,7 +4,6 @@ import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
@@ -34,8 +33,8 @@ import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
-import datawave.query.function.RangeProvider;
 import datawave.query.function.RemoveGroupingContext;
+import datawave.query.function.RangeProvider;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -55,7 +54,6 @@ import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -157,6 +155,7 @@ import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOC
  * <li>PostProcessing Enrichment - Variable enrichment, e.g. term frequency enrichment</li>
  * <li>Serialize Document to a Value, e.g. Kryo, Writable, etc</li>
  * </ol>
+ *
  */
 public class QueryIterator extends QueryOptions implements YieldingKeyValueIterator<Key,Value>, JexlContextCreator.JexlContextValueComparator,
                 SourceFactory<Key,Value>, SortedKeyValueIterator<Key,Value> {
@@ -639,113 +638,26 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
-        NestedIterator<Key> docIter = null;
+
+        // If we had an event-specific range previously, we need to reset it back
+        // to the source we created during init
+        NestedIterator<Key> docIter = getOrSetKeySource(documentRange, script);
+
+        initKeySource = docIter;
+
         if (log.isTraceEnabled()) {
-            log.trace("Batched queries is " + batchedQueries);
+            log.trace("Using init()'ialized source: " + this.initKeySource.getClass().getName());
         }
-        if (batchedQueries >= 1) {
-            List<NestedQuery<Key>> nests = Lists.newArrayList();
 
-            for (Entry<Range,String> queries : batchStack) {
-
-                Range myRange = queries.getKey();
-
-                if (log.isTraceEnabled()) {
-                    log.trace("Adding " + myRange + " from seekrange " + seekRange);
-                }
-
-                /*
-                 * Only perform the following checks if start key is not infinite and document range is specified
-                 */
-                if (null != seekRange && !seekRange.isInfiniteStartKey()) {
-                    Key seekStartKey = seekRange.getStartKey();
-                    Key myStartKey = myRange.getStartKey();
-
-                    /*
-                     * if our seek key is greater than our start key we can skip this batched query. myStartKey.compareTo(seekStartKey) must be <= 0, which
-                     * means that startKey must be greater than or equal be seekStartKey
-                     */
-                    if (null != myStartKey && null != seekStartKey && !seekRange.contains(myStartKey)) {
-
-                        if (log.isTraceEnabled()) {
-                            log.trace("skipping " + myRange);
-                        }
-
-                        continue;
-                    }
-                }
-
-                JexlArithmetic myArithmetic;
-                if (arithmetic instanceof StatefulArithmetic) {
-                    myArithmetic = ((StatefulArithmetic) arithmetic).clone();
-                } else {
-                    myArithmetic = new DefaultArithmetic();
-                }
-
-                // Parse the query
-                ASTJexlScript myScript = null;
-                JexlEvaluation eval = null;
-                try {
-
-                    myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
-                    eval = getJexlEvaluation(queries.getValue(), myArithmetic);
-
-                } catch (Exception e) {
-                    throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
-                }
-                // If we had an event-specific range previously, we need to
-                // reset it back
-                // to the source we created during init
-                NestedIterator<Key> subDocIter = getOrSetKeySource(myRange, myScript);
-
-                if (log.isTraceEnabled()) {
-                    log.trace("Using init()'ialized source: " + subDocIter.getClass().getName());
-                }
-
-                if (gatherTimingDetails()) {
-                    subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter, myEnvironment);
-                }
-
-                // Seek() the boolean logic stuff
-                ((SeekableIterator) subDocIter).seek(myRange, columnFamilies, inclusive);
-
-                NestedQuery<Key> nestedQueryObj = new NestedQuery<>();
-                nestedQueryObj.setQuery(queries.getValue());
-                nestedQueryObj.setIterator(subDocIter);
-                nestedQueryObj.setQueryScript(myScript);
-                nestedQueryObj.setEvaluation(eval);
-                nestedQueryObj.setRange(queries.getKey());
-                nests.add(nestedQueryObj);
-            }
-
-            docIter = new NestedQueryIterator<>(nests);
-
-            // now lets start off the nested iterator
-            docIter.initialize();
-
-            initKeySource = docIter;
-
-        } else {
-            // If we had an event-specific range previously, we need to reset it back
-            // to the source we created during init
-            docIter = getOrSetKeySource(documentRange, script);
-
-            initKeySource = docIter;
-
-            if (log.isTraceEnabled()) {
-                log.trace("Using init()'ialized source: " + this.initKeySource.getClass().getName());
-            }
-
-            if (gatherTimingDetails()) {
-                docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
-            }
-
-            // Seek() the boolean logic stuff
-            ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
-
-            // now lets start off the nested iterator
-            docIter.initialize();
+        if (gatherTimingDetails()) {
+            docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
         }
+
+        // Seek() the boolean logic stuff
+        ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
+
+        // now lets start off the nested iterator
+        docIter.initialize();
 
         return docIter;
     }
@@ -1417,20 +1329,28 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // query)
         if (!this.isFullTableScanOnly()) {
 
-            boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0;
+            // we assume the query is satisfiable as an initial state
+            boolean isQueryFullySatisfiedInitialState = true;
             String hitListOptionString = documentOptions.get(QueryOptions.HIT_LIST);
 
             if (hitListOptionString != null) {
                 boolean hitListOption = Boolean.parseBoolean(hitListOptionString);
                 if (hitListOption) {
-                    isQueryFullySatisfiedInitialState = false;
-                    // if hit list is on, don't attempt satisfiability
+                    isQueryFullySatisfiedInitialState = false; // if hit
+                                                               // list is
+                                                               // on, don't
+                                                               // attempt
+                                                               // satisfiability
                     // don't even make a SatisfactionVisitor.....
                 }
             }
             if (isQueryFullySatisfiedInitialState) {
-                SatisfactionVisitor satisfactionVisitor = this.createSatisfiabilityVisitor(true);
-                // we'll charge in with optimism
+                SatisfactionVisitor satisfactionVisitor = this.createSatisfiabilityVisitor(true); // we'll
+                                                                                                  // charge
+                                                                                                  // in
+                                                                                                  // with
+                                                                                                  // optimism
+
                 // visit() and get the root which is the root of a tree of
                 // Boolean Logic Iterator<Key>'s
                 rangeScript.jjtAccept(satisfactionVisitor, null);
@@ -1572,15 +1492,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         String hdfsPrefix = null;
         if (isDocumentSpecificRange(this.range)) {
             hdfsPrefix = range.getStartKey().getColumnFamily().toString().replace('\0', '_');
-        } else if (batchedQueries > 0) {
-            StringBuilder sb = new StringBuilder();
-            for (Entry<Range,String> queries : batchStack) {
-                if (sb.length() > 0) {
-                    sb.append('-');
-                }
-                sb.append(queries.getKey().getStartKey().getColumnFamily().toString().replace('\0', '_'));
-            }
-            hdfsPrefix = sb.toString();
         }
         return hdfsPrefix;
     }
