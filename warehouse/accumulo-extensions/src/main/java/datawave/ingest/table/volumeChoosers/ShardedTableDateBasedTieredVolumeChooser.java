@@ -20,6 +20,7 @@ import java.util.stream.Collectors;
 
 import static java.time.temporal.ChronoUnit.DAYS;
 
+//@formatter:off
 /**
  * This class is used to configure a date based volume chooser for sharded tables. To configure, this relies on a few accumulo properties being set on the
  * table. Those properties are:
@@ -40,6 +41,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
  * written to oldData
  *
  */
+//@formatter:on
 public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChooser {
     private static final Logger log = LoggerFactory.getLogger(ShardedTableDateBasedTieredVolumeChooser.class);
     private static final String TIER_NAMES_SUFFIX = "volume.tier.names";
