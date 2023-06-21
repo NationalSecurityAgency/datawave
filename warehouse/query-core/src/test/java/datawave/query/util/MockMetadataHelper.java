@@ -44,15 +44,15 @@ public class MockMetadataHelper extends MetadataHelper {
     private final Set<String> contentFields = new HashSet<>();
     private final Set<String> riFields = new HashSet<>();
     private Set<String> nonEventFields = new HashSet<>();
-    private final Multimap<String, String> fieldsToDatatype = HashMultimap.create();
-    protected Multimap<String, Type<?>> dataTypes = HashMultimap.create();
-    protected Map<String, Map<String, MetadataCardinalityCounts>> termCounts = new HashMap<>();
-    protected Map<String, QueryModel> models = new HashMap<>();
-    protected Map<Map.Entry<String, String>, Map<String, Long>> cardinalityByDataTypeForFieldAndDate = Maps.newHashMap();
+    private final Multimap<String,String> fieldsToDatatype = HashMultimap.create();
+    protected Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+    protected Map<String,Map<String,MetadataCardinalityCounts>> termCounts = new HashMap<>();
+    protected Map<String,QueryModel> models = new HashMap<>();
+    protected Map<Map.Entry<String,String>,Map<String,Long>> cardinalityByDataTypeForFieldAndDate = Maps.newHashMap();
 
     private static final Logger log = Logger.getLogger(MockMetadataHelper.class);
 
-    Function<Type<?>, String> function = new Function<Type<?>, String>() {
+    Function<Type<?>,String> function = new Function<Type<?>,String>() {
         @Override
         @Nullable
         public String apply(@Nullable Type<?> input) {
@@ -61,8 +61,8 @@ public class MockMetadataHelper extends MetadataHelper {
     };
 
     public MockMetadataHelper() {
-        super(createAllFieldMetadataHelper(getClient()), Collections.emptySet(), getClient(), TableName.METADATA, Collections.emptySet(), Collections
-                .emptySet());
+        super(createAllFieldMetadataHelper(getClient()), Collections.emptySet(), getClient(), TableName.METADATA, Collections.emptySet(),
+                        Collections.emptySet());
     }
 
     private static AllFieldMetadataHelper createAllFieldMetadataHelper(AccumuloClient client) {
@@ -98,8 +98,7 @@ public class MockMetadataHelper extends MetadataHelper {
         getMetadata().allFields.add(field);
         try {
             this.dataTypes.put(field, Class.forName(dt).asSubclass(Type.class).getDeclaredConstructor().newInstance());
-        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException |
-                 InvocationTargetException e) {
+        } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
             log.error(e);
         }
     }
@@ -111,16 +110,16 @@ public class MockMetadataHelper extends MetadataHelper {
         }
     }
 
-    public void addFields(Multimap<String, Type<?>> fields) {
+    public void addFields(Multimap<String,Type<?>> fields) {
         getMetadata().allFields.addAll(fields.keys());
-        for (Map.Entry<String, Type<?>> field : fields.entries()) {
+        for (Map.Entry<String,Type<?>> field : fields.entries()) {
             this.dataTypes.put(field.getKey(), field.getValue());
         }
     }
 
-    public void addFieldsToDatatypes(Multimap<String, String> fieldsToDatatype) {
+    public void addFieldsToDatatypes(Multimap<String,String> fieldsToDatatype) {
         getMetadata().allFields.addAll(fieldsToDatatype.keySet());
-        for (Map.Entry<String, String> field : fieldsToDatatype.entries()) {
+        for (Map.Entry<String,String> field : fieldsToDatatype.entries()) {
             try {
                 this.dataTypes.put(field.getKey(), Class.forName(field.getValue()).asSubclass(Type.class).newInstance());
             } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
@@ -155,7 +154,7 @@ public class MockMetadataHelper extends MetadataHelper {
         if (ingestTypeFilter == null) {
             return Collections.unmodifiableSet(getMetadata().getAllFields());
         } else if (!ingestTypeFilter.isEmpty()) {
-            for (Map.Entry<String, String> entry : fieldsToDatatype.entries()) {
+            for (Map.Entry<String,String> entry : fieldsToDatatype.entries()) {
                 if (ingestTypeFilter.contains(entry.getValue())) {
                     fields.add(entry.getKey());
                 }
@@ -191,12 +190,12 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Map<String, Map<String, MetadataCardinalityCounts>> getTermCounts() {
+    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCounts() {
         return termCounts;
     }
 
     @Override
-    public Map<String, Map<String, MetadataCardinalityCounts>> getTermCountsWithRootAuths() {
+    public Map<String,Map<String,MetadataCardinalityCounts>> getTermCountsWithRootAuths() {
         return termCounts;
     }
 
@@ -232,13 +231,7 @@ public class MockMetadataHelper extends MetadataHelper {
         TypeMetadata typeMetadata = new TypeMetadata();
         for (String fieldName : dataTypes.keySet()) {
             try {
-                typeMetadata.put(fieldName, "test",
-                        getDatatypesForField(fieldName)
-                                .stream()
-                                .map(function)
-                                .collect(Collectors.toList())
-                                .iterator()
-                                .next());
+                typeMetadata.put(fieldName, "test", getDatatypesForField(fieldName).stream().map(function).collect(Collectors.toList()).iterator().next());
             } catch (InstantiationException | IllegalAccessException e) {
                 log.error(e);
             }
@@ -247,8 +240,8 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    public Multimap<String, Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter) {
-        Multimap<String, Type<?>> multimap = ArrayListMultimap.create();
+    public Multimap<String,Type<?>> getFieldsToDatatypes(Set<String> ingestTypeFilter) {
+        Multimap<String,Type<?>> multimap = ArrayListMultimap.create();
         for (String field : dataTypes.keySet()) {
             multimap.putAll(field, getDatatypesForField(field, ingestTypeFilter));
         }
@@ -345,16 +338,16 @@ public class MockMetadataHelper extends MetadataHelper {
         Preconditions.checkNotNull(date);
         Preconditions.checkNotNull(datatypes);
 
-        Map<String, Long> countsByType = this.cardinalityByDataTypeForFieldAndDate.get(Maps.immutableEntry(fieldName, date));
+        Map<String,Long> countsByType = this.cardinalityByDataTypeForFieldAndDate.get(Maps.immutableEntry(fieldName, date));
 
         if (null == countsByType) {
             return 0L;
         }
 
-        Iterable<Map.Entry<String, Long>> filteredByType = Iterables.filter(countsByType.entrySet(), input -> datatypes.contains(input.getKey()));
+        Iterable<Map.Entry<String,Long>> filteredByType = Iterables.filter(countsByType.entrySet(), input -> datatypes.contains(input.getKey()));
 
         long sum = 0;
-        for (Map.Entry<String, Long> entry : filteredByType) {
+        for (Map.Entry<String,Long> entry : filteredByType) {
             sum += entry.getValue();
         }
 
@@ -362,25 +355,25 @@ public class MockMetadataHelper extends MetadataHelper {
     }
 
     @Override
-    protected Multimap<String, String> loadAllFields() {
+    protected Multimap<String,String> loadAllFields() {
         return HashMultimap.create();
     }
 
     @Override
-    protected Multimap<String, String> loadIndexOnlyFields() throws TableNotFoundException {
+    protected Multimap<String,String> loadIndexOnlyFields() throws TableNotFoundException {
         return super.loadIndexOnlyFields();
     }
 
     @Override
-    protected Multimap<String, String> loadTermFrequencyFields() throws TableNotFoundException {
+    protected Multimap<String,String> loadTermFrequencyFields() throws TableNotFoundException {
         return super.loadTermFrequencyFields();
     }
 
-    public void setCardinalities(Map<Map.Entry<String, String>, Map<String, Long>> cardinalities) {
+    public void setCardinalities(Map<Map.Entry<String,String>,Map<String,Long>> cardinalities) {
         this.cardinalityByDataTypeForFieldAndDate = cardinalities;
     }
 
-    public void setDataTypes(Multimap<String, Type<?>> dataTypes) {
+    public void setDataTypes(Multimap<String,Type<?>> dataTypes) {
         this.dataTypes = dataTypes;
     }
 
@@ -408,7 +401,7 @@ public class MockMetadataHelper extends MetadataHelper {
         this.riFields.addAll(riFields);
     }
 
-    public void setTermCounts(Map<String, Map<String, MetadataCardinalityCounts>> counts) {
+    public void setTermCounts(Map<String,Map<String,MetadataCardinalityCounts>> counts) {
         this.termCounts = counts;
     }
 
