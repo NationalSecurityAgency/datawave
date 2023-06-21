@@ -160,7 +160,7 @@ jobs:
         ./bootstrap.sh
 
         attempt=0
-        max_attempts=5
+        max_attempts=10
         while [ $attempt -lt $max_attempts ]; do
           attempt=$((attempt+1))
 
