@@ -1,5 +1,7 @@
 package datawave.query.iterator.logic;
 
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -26,6 +28,7 @@ import org.junit.Test;
 
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.iterator.SortedListKeyValueIterator;
@@ -71,9 +74,11 @@ public class TermFrequencyIndexIteratorTest {
         fieldsToKeep = new HashSet<>();
         fieldsToKeep.add("FOO");
 
-        filter = new EventDataQueryExpressionFilter(
-                        JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='buz' || FOO=='alf' || FOO=='arm'"), typeMetadata,
-                        fieldsToKeep);
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='buz' || FOO=='alf' || FOO=='arm'");
+        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+        Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
+        filter = new EventDataQueryExpressionFilter(expressionFilters);
 
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
     }
@@ -249,8 +254,12 @@ public class TermFrequencyIndexIteratorTest {
     public void testEndingFieldMismatch() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456.3", "FOO", "alf"), true,
                         getFiKey("row", "type1", "123.345.456.3", Constants.MAX_UNICODE_STRING, "buz"), false);
-        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
-                        fieldsToKeep);
+
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'");
+        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+        Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
+        filter = new EventDataQueryExpressionFilter(expressionFilters);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
@@ -262,8 +271,12 @@ public class TermFrequencyIndexIteratorTest {
     @Test
     public void testScanFullRangeExclusive() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
-        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
-                        fieldsToKeep);
+
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'");
+        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+        Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
+        filter = new EventDataQueryExpressionFilter(expressionFilters);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
@@ -344,8 +357,12 @@ public class TermFrequencyIndexIteratorTest {
     @Test
     public void testScanFullRangeExclusiveEventDataQueryExpressionFilter() throws IOException, ParseException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
-        filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
-                        fieldsToKeep);
+
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'");
+        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+        Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
+        filter = new EventDataQueryExpressionFilter(expressionFilters);
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 

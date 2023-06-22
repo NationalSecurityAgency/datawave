@@ -440,7 +440,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
-            ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
+            ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(sourceNode, attrFilter);
             NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier,
                             new AttributeFactory(this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
@@ -1291,7 +1291,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     protected TermFrequencyAggregator getTermFrequencyAggregator(String identifier, JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
-        ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, node, attrFilter);
+        ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(node, attrFilter);
 
         return buildTermFrequencyAggregator(identifier, wrapped, maxNextCount);
     }
@@ -1317,18 +1317,22 @@ public class IteratorBuildingVisitor extends BaseVisitor {
      *            an existing EventDataQueryFilter
      * @return a ChainableEventDataQueryFilter
      */
+    @Deprecated
     protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(String identifier, JexlNode node, EventDataQueryFilter existing) {
-        // combine index only and term frequency to create non-event fields
-        final Set<String> nonEventFields = new HashSet<>(indexOnlyFields.size() + termFrequencyFields.size());
-        nonEventFields.addAll(indexOnlyFields);
-        nonEventFields.addAll(termFrequencyFields);
+        return createWrappedTermFrequencyFilter(node, existing);
+    }
 
+    protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {
             chainableFilter.addFilter(existing);
         }
 
-        chainableFilter.addFilter(new TermFrequencyDataFilter(node, typeMetadata, nonEventFields));
+        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+        Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(node,
+                        attributeFactory);
+
+        chainableFilter.addFilter(new TermFrequencyDataFilter(expressionFilters));
 
         return chainableFilter;
     }

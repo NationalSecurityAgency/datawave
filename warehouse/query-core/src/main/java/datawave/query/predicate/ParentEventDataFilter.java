@@ -1,5 +1,8 @@
 package datawave.query.predicate;
 
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
+
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -22,8 +25,19 @@ public class ParentEventDataFilter extends EventDataQueryExpressionFilter {
      * @param nonEventFields
      *            set of non event fields
      */
+    @Deprecated
     public ParentEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
         super(script, metadata, nonEventFields);
+    }
+
+    /**
+     * Preferred constructor
+     *
+     * @param filters
+     *            a map of expression filters
+     */
+    public ParentEventDataFilter(Map<String,ExpressionFilter> filters) {
+        super(filters);
     }
 
     public ParentEventDataFilter(ParentEventDataFilter other) {
