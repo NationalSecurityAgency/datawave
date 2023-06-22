@@ -329,7 +329,10 @@ public class TermFrequencyIndexIteratorTest {
 
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
 
-        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), typeMetadata, null, null, -1, -1, Collections.emptyMap(), null, fieldsToKeep);
+        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+        Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), expressionFilters, null, null, -1, -1, Collections.emptyMap(), null,
+                        fieldsToKeep);
 
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);

@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
 
@@ -67,10 +68,17 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     private Set<String> nonEventFields;
 
+    @Deprecated
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
                     long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
         this(script, queryFields, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null,
                         Collections.EMPTY_SET);
+    }
+
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
+                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(), null,
+                        Collections.emptySet());
     }
 
     /**
@@ -83,8 +91,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *
      * @param script
      *            - script
-     * @param attributeFactory
-     *            - attributeFactory
+     * @param typeMetadata
+     *            - TypeMetadata
      * @param blacklist
      *            - blacklist
      * @param limitFieldsField
@@ -102,9 +110,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * @param whitelist
      *            - whitelist
      */
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
+    @Deprecated
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata typeMetadata, Set<String> whitelist, Set<String> blacklist,
                     long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
-        super(script, attributeFactory, nonEventFields);
+        super(script, typeMetadata, nonEventFields);
 
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
@@ -118,6 +127,49 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
         setQueryFields(queryFields, script);
         updateLists(whitelist, blacklist);
         setSortedLists(whitelist, blacklist);
+    }
+
+    /**
+     * Preferred constructor that accepts prebuilt expression filters
+     *
+     * @param script
+     *            the query
+     * @param queryFields
+     *            the query fields
+     * @param filters
+     *            a map of expression filters
+     * @param includedFields
+     *            a set of fields to include
+     * @param excludedFields
+     *            a set of fields to exclude
+     * @param maxFieldsBeforeSeek
+     *            max fields traversed before a seek is issued
+     * @param maxKeysBeforeSeek
+     *            max keys traversed before a seek is issued
+     * @param limitFieldsMap
+     *            the limit fields map
+     * @param limitFieldsField
+     *            the limit fields field
+     * @param nonEventFields
+     *            a set of non-event fields
+     */
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> filters, Set<String> includedFields,
+                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField,
+                    Set<String> nonEventFields) {
+        super(filters);
+
+        this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
+        this.maxKeysBeforeSeek = maxKeysBeforeSeek;
+        this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
+        this.limitFieldsField = limitFieldsField;
+        this.nonEventFields = nonEventFields;
+
+        // set the anyFieldLimit once if specified otherwise set to -1
+        anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
+
+        setQueryFields(queryFields, script);
+        updateLists(includedFields, excludedFields);
+        setSortedLists(includedFields, excludedFields);
     }
 
     public TLDEventDataFilter(TLDEventDataFilter other) {
