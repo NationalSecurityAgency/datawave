@@ -932,7 +932,18 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         if (org.apache.commons.lang3.StringUtils.isNotBlank(noExpansion)) {
             Set<String> noExpansionFields = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(noExpansion, ',')));
             config.setNoExpansionFields(noExpansionFields);
-            setNoExpansionFields(noExpansionFields);
+        }
+
+        String lenientFields = settings.findParameter(QueryParameters.LENIENT_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(lenientFields)) {
+            Set<String> lenientFieldSet = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(lenientFields, ',')));
+            config.setLenientFields(lenientFieldSet);
+        }
+
+        String strictFields = settings.findParameter(QueryParameters.STRICT_FIELDS).getParameterValue().trim();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(strictFields)) {
+            Set<String> strictFieldSet = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(strictFields, ',')));
+            config.setStrictFields(strictFieldSet);
         }
 
         configureDocumentAggregation(settings);
@@ -1325,6 +1336,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         getConfig().setNoExpansionFields(noExpansionFields);
+    }
+
+    public Set<String> getLenientFields() {
+        return getConfig().getLenientFields();
+    }
+
+    public void setLenientFields(Set<String> lenientFields) {
+        getConfig().setLenientFields(lenientFields);
+    }
+
+    public Set<String> getStrictFields() {
+        return getConfig().getStrictFields();
+    }
+
+    public void setStrictFields(Set<String> strictFields) {
+        getConfig().setStrictFields(strictFields);
     }
 
     public ExcerptFields getExcerptFields() {

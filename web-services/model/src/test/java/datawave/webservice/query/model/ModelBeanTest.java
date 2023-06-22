@@ -37,6 +37,7 @@ import org.powermock.reflect.Whitebox;
 
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.query.model.ModelKeyParser;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
@@ -96,7 +97,7 @@ public class ModelBeanTest {
          * In jdk 9+, java.lang.Package.getPackageInfo() may fail to load a package-info.class, which is needed to resolve our JAXB package-level annotations.
          * Here, this results in:
          *
-         * "javax.xml.bind.UnmarshalException: unexpected element (uri:"http://webservice.datawave/v1", local:"Model"). Expected elements are <{}Model>"
+         * "javax.xml.bind.UnmarshalException: unexpected element (uri:"http://webservice.datawave.nsa/v1", local:"Model"). Expected elements are <{}Model>"
          *
          * As a workaround, we can force it to load here in the same manner as in jdk 8's Package.getPackageInfo(), though there's likely a "better" (i.e.,
          * module-focused) way of handling this in jdk 9+

@@ -10,6 +10,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -25,16 +26,22 @@ import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNullLiteral;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
+import datawave.query.Constants;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
@@ -56,15 +63,22 @@ public class QueryModelVisitor extends RebuildingVisitor {
     private final HashSet<ASTAndNode> expandedNodes;
     private final Set<String> validFields;
     private final SimpleQueryModelVisitor simpleQueryModelVisitor;
+    // lenient fields set by the user
+    private final Set<String> lenientFields;
+    // strict fields set by the user
+    private final Set<String> strictFields;
 
     // set of fields that are excluded from model expansion
-    private Set<String> noExpansionFields;
+    private final Set<String> noExpansionFields;
 
     public QueryModelVisitor(QueryModel queryModel, Set<String> validFields) {
         this.queryModel = queryModel;
         this.expandedNodes = Sets.newHashSet();
-        this.validFields = validFields;
+        this.validFields = new HashSet<>(validFields);
         this.simpleQueryModelVisitor = new SimpleQueryModelVisitor(queryModel, validFields);
+        this.noExpansionFields = new HashSet<>();
+        this.lenientFields = new HashSet<>();
+        this.strictFields = new HashSet<>();
     }
 
     /**
@@ -81,14 +95,23 @@ public class QueryModelVisitor extends RebuildingVisitor {
     }
 
     public static ASTJexlScript applyModel(ASTJexlScript script, QueryModel queryModel, Set<String> validFields) {
-        return applyModel(script, queryModel, validFields, Collections.emptySet());
+        return applyModel(script, queryModel, validFields, Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
     }
 
-    public static ASTJexlScript applyModel(ASTJexlScript script, QueryModel queryModel, Set<String> validFields, Set<String> noExpansionFields) {
+    public static ASTJexlScript applyModel(ASTJexlScript script, QueryModel queryModel, Set<String> validFields, Set<String> noExpansionFields,
+                    Set<String> lenientFields, Set<String> strictFields) {
         QueryModelVisitor visitor = new QueryModelVisitor(queryModel, validFields);
 
         if (!noExpansionFields.isEmpty()) {
             visitor.setNoExpansionFields(noExpansionFields);
+        }
+
+        if (!lenientFields.isEmpty()) {
+            visitor.setLenientFields(lenientFields);
+        }
+
+        if (!strictFields.isEmpty()) {
+            visitor.setStrictFields(strictFields);
         }
 
         script = TreeFlatteningRebuildingVisitor.flatten(script);
@@ -176,7 +199,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
 
     public Object expandRangeNodeFromModel(LiteralRange range, ASTAndNode node, Object data) {
 
-        if (isFieldExcluded(range.getFieldName())) {
+        if (isFieldExcluded(range.getFieldName(), noExpansionFields)) {
             return node;
         }
 
@@ -220,12 +243,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
      * @return a jexlnode
      */
     protected JexlNode expandBinaryNodeFromModel(JexlNode node, Object data) {
-
-        String field = JexlASTHelper.getIdentifier(node);
-        if (isFieldExcluded(field)) {
-            return node;
-        }
-
         // Count the immediate children:
         int childCount = node.jjtGetNumChildren();
 
@@ -251,17 +268,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
             log.trace("rightNode:" + PrintingVisitor.formattedQueryString(rightNode));
             log.trace("rightNodeQuery:" + JexlStringBuildingVisitor.buildQuery(rightNode));
         }
-        // this will expand identifiers that have a method connected to them
-        boolean leftState = JexlASTHelper.HasMethodVisitor.hasMethod(leftNode);
-        if (leftState) {
-            // there is a method under leftNode
-            leftNode = (JexlNode) leftNode.jjtAccept(this.simpleQueryModelVisitor, null);
-        }
-        boolean rightState = JexlASTHelper.HasMethodVisitor.hasMethod(rightNode);
-        if (rightState) {
-            // there is a method under rightNode
-            rightNode = (JexlNode) rightNode.jjtAccept(this.simpleQueryModelVisitor, null);
-        }
 
         // expand any identifiers inside of methods/functions in the left and right nodes
         leftNode = (JexlNode) leftNode.jjtAccept(this, null);
@@ -273,23 +279,15 @@ public class QueryModelVisitor extends RebuildingVisitor {
             log.trace("after expansion, rightNodeQuery:" + JexlStringBuildingVisitor.buildQuery(rightNode));
         }
 
-        // if state == true on either side, then there is a method on one side and we are done applying the model
-        if (leftState || rightState) {
-            JexlNode toReturn = JexlNodeFactory.buildUntypedBinaryNode(node, leftNode, rightNode);
-            if (log.isTraceEnabled()) {
-                log.trace("done early. returning:" + JexlStringBuildingVisitor.buildQuery(toReturn));
-            }
-            return toReturn;
-        }
-
-        JexlNode leftSeed, rightSeed;
-        Set<JexlNode> left = Sets.newHashSet(), right = Sets.newHashSet();
         boolean isNullEquality = false;
-
         if (node instanceof ASTEQNode && (leftNode instanceof ASTNullLiteral || rightNode instanceof ASTNullLiteral)) {
             isNullEquality = true;
         }
 
+        SetMultimap<String,JexlNode> left = null;
+        SetMultimap<String,JexlNode> right = null;
+
+        JexlNode leftSeed, rightSeed;
         // the query has been previously groomed so that identifiers are on the left and literals are on the right
         // an identifier with a method attached will have already been substituted above (and will return null for the IdentifierOpLiteral)
         // The normal case of `IDENTIFIER op 'literal'`
@@ -297,94 +295,133 @@ public class QueryModelVisitor extends RebuildingVisitor {
         if (op != null) {
             // One identifier
             leftSeed = op.getIdentifier();
-
             rightSeed = op.getLiteral();
             if (rightSeed instanceof ASTNullLiteral && node instanceof ASTEQNode) {
                 isNullEquality = true;
             }
         } else {
             // We know from above that childCount == 2. We may have a reference on both sides of the expression
-            leftSeed = node.jjtGetChild(0);
-            rightSeed = node.jjtGetChild(1);
+            leftSeed = leftNode;
+            rightSeed = rightNode;
         }
 
-        if (leftSeed instanceof ASTReference) {
-            // String fieldName = JexlASTHelper.getIdentifier((JexlNode)leftSeed);
-            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(leftSeed);
-            if (identifiers.size() > 1) {
-                log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery(leftSeed) + " from "
-                                + JexlStringBuildingVisitor.buildQuery(leftNode));
-            }
-            for (ASTIdentifier identifier : identifiers) {
-                for (String fieldName : getAliasesForField(JexlASTHelper.deconstructIdentifier(identifier))) {
-                    left.add(JexlNodeFactory.buildIdentifier(fieldName));
-                }
-            }
-        } else if (leftSeed instanceof ASTIdentifier) {
-            for (String fieldName : getAliasesForField(JexlASTHelper.deconstructIdentifier((ASTIdentifier) leftSeed))) {
-                left.add(JexlNodeFactory.buildIdentifier(fieldName));
-            }
-        } else {
-            // Not an identifier, therefore it's probably a literal
-            left.add(leftSeed);
-        }
+        // expand the left and right seeds
+        left = expandNodeFromModel(leftSeed);
+        right = expandNodeFromModel(rightSeed);
 
-        if (rightSeed instanceof ASTReference) {
-            List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(rightSeed);
-            if (identifiers.size() > 1) {
-                log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery(rightSeed) + " from "
-                                + JexlStringBuildingVisitor.buildQuery(rightNode));
-            }
-            for (ASTIdentifier identifier : identifiers) {
-                for (String fieldName : getAliasesForField(JexlASTHelper.deconstructIdentifier(identifier))) {
-                    right.add(JexlNodeFactory.buildIdentifier(fieldName));
-                }
-            }
-        } else if (rightSeed instanceof ASTIdentifier) {
-            for (String fieldName : getAliasesForField(JexlASTHelper.deconstructIdentifier((ASTIdentifier) rightSeed))) {
-                right.add(JexlNodeFactory.buildIdentifier(fieldName));
-            }
-
-        } else {
-            // Not an identifier, therefore it's probably a literal
-            right.add(rightSeed);
-        }
-        boolean requiresAnd = isNullEquality || node instanceof ASTNENode;
+        boolean requiresAnd = isNullEquality || node instanceof ASTNENode || node instanceof ASTNRNode;
 
         @SuppressWarnings("unchecked")
-        // retrieve the cartesian product
-        Set<List<JexlNode>> product = Sets.cartesianProduct(left, right);
+        // retrieve the cartesian product of the model field names
+        Set<List<String>> fieldPairs = Sets.cartesianProduct(left.keySet(), right.keySet());
+        Set<List<JexlNode>> product = new HashSet<>();
 
-        /**
-         * use the product transformer to shallow copy the jexl nodes. We've created new nodes that will be embedded within an ast reference. As a result, we
-         * need to ensure that if we create a logical structure ( such as an or ) -- each literal references a unique identifier from the right. Otherwise,
-         * subsequent visitors will reference incorrection sub trees, and potentially negate the activity of the query model visitor
-         */
-        Set<List<JexlNode>> newSet = product.stream().map(list -> list.stream().map(RebuildingVisitor::copy).collect(Collectors.toList()))
-                        .collect(Collectors.toSet());
+        if (!fieldPairs.isEmpty()) {
+            List<JexlNode> expressions = new ArrayList<>();
+            for (List<String> fieldPair : fieldPairs) {
+                boolean lenient = isLenient(fieldPair.get(0)) || isLenient(fieldPair.get(1));
+                Set<JexlNode> leftSet = left.get(fieldPair.get(0));
+                Set<JexlNode> rightSet = right.get(fieldPair.get(1));
+                product.addAll(Sets.cartesianProduct(leftSet, rightSet));
 
-        if (product.size() > 1) {
-            JexlNode expanded;
-            if (requiresAnd) {
-                expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.AND_NODE, node, newSet);
-            } else {
-                expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.OR_NODE, node, newSet);
+                /**
+                 * use the product transformer to shallow copy the jexl nodes. We've created new nodes that will be embedded within an ast reference. As a
+                 * result, we need to ensure that if we create a logical structure ( such as an or ) -- each literal references a unique identifier from the
+                 * right. Otherwise, subsequent visitors will reference incorrect sub-trees, and potentially negate the activity of the query model visitor
+                 */
+                product = product.stream().map(list -> list.stream().map(RebuildingVisitor::copy).collect(Collectors.toList())).collect(Collectors.toSet());
+
+                JexlNode expanded;
+                if (requiresAnd) {
+                    expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.AND_NODE, node, product);
+                } else {
+                    expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.OR_NODE, node, product);
+                }
+                if (lenient) {
+                    expanded = LenientExpression.create(expanded);
+                }
+                if (log.isTraceEnabled())
+                    log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
+                expressions.add(expanded);
             }
-            if (log.isTraceEnabled())
-                log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
-            return expanded;
-        } else if (1 == product.size()) {
-            List<JexlNode> pair = product.iterator().next();
-            JexlNode expanded = JexlNodeFactory.buildUntypedBinaryNode(node, pair.get(0), pair.get(1));
-            if (log.isTraceEnabled())
-                log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
-            return expanded;
+
+            if (expressions.size() == 1) {
+                return expressions.get(0);
+            } else if (requiresAnd) {
+                return JexlNodeFactory.createAndNode(expressions);
+            } else {
+                return JexlNodeFactory.createOrNode(expressions);
+            }
         }
 
         // If we couldn't map anything, return a copy
         if (log.isTraceEnabled())
-            log.trace("just returning the original:" + PrintingVisitor.formattedQueryString(node));
+            log.trace("Not sure how we got here, but just returning the original:" + PrintingVisitor.formattedQueryString(node));
+
         return node;
+    }
+
+    protected SetMultimap<String,JexlNode> expandNodeFromModel(JexlNode seed) {
+        SetMultimap<String,JexlNode> nodes = HashMultimap.create();
+        if (seed instanceof ASTReference) {
+            // we need to be careful here. We do not want to pull identifiers if this node is
+            // anything but identifiers allowing or/and/ref/expression nodes
+            // Hence we are not using the JexlASTHelper.getIdentifiers method.
+            List<ASTIdentifier> identifiers = getIdentifiers(seed);
+            if (identifiers.size() > 1) {
+                log.warn("I did not expect to see more than one Identifier here for " + JexlStringBuildingVisitor.buildQuery(seed));
+            }
+            for (ASTIdentifier identifier : identifiers) {
+                String field = JexlASTHelper.deconstructIdentifier(identifier);
+                if (isFieldExcluded(JexlASTHelper.getIdentifier(identifier, true), noExpansionFields)) {
+                    nodes.put(field, RebuildingVisitor.copy(identifier));
+                } else {
+                    for (String fieldName : getAliasesForField(field)) {
+                        nodes.put(field, JexlNodeFactory.buildIdentifier(fieldName));
+                    }
+                }
+            }
+        } else if (seed instanceof ASTIdentifier) {
+            String field = JexlASTHelper.deconstructIdentifier((ASTIdentifier) seed);
+            if (isFieldExcluded(JexlASTHelper.getIdentifier(seed, true), noExpansionFields)) {
+                nodes.put(field, RebuildingVisitor.copy(seed));
+            } else {
+                for (String fieldName : getAliasesForField(field)) {
+                    nodes.put(field, JexlNodeFactory.buildIdentifier(fieldName));
+                }
+            }
+        }
+        if (nodes.isEmpty()) {
+            // Not an identifier, therefore it's probably a literal
+            nodes.put(Constants.NO_FIELD, RebuildingVisitor.copy(seed));
+        }
+        return nodes;
+    }
+
+    public static List<ASTIdentifier> getIdentifiers(JexlNode node) {
+        List<ASTIdentifier> identifiers = Lists.newArrayList();
+        if (getIdentifiers(node, identifiers)) {
+            return identifiers;
+        } else {
+            return Collections.emptyList();
+        }
+    }
+
+    private static boolean getIdentifiers(JexlNode node, List<ASTIdentifier> identifiers) {
+        if (null != node) {
+            if (node instanceof ASTIdentifier) {
+                identifiers.add((ASTIdentifier) node);
+            } else if (node instanceof ASTReference || node instanceof ASTReferenceExpression || node instanceof ASTAndNode || node instanceof ASTOrNode) {
+                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
+                    if (!getIdentifiers(node.jjtGetChild(i), identifiers)) {
+                        return false;
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -394,15 +431,27 @@ public class QueryModelVisitor extends RebuildingVisitor {
      *            the field to be expanded
      * @return true if the field is excluded
      */
-    private boolean isFieldExcluded(String field) {
+    public static boolean isFieldExcluded(String field, Set<String> noExpansionFields) {
         return noExpansionFields != null && noExpansionFields.contains(field);
     }
 
     public void setNoExpansionFields(Set<String> noExpansionFields) {
-        this.noExpansionFields = noExpansionFields;
+        this.noExpansionFields.addAll(noExpansionFields);
         if (this.simpleQueryModelVisitor != null) {
             this.simpleQueryModelVisitor.setNoExpansionFields(noExpansionFields);
         }
+    }
+
+    public void setLenientFields(Set<String> lenientFields) {
+        this.lenientFields.addAll(lenientFields);
+    }
+
+    public void setStrictFields(Set<String> strictFields) {
+        this.strictFields.addAll(strictFields);
+    }
+
+    public boolean isLenient(String field) {
+        return !strictFields.contains(field) && (queryModel.isLenientForwardMapping(field) || lenientFields.contains(field));
     }
 
     /**
@@ -429,7 +478,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
             JexlNode newNode;
             String fieldName = JexlASTHelper.getIdentifier(node);
 
-            if (noExpansionFields != null && noExpansionFields.contains(fieldName)) {
+            if (isFieldExcluded(fieldName, noExpansionFields)) {
                 return node;
             }
 

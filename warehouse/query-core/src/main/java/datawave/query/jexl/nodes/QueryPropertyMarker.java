@@ -14,6 +14,7 @@ import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
@@ -90,6 +91,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
                     IndexHoleMarkerJexlNode.class,
                     ASTDelayedPredicate.class,
                     ASTEvaluationOnly.class,
+                    DroppedExpression.class,
                     ExceededOrThresholdMarkerJexlNode.class,
                     ExceededTermThresholdMarkerJexlNode.class,
                     ExceededValueThresholdMarkerJexlNode.class

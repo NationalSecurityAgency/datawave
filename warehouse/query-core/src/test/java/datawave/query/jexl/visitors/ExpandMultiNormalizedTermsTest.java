@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,11 +16,13 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.data.type.DateType;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.LcType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
+import datawave.data.type.PointType;
 import datawave.data.type.StringType;
 import datawave.data.type.TrimLeadingZerosType;
 import datawave.data.type.Type;
@@ -522,6 +525,76 @@ public class ExpandMultiNormalizedTermsTest {
             String expected = "((" + marker + " = true) && (FOO == 'Bar'))";
             expandTerms(original, expected);
         }
+    }
+
+    @Test
+    public void testLenientMarkerDropped() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        String original = "((" + LenientExpression.label() + " = true) && (FOO == 'Bar'))";
+        String expected = "(FOO == 'bar')";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testLenientMarkerDroppedNoTypes() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        String original = "((" + LenientExpression.label() + " = true) && (FOO == 'Bar'))";
+        String expected = "FOO == 'Bar'";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testLenientWithFailedNormalization() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "((" + LenientExpression.label() + " = true) && (FOO =~ '32'))";
+        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E')";
+        expandTerms(original, expected);
+
+        // in this case the numeric normalization fails, so keep only the text normalization
+        original = "((" + LenientExpression.label() + " = true) && (FOO =~ '3.*2'))";
+        expected = "(FOO =~ '3.*2')";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testLenientWithAllFailedNormalization() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new PointType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "((" + LenientExpression.label() + " = true) && (FOO == 'ab32'))";
+        String expected = "((_Eval_ = true) && (FOO == 'ab32'))";
+        expandTerms(original, expected);
     }
 
     @Test

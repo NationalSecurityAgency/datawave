@@ -3,6 +3,7 @@ package datawave.query.jexl.visitors;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
@@ -73,7 +74,7 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
 
         // don't traverse delayed nodes
-        if (instance.isAnyTypeOf(IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class, ExceededValueThresholdMarkerJexlNode.class,
+        if (instance.isAnyTypeOf(IndexHoleMarkerJexlNode.class, ASTEvaluationOnly.class, DroppedExpression.class, ExceededValueThresholdMarkerJexlNode.class,
                         ExceededTermThresholdMarkerJexlNode.class, ExceededOrThresholdMarkerJexlNode.class)) {
             return RebuildingVisitor.copy(node);
         }

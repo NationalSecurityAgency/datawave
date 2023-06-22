@@ -4,9 +4,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -16,7 +19,6 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.common.collect.ArrayListMultimap;
@@ -26,10 +28,12 @@ import com.google.common.collect.Sets;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
+import datawave.query.QueryParameters;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
+import datawave.util.StringUtils;
 
 public class QueryModelVisitorTest {
 
@@ -68,6 +72,8 @@ public class QueryModelVisitorTest {
         model.addTermToReverseModel("NOME", "NAM");
         model.addTermToReverseModel("GENDER", "GEN");
         model.addTermToReverseModel("GENERE", "GEN");
+
+        model.addLenientForwardMappings("AG");
 
         allFields = new HashSet<>();
         allFields.add("FOO");
@@ -347,6 +353,55 @@ public class QueryModelVisitorTest {
     }
 
     @Test
+    public void testLenientQuery() throws ParseException {
+        String original = "AG == '123'";
+        String expected = "((_Lenient_ = true) && ((AGE == '123') || (ETA == '123')))";
+        assertResult(original, expected);
+    }
+
+    @Test
+    public void testLenientRegexQuery() throws ParseException {
+        String original = "AG =~ '123'";
+        String expected = "((_Lenient_ = true) && ((AGE =~ '123') || (ETA =~ '123')))";
+        assertResult(original, expected);
+    }
+
+    @Test
+    public void testForcedLenientQuery() throws ParseException {
+        String original = "((_Lenient_ = true) && (NAM == 'dude'))";
+        String expected = "((_Lenient_ = true) && ((NAME == 'dude') || (NOME == 'dude')))";
+        assertResult(original, expected);
+    }
+
+    @Test
+    public void testLenientLiteralQuery() throws ParseException {
+        String original = "(NAM == ((_Lenient_ = true) && 'dude'))";
+        String expected = "((((_Lenient_ = true) && (NOME == 'dude')) || ((_Lenient_ = true) && (NAME == 'dude'))))";
+        assertResult(original, expected);
+    }
+
+    @Test
+    public void testLenientOptionRegexQuery() throws ParseException {
+        String original = "FOO =~ '123' && f:lenient(FOO)";
+        String expected = "((_Lenient_ = true) && ((BAR1 =~ '123') || (BAR2 =~ '123')))";
+        testWithOptionFunction(original, expected, model, Collections.emptySet(), Sets.newHashSet("FOO"), Collections.emptySet());
+    }
+
+    @Test
+    public void testStrictOptionRegexQuery() throws ParseException {
+        String original = "AG =~ '123' && f:strict(AG)";
+        String expected = "AGE =~ '123' || ETA =~ '123'";
+        testWithOptionFunction(original, expected, model, Collections.emptySet(), Collections.emptySet(), Sets.newHashSet("AG"));
+    }
+
+    @Test
+    public void testStrictPrecidenceRegexQuery() throws ParseException {
+        String original = "FOO =~ '123' && f:lenient(FOO) && f:strict(FOO)";
+        String expected = "(BAR1 =~ '123' || BAR2 =~ '123')";
+        testWithOptionFunction(original, expected, model, Collections.emptySet(), Sets.newHashSet("FOO"), Sets.newHashSet("FOO"));
+    }
+
+    @Test
     public void testModelApplication() throws ParseException {
         model.addTermToModel("FOO1", "1BAR");
 
@@ -397,35 +452,35 @@ public class QueryModelVisitorTest {
         // base case, both original fields are expanded
         String query = "FIELD_A == 'bar' && FIELD_B == 'baz'";
         String expected = "(FIELD_AA == 'bar' || FIELD_AB == 'bar') && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
-        testNoExpansion(query, expected, model, Collections.emptySet());
+        testWithOptionFunction(query, expected, model, Collections.emptySet(), Collections.emptySet(), Collections.emptySet());
 
         // only FIELD_B is expanded
         query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_A"), Collections.emptySet(), Collections.emptySet());
 
         // only FIELD_A is expanded
         query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_B)";
         expected = "(FIELD_AB == 'bar' || FIELD_AA == 'bar') && FIELD_B == 'baz'";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_B"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_B"), Collections.emptySet(), Collections.emptySet());
 
         // neither field is expanded
         query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A,FIELD_B)";
         expected = "FIELD_A == 'bar' && FIELD_B == 'baz'";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_B"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_B"), Collections.emptySet(), Collections.emptySet());
 
         // both fields are expanded, NoExpansion function specified a field that does not exist in the query
         query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_X,FIELD_Y)";
         expected = "(FIELD_AA == 'bar' || FIELD_AB == 'bar') && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_X", "FIELD_Y"), Collections.emptySet(), Collections.emptySet());
 
         query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_X,FIELD_Y,FIELD_A)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"), Collections.emptySet(), Collections.emptySet());
 
         query = "FIELD_A == 'bar' && FIELD_B == 'baz' && f:noExpansion(FIELD_A,FIELD_X,FIELD_Y)";
         expected = "FIELD_A == 'bar' && (FIELD_BB == 'baz' || FIELD_BC == 'baz')";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_A", "FIELD_X", "FIELD_Y"), Collections.emptySet(), Collections.emptySet());
     }
 
     // NoExpansion only excludes fields in the original query. A query can still expand into an excluded field
@@ -437,7 +492,7 @@ public class QueryModelVisitorTest {
 
         String query = "FIELD_A == 'bar' && f:noExpansion(FIELD_C)";
         String expected = "(FIELD_B == 'bar' || FIELD_C == 'bar')";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_C"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_C"), Collections.emptySet(), Collections.emptySet());
     }
 
     @Test
@@ -448,10 +503,11 @@ public class QueryModelVisitorTest {
 
         String query = "filter:includeRegex(FIELD_A, 'ba.*') && f:noExpansion(FIELD_A)";
         String expected = "filter:includeRegex(FIELD_A, 'ba.*')";
-        testNoExpansion(query, expected, model, Sets.newHashSet("FIELD_A"));
+        testWithOptionFunction(query, expected, model, Sets.newHashSet("FIELD_A"), Collections.emptySet(), Collections.emptySet());
     }
 
-    private void testNoExpansion(String query, String expected, QueryModel model, Set<String> expectedFields) {
+    private void testWithOptionFunction(String query, String expected, QueryModel model, Set<String> expectedNoExpansionFields,
+                    Set<String> expectedLenientFields, Set<String> expectedStrictFields) {
         try {
             Set<String> allFields = new HashSet<>();
             allFields.addAll(model.getForwardQueryMapping().keySet());
@@ -459,26 +515,35 @@ public class QueryModelVisitorTest {
 
             ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
 
-            NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
-
-            JexlNodeAssert.assertThat(script).isNotEqualTo(result.script);
-            Assert.assertEquals(expectedFields, result.noExpansionFields);
-
-            ASTJexlScript applied;
-            if (result.noExpansionFields.size() > 0) {
-                applied = QueryModelVisitor.applyModel(result.script, model, allFields, result.noExpansionFields);
-            } else {
-                applied = QueryModelVisitor.applyModel(result.script, model, allFields);
+            Set<String> noExpansionFields = new HashSet<>();
+            Set<String> lenientFields = new HashSet<>();
+            Set<String> strictFields = new HashSet<>();
+            Map<String,String> optionsMap = new HashMap<>();
+            ASTJexlScript newscript = QueryOptionsFromQueryVisitor.collect(script, optionsMap);
+            if (optionsMap.containsKey(QueryParameters.NO_EXPANSION_FIELDS)) {
+                JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
+                noExpansionFields = new HashSet<>(Arrays.asList(StringUtils.split(optionsMap.get(QueryParameters.NO_EXPANSION_FIELDS), ',')));
             }
+            Assert.assertEquals(expectedNoExpansionFields, noExpansionFields);
+            if (optionsMap.containsKey(QueryParameters.LENIENT_FIELDS)) {
+                JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
+                lenientFields = new HashSet<>(Arrays.asList(StringUtils.split(optionsMap.get(QueryParameters.LENIENT_FIELDS), ',')));
+            }
+            Assert.assertEquals(expectedLenientFields, lenientFields);
+            if (optionsMap.containsKey(QueryParameters.STRICT_FIELDS)) {
+                JexlNodeAssert.assertThat(script).isNotEqualTo(newscript);
+                strictFields = new HashSet<>(Arrays.asList(StringUtils.split(optionsMap.get(QueryParameters.STRICT_FIELDS), ',')));
+            }
+            Assert.assertEquals(expectedStrictFields, strictFields);
+
+            ASTJexlScript applied = QueryModelVisitor.applyModel(newscript, model, allFields, noExpansionFields, lenientFields, strictFields);
 
             if (log.isTraceEnabled()) {
                 log.trace("expected: " + expected);
                 log.trace("actual  : " + JexlStringBuildingVisitor.buildQueryWithoutParse(applied));
             }
 
-            ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
-            assertTrue(TreeEqualityVisitor.checkEquality(expectedScript, applied).isEqual());
-
+            JexlNodeAssert.assertThat(applied).isEqualTo(expected).hasValidLineage();
         } catch (ParseException e) {
             fail("Error testing query: " + query);
         }

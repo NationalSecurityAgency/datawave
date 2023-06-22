@@ -35,6 +35,7 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
+import datawave.query.jexl.ArithmeticJexlEngines;
 import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.TermFrequencyList.Zone;
@@ -82,16 +83,7 @@ public class ContentFunctionsTest {
      * @return True if result is Boolean and equal to expected
      */
     public static boolean expect(Object result, Boolean expected) {
-        // treat null as false
-        if (null == result) {
-            return Boolean.FALSE.equals(expected);
-        }
-
-        if (result instanceof Boolean) {
-            return result.equals(expected);
-        }
-
-        return false;
+        return expected.equals(ArithmeticJexlEngines.isMatched(result));
     }
 
     private String buildFunction(String functionName, String... args) {

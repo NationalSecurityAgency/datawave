@@ -115,7 +115,6 @@ import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.NoExpansionFunctionVisitor;
 import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -213,17 +212,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Allows developers to cache data types
      */
     protected boolean cacheDataTypes = false;
-
-    /**
-     * Overrides behavior with doc specific ranges
-     */
-    protected boolean docSpecificOverride = false;
-
-    /**
-     * Number of documents to combine for concurrent evaluation
-     *
-     */
-    protected int docsToCombineForEvaluation = -1;
 
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
@@ -337,7 +325,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         preloadOptions = other.preloadOptions;
         rangeStreamClass = other.rangeStreamClass;
         setSourceLimit(other.sourceLimit);
-        setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
     }
@@ -481,9 +468,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         this.plannedScript = newQueryString;
         config.setQueryString(this.plannedScript);
-        // docsToCombineForEvaluation is only enabled when threading is used
-        if (config.getMaxEvaluationPipelines() == 1)
-            docsToCombineForEvaluation = -1;
 
         if (!config.isGeneratePlanOnly()) {
             // add the geo query comparator to sort by geo range granularity if this is a geo query
@@ -512,9 +496,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setQueryTree(config.getQueryTree())
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
-                    .setDocsToCombine(docsToCombineForEvaluation)
                     .setSettings(settings)
-                    .setDocSpecificLimitOverride(docSpecificOverride)
                     .setMaxRangeWaitMillis(maxRangeWaitMillis)
                     .setQueryPlanComparators(queryPlanComparators)
                     .setNumRangesToBuffer(config.getNumRangesToBuffer())
@@ -727,9 +709,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
             }
         }
-
-        // extract #NO_EXPANSION function, if it exists
-        config.setQueryTree(parseNoExpansionFields(timers, config.getQueryTree(), config));
 
         // flatten the tree
         config.setQueryTree(timedFlatten(timers, config.getQueryTree()));
@@ -1233,19 +1212,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     throws DatawaveQueryException {
         String shardsAndDays = optionsMap.get(QueryParameters.SHARDS_AND_DAYS);
         return visitorManager.timedVisit(timers, "Add SHARDS_AND_DAYS From Options", () -> (AddShardsAndDaysVisitor.update(script, shardsAndDays)));
-    }
-
-    protected ASTJexlScript parseNoExpansionFields(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Parse #NO_EXPANSION From Query", () -> (extractNoExpansionFields(script, config)));
-    }
-
-    private ASTJexlScript extractNoExpansionFields(ASTJexlScript script, ShardQueryConfiguration config) {
-        NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
-
-        // merge parsed expansion fields into any existing no expansion fields
-        config.setNoExpansionFields(Sets.union(config.getNoExpansionFields(), result.noExpansionFields));
-
-        return result.script;
     }
 
     protected ASTJexlScript timedApplyRules(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper,
@@ -1820,11 +1786,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
-        if (!config.getNoExpansionFields().isEmpty()) {
-            config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields()));
-        } else {
-            config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields));
-        }
+        config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
+                        config.getStrictFields()));
 
         if (log.isTraceEnabled())
             log.trace("queryTree:" + PrintingVisitor.formattedQueryString(config.getQueryTree()));
@@ -2883,14 +2846,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return new DefaultQueryPlanner(this);
     }
 
-    public void setDocSpecificOverride(boolean docSpecificOverride) {
-        this.docSpecificOverride = docSpecificOverride;
-    }
-
-    public boolean getDocSpecificOverride() {
-        return docSpecificOverride;
-    }
-
     public void setMaxRangeWaitMillis(long maxRangeWaitMillis) {
         this.maxRangeWaitMillis = maxRangeWaitMillis;
     }
@@ -2905,14 +2860,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public long getPushdownThreshold() {
         return pushdownThreshold;
-    }
-
-    public int getDocsToCombineForEvaluation() {
-        return docsToCombineForEvaluation;
-    }
-
-    public void setDocsToCombineForEvaluation(final int docsToCombineForEvaluation) {
-        this.docsToCombineForEvaluation = docsToCombineForEvaluation;
     }
 
     public boolean getExecutableExpansion() {

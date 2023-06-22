@@ -4,9 +4,7 @@ import static org.easymock.EasyMock.mock;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -36,8 +34,6 @@ public class ThreadedRangeBundlerTest {
         assertEquals(0L, bundler.getMaxRanges());
         assertNull(bundler.getSettings());
         assertNull(bundler.getQueryTree());
-        assertFalse(bundler.isDocSpecificLimitOverride());
-        assertEquals(-1, bundler.getDocsToCombine());
         assertNull(bundler.getQueryPlanComparators());
         assertEquals(0, bundler.getNumRangesToBuffer());
         assertEquals(0L, bundler.getRangeBufferTimeoutMillis());
@@ -60,8 +56,6 @@ public class ThreadedRangeBundlerTest {
                         .setMaxRanges(100)
                         .setSettings(settings)
                         .setQueryTree(queryTree)
-                        .setDocSpecificLimitOverride(true)
-                        .setDocsToCombine(10)
                         .setMaxRangeWaitMillis(1)
                         .setQueryPlanComparators(queryPlanComparators)
                         .setNumRangesToBuffer(1)
@@ -75,8 +69,6 @@ public class ThreadedRangeBundlerTest {
         assertEquals(100L, bundler.getMaxRanges());
         assertEquals(settings, bundler.getSettings());
         assertEquals(queryTree, bundler.getQueryTree());
-        assertTrue(bundler.isDocSpecificLimitOverride());
-        assertEquals(10, bundler.getDocsToCombine());
         assertEquals(queryPlanComparators, bundler.getQueryPlanComparators());
         assertEquals(1, bundler.getNumRangesToBuffer());
         assertEquals(10L, bundler.getRangeBufferTimeoutMillis());

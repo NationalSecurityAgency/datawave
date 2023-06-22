@@ -62,6 +62,7 @@ import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl2.parser.ASTVar;
 import org.apache.commons.jexl2.parser.ASTWhileStatement;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.commons.lang.StringUtils;
@@ -732,6 +733,10 @@ public class ExecutableDeterminationVisitor extends BaseVisitor {
             if (output != null) {
                 output.writeLine(data, node, "( Exceeded Or / Value Threshold )", state, true);
             }
+        }
+        // if ignored expression, then ignore it
+        else if (instance.isAnyTypeOf(DroppedExpression.class)) {
+            state = STATE.IGNORABLE;
         }
         // if a delayed predicate, then this is not-executable against the index by choice
         else if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class)) {

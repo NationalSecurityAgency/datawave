@@ -15,6 +15,7 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import datawave.query.config.ShardQueryConfiguration;
@@ -131,13 +132,15 @@ public class FunctionIndexQueryExpansionVisitor extends RebuildingVisitor {
 
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
-        return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isType(ASTEvaluationOnly.class));
+        // if we know from a parent that this is evaluation only (or ignored), pass that forward. if we don't know, check.
+        return super.visit(node, (data instanceof Boolean && (Boolean) data)
+                        || QueryPropertyMarker.findInstance(node).isAnyTypeOf(ASTEvaluationOnly.class, DroppedExpression.class));
     }
 
     @Override
     public Object visit(ASTReference node, Object data) {
-        // if we know from a parent that this is evaluation only, pass that forward. if we don't know, check.
-        return super.visit(node, (data instanceof Boolean && (Boolean) data) || QueryPropertyMarker.findInstance(node).isType(ASTEvaluationOnly.class));
+        // if we know from a parent that this is evaluation only (or ignored), pass that forward. if we don't know, check.
+        return super.visit(node, (data instanceof Boolean && (Boolean) data)
+                        || QueryPropertyMarker.findInstance(node).isAnyTypeOf(ASTEvaluationOnly.class, DroppedExpression.class));
     }
 }

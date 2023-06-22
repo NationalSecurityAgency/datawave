@@ -52,6 +52,8 @@ import com.google.common.collect.Sets;
 import datawave.annotation.Required;
 import datawave.interceptor.RequiredInterceptor;
 import datawave.interceptor.ResponseInterceptor;
+import datawave.query.model.FieldMapping;
+import datawave.query.model.ModelKeyParser;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.ScannerHelper;
 import datawave.webservice.common.cache.AccumuloTableCache;
@@ -59,7 +61,6 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.common.exception.NotFoundException;
 import datawave.webservice.common.exception.PreConditionFailedException;
-import datawave.webservice.model.FieldMapping;
 import datawave.webservice.model.ModelList;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
@@ -359,7 +360,7 @@ public class ModelBean {
                 cfg.addOption(RegExFilter.COLF_REGEX, "^" + name + "(\\x00.*)?");
                 scanner.addScanIterator(cfg);
                 for (Entry<Key,Value> entry : scanner) {
-                    FieldMapping mapping = ModelKeyParser.parseKey(entry.getKey(), cbAuths);
+                    FieldMapping mapping = ModelKeyParser.parseKey(entry.getKey());
                     response.getFields().add(mapping);
                 }
             }

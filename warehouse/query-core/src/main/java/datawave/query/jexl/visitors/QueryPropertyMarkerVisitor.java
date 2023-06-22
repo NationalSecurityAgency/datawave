@@ -18,7 +18,9 @@ import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.LenientExpression;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -92,10 +94,12 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             registerMarker(IndexHoleMarkerJexlNode.class);
             registerMarker(ASTDelayedPredicate.class);
             registerMarker(ASTEvaluationOnly.class);
+            registerMarker(DroppedExpression.class);
             registerMarker(ExceededOrThresholdMarkerJexlNode.class);
             registerMarker(ExceededTermThresholdMarkerJexlNode.class);
             registerMarker(ExceededValueThresholdMarkerJexlNode.class);
             registerMarker(BoundedRange.class);
+            registerMarker(LenientExpression.class);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Failed to register default marker types for " + QueryPropertyMarkerVisitor.class.getName(), e);
         }

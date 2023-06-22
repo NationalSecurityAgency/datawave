@@ -47,6 +47,7 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.pool.impl.GenericObjectPool;
@@ -879,8 +880,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTReference node, Object o) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        // Recurse only if not delayed or evaluation only
-        if (instance.isNotAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class)) {
+        // Recurse only if not delayed, evaluation only, or ignored
+        if (instance.isNotAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class, DroppedExpression.class)) {
             super.visit(node, o);
         } else if (instance.isType(ASTDelayedPredicate.class)) {
             JexlNode subNode = instance.getSource();

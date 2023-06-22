@@ -398,6 +398,7 @@ public class ShardQueryConfigurationTest {
         QueryModel expectedQueryModel = new QueryModel();
         Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
+        Assert.assertEquals(expectedQueryModel.getLenientForwardMappings(), config.getQueryModel().getLenientForwardMappings());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
@@ -513,7 +514,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 201;
+        int expectedObjectCount = 203;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

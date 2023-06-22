@@ -21,8 +21,10 @@ import org.easymock.EasyMock;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import datawave.data.normalizer.NumberNormalizer;
 import datawave.data.type.DateType;
 import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
@@ -241,49 +243,117 @@ public class DatawaveInterpreterTest {
 
     @Test
     public void testBoundedRange() {
-        String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150'))";
+        String query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("120") + "' && SPEED <= '" + numberIndex("150") + "'))";
         test(query, buildBoundedRangeContext(), true);
 
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130'))";
+        query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("90") + "' && SPEED <= '" + numberIndex("120") + "'))";
         test(query, buildBoundedRangeContext(), false);
     }
 
     @Test
     public void testBoundedRangeAndTerm() {
         // range matches, term matches
-        String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) && FOO == 'bar'";
+        String query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("120") + "' && SPEED <= '" + numberIndex("150") + "')) && FOO == 'bar'";
         test(query, buildBoundedRangeContext(), true);
 
         // range matches, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) && FOO != 'bar'";
+        query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("120") + "' && SPEED <= '" + numberIndex("150") + "')) && FOO != 'bar'";
         test(query, buildBoundedRangeContext(), false);
 
         // range misses, term hits
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) && FOO == 'bar'";
+        query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("90") + "' && SPEED <= '" + numberIndex("120") + "')) && FOO == 'bar'";
         test(query, buildBoundedRangeContext(), false);
 
         // range misses, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) && FOO != 'bar'";
+        query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("90") + "' && SPEED <= '" + numberIndex("120") + "')) && FOO != 'bar'";
         test(query, buildBoundedRangeContext(), false);
     }
 
     @Test
     public void testBoundedRangeOrTerm() {
         // range matches, term matches
-        String query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) || FOO == 'bar'";
+        String query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("120") + "' && SPEED <= '" + numberIndex("150") + "')) || FOO == 'bar'";
         test(query, buildBoundedRangeContext(), true);
 
         // range matches, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '120' && SPEED <= '150')) || FOO != 'bar'";
+        query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("120") + "' && SPEED <= '" + numberIndex("150") + "')) || FOO != 'bar'";
         test(query, buildBoundedRangeContext(), true);
 
         // range misses, term hits
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) || FOO == 'bar'";
+        query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("90") + "' && SPEED <= '" + numberIndex("120") + "')) || FOO == 'bar'";
         test(query, buildBoundedRangeContext(), true);
 
         // range misses, term misses
-        query = "((_Bounded_ = true) && (SPEED >= '90' && SPEED <= '130')) || FOO != 'bar'";
+        query = "((_Bounded_ = true) && (SPEED >= '" + numberIndex("90") + "' && SPEED <= '" + numberIndex("120") + "')) || FOO != 'bar'";
         test(query, buildBoundedRangeContext(), false);
+    }
+
+    @Test
+    public void testAssignments() {
+        // test plain assignment will return false
+        String assignment = "(_value_ = true)";
+        String query = assignment;
+        test(query, false);
+
+        // validate simply query hits
+        String test = "FOO == 'bar'";
+        query = test;
+        test(query, true);
+
+        // validate intersection will hit with assignment
+        query = assignment + " && " + test;
+        test(query, true);
+
+        // validate union will hit with assignment
+        query = assignment + " || " + test;
+        test(query, true);
+
+        // validate simply query misses
+        test = "FOO == 'barbar'";
+        query = test;
+        test(query, false);
+
+        // validate intersection will miss with assignment
+        query = assignment + " && " + test;
+        test(query, false);
+
+        // validate union will miss with assignment
+        query = assignment + " || " + test;
+        test(query, false);
+    }
+
+    @Test
+    public void testDroppedAssignments() {
+        // test plain assignment will return false
+        String assignment = "((_dropped_ = true) && ((_reason_ = 'because') && (_query_ = 'field == value')))";
+        String query = assignment;
+        test(query, false);
+
+        // validate simply query hits
+        String test = "FOO == 'bar'";
+        query = test;
+        test(query, true);
+
+        // validate intersection will hit with assignment
+        query = assignment + " && " + test;
+        test(query, true);
+
+        // validate union will hit with assignment
+        query = assignment + " || " + test;
+        test(query, true);
+
+        // validate simply query misses
+        test = "FOO == 'barbar'";
+        query = test;
+        test(query, false);
+
+        // validate intersection will miss with assignment
+        query = assignment + " && " + test;
+        test(query, false);
+
+        // validate union will miss with assignment
+        query = assignment + " || " + test;
+        test(query, false);
     }
 
     // test filter:isNull
@@ -478,11 +548,32 @@ public class DatawaveInterpreterTest {
      *
      * @return a context
      */
-    private JexlContext buildBoundedRangeContext() {
+    private JexlContext buildUnNormalizedBoundedRangeContext() {
         DatawaveJexlContext context = new DatawaveJexlContext();
         context.set("SPEED", new FunctionalSet(Arrays.asList("123", "147")));
         context.set("FOO", new FunctionalSet(Arrays.asList("bar", "baz")));
         return context;
+    }
+
+    /**
+     * Build a jexl context with values that will match bounded ranges
+     *
+     * @return a context
+     */
+    private JexlContext buildBoundedRangeContext() {
+        DatawaveJexlContext context = new DatawaveJexlContext();
+        context.set("SPEED", new FunctionalSet(Arrays.asList(numberTuple("SPEED", "123"), numberTuple("SPEED", "147"))));
+        context.set("FOO", new FunctionalSet(Arrays.asList("bar", "baz")));
+        return context;
+    }
+
+    private String numberIndex(String value) {
+        return new NumberNormalizer().normalize(value);
+    }
+
+    private ValueTuple numberTuple(String field, String value) {
+        String index = numberIndex(value);
+        return new ValueTuple(field, value, index, new TypeAttribute<>(new NumberType(index), docKey, true));
     }
 
 }

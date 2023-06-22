@@ -278,18 +278,16 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (config.getSerializeQueryIterator()) {
                         serializeQuery(newIteratorSetting);
                     } else {
-                        if (!evaluatedPreviously) {
+                        if (!evaluatedPreviously && config.getHdfsSiteConfigURLs() != null) {
                             // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
-                            if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
-                                if (null == script) {
-                                    script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                                }
-                                try {
-                                    script = pushdownLargeFieldedLists(config, script);
-                                    madeChange = true;
-                                } catch (IOException ioe) {
-                                    log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
-                                }
+                            if (null == script) {
+                                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                            }
+                            try {
+                                script = pushdownLargeFieldedLists(config, script);
+                                madeChange = true;
+                            } catch (IOException ioe) {
+                                log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
                             }
                         }
                     }
