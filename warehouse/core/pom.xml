@@ -9,6 +9,9 @@
     <artifactId>datawave-core</artifactId>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.beust</groupId>
@@ -230,7 +233,7 @@
                     <threadCountClasses>0</threadCountClasses>
                     <threadCountMethods>1</threadCountMethods>
                     <threadCountSuites>0</threadCountSuites>
-                    <argLine>-XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
+                    <argLine>@{argLine} -XX:+TieredCompilation -XX:TieredStopAtLevel=1  -Dfile.encoding=UTF8 -Duser.timezone=GMT -Xmx1024m -Dapple.awt.UIElement=true -Djava.security.krb5.realm= -Djava.security.krb5.kdc=
                         --add-opens java.xml/jdk.xml.internal=ALL-UNNAMED</argLine>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>random</runOrder>
@@ -256,6 +259,19 @@
                         <version>${version.junit.bom}</version>
                     </dependency>
                 </dependencies>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

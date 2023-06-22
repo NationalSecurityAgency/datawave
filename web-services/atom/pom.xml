@@ -9,6 +9,9 @@
     <artifactId>datawave-ws-atom</artifactId>
     <packaging>ejb</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/coverage/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>gov.nsa.datawave.webservices</groupId>
@@ -142,6 +145,19 @@
                         </manifest>
                     </archive>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>report</id>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <phase>verify</phase>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
