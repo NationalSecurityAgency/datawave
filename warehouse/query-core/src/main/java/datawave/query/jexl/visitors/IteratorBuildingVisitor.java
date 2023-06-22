@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -108,6 +107,7 @@ import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -1329,8 +1329,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
-        Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(node,
-                        attributeFactory);
+        Map<String,ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(node, attributeFactory);
 
         chainableFilter.addFilter(new TermFrequencyDataFilter(expressionFilters));
 

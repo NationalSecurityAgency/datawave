@@ -7,6 +7,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.JexlNode;
 
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -35,7 +36,7 @@ public class TermFrequencyDataFilter extends EventDataQueryExpressionFilter {
      * @param filters
      *            a map of expression filters
      */
-    public TermFrequencyDataFilter(Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> filters) {
+    public TermFrequencyDataFilter(Map<String,ExpressionFilter> filters) {
         super(filters);
     }
 
