@@ -174,4 +174,14 @@ public class QueryParameters {
      * Used to specify phrase excerpts that should be returned.
      */
     public static final String EXCERPT_FIELDS = "excerpt.fields";
+
+    /**
+     * Used to specify model or DB fields that should be treated as lenient (can be skipped if normalization fails)
+     */
+    public static final String LENIENT_FIELDS = "lenient.fields";
+
+    /**
+     * Used to specify model or DB fields that must be treated as strict (cannot be skipped if normalization fails)
+     */
+    public static final String STRICT_FIELDS = "strict.fields";
 }

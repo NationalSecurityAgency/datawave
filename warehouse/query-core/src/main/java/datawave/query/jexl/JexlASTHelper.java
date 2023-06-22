@@ -369,20 +369,19 @@ public class JexlASTHelper {
                     for (int j = 0; j < child.jjtGetNumChildren(); j++) {
                         JexlNode grandChild = child.jjtGetChild(j);
 
-                        // If the grandchild and its image is non-null and equal to the any-field identifier
+                        // if the grandChild is an identifier, then return its image/value
                         if (grandChild instanceof ASTIdentifier) {
                             return (deconstruct ? deconstructIdentifier(grandChild.image) : grandChild.image);
-                        } else if (grandChild instanceof ASTFunctionNode) {
-                            return null;
                         }
                     }
-                    return null;
-                } else {
-                    return null;
+                } else if (child instanceof ASTIdentifier) {
+                    return (deconstruct ? deconstructIdentifier(child.image) : child.image);
                 }
+
             }
-        } else if (node instanceof ASTIdentifier && node.jjtGetNumChildren() == 0) {
-            return deconstructIdentifier(node.image, deconstruct);
+            return null;
+        } else if (node instanceof ASTIdentifier) {
+            return (deconstruct ? deconstructIdentifier(node.image, deconstruct) : node.image);
         }
 
         NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.IDENTIFIER_MISSING);

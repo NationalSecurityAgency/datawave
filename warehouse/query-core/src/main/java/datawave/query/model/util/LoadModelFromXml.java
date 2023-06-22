@@ -1,7 +1,7 @@
 package datawave.query.model.util;
 
 import datawave.query.model.QueryModel;
-import datawave.webservice.model.FieldMapping;
+import datawave.query.model.FieldMapping;
 import datawave.webservice.model.Model;
 import org.apache.log4j.Logger;
 import org.xml.sax.InputSource;
@@ -45,7 +45,11 @@ public class LoadModelFromXml {
         for (FieldMapping mapping : xmlModel.getFields()) {
             switch (mapping.getDirection()) {
                 case FORWARD:
-                    model.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
+                    if (mapping.isLenientMarker()) {
+                        model.addLenientForwardMappings(mapping.getModelFieldName());
+                    } else {
+                        model.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
+                    }
                     break;
                 case REVERSE:
                     model.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
