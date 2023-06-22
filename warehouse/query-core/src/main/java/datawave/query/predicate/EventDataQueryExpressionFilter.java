@@ -3,12 +3,10 @@ package datawave.query.predicate;
 import com.google.common.collect.Maps;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -103,13 +101,24 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
             throw new RuntimeException("The EventDataQueryExpressionFilter was not initialized");
         }
 
-        final DatawaveKey datawaveKey = new DatawaveKey(key);
-        final String fieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
+        final String fieldName = getFieldNameFromKey(key);
         if (update) {
             return this.filters.containsKey(fieldName) && this.filters.get(fieldName).apply(key);
         } else {
             return this.filters.containsKey(fieldName) && this.filters.get(fieldName).peek(key);
         }
+    }
+
+    /**
+     * Parse the field name from the provided key
+     *
+     * @param key
+     *            the key
+     * @return a field name
+     */
+    protected String getFieldNameFromKey(Key key) {
+        final DatawaveKey datawaveKey = new DatawaveKey(key);
+        return JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
     }
 
     /**
