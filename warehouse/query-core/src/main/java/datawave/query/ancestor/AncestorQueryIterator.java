@@ -53,18 +53,18 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
  */
 public class AncestorQueryIterator extends QueryIterator {
     private static final Logger log = Logger.getLogger(AncestorQueryIterator.class);
-    
+
     public AncestorQueryIterator() {}
-    
+
     public AncestorQueryIterator(AncestorQueryIterator other, IteratorEnvironment env) {
         super(other, env);
     }
-    
+
     @Override
     public AncestorQueryIterator deepCopy(IteratorEnvironment env) {
         return new AncestorQueryIterator(this, env);
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean success = super.validateOptions(options);
@@ -72,20 +72,20 @@ public class AncestorQueryIterator extends QueryIterator {
         super.arithmetic = new HitListArithmetic(false);
         return success;
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (log.isTraceEnabled()) {
             log.trace("AncestorQueryIterator init()");
         }
-        
+
         super.init(source, options, env);
-        
+
         // force evaluation of ranges to find missed hits
         this.mustUseFieldIndex = true;
-        
+
         // TODO: Figure out why this is in the TLD logic:
-        
+
         // Replace the fieldIndexKeyDataTypeFilter with a chain of "anded" index-filtering predicates.
         // If no other predicates are configured via the indexfiltering.classes property, the method
         // simply returns the existing fieldIndexKeyDataTypeFilter value. Otherwise, the returned value
@@ -93,10 +93,10 @@ public class AncestorQueryIterator extends QueryIterator {
         // fieldIndexKeyDataTypeFilter value (assuming it is defined with something other than the default
         // "ALWAYS_TRUE" KeyIdentity.Function).
         fieldIndexKeyDataTypeFilter = parseIndexFilteringChain(new SourcedOptions<>(source, env, options));
-        
+
         disableIndexOnlyDocuments = false;
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // when we are town down and rebuilt, ensure the range is okay even for the middle of a tree shifting to the next
@@ -104,8 +104,8 @@ public class AncestorQueryIterator extends QueryIterator {
         // document specific range but not being inclusive start
         if (!range.isStartKeyInclusive()) {
             Key oldStartKey = range.getStartKey();
-            Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily() + Constants.NULL_BYTE_STRING, oldStartKey
-                            .getColumnQualifier().toString());
+            Key startKey = new Key(oldStartKey.getRow().toString(), oldStartKey.getColumnFamily() + Constants.NULL_BYTE_STRING,
+                            oldStartKey.getColumnQualifier().toString());
             if (!startKey.equals(range.getStartKey())) {
                 Key endKey = range.getEndKey();
                 boolean endKeyInclusive = range.isEndKeyInclusive();
@@ -117,10 +117,10 @@ public class AncestorQueryIterator extends QueryIterator {
                 range = new Range(startKey, true, endKey, endKeyInclusive);
             }
         }
-        
+
         super.seek(range, columnFamilies, inclusive);
     }
-    
+
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (evaluationFilter == null && script != null) {
@@ -129,16 +129,16 @@ public class AncestorQueryIterator extends QueryIterator {
         // return a new script each time as this is not thread safe (maintains state)
         return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
-    
+
     @Override
     protected JexlEvaluation getJexlEvaluation(NestedQueryIterator<Key> documentSource) {
         return new JexlEvaluation(query, getArithmetic()) {
             private Key currentKey = null;
-            
+
             private boolean isCurrentDoc(Key key) {
                 return currentKey.getColumnFamilyData().equals(key.getColumnFamilyData());
             }
-            
+
             private boolean isFromCurrentDoc(ValueTuple tuple) {
                 Attribute<?> source = tuple.getSource();
                 if (source != null && source.isMetadataSet()) {
@@ -146,7 +146,7 @@ public class AncestorQueryIterator extends QueryIterator {
                 }
                 return false;
             }
-            
+
             @Override
             public boolean isMatched(Object o) {
                 boolean matched = false;
@@ -162,7 +162,7 @@ public class AncestorQueryIterator extends QueryIterator {
                 }
                 return matched;
             }
-            
+
             @Override
             public boolean apply(Tuple3<Key,Document,DatawaveJexlContext> input) {
                 currentKey = input.first();
@@ -170,12 +170,12 @@ public class AncestorQueryIterator extends QueryIterator {
             }
         };
     }
-    
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     private Predicate<Key> parseIndexFilteringChain(final Map<String,String> options) {
         // Create a list to gather up the predicates
         List<Predicate<Key>> predicates = Collections.emptyList();
-        
+
         final String functions = (null != options) ? options.get(IndexIterator.INDEX_FILTERING_CLASSES) : StringUtils.EMPTY_STRING;
         if ((null != functions) && !functions.isEmpty()) {
             try {
@@ -184,7 +184,7 @@ public class AncestorQueryIterator extends QueryIterator {
                     if (log.isTraceEnabled()) {
                         log.trace("Configuring index-filtering class: " + fClassName);
                     }
-                    
+
                     final Class<?> fClass = Class.forName(fClassName);
                     if (Predicate.class.isAssignableFrom(fClass)) {
                         // Create and configure the predicate
@@ -192,7 +192,7 @@ public class AncestorQueryIterator extends QueryIterator {
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
                         }
-                        
+
                         // Initialize a mutable List instance and add the default filter, if defined
                         if (predicates.isEmpty()) {
                             predicates = new LinkedList<>();
@@ -201,7 +201,7 @@ public class AncestorQueryIterator extends QueryIterator {
                                 predicates.add(existingPredicate);
                             }
                         }
-                        
+
                         // Add the newly instantiated predicate
                         predicates.add(p);
                     } else {
@@ -209,12 +209,11 @@ public class AncestorQueryIterator extends QueryIterator {
                         return fieldIndexKeyDataTypeFilter;
                     }
                 }
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException |
-                     InvocationTargetException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
             }
         }
-        
+
         // Assign the return value
         final Predicate<Key> predicate;
         if (!predicates.isEmpty()) {
@@ -226,10 +225,10 @@ public class AncestorQueryIterator extends QueryIterator {
         } else {
             predicate = fieldIndexKeyDataTypeFilter;
         }
-        
+
         return predicate;
     }
-    
+
     @Override
     protected IteratorBuildingVisitor createIteratorBuildingVisitor(final Range documentRange, boolean isQueryFullySatisfied, boolean sortedUIDs)
                     throws MalformedURLException, ConfigException, InstantiationException, IllegalAccessException {
@@ -237,10 +236,10 @@ public class AncestorQueryIterator extends QueryIterator {
                         .setIteratorBuilder(AncestorIndexIteratorBuilder.class);
         return ((AncestorIndexBuildingVisitor) v).setEquality(getEquality());
     }
-    
+
     /**
      * Create a comparator used to order values within lists in the JexlContext.
-     * 
+     *
      * @param from
      *            the tuple to create the comparator
      * @return a ValueComparator
@@ -249,18 +248,18 @@ public class AncestorQueryIterator extends QueryIterator {
     public Comparator<Object> getValueComparator(Tuple3<Key,Document,Map<String,Object>> from) {
         return new ValueComparator(from.second().getMetadata());
     }
-    
+
     /**
      * A comparator which will ensure that values for the specific document are sorted first. This allows us to not use exhaustive matching within the jexl
      * context to determine whether the document of interest is actually a match.
      */
     private static class ValueComparator implements Comparator<Object> {
         final Text cf;
-        
+
         public ValueComparator(Key metadata) {
             cf = (metadata == null ? new Text() : metadata.getColumnFamily());
         }
-        
+
         @Override
         public int compare(Object o1, Object o2) {
             if (cf.getLength() == 0) {
@@ -278,7 +277,7 @@ public class AncestorQueryIterator extends QueryIterator {
             }
         }
     }
-    
+
     /**
      * Get a {@link AncestorRangeProvider}
      *
@@ -291,7 +290,7 @@ public class AncestorQueryIterator extends QueryIterator {
         }
         return rangeProvider;
     }
-    
+
     /**
      * Get an {@link AncestorEquality}
      *

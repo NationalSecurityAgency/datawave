@@ -21,44 +21,44 @@ import java.util.Map;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 @XmlSeeAlso({DefaultModificationRequest.class, DefaultUUIDModificationRequest.class})
 public class ModificationRequestBase implements Serializable {
-    
+
     private static String COLUMN_VISIBILITY = "columnVisibility";
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlEnum(String.class)
     public enum MODE {
         INSERT, UPDATE, DELETE
     }
-    
+
     @XmlElement(name = "mode", required = true)
     public MODE mode = null;
-    
+
     public MODE getMode() {
         return mode;
     }
-    
+
     public void setMode(MODE mode) {
         this.mode = mode;
     }
-    
+
     /**
      * Cannot use a setMode(String mode) method as that causes deserialization issues with jackson library.
-     * 
+     *
      * @param mode
      *            - name of the mode to assign
      */
     public void setModeFromString(String mode) {
         this.mode = MODE.valueOf(mode);
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);
         tsb.append("mode", mode);
         return tsb.toString();
     }
-    
+
     public Map<String,List<String>> toMap() {
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         if (this.mode != null) {
@@ -66,16 +66,16 @@ public class ModificationRequestBase implements Serializable {
         }
         return p;
     }
-    
+
     public static class DefaultFieldMarkingsAdapter extends XmlAdapter<DefaultFieldMarking,Map<String,String>> {
-        
+
         @Override
         public Map<String,String> unmarshal(DefaultFieldMarking value) throws Exception {
             HashMap<String,String> fieldMarkings = new HashMap<String,String>();
             fieldMarkings.put(COLUMN_VISIBILITY, value.fieldColumnVisibility);
             return fieldMarkings;
         }
-        
+
         @Override
         public DefaultFieldMarking marshal(Map<String,String> map) throws Exception {
             DefaultFieldMarking fieldMarking = new DefaultFieldMarking();
@@ -83,7 +83,7 @@ public class ModificationRequestBase implements Serializable {
             return fieldMarking;
         }
     }
-    
+
     public static class DefaultFieldMarking {
         @XmlElement(name = "columnVisibility", required = true)
         public String fieldColumnVisibility;;

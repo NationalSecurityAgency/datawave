@@ -10,39 +10,39 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class IsNotNullIntentVisitorTest {
-    
+
     private final ASTValidator validator = new ASTValidator();
-    
+
     @Test
     public void testMatchAnythingRegex() throws ParseException {
         String query = "FOO =~ '.*?'";
         String expected = "FOO != null";
-        
+
         assertResult(query, expected);
     }
-    
+
     @Test
     public void testMatchSpecificValue() throws ParseException {
         String query = "FOO =~ 'value*'";
         String expected = "FOO =~ 'value*'";
-        
+
         assertResult(query, expected);
     }
-    
+
     @Test
     public void testConjunctionWithMatchAnythingRegex() throws ParseException {
         String query = "FOO =~ '.*?' && BAR =~ 'anything*'";
         String expected = "FOO != null && BAR =~ 'anything*'";
-        
+
         assertResult(query, expected);
     }
-    
+
     private void assertResult(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseAndFlattenJexlQuery(original);
         ASTJexlScript actual = IsNotNullIntentVisitor.fixNotNullIntent(originalScript);
-        
+
         JexlNodeAssert.assertThat(actual).isEqualTo(expected).hasValidLineage();
-        
+
         try {
             validator.isValid(actual);
         } catch (InvalidQueryTreeException e) {

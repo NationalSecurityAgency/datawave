@@ -10,12 +10,12 @@ import org.apache.log4j.Logger;
  * Test cases for flatten mode {@link FlattenMode@NORMAL}.
  */
 public class TLDNormalFlattenQueryTest extends NormalFlattenQueryTest {
-    
+
     private static final Logger log = Logger.getLogger(TLDNormalFlattenQueryTest.class);
-    
+
     protected ShardQueryLogic createQueryLogic() {
         return new TLDQueryLogic();
     }
-    
+
     public TLDNormalFlattenQueryTest() {}
 }

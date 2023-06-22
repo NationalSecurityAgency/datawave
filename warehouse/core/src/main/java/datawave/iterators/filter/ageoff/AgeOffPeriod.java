@@ -7,34 +7,34 @@ import org.apache.log4j.Logger;
 
 /**
  * Description: Identifies an age off period
- * 
+ *
  * Justification: Strongly types of age off periods are identified.
  */
 public class AgeOffPeriod {
-    
+
     private long cutOffMillis;
     private long ttl;
     private String ttlUnits;
-    
+
     private static final Logger log = Logger.getLogger(AgeOffPeriod.class);
-    
+
     public AgeOffPeriod(long cutOffMillis) {
         this.ttlUnits = "ms";
         this.ttl = System.currentTimeMillis() - cutOffMillis;
         this.cutOffMillis = cutOffMillis;
     }
-    
+
     public AgeOffPeriod(long scanStart, long ttl, String ttlUnits) {
-        
+
         this.ttl = ttl;
         this.ttlUnits = ttlUnits;
         this.cutOffMillis = scanStart - (ttl * getTtlUnitsFactor());
     }
-    
+
     public long getTtlUnitsFactor() {
         return getTtlUnitsFactor(ttlUnits);
     }
-    
+
     public static long getTtlUnitsFactor(String units) {
         long ttlUnitsFactor;
         if (units.equals(AgeOffTtlUnits.DAYS)) {
@@ -54,35 +54,35 @@ public class AgeOffPeriod {
         }
         return ttlUnitsFactor;
     }
-    
+
     public long getCutOffMilliseconds() {
         return cutOffMillis;
     }
-    
+
     public long getTtl() {
         return ttl;
     }
-    
+
     public String getTtlUnits() {
         return ttlUnits;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (null == o)
             return false;
         if (o == this)
             return true;
-        
+
         if (o instanceof AgeOffPeriod) {
             AgeOffPeriod agp = AgeOffPeriod.class.cast(o);
             return cutOffMillis == agp.cutOffMillis;
-            
+
         }
-        
+
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return (int) (cutOffMillis ^ (cutOffMillis >>> 32));

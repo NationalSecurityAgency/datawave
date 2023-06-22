@@ -12,9 +12,9 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class VirtualFieldTest {
-    
+
     protected Multimap<String,NormalizedContentInterface> eventFields = HashMultimap.create();
-    
+
     @Before
     public void setup() {
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value1", "group1", "subgroup1"));
@@ -22,42 +22,42 @@ public class VirtualFieldTest {
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value3", "group3", "subgroup1"));
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value4", "group4", "subgroup1"));
         eventFields.put("GROUPED_1", new NormalizedFieldAndValue("GROUPED_1", "value5", "group5", "subgroup1"));
-        
+
         eventFields.put("GROUPED_2", new NormalizedFieldAndValue("GROUPED_2", "value1", "group1", "subgroup1"));
         eventFields.put("GROUPED_2", new NormalizedFieldAndValue("GROUPED_2", "value2", "group2", "subgroup1"));
         eventFields.put("GROUPED_2", new NormalizedFieldAndValue("GROUPED_2", "value3", "group3", "subgroup1"));
         eventFields.put("GROUPED_2", new NormalizedFieldAndValue("GROUPED_2", "value4", "group4", "subgroup1"));
         eventFields.put("GROUPED_2", new NormalizedFieldAndValue("GROUPED_2", "value5", "group5", "subgroup1"));
-        
+
         eventFields.put("UNGROUPED_1", new NormalizedFieldAndValue("UNGROUPED_1", "value1"));
         eventFields.put("UNGROUPED_1", new NormalizedFieldAndValue("UNGROUPED_1", "value2"));
         eventFields.put("UNGROUPED_1", new NormalizedFieldAndValue("UNGROUPED_1", "value3"));
         eventFields.put("UNGROUPED_1", new NormalizedFieldAndValue("UNGROUPED_1", "value4"));
         eventFields.put("UNGROUPED_1", new NormalizedFieldAndValue("UNGROUPED_1", "value5"));
-        
+
         eventFields.put("UNGROUPED_2", new NormalizedFieldAndValue("UNGROUPED_2", "value1"));
         eventFields.put("UNGROUPED_2", new NormalizedFieldAndValue("UNGROUPED_2", "value2"));
         eventFields.put("UNGROUPED_2", new NormalizedFieldAndValue("UNGROUPED_2", "value3"));
         eventFields.put("UNGROUPED_2", new NormalizedFieldAndValue("UNGROUPED_2", "value4"));
         eventFields.put("UNGROUPED_2", new NormalizedFieldAndValue("UNGROUPED_2", "value5"));
-        
+
         eventFields.put("PARTIAL_1", new NormalizedFieldAndValue("PARTIAL_1", "value1", "group1", "subgroup1"));
         eventFields.put("PARTIAL_1", new NormalizedFieldAndValue("PARTIAL_1", "value2", "group2", "subgroup1"));
         eventFields.put("PARTIAL_1", new NormalizedFieldAndValue("PARTIAL_1", "value3", "group3", "subgroup1"));
         eventFields.put("PARTIAL_1", new NormalizedFieldAndValue("PARTIAL_1", "value4"));
         eventFields.put("PARTIAL_1", new NormalizedFieldAndValue("PARTIAL_1", "value5"));
-        
+
         eventFields.put("PARTIAL_2", new NormalizedFieldAndValue("PARTIAL_2", "value1"));
         eventFields.put("PARTIAL_2", new NormalizedFieldAndValue("PARTIAL_2", "value2"));
         eventFields.put("PARTIAL_2", new NormalizedFieldAndValue("PARTIAL_2", "value3", "group3", "subgroup1"));
         eventFields.put("PARTIAL_2", new NormalizedFieldAndValue("PARTIAL_2", "value4", "group4", "subgroup1"));
         eventFields.put("PARTIAL_2", new NormalizedFieldAndValue("PARTIAL_2", "value5", "group5", "subgroup1"));
     }
-    
+
     protected VirtualFieldIngestHelper getHelper(VirtualIngest.GroupingPolicy policy) {
         return getHelper(policy, false);
     }
-    
+
     protected VirtualFieldIngestHelper getHelper(VirtualIngest.GroupingPolicy policy, boolean allowMissing) {
         VirtualFieldIngestHelper helper = new VirtualFieldIngestHelper(new Type("test", null, null, null, 1, null));
         Configuration config = new Configuration();
@@ -70,12 +70,12 @@ public class VirtualFieldTest {
         helper.setup(config);
         return helper;
     }
-    
+
     @Test
     public void testSameGroupOnlyVirtualFieldGrouping() {
         VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.SAME_GROUP_ONLY);
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
-        
+
         assertEquals(7, virtualFields.keySet().size());
         // 3 groups match for the patterned virtual fields
         assertEquals(3, virtualFields.get("group1partial1").size());
@@ -88,12 +88,12 @@ public class VirtualFieldTest {
         assertEquals(5, virtualFields.get("group1group2").size());
         assertEquals(5, virtualFields.get("partial1partial2").size());
     }
-    
+
     @Test
     public void testGroupedWithNonGroupedVirtualFieldGrouping() {
         VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.GROUPED_WITH_NON_GROUPED);
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
-        
+
         assertEquals(9, virtualFields.keySet().size());
         // the 3 matching groups plus all group1 groups against the partial fields with null groups for a total of 13
         assertEquals(13, virtualFields.get("group1partial1").size());
@@ -112,12 +112,12 @@ public class VirtualFieldTest {
         // for a grand total of 17
         assertEquals(17, virtualFields.get("partial1partial2").size());
     }
-    
+
     @Test
     public void testIgnoreGroupsVirtualFieldGrouping() {
         VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.IGNORE_GROUPS);
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
-        
+
         assertEquals(9, virtualFields.keySet().size());
         // all 5 of one side match all 5 of the other side for a total of 25
         assertEquals(25, virtualFields.get("group1partial1").size());
@@ -130,12 +130,12 @@ public class VirtualFieldTest {
         assertEquals(25, virtualFields.get("group1ungroup1").size());
         assertEquals(25, virtualFields.get("partial1partial2").size());
     }
-    
+
     @Test
     public void testAllowMissing() {
         VirtualFieldIngestHelper helper = getHelper(VirtualIngest.GroupingPolicy.GROUPED_WITH_NON_GROUPED, true);
         Multimap<String,NormalizedContentInterface> virtualFields = helper.getVirtualFields(eventFields);
-        
+
         assertEquals(11, virtualFields.keySet().size());
         // the 3 matching groups plus all group1 groups against the partial fields with null groups for a total of 13
         assertEquals(13, virtualFields.get("group1partial1").size());
@@ -157,5 +157,5 @@ public class VirtualFieldTest {
         assertEquals(5, virtualFields.get("ungroup1empty").size());
         assertEquals(5, virtualFields.get("emptypartial1").size());
     }
-    
+
 }

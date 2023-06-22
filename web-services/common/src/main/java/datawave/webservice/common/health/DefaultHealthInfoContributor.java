@@ -24,7 +24,7 @@ public class DefaultHealthInfoContributor implements HealthInfoContributor {
         } catch (IOException e) {
             // Ignore -- we just won't have git info.
         }
-        
+
         String version = getClass().getPackage().getImplementationVersion();
         BuildInfo buildInfo = new BuildInfo(version, buildTime);
         return new VersionInfo("default", buildInfo, gitInfo);

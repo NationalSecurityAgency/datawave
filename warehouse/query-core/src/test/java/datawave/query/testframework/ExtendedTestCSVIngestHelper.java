@@ -11,13 +11,13 @@ public class ExtendedTestCSVIngestHelper extends ExtendedCSVIngestHelper {
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
         Multimap<String,NormalizedContentInterface> normalizedFields = super.getEventFields(event);
-        
+
         if (null != event.getSecurityMarkings() && !event.getSecurityMarkings().isEmpty()) {
             for (NormalizedContentInterface nci : normalizedFields.values()) {
                 nci.setMarkings(event.getSecurityMarkings());
             }
         }
-        
+
         return normalizedFields;
     }
 }

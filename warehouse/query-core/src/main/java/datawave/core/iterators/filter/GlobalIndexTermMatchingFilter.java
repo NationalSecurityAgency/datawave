@@ -18,10 +18,10 @@ import org.apache.log4j.Logger;
 
 /**
  * The iterator skips entries in the global index for entries not matching one of a set of matching patterns
- * 
+ *
  */
 public class GlobalIndexTermMatchingFilter extends Filter {
-    
+
     protected static final Logger log = Logger.getLogger(GlobalIndexTermMatchingFilter.class);
     public static final String LITERAL = "term.literal.";
     public static final String PATTERN = "term.pattern.";
@@ -30,14 +30,14 @@ public class GlobalIndexTermMatchingFilter extends Filter {
     private Set<String> literals = new HashSet<>();
     private boolean reverseIndex = false;
     private String matchedValue = null;
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-        
+
         readOptions(options);
     }
-    
+
     protected void readOptions(Map<String,String> options) {
         int i = 1;
         while (options.containsKey(PATTERN + i)) {
@@ -61,16 +61,16 @@ public class GlobalIndexTermMatchingFilter extends Filter {
             log.debug("Set the reverseIndex flag to " + reverseIndex);
         }
     }
-    
+
     @Override
     public boolean accept(Key k, Value v) {
         // The row is the term
         return matches(k.getRow().toString());
     }
-    
+
     /**
      * Determine if we have events. For this to be true
-     * 
+     *
      * @param v
      *            a value
      * @return if the value has events
@@ -78,7 +78,7 @@ public class GlobalIndexTermMatchingFilter extends Filter {
     private boolean hasEvents(final Value v) {
         try {
             Uid.List protobuf = Uid.List.parseFrom(v.get());
-            
+
             // the protobuf list should be aggregated already
             return protobuf.getIGNORE() || !protobuf.getUIDList().isEmpty();
         } catch (InvalidProtocolBufferException e) {
@@ -88,42 +88,42 @@ public class GlobalIndexTermMatchingFilter extends Filter {
             return false;
         }
     }
-    
+
     private Pattern getPattern(String term) {
         return Pattern.compile(term);
     }
-    
+
     private boolean matches(String term) {
         matchedValue = null;
-        
+
         log.trace(term + " -- term");
         if (reverseIndex) {
             StringBuilder buf = new StringBuilder(term);
             term = buf.reverse().toString();
-            
+
         }
-        
+
         if (literals.contains(term)) {
             matchedValue = term;
             return true;
         }
-        
+
         for (Map.Entry<String,Pattern> entry : patterns.entrySet()) {
             if (entry.getValue().matcher(term).matches()) {
                 matchedValue = entry.getKey();
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     public String getMatchedValue() {
         return matchedValue;
     }
-    
+
     public void setMatchedValue(String matchedValue) {
         this.matchedValue = matchedValue;
     }
-    
+
 }

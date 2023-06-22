@@ -36,22 +36,22 @@ import org.apache.lucene.search.PhraseQuery;
  */
 @Deprecated
 public class PhraseQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         TokenizedPhraseQueryNode phraseNode = (TokenizedPhraseQueryNode) queryNode;
         datawave.query.language.tree.QueryNode bNode = null;
-        
+
         List<QueryNode> children = phraseNode.getChildren();
         List<datawave.query.language.tree.QueryNode> childrenList = new ArrayList<>();
-        
+
         if (children != null) {
-            
+
             for (QueryNode child : children) {
                 SelectorNode selectorNode = (SelectorNode) child.getTag(QueryTreeBuilder.QUERY_TREE_BUILDER_TAGID);
                 childrenList.add(selectorNode);
             }
         }
-        
+
         if (children != null) {
             datawave.query.language.tree.QueryNode[] childrenArray = new datawave.query.language.tree.QueryNode[childrenList.size()];
             childrenList.toArray(childrenArray);
@@ -59,7 +59,7 @@ public class PhraseQueryNodeBuilder implements QueryBuilder {
         } else {
             throw new QueryNodeException(new MessageImpl("Unknown class: " + queryNode.getClass().getName()));
         }
-        
+
         return bNode;
     }
 }

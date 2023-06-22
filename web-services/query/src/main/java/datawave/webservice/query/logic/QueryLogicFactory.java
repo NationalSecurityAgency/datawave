@@ -4,9 +4,9 @@ import java.security.Principal;
 import java.util.List;
 
 public interface QueryLogicFactory {
-    
+
     /**
-     * 
+     *
      * @param name
      *            name of query logic
      * @param principal
@@ -18,6 +18,6 @@ public interface QueryLogicFactory {
      *             if the clone is not supported
      */
     QueryLogic<?> getQueryLogic(String name, Principal principal) throws IllegalArgumentException, CloneNotSupportedException;
-    
+
     List<QueryLogic<?>> getQueryLogicList();
 }

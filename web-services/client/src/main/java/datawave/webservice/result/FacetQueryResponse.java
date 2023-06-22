@@ -33,89 +33,89 @@ import io.protostuff.Schema;
 @XmlType(propOrder = {"totalEvents", "facets"})
 public class FacetQueryResponse extends FacetQueryResponseBase implements Serializable, TotalResultsAware, Message<FacetQueryResponse> {
     private static final long serialVersionUID = -8080688956850811620L;
-    
+
     @XmlElement(name = "TotalEvents")
     private Long totalEvents = null;
-    
+
     @XmlElementWrapper(name = "facets")
     @XmlElement(name = "facets")
     private List<DefaultFacets> facets = null;
-    
+
     public FacetQueryResponse() {}
-    
+
     public FacetQueryResponse(List<DefaultFacets> facets) {
         this.facets = new ArrayList<DefaultFacets>(facets);
     }
-    
+
     public void setMarkings(Map<String,String> markings) {
         this.markings = markings;
     }
-    
+
     public Map<String,String> getMarkings() {
         return markings;
     }
-    
+
     public void addFacet(FacetsBase facetInterface) {
         DefaultFacets facet = (DefaultFacets) facetInterface;
         if (facets == null)
             facets = new ArrayList<DefaultFacets>();
         facets.add(facet);
     }
-    
+
     public List<? extends FacetsBase> getFacets() {
         return Collections.unmodifiableList(facets);
     }
-    
+
     @Override
     public void setFacets(List<? extends FacetsBase> facets) {
-        
+
     }
-    
+
     public static Schema<FacetQueryResponse> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<FacetQueryResponse> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<FacetQueryResponse> SCHEMA = new Schema<FacetQueryResponse>() {
         // schema methods
-        
+
         public FacetQueryResponse newMessage() {
             return new FacetQueryResponse();
         }
-        
+
         public Class<FacetQueryResponse> typeClass() {
             return FacetQueryResponse.class;
         }
-        
+
         public String messageName() {
             return FacetQueryResponse.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return FacetQueryResponse.class.getName();
         }
-        
+
         public boolean isInitialized(FacetQueryResponse message) {
             return true;
         }
-        
+
         public void writeTo(Output output, FacetQueryResponse message) throws IOException {
-            
+
             if (message.getQueryId() != null) {
                 output.writeString(1, message.getQueryId(), false);
             }
-            
+
             if (message.getLogicName() != null) {
                 output.writeString(2, message.getLogicName(), false);
             }
-            
+
             output.writeUInt64(3, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -123,7 +123,7 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
                         output.writeString(4, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -131,7 +131,7 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
                         output.writeObject(5, exception, QueryExceptionType.getSchema(), true);
                 }
             }
-            
+
             if (message.facets != null) {
                 for (DefaultFacets facet : message.facets) {
                     if (facet != null)
@@ -139,7 +139,7 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, FacetQueryResponse message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
             int number;
@@ -175,7 +175,7 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
             if (exceptions != null)
                 message.setExceptions(exceptions);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -194,12 +194,12 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("queryId", 1);
@@ -210,21 +210,21 @@ public class FacetQueryResponse extends FacetQueryResponseBase implements Serial
             fieldMap.put("facets", 6);
         }
     };
-    
+
     @Override
     public void setTotalResults(long totalResults) {
         this.totalEvents = totalResults;
     }
-    
+
     @Override
     public long getTotalResults() {
         return totalEvents == null ? -1 : totalEvents;
     }
-    
+
     public Long getTotalEvents() {
         return totalEvents;
     }
-    
+
     public void setTotalEvents(Long totalEvents) {
         this.totalEvents = totalEvents;
     }

@@ -24,15 +24,15 @@ import javax.ws.rs.Produces;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ListUsersBean {
-    
+
     @Inject
     private RemoteAdminService remoteAdminService;
-    
+
     @Path("/ListUsers")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET
     public ListUsersResponse listUsers() {
-        
+
         return remoteAdminService.listUsers();
     }
 }

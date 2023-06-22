@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>gov.nsa.datawave</groupId>
     <artifactId>datawave-parent</artifactId>
-    <version>5.6.0-SNAPSHOT</version>
+    <version>5.8.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>DataWave</name>
     <description>DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data.</description>
@@ -117,7 +117,6 @@
         <version.xerces>2.12.2</version.xerces>
         <version.zookeeper>3.8.1</version.zookeeper>
         <!-- Unless a version is duplicated multiple times, just place the version on the dependency in dependencyManagement. -->
-        <!-- <runOrder>random</runOrder> -->
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -1136,28 +1135,6 @@
         </dependencies>
     </dependencyManagement>
     <repositories>
-        <!--
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>todo-public</id>
-            <url>https://todo/nexus/content/groups/public</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>todo-public-snapshots</id>
-            <url>https://todo/nexus/content/groups/public-snapshots</url>
-        </repository>
-        -->
         <repository>
             <!--
                 This repository is a temporary work-around until we can public artifacts to maven central.
@@ -1281,13 +1258,13 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>net.revelc.code</groupId>
+                    <groupId>net.revelc.code.formatter</groupId>
                     <artifactId>formatter-maven-plugin</artifactId>
-                    <version>0.5.2</version>
+                    <version>2.18.0</version>
                     <configuration>
+                        <removeTrailingWhitespace>true</removeTrailingWhitespace>
                         <configFile>eclipse/Eclipse-Datawave-Codestyle.xml</configFile>
                         <lineEnding>LF</lineEnding>
-                        <overrideConfigCompilerVersion>true</overrideConfigCompilerVersion>
                         <compilerSource>${maven.compiler.source}</compilerSource>
                         <compilerCompliance>${maven.compiler.source}</compilerCompliance>
                         <compilerTargetPlatform>${maven.compiler.target}</compilerTargetPlatform>
@@ -1661,7 +1638,7 @@
                         <artifactId>sortpom-maven-plugin</artifactId>
                     </plugin>
                     <plugin>
-                        <groupId>net.revelc.code</groupId>
+                        <groupId>net.revelc.code.formatter</groupId>
                         <artifactId>formatter-maven-plugin</artifactId>
                     </plugin>
                 </plugins>
@@ -1915,9 +1892,8 @@
                                         </pluginExecution>
                                         <pluginExecution>
                                             <pluginExecutionFilter>
-                                                <groupId>net.revelc.code</groupId>
+                                                <groupId>net.revelc.code.formatter</groupId>
                                                 <artifactId>formatter-maven-plugin</artifactId>
-                                                <versionRange>[0.5.0,)</versionRange>
                                                 <goals>
                                                     <goal>format</goal>
                                                 </goals>
@@ -2001,6 +1977,34 @@
                     <plugin>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs-maven-plugin</artifactId>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>sortimport</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>net.revelc.code</groupId>
+                        <artifactId>impsort-maven-plugin</artifactId>
+                        <version>1.9.0</version>
+                        <configuration>
+                            <groups>java.,javax.,org.,com.</groups>
+                            <staticGroups>java,*</staticGroups>
+                            <excludes>
+                                <exclude>**/thrift/*.java</exclude>
+                            </excludes>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>sort-imports</id>
+                                <goals>
+                                    <goal>sort</goal>
+                                    <!-- runs at process-sources phase by default -->
+                                </goals>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

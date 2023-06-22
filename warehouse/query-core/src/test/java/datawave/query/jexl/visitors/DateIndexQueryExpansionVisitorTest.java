@@ -36,29 +36,28 @@ import java.util.TimeZone;
 public class DateIndexQueryExpansionVisitorTest {
 
     Authorizations auths = new Authorizations("HUSH");
-    
+
     private static AccumuloClient client = null;
-    
+
     private Date startDate;
     private Date endDate;
     private MetadataHelper metadataHelper;
     private DateIndexHelper dateIndexHelper;
-    
+
     @BeforeClass
     public static void before() throws Exception {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
         InMemoryInstance i = new InMemoryInstance(DateIndexQueryExpansionVisitorTest.class.getName());
         client = new InMemoryAccumuloClient("root", i);
     }
-    
+
     @Before
     public void setupTests() throws Exception {
         this.metadataHelper = new MetadataHelperFactory().createMetadataHelper(client, TableName.DATE_INDEX, Collections.singleton(auths));
         this.deleteAndCreateTable();
         DateIndexTestIngest.writeItAll(client);
         PrintUtility.printTable(client, auths, TableName.DATE_INDEX);
-        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2,
-                        0.9f);
+        dateIndexHelper = new DateIndexHelperFactory().createDateIndexHelper().initialize(client, TableName.DATE_INDEX, Collections.singleton(auths), 2, 0.9f);
     }
 
     private void deleteAndCreateTable() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, TableExistsException {
@@ -68,7 +67,7 @@ public class DateIndexQueryExpansionVisitorTest {
         }
         tops.create(TableName.DATE_INDEX);
     }
-    
+
     @Test
     public void testDateIndexExpansion() throws Exception {
         givenStartDate("20100701");
@@ -76,10 +75,10 @@ public class DateIndexQueryExpansionVisitorTest {
 
         String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100703_0,20100704_0,20100704_2,20100705_1'))";
-        
+
         assertExpansion(originalQuery, expectedQuery);
     }
-    
+
     @Test
     public void testDateIndexExpansionWithTimeTravel() throws Exception {
         givenStartDate("20100701");
@@ -88,10 +87,10 @@ public class DateIndexQueryExpansionVisitorTest {
 
         String originalQuery = "filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100704_200000', '20100704_210000') && (SHARDS_AND_DAYS = '20100702_0,20100703_0,20100704_0,20100704_2,20100705_1'))";
-        
+
         assertExpansion(originalQuery, expectedQuery);
     }
-    
+
     @Test
     public void testDateIndexExpansion1() throws Exception {
         givenStartDate("20100101");
@@ -99,10 +98,10 @@ public class DateIndexQueryExpansionVisitorTest {
 
         String originalQuery = "filter:betweenDates(UPTIME, '20100101', '20100101')";
         String expectedQuery = "(filter:betweenDates(UPTIME, '20100101', '20100101') && (SHARDS_AND_DAYS = '20100101_1,20100102_2,20100102_4,20100102_5'))";
-        
+
         assertExpansion(originalQuery, expectedQuery);
     }
-    
+
     @Test
     public void testDateIndexExpansion2() throws Exception {
         givenStartDate("20100101_200000");
@@ -124,13 +123,13 @@ public class DateIndexQueryExpansionVisitorTest {
 
     private void assertExpansion(String original, String expected) throws ParseException {
         ASTJexlScript originalScript = JexlASTHelper.parseJexlQuery(original);
-        
+
         ShardQueryConfiguration config = new ShardQueryConfiguration();
         config.setBeginDate(startDate);
         config.setEndDate(endDate);
-        
+
         ASTJexlScript result = FunctionIndexQueryExpansionVisitor.expandFunctions(config, metadataHelper, dateIndexHelper, originalScript);
-        
+
         JexlNodeAssert.assertThat(result).isEqualTo(expected).hasValidLineage();
         JexlNodeAssert.assertThat(originalScript).isEqualTo(original).hasValidLineage();
     }

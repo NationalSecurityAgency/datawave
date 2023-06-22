@@ -50,54 +50,54 @@ import java.util.Set;
  * </ul>
  */
 public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Document>> {
-    
+
     private static final Logger log = Logger.getLogger(LimitFields.class);
-    
+
     public static final String ORIGINAL_COUNT_SUFFIX = "_ORIGINAL_COUNT";
-    
+
     // A map of fields and the number of values to limit the fields by
     private final Map<String,Integer> limitFieldsMap;
-    
+
     // A collection of field sets where if the values match then those values
     // should not be dropped
     private final Set<Set<String>> matchingFieldSets;
-    
+
     public LimitFields(Map<String,Integer> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
         this.limitFieldsMap = limitFieldsMap;
         this.matchingFieldSets = matchingFieldSets;
         if (log.isTraceEnabled())
             log.trace("limitFieldsMap set to:" + limitFieldsMap);
     }
-    
+
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
         Document document = entry.getValue();
         Multimap<String,String> hitTermMap = this.getHitTermMap(document);
-        
+
         CountMap countForFieldMap = new CountMap();
         CountMap countMissesRemainingForFieldMap = new CountMap();
         CountMap countKeepersForFieldMap = new CountMap();
-        
+
         MatchingFieldGroups matchingFieldGroups = new MatchingFieldGroups(matchingFieldSets);
-        
+
         int attributesToDrop = 0;
-        
+
         // first pass is to set all of the hits to be kept, the misses to drop, and count em all
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
             String keyWithGrouping = de.getKey();
             String keyNoGrouping = removeGrouping(keyWithGrouping);
-            
+
             // if there is an _ANYFIELD_ entry in the limitFieldsMap, then insert every key that is not yet in the map, using the
             // limit value for _ANYFIELD_
             if (this.limitFieldsMap.containsKey("_ANYFIELD_") && this.limitFieldsMap.containsKey(keyNoGrouping) == false) {
                 this.limitFieldsMap.put(keyNoGrouping, this.limitFieldsMap.get("_ANYFIELD_"));
                 log.trace("added " + keyNoGrouping + " - " + this.limitFieldsMap.get(keyNoGrouping) + " to the limitFieldsMap because of the _ANYFIELD_ entry");
             }
-            
+
             if (this.limitFieldsMap.containsKey(keyNoGrouping)) { // look for the key without the grouping context
                 if (log.isTraceEnabled())
                     log.trace("limitFieldsMap contains " + keyNoGrouping);
-                
+
                 Attribute<?> attr = de.getValue();
                 int keepers = countKeepersForFieldMap.get(keyNoGrouping);
                 int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
@@ -134,20 +134,20 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 countForFieldMap.put(keyNoGrouping, total);
             }
         }
-        
+
         // the second pass is to process the limited fields that have matching groups
         matchingFieldGroups.processMatches();
         if (matchingFieldGroups.hasMatches()) {
             for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
                 String keyWithGrouping = de.getKey();
                 String keyNoGrouping = removeGrouping(keyWithGrouping);
-                
+
                 // if this was a limited field
                 if (this.limitFieldsMap.containsKey(keyNoGrouping)) {
-                    
+
                     int keepers = countKeepersForFieldMap.get(keyNoGrouping);
                     int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
-                    
+
                     // if we have matching group
                     if (matchingFieldGroups.isMatchingGroup(keyWithGrouping)) {
                         boolean foundMiss = false;
@@ -155,7 +155,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                         if (attr instanceof Attributes) {
                             Attributes attrs = (Attributes) attr;
                             Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
-                            
+
                             for (Attribute<? extends Comparable<?>> value : attrSet) {
                                 // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                                 if (!value.isToKeep()) {
@@ -176,7 +176,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                                 foundMiss = true;
                             }
                         }
-                        
+
                         if (foundMiss) {
                             countKeepersForFieldMap.put(keyNoGrouping, keepers);
                             countMissesRemainingForFieldMap.put(keyNoGrouping, missesRemaining);
@@ -185,26 +185,26 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 }
             }
         }
-        
+
         // third pass is to set any misses back to be kept if the limit allows
         for (Map.Entry<String,Attribute<? extends Comparable<?>>> de : document.entrySet()) {
             String keyWithGrouping = de.getKey();
             String keyNoGrouping = removeGrouping(keyWithGrouping);
-            
+
             // look for the key without the grouping context
             if (this.limitFieldsMap.containsKey(keyNoGrouping)) {
                 int limit = this.limitFieldsMap.get(keyNoGrouping);
-                
+
                 // short circuit if we are not actually limiting this field.
                 // this is keeping with the original logic where a negative limit means to keep only hits
                 if (limit <= 0) {
                     continue;
                 }
-                
+
                 int keepers = countKeepersForFieldMap.get(keyNoGrouping);
                 int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
                 int missesToSet = Math.min(limit - keepers, missesRemaining);
-                
+
                 // if we have misses yet to keep
                 if (missesToSet > 0) {
                     boolean foundMiss = false;
@@ -212,7 +212,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                     if (attr instanceof Attributes) {
                         Attributes attrs = (Attributes) attr;
                         Set<Attribute<? extends Comparable<?>>> attrSet = attrs.getAttributes();
-                        
+
                         for (Attribute<? extends Comparable<?>> value : attrSet) {
                             // if this was an attribute previously set to not keep, then it is one of the misses (not a hit)
                             if (!value.isToKeep()) {
@@ -237,7 +237,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                             foundMiss = true;
                         }
                     }
-                    
+
                     if (foundMiss) {
                         countKeepersForFieldMap.put(keyNoGrouping, keepers);
                         countMissesRemainingForFieldMap.put(keyNoGrouping, missesRemaining);
@@ -245,11 +245,11 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 }
             }
         }
-        
+
         if (attributesToDrop > 0) {
             // reduce the document to those to keep
             document.reduceToKeep();
-            
+
             // generate fields for original counts
             for (String keyNoGrouping : countForFieldMap.keySet()) {
                 // only generate an original count if a field was reduced
@@ -257,27 +257,27 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 int originalCount = countForFieldMap.get(keyNoGrouping);
                 if (originalCount > keepers) {
                     document.put(keyNoGrouping + ORIGINAL_COUNT_SUFFIX, new Numeric(originalCount, document.getMetadata(), document.isToKeep()), true, false);
-                    
+
                     // some sanity checks
                     int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
                     int limit = this.limitFieldsMap.get(keyNoGrouping);
                     int missesToSet = Math.min(limit - keepers, missesRemaining);
                     if (missesToSet > 0) {
                         log.error("Failed to limit fields correctly, " + missesToSet + " attributes failed to be included");
-                        throw new RuntimeException("Failed to limit fields correctly, " + missesToSet + ' ' + keyNoGrouping
-                                        + " attributes failed to be included");
+                        throw new RuntimeException(
+                                        "Failed to limit fields correctly, " + missesToSet + ' ' + keyNoGrouping + " attributes failed to be included");
                     }
                 }
             }
         }
-        
+
         return entry;
     }
-    
+
     /**
      * Determine whether this attribute is one of the hits. It is a hit if it has a matching value, or if another attribute in the same group has a hit. This
      * allows us to keep all attributes that are part of the same group.
-     * 
+     *
      * @param keyWithGrouping
      *            the string key
      * @param attr
@@ -305,7 +305,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 } catch (Exception e) {}
             }
         }
-        
+
         // if not already returned as a value match, then lets include those that are
         // part of the same group and instance as some other hit.
         if (!hitTermMap.isEmpty()) {
@@ -313,7 +313,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             if (keyTokens != null) {
                 String keyWithGroupingCommonality = keyTokens[0];
                 String keyWithGroupingSuffix = keyTokens[1];
-                
+
                 for (String key : hitTermMap.keySet()) {
                     // get the commonality from the hit term key
                     String[] commonalityAndGroupingContext = LimitFields.getCommonalityAndGroupingContext(key);
@@ -327,10 +327,10 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 }
             }
         }
-        
+
         return false;
     }
-    
+
     static String[] getCommonalityAndGroupingContext(String in) {
         String[] splits = StringUtils.split(in, '.');
         if (splits.length >= 3) {
@@ -339,13 +339,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
         return null;
     }
-    
+
     private Multimap<String,String> getHitTermMap(Document document) {
         Multimap<String,String> attrMap = HashMultimap.create();
         fillHitTermMap(document.get(JexlEvaluation.HIT_TERM_FIELD), attrMap);
         return attrMap;
     }
-    
+
     private void fillHitTermMap(Attribute<?> attr, Multimap<String,String> attrMap) {
         if (attr != null) {
             if (attr instanceof Attributes) {
@@ -361,7 +361,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             }
         }
     }
-    
+
     protected String removeGrouping(String key) {
         // if we have grouping context on, remove the grouping context
         int index = key.indexOf('.');
@@ -370,18 +370,18 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
         return key;
     }
-    
+
     /**
      * A map that assumes a value for missing keys.
      */
     public static class CountMap extends HashMap<String,Integer> {
         private static final Integer ZERO = Integer.valueOf(0);
-        
+
         @Override
         public Integer get(Object key) {
             return getOrDefault(key, ZERO);
         }
-        
+
         @Override
         public Integer put(String key, Integer value) {
             if (value > 0) {
@@ -393,5 +393,5 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             }
         }
     }
-    
+
 }

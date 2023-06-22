@@ -16,7 +16,7 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 
 public class DocumentKeysFunctionTest {
-    
+
     private final Key docKey = new Key("row", "datatype\0uid");
     private final Key docKey1 = new Key("row", "datatype\0uid.1");
     private final Key docKey2 = new Key("row", "datatype\0uid.2");
@@ -26,7 +26,7 @@ public class DocumentKeysFunctionTest {
     private final Key docKey6 = new Key("row", "datatype\0uid.6");
     private final Key docKey7 = new Key("row", "datatype\0uid.7");
     private final Set<Key> docKeys = Sets.newHashSet(docKey, docKey1, docKey2, docKey3, docKey4, docKey5, docKey6, docKey7);
-    
+
     @Test
     public void testTldAndEvenChildren() throws Exception {
         // top level document + all event children
@@ -34,7 +34,7 @@ public class DocumentKeysFunctionTest {
         Set<Key> expected = Sets.newHashSet(docKey, docKey2, docKey4);
         test(query, expected);
     }
-    
+
     @Test
     public void testTldAndOddChildren() throws Exception {
         // top level document + all odd children
@@ -42,7 +42,7 @@ public class DocumentKeysFunctionTest {
         Set<Key> expected = Sets.newHashSet(docKey, docKey1, docKey3, docKey5);
         test(query, expected);
     }
-    
+
     // current implementation just make sure keys exist
     @Test
     public void testTldAndNonIntersectingChildren() throws Exception {
@@ -50,7 +50,7 @@ public class DocumentKeysFunctionTest {
         String query = "content:phrase(FOO, termOffsetMap, 'baz', 'biz') && FOO == 'baz' && FOO == 'biz'";
         test(query, Collections.singleton(docKey));
     }
-    
+
     @Test
     public void testTldWithNegatedPhrase() throws Exception {
         // bar+baz is all even children
@@ -61,10 +61,10 @@ public class DocumentKeysFunctionTest {
         Set<Key> expected = Sets.newHashSet(docKey, docKey1, docKey2, docKey3, docKey4, docKey5, docKey6, docKey7);
         test(query, expected);
     }
-    
+
     @Test
     public void testOnlyNegatedPhrase() throws Exception {
-        //  even though FOO:baz only hits in the TLD and child 2 and 4, still need to search all doc keys
+        // even though FOO:baz only hits in the TLD and child 2 and 4, still need to search all doc keys
         String query = "!(content:phrase(FOO, termOffsetMap, 'baz', 'baz') && FOO == 'baz')";
         Set<Key> expected = Sets.newHashSet(docKey, docKey1, docKey2, docKey3, docKey4, docKey5, docKey6, docKey7);
         test(query, expected);
@@ -77,20 +77,20 @@ public class DocumentKeysFunctionTest {
         Set<Key> expected = Sets.newHashSet(docKey, docKey2, docKey4);
         test(query, expected);
     }
-    
+
     private void test(String query, Set<Key> expectedDocKeys) throws Exception {
         TermFrequencyConfig config = new TermFrequencyConfig();
         config.setScript(JexlASTHelper.parseAndFlattenJexlQuery(query));
-        
+
         DocumentKeysFunction function = new DocumentKeysFunction(config);
-        
+
         Set<Key> filteredKeys = function.getDocKeys(createDocument(), docKeys);
         assertEquals(expectedDocKeys, filteredKeys);
     }
-    
+
     private Document createDocument() {
         Document d = new Document();
-        
+
         // FOO == 'bar' hits in TLD and all five children
         d.put("FOO", new PreNormalizedAttribute("bar", new Key("row", "datatype\0uid"), true));
         d.put("FOO", new PreNormalizedAttribute("bar", new Key("row", "datatype\0uid.1"), true));
@@ -98,12 +98,12 @@ public class DocumentKeysFunctionTest {
         d.put("FOO", new PreNormalizedAttribute("bar", new Key("row", "datatype\0uid.3"), true));
         d.put("FOO", new PreNormalizedAttribute("bar", new Key("row", "datatype\0uid.4"), true));
         d.put("FOO", new PreNormalizedAttribute("bar", new Key("row", "datatype\0uid.5"), true));
-        
+
         // FOO == 'baz' hits in TLD an all EVEN children
         d.put("FOO", new PreNormalizedAttribute("baz", new Key("row", "datatype\0uid"), true));
         d.put("FOO", new PreNormalizedAttribute("baz", new Key("row", "datatype\0uid.2"), true));
         d.put("FOO", new PreNormalizedAttribute("baz", new Key("row", "datatype\0uid.4"), true));
-        
+
         // FOO == 'biz' hits in TLD and all ODD children
         d.put("FOO", new PreNormalizedAttribute("biz", new Key("row", "datatype\0uid"), true));
         d.put("FOO", new PreNormalizedAttribute("biz", new Key("row", "datatype\0uid.1"), true));
@@ -111,10 +111,10 @@ public class DocumentKeysFunctionTest {
         d.put("FOO", new PreNormalizedAttribute("biz", new Key("row", "datatype\0uid.5"), true));
         d.put("FOO", new Content("biz", new Key("row", "datatype\0uid.6"), true));
         d.put("FOO", new TypeAttribute<>(new LcNoDiacriticsType("biz"), new Key("row", "datatype\0uid.7"), true));
-        
+
         // TODO -- different column visibilities
-        
+
         return d;
     }
-    
+
 }

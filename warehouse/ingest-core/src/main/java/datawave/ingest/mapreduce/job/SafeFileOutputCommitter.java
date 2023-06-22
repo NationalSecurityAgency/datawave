@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
  */
 public class SafeFileOutputCommitter extends FileOutputCommitter {
     private static final Logger LOG = LoggerFactory.getLogger(SafeFileOutputCommitter.class);
-    
+
     /**
      * When LENIENT_MODE is set to false, the legacy behavior is maintained: if any files exist in the pending directory when cleanupJob is called, an exception
      * is thrown. When LENIENT_MODE is set to true, an exception is only thrown if one or more of the filenames that appear in the pending directory do not also
@@ -35,43 +35,43 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      * guarantee that a successful file is equivalent to, or better than, a pending file.
      */
     public static final String LENIENT_MODE = "mapreduce.safefileoutputcommitter.lenient.mode";
-    
+
     private static final boolean DEFAULT_LENIENT_MODE = false;
     private final boolean lenientMode;
-    
+
     // a boolean denoting whether we should check for an empty directory before cleaning it up
     private volatile boolean checkForEmptyDir = true;
-    
+
     public SafeFileOutputCommitter(Path outputPath, JobContext context) throws IOException {
         super(outputPath, context);
         this.lenientMode = context.getConfiguration().getBoolean(LENIENT_MODE, DEFAULT_LENIENT_MODE);
     }
-    
+
     public SafeFileOutputCommitter(Path outputPath, TaskAttemptContext context) throws IOException {
         super(outputPath, context);
         this.lenientMode = context.getConfiguration().getBoolean(LENIENT_MODE, DEFAULT_LENIENT_MODE);
     }
-    
+
     @Override
     public void abortJob(JobContext context, State state) throws IOException {
         // in this case the job is being killed, no need to check for empty dirs
         checkForEmptyDir = false;
         super.abortJob(context, state);
     }
-    
+
     /**
      * Since the parent class hides this method, we need to recreate it here
-     * 
+     *
      * @return the location of pending job attempts.
      */
     private Path getPendingJobAttemptsPath() {
         return new Path(super.getOutputPath(), PENDING_DIR_NAME);
     }
-    
+
     /**
      * Cleanup the job. Note that this is deprecated in the super class but is still being used for this work. When the method has been removed from the super
      * class then this class will need to be reworked.
-     * 
+     *
      * @param context
      *            The job context
      */
@@ -83,7 +83,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             // now verify we do not have any files left in the temporary directory structure
             List<Path> fileList = new ArrayList<>();
             boolean containsPendingFiles = containsFiles(fs, pendingJobAttemptsPath, fileList, lenientMode);
-            
+
             if (containsPendingFiles && lenientMode) {
                 verifyRemainingTemporaryFilesByName(fs, fileList);
             } else if (containsPendingFiles) {
@@ -92,11 +92,11 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
         }
         super.cleanupJob(context);
     }
-    
+
     /**
      * Ensure that for each of the non-empty pending files in the provided list there is also a successful file with a matching filename. If not, throw an
      * exception.
-     * 
+     *
      * @param fs
      *            FileSystem to use
      * @param pendingFileList
@@ -108,49 +108,49 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
      */
     private void verifyRemainingTemporaryFilesByName(FileSystem fs, List<Path> pendingFileList) throws IOException {
         List<Path> allFilesInOutputPath = new ArrayList<>();
-        
+
         boolean shouldIgnoreEmptyFiles = true;
         containsFiles(fs, super.getOutputPath(), allFilesInOutputPath, shouldIgnoreEmptyFiles);
-        
+
         LOG.trace("Number of files in output path: {} and in pending: {}", allFilesInOutputPath.size(), pendingFileList.size());
         // Exclude the pending files so that allFilesInOutputPath only contains the successful files
         allFilesInOutputPath.removeAll(pendingFileList);
         LOG.trace("Number of non-pending files: {}", allFilesInOutputPath.size());
-        
+
         // Retrieve just the filenames
         Set<String> successFileNamesOnly = getNames(allFilesInOutputPath);
         Set<String> pendingFileNamesOnly = getNames(pendingFileList);
-        
+
         // Identify which pending filenames do not have a matching successful filename
         pendingFileNamesOnly.removeAll(successFileNamesOnly);
         LOG.trace("successFileNames: {}", successFileNamesOnly);
-        
+
         if (0 < pendingFileNamesOnly.size()) {
             throw new FileExistsException("Found files in temporary job attempts path with no successful counterpart: " + pendingFileNamesOnly);
         }
     }
-    
+
     private Set<String> getNames(List<Path> allFilesInOutputPath) {
         return allFilesInOutputPath.stream().map(Path::getName).collect(Collectors.toSet());
     }
-    
+
     protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list) throws FileNotFoundException, IOException {
         return containsFiles(fs, path, list, false);
     }
-    
-    protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list, boolean ignoreEmptyFiles) throws FileNotFoundException,
-                    IOException {
+
+    protected boolean containsFiles(final FileSystem fs, final Path path, final List<Path> list, boolean ignoreEmptyFiles)
+                    throws FileNotFoundException, IOException {
         RemoteIterator<Path> listing = listFiles(fs, path, ignoreEmptyFiles);
         while (listing.hasNext()) {
             list.add(listing.next());
         }
         return (!list.isEmpty());
     }
-    
+
     /**
      * I could have used the fs.listFiles(path, true), however that provides the LocatedFileStatus which returns all of the block locations as well as the file
      * status. This is a cheaper iterator which only requests the FileStatus for each file as all we need to know is which paths are files vs directories.
-     * 
+     *
      * @param fs
      *            the file system
      * @param path
@@ -160,11 +160,11 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
     protected RemoteIterator<Path> listFiles(final FileSystem fs, final Path path) {
         return listFiles(fs, path, false);
     }
-    
+
     /**
      * See SafeFileOutputCommitter.listFiles(FileSystem, Path). When ignoreEmptyFiles is true, listFiles's returned iterator will not return files that are
      * empty.
-     * 
+     *
      * @param fs
      *            the file system
      * @param path
@@ -178,14 +178,14 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             private ArrayDeque<FileStatus> files = new ArrayDeque<>();
             private Path curFile = null;
             private boolean initialized = false;
-            
+
             private void initialize() throws IOException {
                 if (!initialized) {
                     files.add(fs.getFileStatus(path));
                     initialized = true;
                 }
             }
-            
+
             @Override
             public boolean hasNext() throws FileNotFoundException, IOException {
                 initialize();
@@ -202,7 +202,7 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
                 }
                 return curFile != null;
             }
-            
+
             @Override
             public Path next() throws FileNotFoundException, IOException {
                 if (hasNext()) {
@@ -214,5 +214,5 @@ public class SafeFileOutputCommitter extends FileOutputCommitter {
             }
         };
     }
-    
+
 }

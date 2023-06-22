@@ -14,14 +14,14 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 public class DnUtils {
-    
+
     /** Config for injecting NPE OU identifiers */
     public static final String PROPS_RESOURCE = "dnutils.properties";
-    
+
     private static final Properties PROPS = new Properties();
-    
+
     public static final String SUBJECT_DN_PATTERN_PROPERTY = "subject.dn.pattern";
-    
+
     private static final Pattern SUBJECT_DN_PATTERN;
 
     /** Property containing a comma-delimited list of OUs */
@@ -29,11 +29,9 @@ public class DnUtils {
 
     /** Parsed NPE OU identifiers */
     static final List<String> NPE_OU_LIST;
-
     private static final Logger log = LoggerFactory.getLogger(DnUtils.class);
 
     private static final datawave.microservice.security.util.DnUtils dnUtils;
-
     static {
         InputStream in = null;
         try {
@@ -101,35 +99,35 @@ public class DnUtils {
     public static String buildNormalizedProxyDN(List<SubjectIssuerDNPair> dns) {
         return datawave.microservice.security.util.DnUtils.buildNormalizedProxyDN(dns);
     }
-    
+
     public static String getCommonName(String dn) {
         return datawave.microservice.security.util.DnUtils.getCommonName(dn);
     }
-    
+
     public static String[] getOrganizationalUnits(String dn) {
         return datawave.microservice.security.util.DnUtils.getOrganizationalUnits(dn);
     }
-    
+
     public static String getShortName(String dn) {
         return datawave.microservice.security.util.DnUtils.getShortName(dn);
     }
-    
+
     public static boolean isServerDN(String dn) {
         return dnUtils.isServerDN(dn);
     }
-    
+
     public static String getUserDN(String[] dns) {
         return dnUtils.getUserDN(dns);
     }
-    
+
     public static String getUserDN(String[] dns, boolean issuerDNs) {
         return dnUtils.getUserDN(dns, issuerDNs);
     }
-    
+
     public static String[] getComponents(String dn, String componentName) {
         return dnUtils.getComponents(dn, componentName);
     }
-    
+
     public static String normalizeDN(String userName) {
         return datawave.microservice.security.util.DnUtils.normalizeDN(userName);
     }

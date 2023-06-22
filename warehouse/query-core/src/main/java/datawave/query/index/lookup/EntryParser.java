@@ -32,33 +32,33 @@ import java.util.Set;
  */
 public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,IndexInfo>> {
     protected ASTEQNode currNode;
-    
+
     protected String fieldName;
-    
+
     protected String literal;
-    
+
     private boolean skipNodeDelay;
-    
+
     private Set<String> indexOnlyFields = null;
     private static final Logger log = Logger.getLogger(EntryParser.class);
-    
+
     public EntryParser(ASTEQNode node, String fieldName, String literal) {
         currNode = node;
         this.fieldName = fieldName;
         this.literal = literal;
         this.skipNodeDelay = false;
     }
-    
+
     public EntryParser(String fieldName, String literal, boolean skipNodeDelay) {
         this((ASTEQNode) JexlNodeFactory.buildEQNode(fieldName, literal), fieldName, literal);
         this.skipNodeDelay = skipNodeDelay;
     }
-    
+
     public EntryParser(ASTEQNode node, String fieldName, String literal, Set<String> indexOnlyFields) {
         this(node, fieldName, literal);
         this.indexOnlyFields = indexOnlyFields;
     }
-    
+
     @Override
     public Tuple2<String,IndexInfo> apply(Entry<Key,Value> entry) {
         IndexInfo info = new IndexInfo();
@@ -68,16 +68,16 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
             return null;
         }
         String date = entry.getKey().getColumnQualifier().toString();
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Adding " + currNode + " to " + entry.getKey() + " ");
             for (IndexMatch match : info.uids()) {
                 log.trace(date + " " + match.getUid().split("\u0000")[1]);
             }
         }
-        
+
         if (!skipNodeDelay && ShardEquality.isDay(date) && info.uids().isEmpty()) {
-            
+
             if (isDelayedPredicate(currNode)) {
                 if (log.isTraceEnabled()) {
                     log.trace("not delaying " + currNode + " because it is already delayed" + currNode.jjtGetParent() + "<- parent "
@@ -104,7 +104,7 @@ public class EntryParser implements Function<Entry<Key,Value>,Tuple2<String,Inde
         }
         return Tuples.tuple(entry.getKey().getColumnQualifier().toString(), info);
     }
-    
+
     protected boolean isDelayedPredicate(JexlNode currNode) {
         return QueryPropertyMarker.findInstance(currNode).isAnyTypeOf(IndexHoleMarkerJexlNode.class, ASTDelayedPredicate.class,
                         ExceededOrThresholdMarkerJexlNode.class, ExceededTermThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class);

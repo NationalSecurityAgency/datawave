@@ -21,13 +21,13 @@ import org.apache.lucene.analysis.ngram.NGramTokenizer;
  * Utility class for creating bloom filters, such as those built from {@link Multimap}s and n-gram tokenenization
  */
 public class BloomFilterUtil {
-    
+
     /**
      * The number of bytes in an empty bloom filter. At the time this variable was first calculated, the value was 401 bytes.
      */
     public static final int EMPTY_FILTER_SIZE = MemberShipTest.toValue(BloomFilterUtil.newInstance().newDefaultFilter(0).getFilter()).getSize();
     private static final float FILTER_SIZE_TO_NGRAM_COUNT_FACTOR = 1.1f;
-    
+
     private final AbstractContentIngestHelper helper;
     private final Logger log = Logger.getLogger(BloomFilterUtil.class);
     private final int maxAllowedExecutionTime;
@@ -37,10 +37,10 @@ public class BloomFilterUtil {
     private final float minMemoryThreshold;
     private boolean missingHelperLogged;
     private int optimumFilterSize;
-    
+
     /**
      * Protected constructor to discourage instantiation outside of package
-     * 
+     *
      * @param helper
      *            helper instance for content ingest
      * @param minMemoryThreshold
@@ -56,7 +56,7 @@ public class BloomFilterUtil {
     protected BloomFilterUtil(final AbstractContentIngestHelper helper, float minMemoryThreshold, float minDiskSpaceThreshold, final String minDiskSpacePath,
                     int timeoutInMilliseconds) {
         this.helper = helper;
-        
+
         this.minDiskSpaceThreshold = minDiskSpaceThreshold;
         if ((null != minDiskSpacePath) && !minDiskSpacePath.isEmpty()) {
             this.minDiskSpacePath = minDiskSpacePath;
@@ -66,10 +66,10 @@ public class BloomFilterUtil {
         this.minMemoryThreshold = minMemoryThreshold;
         this.maxAllowedExecutionTime = timeoutInMilliseconds;
     }
-    
+
     /**
      * Tokenize the collection of normalized content and apply the resulting n-grams to the specified filter.
-     * 
+     *
      * @param fieldName
      *            The name of the field the value came from
      * @param ncis
@@ -94,14 +94,14 @@ public class BloomFilterUtil {
                 throw e;
             }
         }
-        
+
         return generatedNGramCount;
     }
-    
+
     /*
      * Determine the maximum percentage of n-grams based on an optimum desired filter size. A negative value indicates an indeterminate number of allowed
      * n-grams.
-     * 
+     *
      * @return max allowed n-grams expressed as a percentage of the total predicted n-grams
      */
     private int calculateMaxAllowedNgrams(int numberOfFields) {
@@ -113,33 +113,33 @@ public class BloomFilterUtil {
                 maxAllowedNgrams = 0;
             }
         }
-        
+
         return maxAllowedNgrams;
     }
-    
+
     /**
      * Returns the maximum number of characters allowed for an n-gram created or predicted by the utility.
-     * 
+     *
      * @return the maximum number of characters allowed for an n-gram created or predicted by the utility
      */
     public int getMaxNGramLength() {
         return this.maxNGramLength;
     }
-    
+
     /**
      * Returns the desired filter size to output from the applyNGrams(..) method. This value is meant as an approximation to help limit and optimize the number
      * of n-grams applied to a generated filter. A value less than or equal to the EMPTY_FILTER_SIZE effectively turns off pruning optimizations based on filter
      * size, which could result in unexpectedly large bloom filters.
-     * 
+     *
      * @return desired filter size, in bytes
      */
     public int getOptimumFilterSize() {
         return this.optimumFilterSize;
     }
-    
+
     /**
      * Create a BloomFilter based on the number of expected insertions
-     * 
+     *
      * @param expectedInsertions
      *            the number of expected insertions
      * @return a wrapped BloomFilter based on the number of expected insertions
@@ -149,14 +149,14 @@ public class BloomFilterUtil {
         if (count < 0) {
             count = 0;
         }
-        
+
         final BloomFilter<String> filter = MemberShipTest.create(count);
         return new BloomFilterWrapper(filter, count);
     }
-    
+
     /**
      * Create a BloomFilter based on a multi-map of fields
-     * 
+     *
      * @param fields
      *            The fields and their values with which to create a bloom filter
      * @return a wrapped BloomFilter based on a multi-map of fields
@@ -164,7 +164,7 @@ public class BloomFilterUtil {
     public BloomFilterWrapper newMultimapBasedFilter(final Multimap<String,NormalizedContentInterface> fields) {
         // Declare the return value
         final BloomFilter<String> filter;
-        
+
         // Handle a non-null map of fields
         int fieldsApplied = 0;
         if (null != fields) {
@@ -178,24 +178,24 @@ public class BloomFilterUtil {
         else {
             filter = MemberShipTest.create(fieldsApplied);
         }
-        
+
         final BloomFilterWrapper wrapper = new BloomFilterWrapper(filter);
         wrapper.setFieldValuesAppliedToFilter(fieldsApplied);
         return wrapper;
     }
-    
+
     /**
      * Create a new factory instance with a default configuration.
-     * 
+     *
      * @return a bloomfilterutil instance
      */
     public static BloomFilterUtil newInstance() {
         return new BloomFilterUtil(null, 0f, 0f, DiskSpaceStarvationStrategy.DEFAULT_PATH_FOR_DISK_SPACE_VALIDATION, -1);
     }
-    
+
     /**
      * Creates a new factory instance based on an ingest helper and minimum resource thresholds.
-     * 
+     *
      * @param helper
      *            helper instance for content ingest
      * @param minMemoryThreshold
@@ -213,10 +213,10 @@ public class BloomFilterUtil {
                     final String minDiskSpacePath, int timeoutMillis) {
         return new BloomFilterUtil(helper, minMemoryThreshold, minDiskSpaceThreshold, minDiskSpacePath, timeoutMillis);
     }
-    
+
     /**
      * Create a BloomFilter based on tokenized n-grams
-     * 
+     *
      * @param fields
      *            The original fields with which to generate n-grams (a.k.a. shingles)
      * @return a wrapped BloomFilter based on tokenized n-grams
@@ -228,7 +228,7 @@ public class BloomFilterUtil {
             this.log.warn(message, new IllegalArgumentException());
             this.missingHelperLogged = true;
         }
-        
+
         // Initialize local variables based on validated fields and internal state
         final BloomFilterWrapper result;
         if ((null != fields) && (null != this.helper)) {
@@ -236,11 +236,11 @@ public class BloomFilterUtil {
             int maxAllowedNGrams = this.calculateMaxAllowedNgrams(fields.size());
             final Map<String,String> fieldsToTokenize = new HashMap<>();
             final WeightedValuePruningStrategy pruningStrategy = new WeightedValuePruningStrategy(maxAllowedNGrams, this.maxNGramLength);
-            
+
             // Initialize basic variables for n-gram creation
             long startTime = System.currentTimeMillis();
             final String tokenFieldNameDesignator = this.helper.getTokenFieldNameDesignator();
-            
+
             // Add tokenize-able fields to the pruning strategy
             int totalPredictedNgrams = 0;
             if (maxAllowedNGrams != 0) {
@@ -248,7 +248,7 @@ public class BloomFilterUtil {
                     // Extract the field name and a modified tokenization field name
                     final String fieldName = entry.getValue().getIndexedFieldName();
                     final String modifiedFieldName = fieldName + tokenFieldNameDesignator;
-                    
+
                     // Validate the tokenize-able fields and predict the expected number of n-grams
                     if ((helper.isContentIndexField(fieldName)) || (helper.isReverseContentIndexField(fieldName))) {
                         for (final NormalizedContentInterface nci : fields.get(modifiedFieldName)) {
@@ -263,19 +263,19 @@ public class BloomFilterUtil {
                     }
                 }
             }
-            
+
             // Create a bloom filter based on the total expected filter additions, which
             // includes the expected number of n-grams plus field values
             int totalExpectedFilterAdditions = fields.size() + pruningStrategy.getExpectedNGramCount();
             final BloomFilter<String> filter = this.newDefaultFilter(totalExpectedFilterAdditions).getFilter();
-            
+
             // Create and stack additional layers of tokenization strategies
             final TimeoutStrategy timeoutStrategy = new TimeoutStrategy(startTime, this.maxAllowedExecutionTime);
             final MemoryStarvationStrategy memoryStrategy = new MemoryStarvationStrategy(timeoutStrategy, this.minMemoryThreshold);
             final DiskSpaceStarvationStrategy diskStrategy = new DiskSpaceStarvationStrategy(memoryStrategy, this.minDiskSpaceThreshold, this.minDiskSpacePath);
             pruningStrategy.setSourceStrategy(diskStrategy);
             pruningStrategy.setFilter(filter);
-            
+
             // Apply all field values to the newly created BloomFilter, plus the n-grams of
             // any identified subset of tokenize-able fields
             int totalAppliedValues = 0;
@@ -284,12 +284,12 @@ public class BloomFilterUtil {
             for (final Entry<String,NormalizedContentInterface> entry : fields.entries()) {
                 // Get the field name
                 final String fieldName = entry.getValue().getIndexedFieldName();
-                
+
                 // Get the field value and apply it to the BloomFilter
                 final String fieldValue = entry.getValue().getIndexedFieldValue();
                 MemberShipTest.update(filter, fieldValue);
                 totalAppliedValues++;
-                
+
                 // If the field is tokenize-able, get the modified field name
                 // and look up its normalized content
                 final String modifiedFieldName = fieldsToTokenize.get(fieldName);
@@ -299,7 +299,7 @@ public class BloomFilterUtil {
                 } else {
                     ncis = Collections.emptyList();
                 }
-                
+
                 // If defined as a non-empty collection, tokenize the normalized content
                 // into n-grams and apply to the filter
                 if ((null != ncis) && !ncis.isEmpty() && (null == timeout)) {
@@ -311,16 +311,16 @@ public class BloomFilterUtil {
                         } else if (e.getCause() instanceof TimeoutException) {
                             timeout = (TimeoutException) e.getCause();
                         }
-                        
+
                         this.log.warn("Problem creating n-grams", e);
                         totalAppliedNGrams += e.getNgramCount();
                     }
                 }
             }
-            
+
             // Determine the numbers of applied and pruned n-grams
             totalAppliedValues += totalAppliedNGrams;
-            
+
             // Create the result and add the tokenization/pruning information
             result = new BloomFilterWrapper(filter);
             result.setFieldValuesAppliedToFilter(totalAppliedValues - totalAppliedNGrams);
@@ -329,14 +329,14 @@ public class BloomFilterUtil {
         } else {
             result = this.newMultimapBasedFilter(fields);
         }
-        
+
         return result;
     }
-    
+
     /**
      * Approximates the maximum number of tokens that can be applied to a bloom filter based on a maximum optimum filter size. This value is assumed to include
      * n-grams and original field values.
-     * 
+     *
      * @param desiredFilterSizeInBytes
      *            the maximum desired filter size (measured in bytes)
      * @return the approximate number of tokens that will be applied to a bloom filter based on the specified byte size
@@ -344,14 +344,14 @@ public class BloomFilterUtil {
     public static int predictMaxFilterAdditions(int desiredFilterSizeInBytes) {
         return Math.round(FILTER_SIZE_TO_NGRAM_COUNT_FACTOR * ((float) (desiredFilterSizeInBytes - EMPTY_FILTER_SIZE)));
     }
-    
+
     /**
      * Predicts the total number of n-grams created by the Apache {@link NGramTokenizer} based on a given field value and maximum token length.
      * <p>
      * Note that this total count does NOT include the field value itself, even though such a field value is applied to and increases the total size of a bloom
      * filter when created through the newNGramBasedFilter(..) method. In other words, a predicted n-gram count calculated by itself will be 1 count less that
      * the overall number of n-grams actually created through the factory method.
-     * 
+     *
      * @param fieldValue
      *            The field value
      * @return the predicted number of n-grams
@@ -359,18 +359,18 @@ public class BloomFilterUtil {
     public static int predictNGramCount(final String fieldValue) {
         return predictNGramCount(fieldValue, AbstractNGramTokenizationStrategy.DEFAULT_MAX_NGRAM_LENGTH);
     }
-    
+
     /**
      * Predicts the total number of n-grams created by the Apache {@link NGramTokenizer} based on a given field value and maximum token length based to the
      * following formula, where f = the number of characters in the field value, and n = the number of created n-grams: <br>
-     * 
+     *
      * <pre>
      * n = (f(f - 1)) / 2
      * </pre>
-     * 
+     *
      * <br>
      * Note that this total count DOES include the field value itself, even though such a value isn't actually output by the {@link NGramTokenizer}.
-     * 
+     *
      * @param fieldValue
      *            The field value
      * @param maxNGramLength
@@ -380,7 +380,7 @@ public class BloomFilterUtil {
     public static int predictNGramCount(final String fieldValue, int maxNGramLength) {
         // Declare the return value
         int predictedNGramCount;
-        
+
         // Validate against null and empty strings
         if ((null != fieldValue) && !fieldValue.isEmpty()) {
             // Predict the number of n-grams based purely on a summation of the number of characters
@@ -389,26 +389,26 @@ public class BloomFilterUtil {
         } else {
             predictedNGramCount = 0;
         }
-        
+
         // Ensure only a zero or positive integer is returned
         if (predictedNGramCount < 0) {
             predictedNGramCount = 0;
         }
-        
+
         return predictedNGramCount;
     }
-    
+
     /**
      * Predicts the total number of n-grams created by the Apache {@link NGramTokenizer} based on a given field value and maximum token length based to the
      * following formula, where f = the number of characters in the field value, and n = the number of created n-grams: <br>
-     * 
+     *
      * <pre>
      * n = (f(f - 1)) / 2
      * </pre>
-     * 
+     *
      * <br>
      * Note that this total count DOES include the field value itself, even though such a value isn't actually output by the {@link NGramTokenizer}.
-     * 
+     *
      * @param fieldValueLength
      *            The field value's length
      * @param maxNGramLength
@@ -418,47 +418,47 @@ public class BloomFilterUtil {
     public static int predictNGramCount(float fieldValueLength, int maxNGramLength) {
         // Declare the return value
         float predictedNGramCount;
-        
+
         // Validate against null and empty strings
         if (fieldValueLength > 0) {
             // Predict the number of n-grams based purely on a summation of the number of characters
             predictedNGramCount = (((fieldValueLength - 1.0f) * fieldValueLength) / 2.0f);
-            
+
             // Calculate an adjustment if the max n-gram length is exceeded
             float adjustmentDueToMaxLength = 0;
             if (fieldValueLength > maxNGramLength) {
                 adjustmentDueToMaxLength = ((fieldValueLength - maxNGramLength) * (fieldValueLength - maxNGramLength + 1)) / 2.0f;
             }
-            
+
             // Adjust the predicted count based on the max length adjustment
             predictedNGramCount = predictedNGramCount - adjustmentDueToMaxLength;
         } else {
             predictedNGramCount = 0;
         }
-        
+
         // Ensure only a zero or positive integer is returned
         if (predictedNGramCount < 0) {
             predictedNGramCount = 0;
         }
-        
+
         return Math.round(predictedNGramCount);
     }
-    
+
     /**
      * Sets the maximum number of characters allowed for an n-gram created or predicted by the utility.
-     * 
+     *
      * @param maxNGramLength
      *            the maximum number of characters allowed for an n-gram created or predicted by the utility
      */
     public void setMaxNGramLength(int maxNGramLength) {
         this.maxNGramLength = maxNGramLength;
     }
-    
+
     /**
      * Sets the desired filter size to output from the applyNGrams(..) method. This value is meant as an approximation to help limit and optimize the number of
      * n-grams applied to a generated filter. A value less than or equal to the EMPTY_FILTER_SIZE effectively turns off pruning optimizations based on filter
      * size, which could result in unexpectedly large bloom filters.
-     * 
+     *
      * @param sizeInBytes
      *            desired filter size
      */

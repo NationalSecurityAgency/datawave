@@ -24,21 +24,21 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MergedReadAhead<T> extends AbstractExecutionThreadService implements Iterator<T>, Closeable {
-    
+
     private static final Logger log = Logger.getLogger(MergedReadAhead.class);
-    
+
     /** the underlying iterator we will read form */
     private final Iterator<T> iterator;
-    
+
     /** holds the data read from iterator */
     protected final BlockingQueue<T> queue;
-    
+
     /** buffers the last item read from the queue to support hasNext/next */
     protected T buffer;
-    
+
     /** Should we wait until the underlying thread has stopped before allowing hasNext to return */
     protected final boolean isStreaming;
-    
+
     /**
      * Create a MergedReadAhead. Will not return until the thread that reads the iterator has started.
      *
@@ -55,17 +55,17 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         this.queue = new LinkedBlockingQueue<T>();
         this.isStreaming = isStreaming;
         this.iterator = configureIterator(iterator, functionalMerge, filters);
-        
+
         log.trace("starting...");
         startAsync();
     }
-    
+
     private Iterator<T> configureIterator(Iterator<T> iterator, Function<T,T> functionalMerge, List<Predicate<T>> filters) {
         Iterator<T> i = iterator;
         if (functionalMerge != null) {
             i = Iterators.transform(iterator, functionalMerge);
         }
-        
+
         if (filters != null) {
             for (Predicate<T> predicate : filters) {
                 i = Iterators.filter(i, predicate);
@@ -73,7 +73,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         }
         return i;
     }
-    
+
     /**
      * Block until an item available in the queue or the thread is no longer running. Drain the queue if the thread is done and items are in the queue. Wait for
      * the entire underlying iterator to be consumed if in non-streaming mode
@@ -83,7 +83,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
             log.trace("Non-streaming, waiting for termination...");
             awaitTerminated();
         }
-        
+
         try {
             // Block & loop while running and no data is available on the queue
             while (state() != State.TERMINATED) {
@@ -93,7 +93,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
                     break;
                 }
             }
-            
+
             // Drain elements from the queue after the thread has stopped
             if (this.buffer == null && !queue.isEmpty()) {
                 this.buffer = queue.poll(1L, TimeUnit.SECONDS);
@@ -102,13 +102,13 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
             Thread.currentThread().interrupt();
         }
     }
-    
+
     @Override
     public boolean hasNext() {
         readFromQueue();
         return this.buffer != null;
     }
-    
+
     @Override
     public T next() {
         if (buffer == null) {
@@ -117,17 +117,17 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
                 throw new NoSuchElementException();
             }
         }
-        
+
         T buf = buffer;
         buffer = null;
         return buf;
     }
-    
+
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
-    
+
     public void finalize() throws Throwable {
         try {
             close();
@@ -135,7 +135,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
             super.finalize();
         }
     }
-    
+
     @Override
     public void close() throws IOException {
         log.trace("stopping...");
@@ -143,7 +143,7 @@ public class MergedReadAhead<T> extends AbstractExecutionThreadService implement
         awaitTerminated();
         log.trace("stopped.");
     }
-    
+
     @Override
     protected void run() throws Exception {
         while (iterator.hasNext()) {

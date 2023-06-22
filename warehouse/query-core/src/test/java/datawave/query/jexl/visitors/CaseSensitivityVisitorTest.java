@@ -13,23 +13,23 @@ import java.util.Collections;
 import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
 
 public class CaseSensitivityVisitorTest {
-    
+
     private final MockMetadataHelper helper = new MockMetadataHelper();
     private final ShardQueryConfiguration config = new ShardQueryConfiguration();
-    
+
     @Before
     public void beforeTest() {
         helper.addTermFrequencyFields(Collections.singletonList("FOO"));
         helper.setIndexedFields(Collections.singleton("FOO"));
     }
-    
+
     @Test
     public void testUpperCaseTerms() throws ParseException {
         String original = "foo == 'bar' && too == 'baz'";
         String expected = "FOO == 'bar' && TOO == 'baz'";
         runUpperCaseTest(original, expected);
     }
-    
+
     @Test
     public void testPhraseFunction() throws ParseException {
         // Construct query with content functions found in query-core Constants.java
@@ -37,7 +37,7 @@ public class CaseSensitivityVisitorTest {
         String expected = "FOO == 'bar' && content:phrase(termOffsetMap, 'foo', 'too')";
         runUpperCaseTest(original, expected);
     }
-    
+
     @Test
     public void testPhraseFunctionForTfField() throws ParseException {
         // Construct query with content functions found in query-core Constants.java
@@ -45,7 +45,7 @@ public class CaseSensitivityVisitorTest {
         String expected = "FOO == 'bar' && content:phrase(FOO, termOffsetMap, 'foo', 'too')";
         runUpperCaseTest(original, expected);
     }
-    
+
     @Test
     public void testRegexFunction() throws ParseException {
         // Construct query with content functions found in query-core Constants.java
@@ -53,12 +53,12 @@ public class CaseSensitivityVisitorTest {
         String expected = "FOO == 'bar' && filter:includeRegex(TOO, '.*')";
         runUpperCaseTest(original, expected);
     }
-    
+
     private void runUpperCaseTest(String original, String expected) throws ParseException {
         ASTJexlScript script = parseJexlQuery(original);
-        
+
         CaseSensitivityVisitor.upperCaseIdentifiers(config, helper, script);
-        
+
         JexlNodeAssert.assertThat(script).hasExactQueryString(expected);
     }
 }

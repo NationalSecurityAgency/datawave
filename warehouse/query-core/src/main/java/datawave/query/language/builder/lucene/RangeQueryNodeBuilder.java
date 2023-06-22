@@ -33,18 +33,18 @@ import org.apache.lucene.search.TermRangeQuery;
  */
 @Deprecated
 public class RangeQueryNodeBuilder implements QueryBuilder {
-    
+
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         TermRangeQueryNode rangeNode = (TermRangeQueryNode) queryNode;
         FieldQueryNode upper = rangeNode.getUpperBound();
         FieldQueryNode lower = rangeNode.getLowerBound();
-        
+
         String field = rangeNode.getField().toString();
-        
+
         RangeFieldedTerm rangeQuery = new RangeFieldedTerm(field, lower.getTextAsString(), upper.getTextAsString(), rangeNode.isLowerInclusive(),
                         rangeNode.isUpperInclusive());
-        
+
         return new SelectorNode(rangeQuery);
     }
-    
+
 }

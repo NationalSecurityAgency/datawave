@@ -56,30 +56,35 @@ public class FieldIndexIntegrationTest {
     private final EventKey eventKeyParser = new EventKey();
     private final FieldIndexKey fiKeyParser = new FieldIndexKey();
 
-    //  stuff for document aggregation
-    private final Set<String> allFields = Sets.newHashSet("FIELD_A", "FIELD_B", "FIELD_C", "TLD_FIELD_A", "TLD_FIELD_B", "TLD_FIELD_C", "FIELD_X", "FIELD_Y", "FIELD_Z");
-    private final Map<String, Integer> fieldDocumentCounts = new HashMap<>(){{
-        put("FIELD_A", 2);
-        put("FIELD_B", 2);
-        put("FIELD_C", 2);
-        put("TLD_FIELD_A", 2);
-        put("TLD_FIELD_B", 2);
-        put("TLD_FIELD_C", 2);
-        put("FIELD_X", 2);
-        put("FIELD_Y", 2);
-        put("FIELD_Z", 2);
-    }};
-    private final Map<String, Integer> fieldTldDocumentCounts = new HashMap<>(){{
-        put("FIELD_A", 2);
-        put("FIELD_B", 2);
-        put("FIELD_C", 2);
-        put("TLD_FIELD_A", 6);
-        put("TLD_FIELD_B", 26);
-        put("TLD_FIELD_C", 8);
-        put("FIELD_X", 2);
-        put("FIELD_Y", 2);
-        put("FIELD_Z", 2);
-    }};
+    // stuff for document aggregation
+    private final Set<String> allFields = Sets.newHashSet("FIELD_A", "FIELD_B", "FIELD_C", "TLD_FIELD_A", "TLD_FIELD_B", "TLD_FIELD_C", "FIELD_X", "FIELD_Y",
+                    "FIELD_Z");
+    private final Map<String,Integer> fieldDocumentCounts = new HashMap<>() {
+        {
+            put("FIELD_A", 2);
+            put("FIELD_B", 2);
+            put("FIELD_C", 2);
+            put("TLD_FIELD_A", 2);
+            put("TLD_FIELD_B", 2);
+            put("TLD_FIELD_C", 2);
+            put("FIELD_X", 2);
+            put("FIELD_Y", 2);
+            put("FIELD_Z", 2);
+        }
+    };
+    private final Map<String,Integer> fieldTldDocumentCounts = new HashMap<>() {
+        {
+            put("FIELD_A", 2);
+            put("FIELD_B", 2);
+            put("FIELD_C", 2);
+            put("TLD_FIELD_A", 6);
+            put("TLD_FIELD_B", 26);
+            put("TLD_FIELD_C", 8);
+            put("FIELD_X", 2);
+            put("FIELD_Y", 2);
+            put("FIELD_Z", 2);
+        }
+    };
 
     //  @formatter:off
     private final Multimap<String,String> expectedTopKeys = new ImmutableMultimap.Builder<String, String>()
@@ -187,7 +192,6 @@ public class FieldIndexIntegrationTest {
         bw.addMutation(m);
     }
 
-
     private static void writeTldData(BatchWriter bw, String field, String value, int uidsPerValue) throws Exception {
         writeTldData(bw, field, value, uidsPerValue, 0);
     }
@@ -197,19 +201,18 @@ public class FieldIndexIntegrationTest {
         Mutation m = new Mutation("row");
         for (int i = 0; i < uidsPerValue; i++) {
 
-            //  write tld first
+            // write tld first
             next = builder.newId((value + "_" + (i + 1)).getBytes());
             m.put(new Text("fi\0" + field), new Text(value + '\u0000' + "datatype" + '\u0000' + next), EMPTY_VALUE);
 
-            //  write any child uids, if any
-            for(int j = 0; j < numberOfChildren; j++) {
+            // write any child uids, if any
+            for (int j = 0; j < numberOfChildren; j++) {
                 next = builder.newId((value + "_" + (i + 1)).getBytes(), String.valueOf(j + 1));
                 m.put(new Text("fi\0" + field), new Text(value + '\u0000' + "datatype" + '\u0000' + next), EMPTY_VALUE);
             }
         }
         bw.addMutation(m);
     }
-
 
     @Test
     public void verifyKeys() throws Exception {
@@ -222,7 +225,7 @@ public class FieldIndexIntegrationTest {
 
         int count = 0;
         for (Map.Entry<Key,Value> entry : scanner) {
-//            System.out.println(entry.getKey().toStringNoTime());
+            // System.out.println(entry.getKey().toStringNoTime());
             count++;
         }
 
@@ -238,7 +241,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test iterates across a series of field ranges
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testPerFieldCountsWithoutAggregation() throws Exception {
@@ -258,7 +262,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test aggregation using an {@link IdentityAggregator} with no additional configuration
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testPerFieldCountsWithIdentityAggregator() throws Exception {
@@ -279,7 +284,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Tests aggregation using an {@link IdentityAggregator} that is configured to seek
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testPerFieldCountsWithSeekingIdentityAggregator() throws Exception {
@@ -300,7 +306,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test aggregation using a {@link TLDFieldIndexAggregator} with minimal configuration
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testPerFieldCountsWithTLDFieldIndexAggregator() throws Exception {
@@ -309,7 +316,7 @@ public class FieldIndexIntegrationTest {
         driveAggregator(aggregator, "FIELD_B", 3);
         driveAggregator(aggregator, "FIELD_C", 4);
 
-        //  TLD aggregator treats all child uids as part of the parent, thus a lower count
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
         driveAggregator(aggregator, "TLD_FIELD_A", 3);
         driveAggregator(aggregator, "TLD_FIELD_B", 1);
         driveAggregator(aggregator, "TLD_FIELD_C", 3);
@@ -322,7 +329,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test aggregating using a {@link TLDFieldIndexAggregator} configured to seek
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testPerFieldCountsWithTLDFieldIndexAggregatorWithSeeking() throws Exception {
@@ -331,7 +339,7 @@ public class FieldIndexIntegrationTest {
         driveAggregator(aggregator, "FIELD_B", 3);
         driveAggregator(aggregator, "FIELD_C", 4);
 
-        //  TLD aggregator treats all child uids as part of the parent, thus a lower count
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
         driveAggregator(aggregator, "TLD_FIELD_A", 3);
         driveAggregator(aggregator, "TLD_FIELD_B", 1);
         driveAggregator(aggregator, "TLD_FIELD_C", 3);
@@ -344,7 +352,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test document aggregation using an {@link IdentityAggregator} with no configuration
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testDocumentAggregationWithIdentityAggregator() throws Exception {
@@ -365,7 +374,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test document aggregation using an {@link IdentityAggregator} configured to seek
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testDocumentAggregationWithSeekingIdentityAggregator() throws Exception {
@@ -386,7 +396,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test document aggregation using a {@link TLDFieldIndexAggregator} with no configuration
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testDocumentAggregationWithTLDFieldIndexAggregator() throws Exception {
@@ -407,7 +418,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test document aggregation using {@link TLDFieldIndexAggregator} configured to seek
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testDocumentAggregationWithTLDFieldIndexAggregatorWithSeeking() throws Exception {
@@ -430,7 +442,8 @@ public class FieldIndexIntegrationTest {
      * <p>
      * This aggregation is not configured to seek
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testSeekingAggregationWithIdentityAggregator() throws Exception {
@@ -451,7 +464,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test aggregation using an {@link IdentityAggregator} with no additional configuration
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testSeekingAggregationWithSeekingIdentityAggregator() throws Exception {
@@ -472,7 +486,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test aggregation using a {@link TLDFieldIndexAggregator} with minimal configuration
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testSeekingAggregationTLDFieldIndexAggregator() throws Exception {
@@ -481,7 +496,7 @@ public class FieldIndexIntegrationTest {
         driveSeekingAggregation(aggregator, "FIELD_B", 3);
         driveSeekingAggregation(aggregator, "FIELD_C", 4);
 
-        //  TLD aggregator treats all child uids as part of the parent, thus a lower count
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
         driveSeekingAggregation(aggregator, "TLD_FIELD_A", 3);
         driveSeekingAggregation(aggregator, "TLD_FIELD_B", 1);
         driveSeekingAggregation(aggregator, "TLD_FIELD_C", 3);
@@ -494,7 +509,8 @@ public class FieldIndexIntegrationTest {
     /**
      * Test aggregation using a {@link TLDFieldIndexAggregator} configured to seek
      *
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
     @Test
     public void testSeekingAggregationTLDFieldIndexAggregatorWithSeeking() throws Exception {
@@ -503,7 +519,7 @@ public class FieldIndexIntegrationTest {
         driveSeekingAggregation(aggregator, "FIELD_B", 3);
         driveSeekingAggregation(aggregator, "FIELD_C", 4);
 
-        //  TLD aggregator treats all child uids as part of the parent, thus a lower count
+        // TLD aggregator treats all child uids as part of the parent, thus a lower count
         driveSeekingAggregation(aggregator, "TLD_FIELD_A", 3);
         driveSeekingAggregation(aggregator, "TLD_FIELD_B", 1);
         driveSeekingAggregation(aggregator, "TLD_FIELD_C", 3);
@@ -516,16 +532,18 @@ public class FieldIndexIntegrationTest {
     /**
      * Constructs an iterator for the specified field
      *
-     * @param field the field
+     * @param field
+     *            the field
      * @return an iterator ready to go!
-     * @throws Exception if something goes wrong
+     * @throws Exception
+     *             if something goes wrong
      */
-    private SortedKeyValueIterator<Key, Value> createIteratorForField(String field) throws Exception{
+    private SortedKeyValueIterator<Key,Value> createIteratorForField(String field) throws Exception {
         Range range = createRangeForField(field);
 
         Scanner scanner = client.createScanner(SHARD);
         scanner.setRange(range);
-        Iterator<Map.Entry<Key, Value>> iter = scanner.iterator();
+        Iterator<Map.Entry<Key,Value>> iter = scanner.iterator();
 
         SortedListKeyValueIterator skvi = new SortedListKeyValueIterator(iter);
         skvi.seek(range, Collections.emptySet(), true);
@@ -544,11 +562,14 @@ public class FieldIndexIntegrationTest {
      * <p>
      * Asserts expected number of uids
      *
-     * @param field the field
-     * @param expectedUidCount the expected number of uids
-     * @throws Exception if something goes wrong
+     * @param field
+     *            the field
+     * @param expectedUidCount
+     *            the expected number of uids
+     * @throws Exception
+     *             if something goes wrong
      */
-    private void driveIterator(String field, int expectedUidCount) throws Exception{
+    private void driveIterator(String field, int expectedUidCount) throws Exception {
         driveIterator(field, expectedUidCount, Collections.emptySet());
     }
 
@@ -557,10 +578,14 @@ public class FieldIndexIntegrationTest {
      * <p>
      * Asserts uid count and optionally the uids themselves
      *
-     * @param field a field
-     * @param expectedUidCount the expected number of uids
-     * @param expectedUids optionally, the expected uids
-     * @throws Exception if something goes wrong
+     * @param field
+     *            a field
+     * @param expectedUidCount
+     *            the expected number of uids
+     * @param expectedUids
+     *            optionally, the expected uids
+     * @throws Exception
+     *             if something goes wrong
      */
     private void driveIterator(String field, int expectedUidCount, Set<String> expectedUids) throws Exception {
         int uidCount = 0;
@@ -571,7 +596,7 @@ public class FieldIndexIntegrationTest {
         while (iter.hasTop()) {
             k = iter.getTopKey();
 
-            //  increment count and parse uid
+            // increment count and parse uid
             uidCount++;
             parseUid(k, fiKeyParser, uids);
             iter.next();
@@ -590,12 +615,16 @@ public class FieldIndexIntegrationTest {
      * <p>
      * Asserts uid count
      *
-     * @param aggregator a FieldIndexAggregator
-     * @param field a field
-     * @param expectedUidCount the expected uid count
-     * @throws Exception if something goes wrong
+     * @param aggregator
+     *            a FieldIndexAggregator
+     * @param field
+     *            a field
+     * @param expectedUidCount
+     *            the expected uid count
+     * @throws Exception
+     *             if something goes wrong
      */
-    private void driveAggregator(FieldIndexAggregator aggregator, String field, int expectedUidCount) throws Exception{
+    private void driveAggregator(FieldIndexAggregator aggregator, String field, int expectedUidCount) throws Exception {
         driveAggregator(aggregator, field, expectedUidCount, Collections.emptySet());
     }
 
@@ -604,11 +633,16 @@ public class FieldIndexIntegrationTest {
      * <p>
      * Asserts uid count and optionally the uids themselves
      *
-     * @param aggregator a FieldIndexAggregator
-     * @param field a field
-     * @param expectedUidCount the expected uid count
-     * @param expectedUids optionally, the expected uids
-     * @throws Exception if something goes wrong
+     * @param aggregator
+     *            a FieldIndexAggregator
+     * @param field
+     *            a field
+     * @param expectedUidCount
+     *            the expected uid count
+     * @param expectedUids
+     *            optionally, the expected uids
+     * @throws Exception
+     *             if something goes wrong
      */
     private void driveAggregator(FieldIndexAggregator aggregator, String field, int expectedUidCount, Set<String> expectedUids) throws Exception {
         int uidCount = 0;
@@ -619,7 +653,7 @@ public class FieldIndexIntegrationTest {
         while (iter.hasTop()) {
             k = aggregator.apply(iter);
 
-            //  increment count and parse uid
+            // increment count and parse uid
             uidCount++;
             assertTopKeyForField(field, k);
             parseUid(k, eventKeyParser, uids);
@@ -638,10 +672,14 @@ public class FieldIndexIntegrationTest {
      * <p>
      * Assert uid count and possibly some document stuff
      *
-     * @param aggregator a FieldIndexAggregator
-     * @param field a field
-     * @param expectedUidCount the expected uid count
-     * @throws Exception if something goes wrong
+     * @param aggregator
+     *            a FieldIndexAggregator
+     * @param field
+     *            a field
+     * @param expectedUidCount
+     *            the expected uid count
+     * @throws Exception
+     *             if something goes wrong
      */
     private void driveDocumentAggregation(FieldIndexAggregator aggregator, String field, int expectedUidCount) throws Exception {
         int uidCount = 0;
@@ -665,10 +703,14 @@ public class FieldIndexIntegrationTest {
     /**
      * Method drives an iterator with an aggregator, no document is aggregated but the source may be seeked
      *
-     * @param aggregator a FieldIndexAggregator
-     * @param field a field
-     * @param expectedUidCount the expected uid count
-     * @throws Exception if something goes wrong
+     * @param aggregator
+     *            a FieldIndexAggregator
+     * @param field
+     *            a field
+     * @param expectedUidCount
+     *            the expected uid count
+     * @throws Exception
+     *             if something goes wrong
      */
     private void driveSeekingAggregation(FieldIndexAggregator aggregator, String field, int expectedUidCount) throws Exception {
         int uidCount = 0;
@@ -704,8 +746,11 @@ public class FieldIndexIntegrationTest {
 
     /**
      * Asserts that the provided top key is present in the expectedTopKeys set
-     * @param field the field
-     * @param key the top key
+     *
+     * @param field
+     *            the field
+     * @param key
+     *            the top key
      */
     private void assertTopKeyForField(String field, Key key) {
 

@@ -38,24 +38,24 @@ public class ConfigurationBean {
     @Inject
     @Any
     private Event<RefreshLifecycle> refreshLifecycleEvent;
-    
+
     @PermitAll
     @JmxManaged
     public void refreshInternal() {
         refreshLifecycleEvent.fire(RefreshLifecycle.INITIATED);
-        
+
         // Tell spring configurations to reload
         configurationEvent.fire(new ConfigurationEvent());
         // Now refresh the refreshable context to ensure beans that need to be are recreated.
         refreshEvent.fire(new RefreshEvent());
-        
+
         refreshLifecycleEvent.fire(RefreshLifecycle.COMPLETE);
     }
-    
+
     /**
      * Causes reloadable configuration to be re-read from disk. If a spring config file on disk is edited, or a system property is changed, call this endpoint
      * to have all classes that are able to refresh themselves using the updated configuration.
-     * 
+     *
      * @return endpoint response
      */
     @GET

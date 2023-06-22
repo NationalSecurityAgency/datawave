@@ -13,18 +13,18 @@ import java.util.Map;
 public class FieldMappingTransform extends DocumentTransform.DefaultDocumentTransform {
     private final Boolean reducedResponse;
     private Map<String,List<String>> primaryToSecondaryFieldMap;
-    
+
     public FieldMappingTransform(Map<String,List<String>> primaryToSecondaryFieldMap, Boolean reducedResponse) {
         this.primaryToSecondaryFieldMap = primaryToSecondaryFieldMap;
         this.reducedResponse = reducedResponse;
     }
-    
+
     @Nullable
     @Override
     public Map.Entry<Key,Document> apply(@Nullable Map.Entry<Key,Document> keyDocumentEntry) {
         if (keyDocumentEntry != null) {
             Document document = keyDocumentEntry.getValue();
-            
+
             for (String primaryField : this.primaryToSecondaryFieldMap.keySet()) {
                 if (!document.containsKey(primaryField)) {
                     for (String secondaryField : this.primaryToSecondaryFieldMap.get(primaryField)) {
@@ -36,7 +36,7 @@ public class FieldMappingTransform extends DocumentTransform.DefaultDocumentTran
                 }
             }
         }
-        
+
         return keyDocumentEntry;
     }
 }

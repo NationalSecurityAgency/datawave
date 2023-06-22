@@ -32,37 +32,37 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
     private final List<DatawaveUser> proxiedUsers = new ArrayList<>();
     @XmlElement
     private final long creationTime;
-    
+
     /**
      * This constructor should not be used. It is here to allow JAX-B mapping and CDI proxying of this class.
      */
     public DatawavePrincipal() {
         this("ANONYMOUS");
     }
-    
+
     public DatawavePrincipal(String username) {
         this.username = username;
         this.primaryUser = ANONYMOUS_USER;
         this.creationTime = System.currentTimeMillis();
     }
-    
+
     public DatawavePrincipal(Collection<? extends DatawaveUser> proxiedUsers) {
         this(proxiedUsers, System.currentTimeMillis());
     }
-    
+
     public DatawavePrincipal(Collection<? extends DatawaveUser> proxiedUsers, long creationTime) {
         this.proxiedUsers.addAll(proxiedUsers);
         this.creationTime = creationTime;
         this.primaryUser = DatawavePrincipal.findPrimaryUser(this.proxiedUsers);
         this.username = DatawavePrincipal.orderProxiedUsers(this.proxiedUsers).stream().map(DatawaveUser::getName).collect(Collectors.joining(" -> "));
     }
-    
+
     /**
      * Gets the {@link DatawaveUser} that represents the primary user in this DatawavePrincipal. If there is only one DatawaveUser, then it is the primaryUser.
      * If there is more than one DatawaveUser, then the first (and presumably only) DatawaveUser whose {@link DatawaveUser#getUserType()} is
      * {@link UserType#USER} is the primary user. If no such DatawaveUser is present, then the first principal in the list is returned as the primary user. This
      * will be the first entity in the X-ProxiedEntitiesChain which should be the server that originated the request.
-     * 
+     *
      * @param datawaveUsers
      *            list of users
      * @return a datawave user
@@ -74,7 +74,7 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
             return datawaveUsers.get(findPrimaryUserPosition(datawaveUsers));
         }
     }
-    
+
     static protected int findPrimaryUserPosition(List<DatawaveUser> datawaveUsers) {
         if (datawaveUsers.isEmpty()) {
             return -1;
@@ -87,7 +87,7 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
             return 0;
         }
     }
-    
+
     /*
      * The purpose here is to return a List of DatawaveUsers where the original caller is first followed by any entities in X-ProxiedEntitiesChain in the order
      * that they were traversed and ending with the entity that made the final call. The List that is passed is not modified. This method makes the following
@@ -106,15 +106,15 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
         }
         return users;
     }
-    
+
     public Collection<DatawaveUser> getProxiedUsers() {
         return Collections.unmodifiableCollection(this.proxiedUsers);
     }
-    
+
     public DatawaveUser getPrimaryUser() {
         return primaryUser;
     }
-    
+
     public Collection<? extends Collection<String>> getAuthorizations() {
         // @formatter:off
         return Collections.unmodifiableCollection(
@@ -123,7 +123,7 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
                 .collect(Collectors.toList()));
         // @formatter:on
     }
-    
+
     public String[] getDNs() {
         // @formatter:off
         return DatawavePrincipal.orderProxiedUsers(this.proxiedUsers).stream()
@@ -132,27 +132,27 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
                 .toArray(String[]::new);
         // @formatter:on
     }
-    
+
     public long getCreationTime() {
         return this.creationTime;
     }
-    
+
     @Override
     @XmlElement
     public String getName() {
         return this.username;
     }
-    
+
     public String getShortName() {
         return DnUtils.getShortName(getPrimaryUser().getName());
     }
-    
+
     public SubjectIssuerDNPair getUserDN() {
         return getPrimaryUser().getDn();
     }
-    
+
     public List<String> getProxyServers() {
-        
+
         // @formatter:off
         List<String> proxyServers = orderProxiedUsers(this.proxiedUsers).stream()
                 .filter(u -> u.getUserType() == UserType.SERVER)
@@ -163,33 +163,33 @@ public class DatawavePrincipal implements ProxiedUserDetails, Principal, Seriali
         // @formatter:on
         return proxyServers.isEmpty() ? null : proxyServers;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        
+
         DatawavePrincipal that = (DatawavePrincipal) o;
-        
+
         if (!username.equals(that.username))
             return false;
         return proxiedUsers.equals(that.proxiedUsers);
     }
-    
+
     @Override
     public int hashCode() {
         int result = username.hashCode();
         result = 31 * result + proxiedUsers.hashCode();
         return result;
     }
-    
+
     @Override
     public String toString() {
         return "DatawavePrincipal{" + "name='" + username + "'" + ", proxiedUsers=" + DatawavePrincipal.orderProxiedUsers(proxiedUsers) + "}";
     }
-    
+
     public static DatawavePrincipal anonymousPrincipal() {
         return new DatawavePrincipal("ANONYMOUS");
     }

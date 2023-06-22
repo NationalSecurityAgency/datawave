@@ -12,11 +12,11 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
 public class AncestorIndexIteratorBuilder extends IndexIteratorBuilder {
-    
+
     @Override
     public IndexIterator newIndexIterator(Text field, Text value, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
                     boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        
+
         return AncestorIndexIterator.builder(field, value, source).withTimeFilter(timeFilter).withTypeMetadata(typeMetadata).shouldBuildDocument(buildDocument)
                         .withDatatypeFilter(datatypeFilter).withAggregation(aggregator).build();
     }
