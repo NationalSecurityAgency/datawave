@@ -422,7 +422,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(13, config.getFiNextSeek());
         Assert.assertEquals(14, config.getEventFieldSeek());
         Assert.assertEquals(15, config.getEventNextSeek());
-        Assert.assertEquals(16, other.getTfFieldSeek());
+        Assert.assertEquals(16, config.getTfFieldSeek());
         Assert.assertEquals(17, config.getTfNextSeek());
 
         Assert.assertTrue(config.getPruneQueryOptions());
