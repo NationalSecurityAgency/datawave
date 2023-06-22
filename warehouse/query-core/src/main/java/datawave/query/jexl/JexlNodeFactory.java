@@ -9,6 +9,7 @@ import datawave.query.jexl.lookups.IndexLookupMap;
 import datawave.query.jexl.lookups.ValueSet;
 import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
@@ -45,6 +46,7 @@ import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 import java.math.BigDecimal;
@@ -263,6 +265,15 @@ public class JexlNodeFactory {
         }
     }
 
+    /**
+     * This method is currently only used from the QueryModelVisitor to expand a binary node into multiple pairs. If one side contains the lenient marker, then
+     * that will be extended around the binary node.
+     *
+     * @param containerType
+     * @param node
+     * @param pairs
+     * @return The container of binary nodes based on the specified node type
+     */
     public static JexlNode createNodeTreeFromPairs(ContainerType containerType, JexlNode node, Set<List<JexlNode>> pairs) {
         if (1 == pairs.size()) {
             List<JexlNode> pair = pairs.iterator().next();
@@ -284,7 +295,23 @@ public class JexlNodeFactory {
                 throw new UnsupportedOperationException("Cannot construct a node from a non-binary pair: " + pair);
             }
 
-            JexlNode child = buildUntypedBinaryNode(node, pair.get(0), pair.get(1));
+            JexlNode leftNode = pair.get(0);
+            JexlNode rightNode = pair.get(1);
+            QueryPropertyMarker.Instance leftType = QueryPropertyMarker.findInstance(leftNode);
+            QueryPropertyMarker.Instance rightType = QueryPropertyMarker.findInstance(rightNode);
+            boolean lenient = false;
+            if (leftType.isType(LenientExpression.class)) {
+                lenient = true;
+                leftNode = leftType.getSource();
+            }
+            if (rightType.isType(LenientExpression.class)) {
+                lenient = true;
+                rightNode = rightType.getSource();
+            }
+            JexlNode child = buildUntypedBinaryNode(node, leftNode, rightNode);
+            if (lenient) {
+                child = LenientExpression.create(child);
+            }
             parentNode.jjtAddChild(child, i);
 
             // We want to override the default parent that would be set by

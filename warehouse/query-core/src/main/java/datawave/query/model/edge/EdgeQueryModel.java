@@ -46,18 +46,6 @@ public class EdgeQueryModel extends QueryModel implements EdgeModelAware {
     @SuppressWarnings("unused")
     private EdgeQueryModel() {}
 
-    public void setUnevaluatedFields(Set<String> uneval) {
-        // No-Op/Ignore
-    }
-
-    public void addUnevaluatedField(String uneval) {
-        // No-Op/Ignore
-    }
-
-    public boolean isUnevaluatedField(String field) {
-        return false; // Always false
-    }
-
     /**
      * Simple factory method to load a query model from the specified classpath resource.
      *

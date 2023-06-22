@@ -388,6 +388,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
 
+    // fields for which normalizations can be dropped if they do not normalize
+    // properly for the type. This can include model fields in which case the
+    // concept will pass on to the expanded fields.
+    private Set<String> lenientFields = new HashSet<>();
+
+    // fields for which normalizations cannot be dropped because of normalization issues
+    // (e.g. a model field may be marked lenient in the QueryModel. This will override.)
+    private Set<String> strictFields = new HashSet<>();
+
     /**
      * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
      */
@@ -611,6 +620,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setLenientFields(other.getLenientFields());
+        this.setStrictFields(other.getStrictFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
         this.setFiFieldSeek(other.getFiFieldSeek());
@@ -2314,6 +2325,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+    }
+
+    public Set<String> getLenientFields() {
+        return lenientFields;
+    }
+
+    public void setLenientFields(Set<String> lenientFields) {
+        this.lenientFields = lenientFields;
+    }
+
+    public Set<String> getStrictFields() {
+        return strictFields;
+    }
+
+    public void setStrictFields(Set<String> strictFields) {
+        this.strictFields = strictFields;
     }
 
     public ExcerptFields getExcerptFields() {

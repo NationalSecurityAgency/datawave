@@ -30,6 +30,8 @@ public class QueryFunctions {
     public static final String UNIQUE_FUNCTION = "unique";
     public static final String GROUPBY_FUNCTION = "groupby";
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
+    public static final String LENIENT_FIELDS_FUNCTION = "lenient";
+    public static final String STRICT_FIELDS_FUNCTION = "strict";
     public static final String MATCH_REGEX = "matchRegex";
     public static final String INCLUDE_TEXT = "includeText";
     public static final String NO_EXPANSION = "noExpansion";
