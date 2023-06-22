@@ -10,6 +10,8 @@ import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
 
 public class QueryOptionsSwitch {
@@ -54,6 +56,16 @@ public class QueryOptionsSwitch {
                 case QueryParameters.EXCERPT_FIELDS:
                     ExcerptFields excerptFields = ExcerptFields.from(value);
                     config.setExcerptFields(excerptFields);
+                    break;
+                case QueryParameters.NO_EXPANSION_FIELDS:
+                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
+                case QueryParameters.LENIENT_FIELDS:
+                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
+                case QueryParameters.STRICT_FIELDS:
+                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
             }
         }
     }

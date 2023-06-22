@@ -204,6 +204,8 @@ public class QueryFunctionsDescriptor implements JexlFunctionArgumentDescriptorF
             case QueryFunctions.MATCH_REGEX:
             case QueryFunctions.INCLUDE_TEXT:
             case QueryFunctions.NO_EXPANSION:
+            case QueryFunctions.LENIENT_FIELDS_FUNCTION:
+            case QueryFunctions.STRICT_FIELDS_FUNCTION:
                 if (numArgs == 0) {
                     throw new IllegalArgumentException("Expected at least one argument to the " + name + " function");
                 }

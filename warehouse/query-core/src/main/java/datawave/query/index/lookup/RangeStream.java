@@ -69,6 +69,7 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
+import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -705,6 +706,8 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
             return ScannerStream.exceededValueThreshold(createFullFieldIndexScanList(config, node).iterator(), node);
         } else if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ASTEvaluationOnly.class)) {
             return ScannerStream.ignored(node);
+        } else if (instance.isType(DroppedExpression.class)) {
+            return ScannerStream.noOp(node);
         } else if (instance.isType(IndexHoleMarkerJexlNode.class)) {
             return ScannerStream.ignored(node);
         } else if (instance.isType(BoundedRange.class)) {

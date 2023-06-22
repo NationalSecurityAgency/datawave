@@ -1,8 +1,8 @@
 package datawave.query.cardinality;
 
 import datawave.query.model.QueryModel;
-import datawave.webservice.model.Direction;
-import datawave.webservice.model.FieldMapping;
+import datawave.query.model.Direction;
+import datawave.query.model.FieldMapping;
 import datawave.webservice.model.Model;
 import org.junit.Assert;
 import org.junit.Before;
