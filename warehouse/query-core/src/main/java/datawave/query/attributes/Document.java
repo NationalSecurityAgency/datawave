@@ -305,7 +305,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                     if (!AttributeComparator.multipleToMultiple((Attributes) existingAttr, (Attributes) value)) {
                         // merge the two sets
                         attrs.addAll(((Attributes) value).getAttributes());
-                        
+
                         _count += attrs.size();
                         if (trackSizes) {
                             _bytes += attrs.sizeInBytes();
@@ -316,7 +316,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attributes) value);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
-                        
+
                         _count += mergedAttributes.size();
                         if (trackSizes) {
                             _bytes += mergedAttributes.sizeInBytes();
@@ -335,7 +335,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         attrsSet.addAll(((Attributes) value).getAttributes());
                         attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
                         dict.put(key, attrs);
-                        
+
                         _count += attrs.size();
                         if (trackSizes) {
                             _bytes += attrs.sizeInBytes();
@@ -346,7 +346,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attributes) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
-                        
+
                         _count += mergedAttributes.size();
                         if (trackSizes) {
                             _bytes += mergedAttributes.sizeInBytes();
@@ -376,7 +376,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                     // ensure no fuzzy matches before merging
                     if (!AttributeComparator.singleToMultiple(value, (Attributes) existingAttr)) {
                         attrs.add(value);
-                        
+
                         _count += attrs.size();
                         if (trackSizes) {
                             _bytes += attrs.sizeInBytes();
@@ -387,7 +387,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                                         (Attribute) value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
                         dict.put(key, mergedAttributes);
-                        
+
                         _count += mergedAttributes.size();
                         if (trackSizes) {
                             _bytes += mergedAttributes.sizeInBytes();
@@ -402,7 +402,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         attrsSet.add(value);
                         attrs = new Attributes(attrsSet, this.isToKeep(), trackSizes);
                         dict.put(key, attrs);
-                        
+
                         _count += value.size();
                         if (trackSizes) {
                             _bytes += value.sizeInBytes();
@@ -411,13 +411,13 @@ public class Document extends AttributeBag<Document> implements Serializable {
                         // fuzzy matches found, attempt to combine attributes
                         Set<Attribute<? extends Comparable<?>>> combinedSet = AttributeComparator.combineSingleAttributes(existingAttr, value, trackSizes);
                         Attributes mergedAttributes = new Attributes(combinedSet, this.isToKeep(), trackSizes);
-                        
+
                         if (combinedSet.size() > 1) {
                             dict.put(key, mergedAttributes);
                         } else {
                             dict.put(key, combinedSet.iterator().next());
                         }
-                        
+
                         _count += mergedAttributes.size();
                         if (trackSizes) {
                             _bytes += mergedAttributes.sizeInBytes();
