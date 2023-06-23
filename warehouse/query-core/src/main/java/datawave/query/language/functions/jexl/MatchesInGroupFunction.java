@@ -16,11 +16,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * </pre>
  */
 public class MatchesInGroupFunction extends JexlQueryFunction {
-    
+
     public MatchesInGroupFunction() {
         super("matches_in_group", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 2) {
@@ -38,7 +38,7 @@ public class MatchesInGroupFunction extends JexlQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -56,10 +56,10 @@ public class MatchesInGroupFunction extends JexlQueryFunction {
         sb.append(")");
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new MatchesInGroupFunction();
     }
-    
+
 }

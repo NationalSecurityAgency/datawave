@@ -48,18 +48,18 @@ import java.util.Properties;
  */
 @RunWith(Arquillian.class)
 public class WiredQueryExecutorBeanTest {
-    
+
     private Logger log = Logger.getLogger(WiredQueryExecutorBeanTest.class);
-    
+
     @Inject
     ApplicationContext ctx;
-    
+
     @Produces
     @ServerPrincipal
     public DatawavePrincipal produceServerPrincipal() {
         return new DatawavePrincipal();
     }
-    
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         System.setProperty("cdi.bean.context", "springFrameworkBeanRefContext.xml");
@@ -69,7 +69,7 @@ public class WiredQueryExecutorBeanTest {
             systemProperties.load(is);
             System.setProperties(systemProperties);
         }
-        
+
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.data.type", "datawave.query.language.parser.jexl",
                                         "datawave.query.language.functions.jexl", "datawave.webservice.query.configuration", "datawave.configuration")
@@ -81,13 +81,13 @@ public class WiredQueryExecutorBeanTest {
                                         DefaultMapperDecorator.class)
                         .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
     }
-    
+
     @Test
     public void testCreatingContext() throws Exception {
         DefaultQueryPlanner defaultQueryPlanner = ctx.getBean("DefaultQueryPlanner", DefaultQueryPlanner.class);
         Assert.assertNotNull(defaultQueryPlanner);
     }
-    
+
     // This test ensures that we can
     // 1) generate a query logic via xml configuration
     // 2) inject an xml generated reference bean into the generated query logic
@@ -103,24 +103,24 @@ public class WiredQueryExecutorBeanTest {
             log.debug("got " + ql);
         }
     }
-    
+
     private static JSSESecurityDomain mockJsseSecurityDomain = EasyMock.createMock(JSSESecurityDomain.class);
     private static DatawavePrincipal mockDatawavePrincipal = EasyMock.createMock(DatawavePrincipal.class);
-    
+
     private static RemoteEdgeDictionary mockRemoteEdgeDictionary = EasyMock.createMock(RemoteEdgeDictionary.class);
-    
+
     public static class Producer {
         @Produces
         public static JSSESecurityDomain produceSecurityDomain() {
             return mockJsseSecurityDomain;
         }
-        
+
         @Produces
         @CallerPrincipal
         public static DatawavePrincipal produceDatawavePrincipal() {
             return mockDatawavePrincipal;
         }
-        
+
         @Produces
         public static RemoteEdgeDictionary produceRemoteEdgeDictionary() {
             return mockRemoteEdgeDictionary;

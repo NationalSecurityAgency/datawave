@@ -20,12 +20,12 @@ public class GetParentDocument implements Function<Entry<Key,Document>,Tuple2<Ke
     private final Aggregation makeDocument;
     private final EntryToTuple<Key,Document> convert = new EntryToTuple<>();
     private static final Logger log = Logger.getLogger(GetParentDocument.class);
-    
+
     public GetParentDocument(KeyToDocumentData fetchDocData, Aggregation makeDocument) {
         this.fetchDocData = fetchDocData;
         this.makeDocument = makeDocument;
     }
-    
+
     public Tuple2<Key,Document> apply(Entry<Key,Document> from) {
         if (log.isTraceEnabled())
             log.trace("Apply parent key " + from.getKey());

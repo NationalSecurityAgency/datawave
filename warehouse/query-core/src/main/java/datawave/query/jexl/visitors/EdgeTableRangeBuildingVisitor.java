@@ -37,15 +37,15 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build
  * the accumulo ranges and the normalized query that will be sent to the EdgeFilterIterator for further evaluation <br>
  * <br>
- * 
+ *
  * The high level design of how the parsing works is as follows: There are two data structures that are built during the traversal to keep track of information.
  * Once the traversal is complete and the data structures are built they are sent to the VisitationContext which then builds the ranges and normalized query and
  * gets returned.<br>
  * <br>
- * 
+ *
  * All data is expected to be passed up since this is a depth first search nothing will be passed down<br>
  * <br>
- * 
+ *
  * The two data structures used:<br>
  * 1) IdentityContext<br>
  * This class stores 3 things:<br>
@@ -53,22 +53,22 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * Operation: eg equals, equals regex, not equals, and not regex<br>
  * Literal: eg 'search term'<br>
  * <br>
- * 
+ *
  * During the Traversal lists of IdentityContexts are built. A list of IdentityContexts must all have the same Identity. For example you can only have a list of
  * IdentityContexts with all SOURCE identities or all TYPE identities. Once a list of IdentityContexts is finished being built it is stored in a QueryContext
  * The only exception is for exclusion expressions (!= !~) and functions.<br>
  * <br>
- * 
+ *
  * 2) QueryContext<br>
  * This class stores a list of IdentityContexts for each supported search term. (Eg 1 list of IdentityContexts for source or edge type ect...) Once a list has
  * been set it cannot be changed/modified/added to<br>
  * <br>
- * 
+ *
  * During the Traversal lists of QueryContexts are built. Once traversal is over we must have 1 or more QueryContexts which are then used to build the
  * ranges/normalized query.<br>
  * <br>
- * 
- * 
+ *
+ *
  * The 3 basic rules that are enforced are:<br>
  * for equivalence expressions (== =~)<br>
  * 1) cant and like identifiers<br>
@@ -76,16 +76,16 @@ import static org.apache.commons.jexl2.parser.JexlNodes.children;
  * for exclude expressions (!= !~)<br>
  * 3) only use and<br>
  * <br>
- * 
+ *
  * There are two basic types of queries that are allowed/expected to be run:<br>
  * <br>
- * 
+ *
  * {@code (SOURCE == 's1' || SOURCE == 's2'|| SOURCE == ...) && (SINK == 't1' || SINK == 't2' || ...)}<br>
  * <br>
- * 
+ *
  * or<br>
  * <br>
- * 
+ *
  * {@code (SOURCE == 's1' && SINK == 's2') || (SOURCE == 's2 && SINK == 's2) || ...}<br>
  * <br>
  */
@@ -94,7 +94,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
     protected boolean includeStats;
     protected List<? extends Type<?>> regexDataTypes;
     protected List<? extends Type<?>> dataTypes;
-    
+
     private static final char BACKSLASH = '\\';
     private static final char STRING_QUOTE = '\'';
     private Set<String> allowedFunctions = Sets.newHashSet("has_all");
@@ -103,7 +103,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
     private boolean sawEquivalenceRegexSource = false;
     private boolean sawEquivalenceRegexSink = false;
     private final EdgeModelFields fields;
-    
+
     public EdgeTableRangeBuildingVisitor(boolean stats, List<? extends Type<?>> types, long maxTerms, List<? extends Type<?>> rTypes, EdgeModelFields fields) {
         this.includeStats = stats;
         this.dataTypes = types;
@@ -111,33 +111,33 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         regexDataTypes = rTypes;
         this.fields = fields;
     }
-    
+
     /*
      * This is treated as the root node of the tree it can only have one child
-     * 
+     *
      * The job of this node is to take the results of its child and create the visitation context to be returned
      */
     public Object visit(ASTJexlScript node, Object data) {
-        
+
         int numChildren = node.jjtGetNumChildren();
-        
+
         if (numChildren != 1) {
             log.error("JexlScript node had an unexpected number of children: " + numChildren);
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR);
             throw new RuntimeException(qe);
         }
-        
+
         @SuppressWarnings("unchecked")
         List<? extends EdgeContext> context = (List<? extends EdgeContext>) node.jjtGetChild(0).jjtAccept(this, null);
-        
+
         if (context.get(0) instanceof IdentityContext) {
             // this can only happen if there is no AND node in the query
             // Build singleton list of QueryContexts then create VisitationContext
             QueryContext qContext = new QueryContext(fields);
             qContext.packageIdentities((List<IdentityContext>) context);
-            
+
             return computeVisitaionContext(Collections.singletonList(qContext));
-            
+
         } else if (context.get(0) instanceof QueryContext) {
             return computeVisitaionContext((List<QueryContext>) context);
             // return context;
@@ -146,24 +146,24 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.NODE_PROCESSING_ERROR);
             throw new RuntimeException(qe);
         }
-        
+
     }
-    
+
     // Overridden to return the results of children
     @Override
     public Object visit(ASTReference node, Object data) {
         return node.jjtGetChild(0).jjtAccept(this, data);
     }
-    
+
     // Overridden to return the results of children
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return node.jjtGetChild(0).jjtAccept(this, data);
     }
-    
+
     /*
      * And node should have exactly two children This node's only function is to pack lists of IdentityContexts into a QueryContext
-     * 
+     *
      * Returns a QueryContext
      */
     @Override
@@ -172,50 +172,50 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             log.error("Query has too many terms");
             throw new IllegalArgumentException("Too many search terms " + termCount);
         }
-        
+
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
         for (JexlNode child : children(node)) {
             childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
         }
-        
+
         if (childContexts.isEmpty()) {
             log.error("Unable to get edge context from AND node");
             throw new IllegalArgumentException("Unable to get edge context from AND node");
         }
-        
+
         List<? extends EdgeContext> mergedContext = childContexts.remove(childContexts.size() - 1);
-        
+
         // now merge the child contexts
         while (!childContexts.isEmpty()) {
             List<? extends EdgeContext> childContext = childContexts.remove(childContexts.size() - 1);
-            
+
             if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof IdentityContext)) {
                 QueryContext qContext = new QueryContext(fields);
-                
+
                 qContext.packageIdentities((List<IdentityContext>) childContext);
                 qContext.packageIdentities((List<IdentityContext>) mergedContext);
-                
+
                 ArrayList<QueryContext> aList = new ArrayList<>();
                 aList.add(qContext);
                 mergedContext = aList;
             } else if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof QueryContext)) {
-                
+
                 for (QueryContext qContext : (List<QueryContext>) mergedContext) {
                     qContext.packageIdentities((List<IdentityContext>) childContext);
                 }
-                
+
             } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof IdentityContext)) {
-                
+
                 for (QueryContext qContext : (List<QueryContext>) childContext) {
                     qContext.packageIdentities((List<IdentityContext>) mergedContext);
                 }
-                
+
                 mergedContext = childContext;
                 /*
                  * On rare occasion a group of Query contexts without a source can get grouped together, this happens with queries like: SOURCE == 's1' &&
                  * ((TYPE == 't1' && RELATIONSHIP == 'r1') || (TYPE == 't2' && RELATIONSHIP == 'r2'))
-                 * 
+                 *
                  * This probably was not supposed to be allowed, you should only be ANDing groups of sources with groups of other identifiers rather here it is
                  * ANDing source(s) with groups of expressions. Honestly it would be safer to split that type of query up into two separate ones but limited
                  * support has been included. However it can be dangerous if the user tries to use SINK in one of the grouped expressions so that is not
@@ -245,27 +245,27 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                     throw new IllegalArgumentException("Error: problem with query syntax");
                 }
             } else {
-                
+
                 log.error("And node had unexpected return type");
                 throw new IllegalArgumentException("Error: problem with query syntax");
             }
         }
-        
+
         return mergedContext;
     }
-    
+
     /**
      * Or node should have exactly two children This or node's only function is to combine the lists returned by its children.
-     * 
+     *
      * The Children can return lists of type IdentityContext or QueryContext both children must return the same type of lists else its an improper query ex:
      * Both children return lists of IdentityContexts where the identity is source Both children return lists of QueryContexts
-     * 
+     *
      * There is one exception where a QueryContext list and a IdentityContext list could be returned by the children in which case the returned IdentityContext
      * list is immediately packaged into a new QueryContext and is then combined with the returned other QueryContext list Happens with a query like this:
      * {@code (SOURCE == 'source1' && SINK == 'sink') || (SOURCE == 'source2')}
-     * 
+     *
      * Or node will return either a list of IdentityContexts or QueryContexts
-     * 
+     *
      * @param node
      *            the node
      * @param data
@@ -278,29 +278,29 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             log.error("Query has too many terms");
             throw new IllegalArgumentException("Too many search terms " + termCount);
         }
-        
+
         // run the visitor against all of the children
         List<List<? extends EdgeContext>> childContexts = new ArrayList<>(node.jjtGetNumChildren());
         for (JexlNode child : children(node)) {
             childContexts.add((List<? extends EdgeContext>) child.jjtAccept(this, null));
         }
-        
+
         if (childContexts.isEmpty()) {
             log.error("Unable to get edge context from OR node");
             throw new IllegalArgumentException("Unable to get edge context from OR node");
         }
-        
+
         List<? extends EdgeContext> mergedContext = childContexts.remove(childContexts.size() - 1);
-        
+
         // now merge the child contexts
         while (!childContexts.isEmpty()) {
             List<? extends EdgeContext> childContext = childContexts.remove(childContexts.size() - 1);
-            
+
             if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof IdentityContext)) {
                 // Combine two lists of Identity contexts
                 IdentityContext iContext1 = (IdentityContext) childContext.get(0);
                 IdentityContext iContext2 = (IdentityContext) mergedContext.get(0);
-                
+
                 checkNotExclusion(iContext1, "Can't OR exclusion expressions");
                 checkNotExclusion(iContext2, "Can't OR exclusion expressions");
                 if (iContext1.getIdentity().equals(iContext2.getIdentity())) {
@@ -310,38 +310,38 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                     log.error("Query attempted to or like terms: " + iContext1.getIdentity() + " and " + iContext1.getIdentity());
                     throw new IllegalArgumentException("Can't OR unlike terms: " + iContext1.getIdentity() + " and " + iContext2.getIdentity());
                 }
-                
+
             } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof QueryContext)) {
                 List<QueryContext> context1 = (List<QueryContext>) childContext;
                 List<QueryContext> context2 = (List<QueryContext>) mergedContext;
-                
+
                 if (context1.size() == 1 && context1.get(0).hasSourceList() == false) {
                     runCombine(context2, context1);
-                    
+
                     mergedContext = context2;
                 } else if (context2.size() == 1 && context2.get(0).hasSourceList() == false) {
                     runCombine(context1, context2);
-                    
+
                     mergedContext = context1;
                 } else {
                     context1.addAll(context2);
                     mergedContext = context1;
                 }
             }
-            
+
             /*
              * The next two else if statements are used when we have a query that technically follows the rules but it is not clear how it should be evaluated.
              * Basically we make an effort to keep going. No guarantees as to what happens Ex) SOURCE == 's1' || SOURCE == 's2 && SINK == 't1' || SINK == 't2'
              * Instead of: (SOURCE == 's1' || SOURCE == 's2) && (SINK == 't1' || SINK == 't2') Or: SOURCE == 's1' || (SOURCE == 's2 && (SINK == 't1' || SINK ==
              * 't2'))
              */
-            
+
             else if ((childContext.get(0) instanceof IdentityContext) && (mergedContext.get(0) instanceof QueryContext)) {
                 checkNotExclusion((IdentityContext) childContext.get(0), "Can't OR exclusion expressions");
-                
+
                 QueryContext queryContext = new QueryContext(fields);
                 queryContext.packageIdentities((List<IdentityContext>) childContext, false);
-                
+
                 if (isSourceList((List<IdentityContext>) childContext)) {
                     ((List<QueryContext>) mergedContext).add(queryContext);
                 } else {
@@ -351,10 +351,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 }
             } else if ((childContext.get(0) instanceof QueryContext) && (mergedContext.get(0) instanceof IdentityContext)) {
                 checkNotExclusion((IdentityContext) mergedContext.get(0), "Can't OR exclusion expressions");
-                
+
                 QueryContext queryContext = new QueryContext(fields);
                 queryContext.packageIdentities((List<IdentityContext>) mergedContext, false);
-                
+
                 if (isSourceList((List<IdentityContext>) mergedContext)) {
                     ((List<QueryContext>) childContext).add(queryContext);
                 } else {
@@ -362,17 +362,17 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                     otherContexts.add(queryContext);
                     runCombine((List<QueryContext>) childContext, otherContexts);
                 }
-                
+
                 mergedContext = childContext;
             } else {
                 log.error("OR node had unexpected return type");
                 throw new IllegalArgumentException("Error: problem with query syntax");
             }
         }
-        
+
         return mergedContext;
     }
-    
+
     private void runCombine(List<QueryContext> q1, List<QueryContext> q2) {
         for (QueryContext qContext : (List<QueryContext>) q1) {
             if (!qContext.combineQueryContexts(q2, true)) {
@@ -381,7 +381,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             }
         }
     }
-    
+
     private boolean isSourceList(List<IdentityContext> context) {
         if (context.get(0).getIdentity().equals(EdgeModelFields.FieldKey.EDGE_SOURCE)) {
             return true;
@@ -389,19 +389,19 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             return false;
         }
     }
-    
+
     private void checkNotExclusion(IdentityContext context, String msg) {
         if (!context.isEquivalence()) {
             throw new RuntimeException(msg);
         }
     }
-    
+
     /**
      * Equals node (==) should have exactly two children (reference nodes) one child will have the identifier eg: SOURCE ... the other child will have the
      * string literal eg: 'searchTerm'
-     * 
+     *
      * Returns a list of 1 or more IdentityContexts
-     * 
+     *
      * @param node
      *            the node
      * @param data
@@ -413,13 +413,13 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         termCount++;
         return visitExpresionNode(node, EdgeModelFields.EQUALS);
     }
-    
+
     /**
      * Equals node (=~) should have exactly two children (reference nodes) one child will have the identifier eg: SOURCE ... the other child will have the
      * string literal eg: 'searchTerm'
-     * 
+     *
      * Returns a list of 1 or more IdentityContexts
-     * 
+     *
      * @param node
      *            the node
      * @param data
@@ -437,34 +437,34 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         }
         return contexts;
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         termCount++;
         return visitExpresionNode(node, EdgeModelFields.NOT_EQUALS_REGEX);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         termCount++;
         return visitExpresionNode(node, EdgeModelFields.NOT_EQUALS);
     }
-    
+
     private Object visitExpresionNode(SimpleNode node, String operator) {
         int numChildren = node.jjtGetNumChildren();
-        
+
         if (numChildren != 2) {
             log.error("Equals node had unexpected number of children: " + numChildren);
             throw new IllegalArgumentException("Problem parsing query");
         }
-        
+
         String identifier = getIdentity(node.jjtGetChild(0));
         String literal = getLiteral(node.jjtGetChild(1));
         List<IdentityContext> contexts = new ArrayList<>();
-        
+
         if (identifier.equals(fields.getSourceFieldName()) || identifier.equals(fields.getSinkFieldName()) || identifier.equals(fields.getAttribute3FieldName())
                         || identifier.equals(fields.getAttribute2FieldName())) {
-            
+
             if (operator.equals(EdgeModelFields.EQUALS_REGEX) || operator.equals(EdgeModelFields.NOT_EQUALS_REGEX)) {
                 for (String normalizedLiteral : EdgeKeyUtil.normalizeRegexSource(literal, regexDataTypes, true)) {
                     try { // verify that the normalized regex is valid here instead of letting it fail on tserver
@@ -489,35 +489,35 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                     contexts.add(iContext);
                 }
             }
-            
+
         } else {
             IdentityContext iContext = new IdentityContext(identifier, literal, operator, fields);
             contexts.add(iContext);
         }
-        
+
         return contexts;
     }
-    
+
     /**
      * Gets the Identity of an expression eg. SOURCE
-     * 
+     *
      * @param referenceNode
      *            a reference node
      * @return the identity
      */
     private String getIdentity(SimpleNode referenceNode) {
-        
+
         if (referenceNode.jjtGetNumChildren() != 1) {
             log.error("Reference node (identity) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
             throw new IllegalArgumentException("Problem parsing query");
         }
-        
+
         return referenceNode.jjtGetChild(0).image.toUpperCase();
     }
-    
+
     /**
      * Gets the string literal
-     * 
+     *
      * @param referenceNode
      *            reference node
      * @return string literal
@@ -527,15 +527,15 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             log.error("Reference node (literal) had unexpected number of children: " + referenceNode.jjtGetNumChildren());
             throw new IllegalArgumentException("Problem parsing query");
         }
-        
+
         return referenceNode.jjtGetChild(0).image;
     }
-    
+
     /**
      * Used only for the Edge'Source'QueryLogic Basically function support was an afterthought only to support old code in the existing Edge'Source'QueryLogic A
      * list with a single Identity context is returned in the following format: Identity = FUNCTION Opperator = FUNCTION LITER = "{function string}" //eg
      * source.has_all(SINK, "t1", "t2", ...)
-     * 
+     *
      * @param node
      *            the node
      * @param data
@@ -547,9 +547,9 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             // then we're the only node in here, we need to come up with ranges from the function itself, or fail the query
             throw new IllegalArgumentException("Cannot perform has_all without specifying a pattern for the edge 'SOURCE'.");
         }
-        
+
         StringBuilder sb = new StringBuilder();
-        
+
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             if (0 == i) {
                 sb.append(node.jjtGetChild(i).image);
@@ -569,23 +569,23 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 sb.append("'" + getLiteral(node.jjtGetChild(i)).toLowerCase() + "'");
             }
         }
-        
+
         sb.append(")");
-        
+
         List<IdentityContext> contexts = new ArrayList<>();
         IdentityContext iContext = new IdentityContext(EdgeModelFields.FieldKey.FUNCTION.name(), sb.toString(), EdgeModelFields.FieldKey.FUNCTION.name(),
                         fields);
-        
+
         contexts.add(iContext);
         return contexts;
     }
-    
+
     /**
      * This method creates a new VisitationContext object to be returned and loads the final list of queryContexts which are then used to build the ranges and
      * normalized query One of the main purposes of this method is to create the normalized query that is used to filter column families from ranges. This is a
      * problem when there are multiple query contexts because the whitelist will exclude certain column family values, which will affect what gets returned by
      * the query. This is addressed by the columnFamilyAreDifferent boolean which is passed down to populateQuery()
-     * 
+     *
      * @param queryContexts
      *            query contexts
      * @return a visitation context
@@ -596,7 +596,7 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
         // from the normalized query that goes to the edge filter iterator.
         boolean includColumnFamilyTerms = false;
         boolean columnFamilyAreDifferent = false;
-        
+
         // If the sink field appears in a query contexts, 'otherContext' list then it will have to be included in the normalized
         // query string sent to the edge filter iterator
         boolean includeSink = false;
@@ -607,10 +607,10 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
                 break;
             }
         }
-        
+
         // If there are multiple query contexts, and their column families are not the same, we will pass down a boolean
         // so that the whitelist will not get updated to improve column family filtering against ranges
-        
+
         if (queryContexts.size() > 1) {
             int i;
             QueryContext.ColumnContext firstColumn = (queryContexts.get(0).getColumnContext());
@@ -629,9 +629,8 @@ public class EdgeTableRangeBuildingVisitor extends BaseVisitor {
             }
         }
         VisitationContext vContext = new VisitationContext(fields, includeStats);
-        
         vContext.setHasAllCompleteColumnFamilies(!includColumnFamilyTerms);
-        
+
         for (QueryContext qContext : queryContexts) {
             includeSink = vContext.updateQueryRanges(qContext);
             includeSink = includeSink || sawEquivalenceRegexSink || columnFamilyAreDifferent;

@@ -10,7 +10,7 @@ import javax.inject.Inject;
 public class EdgeDictionaryProviderImpl implements EdgeDictionaryProvider {
     @Inject
     private RemoteEdgeDictionary remoteEdgeDictionary;
-    
+
     @Override
     public EdgeDictionaryBase<?,? extends MetadataBase<?>> getEdgeDictionary(Query settings, String metadataTableName) {
         return remoteEdgeDictionary.getEdgeDictionary(settings, metadataTableName);

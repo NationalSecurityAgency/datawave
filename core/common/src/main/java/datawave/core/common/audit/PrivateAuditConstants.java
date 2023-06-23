@@ -9,13 +9,13 @@ import java.util.Map;
  */
 public class PrivateAuditConstants {
     public static final String PREFIX = "audit.";
-    
+
     public static final String AUDIT_TYPE = PREFIX + "auditType";
     public static final String COLUMN_VISIBILITY = PREFIX + "columnVisibility";
     public static final String LOGIC_CLASS = PREFIX + "logicClass";
     public static final String USER_DN = PREFIX + "userDn";
     public static final String SELECTORS = PREFIX + "selectors";
-    
+
     public static void stripPrivateParameters(Map<String,List<String>> queryParameters) {
         queryParameters.entrySet().removeIf(entry -> entry.getKey().startsWith(PREFIX));
     }

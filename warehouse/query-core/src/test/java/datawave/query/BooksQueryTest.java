@@ -41,25 +41,25 @@ import static datawave.query.testframework.RawDataManager.RE_OP;
  * Tests for grouping data. The {@link BooksDataManager} will create the valid grouping entries.
  */
 public class BooksQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(BooksQueryTest.class);
-    
+
     private static final Map<String,String> QUERY_OPTIONS = ImmutableMap.of(QueryParameters.INCLUDE_GROUPING_CONTEXT, Boolean.TRUE.toString());
     private static final RawDataManager BOOKS_MANAGER = createManager();
-    
+
     private static RawDataManager createManager() {
         try {
             Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
             FieldConfig indexes = new BooksFieldIndex();
             ConfigData cfgData = new ConfigData(BooksField.BOOKS_DATE.name(), BooksField.ISBN_13.name(), BooksField.getHeaders(),
                             BooksDataType.getDefaultVisibility(), BooksField.getFieldsMetadata());
-            
+
             DataTypeHadoopConfig books = new BooksDataType(BooksEntry.tech.getDataType(), BooksEntry.tech.getIngestFile(), indexes, cfgData);
             dataTypes.add(books);
-            
+
             accumuloSetup.setData(FileType.GROUPING, dataTypes);
             client = accumuloSetup.loadTables(log);
             BooksDataManager mgr = new BooksDataManager(BooksEntry.tech.getDataType(), client, indexes, cfgData);
@@ -69,11 +69,11 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             throw new AssertionError(e);
         }
     }
-    
+
     public BooksQueryTest() {
         super(BOOKS_MANAGER);
     }
-    
+
     @Test
     public void testLanguage() throws Exception {
         log.info("------  testLanguage  ------");
@@ -83,7 +83,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             runTest(query, query, QUERY_OPTIONS);
         }
     }
-    
+
     @Test
     public void testAuthor() throws Exception {
         log.info("------  testAuthor  ------");
@@ -93,7 +93,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             runTest(query, query, QUERY_OPTIONS);
         }
     }
-    
+
     @Test
     public void testMultiAuthorOr() throws Exception {
         log.info("------  testMultiAuthor  ------");
@@ -102,7 +102,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
         String query = BooksField.AUTHOR.name() + EQ_OP + doug + OR_OP + BooksField.AUTHOR.name() + EQ_OP + joshua;
         runTest(query, query, QUERY_OPTIONS);
     }
-    
+
     @Test
     public void testEvaluationOnlyAuthor() throws Exception {
         log.info("------  testEvaluationOnlyAuthor  ------");
@@ -113,12 +113,12 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
         String expectedQuery = BooksField.AUTHOR + RE_OP + "'.*" + bloch + '\'' + AND_OP + BooksField.LANGUAGE.name() + EQ_OP + "'ENGLISH'";
         runTest(query, expectedQuery, QUERY_OPTIONS);
     }
-    
+
     public static String AUTHOR_LAST_NAME = "AUTHOR_LAST_NAME";
     public static String AUTHOR_FIRST_NAME = "AUTHOR_FIRST_NAME";
-    
+
     public static class AuthorNameParts implements DocumentPermutation {
-        
+
         @Nullable
         @Override
         public Map.Entry<Key,Document> apply(@Nullable Map.Entry<Key,Document> keyDocumentEntry) {
@@ -146,7 +146,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             return keyDocumentEntry;
         }
     }
-    
+
     @Test
     public void testAuthorAndISBN_10() throws Exception {
         log.info("------  testISBN_10  ------");
@@ -157,7 +157,7 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
             runTest(query, query, QUERY_OPTIONS);
         }
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {
@@ -165,27 +165,27 @@ public class BooksQueryTest extends AbstractFunctionalQuery {
         // add suffix for grouping
         this.documentKey = BooksField.ISBN_13.name() + ".0";
     }
-    
+
     private static class BooksFieldIndex extends AbstractFields {
-        
+
         private static final Collection<String> index = new HashSet<>();
         private static final Collection<String> indexOnly = new HashSet<>();
         private static final Collection<String> reverse = new HashSet<>();
         private static final Collection<String> multivalue = new HashSet<>();
         private static final Collection<Set<String>> composite = new HashSet<>();
         private static final Collection<Set<String>> virtual = new HashSet<>();
-        
+
         static {
             index.add(BooksField.TITLE.name());
             index.add(BooksField.AUTHOR.name());
             index.add(BooksField.LANGUAGE.name());
             reverse.addAll(index);
         }
-        
+
         public BooksFieldIndex() {
             super(index, indexOnly, reverse, multivalue, composite, virtual);
         }
-        
+
         @Override
         public String toString() {
             return this.getClass().getSimpleName() + "{" + super.toString() + "}";

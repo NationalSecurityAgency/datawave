@@ -38,7 +38,7 @@ public class WSAuthorizationsUtilTest {
     private DatawavePrincipal remoteUserPrincipal;
     // the overall user is a combination of the proxied and remote users
     private DatawavePrincipal overallUserPrincipal;
-    
+
     @Before
     public void initialize() {
         System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -46,96 +46,96 @@ public class WSAuthorizationsUtilTest {
         userAuths = new HashSet<>();
         userAuths.add(Sets.newHashSet("A", "C", "D"));
         userAuths.add(Sets.newHashSet("A", "B", "E"));
-        
+
         SubjectIssuerDNPair userDN = SubjectIssuerDNPair.of(USER_DN, ISSUER_DN);
         SubjectIssuerDNPair p1dn = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
         SubjectIssuerDNPair p2dn = SubjectIssuerDNPair.of("entity2UserDN", "entity2IssuerDN");
         SubjectIssuerDNPair p3dn = SubjectIssuerDNPair.of("entity3UserDN", "entity3IssuerDN");
-        
+
         DatawaveUser user = new DatawaveUser(userDN, UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
         DatawaveUser p1 = new DatawaveUser(p1dn, UserType.SERVER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
         DatawaveUser p2 = new DatawaveUser(p2dn, UserType.SERVER, Sets.newHashSet("A", "F", "G"), null, null, System.currentTimeMillis());
         DatawaveUser p3 = new DatawaveUser(p3dn, UserType.SERVER, Sets.newHashSet("A", "B", "G"), null, null, System.currentTimeMillis());
-        
+
         proxiedUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user, p1, p2));
         proxiedServerPrincipal1 = new DatawavePrincipal(Lists.newArrayList(p3, p1));
         proxiedServerPrincipal2 = new DatawavePrincipal(Lists.newArrayList(p2, p3, p1));
-        
+
         DatawaveUser user_2 = new DatawaveUser(userDN, UserType.USER, Sets.newHashSet("A", "D", "E", "H"), null, null, System.currentTimeMillis());
         remoteUserPrincipal = new DatawavePrincipal(Lists.newArrayList(user_2, p1, p2));
         remoteAuths = "A,E";
-        
+
         DatawaveUser overallUser = new DatawaveUser(userDN, UserType.USER, Sets.newHashSet("A", "C", "D", "E", "H"), null, null, System.currentTimeMillis());
-        
+
         overallUserPrincipal = new DatawavePrincipal(Lists.newArrayList(overallUser, p1, p2));
     }
-    
+
     @Test
     public void testMergeAuthorizations() {
         HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C"), new Authorizations("A"));
         assertEquals(expected, WSAuthorizationsUtil.mergeAuthorizations(methodAuths, userAuths));
     }
-    
+
     @Test
     public void testDowngradeAuthorizations() throws AuthorizationException {
         HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "C"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "G"));
         assertEquals(expected, WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal, proxiedUserPrincipal));
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testDowngradeAuthorizationsUserRequestsAuthTheyDontHave() throws AuthorizationException {
         WSAuthorizationsUtil.getDowngradedAuthorizations("A,C,E", proxiedUserPrincipal, proxiedUserPrincipal);
         fail("Exception not thrown!");
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave1() throws AuthorizationException {
         // p1, p3 - call will succeed if p1 is primaryUser, throw exception if p3 is primaryUser
         WSAuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal1, proxiedServerPrincipal1);
         fail("Exception not thrown!");
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testDowngradeAuthorizationsServerRequestsAuthTheyDontHave2() throws AuthorizationException {
         // p1, p2, p3 - call will succeed if p1 is primaryUser, throw exception if p2 is primaryUser
         WSAuthorizationsUtil.getDowngradedAuthorizations("A,B,E", proxiedServerPrincipal2, proxiedServerPrincipal2);
         fail("Exception not thrown!");
     }
-    
+
     @Test
     public void testDowngradeRemoteAuthorizations() throws AuthorizationException {
         HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A", "E"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "G"));
         assertEquals(expected, WSAuthorizationsUtil.getDowngradedAuthorizations(remoteAuths, overallUserPrincipal, remoteUserPrincipal));
     }
-    
+
     @Test(expected = AuthorizationException.class)
     public void testDowngradeRemoteAuthorizationsFail() throws AuthorizationException {
         HashSet<Authorizations> expected = Sets.newHashSet(new Authorizations("A"), new Authorizations("A", "B", "E"), new Authorizations("A", "F", "E"));
         assertEquals(expected, WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, remoteUserPrincipal, remoteUserPrincipal));
     }
-    
+
     @Test
     public void testUserAuthsFirstInMergedSet() throws AuthorizationException {
         Set<Authorizations> mergedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(methodAuths, proxiedUserPrincipal, proxiedUserPrincipal);
         assertEquals(3, mergedAuths.size());
         assertEquals("Merged user authorizations were not first in the return set", new Authorizations("A", "C"), mergedAuths.iterator().next());
     }
-    
+
     @Test
     public void testUnionAuthorizations() {
         assertEquals(new Authorizations("A", "C"), WSAuthorizationsUtil.union(new Authorizations("A", "C"), new Authorizations("A")));
     }
-    
+
     @Test
     public void testUnionWithEmptyAuthorizations() {
         assertEquals(new Authorizations("A", "C"), WSAuthorizationsUtil.union(new Authorizations("A", "C"), new Authorizations()));
     }
-    
+
     @Test
     public void testUnionWithBothEmptyAuthorizations() {
         assertEquals(new Authorizations(), WSAuthorizationsUtil.union(new Authorizations(), new Authorizations()));
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testUserRequestsAuthTheyDontHave() {
         // This is the case where we could throw an error or write something to the logs
@@ -143,7 +143,7 @@ public class WSAuthorizationsUtilTest {
         WSAuthorizationsUtil.mergeAuthorizations(methodAuths, userAuths);
         fail("Exception not thrown!");
     }
-    
+
     @Test
     public void testMethodAuthsIsNull() {
         HashSet<Authorizations> expected = new HashSet<>();
@@ -152,26 +152,26 @@ public class WSAuthorizationsUtilTest {
         }
         assertEquals(expected, WSAuthorizationsUtil.mergeAuthorizations(null, userAuths));
     }
-    
+
     @Test
     public void testUserAuthsIsNull() {
         assertEquals(Collections.singleton(new Authorizations()), WSAuthorizationsUtil.mergeAuthorizations(methodAuths, null));
     }
-    
+
     @Test
     public void testBothMethodAndUserAuthsNull() {
         assertEquals(Collections.singleton(new Authorizations()), WSAuthorizationsUtil.mergeAuthorizations(null, null));
     }
-    
+
     @Test
     public void testMinimizeWithSubset() {
         ArrayList<Authorizations> authSets = Lists.newArrayList(new Authorizations("A", "B", "C", "D"), new Authorizations("C", "B"),
                         new Authorizations("A", "B", "C"), new Authorizations("B", "C", "D", "E"));
         Collection<Authorizations> expected = Collections.singleton(new Authorizations("B", "C"));
-        
+
         assertEquals(expected, WSAuthorizationsUtil.minimize(authSets));
     }
-    
+
     @Test
     public void testMinimizeWithNoSubset() {
         LinkedHashSet<Authorizations> expected = new LinkedHashSet<>();
@@ -179,10 +179,10 @@ public class WSAuthorizationsUtilTest {
         expected.add(new Authorizations("B", "C", "F"));
         expected.add(new Authorizations("A", "B", "E"));
         expected.add(new Authorizations("B", "C", "D", "E"));
-        
+
         assertEquals(expected, WSAuthorizationsUtil.minimize(expected));
     }
-    
+
     @Test
     public void testMinimizeWithMultipleSubsets() {
         LinkedHashSet<Authorizations> testSet = new LinkedHashSet<>();
@@ -190,59 +190,58 @@ public class WSAuthorizationsUtilTest {
         testSet.add(new Authorizations("B", "C"));
         testSet.add(new Authorizations("A", "B", "E"));
         testSet.add(new Authorizations("A", "B", "D", "E"));
-        
+
         LinkedHashSet<Authorizations> expected = new LinkedHashSet<>();
         expected.add(new Authorizations("B", "C"));
         expected.add(new Authorizations("A", "B", "E"));
-        
+
         assertEquals(expected, WSAuthorizationsUtil.minimize(testSet));
     }
-    
+
     @Test
     public void testMinimizeWithDupsButNoSubset() {
         ArrayList<Authorizations> authSets = Lists.newArrayList(new Authorizations("A", "B", "C", "D"), new Authorizations("B", "C", "F"),
                         new Authorizations("A", "B", "C", "D"), new Authorizations("B", "C", "D", "E"));
-        
+
         LinkedHashSet<Authorizations> expected = new LinkedHashSet<>();
         expected.add(new Authorizations("A", "B", "C", "D"));
         expected.add(new Authorizations("B", "C", "F"));
         expected.add(new Authorizations("B", "C", "D", "E"));
         assertEquals(expected, WSAuthorizationsUtil.minimize(authSets));
     }
-    
+
     @Test
     public void testBuilidAuthorizationString() {
         Collection<Collection<String>> auths = new HashSet<>();
         List<String> authsList = Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "A", "E", "I", "J");
-        
+
         HashSet<String> uniqAuths = new HashSet<>(authsList);
-        
+
         auths.add(authsList.subList(0, 4));
         auths.add(authsList.subList(4, 8));
         auths.add(authsList.subList(8, 12));
         uniqAuths.removeAll(Arrays.asList(WSAuthorizationsUtil.buildAuthorizationString(auths).split(",")));
         assertTrue(uniqAuths.isEmpty());
     }
-    
+
     @Test
     public void testBuildUserAuthorizationsString() throws Exception {
         String expected = new Authorizations("A", "C", "D").toString();
         assertEquals(expected, WSAuthorizationsUtil.buildUserAuthorizationString((DatawavePrincipal) proxiedUserPrincipal));
     }
-    
+
     @Test
     public void testMergeUsers() {
         SubjectIssuerDNPair userDn1 = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
         SubjectIssuerDNPair userDn2 = SubjectIssuerDNPair.of("entity1UserDN", "entity1IssuerDN");
-        
+
         DatawaveUser user1 = new DatawaveUser(userDn1, UserType.USER, Sets.newHashSet("A", "C", "D"), null, null, System.currentTimeMillis());
         DatawaveUser user2 = new DatawaveUser(userDn2, UserType.USER, Sets.newHashSet("A", "B", "E"), null, null, System.currentTimeMillis());
-        
+
         DatawaveUser user3 = WSAuthorizationsUtil.mergeUsers(user1, user2);
-        
         DatawaveUser expected = new DatawaveUser(userDn1, user1.getUserType(), Sets.newHashSet("A", "B", "C", "D", "E"), null, null, -1);
         assertUserEquals(expected, user3);
-        
+
         Multimap<String,String> rolesToAuths1 = HashMultimap.create();
         rolesToAuths1.put("role1", "A");
         rolesToAuths1.put("role1", "B");
@@ -251,33 +250,32 @@ public class WSAuthorizationsUtilTest {
         rolesToAuths2.put("role3", "A");
         Multimap<String,String> rolesToAuths3 = HashMultimap.create(rolesToAuths1);
         rolesToAuths3.putAll(rolesToAuths2);
-        
+
         user1 = new DatawaveUser(userDn1, UserType.USER, Sets.newHashSet("A", "C", "D"), rolesToAuths1.keySet(), rolesToAuths1, System.currentTimeMillis());
         user2 = new DatawaveUser(userDn2, UserType.USER, Sets.newHashSet("A", "B", "E"), rolesToAuths2.keySet(), rolesToAuths2, System.currentTimeMillis());
-        
+
         user3 = WSAuthorizationsUtil.mergeUsers(user1, user2);
-        
         expected = new DatawaveUser(userDn1, UserType.USER, Sets.newHashSet("A", "B", "C", "D", "E"), rolesToAuths3.keySet(), rolesToAuths3, -1);
         assertUserEquals(expected, user3);
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testCannotMergeUser() {
         WSAuthorizationsUtil.mergeUsers(((DatawavePrincipal) proxiedServerPrincipal1).getPrimaryUser(),
                         ((DatawavePrincipal) proxiedServerPrincipal2).getPrimaryUser());
     }
-    
+
     @Test
     public void testMergePrincipals() {
         DatawavePrincipal merged = WSAuthorizationsUtil.mergePrincipals((DatawavePrincipal) proxiedUserPrincipal, (DatawavePrincipal) remoteUserPrincipal);
         assertPrincipalEquals((DatawavePrincipal) overallUserPrincipal, merged);
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testCannotMergePrincipal() {
         WSAuthorizationsUtil.mergePrincipals((DatawavePrincipal) proxiedServerPrincipal1, (DatawavePrincipal) proxiedServerPrincipal2);
     }
-    
+
     private void assertUserEquals(DatawaveUser user1, DatawaveUser user2) {
         assertEquals(user1.getDn(), user2.getDn());
         assertEquals(user1.getUserType(), user2.getUserType());
@@ -285,7 +283,7 @@ public class WSAuthorizationsUtilTest {
         assertEquals(new HashSet<>(user1.getRoles()), new HashSet<>(user2.getRoles()));
         assertEquals(user1.getRoleToAuthMapping(), user2.getRoleToAuthMapping());
     }
-    
+
     private void assertPrincipalEquals(DatawavePrincipal user1, DatawavePrincipal user2) {
         List<DatawaveUser> users1 = new ArrayList<>(user1.getProxiedUsers());
         List<DatawaveUser> users2 = new ArrayList<>(user2.getProxiedUsers());

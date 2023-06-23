@@ -24,12 +24,12 @@ import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
 import static org.junit.Assert.assertEquals;
 
 public class QueryOptionsTest {
-    
+
     @BeforeClass
     public static void setupClass() {
         Logger.getLogger(QueryOptions.class).setLevel(Level.TRACE);
     }
-    
+
     @Test
     public void testBuildFieldDataTypeMapFromSingleValueString() {
         String singleValueData = "k:v;";
@@ -38,7 +38,7 @@ public class QueryOptionsTest {
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(singleValueData);
         assertEquals("Failed to parse single value option string", expectedDataTypeMap, fieldDataTypeMap);
     }
-    
+
     @Test
     public void testBuildFieldDataTypeMapFromMultiValueString() {
         String multiValueData = "k:v;key:value";
@@ -48,7 +48,7 @@ public class QueryOptionsTest {
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(multiValueData);
         assertEquals("Failed to parse multi-value option string", expectedDataTypeMap, fieldDataTypeMap);
     }
-    
+
     @Test
     public void testBuildFieldDataTypeMapFromEmptyString() {
         String emptyData = "";
@@ -56,7 +56,7 @@ public class QueryOptionsTest {
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(emptyData);
         assertEquals("Failed to parse empty option string", expectedDataTypeMap, fieldDataTypeMap);
     }
-    
+
     @Test
     public void testBuildFieldDataTypeMapFromNullString() {
         String nulldata = null;
@@ -64,7 +64,7 @@ public class QueryOptionsTest {
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(nulldata);
         assertEquals("Failed to parse null option string", expectedDataTypeMap, fieldDataTypeMap);
     }
-    
+
     @Test
     public void testBuildFieldDataTypeMapFromBadString() {
         String badData = "k:k2:k3:v;";
@@ -72,7 +72,7 @@ public class QueryOptionsTest {
         Map<String,Set<String>> fieldDataTypeMap = QueryOptions.buildFieldDataTypeMap(badData);
         assertEquals("Failed to parse bad option string", expectedDataTypeMap, fieldDataTypeMap);
     }
-    
+
     @Test
     public void testFetchDataTypeKeysFromSingleValueString() {
         String data = "k:v;";
@@ -80,7 +80,7 @@ public class QueryOptionsTest {
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
         assertEquals("Failed to parse single value option string", expectedDataTypeKeys, dataTypeKeys);
     }
-    
+
     @Test
     public void testFetchDataTypeKeysFromMultiValueString() {
         String data = "k:v;key:value";
@@ -88,7 +88,7 @@ public class QueryOptionsTest {
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
         assertEquals("Failed to parse multi-value option string", expectedDataTypeKeys, dataTypeKeys);
     }
-    
+
     @Test
     public void testFetchDataTypeKeysFromEmptyString() {
         String data = "";
@@ -96,7 +96,7 @@ public class QueryOptionsTest {
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
         assertEquals("Failed to parse empty option string", expectedDataTypeKeys, dataTypeKeys);
     }
-    
+
     @Test
     public void testFetchDataTypeKeysFromNullString() {
         String data = null;
@@ -104,7 +104,7 @@ public class QueryOptionsTest {
         Set<String> dataTypeKeys = QueryOptions.fetchDataTypeKeys(data);
         assertEquals("Failed to parse null option string", expectedDataTypeKeys, dataTypeKeys);
     }
-    
+
     @Test
     public void testSeekingConfiguration() {
         Map<String,String> optionsMap = new HashMap<>();
@@ -115,9 +115,9 @@ public class QueryOptionsTest {
         optionsMap.put(EVENT_NEXT_SEEK, "13");
         optionsMap.put(TF_FIELD_SEEK, "14");
         optionsMap.put(TF_NEXT_SEEK, "15");
-        
+
         QueryOptions options = new QueryOptions();
-        
+
         // initial state
         assertEquals(-1, options.getFiFieldSeek());
         assertEquals(-1, options.getFiNextSeek());
@@ -125,9 +125,9 @@ public class QueryOptionsTest {
         assertEquals(-1, options.getEventNextSeek());
         assertEquals(-1, options.getTfFieldSeek());
         assertEquals(-1, options.getTfNextSeek());
-        
+
         options.validateOptions(optionsMap);
-        
+
         // expected state
         assertEquals(10, options.getFiFieldSeek());
         assertEquals(11, options.getFiNextSeek());
@@ -136,27 +136,27 @@ public class QueryOptionsTest {
         assertEquals(14, options.getTfFieldSeek());
         assertEquals(15, options.getTfNextSeek());
     }
-    
+
     @Test
     public void testDocumentAndTermOffsetAggregationThresholds() {
         Map<String,String> optionsMap = new HashMap<>();
         optionsMap.put(QUERY, "query option required to validate");
         optionsMap.put(DOC_AGGREGATION_THRESHOLD_MS, "15000");
         optionsMap.put(TERM_FREQUENCY_AGGREGATION_THRESHOLD_MS, "10000");
-        
+
         QueryOptions options = new QueryOptions();
-        
+
         // initial state
         assertEquals(-1, options.getDocAggregationThresholdMs());
         assertEquals(-1, options.getTfAggregationThresholdMs());
-        
+
         options.validateOptions(optionsMap);
-        
+
         // expected state
         assertEquals(15000, options.getDocAggregationThresholdMs());
         assertEquals(10000, options.getTfAggregationThresholdMs());
     }
-    
+
     @Test
     public void testGetEquality() {
         QueryOptions options = new QueryOptions();

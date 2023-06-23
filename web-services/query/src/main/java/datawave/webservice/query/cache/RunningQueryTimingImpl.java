@@ -4,7 +4,7 @@ import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.webservice.query.runner.RunningQuery.RunningQueryTiming;
 
 public class RunningQueryTimingImpl implements RunningQueryTiming {
-    
+
     // The max time allowed within a call (e.g. next())
     private long maxCallMs = 60 * 60 * 1000; // the default is 60, can be overridden in call
     // The time after which we start checking the page size velocity
@@ -13,21 +13,21 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
     private long pageShortCircuitTimeoutMs = 58 * 60 * 1000;
     // The maximum number of times to continue running a long running query after the timeout is reached.
     private int maxLongRunningTimeoutRetries = 3;
-    
+
     public RunningQueryTimingImpl(QueryExpirationProperties conf, int pageTimeout) {
         this(conf.getCallTimeoutMillis(), conf.getShortCircuitCheckTimeMillis(), conf.getShortCircuitTimeoutMillis(), conf.getMaxLongRunningTimeoutRetries());
-        
+
         if (pageTimeout > 0) {
             maxCallMs = pageTimeout * 60 * 1000;
             pageSizeShortCircuitCheckTimeMs = maxCallMs / 2;
             pageShortCircuitTimeoutMs = Math.round(0.97 * maxCallMs);
         }
     }
-    
+
     public RunningQueryTimingImpl(long maxCallMs, long pageSizeShortCircuitCheckTimeMs, long pageShortCircuitTimeoutMs) {
         this(maxCallMs, pageSizeShortCircuitCheckTimeMs, pageShortCircuitTimeoutMs, 0);
     }
-    
+
     public RunningQueryTimingImpl(long maxCallMs, long pageSizeShortCircuitCheckTimeMs, long pageShortCircuitTimeoutMs, int maxLongRunningTimeoutRetries) {
         this.maxCallMs = maxCallMs;
         this.pageSizeShortCircuitCheckTimeMs = pageSizeShortCircuitCheckTimeMs;
@@ -36,31 +36,31 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
             this.maxLongRunningTimeoutRetries = maxLongRunningTimeoutRetries;
         }
     }
-    
+
     public long getMaxCallMs() {
         return maxCallMs;
     }
-    
+
     public long getPageSizeShortCircuitCheckTimeMs() {
         return pageSizeShortCircuitCheckTimeMs;
     }
-    
+
     @Override
     public long getPageShortCircuitTimeoutMs() {
         return pageShortCircuitTimeoutMs;
     }
-    
+
     @Override
     public int getMaxLongRunningTimeoutRetries() {
         return maxLongRunningTimeoutRetries;
     }
-    
+
     @Override
     public boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
-        
+
         // only return prematurely if we have at least 1 result
         if (pageSize > 0) {
-            
+
             // if after the page size short circuit check time
             if (timeInCall >= pageSizeShortCircuitCheckTimeMs) {
                 float percentTimeComplete = (float) timeInCall / (float) (this.maxCallMs);
@@ -70,17 +70,17 @@ public class RunningQueryTimingImpl implements RunningQueryTiming {
                     return true;
                 }
             }
-            
+
             // if after the page short circuit timeout, then break out
             if (timeInCall >= this.pageShortCircuitTimeoutMs) {
                 return true;
             }
-            
+
         }
-        
+
         return false;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

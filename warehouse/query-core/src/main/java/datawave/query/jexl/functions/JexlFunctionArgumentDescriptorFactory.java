@@ -19,20 +19,20 @@ import com.google.common.collect.ImmutableList;
 public interface JexlFunctionArgumentDescriptorFactory {
     /**
      * Return an argument descriptor for a given tree node.
-     * 
+     *
      * @param node
      *            A node that must be for a JEXL function in the implementing class.
      * @return The argument descriptor.
      */
     JexlArgumentDescriptor getArgumentDescriptor(ASTFunctionNode node);
-    
+
     JexlNode TRUE_NODE = new ASTTrueNode(ParserTreeConstants.JJTTRUENODE);
-    
+
     /** An encapsulation of methods that can be used with this interface */
     class F {
         /**
          * A convenience method to get the argument descriptor from a node
-         * 
+         *
          * @param node
          *            the function node
          * @return the argument descriptor
@@ -41,9 +41,9 @@ public interface JexlFunctionArgumentDescriptorFactory {
             if (node == null)
                 throw new IllegalArgumentException(
                                 "Calling " + JexlFunctionArgumentDescriptorFactory.class.getSimpleName() + ".getArgumentDescriptor with a null tree node");
-            
+
             Class<?> funcClass = extractFunctionClass(node);
-            
+
             // find the descriptor annotation
             JexlFunctions d = funcClass.getAnnotation(JexlFunctions.class);
             if (d != null) {
@@ -64,15 +64,15 @@ public interface JexlFunctionArgumentDescriptorFactory {
             }
             return null;
         }
-        
+
         /*
          * Uses the FunctionReferenceVisitor to try and get the namespace from a function node
          */
         public static Class<?> extractFunctionClass(ASTFunctionNode node) {
             String namespace = node.jjtGetChild(0).image;
-            
+
             Object possibleMatch = ArithmeticJexlEngines.functions().get(namespace);
-            
+
             if (possibleMatch != null && possibleMatch instanceof Class<?>) {
                 return (Class<?>) possibleMatch;
             } else {
@@ -85,15 +85,15 @@ public interface JexlFunctionArgumentDescriptorFactory {
 
 class FunctionVisitor extends BaseVisitor {
     private ImmutableList.Builder<ASTFunctionNode> functions = ImmutableList.builder();
-    
+
     public ImmutableList<ASTFunctionNode> functions() {
         return functions.build();
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         functions.add(node);
-        
+
         // we may be passed a function as an argument
         node.childrenAccept(this, null);
         return null;

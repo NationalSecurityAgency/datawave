@@ -12,10 +12,10 @@ import datawave.security.authorization.DatawavePrincipal;
  * be reduced by this set of auths.
  */
 public class WSAuthorizationsUtil extends AuthorizationsUtil {
-    
+
     /**
      * Merge principals. This can be used to create a composite view of a principal when including remote systems
-     * 
+     *
      * @param principals
      * @return The merge principal
      */

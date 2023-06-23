@@ -28,13 +28,13 @@ import org.springframework.util.MultiValueMap;
 @DeclareRoles({"AuthorizedUser", "AuthorizedServer", "InternalUser", "Administrator"})
 public class AuditBean {
     private static final Logger log = Logger.getLogger(AuditBean.class);
-    
+
     @Inject
     private AuditService auditService;
-    
+
     @Inject
     private AuditParameterBuilder auditParameterBuilder;
-    
+
     @POST
     @Path("/audit")
     @Consumes("*/*")
@@ -54,7 +54,7 @@ public class AuditBean {
             throw new DatawaveWebApplicationException(qe, response, statusCode);
         }
     }
-    
+
     public String audit(MultiValueMap<String,String> parameters) throws Exception {
         return auditService.audit(auditParameterBuilder.convertAndValidate(parameters));
     }

@@ -12,16 +12,16 @@ import java.util.List;
 
 public class EvaluationOnly extends JexlQueryFunction {
     private LuceneToJexlQueryParser parser;
-    
+
     public EvaluationOnly() {
         this(new LuceneToJexlQueryParser());
     }
-    
+
     public EvaluationOnly(LuceneToJexlQueryParser parser) {
         super("evaluation_only", new ArrayList<>());
         this.parser = parser;
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 1) {
@@ -29,7 +29,7 @@ public class EvaluationOnly extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -50,16 +50,16 @@ public class EvaluationOnly extends JexlQueryFunction {
         sb.append("))");
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new EvaluationOnly(this.parser);
     }
-    
+
     public LuceneToJexlQueryParser getParser() {
         return parser;
     }
-    
+
     public void setParser(LuceneToJexlQueryParser parser) {
         this.parser = parser;
     }

@@ -25,37 +25,37 @@ import org.apache.hadoop.io.Text;
  * <p>
  * An iterator that will map uids in table entries per a configured UidMapper.
  * </p>
- * 
- * 
+ *
+ *
  * @see datawave.core.iterators.uid.UidMapper
- * 
+ *
  */
 public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    
+
     public static final String UID_MAPPER = QueryParameters.QUERY_CONTEXT_UID_MAPPER;
     public static final byte[] EMPTY_BYTES = new byte[0];
-    
+
     protected Key topKey = null;
     protected Value topValue = null;
     protected SortedKeyValueIterator<Key,Value> source = null;
     protected UidMapper uidMapper = null;
-    
+
     public UidMappingIterator() {}
-    
+
     public UidMappingIterator(UidMappingIterator iter, IteratorEnvironment env) {
         this.source = (iter.source == null ? null : iter.source.deepCopy(env));
         this.uidMapper = iter.uidMapper;
         this.topKey = (iter.topKey == null ? null : new Key(iter.topKey));
         this.topValue = (iter.topValue == null ? null : new Value(iter.topValue));
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
         options.put(UID_MAPPER, "UidMapper class");
         return new IteratorOptions(getClass().getSimpleName(), "Enriches the data passing through the iterator", options, null);
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         if (options.containsKey(UidMappingIterator.UID_MAPPER)) {
@@ -78,55 +78,55 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
             }
             return true;
         }
-        
+
         return false;
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (!validateOptions(options)) {
             throw new IOException("Invalid options");
         }
-        
+
         this.topKey = null;
         this.topValue = null;
         this.source = source;
     }
-    
+
     @Override
     public boolean hasTop() {
         return this.source != null && this.topKey != null;
     }
-    
+
     @Override
     public void next() throws IOException {
         if (this.source == null) {
             return;
         }
-        
+
         // next the source
         this.source.next();
-        
+
         // and find the top
         findTop();
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (this.source == null) {
             return;
         }
-        
+
         // remap the range etc. if needed to encompass all of the keys that will map into this range
         SeekParams params = mapSeek(range, columnFamilies, inclusive);
-        
+
         // seek the source
         this.source.seek(params.range, params.columnFamilies, params.inclusive);
-        
+
         // and find the top
         findTop();
     }
-    
+
     protected void findTop() throws IOException {
         if (this.source.hasTop()) {
             KeyValue keyValue = mapUid(new KeyValue(this.source.getTopKey(), this.source.getTopValue().get()), false, false, false, false);
@@ -137,20 +137,20 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
             this.topValue = null;
         }
     }
-    
+
     @Override
     public Key getTopKey() {
         return this.topKey;
     }
-    
+
     @Override
     public Value getTopValue() {
         return this.topValue;
     }
-    
+
     /**
      * Map the uid in the supplied key and value.
-     * 
+     *
      * @param keyValue
      *            The key and value to map. Could be null.
      * @param startKey
@@ -166,10 +166,10 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
     protected KeyValue mapUid(KeyValue keyValue, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
         return keyValue;
     }
-    
+
     /**
      * Map the uid in the supplied key.
-     * 
+     *
      * @param key
      *            The key to map. Could be null.
      * @param startKey
@@ -185,10 +185,10 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
     protected Key mapUid(Key key, boolean startKey, boolean startKeyInclusive, boolean endKey, boolean endKeyInclusive) {
         return mapUid(new KeyValue(key, EMPTY_BYTES), startKey, startKeyInclusive, endKey, endKeyInclusive).getKey();
     }
-    
+
     /**
      * Map the seek parameters so that they include all uids that map to the original range
-     * 
+     *
      * @param range
      *            the range provided
      * @return the modified seek parameters
@@ -200,10 +200,10 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
         }
         return range;
     }
-    
+
     /**
      * Map the column families so that includes all uids that map to the original column family filter
-     * 
+     *
      * @param range
      *            the range provided
      * @param columnFamilies
@@ -224,10 +224,10 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
         }
         return columnFamilies;
     }
-    
+
     /**
      * Map the seek parameters so that they include all uids that map to the original range. Uses mapRange and mapColumnFamilies
-     * 
+     *
      * @param range
      *            the range
      * @param columnFamilies
@@ -243,18 +243,18 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
         params.inclusive = inclusive;
         return params;
     }
-    
+
     /**
      * The class returned by mapSeek
-     * 
-     * 
-     * 
+     *
+     *
+     *
      */
     protected static class SeekParams {
         public Range range;
         public Collection<ByteSequence> columnFamilies;
         public boolean inclusive;
-        
+
         public boolean contains(SeekParams params) {
             if (inclusive == params.inclusive) {
                 if (new HashSet<>(columnFamilies).equals(new HashSet<>(params.columnFamilies))) {
@@ -271,7 +271,7 @@ public abstract class UidMappingIterator implements SortedKeyValueIterator<Key,V
             return false;
         }
     }
-    
+
     @Override
     public abstract SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env);
 }

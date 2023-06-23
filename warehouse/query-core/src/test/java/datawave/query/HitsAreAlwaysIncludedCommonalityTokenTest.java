@@ -51,75 +51,75 @@ import java.util.UUID;
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
  * the field that hit on the query. This test uses a dot delimited token in the event field name as a 'commonality token'
- * 
+ *
  */
 public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
-    
+
     @RunWith(Arquillian.class)
     public static class ShardRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static AccumuloClient client = null;
-        
+
         @BeforeClass
         public static void setUp() throws Exception {
-            
+
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
             client = qtth.client;
-            
+
             CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
-        
+
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
             super.runTestQuery(client, queryString, startDate, endDate, extraParms, goodResults);
         }
     }
-    
+
     @RunWith(Arquillian.class)
     public static class DocumentRange extends HitsAreAlwaysIncludedCommonalityTokenTest {
         protected static AccumuloClient client = null;
-        
+
         @BeforeClass
         public static void setUp() throws Exception {
-            
+
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
             client = qtth.client;
-            
+
             CommonalityTokenTestDataIngest.writeItAll(client, CommonalityTokenTestDataIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
-        
+
         @Override
         protected void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                         throws Exception {
             super.runTestQuery(client, queryString, startDate, endDate, extraParms, goodResults);
         }
     }
-    
+
     private static final Logger log = Logger.getLogger(HitsAreAlwaysIncludedCommonalityTokenTest.class);
-    
+
     protected Authorizations auths = new Authorizations("ALL");
-    
+
     protected Set<Authorizations> authSet = Collections.singleton(auths);
-    
+
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
-    
+
     protected KryoDocumentDeserializer deserializer;
-    
+
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        
+
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event", "datawave.core.query.result.event")
@@ -129,26 +129,26 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
     }
-    
+
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
     }
-    
+
     @Before
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
+
         logic.setFullTableScanEnabled(true);
         deserializer = new KryoDocumentDeserializer();
     }
-    
+
     protected abstract void runTestQuery(String queryString, Date startDate, Date endDate, Map<String,String> extraParms, Collection<String> goodResults)
                     throws Exception;
-    
+
     protected void runTestQuery(AccumuloClient client, String queryString, Date startDate, Date endDate, Map<String,String> extraParms,
                     Collection<String> goodResults) throws Exception {
-        
+
         QueryImpl settings = new QueryImpl();
         settings.setBeginDate(startDate);
         settings.setEndDate(endDate);
@@ -157,21 +157,21 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
         settings.setQuery(queryString);
         settings.setParameters(extraParms);
         settings.setId(UUID.randomUUID());
-        
+
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
-        
+
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
-        
+
         Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
             log.trace(entry.getKey() + " => " + d);
             docs.add(d);
-            
+
             Attribute hitAttribute = d.get(JexlEvaluation.HIT_TERM_FIELD);
-            
+
             if (hitAttribute instanceof Attributes) {
                 Attributes attributes = (Attributes) hitAttribute;
                 for (Attribute attr : attributes.getAttributes()) {
@@ -184,13 +184,13 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
                 Content content = (Content) hitAttribute;
                 Assert.assertTrue(goodResults.contains(content.getContent()));
             }
-            
+
             // remove from goodResults as we find the expected return fields
             log.debug("goodResults: " + goodResults);
             Map<String,Attribute<? extends Comparable<?>>> dictionary = d.getDictionary();
             log.debug("dictionary:" + dictionary);
             for (Entry<String,Attribute<? extends Comparable<?>>> dictionaryEntry : dictionary.entrySet()) {
-                
+
                 Attribute<? extends Comparable<?>> attribute = dictionaryEntry.getValue();
                 if (attribute instanceof Attributes) {
                     for (Attribute attr : ((Attributes) attribute).getAttributes()) {
@@ -202,49 +202,49 @@ public abstract class HitsAreAlwaysIncludedCommonalityTokenTest {
                             log.debug("Did not remove " + toFind);
                     }
                 } else {
-                    
+
                     String toFind = dictionaryEntry.getKey() + ":" + dictionaryEntry.getValue();
-                    
+
                     boolean found = goodResults.remove(toFind);
                     if (found)
                         log.debug("removed " + toFind);
                     else
                         log.debug("Did not remove " + toFind);
                 }
-                
+
             }
-            
+
             Assert.assertTrue(goodResults + " was not empty", goodResults.isEmpty());
         }
         Assert.assertTrue("No docs were returned!", !docs.isEmpty());
     }
-    
+
     @Test
     public void testWhereTheWildThingsAre() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
         extraParameters.put("limit.fields", "_ANYFIELD_=2");
-        
+
         String queryString = "BIRD == 'buzzard'";
-        
+
         Set<String> goodResults = Sets.newHashSet("BIRD.WILD.3:buzzard", "CAT.WILD.3:puma", "CANINE.WILD.3:dingo", "FISH.WILD.3:salmon");
-        
+
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
-    
+
     @Test
     public void testPetSounds() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
         extraParameters.put("limit.fields", "_ANYFIELD_=2");
-        
+
         String queryString = "FISH == 'angelfish'";
-        
+
         Set<String> goodResults = Sets.newHashSet("BIRD.PET.2:parrot", "CAT.PET.2:tom", "CANINE.PET.2:chihuahua", "FISH.PET.2:angelfish");
-        
+
         runTestQuery(queryString, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);
     }
-    
+
 }

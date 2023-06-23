@@ -9,6 +9,6 @@ import datawave.security.authorization.UserOperations;
  */
 public interface RemoteQueryLogic<T> extends QueryLogic<T> {
     public void setRemoteQueryService(RemoteQueryService service);
-    
+
     public void setUserOperations(UserOperations userOperations);
 }

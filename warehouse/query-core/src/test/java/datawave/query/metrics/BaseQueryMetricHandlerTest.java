@@ -17,17 +17,17 @@ import java.util.List;
 import java.util.Map;
 
 public class BaseQueryMetricHandlerTest {
-    
+
     private TestQueryMetricHandler queryMetricHandler;
-    
+
     @Before
     public void setup() {
         this.queryMetricHandler = new TestQueryMetricHandler();
     }
-    
+
     @Test
     public void testPopulateMetricSelectors() {
-        
+
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
         QueryMetric metric = new QueryMetric();
         metric.setQueryType("RunningQuery");
@@ -35,7 +35,7 @@ public class BaseQueryMetricHandlerTest {
         metric.setQuery("FIELD:value AND #UNKNOWNFUNCTION(parameter)");
         this.queryMetricHandler.populateMetricSelectors(metric, parser);
         Assert.assertNull(metric.getPositiveSelectors());
-        
+
         metric.setQuery("FIELD1:value1 NOT FIELD2:value2 AND #ISNOTNULL(OTHER)");
         this.queryMetricHandler.populateMetricSelectors(metric, parser);
         Assert.assertEquals(1, metric.getPositiveSelectors().size());
@@ -43,13 +43,13 @@ public class BaseQueryMetricHandlerTest {
         Assert.assertEquals(1, metric.getNegativeSelectors().size());
         Assert.assertEquals("FIELD2:value2", metric.getNegativeSelectors().get(0));
     }
-    
+
     @Test
     public void testNumUpdates() {
         QueryMetric metric = new QueryMetric();
         this.queryMetricHandler.incrementNumUpdates(metric, Collections.singleton(metric));
         Assert.assertEquals(1, metric.getNumUpdates());
-        
+
         metric.setNumUpdates(0);
         List<QueryMetric> metricList = new ArrayList<>();
         QueryMetric metric1 = new QueryMetric();
@@ -64,47 +64,47 @@ public class BaseQueryMetricHandlerTest {
         this.queryMetricHandler.incrementNumUpdates(metric, metricList);
         Assert.assertEquals(9, metric.getNumUpdates());
     }
-    
+
     private static class TestQueryMetricHandler extends BaseQueryMetricHandler<QueryMetric> {
-        
+
         @Override
         public void updateMetric(QueryMetric metric, DatawavePrincipal datawavePrincipal) throws Exception {
-            
+
         }
-        
+
         @Override
         public Map<String,String> getEventFields(BaseQueryMetric queryMetric) {
             return null;
         }
-        
+
         @Override
         public BaseQueryMetricListResponse<QueryMetric> query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
             return null;
         }
-        
+
         @Override
         public QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
             return null;
         }
-        
+
         @Override
         public QueryMetricsSummaryResponse getTotalQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
             return null;
         }
-        
+
         @Override
         public QueryMetricsSummaryResponse getUserQueriesSummary(Date begin, Date end, DatawavePrincipal datawavePrincipal) {
             return null;
         }
-        
+
         @Override
         public void flush() throws Exception {
-            
+
         }
-        
+
         @Override
         public void reload() {
-            
+
         }
     }
 }

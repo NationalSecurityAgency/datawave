@@ -10,36 +10,36 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
 /**
- * 
+ *
  * This class enables range queries based on Column Families
- * 
- * 
- * 
+ *
+ *
+ *
  */
 public class ColumnFamilyRangeIterator extends ColumnRangeIterator {
     public ColumnFamilyRangeIterator() {
         super();
     }
-    
+
     public ColumnFamilyRangeIterator(SortedKeyValueIterator<Key,Value> source) {
         super(source);
     }
-    
+
     public ColumnFamilyRangeIterator(SortedKeyValueIterator<Key,Value> source, Range columnFamilyRange) {
         super(source, columnFamilyRange);
     }
-    
+
     @Override
     protected void consumeImpl() throws IOException {
-        
+
         int count = 0;
         int limit = getSkipLimit();
-        
+
         while (getSource().hasTop()) {
             Key topColumnFamily = new Key(getSource().getTopKey().getColumnFamily());
-            
+
             if (getColumnRange().beforeStartKey(topColumnFamily)) { // top key's CF is before the desired range starts, need to skip some CFs...
-                
+
                 if (count < limit) {
                     advanceSource();
                     ++count;
@@ -66,7 +66,7 @@ public class ColumnFamilyRangeIterator extends ColumnRangeIterator {
             }
         } // end while()
     } // end consume()
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new ColumnFamilyRangeIterator(getSource().deepCopy(env), getColumnRange());

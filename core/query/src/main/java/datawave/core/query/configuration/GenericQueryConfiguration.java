@@ -37,47 +37,46 @@ import java.util.stream.Collectors;
 public abstract class GenericQueryConfiguration implements Serializable {
     // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
     private boolean checkpointable = false;
-    
+
     private transient AccumuloClient client = null;
-    
+
     // This is just used for (de)serialization
     private Set<String> auths = Collections.emptySet();
-    
+
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
-    
+
     private Query query = null;
-    
+
     // Leave in a top-level query for backwards-compatibility purposes
     private String queryString = null;
-    
+
     private Date beginDate = null;
     private Date endDate = null;
-    
+
     // The max number of next + seek calls made by the underlying iterators
     private Long maxWork = -1L;
-    
+
     protected int baseIteratorPriority = 100;
-    
+
     // Table name
     private String tableName = TableName.SHARD;
-    
+
     private Collection<QueryData> queries = Collections.emptyList();
-    
+
     @JsonIgnore
     private transient Iterator<QueryData> queriesIter = Collections.emptyIterator();
-    
     protected boolean bypassAccumulo;
-    
+
     // use a value like 'env:PASS' to pull from the environment
     private String accumuloPassword = "";
-    
+
     /**
      * Empty default constructor
      */
     public GenericQueryConfiguration() {
-        
+
     }
-    
+
     /**
      * Pulls the table name, max query results, and max rows to scan from the provided argument
      *
@@ -87,7 +86,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
     public GenericQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
         this(configuredLogic.getConfig());
     }
-    
+
     public GenericQueryConfiguration(GenericQueryConfiguration genericConfig) {
         this.setQuery(genericConfig.getQuery());
         this.setCheckpointable(genericConfig.isCheckpointable());
@@ -104,15 +103,15 @@ public abstract class GenericQueryConfiguration implements Serializable {
         this.setQueryString(genericConfig.getQueryString());
         this.setTableName(genericConfig.getTableName());
     }
-    
+
     public Collection<QueryData> getQueries() {
         return queries;
     }
-    
+
     public void setQueries(Collection<QueryData> queries) {
         this.queries = queries;
     }
-    
+
     /**
      * Return the configured {@code Iterator<QueryData>}
      *
@@ -125,7 +124,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
             return Iterators.unmodifiableIterator(this.queriesIter);
         }
     }
-    
+
     /**
      * Set the queries to be run.
      *
@@ -135,41 +134,41 @@ public abstract class GenericQueryConfiguration implements Serializable {
     public void setQueriesIter(Iterator<QueryData> queriesIter) {
         this.queriesIter = queriesIter;
     }
-    
+
     public boolean isCheckpointable() {
         return checkpointable;
     }
-    
+
     public void setCheckpointable(boolean checkpointable) {
         this.checkpointable = checkpointable;
     }
-    
+
     @JsonIgnore
     @XmlTransient
     public AccumuloClient getClient() {
         return client;
     }
-    
+
     public void setClient(AccumuloClient client) {
         this.client = client;
     }
-    
+
     public Query getQuery() {
         return query;
     }
-    
+
     public void setQuery(Query query) {
         this.query = query;
     }
-    
+
     public void setQueryString(String query) {
         this.queryString = query;
     }
-    
+
     public String getQueryString() {
         return queryString;
     }
-    
+
     public Set<String> getAuths() {
         if (auths == null && authorizations != null) {
             auths = authorizations.stream().flatMap(a -> a.getAuthorizations().stream()).map(b -> new String(b, StandardCharsets.UTF_8))
@@ -177,13 +176,13 @@ public abstract class GenericQueryConfiguration implements Serializable {
         }
         return auths;
     }
-    
+
     public void setAuths(Set<String> auths) {
         this.auths = auths;
         this.authorizations = null;
         getAuthorizations();
     }
-    
+
     @JsonIgnore
     public Set<Authorizations> getAuthorizations() {
         if (authorizations == null && auths != null) {
@@ -192,68 +191,68 @@ public abstract class GenericQueryConfiguration implements Serializable {
         }
         return authorizations;
     }
-    
+
     public void setAuthorizations(Set<Authorizations> authorizations) {
         this.authorizations = authorizations;
         this.auths = null;
         getAuths();
     }
-    
+
     public int getBaseIteratorPriority() {
         return baseIteratorPriority;
     }
-    
+
     public void setBaseIteratorPriority(final int baseIteratorPriority) {
         this.baseIteratorPriority = baseIteratorPriority;
     }
-    
+
     public Date getBeginDate() {
         return beginDate;
     }
-    
+
     public void setBeginDate(Date beginDate) {
         this.beginDate = beginDate;
     }
-    
+
     public Date getEndDate() {
         return endDate;
     }
-    
+
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
     }
-    
+
     public Long getMaxWork() {
         return maxWork;
     }
-    
+
     public void setMaxWork(Long maxWork) {
         this.maxWork = maxWork;
     }
-    
+
     public String getTableName() {
         return tableName;
     }
-    
+
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-    
+
     public boolean getBypassAccumulo() {
         return bypassAccumulo;
     }
-    
+
     public void setBypassAccumulo(boolean bypassAccumulo) {
         this.bypassAccumulo = bypassAccumulo;
     }
-    
+
     /**
      * @return - the accumulo password
      */
     public String getAccumuloPassword() {
         return this.accumuloPassword;
     }
-    
+
     /**
      * Sets configured password for accumulo access
      *
@@ -263,7 +262,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
     public void setAccumuloPassword(String password) {
         this.accumuloPassword = EnvProvider.resolve(password);
     }
-    
+
     /**
      * Checks for non-null, sane values for the configured values
      *
@@ -274,25 +273,25 @@ public abstract class GenericQueryConfiguration implements Serializable {
         if (null == this.getClient() || null == this.getAuthorizations()) {
             return false;
         }
-        
+
         // Ensure valid dates
         if (null == this.getBeginDate() || null == this.getEndDate() || endDate.before(beginDate)) {
             return false;
         }
-        
+
         // A non-empty table was given
         if (null == getTableName() || this.getTableName().isEmpty()) {
             return false;
         }
-        
+
         // At least one QueryData was provided
         if (null == this.getQueriesIter()) {
             return false;
         }
-        
+
         return true;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -307,7 +306,7 @@ public abstract class GenericQueryConfiguration implements Serializable {
                         && Objects.equals(getMaxWork(), that.getMaxWork()) && Objects.equals(getTableName(), that.getTableName())
                         && Objects.equals(getQueries(), that.getQueries());
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(isCheckpointable(), getAuthorizations(), getQuery(), getQueryString(), getBeginDate(), getEndDate(), getMaxWork(),

@@ -10,19 +10,19 @@ import com.google.common.collect.Sets;
 public class GeoFunction extends JexlQueryFunction {
     private static final Set<String> COMMANDS = Sets.newHashSet("bounding_box", "circle");
     private boolean[] shouldQuote = null;
-    
+
     public GeoFunction() {
         super("geo", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         int numParams = parameterList.size();
-        
+
         if (numParams == 0 || !COMMANDS.contains(parameterList.get(0).toLowerCase())) {
             throw new IllegalArgumentException("First geo function argument must be one of " + COMMANDS);
         }
-        
+
         String function = parameterList.get(0);
         if (function.equalsIgnoreCase("bounding_box")) {
             switch (numParams) {
@@ -46,16 +46,16 @@ public class GeoFunction extends JexlQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder f = new StringBuilder(64);
         f.append("geo:within_");
-        
+
         String functionName = parameterList.get(0).toLowerCase();
         f.append(shouldQuote[0] == true ? escapeString(functionName) : functionName);
         f.append('(');
-        
+
         for (int x = 1; x < parameterList.size(); x++) {
             String p = parameterList.get(x);
             f.append(shouldQuote[x] == true ? escapeString(p) : p);
@@ -65,10 +65,10 @@ public class GeoFunction extends JexlQueryFunction {
         f.append(')');
         return f.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new GeoFunction();
     }
-    
+
 }

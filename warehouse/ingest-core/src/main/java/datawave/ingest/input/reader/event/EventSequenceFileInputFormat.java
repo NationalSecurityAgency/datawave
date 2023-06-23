@@ -11,17 +11,17 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
 /**
  * Specialization of SequenceFileInputFormat that expects an {@link RawRecordContainer} object as the value.
- * 
- * 
- * 
+ *
+ *
+ *
  * @param <K>
  *            key type
  */
 public class EventSequenceFileInputFormat<K> extends SequenceFileInputFormat<K,RawRecordContainer> {
-    
+
     @Override
     public RecordReader<K,RawRecordContainer> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
         return new EventSequenceFileRecordReader<>();
     }
-    
+
 }

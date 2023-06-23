@@ -17,10 +17,10 @@ import com.google.common.collect.Sets;
  * context before returning documents to the user.
  */
 public class RemoveGroupingContext implements Function<Entry<Key,Document>,Entry<Key,Document>> {
-    
+
     @Override
     public Entry<Key,Document> apply(Entry<Key,Document> entry) {
-        
+
         Set<Entry<String,Attribute<? extends Comparable<?>>>> toRemove = Sets.newHashSet();
         for (Entry<String,Attribute<? extends Comparable<?>>> attribute : entry.getValue().entrySet()) {
             String fieldName = attribute.getKey();

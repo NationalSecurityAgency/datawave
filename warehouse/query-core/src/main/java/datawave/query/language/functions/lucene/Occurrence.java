@@ -17,7 +17,7 @@ public class Occurrence extends LuceneQueryFunction {
     public Occurrence() {
         super("occurrence", new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
@@ -35,14 +35,14 @@ public class Occurrence extends LuceneQueryFunction {
             x = 1;
         }
         this.fieldedFilter = new WildcardFieldedFilter(true, type);
-        
+
         while (x < parameterList.size()) {
             String field = parameterList.get(x++);
             String regex = parameterList.get(x++);
             this.fieldedFilter.addCondition(field, regex);
         }
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.depth != 1) {
@@ -56,12 +56,12 @@ public class Occurrence extends LuceneQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         return this.fieldedFilter.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Occurrence();

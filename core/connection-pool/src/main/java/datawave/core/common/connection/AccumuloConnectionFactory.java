@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 public interface AccumuloConnectionFactory extends AutoCloseable {
-    
+
     String USER_DN = "user.dn";
     String PROXY_SERVERS = "proxyServers";
     String REQUEST_LOCATION = "request.location";
@@ -20,17 +20,17 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
     String QUERY_USER = "query.user";
     String QUERY_ID = "query.id";
     String QUERY = "query.query";
-    
+
     enum Priority {
-        
+
         LOW, NORMAL, HIGH, ADMIN
     }
-    
+
     enum State {
-        
+
         WAITING, CONNECTED
     }
-    
+
     /**
      * Gets a connection from the pool with the assigned priority
      *
@@ -45,7 +45,7 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      *             on failure
      */
     AccumuloClient getClient(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap) throws Exception;
-    
+
     /**
      * Gets a connection from the named pool with the assigned priority
      *
@@ -61,7 +61,7 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      */
     AccumuloClient getClient(String userDN, Collection<String> proxyServers, String poolName, Priority priority, Map<String,String> trackingMap)
                     throws Exception;
-    
+
     /**
      * Returns the connection to the pool with the associated priority.
      *
@@ -71,26 +71,26 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      *             on failure
      */
     void returnClient(AccumuloClient client) throws Exception;
-    
+
     /**
      * Return a report of the current connection factory usage
      */
     String report();
-    
+
     /**
      * Get a description of the current pools
-     * 
+     *
      * @return A list of connection pools
      */
     List<ConnectionPool> getConnectionPools();
-    
+
     /**
      * Get the current connection usage percentage. This can be used for balancing purposes.
-     * 
+     *
      * @return The usage percentage (0 - 100)
      */
     int getConnectionUsagePercent();
-    
+
     /**
      * Get a tracking map to be used in the getConnection calls
      *
@@ -99,7 +99,7 @@ public interface AccumuloConnectionFactory extends AutoCloseable {
      * @return A map representation
      */
     Map<String,String> getTrackingMap(StackTraceElement[] stackTrace);
-    
+
     /**
      * Utility method to unwrap the ClientContext instance within {@link WrappedAccumuloClient} as needed
      *

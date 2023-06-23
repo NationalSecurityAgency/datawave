@@ -22,19 +22,19 @@ import java.util.List;
 import java.util.Map;
 
 public class ApplicationContextAwareMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extends Mapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> {
-    
+
     private static Logger log = Logger.getLogger(ApplicationContextAwareMapper.class);
-    
+
     //
     public static final String SPRING_CONFIG_LOCATIONS = "spring.config.locations";
     public static final String SPRING_CONFIG_BASE_PACKAGES = "spring.config.base-packages";
     public static final String SPRING_CONFIG_STARTING_CLASS = "spring.config.starting-class";
-    
+
     protected ApplicationContext applicationContext;
-    
+
     /**
      * Create a Spring Application Context
-     * 
+     *
      * @param contextPath
      *            is a possibly CSV of spring config file locations
      * @param basePackages
@@ -44,7 +44,7 @@ public class ApplicationContextAwareMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extend
      */
     protected void setApplicationContext(String contextPath, String basePackages, String startingClass) {
         AnnotationConfigApplicationContext annotationApplicationContext = new AnnotationConfigApplicationContext();
-        
+
         try {
             annotationApplicationContext.getEnvironment().getPropertySources()
                             .addLast(new ResourcePropertySource(new ClassPathResource("application.properties")));
@@ -52,11 +52,11 @@ public class ApplicationContextAwareMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extend
             log.error("application.properties could not be loaded", e);
             throw new RuntimeException(e);
         }
-        
+
         if (basePackages != null && !basePackages.isEmpty()) {
             annotationApplicationContext.scan(basePackages.split(","));
         }
-        
+
         if (startingClass != null && !startingClass.isEmpty()) {
             try {
                 annotationApplicationContext.register(Class.forName(startingClass));
@@ -64,9 +64,9 @@ public class ApplicationContextAwareMapper<KEYIN,VALUEIN,KEYOUT,VALUEOUT> extend
                 throw new RuntimeException("Could not find starting class: " + startingClass, e);
             }
         }
-        
+
         annotationApplicationContext.refresh();
-        
+
         if (contextPath != null && !contextPath.isEmpty()) {
             this.applicationContext = new ClassPathXmlApplicationContext(contextPath.split(","), annotationApplicationContext);
         } else {

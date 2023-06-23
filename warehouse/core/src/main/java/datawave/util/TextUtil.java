@@ -19,19 +19,19 @@ public class TextUtil {
         appendNullByte(text);
         textAppendNoNull(text, string);
     }
-    
+
     public static void textAppend(Text text, String string, boolean replaceBadChar) {
         appendNullByte(text);
         textAppendNoNull(text, string, replaceBadChar);
     }
-    
+
     public static void textAppend(Text t, long s) {
         t.append(nullByte, 0, 1);
         t.append(LongCombiner.FIXED_LEN_ENCODER.encode(s), 0, 8);
     }
-    
+
     private static final byte[] nullByte = {0};
-    
+
     /**
      * Appends a null byte to the given text
      *
@@ -41,7 +41,7 @@ public class TextUtil {
     public static void appendNullByte(Text text) {
         text.append(nullByte, 0, nullByte.length);
     }
-    
+
     /**
      * Appends the UTF-8 bytes of the given string to the given {@link Text}
      *
@@ -53,7 +53,7 @@ public class TextUtil {
     public static void textAppendNoNull(Text t, String s) {
         textAppendNoNull(t, s, false);
     }
-    
+
     /**
      * Appends the UTF-8 bytes of the given string to the given {@link Text}
      */
@@ -65,7 +65,7 @@ public class TextUtil {
             throw new IllegalArgumentException(cce);
         }
     }
-    
+
     /**
      * Converts the given string its UTF-8 bytes. This uses Hadoop's method for converting string to UTF-8 and is much faster than calling
      * {@link String#getBytes(String)}.
@@ -85,7 +85,7 @@ public class TextUtil {
         System.arraycopy(buffer.array(), 0, bytes, 0, bytes.length);
         return bytes;
     }
-    
+
     /**
      * Converts a UTF-8 encoded byte array back into a String.
      *

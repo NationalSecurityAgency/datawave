@@ -20,29 +20,29 @@ import com.google.common.collect.Sets;
 
 public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilter {
     public static final Logger log = Logger.getLogger(FieldIndexKeyDataTypeFilter.class);
-    
+
     protected ThreadLocal<Text> textBuffer = ThreadLocal.withInitial(Text::new);
     protected HashSet<ByteBuffer> patterns;
-    
+
     /**
      * Maintain a sorted list of the dataTypes this filter is using. Assumes dataTypes will all be UTF-8
      */
     protected TreeSet<String> sortedDataTypes;
-    
+
     /**
      * The threshold for nextCount before getSeekRange will return a non-null range. Disable feature by setting to -1
      */
     protected int maxNextBeforeSeek = -1;
-    
+
     /**
      * The number of failed keys since a key was accepted
      */
     private int nextCount = 0;
-    
+
     public FieldIndexKeyDataTypeFilter(@SuppressWarnings("rawtypes") Iterable datatypes) {
         this(datatypes, -1);
     }
-    
+
     public FieldIndexKeyDataTypeFilter(@SuppressWarnings("rawtypes") Iterable datatypes, int maxNextBeforeSeek) {
         this.maxNextBeforeSeek = maxNextBeforeSeek;
         patterns = Sets.newHashSet();
@@ -70,19 +70,19 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
             }
         }
     }
-    
+
     @Override
     public boolean apply(Key input) {
         return apply(input.getColumnQualifier(textBuffer.get()));
     }
-    
+
     protected boolean apply(Text t) {
         ByteBuffer bb = extractPattern(t);
         boolean applied = apply(bb);
         if (log.isTraceEnabled()) {
             log.trace("Applying datatype filter to " + t + " -> " + applied);
         }
-        
+
         // manage tracking the nextCount if necessary
         if (maxNextBeforeSeek != -1) {
             if (applied) {
@@ -94,25 +94,25 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
         }
         return applied;
     }
-    
+
     protected boolean apply(ByteBuffer bb) {
         return patterns.contains(bb);
     }
-    
+
     public Set<ByteBuffer> patterns() {
         return Collections.unmodifiableSet(patterns);
     }
-    
+
     protected ByteBuffer extractPattern(Text text) {
         return extractPattern(text.getBytes(), 0, text.getLength());
     }
-    
+
     protected ByteBuffer extractPattern(byte[] bytes, int offset, int length) {
         // We expect at least two null bytes in the array
         if (bytes.length <= 2) {
             return ByteBuffer.wrap(bytes);
         }
-        
+
         // parse from the end to enable handling nasty field values
         int pos = offset + length - 1;
         for (; pos >= 0 && bytes[pos] != 0; pos--)
@@ -133,22 +133,22 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
         // multiple null bytes, assume next to last part is the datatype
         return ByteBuffer.wrap(bytes, start, stop - start);
     }
-    
+
     @Override
     public Range getSeekRange(Key current, Key endKey, boolean endKeyInclusive) {
         // early return if possible
         if (maxNextBeforeSeek == -1 || nextCount < maxNextBeforeSeek) {
             return null;
         }
-        
+
         // parse the key to get the value and dataType
         DatawaveKey datawaveKey = new DatawaveKey(current);
-        
+
         // test if this key should have been accepted
         if (sortedDataTypes.contains(datawaveKey.getDataType())) {
             return null;
         }
-        
+
         // still here, find the next valid sorted data type and apply it for a new range
         String nextDataType = null;
         for (String dataType : sortedDataTypes) {
@@ -157,7 +157,7 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
                 break;
             }
         }
-        
+
         // ensure a dataType was selected
         Key startKey;
         boolean inclusiveStart;
@@ -172,15 +172,15 @@ public class FieldIndexKeyDataTypeFilter implements Predicate<Key>, SeekingFilte
             startKey = new Key(current.getRow(), current.getColumnFamily(), new Text(datawaveKey.getFieldValue() + Constants.NULL_BYTE_STRING + nextDataType));
             inclusiveStart = true;
         }
-        
+
         if (startKey.compareTo(endKey) > 0) {
             // generate an empty range
             return new Range(startKey, false, startKey.followingKey(PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME), false);
         }
-        
+
         return new Range(startKey, inclusiveStart, endKey, endKeyInclusive);
     }
-    
+
     @Override
     public int getMaxNextCount() {
         return maxNextBeforeSeek;

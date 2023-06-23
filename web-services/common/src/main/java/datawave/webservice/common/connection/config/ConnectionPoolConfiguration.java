@@ -5,7 +5,6 @@ import datawave.core.common.util.EnvProvider;
 import org.apache.deltaspike.core.api.config.ConfigResolver;
 
 public class ConnectionPoolConfiguration extends ConnectionPoolProperties {
-    
     public ConnectionPoolConfiguration(String poolName) {
         username = ConfigResolver.getPropertyValue("dw." + poolName + ".accumulo.userName");
         password = resolvePassword(poolName);
@@ -16,7 +15,7 @@ public class ConnectionPoolConfiguration extends ConnectionPoolProperties {
         highPriorityPoolSize = Integer.parseInt(ConfigResolver.getPropertyValue("dw." + poolName + ".pool.high.size", "100"));
         adminPriorityPoolSize = Integer.parseInt(ConfigResolver.getPropertyValue("dw." + poolName + ".pool.admin.size", "200"));
     }
-    
+
     /**
      * Resolve the accumulo password from either the system properties or the environment. The environment takes precedence if both are configured.
      *

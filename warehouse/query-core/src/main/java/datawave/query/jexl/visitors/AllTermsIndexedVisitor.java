@@ -45,56 +45,56 @@ import static org.apache.commons.jexl2.parser.JexlNodes.promote;
  * In the case where the tree fails to meet a condition, an exception will be thrown.
  */
 public class AllTermsIndexedVisitor extends RebuildingVisitor {
-    
+
     private static final Logger log = Logger.getLogger(AllTermsIndexedVisitor.class);
-    
+
     private final ShardQueryConfiguration config;
     private final MetadataHelper helper;
-    
+
     private static final String NODE_PATTERN = "Node: {0}";
-    
+
     public AllTermsIndexedVisitor(ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(config, "ShardQueryConfiguration must not be null");
         Preconditions.checkNotNull(helper, "MetadataHelper must not be null");
-        
+
         this.config = config;
         this.helper = helper;
     }
-    
+
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T isIndexed(T script, ShardQueryConfiguration config, MetadataHelper helper) {
         Preconditions.checkNotNull(script, "JEXL script must not be null");
-        
+
         AllTermsIndexedVisitor visitor = new AllTermsIndexedVisitor(config, helper);
-        
+
         return (T) script.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         JexlNode copy = (JexlNode) super.visit(node, data);
-        
+
         if (copy.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_ANYFIELD_EXPANSION_MATCH);
             log.warn(qe);
             throw new EmptyUnfieldedTermExpansionException(qe);
         }
-        
+
         return copy;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         JexlNode copy = (JexlNode) super.visit(node, data);
         return visitJunctionNode(copy);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         JexlNode copy = (JexlNode) super.visit(node, data);
         return visitJunctionNode(copy);
     }
-    
+
     private Object visitJunctionNode(JexlNode copy) {
         switch (copy.jjtGetNumChildren()) {
             case 0:
@@ -107,17 +107,17 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                 return copy;
         }
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return equalityVisitor(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return equalityVisitor(node, data);
     }
-    
+
     /**
      * Determine, for a binary equality node, if the field name is indexed.
      *
@@ -143,7 +143,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
             if (Constants.ANY_FIELD.equals(fieldName) || Constants.NO_FIELD.equals(fieldName)) {
                 return copy(node);
             }
-            
+
             // Verify that the term is indexed.
             if (!this.helper.isIndexed(fieldName, config.getDatatypeFilter())) {
                 PreConditionFailedQueryException qe = new PreConditionFailedQueryException(DatawaveErrorCode.FIELD_NOT_INDEXED,
@@ -154,10 +154,10 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
             QueryException qe = new QueryException(DatawaveErrorCode.INDETERMINATE_INDEX_STATUS, e);
             throw new DatawaveFatalQueryException(qe);
         }
-        
+
         return copy(node);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *
@@ -173,7 +173,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         MessageFormat.format(NODE_PATTERN, PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *
@@ -189,7 +189,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         MessageFormat.format(NODE_PATTERN, PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *
@@ -205,7 +205,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         MessageFormat.format(NODE_PATTERN, PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *
@@ -221,7 +221,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         MessageFormat.format(NODE_PATTERN, PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *
@@ -237,7 +237,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         MessageFormat.format(NODE_PATTERN, PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *
@@ -253,7 +253,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         MessageFormat.format(NODE_PATTERN, PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *
@@ -269,7 +269,7 @@ public class AllTermsIndexedVisitor extends RebuildingVisitor {
                         MessageFormat.format(NODE_PATTERN, PrintingVisitor.formattedQueryString(node).replace('\n', ' ')));
         throw new InvalidFieldIndexQueryFatalQueryException(qe);
     }
-    
+
     /**
      * Throw an {@link datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException}.
      *

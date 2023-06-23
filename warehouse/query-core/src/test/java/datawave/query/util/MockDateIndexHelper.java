@@ -9,27 +9,27 @@ import java.util.Map;
 import java.util.Set;
 
 public class MockDateIndexHelper extends DateIndexHelper {
-    
+
     private final TreeMultimap<String,Entry> entries = TreeMultimap.create();
-    
+
     private static class Entry implements Comparable<Entry> {
         public final String type;
         public final String dataType;
         public final String field;
         public final String shard;
-        
+
         public Entry(String type, String dataType, String field, String shard) {
             this.type = type;
             this.dataType = dataType;
             this.field = field;
             this.shard = shard;
         }
-        
+
         public String getShardDate() {
             int index = shard.indexOf('_');
             return shard.substring(0, index);
         }
-        
+
         @Override
         public int compareTo(Entry o) {
             int cmp = type.compareTo(o.type);
@@ -44,16 +44,16 @@ public class MockDateIndexHelper extends DateIndexHelper {
             }
             return cmp;
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (this == o)
                 return true;
             if (o == null || getClass() != o.getClass())
                 return false;
-            
+
             Entry entry = (Entry) o;
-            
+
             if (type != null ? !type.equals(entry.type) : entry.type != null)
                 return false;
             if (dataType != null ? !dataType.equals(entry.dataType) : entry.dataType != null)
@@ -62,7 +62,7 @@ public class MockDateIndexHelper extends DateIndexHelper {
                 return false;
             return shard != null ? shard.equals(entry.shard) : entry.shard == null;
         }
-        
+
         @Override
         public int hashCode() {
             int result = type != null ? type.hashCode() : 0;
@@ -71,17 +71,17 @@ public class MockDateIndexHelper extends DateIndexHelper {
             result = 31 * result + (shard != null ? shard.hashCode() : 0);
             return result;
         }
-        
+
         @Override
         public String toString() {
             return "Entry{" + "type='" + type + '\'' + ", dataType='" + dataType + '\'' + ", field='" + field + '\'' + ", shard='" + shard + '\'' + '}';
         }
     }
-    
+
     public void addEntry(String date, String type, String dataType, String field, String shard) {
         entries.put(date, new Entry(type, dataType, field, shard));
     }
-    
+
     @Override
     public DateTypeDescription getTypeDescription(String dateType, Date begin, Date end, Set<String> datatypeFilter) throws TableNotFoundException {
         final DateTypeDescription desc = new DateTypeDescription();
@@ -91,11 +91,11 @@ public class MockDateIndexHelper extends DateIndexHelper {
             }
         }
         SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMdd");
-        
+
         for (Map.Entry<String,Entry> entry : entries.entries()) {
             if (entry.getValue().type.equals(dateType)
                             && (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(entry.getValue().dataType))) {
-                
+
                 String date = entry.getValue().getShardDate();
                 if (desc.dateRange[0] == null) {
                     desc.dateRange[0] = desc.dateRange[1] = date;
@@ -115,7 +115,7 @@ public class MockDateIndexHelper extends DateIndexHelper {
         }
         return desc;
     }
-    
+
     @Override
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
                     throws TableNotFoundException {

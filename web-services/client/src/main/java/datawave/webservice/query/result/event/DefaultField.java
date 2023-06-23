@@ -36,9 +36,9 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultField extends FieldBase<DefaultField> implements Serializable, Message<DefaultField> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "Markings")
     @XmlJavaTypeAdapter(StringMapAdapter.class)
     private HashMap<String,String> markings;
@@ -50,9 +50,9 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
     private String name;
     @XmlElement(name = "Value")
     private TypedValue value;
-    
+
     public DefaultField() {}
-    
+
     public DefaultField(String name, String columnVisibility, Map<String,String> markings, Long timestamp, Object value) {
         super();
         this.name = name;
@@ -61,7 +61,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         this.timestamp = timestamp;
         this.value = new TypedValue(value);
     }
-    
+
     public DefaultField(String name, String columnVisibility, Long timestamp, Object value) {
         super();
         this.name = name;
@@ -69,53 +69,53 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
         this.timestamp = timestamp;
         this.value = new TypedValue(value);
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.query.result.event.FieldInterface#setMarkings(java.util.Map)
      */
     @Override
     public void setMarkings(Map<String,String> markings) {
         this.markings = new HashMap<String,String>(markings);
     }
-    
+
     public Map<String,String> getMarkings() {
         return markings;
     }
-    
+
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
-    
+
     public String getColumnVisibility() {
         return columnVisibility;
     }
-    
+
     public void setTimestamp(Long timestamp) {
         this.timestamp = timestamp;
     }
-    
+
     public Long getTimestamp() {
         return timestamp;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public void setTypedValue(TypedValue value) {
         this.value = value;
     }
-    
+
     public TypedValue getTypedValue() {
         return this.value;
     }
-    
+
     @JsonIgnore
     public void setValue(Object value) {
         if (value instanceof TypedValue) {
@@ -124,13 +124,13 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             this.value = new TypedValue(value);
         }
     }
-    
+
     @JsonIgnore
     @XmlTransient
     public Object getValueOfTypedValue() {
         return (null == value) ? null : value.getValue();
     }
-    
+
     @JsonIgnore
     @XmlTransient
     public String getValueString() {
@@ -142,7 +142,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             return value.getValue().toString();
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
@@ -157,19 +157,19 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             buf.append("null ]");
         return buf.toString();
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder(17, 37).append(markings).append(columnVisibility).append(timestamp).append(name).append(value).hashCode();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof DefaultField) {
             DefaultField v = (DefaultField) o;
-            
+
             EqualsBuilder eb = new EqualsBuilder();
-            
+
             eb.append(this.name, v.name);
             eb.append(this.timestamp, v.timestamp);
             eb.append(this.markings, v.markings);
@@ -177,43 +177,43 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             eb.append(this.value, v.value);
             return eb.isEquals();
         }
-        
+
         return false;
     }
-    
+
     @Override
     public Schema<DefaultField> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<DefaultField> SCHEMA = new Schema<DefaultField>() {
-        
+
         @Override
         public DefaultField newMessage() {
             return new DefaultField();
         }
-        
+
         @Override
         public Class<? super DefaultField> typeClass() {
             return DefaultField.class;
         }
-        
+
         @Override
         public String messageName() {
             return DefaultField.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return DefaultField.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(DefaultField message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, DefaultField message) throws IOException {
             if (message.markings != null)
@@ -226,7 +226,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
             if (message.value != null)
                 output.writeObject(5, message.value, message.value.cachedSchema(), false);
         }
-        
+
         @Override
         public void mergeFrom(Input input, DefaultField message) throws IOException {
             int number;
@@ -254,7 +254,7 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -272,13 +272,13 @@ public class DefaultField extends FieldBase<DefaultField> implements Serializabl
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
             fieldMap.put("markings", 1);

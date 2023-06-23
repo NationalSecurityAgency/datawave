@@ -61,7 +61,7 @@ import java.util.function.Consumer;
  * iterator that will force the stack to be torn down.
  */
 public class RebuildingScannerTestHelper {
-    
+
     public enum TEARDOWN {
         NEVER(NeverTeardown.class),
         ALWAYS(AlwaysTeardown.class),
@@ -70,13 +70,13 @@ public class RebuildingScannerTestHelper {
         ALWAYS_SANS_CONSISTENCY(AlwaysTeardownWithoutConsistency.class),
         RANDOM_SANS_CONSISTENCY(RandomTeardownWithoutConsistency.class),
         EVERY_OTHER_SANS_CONSISTENCY(EveryOtherTeardownWithoutConsistency.class);
-        
+
         private Class<? extends TeardownListener> tclass;
-        
+
         TEARDOWN(Class<? extends TeardownListener> tclass) {
             this.tclass = tclass;
         }
-        
+
         public TeardownListener instance() {
             try {
                 return tclass.getDeclaredConstructor().newInstance();
@@ -85,20 +85,20 @@ public class RebuildingScannerTestHelper {
             }
         }
     }
-    
+
     public enum INTERRUPT {
         NEVER(NeverInterrupt.class),
         RANDOM(RandomInterrupt.class),
         EVERY_OTHER(EveryOtherInterrupt.class),
         FI_EVERY_OTHER(FiEveryOtherInterrupt.class),
         RANDOM_HIGH(HighRandomInterrupt.class);
-        
+
         private Class<? extends InterruptListener> iclass;
-        
+
         INTERRUPT(Class<? extends InterruptListener> iclass) {
             this.iclass = iclass;
         }
-        
+
         public InterruptListener instance() {
             try {
                 return iclass.newInstance();
@@ -109,78 +109,78 @@ public class RebuildingScannerTestHelper {
             }
         }
     }
-    
+
     public static class InterruptIterator implements SortedKeyValueIterator<Key,Value> {
         private SortedKeyValueIterator<Key,Value> source;
         private InterruptListener interruptListener;
         private boolean initialized = false;
-        
+
         public InterruptIterator() {
             // no-op
         }
-        
+
         public InterruptIterator(InterruptIterator other, IteratorEnvironment env) {
             this.interruptListener = other.interruptListener;
             this.source = other.source.deepCopy(env);
         }
-        
+
         @Override
         public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> map, IteratorEnvironment iteratorEnvironment) throws IOException {
             this.source = source;
         }
-        
+
         @Override
         public boolean hasTop() {
             return source.hasTop();
         }
-        
+
         @Override
         public void next() throws IOException {
             if (initialized && interruptListener != null && interruptListener.interrupt(source.getTopKey())) {
                 throw new IterationInterruptedException("testing next interrupt");
             }
-            
+
             source.next();
         }
-        
+
         @Override
         public void seek(Range range, Collection<ByteSequence> collection, boolean inclusive) throws IOException {
             if (interruptListener != null && interruptListener.interrupt(null)) {
                 throw new IterationInterruptedException("testing seek interrupt");
             }
-            
+
             source.seek(range, collection, inclusive);
-            
+
             initialized = true;
         }
-        
+
         @Override
         public Key getTopKey() {
             return source.getTopKey();
         }
-        
+
         @Override
         public Value getTopValue() {
             return source.getTopValue();
         }
-        
+
         @Override
         public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
             return new InterruptIterator(this, env);
         }
-        
+
         // must be set by the RebuildingIterator after each rebuild
         public void setInterruptListener(InterruptListener listener) {
             this.interruptListener = listener;
         }
     }
-    
+
     public interface InterruptListener {
         boolean interrupt(Key key);
-        
+
         void processedInterrupt(boolean interrupt);
     }
-    
+
     /**
      * Never interrupts
      */
@@ -189,31 +189,31 @@ public class RebuildingScannerTestHelper {
         public boolean interrupt(Key key) {
             return false;
         }
-        
+
         @Override
         public void processedInterrupt(boolean interrupt) {
             // no-op
         }
     }
-    
+
     /**
      * Sets interrupting at 50% rate
      */
     public static class RandomInterrupt implements InterruptListener {
         protected final Random random = new Random();
         protected boolean interrupting = random.nextBoolean();
-        
+
         @Override
         public boolean interrupt(Key key) {
             return interrupting;
         }
-        
+
         @Override
         public void processedInterrupt(boolean interrupt) {
             interrupting = random.nextBoolean();
         }
     }
-    
+
     /**
      * Sets interrupting at 95% rate
      */
@@ -223,24 +223,24 @@ public class RebuildingScannerTestHelper {
             interrupting = random.nextInt(100) < 95;
         }
     }
-    
+
     /**
      * interrupts every other call
      */
     public static class EveryOtherInterrupt implements InterruptListener {
         protected boolean interrupting = false;
-        
+
         @Override
         public boolean interrupt(Key key) {
             return interrupting;
         }
-        
+
         @Override
         public void processedInterrupt(boolean interrupt) {
             interrupting = !interrupting;
         }
     }
-    
+
     /**
      * interrupt every other fi key, otherwise don't interrupt
      */
@@ -249,43 +249,43 @@ public class RebuildingScannerTestHelper {
             // initialize to true first
             processedInterrupt(false);
         }
-        
+
         @Override
         public boolean interrupt(Key key) {
             if (key != null && key.getColumnFamily().toString().startsWith("fi" + Constants.NULL)) {
                 return super.interrupt(key);
             }
-            
+
             return false;
         }
     }
-    
+
     public static AccumuloClient getClient(InMemoryInstance i, String user, byte[] pass, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloException, AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
-    
+
     public static AccumuloClient getClient(InMemoryInstance i, String user, ByteBuffer pass, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloException, AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
-    
+
     public static AccumuloClient getClient(InMemoryInstance i, String user, CharSequence pass, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloException, AccumuloSecurityException {
         return new RebuildingAccumuloClient(user, i, teardown, interrupt);
     }
-    
+
     public static AccumuloClient getClient(InMemoryInstance i, String principal, AuthenticationToken token, TEARDOWN teardown, INTERRUPT interrupt)
                     throws AccumuloException, AccumuloSecurityException {
         return new RebuildingAccumuloClient(principal, i, teardown, interrupt);
     }
-    
+
     public interface TeardownListener {
         boolean teardown();
-        
+
         boolean checkConsistency();
     }
-    
+
     public static class RebuildingIterator implements Iterator<Map.Entry<Key,Value>> {
         private InMemoryScannerBase baseScanner;
         private Iterator<Map.Entry<Key,Value>> delegate;
@@ -296,7 +296,7 @@ public class RebuildingScannerTestHelper {
         private Map.Entry<Key,Value> lastKey = null;
         private KryoDocumentDeserializer deserializer = new KryoDocumentDeserializer();
         private boolean initialized = false;
-        
+
         public RebuildingIterator(InMemoryScannerBase baseScanner, ScannerRebuilder scanner, TeardownListener teardown, InterruptListener interruptListener) {
             this.baseScanner = baseScanner;
             this.scanner = scanner;
@@ -304,39 +304,39 @@ public class RebuildingScannerTestHelper {
             this.interruptListener = interruptListener;
             init();
         }
-        
+
         private void init() {
             // create the interruptIterator and add it to the base scanner
             InterruptIterator interruptIterator = new InterruptIterator();
             interruptIterator.setInterruptListener(interruptListener);
-            
+
             // add it to the baseScanner injected list so that this iterator is not torn down and losing state with
             // every interrupt or rebuild
             baseScanner.addInjectedIterator(interruptIterator);
         }
-        
+
         @Override
         public boolean hasNext() {
             if (!initialized) {
                 findNext();
                 initialized = true;
             }
-            
+
             return next != null;
         }
-        
+
         @Override
         public Map.Entry<Key,Value> next() {
             if (!initialized) {
                 findNext();
                 initialized = true;
             }
-            
+
             lastKey = next;
             findNext();
             return lastKey;
         }
-        
+
         private void findNext() {
             boolean interrupted = false;
             int interruptCount = 0;
@@ -348,7 +348,7 @@ public class RebuildingScannerTestHelper {
                         // build initial iterator. It can be interrupted since it calls seek/next under the covers to prepare the first key
                         delegate = baseScanner.iterator();
                     }
-                    
+
                     if (interrupted) {
                         Key last = lastKey != null ? lastKey.getKey() : null;
                         if (!rebuilt) {
@@ -359,14 +359,14 @@ public class RebuildingScannerTestHelper {
                             delegate = scanner.rebuild(null);
                         }
                     }
-                    
+
                     if (lastKey != null && teardown.teardown()) {
                         boolean hasNext = delegate.hasNext();
                         Map.Entry<Key,Value> next = (hasNext ? delegate.next() : null);
                         if (hasNext && (next == null)) {
                             throw new RuntimeException("Pre teardown: If hasNext() is true, next() must not return null. interrupted: " + interruptCount);
                         }
-                        
+
                         if (!rebuilt) {
                             delegate = scanner.rebuild(lastKey.getKey());
                             rebuilt = true;
@@ -374,13 +374,13 @@ public class RebuildingScannerTestHelper {
                             // was already rebuilt once with this key, just re-create the iterator
                             delegate = scanner.rebuild(null);
                         }
-                        
+
                         boolean rebuildHasNext = delegate.hasNext();
                         Map.Entry<Key,Value> rebuildNext = (rebuildHasNext ? delegate.next() : null);
                         if (rebuildHasNext && (rebuildNext == null)) {
                             throw new RuntimeException("After rebuild: If hasNext() is true, next() must not return null. interrupted: " + interruptCount);
                         }
-                        
+
                         if (hasNext != rebuildHasNext) {
                             // the only known scenario where this is ok is when the rebuild causes us to have a "FinalDocument" where previously we did not
                             // have/need one
@@ -409,7 +409,7 @@ public class RebuildingScannerTestHelper {
                                 }
                             }
                         }
-                        
+
                         this.next = rebuildNext;
                     } else {
                         this.next = (delegate.hasNext() ? delegate.next() : null);
@@ -425,102 +425,102 @@ public class RebuildingScannerTestHelper {
                 }
             } while (interrupted);
         }
-        
+
         @Override
         public void remove() {
             delegate.remove();
         }
-        
+
         @Override
         public void forEachRemaining(Consumer<? super Map.Entry<Key,Value>> action) {
             delegate.forEachRemaining(action);
         }
     }
-    
+
     public static class RandomTeardown implements TeardownListener {
         private final Random random = new Random();
-        
+
         @Override
         public boolean teardown() {
             return (random.nextBoolean());
         }
-        
+
         @Override
         public boolean checkConsistency() {
             return true;
         }
     }
-    
+
     public static class RandomTeardownWithoutConsistency extends RandomTeardown {
         @Override
         public boolean checkConsistency() {
             return false;
         }
     }
-    
+
     public static class EveryOtherTeardown implements TeardownListener {
         private transient boolean teardown = false;
-        
+
         @Override
         public boolean teardown() {
             teardown = !teardown;
             return (teardown);
         }
-        
+
         @Override
         public boolean checkConsistency() {
             return true;
         }
     }
-    
+
     public static class EveryOtherTeardownWithoutConsistency extends EveryOtherTeardown {
         @Override
         public boolean checkConsistency() {
             return false;
         }
     }
-    
+
     public static class AlwaysTeardown implements TeardownListener {
         @Override
         public boolean teardown() {
             return true;
         }
-        
+
         @Override
         public boolean checkConsistency() {
             return true;
         }
     }
-    
+
     public static class AlwaysTeardownWithoutConsistency extends AlwaysTeardown {
         @Override
         public boolean checkConsistency() {
             return false;
         }
     }
-    
+
     public static class NeverTeardown implements TeardownListener {
         @Override
         public boolean teardown() {
             return false;
         }
-        
+
         @Override
         public boolean checkConsistency() {
             return true;
         }
     }
-    
+
     public static class RebuildingScanner extends DelegatingScannerBase implements Scanner {
         private final TEARDOWN teardown;
         private final INTERRUPT interrupt;
-        
+
         public RebuildingScanner(InMemoryScanner delegate, TEARDOWN teardown, INTERRUPT interrupt) {
             super(delegate);
             this.teardown = teardown;
             this.interrupt = interrupt;
         }
-        
+
         @Override
         public Iterator<Map.Entry<Key,Value>> iterator() {
             try {
@@ -529,68 +529,68 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-        
+
         @Override
         public ConsistencyLevel getConsistencyLevel() {
             return ConsistencyLevel.IMMEDIATE;
         }
-        
+
         @Override
         public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
-            
+
         }
-        
+
         @Override
         public void setRange(Range range) {
             ((InMemoryScanner) delegate).setRange(range);
         }
-        
+
         @Override
         public Range getRange() {
             return ((InMemoryScanner) delegate).getRange();
         }
-        
+
         @Override
         public void setBatchSize(int size) {
             ((InMemoryScanner) delegate).setBatchSize(size);
         }
-        
+
         @Override
         public int getBatchSize() {
             return ((InMemoryScanner) delegate).getBatchSize();
         }
-        
+
         @Override
         public void enableIsolation() {
             ((InMemoryScanner) delegate).enableIsolation();
         }
-        
+
         @Override
         public void disableIsolation() {
             ((InMemoryScanner) delegate).disableIsolation();
         }
-        
+
         @Override
         public long getReadaheadThreshold() {
             return ((InMemoryScanner) delegate).getReadaheadThreshold();
         }
-        
+
         @Override
         public void setReadaheadThreshold(long batches) {
             ((InMemoryScanner) delegate).setReadaheadThreshold(batches);
         }
     }
-    
+
     public static class RebuildingBatchScanner extends DelegatingScannerBase implements BatchScanner {
         private final TEARDOWN teardown;
         private final INTERRUPT interrupt;
-        
+
         public RebuildingBatchScanner(InMemoryBatchScanner delegate, TEARDOWN teardown, INTERRUPT interrupt) {
             super(delegate);
             this.teardown = teardown;
             this.interrupt = interrupt;
         }
-        
+
         @Override
         public Iterator<Map.Entry<Key,Value>> iterator() {
             try {
@@ -600,190 +600,190 @@ public class RebuildingScannerTestHelper {
                 throw new RuntimeException("Misconfigured teardown listener class most likely", e);
             }
         }
-        
+
         @Override
         public ConsistencyLevel getConsistencyLevel() {
             return ConsistencyLevel.IMMEDIATE;
         }
-        
+
         @Override
         public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
-            
+
         }
-        
+
         @Override
         public void setRanges(Collection<Range> ranges) {
             ((InMemoryBatchScanner) delegate).setRanges(ranges);
         }
     }
-    
+
     public static class RebuildingAccumuloClient extends InMemoryAccumuloClient {
         private final TEARDOWN teardown;
         private final INTERRUPT interrupt;
-        
+
         public RebuildingAccumuloClient(String user, InMemoryInstance instance, TEARDOWN teardown, INTERRUPT interrupt) throws AccumuloSecurityException {
             super(user, instance);
             this.teardown = teardown;
             this.interrupt = interrupt;
         }
-        
+
         @Override
         public BatchScanner createBatchScanner(String s, Authorizations authorizations, int i) throws TableNotFoundException {
             return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s, authorizations, i)), teardown, interrupt);
         }
-        
+
         @Override
         public BatchScanner createBatchScanner(String s, Authorizations authorizations) throws TableNotFoundException {
             return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s, authorizations)), teardown, interrupt);
         }
-        
+
         @Override
         public BatchScanner createBatchScanner(String s) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
             return new RebuildingBatchScanner((InMemoryBatchScanner) (super.createBatchScanner(s)), teardown, interrupt);
         }
-        
+
         @Override
         public Scanner createScanner(String s, Authorizations authorizations) throws TableNotFoundException {
             return new RebuildingScanner((InMemoryScanner) (super.createScanner(s, authorizations)), teardown, interrupt);
         }
-        
+
         @Override
         public Scanner createScanner(String s) throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
             return new RebuildingScanner((InMemoryScanner) (super.createScanner(s)), teardown, interrupt);
         }
     }
-    
+
     public static class DelegatingScannerBase implements ScannerBase {
         protected final ScannerBase delegate;
-        
+
         public DelegatingScannerBase(ScannerBase delegate) {
             this.delegate = delegate;
         }
-        
+
         @Override
         public void addScanIterator(IteratorSetting cfg) {
             delegate.addScanIterator(cfg);
         }
-        
+
         @Override
         public void removeScanIterator(String iteratorName) {
             delegate.removeScanIterator(iteratorName);
         }
-        
+
         @Override
         public void updateScanIteratorOption(String iteratorName, String key, String value) {
             delegate.updateScanIteratorOption(iteratorName, key, value);
         }
-        
+
         @Override
         public void fetchColumnFamily(Text col) {
             delegate.fetchColumnFamily(col);
         }
-        
+
         @Override
         public void fetchColumn(Text colFam, Text colQual) {
             delegate.fetchColumn(colFam, colQual);
         }
-        
+
         @Override
         public void fetchColumn(IteratorSetting.Column column) {
             delegate.fetchColumn(column);
         }
-        
+
         @Override
         public void clearColumns() {
             delegate.clearColumns();
         }
-        
+
         @Override
         public void clearScanIterators() {
             delegate.clearScanIterators();
         }
-        
+
         @Override
         public Iterator<Map.Entry<Key,Value>> iterator() {
             return delegate.iterator();
         }
-        
+
         @Override
         public void setTimeout(long timeOut, TimeUnit timeUnit) {
             delegate.setTimeout(timeOut, timeUnit);
         }
-        
+
         @Override
         public long getTimeout(TimeUnit timeUnit) {
             return delegate.getTimeout(timeUnit);
         }
-        
+
         @Override
         public void close() {
             delegate.close();
         }
-        
+
         @Override
         public Authorizations getAuthorizations() {
             return delegate.getAuthorizations();
         }
-        
+
         @Override
         public void setSamplerConfiguration(SamplerConfiguration samplerConfig) {
             delegate.setSamplerConfiguration(samplerConfig);
         }
-        
+
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
             return delegate.getSamplerConfiguration();
         }
-        
+
         @Override
         public void clearSamplerConfiguration() {
             delegate.clearSamplerConfiguration();
         }
-        
+
         @Override
         public void setBatchTimeout(long timeOut, TimeUnit timeUnit) {
             delegate.setBatchTimeout(timeOut, timeUnit);
         }
-        
+
         @Override
         public long getBatchTimeout(TimeUnit timeUnit) {
             return delegate.getBatchTimeout(timeUnit);
         }
-        
+
         @Override
         public void setClassLoaderContext(String classLoaderContext) {
             delegate.setClassLoaderContext(classLoaderContext);
         }
-        
+
         @Override
         public void clearClassLoaderContext() {
             delegate.clearClassLoaderContext();
         }
-        
+
         @Override
         public String getClassLoaderContext() {
             return delegate.getClassLoaderContext();
         }
-        
+
         @Override
         public ConsistencyLevel getConsistencyLevel() {
             return ConsistencyLevel.IMMEDIATE;
         }
-        
+
         @Override
         public void setConsistencyLevel(ConsistencyLevel consistencyLevel) {
-            
+
         }
-        
+
         @Override
         public void forEach(Consumer<? super Map.Entry<Key,Value>> action) {
             delegate.forEach(action);
         }
-        
+
         @Override
         public Spliterator<Map.Entry<Key,Value>> spliterator() {
             return delegate.spliterator();
         }
     }
-    
+
 }

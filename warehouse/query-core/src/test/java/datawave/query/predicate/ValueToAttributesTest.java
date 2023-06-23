@@ -55,72 +55,72 @@ import java.util.UUID;
 /**
   */
 public abstract class ValueToAttributesTest {
-    
+
     @RunWith(Arquillian.class)
     public static class ShardRange extends ValueToAttributesTest {
         protected static AccumuloClient client = null;
-        
+
         @BeforeClass
         public static void setUp() throws Exception {
-            
+
             QueryTestTableHelper qtth = new QueryTestTableHelper(ShardRange.class.toString(), log);
             client = qtth.client;
-            
+
             CompositeTestingIngest.writeItAll(client, CompositeTestingIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
         }
-        
+
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
-    
+
     @RunWith(Arquillian.class)
     public static class DocumentRange extends ValueToAttributesTest {
         protected static AccumuloClient client = null;
-        
+
         @BeforeClass
         public static void setUp() throws Exception {
-            
+
             QueryTestTableHelper qtth = new QueryTestTableHelper(DocumentRange.class.toString(), log);
             client = qtth.client;
-            
+
             CompositeTestingIngest.writeItAll(client, CompositeTestingIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, BaseEdgeQueryTest.MODEL_TABLE_NAME);
         }
-        
+
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms)
                         throws ParseException, Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
-    
+
     private static final Logger log = Logger.getLogger(ValueToAttributesTest.class);
-    
+
     protected Authorizations auths = new Authorizations("ALL");
-    
+
     protected Set<Authorizations> authSet = Collections.singleton(auths);
-    
+
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
-    
+
     protected KryoDocumentDeserializer deserializer;
-    
+
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
         System.setProperty("cdi.bean.context", "queryBeanRefContext.xml");
-        
+
         return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event", "datawave.core.query.result.event")
@@ -130,22 +130,22 @@ public abstract class ValueToAttributesTest {
                                         "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
                                         "beans.xml");
     }
-    
+
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
     }
-    
+
     @Before
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
+
         logic.setFullTableScanEnabled(true);
         deserializer = new KryoDocumentDeserializer();
     }
-    
+
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
-    
+
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client)
                     throws Exception {
         log.debug("runTestQuery");
@@ -158,64 +158,64 @@ public abstract class ValueToAttributesTest {
         settings.setQuery(querystr);
         settings.setParameters(extraParms);
         settings.setId(UUID.randomUUID());
-        
+
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
-        
+
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
-        
+
         String plannedScript = logic.getQueryPlanner().getPlannedScript();
         Assert.assertTrue("CompositeTerm was not substituted into query:" + plannedScript, plannedScript.contains("MAKE_COLOR"));
-        
+
         HashSet<String> expectedSet = new HashSet<>(expected);
         HashSet<String> resultSet;
         resultSet = new HashSet<>();
         Set<Document> docs = new HashSet<>();
         for (Map.Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
-            
+
             log.trace(entry.getKey() + " => " + d);
-            
+
             Attribute<?> attr = d.get("UUID");
             if (attr == null)
                 attr = d.get("UUID.0");
-            
+
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
             Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
                             attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
-            
+
             TypeAttribute<?> uuidAttr = (TypeAttribute<?>) attr;
-            
+
             String uuid = uuidAttr.getType().getDelegate().toString();
             Assert.assertTrue("Received unexpected UUID: " + uuid, expected.contains(uuid));
-            
+
             resultSet.add(uuid);
             docs.add(d);
         }
-        
+
         if (expected.size() > resultSet.size()) {
             expectedSet.addAll(expected);
             expectedSet.removeAll(resultSet);
-            
+
             for (String s : expectedSet) {
                 log.warn("Missing: " + s);
             }
         }
-        
+
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
         Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
         Assert.assertEquals("Unexpected number of records", expected.size(), resultSet.size());
     }
-    
+
     @Test
     public void testCompositeFunctions() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        
+
         if (log.isDebugEnabled()) {
             log.debug("testCompositeFunctions");
         }
@@ -224,7 +224,7 @@ public abstract class ValueToAttributesTest {
                 "COLOR == 'BLUE' && MAKE == 'CHEVY'", //
                 "COLOR == 'BLUE' && MAKE == 'FORD'", //
         };
-        
+
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] { //
                 Arrays.asList("One"), //
@@ -235,7 +235,7 @@ public abstract class ValueToAttributesTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
-    
+
     @Test
     public void testComposites() {
         CompositeMetadata compositeMetadata = new CompositeMetadata();
@@ -243,7 +243,7 @@ public abstract class ValueToAttributesTest {
             compositeMetadata.setCompositeFieldMappingByType(ingestType, "MAKE_COLOR", Arrays.asList("MAKE", "COLOR"));
             compositeMetadata.setCompositeFieldMappingByType(ingestType, "COLOR_WHEELS", Arrays.asList("MAKE", "COLOR"));
         }
-        
+
         TypeMetadata typeMetadata = new TypeMetadata(
                         "MAKE:[beep:datawave.data.type.LcNoDiacriticsType];MAKE_COLOR:[beep:datawave.data.type.NoOpType];START_DATE:[beep:datawave.data.type.DateType];TYPE_NOEVAL:[beep:datawave.data.type.LcNoDiacriticsType];IP_ADDR:[beep:datawave.data.type.IpAddressType];WHEELS:[beep:datawave.data.type.LcNoDiacriticsType,datawave.data.type.NumberType];COLOR:[beep:datawave.data.type.LcNoDiacriticsType];COLOR_WHEELS:[beep:datawave.data.type.NoOpType];TYPE:[beep:datawave.data.type.LcNoDiacriticsType]");
         MarkingFunctions markingFunctions = new MarkingFunctions.Default();

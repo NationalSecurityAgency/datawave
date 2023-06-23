@@ -12,21 +12,21 @@ import org.apache.log4j.Logger;
 import java.util.List;
 
 public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic {
-    
+
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicTransformer.class);
-    
+
     private List<QueryLogicTransformer<I,O>> delegates = null;
-    
+
     public CompositeQueryLogicTransformer(List<QueryLogicTransformer<I,O>> delegates) {
         this.delegates = delegates;
     }
-    
+
     @Override
     public O transform(I input) {
         // The objects put into the pageQueue have already been transformed, so no transformation required here.
         return (O) input;
     }
-    
+
     @Override
     public CacheableQueryRow writeToCache(Object o) throws QueryException {
         CacheableQueryRow result = null;
@@ -42,7 +42,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return result;
     }
-    
+
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
         Object result = null;
@@ -58,7 +58,7 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return result;
     }
-    
+
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         Exception lastFailure = null;
@@ -79,5 +79,5 @@ public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTrans
         }
         return null;
     }
-    
+
 }

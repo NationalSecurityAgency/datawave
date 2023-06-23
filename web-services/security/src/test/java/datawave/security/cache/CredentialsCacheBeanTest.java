@@ -43,14 +43,14 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(Arquillian.class)
 public class CredentialsCacheBeanTest {
-    
+
     private CredentialsCacheBean ccb;
-    
+
     @Inject
     private CacheableManager<Object,Principal> authManager;
-    
+
     private Cache<Principal,Principal> cache;
-    
+
     @Deployment
     public static JavaArchive createDeployment() {
         System.setProperty("cdi.bean.context", "springFrameworkBeanRefContext.xml");
@@ -62,7 +62,7 @@ public class CredentialsCacheBeanTest {
                 .addAsManifestResource(EmptyAsset.INSTANCE, "beans.xml");
         // @formatter:on
     }
-    
+
     @Before
     public void setUp() {
         // With Arquillian we would normally inject this bean into the test class. However there seems to be
@@ -72,35 +72,35 @@ public class CredentialsCacheBeanTest {
         // TODO: identify and resolve the underlying issue
         ccb = new CredentialsCacheBean();
         BeanProvider.injectFields(ccb);
-        
+
         cache = CacheBuilder.newBuilder().build();
         authManager.setCache(cache);
-        
+
         DatawaveUser u1 = new DatawaveUser(SubjectIssuerDNPair.of("user1", "issuer1"), UserType.USER, null, null, null, -1);
         DatawaveUser u2 = new DatawaveUser(SubjectIssuerDNPair.of("user2", "issuer2"), UserType.USER, null, null, null, -1);
         DatawaveUser s1 = new DatawaveUser(SubjectIssuerDNPair.of("server1", "issuer1"), UserType.SERVER, null, null, null, -1);
-        
+
         DatawavePrincipal dp1 = new DatawavePrincipal(Arrays.asList(u1, s1));
         DatawavePrincipal dp2 = new DatawavePrincipal(Collections.singleton(u1));
         DatawavePrincipal dp3 = new DatawavePrincipal(Arrays.asList(u2, s1));
-        
+
         cache.put(dp1, dp1);
         cache.put(dp2, dp2);
         cache.put(dp3, dp3);
     }
-    
+
     @After
     public void tearDown() {}
-    
+
     @Test
     public void testFlushAll() {
         assertEquals(3, cache.size());
-        
+
         ccb.flushAll();
-        
+
         assertEquals(0, cache.size());
     }
-    
+
     @Test
     public void testEvict() {
         Principal expected = cache.asMap().keySet().stream().filter(p -> p.getName().startsWith("user2")).findFirst().orElse(null);
@@ -110,7 +110,7 @@ public class CredentialsCacheBeanTest {
         assertNull(cache.getIfPresent(expected));
         assertEquals(2, cache.size());
     }
-    
+
     @Test
     public void testListDNs() {
         ArrayList<String> expectedDns = Lists.newArrayList("user2<issuer2>", "server1<issuer1>", "user1<issuer1>");
@@ -118,7 +118,7 @@ public class CredentialsCacheBeanTest {
         assertEquals(3, dnList.getDns().size());
         assertEquals(expectedDns, new ArrayList<>(dnList.getDns()));
     }
-    
+
     @Test
     public void testListMatching() {
         ArrayList<String> expectedDns = Lists.newArrayList("server1<issuer1>", "user1<issuer1>");
@@ -126,87 +126,87 @@ public class CredentialsCacheBeanTest {
         assertEquals(2, dnList.getDns().size());
         assertEquals(expectedDns, new ArrayList<>(dnList.getDns()));
     }
-    
+
     @Test
     public void testList() {
         DatawaveUser u = ccb.list("user2<issuer2>");
         assertNotNull(u);
         assertEquals("user2<issuer2>", u.getName());
     }
-    
+
     @Default
     @ApplicationScoped
     @AuthorizationCache
     private static class TestCacheableManager implements CacheableManager<Object,Principal> {
         private Cache<Principal,Principal> cache;
-        
+
         @Override
         public void setCache(Object o) {
             // noinspection unchecked
             cache = (Cache<Principal,Principal>) o;
         }
-        
+
         @Override
         public void flushCache() {
             cache.invalidateAll();
             cache.cleanUp();
         }
-        
+
         @Override
         public void flushCache(Principal principal) {
             cache.invalidate(principal);
         }
-        
+
         @Override
         public boolean containsKey(Principal principal) {
             return cache.getIfPresent(principal) != null;
         }
-        
+
         @Override
         public Set<Principal> getCachedKeys() {
             return new HashSet<>(cache.asMap().values());
         }
     }
-    
+
     private static class MockAccumuloConnectionFactory implements AccumuloConnectionFactory {
         @Override
         public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, Priority priority, Map<String,String> trackingMap) {
             return null;
         }
-        
+
         @Override
         public AccumuloClient getClient(String userDN, Collection<String> proxiedDNs, String poolName, Priority priority, Map<String,String> trackingMap) {
             return null;
         }
-        
+
         @Override
         public void returnClient(AccumuloClient client) {
-            
+
         }
-        
+
         @Override
         public String report() {
             return null;
         }
-        
+
         @Override
         public List<ConnectionPool> getConnectionPools() {
             return null;
         }
-        
+
         @Override
         public int getConnectionUsagePercent() {
             return 0;
         }
-        
+
         @Override
         public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
             return null;
         }
-        
+
         @Override
         public void close() throws Exception {
-            
+
         }
     }
 }

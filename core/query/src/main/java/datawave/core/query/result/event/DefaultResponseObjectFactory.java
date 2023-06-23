@@ -39,77 +39,77 @@ public class DefaultResponseObjectFactory extends ResponseObjectFactory {
     public EventBase getEvent() {
         return new DefaultEvent();
     }
-    
+
     @Override
     public FieldBase getField() {
         return new DefaultField();
     }
-    
+
     @Override
     public EventQueryResponseBase getEventQueryResponse() {
         return new DefaultEventQueryResponse();
     }
-    
+
     @Override
     public CacheableQueryRow getCacheableQueryRow() {
         return new CacheableQueryRowImpl();
     }
-    
+
     @Override
     public EdgeBase getEdge() {
         return new DefaultEdge();
     }
-    
+
     @Override
     public EdgeQueryResponseBase getEdgeQueryResponse() {
         return new DefaultEdgeQueryResponse();
     }
-    
+
     @Override
     public FacetQueryResponseBase getFacetQueryResponse() {
         return new FacetQueryResponse();
     }
-    
+
     @Override
     public FacetsBase getFacets() {
         return new DefaultFacets();
     }
-    
+
     @Override
     public FieldCardinalityBase getFieldCardinality() {
         return new DefaultFieldCardinality();
     }
-    
+
     @Override
     public KeyBase getKey() {
         return new DefaultKey();
     }
-    
+
     @Override
     public AuthorizationsListBase getAuthorizationsList() {
         return new DefaultAuthorizationsList();
     }
-    
+
     @Override
     public Query getQueryImpl() {
         return new QueryImpl();
     }
-    
+
     @Override
     public DataDictionaryBase getDataDictionary() {
         return new DefaultDataDictionary();
     }
-    
+
     @Override
     public FieldsBase getFields() {
         return new DefaultFields();
     }
-    
+
     @Override
     public DescriptionBase getDescription() {
         return new DefaultDescription();
     }
-    
+
     @Override
     public MetadataFieldBase getMetadataField() {
         return new DefaultMetadataField();

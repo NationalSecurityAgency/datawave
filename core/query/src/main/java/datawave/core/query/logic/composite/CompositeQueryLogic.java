@@ -43,82 +43,82 @@ import java.util.concurrent.CountDownLatch;
  * class name and tableName cannot be configured.
  */
 public class CompositeQueryLogic extends BaseQueryLogic<Object> implements CheckpointableQueryLogic {
-    
+
     private class QueryLogicHolder extends Thread {
         private GenericQueryConfiguration config;
         private String logicName;
         private QueryLogic<?> logic;
         private TransformIterator transformIterator;
-        
+
         private Query settings;
         private boolean started = false;
         private long maxResults;
-        
+
         public QueryLogicHolder(String logicName, QueryLogic<?> logic) {
             this.setDaemon(true);
             this.setLogicName(logicName);
             this.setLogic(logic);
             this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName);
         }
-        
+
         public String getLogicName() {
             return logicName;
         }
-        
+
         public void setLogicName(String logicName) {
             this.logicName = logicName;
         }
-        
+
         public QueryLogic<?> getLogic() {
             return logic;
         }
-        
+
         public void setLogic(QueryLogic<?> logic) {
             this.logic = logic;
         }
-        
+
         public GenericQueryConfiguration getConfig() {
             return config;
         }
-        
+
         public void setConfig(GenericQueryConfiguration config) {
             this.config = config;
         }
-        
+
         public void setTransformIterator(TransformIterator transformIterator) {
             this.transformIterator = transformIterator;
         }
-        
+
         public void setMaxResults(long maxResults) {
             this.maxResults = maxResults;
         }
-        
+
         public long getMaxResults() {
             return maxResults;
         }
-        
+
         public Query getSettings() {
             return settings;
         }
-        
+
         public void setSettings(Query settings) {
             this.settings = settings;
         }
-        
+
         public void run() {
             long resultCount = 0L;
-            
+
             log.trace("Starting thread: " + this.getName());
-            
+
             if (!started) {
                 startLatch.countDown();
                 started = true;
             }
-            
+
             // the results queue is also an exception handler
             setUncaughtExceptionHandler(results);
             boolean success = false;
-            
+
             try {
                 Object last = new Object();
                 if (this.getMaxResults() < 0)
@@ -152,16 +152,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 log.trace("Finished thread: " + this.getName() + " with success = " + success);
             }
         }
-        
+
     }
-    
+
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
-    
+
     private Map<String,QueryLogic<?>> queryLogics = null;
-    
+
     // Specified whether all queries must succeed initialization
     private boolean allMustInitialize = false;
-    
+
     private QueryLogicTransformer transformer;
     private Priority p = Priority.NORMAL;
     private volatile boolean interrupted = false;
@@ -169,9 +169,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     private volatile CountDownLatch completionLatch = null;
     private Map<String,QueryLogicHolder> logicState = new HashMap<>();
     private volatile CompositeQueryLogicResults results = null;
-    
+
     public CompositeQueryLogic() {}
-    
+
     public CompositeQueryLogic(CompositeQueryLogic other) {
         super(other);
         if (other.queryLogics != null) {
@@ -188,10 +188,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         this.allMustInitialize = other.allMustInitialize;
     }
-    
+
     public Set<Authorizations> updateRuntimeAuthorizationsAndQueryAuths(QueryLogic<?> logic, Query settings) throws AuthorizationException {
         Set<String> requestedAuths = new HashSet<>(AuthorizationsUtil.splitAuths(settings.getQueryAuthorizations()));
-        
+
         // determine the valid authorizations for this call to be the user's auths for this logic
         ProxiedUserDetails currentUser = logic.getCurrentUser();
         ProxiedUserDetails queryUser = currentUser;
@@ -202,20 +202,20 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         if (logic.getUserOperations() != null) {
             queryUser = logic.getUserOperations().getRemoteUser(queryUser);
         }
-        
+
         // get the valid auths from the query user
         Collection<String> validAuths = queryUser.getPrimaryUser().getAuths();
         Set<String> validRequestedAuths = new HashSet<>(requestedAuths);
         validRequestedAuths.retainAll(validAuths);
         String validQueryAuthorizations = Joiner.on(',').join(validRequestedAuths);
-        
+
         // Update the set of requested auths
         settings.setQueryAuthorizations(validQueryAuthorizations);
-        
+
         // recalculate the runtime query authorizations (no need to pass in userService as we have already recalculated the principal)
         return AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, currentUser, queryUser);
     }
-    
+
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
         StringBuilder logicQueryStringBuilder = new StringBuilder("CompositeQueryLogic: ");
@@ -231,10 +231,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 try {
                     // duplicate the settings for this query
                     Query settingsCopy = settings.duplicate(settings.getQueryName() + " -> " + logicName);
-                    
+
                     // update the query auths and runtime query authorizations for this logic
                     runtimeQueryAuthorizations = updateRuntimeAuthorizationsAndQueryAuths(logic, settingsCopy);
-                    
+
                     config = logic.initialize(client, settings, runtimeQueryAuthorizations);
                     configs.put(entry.getKey(), config);
                     if (logicQueryStringBuilder.length() > 0) {
@@ -254,19 +254,19 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 }
             }
         }
-        
+
         if (!exceptions.isEmpty()) {
             if (logicState.isEmpty()) {
                 // all logics have failed to initialize, rethrow the last exception caught
                 throw new CompositeLogicException("All logics have failed to initialize", exceptions);
             }
-            
+
             // if all must initialize successfully, then pass up an exception
             if (allMustInitialize) {
                 throw new CompositeLogicException("Failed to initialize all composite child logics", exceptions);
             }
         }
-        
+
         startLatch = new CountDownLatch(logicState.size());
         completionLatch = new CountDownLatch(logicState.size());
         this.results = new CompositeQueryLogicResults(Math.min(settings.getPagesize() * 2, 1000), completionLatch);
@@ -276,31 +276,31 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                 log.debug("\tLogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getLogic().getTableName());
             }
         }
-        
+
         return new CompositeQueryConfiguration(logicQueryStringBuilder.toString(), configs);
     }
-    
+
     @Override
     public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
-        
+
         StringBuilder plans = new StringBuilder();
         int count = 1;
         String separator = Integer.toString(count++) + ": ";
         for (Map.Entry<String,QueryLogic<?>> entry : queryLogics.entrySet()) {
             // duplicate the settings for this query
             Query settingsCopy = settings.duplicate(settings.getQueryName() + " -> " + entry.getKey());
-            
+
             // update the query auths and runtime query authorizations for this logic
             runtimeQueryAuthorizations = updateRuntimeAuthorizationsAndQueryAuths(entry.getValue(), settingsCopy);
-            
+
             plans.append(separator);
             plans.append(entry.getValue().getPlan(client, settingsCopy, runtimeQueryAuthorizations, expandFields, expandValues));
             separator = "\n" + Integer.toString(count++) + ": ";
         }
         return plans.toString();
     }
-    
+
     @Override
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
         for (QueryLogicHolder holder : logicState.values()) {
@@ -315,16 +315,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         startLatch.await();
         log.trace("All threads have started.");
     }
-    
+
     @Override
     public Priority getConnectionPriority() {
         return p;
     }
-    
+
     public void setConnectionPriority(String priority) {
         p = Priority.valueOf(priority);
     }
-    
+
     /**
      * Method used to check that the configuration is correct and to get the response class by QueryExecutorBean.listQueryLogic()
      */
@@ -350,12 +350,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         this.transformer = new CompositeQueryLogicTransformer(delegates);
         return this.transformer;
     }
-    
+
     @Override
     public Iterator<Object> iterator() {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         if (isCheckpointable()) {
@@ -366,12 +366,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             return new TransformIterator(results.iterator(), NOPTransformer.nopTransformer());
         }
     }
-    
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new CompositeQueryLogic(this);
     }
-    
+
     @Override
     public void close() {
         this.interrupted = true;
@@ -391,15 +391,15 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         if (null != results)
             results.clear();
     }
-    
+
     public Map<String,QueryLogic<?>> getQueryLogics() {
         return queryLogics;
     }
-    
+
     public void setQueryLogics(Map<String,QueryLogic<?>> queryLogics) {
         this.queryLogics = queryLogics;
     }
-    
+
     public UserOperations getUserOperations() {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying
@@ -419,7 +419,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return null;
     }
-    
+
     @Override
     public boolean canRunQuery(Collection<String> userRoles) {
         if (this.queryLogics == null) {
@@ -435,7 +435,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return (!this.queryLogics.isEmpty());
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> params = new TreeSet<>();
@@ -447,7 +447,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return params;
     }
-    
+
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> params = new TreeSet<>();
@@ -458,7 +458,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return params;
     }
-    
+
     @Override
     public Set<String> getExampleQueries() {
         Set<String> params = new TreeSet<>();
@@ -472,7 +472,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return params.isEmpty() ? null : params;
     }
-    
+
     @Override
     public boolean isCheckpointable() {
         boolean checkpointable = true;
@@ -484,7 +484,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return checkpointable;
     }
-    
+
     @Override
     public void setCheckpointable(boolean checkpointable) {
         for (QueryLogic<?> queryLogic : queryLogics.values()) {
@@ -495,13 +495,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             }
         }
     }
-    
+
     @Override
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
         if (!isCheckpointable()) {
             throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
         }
-        
+
         List<QueryCheckpoint> checkpoints = new ArrayList<>();
         for (Map.Entry<String,QueryLogic<?>> logic : queryLogics.entrySet()) {
             for (QueryCheckpoint checkpoint : ((CheckpointableQueryLogic) logic.getValue()).checkpoint(queryKey)) {
@@ -510,48 +510,48 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return checkpoints;
     }
-    
+
     @Override
     public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
         if (!isCheckpointable() || !(checkpoint instanceof CompositeQueryCheckpoint)) {
             throw new UnsupportedOperationException("Cannot update a non-composite query checkpoint with the composite query logic.");
         }
-        
+
         CompositeQueryCheckpoint compositeCheckpoint = (CompositeQueryCheckpoint) checkpoint;
-        
+
         CheckpointableQueryLogic logic = (CheckpointableQueryLogic) queryLogics.get(compositeCheckpoint.getDelegateQueryLogic());
         if (logic == null) {
             throw new UnsupportedOperationException(
                             "Cannot update query checkpoint because delegate query logic [" + compositeCheckpoint.getDelegateQueryLogic() + "]does not exist");
         }
-        
+
         return logic.updateCheckpoint(checkpoint);
     }
-    
+
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
         if (!isCheckpointable() || !(checkpoint instanceof CompositeQueryCheckpoint) || !(config instanceof CompositeQueryConfiguration)) {
             throw new UnsupportedOperationException("Cannot setup a non-composite query checkpoint with the composite query logic.");
         }
-        
+
         CompositeQueryCheckpoint compositeCheckpoint = (CompositeQueryCheckpoint) checkpoint;
-        
+
         CheckpointableQueryLogic logic = (CheckpointableQueryLogic) queryLogics.get(compositeCheckpoint.getDelegateQueryLogic());
         if (logic == null) {
             throw new UnsupportedOperationException(
                             "Cannot update query checkpoint because delegate query logic [" + compositeCheckpoint.getDelegateQueryLogic() + "]does not exist");
         }
-        
+
         // we are setting up a checkpoint, with a single query data, against a single query logic, so just keep the one we need
         queryLogics.clear();
         queryLogics.put(compositeCheckpoint.getDelegateQueryLogic(), (BaseQueryLogic<?>) logic);
-        
+
         CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) config;
         GenericQueryConfiguration delegateConfig = compositeConfig.getConfigs().get(compositeCheckpoint.getDelegateQueryLogic());
-        
+
         logic.setupQuery(client, delegateConfig, checkpoint);
     }
-    
+
     /**
      * The selector extractor is dependent on the children. Return the first non-null instance.
      *
@@ -569,7 +569,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
         return null;
     }
-    
+
     /**
      * Setting the current user is called after the logic is created. Pass this on to the children.
      *
@@ -584,7 +584,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             }
         }
     }
-    
+
     /**
      * /** Setting the server user is called after the logic is created. Pass this on to the children.
      *
@@ -599,7 +599,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             }
         }
     }
-    
+
     /**
      * Setting the page processing start time is called after the logic is created. Pass this on to the children.
      *
@@ -615,11 +615,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             }
         }
     }
-    
+
     public boolean isAllMustInitialize() {
         return allMustInitialize;
     }
-    
+
     public void setAllMustInitialize(boolean allMustInitialize) {
         this.allMustInitialize = allMustInitialize;
     }

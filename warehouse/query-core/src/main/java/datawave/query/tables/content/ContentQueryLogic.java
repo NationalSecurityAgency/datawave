@@ -43,35 +43,35 @@ import java.util.TreeSet;
  * table. We will decompress the data so that it is base64 encoded binary data in the QueryResults object.
  * <p>
  * The query that needs to be passed to the web service is:
- * 
+ *
  * <pre>
  *     DOCUMENT:shardId/datatype/uid [DOCUMENT:shardId/datatype/uid]*
  * </pre>
- * 
+ *
  * The optional parameter content.view.name can be used to retrieve an alternate view of the document, assuming one is stored with that name. The optional
  * parameter content.view.all can be used to retrieve all documents for the parent and children Both optional parameters can be used together
  */
 public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
-    
+
     private static final Logger log = Logger.getLogger(ContentQueryLogic.class);
-    
+
     private static final String PARENT_ONLY = "\1";
     private static final String ALL = "\u10FFFF";
-    
+
     private int queryThreads = 100;
     private ScannerFactory scannerFactory;
     private String viewName = null;
-    
+
     private ContentQueryConfiguration config;
-    
+
     public ContentQueryLogic() {
         super();
     }
-    
+
     public ContentQueryLogic(final ContentQueryLogic contentQueryLogic) {
         super(contentQueryLogic);
     }
-    
+
     /**
      * This method calls the base logic's close method, and then attempts to close all batch scanners tracked by the scanner factory, if it is not null.
      */
@@ -92,7 +92,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                 log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
         }
     }
-    
+
     @Override
     public GenericQueryConfiguration initialize(final AccumuloClient client, final Query settings, final Set<Authorizations> auths) throws Exception {
         // Initialize the config and scanner factory
@@ -100,13 +100,13 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         this.scannerFactory = new ScannerFactory(client);
         config.setClient(client);
         config.setAuthorizations(auths);
-        
+
         // Re-assign the view name if specified via params
         Parameter p = settings.findParameter(QueryParameters.CONTENT_VIEW_NAME);
         if (null != p && !StringUtils.isEmpty(p.getParameterValue())) {
             this.viewName = p.getParameterValue();
         }
-        
+
         // Decide whether or not to include the content of child events
         String end;
         p = settings.findParameter(QueryParameters.CONTENT_VIEW_ALL);
@@ -115,61 +115,61 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         } else {
             end = PARENT_ONLY;
         }
-        
+
         // Configure ranges
         final Collection<Range> ranges = this.createRanges(settings, end);
         config.setRanges(ranges);
-        
+
         return config;
     }
-    
+
     public void setQueryThreads(int queryThreads) {
         this.queryThreads = queryThreads;
     }
-    
+
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {
         if (!genericConfig.getClass().getName().equals(ContentQueryConfiguration.class.getName())) {
             throw new QueryException("Did not receive a ContentQueryConfiguration instance!!");
         }
-        
+
         final ContentQueryConfiguration config = (ContentQueryConfiguration) genericConfig;
-        
+
         try {
             final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
                             config.getQuery());
             scanner.setRanges(config.getRanges());
-            
+
             if (null != this.viewName) {
                 final IteratorSetting cfg = new IteratorSetting(50, RegExFilter.class);
                 cfg.addOption(RegExFilter.COLQ_REGEX, this.viewName);
                 scanner.addScanIterator(cfg);
             }
-            
+
             this.iterator = scanner.iterator();
             this.scanner = scanner;
-            
+
         } catch (TableNotFoundException e) {
             throw new RuntimeException("Table not found: " + this.getTableName(), e);
         }
     }
-    
+
     /*
      * Create an ordered collection of Ranges for scanning
-     * 
+     *
      * @param settings the query
-     * 
+     *
      * @param endKeyTerminator a string appended to each Range's end key indicating whether or not to include child content
-     * 
+     *
      * @return one or more Ranges
      */
     private Collection<Range> createRanges(final Query settings, final String endKeyTerminator) {
         // Initialize the returned collection of ordered ranges
         final Set<Range> ranges = new TreeSet<>();
-        
+
         // Get the query
         final String query = settings.getQuery().trim();
-        
+
         int termIndex = 0;
         while (termIndex < query.length()) {
             // Get the next term
@@ -182,7 +182,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                 term = query.substring(termIndex, query.length()).trim();
                 termIndex = query.length();
             }
-            
+
             // Ignore empty terms
             if (!term.isEmpty()) {
                 // Get the next value
@@ -193,7 +193,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                 } else {
                     value = term;
                 }
-                
+
                 // Validate the value
                 final String[] parts = value.split("/");
                 if (parts.length != 3) {
@@ -206,9 +206,9 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                     final String shardId = parts[0];
                     final String datatype = parts[1];
                     final String uid = parts[2];
-                    
+
                     log.debug("Received pieces: " + shardId + ", " + datatype + ", " + uid);
-                    
+
                     // Create and add a Range
                     final String cf = ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY;
                     final String cq = datatype + Constants.NULL_BYTE_STRING + uid;
@@ -216,39 +216,39 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
                     final Key endKey = new Key(shardId, cf, cq + endKeyTerminator);
                     final Range r = new Range(startKey, true, endKey, false);
                     ranges.add(r);
-                    
+
                     log.debug("Adding range: " + r);
                 }
             }
         }
-        
+
         if (ranges.isEmpty()) {
             throw new IllegalArgumentException("Query does not specify all needed parts: " + settings.getQuery()
                             + ". At least one term required of the form 'DOCUMENT:shardId/datatype/eventUID'.");
         }
-        
+
         return ranges;
     }
-    
+
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.NORMAL;
     }
-    
+
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         return new ContentQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
     }
-    
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new ContentQueryLogic(this);
     }
-    
+
     public int getQueryThreads() {
         return this.queryThreads;
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> params = new TreeSet<>();
@@ -256,42 +256,42 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
         params.add(QueryParameters.CONTENT_VIEW_ALL);
         return params;
     }
-    
+
     @Override
     public Set<String> getRequiredQueryParameters() {
         return Collections.emptySet();
     }
-    
+
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
     }
-    
+
     @Override
     public ContentQueryConfiguration getConfig() {
         if (this.config == null) {
             this.config = ContentQueryConfiguration.create();
         }
-        
+
         return this.config;
     }
-    
+
     @Override
     public boolean isCheckpointable() {
         return getConfig().isCheckpointable();
     }
-    
+
     @Override
     public void setCheckpointable(boolean checkpointable) {
         getConfig().setCheckpointable(checkpointable);
     }
-    
+
     @Override
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
         if (!isCheckpointable()) {
             throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
         }
-        
+
         // if we have started returning results, then capture the state of the query data objects
         if (this.iterator != null) {
             List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
@@ -305,22 +305,22 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             return Lists.newArrayList(new QueryCheckpoint(queryKey));
         }
     }
-    
+
     @Override
     public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
         // for the content query logic, the query data objects automatically get updated with
         // the last result returned, so the checkpoint should already be updated!
         return checkpoint;
     }
-    
+
     @Override
     public void setupQuery(AccumuloClient client, GenericQueryConfiguration config, QueryCheckpoint checkpoint) throws Exception {
         ContentQueryConfiguration contentQueryConfig = (ContentQueryConfiguration) config;
         contentQueryConfig.setRanges(((ContentQueryCheckpoint) checkpoint).getRanges());
         contentQueryConfig.setClient(client);
-        
+
         scannerFactory = new ScannerFactory(client);
-        
+
         setupQuery(contentQueryConfig);
     }
 }

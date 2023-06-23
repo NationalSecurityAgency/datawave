@@ -24,7 +24,7 @@ public class TextUtilTest {
         System.arraycopy(textBytes, 1 + prefixLength, restOfText, 0, restOfText.length);
         Assert.assertArrayEquals("Contents were wrong", stringBytes, restOfText);
     }
-    
+
     @Test
     public void testAppend_long() throws IOException {
         String prefix = "prefix\u6C34";
@@ -40,7 +40,7 @@ public class TextUtilTest {
         Assert.assertArrayEquals("Contents were wrong",
                         new byte[] {(byte) 0x01, (byte) 0x23, (byte) 0x45, (byte) 0x67, (byte) 0x89, (byte) 0xAB, (byte) 0xCD, (byte) 0xEF}, restOfText);
     }
-    
+
     @Test
     public void testAppendNullByte() {
         Text text = new Text(new byte[] {1, 2, 3});
@@ -48,7 +48,7 @@ public class TextUtilTest {
         Assert.assertEquals(4, text.getLength());
         Assert.assertEquals(0, text.getBytes()[3]);
     }
-    
+
     @Test
     public void testToUtf8() throws UnsupportedEncodingException {
         String multiByteCharString = "\u007A\u6C34\uD834\uDD1E";

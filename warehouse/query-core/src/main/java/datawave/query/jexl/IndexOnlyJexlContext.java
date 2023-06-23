@@ -20,7 +20,7 @@ import com.google.common.base.Objects;
 
 /**
  * A map context tied into an iterator for fetching and performing functions on index-only fields
- * 
+ *
  * @param <T>
  *            The type of input
  */
@@ -29,10 +29,10 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
     private final IndexOnlyFunctionIterator<T> iterator;
     private final Map<String,WeakReference<Collection<?>>> lazyFetchingIndexOnlySets;
     private final MapContext parent;
-    
+
     /**
      * Constructor
-     * 
+     *
      * @param context
      *            A non-null MapContext, presumably an instance of {@link DatawaveJexlContext}
      * @param iterator
@@ -43,7 +43,7 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
         checkNotNull(iterator, this.getClass().getSimpleName() + " cannot be initialized with a null " + IndexOnlyFunctionIterator.class.getSimpleName());
         this.parent = context;
         this.iterator = iterator;
-        
+
         // Create a collection of index-only field names for quick lookup
         final Collection<String> fields = this.iterator.getIndexOnlyFields();
         if (null != fields) {
@@ -51,17 +51,17 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
         } else {
             this.indexOnlyFields = Collections.emptySet();
         }
-        
+
         // Create a weak hashmap to allow garbage collection in case of abnormally large sets of index-only records, yet prevent duplicate
         // fetching if the values can be held in memory.
         this.lazyFetchingIndexOnlySets = Collections.synchronizedMap(new WeakHashMap<>());
     }
-    
+
     @Override
     public Object get(final String name) {
         // Get the value from the parent context, if defined.
         final Object value;
-        
+
         // Otherwise, consider using index-only value(s) fetched from the fi section of the shard
         // table, if applicable
         if ((null != name) && (name.endsWith(INDEX_ONLY_FUNCTION_SUFFIX))) {
@@ -76,10 +76,10 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
         else {
             value = this.parent.get(name);
         }
-        
+
         return value;
     }
-    
+
     @Override
     public boolean has(final String name) {
         boolean hasField = this.parent.has(name);
@@ -92,33 +92,33 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
                 }
             }
         }
-        
+
         return hasField;
     }
-    
+
     /**
      * Returns a collection of index-only field names
-     * 
+     *
      * @return a collection of index-only field names
      */
     public Collection<String> getIndexOnlyFields() {
         return Collections.unmodifiableSet(this.indexOnlyFields);
     }
-    
+
     /**
      * Returns the iterator the context will use to fetch index-only records
-     * 
+     *
      * @return the iterator the context will use to fetch index-only records
      */
     public IndexOnlyFunctionIterator<T> getIterator() {
         return this.iterator;
     }
-    
+
     /*
      * Lookup or generate a JEXL context based on an index-only field name
-     * 
+     *
      * @param name A presumably index-only field name
-     * 
+     *
      * @return An in-memory or newly generated context
      */
     private Collection<?> getLazyFetchingSet(final String name) {
@@ -132,7 +132,7 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
             } else {
                 values = null;
             }
-            
+
             // Use the set obtained from memory, or create a new one. Fetching won't occur until the
             // set is used, such as asking for its size, iterator, etc.
             if (null != values) {
@@ -144,15 +144,15 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
         } else {
             lazyFetchingSet = null;
         }
-        
+
         return lazyFetchingSet;
     }
-    
+
     @Override
     public void set(final String name, Object value) {
         this.parent.set(name, value);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof IndexOnlyJexlContext)) {
@@ -161,7 +161,7 @@ public class IndexOnlyJexlContext<T> extends DatawaveJexlContext {
         IndexOnlyJexlContext other = (IndexOnlyJexlContext) o;
         return super.equals(other) && Objects.equal(indexOnlyFields, other.indexOnlyFields) && Objects.equal(parent, other.parent);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hashCode(super.hashCode(), indexOnlyFields, parent);

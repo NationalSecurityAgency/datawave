@@ -50,9 +50,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * plan that corresponds with those queries
  */
 public class PushdownScheduler extends Scheduler {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushdownScheduler.class);
-    
+
     /**
      * Configuration reference.
      */
@@ -69,22 +69,22 @@ public class PushdownScheduler extends Scheduler {
      * BatchScannerSession reference, so that we can close upon completion or error
      */
     protected BatchScannerSession session = null;
-    
+
     protected Iterator<Entry<Key,Value>> currentIterator = null;
-    
+
     protected List<Function<IteratorSetting,IteratorSetting>> customizedFunctionList;
-    
+
     /**
      * Local instance of the table ID
      */
     protected TableId tableId;
-    
+
     protected MetadataHelper metadataHelper;
-    
+
     public PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelperFactory metaFactory) {
         this(config, scannerFactory, metaFactory.createMetadataHelper(config.getClient(), config.getMetadataTableName(), config.getAuthorizations()));
     }
-    
+
     protected PushdownScheduler(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper) {
         this.config = config;
         this.metadataHelper = helper;
@@ -92,11 +92,11 @@ public class PushdownScheduler extends Scheduler {
         customizedFunctionList = Lists.newArrayList();
         Preconditions.checkNotNull(config.getClient());
     }
-    
+
     public void addSetting(IteratorSetting customSetting) {
         settings.add(customSetting);
     }
-    
+
     @Override
     public List<QueryCheckpoint> checkpoint(QueryKey queryKey) {
         // if we were not actually started, then simple return the query data checkpoints
@@ -113,10 +113,10 @@ public class PushdownScheduler extends Scheduler {
             return checkpoints;
         }
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Iterable#iterator()
      */
     @Override
@@ -124,16 +124,16 @@ public class PushdownScheduler extends Scheduler {
         if (null == this.config) {
             throw new IllegalArgumentException("Null configuration provided");
         }
-        
+
         try {
-            
+
             return concatIterators();
         } catch (AccumuloException | ParseException | TableNotFoundException | AccumuloSecurityException e) {
             throw new RuntimeException(e);
         }
-        
+
     }
-    
+
     /**
      * @return
      * @throws ParseException
@@ -144,11 +144,11 @@ public class PushdownScheduler extends Scheduler {
     protected Iterator<Result> concatIterators() throws AccumuloException, AccumuloSecurityException, TableNotFoundException, ParseException {
         boolean hasNext = config.getQueriesIter().hasNext();
         String tableName = config.getShardTableName();
-        
+
         Set<Authorizations> auths = config.getAuthorizations();
-        
+
         TabletLocator tl;
-        
+
         AccumuloClient client = config.getClient();
         if (client instanceof InMemoryAccumuloClient) {
             tl = new InMemoryTabletLocator();
@@ -159,38 +159,38 @@ public class PushdownScheduler extends Scheduler {
             tl = TabletLocator.getLocator(ctx, tableId);
         }
         Iterator<List<ScannerChunk>> chunkIter = Iterators.transform(getQueryDataIterator(), new PushdownFunction(tl, config, settings, tableId));
-        
+
         try {
             session = scannerFactory.newQueryScanner(tableName, auths, config.getQuery()).setConfig(config);
-            
+
             if (config.getBypassAccumulo()) {
                 session.setDelegatedInitializer(RfileResource.class);
             }
-            
+
             if (config.getSpeculativeScanning()) {
                 session.setSpeculativeScanning(true);
             }
-            
+
             session.addVisitor(new VisitorFunction(config, metadataHelper));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        
+
         session.setScanLimit(config.getMaxDocScanTimeout());
-        
+
         if (config.getBackoffEnabled()) {
             session.setBackoffEnabled(true);
         }
-        
+
         session.setChunkIter(chunkIter);
-        
+
         session.setTabletLocator(tl);
-        
+
         session.updateIdentifier(config.getQuery().getId().toString());
-        
+
         return session;
     }
-    
+
     protected Iterator<QueryData> getQueryDataIterator() {
         if (config.isCheckpointable()) {
             return new SingleRangeQueryDataIterator(config.getQueriesIter());
@@ -198,38 +198,38 @@ public class PushdownScheduler extends Scheduler {
             return config.getQueriesIter();
         }
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.io.Closeable#close()
      */
     @Override
     public void close() {
         if (session != null)
             scannerFactory.close(session);
-        
+
         log.debug("Ran " + count.get() + " queries for a single user query");
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see Scheduler#createBatchScanner(ShardQueryConfiguration, datawave.query.tables.ScannerFactory, datawave.webservice.query.configuration.QueryData)
      */
     @Override
     public BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException {
         return ShardQueryLogic.createBatchScanner(config, scannerFactory, qd);
     }
-    
+
     @Override
     public ScanSessionStats getSchedulerStats() {
-        
+
         ScanSessionStats stats = null;
         if (null != session) {
             stats = session.getStatistics();
         }
         return stats;
     }
-    
+
 }

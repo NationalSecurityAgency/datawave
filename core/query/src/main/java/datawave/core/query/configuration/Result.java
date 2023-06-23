@@ -17,36 +17,36 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
     private final T context;
     private final Key key;
     private Value value;
-    
+
     public Result(Key k, Value v) {
         this(null, k, v);
     }
-    
+
     public Result(T context, Key k, Value v) {
         this.context = context;
         this.key = k;
         this.value = v;
     }
-    
+
     public T getContext() {
         return context;
     }
-    
+
     @Override
     public Key getKey() {
         return key;
     }
-    
+
     @Override
     public Value getValue() {
         return value;
     }
-    
+
     @Override
     public Value setValue(Value value) {
         throw new UnsupportedOperationException("This value is immutable");
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof Result) {
@@ -55,12 +55,12 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(context).append(key).append(value).toHashCode();
     }
-    
+
     public Map.Entry<Key,Value> returnKeyValue() {
         Map.Entry<Key,Value> entry = (key == null ? null : Maps.immutableEntry(key, value));
         if (context != null) {
@@ -68,7 +68,7 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
         }
         return entry;
     }
-    
+
     public static Iterator<Map.Entry<Key,Value>> keyValueIterator(Iterator<Result> it) {
         return Iterators.filter(Iterators.transform(it, new Function<Result,Map.Entry<Key,Value>>() {
             @Override
@@ -85,7 +85,7 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
             }
         });
     }
-    
+
     public static Iterator<Result> resultIterator(final ResultContext context, Iterator<Map.Entry<Key,Value>> it) {
         return Iterators.filter(Iterators.transform(it, new Function<Map.Entry<Key,Value>,Result>() {
             @Nullable
@@ -97,7 +97,7 @@ public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
                 return new Result(context, keyValueEntry.getKey(), keyValueEntry.getValue());
             }
         }), new Predicate<Result>() {
-            
+
             @Override
             public boolean apply(@Nullable Result result) {
                 return result != null;

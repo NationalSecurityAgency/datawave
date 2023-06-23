@@ -18,7 +18,7 @@ public interface AuditParameterBuilder {
      * @return validated parameters
      */
     Map<String,String> convertAndValidate(MultiValueMap<String,String> queryParameters);
-    
+
     /**
      * Builds validated audit parameters for a direct call to the audit service. That is, the parameters passed in are expected to be those used by the audit
      * service.

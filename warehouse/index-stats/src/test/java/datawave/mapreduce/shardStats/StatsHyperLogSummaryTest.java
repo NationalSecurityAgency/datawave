@@ -17,21 +17,21 @@ import java.util.Set;
 
 public class StatsHyperLogSummaryTest {
     private static final Logger log = Logger.getLogger(StatsHyperLogSummaryTest.class);
-    
+
     private static final int MAX_UNIQUE_VALUES = 60;
     private static final int MIN_UNIQUE_VALUES = 20;
     private static final int MAX_DUP_VALUES = 30;
     private static final int MIN_DUP_VALUES = 15;
-    
+
     private static final Random rVal = new Random(System.currentTimeMillis());
-    
+
     static {
         Logger.getLogger(StatsHyperLogSummary.class).setLevel(Level.DEBUG);
         Logger.getLogger(StatsHyperLogSummaryTest.class).setLevel(Level.DEBUG);
     }
-    
+
     private int uniqueCount;
-    
+
     @Test
     public void testSerialize() throws IOException {
         for (int n = 0; n < 10; n++) {
@@ -40,17 +40,17 @@ public class StatsHyperLogSummaryTest {
             byte[] bytes = before.toByteArray();
             Value value = new Value(bytes);
             final StatsHyperLogSummary after = new StatsHyperLogSummary(value);
-            
+
             log.debug("before(" + before + ")");
             log.debug("after(" + after + ")");
-            
+
             Assert.assertEquals(before, after);
             Assert.assertEquals(0, before.compareTo(after));
             Assert.assertEquals(before.getCount(), after.getCount());
-            
+
             HyperLogLogPlus logPlusBefore = before.getHyperLogPlus();
             HyperLogLogPlus logPlusAfter = after.getHyperLogPlus();
-            
+
             Assert.assertEquals(logPlusBefore.cardinality(), logPlusAfter.cardinality());
             // may not be true for large sample set but for small sample it is correct
             Assert.assertEquals(this.uniqueCount, logPlusAfter.cardinality());
@@ -58,7 +58,7 @@ public class StatsHyperLogSummaryTest {
             Assert.assertEquals(this.uniqueCount, before.getUniqueCount());
         }
     }
-    
+
     /**
      * Randomly populates a {@link HyperLogLogPlus} object.
      */
@@ -74,9 +74,9 @@ public class StatsHyperLogSummaryTest {
                 n++;
             }
         }
-        
+
         log.debug("unique strings added to hyper log(" + this.uniqueCount + ")");
-        
+
         // add duplicates
         List<String> values = new ArrayList<>(unique);
         int dups = rVal.nextInt(MAX_DUP_VALUES - MIN_DUP_VALUES) + MIN_DUP_VALUES;
@@ -84,7 +84,7 @@ public class StatsHyperLogSummaryTest {
             int idx = rVal.nextInt(values.size());
             logPlus.offer(values.get(idx));
         }
-        
+
         return logPlus;
     }
 }

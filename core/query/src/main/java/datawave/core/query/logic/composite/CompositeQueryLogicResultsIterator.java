@@ -10,20 +10,20 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
-    
+
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicResultsIterator.class);
-    
+
     private final ArrayBlockingQueue<Object> results;
     private Object nextEntry = null;
     private final Object lock = new Object();
     private final CountDownLatch completionLatch;
     private volatile Throwable failure = null;
-    
+
     public CompositeQueryLogicResultsIterator(ArrayBlockingQueue<Object> results, CountDownLatch completionLatch) {
         this.results = results;
         this.completionLatch = completionLatch;
     }
-    
+
     @Override
     public boolean hasNext() {
         synchronized (lock) {
@@ -45,11 +45,11 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
             }
         }
     }
-    
+
     @Override
     public Object next() {
         Object current = null;
-        
+
         synchronized (lock) {
             if (failure != null) {
                 Throwables.propagate(failure);
@@ -61,12 +61,12 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
         }
         return current;
     }
-    
+
     @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         // keep the first one

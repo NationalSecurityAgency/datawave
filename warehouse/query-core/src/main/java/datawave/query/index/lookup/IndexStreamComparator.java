@@ -8,12 +8,12 @@ import java.util.Comparator;
  * IndexStreams are ordered first by stream context, then by implementing subclass
  */
 public class IndexStreamComparator implements Comparator<IndexStream> {
-    
+
     @Override
     public int compare(IndexStream left, IndexStream right) {
         int leftId = id(left);
         int rightId = id(right);
-        
+
         int result = Integer.compare(leftId, rightId);
         if (result == 0) {
             // a TreeMultimap is an implementation of a SortedKeySortedSetMultimap
@@ -24,7 +24,7 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
             return result;
         }
     }
-    
+
     /**
      * Map an IndexStream's class to an integer id
      *
@@ -35,7 +35,7 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
     private int id(IndexStream stream) {
         return getContextId(stream) + getClassId(stream);
     }
-    
+
     /**
      * Secondary sort by class
      *
@@ -54,7 +54,7 @@ public class IndexStreamComparator implements Comparator<IndexStream> {
             return 4;
         }
     }
-    
+
     /**
      * Primary sort by IndexStream context
      *

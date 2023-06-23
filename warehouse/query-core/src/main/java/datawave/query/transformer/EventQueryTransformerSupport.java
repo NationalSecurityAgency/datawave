@@ -34,27 +34,27 @@ import java.util.Set;
 import java.util.TreeSet;
 
 public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic {
-    
+
     protected EventFields eventFields = new EventFields();
-    
+
     protected Kryo kryo = new Kryo();
-    
+
     protected Query settings = null;
-    
+
     protected BaseQueryLogic<Entry<Key,Value>> logic = null;
-    
+
     protected Authorizations auths = null;
-    
+
     protected EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer = null;
-    
+
     protected List<String> contentFieldNames = Collections.emptyList();
-    
+
     protected static final Logger log = Logger.getLogger(EventQueryTransformerSupport.class);
-    
+
     protected QueryModel qm;
     protected String tableName;
     protected ResponseObjectFactory responseObjectFactory;
-    
+
     public EventQueryTransformerSupport(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.settings = settings;
@@ -62,26 +62,26 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         this.tableName = tableName;
         this.responseObjectFactory = responseObjectFactory;
     }
-    
+
     public EventQueryTransformerSupport(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory) {
         this(logic.getTableName(), settings, markingFunctions, responseObjectFactory);
         this.logic = logic;
         this.responseObjectFactory = responseObjectFactory;
     }
-    
+
     protected ResponseObjectFactory getResponseObjectFactory() {
         return this.responseObjectFactory;
     }
-    
+
     protected Authorizations getAuths() {
         return this.auths;
     }
-    
+
     @Override
     public CacheableQueryRow writeToCache(Object o) throws QueryException {
         EventBase<?,?> event = (EventBase<?,?>) o;
-        
+
         CacheableQueryRow cqo = this.responseObjectFactory.getCacheableQueryRow();
         cqo.setMarkingFunctions(this.markingFunctions);
         Metadata metadata = event.getMetadata();
@@ -89,31 +89,31 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         cqo.setDataType(metadata.getDataType());
         cqo.setEventId(metadata.getInternalId());
         cqo.setRow(metadata.getRow());
-        
+
         List<? extends FieldBase<?>> fields = event.getFields();
         for (FieldBase<?> f : fields) {
             cqo.addColumn(f.getName(), f.getTypedValue(), f.getMarkings(), f.getColumnVisibility(), f.getTimestamp());
         }
         return cqo;
     }
-    
+
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
         Map<String,String> markings = cacheableQueryRow.getMarkings();
         String dataType = cacheableQueryRow.getDataType();
         String internalId = cacheableQueryRow.getEventId();
         String row = cacheableQueryRow.getRow();
-        
+
         EventBase event = this.responseObjectFactory.getEvent();
         event.setMarkings(markings);
-        
+
         Metadata metadata = new Metadata();
         metadata.setDataType(dataType);
         metadata.setInternalId(internalId);
         metadata.setRow(row);
         metadata.setTable(logic.getTableName());
         event.setMetadata(metadata);
-        
+
         List<FieldBase<?>> fieldList = new ArrayList<>();
         Map<String,String> columnValueMap = cacheableQueryRow.getColumnValues();
         for (Entry<String,String> entry : columnValueMap.entrySet()) {
@@ -128,7 +128,7 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         event.setFields(fieldList);
         return event;
     }
-    
+
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         EventQueryResponseBase response = this.responseObjectFactory.getEventQueryResponse();
@@ -140,14 +140,14 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
                 fieldSet.add(f.getName());
             }
             eventList.add(e);
-            
+
         }
         response.setFields(Lists.newArrayList(fieldSet));
         response.setEvents(eventList);
         response.setReturnedEvents((long) eventList.size());
         return response;
     }
-    
+
     protected FieldBase<?> makeField(String name, Map<String,String> markings, String columnVisibility, Long timestamp, Object value) {
         FieldBase<?> field = this.responseObjectFactory.getField();
         field.setName(name);
@@ -157,20 +157,20 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
         field.setValue(value);
         return field;
     }
-    
+
     protected FieldBase<?> makeField(String name, Map<String,String> markings, ColumnVisibility columnVisibility, Long timestamp, Object value) {
         FieldBase<?> field = makeField(name, markings, (String) null, timestamp, value);
         field.setColumnVisibility(columnVisibility);
         return field;
     }
-    
+
     public EventQueryDataDecoratorTransformer getEventQueryDataDecoratorTransformer() {
         return eventQueryDataDecoratorTransformer;
     }
-    
+
     public void setEventQueryDataDecoratorTransformer(EventQueryDataDecoratorTransformer eventQueryDataDecoratorTransformer) {
         this.eventQueryDataDecoratorTransformer = eventQueryDataDecoratorTransformer;
-        
+
         Set<Parameter> parameters = this.settings.getParameters();
         if (eventQueryDataDecoratorTransformer != null && parameters != null) {
             List<String> requestedDecorators = new ArrayList<>();
@@ -197,21 +197,21 @@ public abstract class EventQueryTransformerSupport<I,O> extends BaseQueryLogicTr
             }
         }
     }
-    
+
     public List<String> getContentFieldNames() {
         return contentFieldNames;
     }
-    
+
     public void setContentFieldNames(List<String> contentFieldNames) {
         this.contentFieldNames = contentFieldNames;
     }
-    
+
     public QueryModel getQm() {
         return qm;
     }
-    
+
     public void setQm(QueryModel qm) {
         this.qm = qm;
     }
-    
+
 }

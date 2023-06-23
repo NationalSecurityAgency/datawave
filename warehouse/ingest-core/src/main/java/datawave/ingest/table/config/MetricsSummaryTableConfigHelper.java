@@ -13,32 +13,32 @@ import org.apache.log4j.Logger;
 
 public class MetricsSummaryTableConfigHelper extends AbstractTableConfigHelper {
     protected Logger mLog;
-    
+
     protected Configuration mConf;
     protected String mTableName;
-    
+
     public static final String ENABLE_BLOOM_FILTERS = MetricsSummaryDataTypeHandler.METRICS_SUMMARY_PROP_PREFIX + "summary.enable.bloom.filters";
     protected boolean mEnableBloomFilters = false;
-    
+
     @Override
     public void setup(String tableName, Configuration config, Logger log) throws IllegalArgumentException {
         mLog = log;
         mConf = config;
         mTableName = tableName;
-        
+
         String mMetricsSummaryTableName = mConf.get(MetricsSummaryDataTypeHandler.METRICS_SUMMARY_TABLE_NAME);
-        
+
         if (mMetricsSummaryTableName == null) {
             throw new IllegalArgumentException("Metrics Summary Table is not defined in the Configuration.");
         }
-        
+
         mEnableBloomFilters = mConf.getBoolean(ENABLE_BLOOM_FILTERS, false);
-        
+
         if (!mTableName.equals(mMetricsSummaryTableName)) {
             throw new IllegalArgumentException("Invalid Metrics Summary Table Definition For: " + mTableName);
         }
     }
-    
+
     @Override
     public void configure(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
         // add the SummingCombiner Iterator for each iterator scope (majc, minc, scan)
@@ -50,7 +50,7 @@ public class MetricsSummaryTableConfigHelper extends AbstractTableConfigHelper {
             setPropertyIfNecessary(mTableName, propName + "lossy", "FALSE", tops, mLog);
             setPropertyIfNecessary(mTableName, propName + "type", "STRING", tops, mLog);
         }
-        
+
         // enable bloom filters if necessary.
         if (mEnableBloomFilters) {
             setPropertyIfNecessary(mTableName, Property.TABLE_BLOOM_KEY_FUNCTOR.getKey(), ShardIndexKeyFunctor.class.getName(), tops, mLog);

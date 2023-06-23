@@ -8,21 +8,21 @@ import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.apache.log4j.Logger;
 
 public class AccumuloClientPoolFactory implements PooledObjectFactory<AccumuloClient> {
-    
+
     private static final Logger log = Logger.getLogger(AccumuloClientPoolFactory.class);
-    
+
     private String username;
     private String password;
     private String instanceName;
     private String zookeepers;
-    
+
     public AccumuloClientPoolFactory(String username, String password, String zookeepers, String instanceName) {
         this.username = username;
         this.password = password;
         this.instanceName = instanceName;
         this.zookeepers = zookeepers;
     }
-    
+
     /**
      * Returns a new CB Connection
      */
@@ -30,20 +30,20 @@ public class AccumuloClientPoolFactory implements PooledObjectFactory<AccumuloCl
         AccumuloClient c = Accumulo.newClient().to(instanceName, zookeepers).as(username, password).build();
         return new DefaultPooledObject<>(c);
     }
-    
+
     String getUsername() {
         return username;
     }
-    
+
     String getPassword() {
         return password;
     }
-    
+
     @Override
     public void destroyObject(PooledObject<AccumuloClient> p) {
         /* no-op */
     }
-    
+
     @Override
     public boolean validateObject(PooledObject<AccumuloClient> p) {
         if (null == p) {
@@ -51,18 +51,18 @@ public class AccumuloClientPoolFactory implements PooledObjectFactory<AccumuloCl
             log.warn(msg, new NullPointerException(msg));
             return false;
         }
-        
+
         return true;
     }
-    
+
     @Override
     public void activateObject(PooledObject<AccumuloClient> p) {
         /* no-op */
     }
-    
+
     @Override
     public void passivateObject(PooledObject<AccumuloClient> p) {
         /* no-op */
     }
-    
+
 }

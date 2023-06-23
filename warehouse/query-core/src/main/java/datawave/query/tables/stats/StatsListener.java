@@ -8,19 +8,19 @@ import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.Service.State;
 
 public class StatsListener extends Service.Listener {
-    
+
     protected ScanSessionStats stats;
     private ExecutorService statsListener;
-    
+
     public StatsListener(ScanSessionStats stats, ExecutorService statsListener) {
-        
+
         this.stats = stats;
         this.statsListener = statsListener;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see com.google.common.util.concurrent.Service.Listener#starting()
      */
     @Override
@@ -31,12 +31,12 @@ public class StatsListener extends Service.Listener {
         /**
          * Nothing to do here
          */
-        
+
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see com.google.common.util.concurrent.Service.Listener#running()
      */
     @Override
@@ -44,18 +44,18 @@ public class StatsListener extends Service.Listener {
         /**
          * Nothing to do here
          */
-        
+
     }
-    
+
     /*
      * (non-Javadoc) QueryIterator
-     * 
+     *
      * @see com.google.common.util.concurrent.Service.Listener#stopping(com.google.common.util.concurrent.Service.State)
      */
     @Override
     public void stopping(State from) {
         stats.getTimer(TIMERS.RUNTIME).stop();
-        
+
         switch (from) {
             case NEW:
             case RUNNING:
@@ -66,20 +66,20 @@ public class StatsListener extends Service.Listener {
                 break;
         }
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see com.google.common.util.concurrent.Service.Listener#terminated(com.google.common.util.concurrent.Service.State)
      */
     @Override
     public void terminated(State from) {
         statsListener.shutdownNow();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see com.google.common.util.concurrent.Service.Listener#failed(com.google.common.util.concurrent.Service.State, java.lang.Throwable)
      */
     @Override

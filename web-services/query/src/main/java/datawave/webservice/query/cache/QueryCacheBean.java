@@ -38,16 +38,16 @@ import java.util.Map.Entry;
 @MBean
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryCacheBean {
-    
+
     @Inject
     private QueryCache cache;
-    
+
     @Inject
     private QueryExecutorBean query;
-    
+
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
-    
+
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @JmxManaged
     public String listRunningQueries() {
@@ -58,7 +58,7 @@ public class QueryCacheBean {
         }
         return buf.toString();
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      *
@@ -70,9 +70,9 @@ public class QueryCacheBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     public RunningQueries getRunningQueries() {
-        
+
         RunningQueries result = new RunningQueries();
-        
+
         // Iterate over the cache contents
         for (RunningQuery value : cache) {
             result.getQueries().add(value.toString());
@@ -83,7 +83,7 @@ public class QueryCacheBean {
         }
         return result;
     }
-    
+
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @JmxManaged
     public String cancelUserQuery(String id) throws Exception {
@@ -100,5 +100,5 @@ public class QueryCacheBean {
             return "No such query: " + id;
         }
     }
-    
+
 }

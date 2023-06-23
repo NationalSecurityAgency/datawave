@@ -24,19 +24,19 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(PowerMockRunner.class)
 public class GenericQueryConfigurationMockTest {
-    
+
     @Mock
     Authorizations authorizations;
-    
+
     @Mock
     BaseQueryLogic<?> baseQueryLogic;
-    
+
     @Mock
     AccumuloClient client;
-    
+
     @Mock
     GenericQueryConfiguration config;
-    
+
     @Before
     public void setup() {
         this.config = new GenericQueryConfiguration() {
@@ -46,7 +46,7 @@ public class GenericQueryConfigurationMockTest {
             }
         };
     }
-    
+
     @Test
     public void testConstructor_WithConfiguredLogic() {
         GenericQueryConfiguration oldConfig = new GenericQueryConfiguration() {};
@@ -54,23 +54,23 @@ public class GenericQueryConfigurationMockTest {
         oldConfig.setBaseIteratorPriority(100);
         oldConfig.setMaxWork(1000L);
         oldConfig.setBypassAccumulo(false);
-        
+
         expect(this.baseQueryLogic.getConfig()).andReturn(oldConfig).anyTimes();
-        
+
         // Run the test
         PowerMock.replayAll();
         GenericQueryConfiguration subject = new GenericQueryConfiguration(this.baseQueryLogic) {};
         boolean result1 = subject.canRunQuery();
         PowerMock.verifyAll();
-        
+
         // Verify results
         assertFalse("Query should not be runnable", result1);
     }
-    
+
     @Test
     public void testCanRunQuery_HappyPath() {
         expect(this.authorizations.getAuthorizations()).andReturn(Collections.emptyList());
-        
+
         // Run the test
         PowerMock.replayAll();
         GenericQueryConfiguration subject = new GenericQueryConfiguration() {};
@@ -80,11 +80,11 @@ public class GenericQueryConfigurationMockTest {
         subject.setEndDate(new Date());
         boolean result1 = subject.canRunQuery();
         PowerMock.verifyAll();
-        
+
         // Verify results
         assertTrue("Query should be runnable", result1);
     }
-    
+
     @Test
     public void testBasicInit() {
         // Assert good init

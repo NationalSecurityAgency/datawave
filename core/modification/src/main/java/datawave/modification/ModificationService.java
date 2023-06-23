@@ -30,17 +30,17 @@ import java.util.stream.Collectors;
 import static java.util.Map.Entry;
 
 public class ModificationService {
-    
+
     private static final Logger log = Logger.getLogger(ModificationService.class);
-    
+
     private final AccumuloConnectionFactory connectionFactory;
-    
+
     private final ModificationCache cache;
-    
+
     private final ModificationQueryService.ModificationQueryServiceFactory queryServiceFactory;
-    
+
     private final ModificationConfiguration modificationConfiguration;
-    
+
     public ModificationService(ModificationConfiguration modificationConfiguration, ModificationCache cache, AccumuloConnectionFactory connectionFactory,
                     ModificationQueryService.ModificationQueryServiceFactory queryServiceFactory) {
         this.modificationConfiguration = modificationConfiguration;
@@ -48,7 +48,7 @@ public class ModificationService {
         this.connectionFactory = connectionFactory;
         this.queryServiceFactory = queryServiceFactory;
     }
-    
+
     /**
      * Returns a list of the Modification service names and their configurations
      *
@@ -66,7 +66,7 @@ public class ModificationService {
         }
         return configs;
     }
-    
+
     /**
      * Execute a Modification service with the given name and runtime parameters
      *
@@ -80,7 +80,7 @@ public class ModificationService {
      */
     public VoidResponse submit(Collection<? extends DatawaveUser> proxiedUsers, String modificationServiceName, ModificationRequestBase request) {
         VoidResponse response = new VoidResponse();
-        
+
         // Find out who/what called this method
         DatawavePrincipal dp = new DatawavePrincipal(proxiedUsers);
         DatawaveUser primaryUser = dp.getPrimaryUser();
@@ -88,7 +88,7 @@ public class ModificationService {
         Collection<String> proxyServers = proxiedUsers.stream().map(u -> u.getDn().subjectDN()).collect(Collectors.toList());
         Collection<String> userRoles = primaryUser.getRoles();
         Set<Authorizations> cbAuths = proxiedUsers.stream().map(u -> new Authorizations(u.getAuths().toArray(new String[0]))).collect(Collectors.toSet());
-        
+
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
         try {
@@ -99,9 +99,9 @@ public class ModificationService {
                                 MessageFormat.format("Requires: {0} but got {1}", service.getRequestClass().getName(), request.getClass().getName()));
                 throw new DatawaveModificationException(qe);
             }
-            
+
             priority = service.getPriority();
-            
+
             // Ensure that the user is in the list of authorized roles
             if (null != service.getAuthorizedRoles()) {
                 boolean authorized = !Collections.disjoint(userRoles, service.getAuthorizedRoles());
@@ -112,7 +112,7 @@ public class ModificationService {
                     throw new DatawaveModificationException(qe);
                 }
             }
-            
+
             // Process the modification
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(userDn, proxyServers, modificationConfiguration.getPoolName(), priority, trackingMap);
@@ -134,8 +134,8 @@ public class ModificationService {
                 }
             }
         }
-        
+
         return response;
     }
-    
+
 }

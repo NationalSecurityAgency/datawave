@@ -46,27 +46,27 @@ import java.util.List;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ModificationBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     private ModificationCacheBean cache;
-    
+
     @Inject
     private QueryExecutorBean queryService;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private ModificationConfiguration modificationConfiguration;
-    
+
     private ModificationService service;
-    
+
     private ModificationService getService() {
         if (service == null) {
             service = new ModificationService(modificationConfiguration, cache.getCache(), connectionFactory,
@@ -74,7 +74,7 @@ public class ModificationBean {
         }
         return service;
     }
-    
+
     /**
      * Returns a list of the Modification service names and their configurations
      *
@@ -92,7 +92,7 @@ public class ModificationBean {
     public List<ModificationConfigurationResponse> listConfigurations() {
         return getService().listConfigurations();
     }
-    
+
     /**
      * Execute a Modification service with the given name and runtime parameters
      *
@@ -129,5 +129,5 @@ public class ModificationBean {
             throw new DatawaveWebApplicationException(dme, response);
         }
     }
-    
+
 }

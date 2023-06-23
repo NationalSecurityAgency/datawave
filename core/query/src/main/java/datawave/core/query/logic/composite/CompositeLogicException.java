@@ -7,7 +7,7 @@ public class CompositeLogicException extends RuntimeException {
         super(getMessage(message, exceptions));
         exceptions.values().forEach(this::addSuppressed);
     }
-    
+
     private static String getMessage(String message, Map<String,Exception> exceptions) {
         StringBuilder builder = new StringBuilder();
         builder.append(message).append(":");

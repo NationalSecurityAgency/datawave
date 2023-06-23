@@ -22,27 +22,27 @@ import java.util.List;
 @Alternative
 @Priority(Interceptor.Priority.APPLICATION)
 public class RemoteLookupService extends RemoteAccumuloService {
-    
+
     private static final String LOOKUP_SUFFIX = "lookup/%s/%s";
-    
+
     private ObjectReader lookupReader;
-    
+
     @Override
     @PostConstruct
     public void init() {
         super.init();
         lookupReader = objectMapper.readerFor(LookupResponse.class);
     }
-    
+
     @Timed(name = "dw.remoteAccumuloService.lookup", absolute = true)
     public LookupResponse lookup(String table, String row, MultivaluedMap<String,String> params) {
-        
+
         final List<NameValuePair> nvpList = new ArrayList<>();
         params.forEach((k, valueList) -> valueList.forEach(v -> nvpList.add(new BasicNameValuePair(k, v))));
         final UrlEncodedFormEntity postBody = new UrlEncodedFormEntity(nvpList::iterator);
-        
+
         String suffix = String.format(LOOKUP_SUFFIX, table, row);
-        
+
         // @formatter:off
         return executePostMethodWithRuntimeException(
             suffix,

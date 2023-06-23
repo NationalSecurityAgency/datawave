@@ -58,54 +58,54 @@ public class MultiRfileInputformat extends RFileInputFormat {
     public static final String CACHE_METADATA_SIZE = "rfile.cache.metdata.size";
     private static final String HDFS_BASE = "hdfs://";
     private static final String ACCUMULO_BASE_PATH = "/accumulo";
-    
+
     private static final String FS_DEFAULT_NAME = "fs.default.name";
     private static final Logger log = Logger.getLogger(MultiRfileInputformat.class);
     public static final String tableStr = Path.SEPARATOR + "tables" + Path.SEPARATOR;
-    
+
     private static LoadingCache<Range,Set<Tuple2<String,Set<String>>>> locationMap = null;
-    
+
     protected static final Map<String,String> dfsUriMap = new ConcurrentHashMap<>();
     protected static final Map<String,String> dfsDirMap = new ConcurrentHashMap<>();
-    
+
     @Override
     public RecordReader<Key,Value> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
         return new RangeRecordReader();
     }
-    
+
     /**
      * Return the lists of computed slit points
      */
     public List<InputSplit> getSplits(JobContext job) throws IOException {
-        
+
         AccumuloHelper cbHelper = new AccumuloHelper();
         cbHelper.setup(job.getConfiguration());
-        
+
         String tableName = BulkInputFormat.getTablename(job.getConfiguration());
         boolean autoAdjust = BulkInputFormat.getAutoAdjustRanges(job.getConfiguration());
         List<Range> ranges = autoAdjust ? Range.mergeOverlapping(BulkInputFormat.getRanges(job.getConfiguration()))
                         : BulkInputFormat.getRanges(job.getConfiguration());
-        
+
         if (ranges.isEmpty()) {
             ranges = Lists.newArrayListWithCapacity(1);
             ranges.add(new Range());
         }
-        
+
         List<InputSplit> inputSplits = Lists.newArrayList();
         try {
             inputSplits = computeSplitPoints(job, tableName, ranges);
         } catch (TableNotFoundException | AccumuloException | AccumuloSecurityException | InterruptedException e) {
             throw new IOException(e);
         }
-        
+
         return inputSplits;
     }
-    
+
     List<InputSplit> computeSplitPoints(JobContext job, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
         return computeSplitPoints(job.getConfiguration(), tableName, ranges);
     }
-    
+
     public static void clearMetadataCache() {
         synchronized (MultiRfileInputformat.class) {
             if (null == locationMap) {
@@ -114,74 +114,74 @@ public class MultiRfileInputformat extends RFileInputFormat {
         }
         locationMap.invalidateAll();
     }
-    
+
     public static void clearMetadataCache(Range range) {
-        
+
         synchronized (MultiRfileInputformat.class) {
             if (null == locationMap) {
                 return;
             }
         }
-        
+
         locationMap.invalidate(range);
         locationMap.refresh(range);
     }
-    
+
     public static List<InputSplit> computeSplitPoints(Configuration conf, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
         return computeSplitPoints(BulkInputFormat.getClient(conf), conf, tableName, ranges);
     }
-    
+
     public static List<InputSplit> computeSplitPoints(AccumuloClient client, Configuration conf, String tableName, List<Range> ranges)
                     throws TableNotFoundException, AccumuloException, AccumuloSecurityException, IOException, InterruptedException {
-        
+
         final Multimap<Range,RfileSplit> binnedRanges = ArrayListMultimap.create();
-        
+
         final String tableId = client.tableOperations().tableIdMap().get(tableName);
-        
+
         final List<InputSplit> inputSplitList = Lists.newArrayList();
-        
+
         Multimap<Text,Range> rowMap = TreeMultimap.create();
-        
+
         String defaultNamespace = null, basePath = null;
-        
+
         /**
          * Attempt the following 1) try to get the default namespace from accumulo 2) Use the custom config option 3) use default name in the hdfs configuration
          */
         if (dfsUriMap.get(tableId) == null || dfsDirMap.get(tableId) == null) {
-            
+
             synchronized (MultiRfileInputformat.class) {
                 final InstanceOperations instOps = client.instanceOperations();
                 dfsUriMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_URI.getKey()));
                 dfsDirMap.put(tableId, instOps.getSystemConfiguration().get(Property.INSTANCE_DFS_DIR.getKey()));
             }
         }
-        
+
         defaultNamespace = dfsUriMap.get(tableId);
-        
+
         if (StringUtils.isEmpty(defaultNamespace)) {
             defaultNamespace = conf.get(FS_DEFAULT_NAMESPACE);
-            
+
             if (StringUtils.isEmpty(defaultNamespace)) {
                 defaultNamespace = conf.get(FS_DEFAULT_NAME);
             }
         }
-        
+
         basePath = dfsDirMap.get(tableId);
-        
+
         if (StringUtils.isEmpty(basePath)) {
             basePath = ACCUMULO_BASE_PATH;
         }
-        
+
         // ensure we have a separator
         if (!basePath.startsWith(Path.SEPARATOR)) {
             basePath = Path.SEPARATOR + basePath;
         }
-        
+
         // must get the default base path since accumulo only stores the full namespace path
         // when one is not stored on the default.
         final String defaultBasePath = defaultNamespace + basePath;
-        
+
         if (conf.getBoolean(CACHE_METADATA, false) == true) {
             synchronized (MultiRfileInputformat.class) {
                 if (null == locationMap) {
@@ -192,11 +192,11 @@ public class MultiRfileInputformat extends RFileInputFormat {
                 }
             }
         }
-        
+
         for (Range range : ranges) {
             // turn this range into a range of rows against the accumulo metadata: (e.g. <tableId>;row)
             Range metadataRange = MetadataCacheLoader.createMetadataRange(TableId.of(tableId), range);
-            
+
             Set<Tuple2<String,Set<String>>> metadataEntries;
             try {
                 if (null == locationMap) {
@@ -207,34 +207,34 @@ public class MultiRfileInputformat extends RFileInputFormat {
             } catch (Exception e) {
                 throw new RuntimeException("Unable to get rfile locations from accumulo metadata", e);
             }
-            
+
             if (metadataEntries == null || metadataEntries.isEmpty()) {
                 throw new IOException("Unable to find location or files associated with " + range);
             }
-            
+
             for (Tuple2<String,Set<String>> entry : metadataEntries) {
                 String location = entry.first();
                 Set<String> fileLocations = entry.second();
                 if (fileLocations != null && !fileLocations.isEmpty()) {
-                    
+
                     if (location == null || location.isEmpty()) {
                         log.warn("Unable to find a location associated with " + range + " : ? -> " + fileLocations);
                     }
-                    
+
                     for (String fileLocation : fileLocations) {
-                        
+
                         Path path = new Path(fileLocation);
-                        
+
                         boolean pullSize = conf.getBoolean(CACHE_RETRIEVE_SIZE, false);
                         long length = Long.MAX_VALUE;
                         if (pullSize) {
                             length = path.getFileSystem(conf).getFileStatus(path).getLen();
                         }
-                        
+
                         String[] locations = new String[] {location};
-                        
+
                         binnedRanges.put(range, new RfileSplit(path, 0, length, locations));
-                        
+
                         rowMap.put(range.getStartKey().getRow(), range);
                     }
                 } else {
@@ -242,13 +242,13 @@ public class MultiRfileInputformat extends RFileInputFormat {
                 }
             }
         }
-        
+
         boolean mergeRanges = conf.getBoolean(MERGE_RANGE, true);
-        
+
         if (!mergeRanges) {
             for (Range range : binnedRanges.keySet()) {
                 Collection<RfileSplit> rangeSplits = binnedRanges.get(range);
-                
+
                 if (rangeSplits.isEmpty())
                     continue;
                 TabletSplitSplit compositeInputSplit = new TabletSplitSplit(rangeSplits.size());
@@ -256,37 +256,37 @@ public class MultiRfileInputformat extends RFileInputFormat {
                 for (RfileSplit split : rangeSplits) {
                     compositeInputSplit.add(new FileRangeSplit(range, split.path, 0, split.length, split.hosts));
                 }
-                
+
                 inputSplitList.add(compositeInputSplit);
             }
         } else {
-            
+
             for (Text row : rowMap.keySet()) {
-                
+
                 Collection<Range> rangeColl = rowMap.get(row);
-                
+
                 Set<RfileSplit> rfiles = Sets.newHashSet();
-                
+
                 for (Range range : rangeColl) {
                     Collection<RfileSplit> rangeSplits = binnedRanges.get(range);
                     rfiles.addAll(rangeSplits);
                 }
-                
+
                 TabletSplitSplit compositeInputSplit = new TabletSplitSplit(rfiles.size());
                 compositeInputSplit.setTable(tableName);
                 for (RfileSplit split : rfiles) {
-                    
+
                     compositeInputSplit.add(new FileRangeSplit(rangeColl, split.path, 0, split.length, split.hosts));
-                    
+
                 }
-                
+
                 inputSplitList.add(compositeInputSplit);
             }
         }
-        
+
         if (log.isTraceEnabled())
             log.trace("Size is " + inputSplitList.size());
-        
+
         return inputSplitList;
     }
 }

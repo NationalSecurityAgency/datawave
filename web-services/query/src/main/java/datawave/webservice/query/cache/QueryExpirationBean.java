@@ -37,49 +37,49 @@ import javax.inject.Inject;
 // by default all methods are blocking
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryExpirationBean {
-    
+
     private static final Logger log = Logger.getLogger(QueryExpirationBean.class);
-    
+
     @Inject
     private QueryCache cache;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private QueryExpirationProperties conf;
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
-    
+
     @Inject
     private QueryMetricsBean metrics;
-    
+
     private boolean clearAll = false;
-    
+
     @PostConstruct
     public void init() {
         if (log.isDebugEnabled()) {
             log.debug("@PostConstruct - init()");
         }
-        
+
         if (conf == null) {
             throw new IllegalArgumentException("QueryExpirationProperties is null");
         }
     }
-    
+
     @PreDestroy
     public void close() {
         if (log.isDebugEnabled()) {
             log.debug("@PreDestroy - Closing all active queries and query logics before shutdown.");
             log.debug("Overriding idle and call time thresholds to zero so that all queries and logics resources are cleared before shutdown.");
         }
-        
+
         clearAll = true;
         clearQueries(System.currentTimeMillis());
     }
-    
+
     /**
      * The cache eviction notifications are not working. Using an interceptor is not working either. This method will be invoked every 30 seconds by the timer
      * service and will evict entries that are idle or expired.
@@ -93,10 +93,10 @@ public class QueryExpirationBean {
         clearQueries(now);
         qlCache.clearQueryLogics(now, conf.getCallTimeoutMillis());
     }
-    
+
     private void clearQueries(long now) {
         int count = 0;
-        
+
         for (RunningQuery query : cache) {
             boolean idleTooLong = !clearAll && !query.hasActiveCall() && isIdleTooLong(query, now);
             boolean nextTooLong = !clearAll && query.hasActiveCall() && isNextTooLong(query, now);
@@ -116,7 +116,7 @@ public class QueryExpirationBean {
                         if (!query.getMetric().isLifecycleFinal() && !query.isFinished() && nextTooLong) {
                             query.getMetric().setLifecycle(QueryMetric.Lifecycle.NEXTTIMEOUT);
                         }
-                        
+
                         query.getSettings().getUncaughtExceptionHandler().uncaughtException(Thread.currentThread(),
                                         new QueryException(DatawaveErrorCode.QUERY_TIMEOUT));
                     }
@@ -129,7 +129,7 @@ public class QueryExpirationBean {
                         }
                     }
                 }
-                
+
                 if (query.hasActiveCall()) {
                     query.cancel();
                 }
@@ -149,7 +149,7 @@ public class QueryExpirationBean {
             log.debug(count + " entries evicted from query cache.");
         }
     }
-    
+
     /**
      * Method to determine if a query has been idle too long based on configured values.
      *
@@ -165,10 +165,10 @@ public class QueryExpirationBean {
             long countDown = (conf.getIdleTimeoutMillis() / 1000) - (difference / 1000);
             log.debug("Query: " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " will be evicted in: " + countDown + " seconds.");
         }
-        
+
         return difference > conf.getIdleTimeoutMillis();
     }
-    
+
     /**
      * Method to determine if a query next call has been running too long based on configured values.
      *
@@ -183,10 +183,10 @@ public class QueryExpirationBean {
             log.warn("Query has active call set but a call time of 0ms.");
             return false;
         }
-        
+
         query.touch(); // Since we know we're still in a call, go ahead and reset the idle time.
         long difference = currentTime - query.getTimeOfCurrentCall();
-        
+
         if (difference > conf.getCallTimeoutMillis()) {
             log.warn("Query " + query.getSettings().getOwner() + " - " + query.getSettings().getId() + " has been in a call for " + (difference / 1000)
                             + "s.  We are evicting this query from the cache.");

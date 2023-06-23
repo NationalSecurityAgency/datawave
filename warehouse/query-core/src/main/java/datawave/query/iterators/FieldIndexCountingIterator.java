@@ -35,16 +35,16 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 /**
- * 
+ *
  * An iterator for the Datawave shard table, it searches FieldIndex keys and returns Event keys (its topKey must be an Event key).
- * 
+ *
  * FieldIndex keys: fi\0{fieldName}:{fieldValue}\0datatype\0uid
- * 
+ *
  * Return key: Row - ShardId Fam - FieldName Qual - FieldValue - Datatype - count
- * 
+ *
  */
 public class FieldIndexCountingIterator extends WrappingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    
+
     protected static final Logger log = Logger.getLogger(FieldIndexCountingIterator.class);
     // Config constants
     public static final String START_TIME = "FieldIndexCountingIterator.START_TIME";
@@ -56,7 +56,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     public static final String DATA_TYPES = "FieldIndexCountingIterator.DATA_TYPES";
     public static final String UNIQ_BY_DATA_TYPE = "FieldIndexCountingIterator.UNIQ_BY_DATA_TYPE";
     public static final String SEP = ",";
-    
+
     // Timestamp variables
     private final SimpleDateFormat dateParser = initDateParser();
     private long stamp_start;
@@ -69,12 +69,12 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     private TreeSet<String> fieldNameFilter;
     private TreeSet<String> fieldValueFilter; // Let us do specific field values.
     private TreeSet<String> dataTypeFilter; // hold ordered set of data types to include
-    
+
     protected Key topKey = null;
     protected Value topValue = null;
     protected Range parentRange;
     protected TreeSet<ByteSequence> seekColumnFamilies; // This iterator can only have a columnFamilies of the form fi\x00FIELDNAME
-    
+
     private long count = 0L;
     private long maxTimeStamp = 0L;
     private Text currentRow = null;
@@ -83,31 +83,31 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     private String currentDataType = null;
     private StringBuilder dataTypeStringBuilder = new StringBuilder();
     private StringBuilder fieldValueStringBuilder = new StringBuilder();
-    
+
     public static final String ONE_BYTE_STRING = "\u0001";
     public static final String DATE_FORMAT_STRING = "yyyyMMddHHmmss";
     public static final Text fi_PREFIX_TEXT = new Text("fi\u0000");
-    
+
     private Set<Text> visibilitySet = new HashSet<>();
-    
+
     protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-    
+
     // -------------------------------------------------------------------------
     // ------------- Constructors
     public FieldIndexCountingIterator() {
         visibilitySet = new HashSet<>();
     }
-    
+
     public FieldIndexCountingIterator(FieldIndexCountingIterator other, IteratorEnvironment env) {
         this();
         this.source = other.getSource().deepCopy(env);
         this.seekColumnFamilies = new TreeSet<>(other.seekColumnFamilies);
         this.parentRange = new Range(other.parentRange);
-        
+
         this.stamp_start = other.stamp_start;
         this.stamp_end = other.stamp_end;
         this.stampRange = new LongRange(stamp_start, stamp_end);
-        
+
         this.uniqByDataTypeOption = other.uniqByDataTypeOption;
         if (null != other.fieldNameFilter && !other.fieldNameFilter.isEmpty()) {
             this.fieldNameFilter = new TreeSet<>(other.fieldNameFilter);
@@ -118,14 +118,14 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         if (null != other.dataTypeFilter && !other.dataTypeFilter.isEmpty()) {
             this.dataTypeFilter = new TreeSet<>(other.dataTypeFilter);
         }
-        
+
         if (log.isTraceEnabled()) {
             for (ByteSequence bs : this.seekColumnFamilies) {
                 log.trace("seekColumnFamilies for this iterator: " + (new String(bs.toArray())).replaceAll(Constants.NULL_BYTE_STRING, "%00"));
             }
         }
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -136,13 +136,13 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         options.put(FIELD_NAMES, "The (optional) field names to count separated by \"" + SEP + "\"");
         options.put(FIELD_VALUES, "The (optional) field values to count separated by \"" + SEP + "\"");
         options.put(DATA_TYPES, "The (optional) data types to filter by");
-        
+
         return new IteratorOptions(getClass().getSimpleName(), "An iterator used to count items in the field index", options, null);
     }
-    
+
     /**
      * Get an IteratorSetting given a hadoop configuration
-     * 
+     *
      * @param conf
      *            Configuration object containing the options values for this iterator.
      * @return the iterator setting
@@ -160,13 +160,13 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         return new IteratorSetting(IteratorSettingHelper.BASE_ITERATOR_PRIORITY + 40, "FieldIndexCountingIterator", FieldIndexCountingIterator.class.getName(),
                         summaryIteratorSettings);
     }
-    
+
     private static void putIfNotNull(Map<String,String> map, String key, String value) {
         if (key != null && value != null) {
             map.put(key, value);
         }
     }
-    
+
     // -------------------------------------------------------------------------
     // ------------- Overrides
     @Override
@@ -174,7 +174,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         if (!this.validateOptions(options)) {
             throw new IllegalArgumentException("options not set properly");
         }
-        
+
         this.source = src;
         this.seekColumnFamilies = new TreeSet<>();
         if (this.fieldNameFilter != null && !this.fieldNameFilter.isEmpty()) {
@@ -187,42 +187,42 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 log.trace("seekColumnFamilies for this iterator: " + (new String(bs.toArray())).replaceAll(Constants.NULL_BYTE_STRING, "%00"));
             }
         }
-        
+
         if (log.isTraceEnabled()) {
             log.trace("timestamp range: " + this.stampRange);
         }
     }
-    
+
     @Override
     protected void setSource(SortedKeyValueIterator<Key,Value> src) {
         this.source = src;
     }
-    
+
     @Override
     protected SortedKeyValueIterator<Key,Value> getSource() {
         return source;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new FieldIndexCountingIterator(this, env);
     }
-    
+
     @Override
     public Key getTopKey() {
         return topKey;
     }
-    
+
     @Override
     public Value getTopValue() {
         return topValue;
     }
-    
+
     @Override
     public boolean hasTop() {
         return (topKey != null);
     }
-    
+
     @Override
     public void next() throws IOException {
         if (!source.hasTop()) {
@@ -231,40 +231,40 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         }
         findTop();
     }
-    
+
     @Override
     public void seek(Range r, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         this.parentRange = new Range(r);
-        
+
         this.topKey = null;
         this.topValue = null;
-        
+
         if (log.isTraceEnabled()) {
             log.trace("begin seek, range: " + parentRange);
             for (ByteSequence bs : this.seekColumnFamilies) {
                 log.trace("seekColumnFamilies for this iterator: " + (new String(bs.toArray())).replaceAll(Constants.NULL_BYTE_STRING, "%00"));
             }
         }
-        
+
         Key pStartKey = parentRange.getStartKey();
-        
+
         // If we have a null start key or empty starting row, lets seek our underlying source so we can get the first row
         // Once we have the row, we can build our first fi\x00FIELDNAME properly
         // The goal is to build the proper starting key which we will update the parentRange with at the end of this logic.
         // This handles the infinite start key / empty range case.
         if (null == pStartKey || null == pStartKey.getRow() || pStartKey.getRow().toString().trim().length() <= 0) {
-            
+
             source.seek(parentRange, this.seekColumnFamilies, !seekColumnFamilies.isEmpty());
-            
+
             if (!source.hasTop()) { // early out
                 return;
             }
-            
+
             Text cFam = new Text(Constants.FIELD_INDEX_PREFIX);
             if (null != this.fieldNameFilter && !this.fieldNameFilter.isEmpty()) {
                 TextUtil.textAppendNoNull(cFam, this.fieldNameFilter.first());
             }
-            
+
             Text cQual = new Text();
             if (null != this.fieldValueFilter && !this.fieldValueFilter.isEmpty()) {
                 TextUtil.textAppendNoNull(cQual, this.fieldValueFilter.first());
@@ -273,43 +273,43 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 }
             }
             pStartKey = new Key(source.getTopKey().getRow(), cFam, cQual);
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("pStartKey was null or row was empty, parentRange: " + parentRange + "  source.getTopKey(): " + source.getTopKey());
             }
-            
+
         } else { // We have a valid start key and row
-            
+
             // Check if we are recovering from IterationInterruptedException (verify that we have the right key parts
             // and that the start key is NOT inclusive).
             if (null != pStartKey.getColumnFamily() && !pStartKey.getColumnFamily().toString().trim().isEmpty() && null != pStartKey.getColumnQualifier()
                             && !pStartKey.getColumnQualifier().toString().trim().isEmpty() && !parentRange.isStartKeyInclusive()) {
-                
+
                 // Iteration interrupted case, need to seek to the end of this FN:FV range. IterationInterruptedException
                 // should always seek with the previously returned top key but with the inclusivity bit set to false.
                 // i.e. Key-> Row:000 CFAM:fi\x00COLOR CQ:red, inclusive:False
                 // we want to seek to the end of 'red' to the next unknown value, so CQ: red\u0001 should get us there.
                 pStartKey = new Key(pStartKey.getRow(), pStartKey.getColumnFamily(), new Text(pStartKey.getColumnQualifier() + ONE_BYTE_STRING));
             }
-            
+
             // for anything else we'll seek the underlying source and let findTop sort it out.
         }
-        
+
         // Verify pStartKey is still in the range, if not we're done
         if (!parentRange.contains(pStartKey)) {
             return;
         }
-        
+
         // Update the parent range and seek the underlying source
         // NOTE: In the case of non-inclusive start key, we've modified it accordingly so inclusivity should now be true.
         parentRange = new Range(pStartKey, true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
         source.seek(parentRange, this.seekColumnFamilies, !this.seekColumnFamilies.isEmpty());
-        
+
         // advance to the field index if needed
         if (null == fieldNameFilter || fieldNameFilter.isEmpty()) {
             advanceToFieldIndex();
         }
-        
+
         // if the start key of our bounding range > parentKey.endKey we can stop
         if (!source.hasTop() || !parentRange.contains(source.getTopKey())) {
             if (log.isTraceEnabled()) {
@@ -317,24 +317,24 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             }
             return;
         }
-        
+
         // now get the top key
         findTop();
-        
+
         if (log.isTraceEnabled()) {
             log.trace("seek, topKey : " + ((null == topKey) ? "null" : topKey));
         }
     }
-    
+
     @Override
     public String toString() {
         return "FieldIndexCountingIterator{" + "stamp_start=" + stamp_start + ", stamp_end=" + stamp_end + ", uniqByDataTypeOption=" + uniqByDataTypeOption
                         + ", currentRow=" + currentRow + ", currentFieldValue=" + currentFieldValue + ", currentDataType=" + currentDataType + '}';
     }
-    
+
     // -------------------------------------------------------------------------
     // ------------- other stuff
-    
+
     /**
      * Given a Key to consume, update any necessary counters etc.
      *
@@ -342,31 +342,31 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      *            The field index key to consume, should already satisfy all matching conditions.
      */
     private void consume(Key key) {
-        
+
         if (log.isTraceEnabled()) {
             log.trace("consume, key: " + key);
         }
-        
+
         if (!this.visibilitySet.contains(key.getColumnVisibility())) {
             this.visibilitySet.add(key.getColumnVisibility());
         }
-        
+
         // update current count
         this.count += 1;
-        
+
         // set most recent timestamp
         this.maxTimeStamp = (this.maxTimeStamp > key.getTimestamp()) ? maxTimeStamp : key.getTimestamp();
     }
-    
+
     private boolean acceptTimestamp(Key k) {
         return this.stampRange.containsLong(k.getTimestamp());
     }
-    
+
     private boolean isFieldIndexKey(Key key) {
         Text cf = key.getColumnFamily();
         return (cf.getLength() >= 3 && cf.charAt(0) == 'f' && cf.charAt(1) == 'i' && cf.charAt(2) == '\0');
     }
-    
+
     /**
      * NOTE: This method is most likely never invoked if 1. At least one FieldName has been configured on the iterator (populates seekColumnFamilies) 2. The
      * underlying iterator is honoring the seek column families
@@ -383,12 +383,12 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
      */
     protected boolean advanceToFieldIndex() throws IOException {
         log.trace("advanceToFieldIndex");
-        
+
         Key key = source.hasTop() ? source.getTopKey() : null; // Grab the source top key and update the key as we go
         while (null != key && !isFieldIndexKey(key) && parentRange.contains(key)) {
-            
+
             log.trace("advanceToFieldIndex.key: " + key);
-            
+
             // We know this is not a field index key, it is either before or after the fi\x00FN block
             if (key.compareColumnFamily(fi_PREFIX_TEXT) > 0) { // after fi\x00 segment, we need to move to then next row
                 if (!advanceToNextRow()) { // this moves the source & updates parent range
@@ -396,7 +396,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                     return false;
                 }
             }
-            
+
             // Seek to the first FieldName in our list
             key = new Key(source.getTopKey().getRow(),
                             new Text(Constants.FIELD_INDEX_PREFIX + ((null != fieldNameFilter && !fieldNameFilter.isEmpty()) ? fieldNameFilter.first() : "")));
@@ -410,10 +410,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 source.seek(range, seekColumnFamilies, !seekColumnFamilies.isEmpty());
             }
         }
-        
+
         return (null != key) && parentRange.contains(key) && isFieldIndexKey(key);
     }
-    
+
     /**
      * Build a key for the following row and attempt to seek the underlaying source iterator if the following row is in the parent range.
      *
@@ -426,15 +426,15 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         if (!source.hasTop()) {
             return false;
         }
-        
+
         // Build a key that is the following row
         Key followingRowKey = new Key(source.getTopKey().followingKey(PartialKey.ROW));
-        
+
         if (log.isTraceEnabled()) {
             log.trace("advanceToNextRow source.topKey: " + source.getTopKey());
             log.trace("advanceToNextRow followingRowKey: " + followingRowKey);
         }
-        
+
         // If that following row is in the parent range, update the range and seek underlying source iterator
         if (parentRange.contains(followingRowKey)) {
             parentRange = new Range(followingRowKey, true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
@@ -444,29 +444,29 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             Range range = new Range(parentRange.getEndKey(), true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
             source.seek(range, seekColumnFamilies, !seekColumnFamilies.isEmpty());
         }
-        
+
         // if the start key of our bounding range > parentKey.endKey we can stop
         if (log.isTraceEnabled()) {
             if (source.hasTop()) {
                 log.trace("advanceToNextRow source.topKey: " + source.getTopKey() + " :: in parent range? " + parentRange.contains(source.getTopKey()));
             }
         }
-        
+
         return source.hasTop() && parentRange.contains(source.getTopKey());
     }
-    
+
     private void advanceToNextDataType(String fieldVal, String dType) throws IOException {
         // seek the source iterator to the next datatype on the list
         dataTypeStringBuilder.delete(0, dataTypeStringBuilder.length());
         Key sKey = this.source.getTopKey();
-        
+
         // Given a datatype, get the next, highest one on the set.
         dType = this.dataTypeFilter.higher(dType);
         if (log.isTraceEnabled()) {
             log.trace("\t\tnext data type: " + dType);
             log.trace("\t\tcurrentFieldValue: " + this.currentFieldValue);
         }
-        
+
         dataTypeStringBuilder.append(fieldVal);
         if (null == dType) {
             // no more valid datatypes in this particular field value, skip to next
@@ -474,12 +474,12 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         } else {
             dataTypeStringBuilder.append(Constants.NULL_BYTE_STRING).append(dType);
         }
-        
+
         sKey = new Key(sKey.getRow(), sKey.getColumnFamily(), new Text(dataTypeStringBuilder.toString()));
         if (log.isTraceEnabled()) {
             log.trace("\t\tadvanceToNextDataType, startKey: " + sKey);
         }
-        
+
         if (parentRange.contains(sKey)) {
             parentRange = new Range(sKey, true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
             source.seek(parentRange, seekColumnFamilies, !seekColumnFamilies.isEmpty());
@@ -489,26 +489,26 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             source.seek(parentRange, seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
         }
     }
-    
+
     private void advanceToNextFieldValue(String fieldVal) throws IOException {
         // seek the source iterator to the next fieldValue on the list
-        
+
         fieldValueStringBuilder.delete(0, fieldValueStringBuilder.length());
         Key sKey = this.source.getTopKey();
-        
+
         // Given a datatype, get the next, highest one on the set.
         fieldVal = this.fieldValueFilter.higher(fieldVal);
-        
+
         if (log.isTraceEnabled()) {
             log.trace("\t\tcurrentFieldValue: " + this.currentFieldValue);
         }
-        
+
         if (null == fieldVal) {
             // end of our fieldValues move to next row.
             sKey = new Key(sKey.followingKey(PartialKey.ROW));
         } else {
             fieldValueStringBuilder.append(fieldVal);
-            
+
             // if we have datatypes, start back at the first one.
             if (null != this.dataTypeFilter) {
                 fieldValueStringBuilder.append(Constants.NULL_BYTE_STRING);
@@ -519,7 +519,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         if (log.isTraceEnabled()) {
             log.trace("\t\tadvanceToNextFieldValue, startKey: " + sKey);
         }
-        
+
         if (parentRange.contains(sKey)) {
             parentRange = new Range(sKey, true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
             source.seek(parentRange, seekColumnFamilies, !seekColumnFamilies.isEmpty());
@@ -529,9 +529,9 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             source.seek(parentRange, seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
         }
     }
-    
+
     /**
-     * 
+     *
      * @return true if we have a new key to return, false if the count is empty. This also resets current counters etc.
      * @throws IOException
      *             for issues with read/write
@@ -542,7 +542,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         }
         this.topKey = null;
         this.topValue = null;
-        
+
         // -----------------------------
         // if our key is empty i.e. all values outside of timestamp
         // we need to call find top again
@@ -557,13 +557,13 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             this.topValue = this.buildReturnValue();
             resetCurrentMarkers();
         }
-        
+
         return hasTop();
     }
-    
+
     /**
      * Row : shardId Fam : fieldName Qual: fieldValue \x00 datatype
-     * 
+     *
      * @return our new top key with the aggregated columnVisibility
      */
     private Key buildReturnKey() {
@@ -572,12 +572,12 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             log.trace("buildReturnKey, currentFieldName: " + this.currentFieldName);
             log.trace("buildReturnKey, currentFieldValue: " + this.currentFieldValue);
         }
-        
+
         Text cq = new Text(this.currentFieldValue);
         if (this.uniqByDataTypeOption) {
             TextUtil.textAppend(cq, this.currentDataType);
         }
-        
+
         // Combine the column visibilities into a single one
         // NOTE: key.getColumnVisibility actually returns a Text object so we need to convert them
         Set<ColumnVisibility> columnVisibilities = new HashSet<>();
@@ -591,15 +591,15 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             log.error("Could not combine visibilities: " + visibilitySet + "  " + e);
             return null;
         }
-        
+
         return new Key(this.currentRow, new Text(this.currentFieldName), cq, new Text(cv.getExpression()), this.maxTimeStamp);
     }
-    
+
     /* TODO: make this a mutable long, also check wrap up current method */
     private Value buildReturnValue() {
         return new Value(Long.toString(count).getBytes());
     }
-    
+
     /**
      * Reset all of our "current" state variables back to null/empty/zero. These are the current markers with respect to the current FieldName/FieldValue etc.
      * key we are trying to create.
@@ -613,10 +613,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         this.maxTimeStamp = 0;
         this.visibilitySet.clear();
     }
-    
+
     /**
      * Basic method to find our topKey which matches our given FieldName,FieldValue.
-     * 
+     *
      * @throws IOException
      *             for issues with read/write
      */
@@ -626,19 +626,19 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         String fv;
         this.topKey = null;
         this.topValue = null;
-        
+
         while (true) {
             if (!source.hasTop()) {
                 log.trace("findTop: source does not have top");
                 wrapUpCurrent();
                 return;
             }
-            
+
             Key key = source.getTopKey();
             if (log.isTraceEnabled()) {
                 log.trace("findTop examining key: " + key);
             }
-            
+
             // check that the key is within the parent range
             if (!parentRange.contains(key)) {
                 if (log.isTraceEnabled()) {
@@ -647,12 +647,12 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 wrapUpCurrent();
                 return;
             }
-            
+
             // -------- Check ROW --------
             if (null == currentRow) {
                 currentRow = key.getRow();
             }
-            
+
             int rowCompare = currentRow.compareTo(key.getRow());
             if (rowCompare < 0) { // current row is behind
                 if (log.isTraceEnabled()) {
@@ -662,7 +662,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                     // we had something with a valid count we're done for this iteration
                     return;
                 }
-                
+
                 // we had no current top key, so we reset the current markers, loop again.
                 continue;
             } else if (rowCompare > 0) { // current row is ahead
@@ -670,34 +670,34 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 // is this condition really possible?
                 throw new IllegalArgumentException("source iterator is behind us, how did this happen? Our currentRow: " + currentRow + " Source key- Row:"
                                 + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: " + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
-                
+
             } else { // same row - Compare CQ
-                
+
                 /**
                  * The only time we should trigger the following is if: 1. No field name was passed in (resulting in empty seekColumnFamilies) 2. Underlying
                  * iterator is NOT honoring seekColumnFamilies & inclusivity
                  */
                 // if not a field index key, then advance to the next field index
                 if (!isFieldIndexKey(key)) {
-                    
+
                     // If the underlying iterator honors seekColumnFamilies then this code will never be executed
-                    
+
                     if (wrapUpCurrent()) { // if we were working on something finish up and reset markers.
                         return;
                     }
-                    
+
                     if (!advanceToFieldIndex()) {
                         return;
                     }
-                    
+
                     continue;
                 }
-                
+
                 // -------- Check FIELD NAME (COLFAM) --------
                 if (null == currentFieldName) {
                     currentFieldName = key.getColumnFamily(); // seekColFams should ensure we are only on valid field names.
                 }
-                
+
                 int fnCompare = currentFieldName.compareTo(key.getColumnFamily());
                 if (fnCompare < 0) { // current field name is behind
                     if (log.isTraceEnabled()) {
@@ -711,11 +711,11 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                                     + currentFieldName + " Source key- Row:" + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: "
                                     + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
                 } else { // same field name
-                    
+
                     // check FIELD VALUE, there are multiple conditions here
                     // 1. we were given a set of field values to look for
                     // 2. we are doing all field values.
-                    
+
                     // parse column qualifier (from the end incase we have a nasty field value)
                     cq = key.getColumnQualifier().toString();
                     int idx2 = cq.lastIndexOf(Constants.NULL_BYTE_STRING);
@@ -729,7 +729,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                         throw new IllegalArgumentException("Found an invalid field index key; expected cq of the form fv%00dt%00uid? " + key);
                     }
                     fv = cq.substring(0, idx1);
-                    
+
                     // if we're looking for spedific field values, this logic will skip ones
                     // not in our list.
                     if (null != this.fieldValueFilter && !this.fieldValueFilter.contains(fv)) {
@@ -740,11 +740,11 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                         advanceToNextFieldValue(fv); // will issue a seek
                         continue;
                     }
-                    
+
                     if (null == this.currentFieldValue) {
                         this.currentFieldValue = fv;
                     }
-                    
+
                     if (!this.currentFieldValue.equals(fv)) { // we have a new field value
                         if (log.isTraceEnabled()) {
                             log.trace("field Value changed, current: " + currentFieldValue + " , new: " + fv);
@@ -754,7 +754,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                         }
                         continue;
                     } else { // same field value
-                        
+
                         // see if we care about data type
                         if (this.uniqByDataTypeOption || this.dataTypeFilter != null) {
                             if (log.isTraceEnabled()) {
@@ -762,7 +762,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                             }
                             // parse out the datatype
                             String dataType = cq.substring(idx1 + 1, idx2);
-                            
+
                             if (!uniqByDataTypeOption) { // we are returning aggregate types
                                 // we only care if it's in our filter list, if not skip
                                 // to the next one we care about.
@@ -775,7 +775,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                                     continue;
                                 }
                                 // else -> we are good fall through & check timestamp.
-                                
+
                             } else { // we are returning uniq data types
                                 if (null == this.currentDataType) {
                                     if (null == this.dataTypeFilter) { // if the dataTypeFilter is null then just accept it.
@@ -810,7 +810,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                                 }
                             }
                         }
-                        
+
                         // check if this is a deleted key, and ignore if so
                         if (key.isDeleted()) {
                             if (log.isTraceEnabled()) {
@@ -831,27 +831,27 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                                 log.trace("ignoring key outside time range: " + key);
                             }
                         }
-                        
+
                         // advance
                         source.next();
                     }
                 }
-                
+
             }
-            
+
         }
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
-        
+
         // -----------------------------
         // set up timestamp range
         try {
             this.stamp_start = dateParser.parse(options.get(START_TIME)).getTime();
             this.stamp_end = dateParser.parse(options.get(STOP_TIME)).getTime();
             this.stamp_end += 999; // Since you only have the ability to tell us seconds, but our keys are in millis, make sure we give you the full second.
-            
+
             // Note LongRange is inclusive only, so if start/stop is marked as
             // exclusive, inc/decrement by 1.
             if (options.get(START_TIME_INCL) != null) {
@@ -869,7 +869,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
             log.error("Invalid time range for " + FieldIndexCountingIterator.class.getName());
             return false;
         }
-        
+
         // -----------------------------
         // Set the field names
         if (null == options.get(FIELD_NAMES)) {
@@ -885,11 +885,11 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 for (String f : fieldNameFilter) {
                     b.append(f).append(" ");
                 }
-                
+
                 log.debug("Iter configured with FieldNames: " + b);
             }
         }
-        
+
         // -----------------------------
         // Set the field values
         if (null != options.get(FIELD_VALUES) && !options.get(FIELD_VALUES).trim().isEmpty()) {
@@ -898,7 +898,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 fieldValueFilter = null;
             }
         }
-        
+
         // -----------------------------
         // See if we have a data type filter
         if (null != options.get(DATA_TYPES) && !options.get(DATA_TYPES).trim().isEmpty()) {
@@ -907,7 +907,7 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 log.trace("data types: " + options.get(DATA_TYPES));
             }
         }
-        
+
         // -----------------------------
         // See if we need to return counts per datatype
         if (null != options.get(UNIQ_BY_DATA_TYPE)) {
@@ -916,10 +916,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
                 log.trace(UNIQ_BY_DATA_TYPE + ":" + uniqByDataTypeOption);
             }
         }
-        
+
         return true;
     }
-    
+
     // --------------------------------------------------------------------------
     // All timestamp stuff, taken from org.apache.accumulo.core.iterators.user.TimestampFilter
     private static SimpleDateFormat initDateParser() {
@@ -927,10 +927,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         dateParser.setTimeZone(TimeZone.getTimeZone("GMT"));
         return dateParser;
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -941,10 +941,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     public static void setRange(IteratorSetting is, String start, String end) {
         setRange(is, start, true, end, true);
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -960,10 +960,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         setStart(is, start, startInclusive);
         setEnd(is, end, endInclusive);
     }
-    
+
     /**
      * A convenience method for setting the start timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -975,10 +975,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         is.addOption(START_TIME, start);
         is.addOption(START_TIME_INCL, Boolean.toString(startInclusive));
     }
-    
+
     /**
      * A convenience method for setting the end timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param end
@@ -990,10 +990,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         is.addOption(STOP_TIME, end);
         is.addOption(STOP_TIME_INCL, Boolean.toString(endInclusive));
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -1004,10 +1004,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
     public static void setRange(IteratorSetting is, long start, long end) {
         setRange(is, start, true, end, true);
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -1023,10 +1023,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         setStart(is, start, startInclusive);
         setEnd(is, end, endInclusive);
     }
-    
+
     /**
      * A convenience method for setting the start timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -1039,10 +1039,10 @@ public class FieldIndexCountingIterator extends WrappingIterator implements Sort
         is.addOption(START_TIME, dateParser.format(new Date(start)));
         is.addOption(START_TIME_INCL, Boolean.toString(startInclusive));
     }
-    
+
     /**
      * A convenience method for setting the end timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param end

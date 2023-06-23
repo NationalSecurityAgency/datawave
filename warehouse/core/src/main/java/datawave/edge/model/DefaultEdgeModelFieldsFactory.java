@@ -9,7 +9,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import java.util.Map;
 
 public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
-    
+
     /** required bean context */
     /** common default locations for locating bean xml */
     static final String[] EDGE_MODEL_CONTEXT = {"classpath*:EdgeModelContext.xml"};
@@ -19,9 +19,9 @@ public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
     static final String KEYUTIL_MODEL_BEAN = "keyUtilFieldMap";
     /** required bean name */
     static final String TRANSFORM_MODEL_BEAN = "transformFieldMap";
-    
+
     private static Logger log = Logger.getLogger(DefaultEdgeModelFieldsFactory.class);
-    
+
     @Override
     public EdgeModelFields createFields() {
         EdgeModelFields fields = new EdgeModelFields();
@@ -38,7 +38,7 @@ public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
                 cpContext.refresh();
                 context = cpContext;
             }
-            
+
             // now load the maps
             fields.setBaseFieldMap((Map<String,String>) context.getBean(BASE_MODEL_BEAN));
             fields.setKeyUtilFieldMap((Map<String,String>) context.getBean(KEYUTIL_MODEL_BEAN));
@@ -52,11 +52,11 @@ public class DefaultEdgeModelFieldsFactory implements EdgeModelFieldsFactory {
                 context.close();
             }
         }
-        
+
         return fields;
     }
-    
+
     @SuppressWarnings("unchecked")
     private void loadMaps(ApplicationContext context) {}
-    
+
 }

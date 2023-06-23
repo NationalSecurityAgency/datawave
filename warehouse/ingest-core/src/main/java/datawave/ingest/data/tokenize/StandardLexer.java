@@ -23,22 +23,22 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 @SuppressWarnings("unused")
 public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
-    
+
     /** This character denotes the end of file */
     public static final int YYEOF = -1;
-    
+
     /** initial size of the lookahead buffer */
     private static int ZZ_BUFFERSIZE = 16384;
-    
+
     /** lexical states */
     public static final int YYINITIAL = 0;
-    
+
     /**
      * ZZ_LEXSTATE[l] is the state in the DFA for the lexical state l ZZ_LEXSTATE[l+1] is the state in the DFA for the lexical state l at the beginning of a
      * line l is of the form l = 2*k, k a non negative integer
      */
     private static final int ZZ_LEXSTATE[] = {0, 0};
-    
+
     /**
      * Translates characters to character classes
      */
@@ -51,17 +51,17 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                     + "\12\43\166\42\12\43\166\42\12\43\167\42\11\43\166\42\12\43\166\42"
                     + "\12\43\166\42\12\43\340\42\12\43\166\42\12\43\u0166\42\12\43\u0fb6\42"
                     + "\u0100\0\120\115\ude50\0\75\42\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\uffff\0\63\0";
-    
+
     /**
      * Translates characters to character classes
      */
     private static final char[] ZZ_CMAP = zzUnpackCMap(ZZ_CMAP_PACKED);
-    
+
     /**
      * Translates DFA states to action switch labels.
      */
     private static final int[] ZZ_ACTION = zzUnpackAction();
-    
+
     private static final String ZZ_ACTION_PACKED_0 = "\1\0\2\1\2\2\1\1\4\2\3\1\7\2\1\1" + "\2\2\1\1\1\2\1\1\11\2\1\3\6\0\2\2"
                     + "\2\0\2\2\1\0\1\2\1\4\2\0\2\2\3\0" + "\1\2\1\0\1\2\2\0\3\2\1\5\4\0\11\2" + "\1\0\6\2\6\0\1\2\2\0\14\2\3\0\7\4"
                     + "\2\2\2\0\1\5\2\0\2\2\2\6\1\4\2\7" + "\1\4\2\0\1\4\2\10\1\0\1\4\2\0\1\4" + "\2\0\1\4\2\0\4\5\1\0\1\11\2\10\1\11"
@@ -76,14 +76,14 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                     + "\1\10\3\11\73\0\1\4\7\0\3\5\12\0\1\13" + "\1\10\3\11\14\0\1\15\52\0\1\4\3\0\2\5" + "\11\0\1\11\1\14\1\11\11\0\1\15\14\0\1\10"
                     + "\31\0\1\4\3\0\1\5\15\0\1\15\42\0\1\4" + "\56\0\1\4\2\0\1\16\52\0\2\4\4\0\1\16" + "\44\0\1\4\2\0\1\16\43\0\1\4\2\0\1\16"
                     + "\43\0\1\4\2\16\26\0\1\4\1\16\12\0\1\4" + "\1\16\4\0\1\4\1\16\1\4\1\16\1\4\1\16" + "\1\4\5\16";
-    
+
     private static int[] zzUnpackAction() {
         int[] result = new int[1501];
         int offset = 0;
         offset = zzUnpackAction(ZZ_ACTION_PACKED_0, offset, result);
         return result;
     }
-    
+
     private static int zzUnpackAction(String packed, int offset, int[] result) {
         int i = 0; /* index in packed string */
         int j = offset; /* index in unpacked array */
@@ -97,12 +97,12 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         }
         return j;
     }
-    
+
     /**
      * Translates a state to a row index in the transition table
      */
     private static final int[] ZZ_ROWMAP = zzUnpackRowMap();
-    
+
     private static final String ZZ_ROWMAP_PACKED_0 = "\0\0\0\116\0\234\0\352\0\u0138\0\u0186\0\u01d4\0\u0222"
                     + "\0\u0270\0\u02be\0\u030c\0\u035a\0\u03a8\0\u03f6\0\u0444\0\u0492" + "\0\u04e0\0\u052e\0\u057c\0\u05ca\0\u0618\0\u0666\0\u06b4\0\u0702"
                     + "\0\u0750\0\u079e\0\u07ec\0\u083a\0\u0888\0\u08d6\0\u0924\0\u0972" + "\0\u09c0\0\u0a0e\0\u0a5c\0\u0aaa\0\u0af8\0\234\0\u0b46\0\u0b94"
@@ -198,14 +198,14 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                     + "\1\ub624\1\ub672\1\ub6c0\1\ub70e\1\ub75c\1\ub7aa\1\ub7f8\1\ub846" + "\1\ub894\1\ub8e2\1\ub930\1\ub97e\1\ub9cc\1\uba1a\1\uba68\1\ubab6"
                     + "\1\ubb04\1\ubb52\1\ubba0\1\ubbee\1\ubc3c\1\ubc8a\1\ubcd8\1\ubd26" + "\1\ubd74\1\ubdc2\1\ube10\1\ube5e\1\ubeac\1\ubefa\1\ubf48\1\ubf96"
                     + "\1\ubfe4\1\uc032\1\uc080\1\uc0ce\1\ua562";
-    
+
     private static int[] zzUnpackRowMap() {
         int[] result = new int[1501];
         int offset = 0;
         offset = zzUnpackRowMap(ZZ_ROWMAP_PACKED_0, offset, result);
         return result;
     }
-    
+
     private static int zzUnpackRowMap(String packed, int offset, int[] result) {
         int i = 0; /* index in packed string */
         int j = offset; /* index in unpacked array */
@@ -216,12 +216,12 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         }
         return j;
     }
-    
+
     /**
      * The transition table of the DFA
      */
     private static final int[] ZZ_TRANS = zzUnpackTrans();
-    
+
     private static final String ZZ_TRANS_PACKED_0 = "\2\2\1\3\2\2\1\4\1\5\1\6\1\7\1\10" + "\1\11\1\12\1\13\1\5\1\11\1\2\3\11\1\14"
                     + "\1\15\1\16\1\11\1\17\1\20\1\21\1\22\1\23" + "\1\11\1\24\2\11\1\25\1\2\1\26\1\27\1\30" + "\1\2\1\5\1\23\1\31\6\2\1\32\1\2\1\33"
                     + "\1\11\1\34\2\11\1\2\1\11\1\23\1\2\2\11" + "\1\23\1\35\2\36\1\11\1\2\1\11\1\37\1\5" + "\1\40\1\11\1\41\1\42\1\43\1\11\2\2\1\44"
@@ -1561,7 +1561,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                     + "\4\0\1\u03fc\3\0\1\u03fc\10\0\1\u03ab\1\0\2\u03fe" + "\1\0\2\u03fe\1\0\1\u03fe\1\u03ff\1\u03fe\13\0\1\u0400"
                     + "\1\0\1\u0400\12\0\1\u03fe\2\u0400\4\0\1\u035b\12\0" + "\1\u0400\3\0\4\u0400\4\0\1\u03fe\3\0\1\u0400\10\0"
                     + "\1\u03ab\1\0\2\u0401\1\0\2\u0401\1\0\1\u0401\1\u03ff" + "\1\u0401\13\0\1\u0400\1\0\1\u0400\12\0\1\u0401\2\u0400" + "\4\0";
-    
+
     private static final String ZZ_TRANS_PACKED_1 = "\1\u035b\12\0\1\u0400\3\0\4\u0400\4\0\1\u0401\3\0"
                     + "\1\u0400\10\0\1\u03ab\1\0\1\u0401\1\u03fe\1\0\2\u0401" + "\1\0\1\u0401\1\u03ff\1\u0402\13\0\1\u0400\1\0\1\u0400"
                     + "\12\0\1\u0401\2\u0400\4\0\1\u035b\12\0\1\u0400\3\0" + "\4\u0400\4\0\1\u03fe\3\0\1\u0400\12\0\2\u0400\1\0"
@@ -2308,7 +2308,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                     + "\16\0\1\u0534\7\0\1\u05da\35\0\1\u05da\16\0\2\u05db" + "\1\u0533\2\u05db\1\0\1\u05db\1\u055a\1\u05db\1\u0534\1\u0533"
                     + "\16\0\1\u0534\7\0\1\u05db\35\0\1\u05db\16\0\2\u05dc" + "\1\0\2\u05dc\1\0\1\u05dc\1\u055a\1\u05dc\30\0\1\u05dc"
                     + "\35\0\1\u05dc\16\0\2\u05dd\1\0\2\u05dd\1\0\1\u05dd" + "\1\u055a\1\u05dd\30\0\1\u05dd\35\0\1\u05dd\11\0";
-    
+
     private static int[] zzUnpackTrans() {
         int[] result = new int[114972];
         int offset = 0;
@@ -2316,7 +2316,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         offset = zzUnpackTrans(ZZ_TRANS_PACKED_1, offset, result);
         return result;
     }
-    
+
     private static int zzUnpackTrans(String packed, int offset, int[] result) {
         int i = 0; /* index in packed string */
         int j = offset; /* index in unpacked array */
@@ -2331,20 +2331,20 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         }
         return j;
     }
-    
+
     /* error codes */
     private static final int ZZ_UNKNOWN_ERROR = 0;
     private static final int ZZ_NO_MATCH = 1;
     private static final int ZZ_PUSHBACK_2BIG = 2;
-    
+
     /* error messages for the codes above */
     private static final String ZZ_ERROR_MSG[] = {"Unknown internal scanner error", "Error: could not match input", "Error: pushback value was too large"};
-    
+
     /**
      * ZZ_ATTRIBUTE[aState] contains the attributes of state <code>aState</code>
      */
     private static final int[] ZZ_ATTRIBUTE = zzUnpackAttribute();
-    
+
     private static final String ZZ_ATTRIBUTE_PACKED_0 = "\1\0\1\11\42\1\6\0\2\1\2\0\2\1\1\0" + "\2\1\2\0\2\1\3\0\1\1\1\0\1\1\2\0"
                     + "\4\1\4\0\11\1\1\0\6\1\6\0\1\1\2\0" + "\14\1\3\0\11\1\2\0\1\1\2\0\10\1\2\0" + "\3\1\1\0\1\1\2\0\1\1\2\0\1\1\2\0"
                     + "\4\1\1\0\4\1\1\0\32\1\3\0\14\1\5\0" + "\2\1\1\0\3\1\1\0\4\1\2\0\4\1\23\0" + "\1\1\1\0\1\1\1\0\12\1\3\0\3\1\1\0"
@@ -2356,14 +2356,14 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                     + "\72\0\1\1\4\0\1\1\1\0\1\1\1\0\4\1" + "\13\0\4\1\73\0\1\1\7\0\3\1\12\0\1\11" + "\4\1\14\0\1\1\52\0\1\1\3\0\2\1\11\0"
                     + "\3\1\11\0\1\1\14\0\1\1\31\0\1\1\3\0" + "\1\1\15\0\1\11\42\0\1\1\56\0\1\1\2\0" + "\1\1\52\0\2\1\4\0\1\11\44\0\1\1\2\0"
                     + "\1\1\43\0\1\1\2\0\1\1\43\0\3\1\26\0" + "\2\1\12\0\2\1\4\0\14\1";
-    
+
     private static int[] zzUnpackAttribute() {
         int[] result = new int[1501];
         int offset = 0;
         offset = zzUnpackAttribute(ZZ_ATTRIBUTE_PACKED_0, offset, result);
         return result;
     }
-    
+
     private static int zzUnpackAttribute(String packed, int offset, int[] result) {
         int i = 0; /* index in packed string */
         int j = offset; /* index in unpacked array */
@@ -2377,79 +2377,79 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         }
         return j;
     }
-    
+
     /** the input device */
     private java.io.Reader zzReader;
-    
+
     /** the current state of the DFA */
     private int zzState;
-    
+
     /** the current lexical state */
     private int zzLexicalState = YYINITIAL;
-    
+
     /**
      * this buffer contains the current text to be matched and is the source of the yytext() string
      */
     private char zzBuffer[] = new char[ZZ_BUFFERSIZE];
-    
+
     /** the textposition at the last accepting state */
     private int zzMarkedPos;
-    
+
     /** the current text position in the buffer */
     private int zzCurrentPos;
-    
+
     /** startRead marks the beginning of the yytext() string in the buffer */
     private int zzStartRead;
-    
+
     /**
      * endRead marks the last character in the buffer, that has been read from input
      */
     private int zzEndRead;
-    
+
     /** number of newlines encountered up to the start of the matched text */
     private int yyline;
-    
+
     /** the number of characters up to the start of the matched text */
     private int yychar;
-    
+
     /**
      * the number of characters from the last newline up to the start of the matched text
      */
     private int yycolumn;
-    
+
     /**
      * {@code zzAtBOL == true <=>} the scanner is currently at the beginning of a line
      */
     private boolean zzAtBOL = true;
-    
+
     /** {@code zzAtEOF == true <=>} the scanner is at the EOF */
     private boolean zzAtEOF;
-    
+
     /** denotes if the user-EOF-code has already been executed */
     private boolean zzEOFDone;
-    
+
     /**
      * The number of occupied positions in zzBuffer beyond zzEndRead. When a lead/high surrogate has been read from the input stream into the final zzBuffer
      * position, this will have a value of 1; otherwise, it will have a value of 0.
      */
     private int zzFinalHighSurrogate = 0;
-    
+
     /* user code: */
-    
+
     public final int yychar() {
         return yychar;
     }
-    
+
     /**
      * Fills Lucene term attribute with the current token text.
      */
     final void getText(CharTermAttribute t, int maxLength) {
         t.copyBuffer(zzBuffer, zzStartRead, Math.min(zzMarkedPos - zzStartRead, maxLength));
     }
-    
+
     /**
      * Compare the current token with the specified byte array.
-     * 
+     *
      * @param b
      *            byte array
      * @return if the boolean matches
@@ -2462,10 +2462,10 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         }
         return i == b.length;
     }
-    
+
     /**
      * Sets the scanner buffer size in chars
-     * 
+     *
      * @param numChars
      *            the number of characters
      */
@@ -2475,11 +2475,11 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         System.arraycopy(zzBuffer, 0, newZzBuffer, 0, Math.min(zzBuffer.length, ZZ_BUFFERSIZE));
         zzBuffer = newZzBuffer;
     }
-    
+
     private static void updateBufferSize(int numChars) {
         ZZ_BUFFERSIZE = numChars;
     }
-    
+
     /**
      * Creates a new scanner
      *
@@ -2489,7 +2489,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     public StandardLexer(java.io.Reader in) {
         this.zzReader = in;
     }
-    
+
     /**
      * Unpacks the compressed character translation table.
      *
@@ -2510,30 +2510,30 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         }
         return map;
     }
-    
+
     /**
      * Refills the input buffer.
      *
      * @return <code>false</code>, iff there was new input.
-     * 
+     *
      * @exception java.io.IOException
      *                if any I/O-Error occurs
      */
     private boolean zzRefill() throws java.io.IOException {
-        
+
         /* first: make room (if you can) */
         if (zzStartRead > 0) {
             zzEndRead += zzFinalHighSurrogate;
             zzFinalHighSurrogate = 0;
             System.arraycopy(zzBuffer, zzStartRead, zzBuffer, 0, zzEndRead - zzStartRead);
-            
+
             /* translate stored positions */
             zzEndRead -= zzStartRead;
             zzCurrentPos -= zzStartRead;
             zzMarkedPos -= zzStartRead;
             zzStartRead = 0;
         }
-        
+
         /* is the buffer big enough? */
         if (zzCurrentPos >= zzBuffer.length - zzFinalHighSurrogate) {
             /* if not: blow it up */
@@ -2543,11 +2543,11 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
             zzEndRead += zzFinalHighSurrogate;
             zzFinalHighSurrogate = 0;
         }
-        
+
         /* fill the buffer with new input */
         int requested = zzBuffer.length - zzEndRead;
         int numRead = zzReader.read(zzBuffer, zzEndRead, requested);
-        
+
         /* not supposed to occur according to specification of java.io.Reader */
         if (numRead == 0) {
             throw new java.io.IOException("Reader returned 0 characters. See JFlex examples for workaround.");
@@ -2567,25 +2567,25 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
             /* potentially more input available */
             return false;
         }
-        
+
         /* numRead < 0 ==> end of stream */
         return true;
     }
-    
+
     /**
      * Closes the input stream.
-     * 
+     *
      * @throws java.io.IOException
      *             for issues with file read/write
      */
     public final void yyclose() throws java.io.IOException {
         zzAtEOF = true; /* indicate end of file */
         zzEndRead = zzStartRead; /* invalidate buffer */
-        
+
         if (zzReader != null)
             zzReader.close();
     }
-    
+
     /**
      * Resets the scanner to read from a new input stream. Does not close the old reader.
      *
@@ -2610,16 +2610,16 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         if (zzBuffer.length > ZZ_BUFFERSIZE)
             zzBuffer = new char[ZZ_BUFFERSIZE];
     }
-    
+
     /**
      * Returns the current lexical state.
-     * 
+     *
      * @return lexical state
      */
     public final int yystate() {
         return zzLexicalState;
     }
-    
+
     /**
      * Enters a new lexical state
      *
@@ -2629,37 +2629,37 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     public final void yybegin(int newState) {
         zzLexicalState = newState;
     }
-    
+
     /**
      * Returns the text matched by the current regular expression.
-     * 
+     *
      * @return text matched by the current regular expression
      */
     public final String yytext() {
         return new String(zzBuffer, zzStartRead, zzMarkedPos - zzStartRead);
     }
-    
+
     /**
      * Returns the character at position <code>pos</code> from the matched text.
-     * 
+     *
      * It is equivalent to yytext().charAt(pos), but faster
      *
      * @param pos
      *            the position of the character to fetch. A value from 0 to yylength()-1.
-     *            
+     *
      * @return the character at position pos
      */
     public final char yycharat(int pos) {
         return zzBuffer[zzStartRead + pos];
     }
-    
+
     /**
      * Returns the length of the matched text region.
      */
     public final int yylength() {
         return zzMarkedPos - zzStartRead;
     }
-    
+
     /**
      * Reports an error that occured while scanning.
      *
@@ -2678,10 +2678,10 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
         } catch (ArrayIndexOutOfBoundsException e) {
             message = ZZ_ERROR_MSG[ZZ_UNKNOWN_ERROR];
         }
-        
+
         throw new Error(message);
     }
-    
+
     /**
      * Pushes the specified amount of characters back into the input stream.
      *
@@ -2693,10 +2693,10 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     public void yypushback(int number) {
         if (number > yylength())
             zzScanError(ZZ_PUSHBACK_2BIG);
-        
+
         zzMarkedPos -= number;
     }
-    
+
     /**
      * Resumes scanning until the next regular expression is matched, the end of input is encountered or an I/O-Error occurs.
      *
@@ -2707,35 +2707,35 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
     public int getNextToken() throws java.io.IOException {
         int zzInput;
         int zzAction;
-        
+
         // cached fields:
         int zzCurrentPosL;
         int zzMarkedPosL;
         int zzEndReadL = zzEndRead;
         char[] zzBufferL = zzBuffer;
-        
+
         int[] zzAttrL = ZZ_ATTRIBUTE;
-        
+
         while (true) {
             zzMarkedPosL = zzMarkedPos;
-            
+
             yychar += zzMarkedPosL - zzStartRead;
-            
+
             zzAction = -1;
-            
+
             zzCurrentPosL = zzCurrentPos = zzStartRead = zzMarkedPosL;
-            
+
             zzState = ZZ_LEXSTATE[zzLexicalState];
-            
+
             // set up zzAction for empty match case:
             int zzAttributes = zzAttrL[zzState];
             if ((zzAttributes & 1) == 1) {
                 zzAction = zzState;
             }
-            
+
             zzForAction: {
                 while (true) {
-                    
+
                     if (zzCurrentPosL < zzEndReadL) {
                         zzInput = Character.codePointAt(zzBufferL, zzCurrentPosL, zzEndReadL);
                         zzCurrentPosL += Character.charCount(zzInput);
@@ -2764,7 +2764,7 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                     if (zzNext == -1)
                         break zzForAction;
                     zzState = zzNext;
-                    
+
                     zzAttributes = zzAttrL[zzState];
                     if ((zzAttributes & 1) == 1) {
                         zzAction = zzState;
@@ -2772,13 +2772,13 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
                         if ((zzAttributes & 8) == 8)
                             break zzForAction;
                     }
-                    
+
                 }
             }
-            
+
             // store back cached position
             zzMarkedPos = zzMarkedPosL;
-            
+
             if (zzInput == YYEOF && zzStartRead == zzCurrentPos) {
                 zzAtEOF = true;
                 return YYEOF;
@@ -2859,5 +2859,5 @@ public final class StandardLexer extends datawave.ingest.data.tokenize.Lexer {
             }
         }
     }
-    
+
 }

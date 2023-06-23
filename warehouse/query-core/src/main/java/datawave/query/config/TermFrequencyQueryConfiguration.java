@@ -10,24 +10,24 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private transient Range range = null;
-    
+
     public TermFrequencyQueryConfiguration(BaseQueryLogic<?> configuredLogic, Query query) {
         super(configuredLogic);
         setQuery(query);
     }
-    
+
     public Range getRange() {
         return range;
     }
-    
+
     public void setRange(Range range) {
         this.range = range;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -39,12 +39,12 @@ public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration i
         TermFrequencyQueryConfiguration that = (TermFrequencyQueryConfiguration) o;
         return Objects.equals(range, that.range);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), range);
     }
-    
+
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         out.writeBoolean(range != null);
@@ -52,7 +52,7 @@ public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration i
             range.write(out);
         }
     }
-    
+
     private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (in.readBoolean()) {

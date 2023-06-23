@@ -24,18 +24,18 @@ import java.util.concurrent.TimeUnit;
  * class is created by the MetadataHelperCacheListenerContext.xml which is not loaded in unit tests
  */
 public class MetadataHelperUpdateHdfsListener {
-    
+
     private static final Logger log = Logger.getLogger(MetadataHelperUpdateHdfsListener.class);
-    
+
     private final String zookeepers;
     private final TypeMetadataHelper.Factory typeMetadataHelperFactory;
     private final Set<Authorizations> allMetadataAuths;
-    
+
     private final String instance;
     private final String username;
     private final String password;
     private final long lockWaitTime;
-    
+
     /**
      * Default constructor
      *
@@ -65,12 +65,12 @@ public class MetadataHelperUpdateHdfsListener {
         this.username = username;
         this.password = resolvePassword(password);
         this.lockWaitTime = lockWaitTime;
-        
+
         for (String metadataTableName : metadataTableNames) {
             registerCacheListener(metadataTableName);
         }
     }
-    
+
     /**
      * Gets a password, either hard coded or from the environment
      *
@@ -81,7 +81,7 @@ public class MetadataHelperUpdateHdfsListener {
     private String resolvePassword(String password) {
         return EnvProvider.resolve(password);
     }
-    
+
     private void registerCacheListener(final String metadataTableName) {
         if (log.isDebugEnabled())
             log.debug("table:" + metadataTableName + " created UpdateHdfs listener for table:" + metadataTableName);
@@ -103,7 +103,7 @@ public class MetadataHelperUpdateHdfsListener {
                         maybeUpdateTypeMetadataInHdfs(watcher, triStateName, metadataTableName);
                     }
                 }
-                
+
                 @Override
                 public void stateChanged(CuratorFramework client, ConnectionState newState) {
                     if (log.isTraceEnabled())
@@ -114,14 +114,14 @@ public class MetadataHelperUpdateHdfsListener {
             if (!watcher.checkTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE)) {
                 watcher.setTriState(triStateName, SharedTriState.STATE.NEEDS_UPDATE);
             }
-            
+
         } catch (Exception e) {
             log.error(e);
         }
     }
-    
+
     private void maybeUpdateTypeMetadataInHdfs(final SharedCacheCoordinator watcher, String triStateName, String metadataTableName) throws Exception {
-        
+
         boolean locked = false;
         InterProcessMutex lock = (InterProcessMutex) watcher.getMutex("lock");
         try {
@@ -134,7 +134,7 @@ public class MetadataHelperUpdateHdfsListener {
         } catch (Exception e) {
             log.warn("table:" + metadataTableName + " Got Exception trying to acquire lock to update " + metadataTableName + ".", e);
         }
-        
+
         try {
             if (locked) {
                 try {
@@ -168,7 +168,7 @@ public class MetadataHelperUpdateHdfsListener {
                     if (log.isDebugEnabled()) {
                         log.debug("After exception, set the SharedTriState STATE to NEEDS_UPDATE");
                     }
-                    
+
                 }
             }
         } finally {
@@ -176,7 +176,7 @@ public class MetadataHelperUpdateHdfsListener {
                 lock.release();
                 if (log.isTraceEnabled())
                     log.trace("table:" + metadataTableName + " " + this + " released the lock for " + metadataTableName);
-                
+
             }
         }
     }

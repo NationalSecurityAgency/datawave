@@ -25,12 +25,12 @@ import static datawave.query.testframework.RawDataManager.OR_OP;
 import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class PushdownQueryTest extends AbstractFunctionalQuery {
-    
+
     @ClassRule
     public static AccumuloSetup accumuloSetup = new AccumuloSetup();
-    
+
     private static final Logger log = Logger.getLogger(PushdownQueryTest.class);
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -40,15 +40,15 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         generic.addIndexOnlyField(CityField.CODE.name());
         generic.addReverseIndexField(CityField.CODE.name());
         dataTypes.add(new CitiesDataType(CityEntry.generic, generic));
-        
+
         accumuloSetup.setData(FileType.CSV, dataTypes);
         client = accumuloSetup.loadTables(log);
     }
-    
+
     public PushdownQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testAnd() throws Exception {
         log.info("------  testAnd  ------");
@@ -60,7 +60,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testCompoundAnd() throws Exception {
         log.info("------  testCompoundAnd  ------");
@@ -73,7 +73,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testAndFilterIncludeRegex() throws Exception {
         log.info("------  testAndFilterIncludeRegex  ------");
@@ -87,7 +87,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testCompoundAndFilterIncludeRegex() throws Exception {
         log.info("------  testCompoundAndFilterIncludeRegex  ------");
@@ -102,7 +102,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testNumericLt() throws Exception {
         log.info("------  testNumericLt  ------");
@@ -113,7 +113,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, query);
         }
     }
-    
+
     @Test
     public void testDelayedIndexOnly() throws Exception {
         log.info("------  testErrorIndexOnly  ------");
@@ -122,7 +122,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
         ((DefaultQueryPlanner) logic.getQueryPlanner()).setExecutableExpansion(false);
         runTest(query, query);
     }
-    
+
     @Test
     public void testDelayedFilterIncludeRegex() throws Exception {
         log.info("------  testDelayedFilterIncludeRegex  ------");
@@ -137,7 +137,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     @Test
     public void testDelayedFilterIncludeRegexExpansion() throws Exception {
         log.info("------  testDelayedFilterIncludeRegexExpansion  ------");
@@ -152,7 +152,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     // ============================================
     // error conditions
     @Test
@@ -162,7 +162,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
                         + "104)";
         runTest(query, query);
     }
-    
+
     @Test
     public void testExecutableExpansionRegex() throws Exception {
         log.info("------  testExecutableExpansionRegex  ------");
@@ -176,7 +176,7 @@ public class PushdownQueryTest extends AbstractFunctionalQuery {
             runTest(query, expectQuery);
         }
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

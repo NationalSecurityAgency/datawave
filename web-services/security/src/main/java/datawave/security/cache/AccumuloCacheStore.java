@@ -51,10 +51,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
     private AccumuloCacheStoreConfiguration configuration;
     private String tableName;
     private Authorizations authorizations = new Authorizations();
-    
+
     private AccumuloClient accumuloClient;
     private BatchWriter batchWriter;
-    
+
     @Override
     public void init(InitializationContext ctx) {
         this.ctx = ctx;
@@ -64,7 +64,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         if (auths != null && !auths.isEmpty())
             authorizations = new Authorizations(auths.toArray(new String[0]));
     }
-    
+
     @Override
     public void start() {
         // @formatter:off
@@ -73,10 +73,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
                 .as(configuration.username(), configuration.password())
                 .build();
         // @formatter:on
-        
+
         IteratorSetting ageoffConfig = new IteratorSetting(configuration.ageoffPriority(), AgeOffFilter.class.getSimpleName(), AgeOffFilter.class);
         AgeOffFilter.setTTL(ageoffConfig, configuration.ageoffTTLhours() * 60L * 60L * 1000L);
-        
+
         if (!accumuloClient.tableOperations().exists(tableName)) {
             try {
                 accumuloClient.tableOperations().create(tableName);
@@ -113,7 +113,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
                 throw new RuntimeException("Unable to configure Accumulo cache table " + tableName, e);
             }
         }
-        
+
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxWriteThreads(configuration.writeThreads())
                         .setMaxLatency(configuration.maxLatency(), TimeUnit.SECONDS).setMaxMemory(configuration.maxMemory());
         try {
@@ -123,7 +123,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new RuntimeException("Unable to create BatchWriter.", e);
         }
     }
-    
+
     @Override
     public void stop() {
         try {
@@ -131,20 +131,20 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         } catch (MutationsRejectedException e) {
             throw new RuntimeException("Unable to write cache value(s) to Accumulo", e);
         }
-        
+
         accumuloClient.close();
     }
-    
+
     @Override
     public void write(MarshalledEntry<? extends K,? extends V> entry) {
         log.trace("Adding value for {} to the accumulo cache for table {}.", entry.getKey(), tableName);
-        
+
         org.infinispan.commons.io.ByteBuffer keyBytes = entry.getKeyBytes();
         org.infinispan.commons.io.ByteBuffer valueBytes = entry.getValueBytes();
         org.infinispan.commons.io.ByteBuffer metadataBytes = entry.getMetadataBytes();
         int metadataLength = metadataBytes == null ? 0 : metadataBytes.getLength();
         int len = 4 + 4 + valueBytes.getLength() + metadataLength;
-        
+
         ByteBuffer buffer = ByteBuffer.allocate(len);
         buffer.putInt(valueBytes.getLength());
         buffer.putInt(metadataLength);
@@ -152,7 +152,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         if (metadataBytes != null)
             buffer.put(metadataBytes.getBuf(), metadataBytes.getOffset(), metadataBytes.getLength());
         buffer.flip();
-        
+
         Mutation m = new Mutation(keyBytes.getBuf(), keyBytes.getOffset(), keyBytes.getLength());
         m.put("", "", entry.getMetadata().created(), new Value(buffer));
         try {
@@ -162,7 +162,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException("Unable to write cache value to Accumulo", e);
         }
     }
-    
+
     @Override
     public void clear() {
         log.trace("Clearing Accumulo cache for table {}.", tableName);
@@ -176,7 +176,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException("Unable to clear Accumulo cache for " + tableName, e);
         }
     }
-    
+
     @Override
     public boolean delete(Object key) {
         log.trace("Deleting value for {} from the Accumulo cache for table {}.", key, tableName);
@@ -195,12 +195,12 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException("Unable to serialize key: " + key, e);
         }
     }
-    
+
     @Override
     public MarshalledEntry<K,V> load(Object key) {
         return _load(key, true, true);
     }
-    
+
     public MarshalledEntry<K,V> _load(Object key, boolean loadValue, boolean loadMetadata) {
         Scanner scanner;
         try {
@@ -212,12 +212,12 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         } catch (IOException | InterruptedException e) {
             throw new PersistenceException("Unable to serialize key " + key, e);
         }
-        
+
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
         Map.Entry<Key,Value> entry = iterator.hasNext() ? iterator.next() : null;
         return decodeEntry(entry, key, loadValue, loadMetadata);
     }
-    
+
     private MarshalledEntry<K,V> decodeEntry(Map.Entry<Key,Value> entry, Object key, boolean loadValue, boolean loadMetadata) {
         if (entry != null) {
             ByteBufferFactory bbFactory = ctx.getByteBufferFactory();
@@ -241,7 +241,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             return null;
         }
     }
-    
+
     @Override
     public boolean contains(Object key) {
         try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
@@ -252,7 +252,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException(e);
         }
     }
-    
+
     @Override
     public int size() {
         try (BatchScanner batchScanner = accumuloClient.createBatchScanner(tableName, authorizations, 5)) {
@@ -270,23 +270,23 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException("Unable to calculate size of Accumulo cache table " + tableName, e);
         }
     }
-    
+
     @Override
     public void purge(Executor threadPool, PurgeListener<? super K> listener) {
         // This is a no-op since we use an age-off iterator on the cache entries
     }
-    
+
     @Override
     public void process(KeyFilter<? super K> filter, CacheLoaderTask<K,V> task, Executor executor, boolean fetchValue, boolean fetchMetadata) {
         try (BatchScanner batchScanner = accumuloClient.createBatchScanner(tableName, authorizations, 5)) {
-            
+
             batchScanner.setRanges(Collections.singleton(new Range()));
             try {
                 TaskContext taskContext = new TaskContextImpl();
                 for (Map.Entry<Key,Value> entry : batchScanner) {
                     if (taskContext.isStopped())
                         break;
-                    
+
                     try {
                         ByteSequence rowData = entry.getKey().getRowData();
                         @SuppressWarnings("unchecked")

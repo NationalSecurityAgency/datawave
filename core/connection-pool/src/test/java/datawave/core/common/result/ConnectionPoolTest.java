@@ -11,19 +11,19 @@ import java.util.List;
 import java.util.TreeSet;
 
 /**
- * 
+ *
  */
 public class ConnectionPoolTest {
-    
+
     List<ConnectionPool> connectionPools = null;
-    
+
     private ConnectionPool createPool(String poolName, String priority) {
         ConnectionPool p = new ConnectionPool();
         p.setPoolName(poolName);
         p.setPriority(priority);
         return p;
     }
-    
+
     @Before
     public void setup() {
         connectionPools = new LinkedList<>();
@@ -36,15 +36,15 @@ public class ConnectionPoolTest {
         connectionPools.add(createPool("INGEST", Priority.NORMAL.toString()));
         connectionPools.add(createPool("INGEST", Priority.HIGH.toString()));
     }
-    
+
     @Test
     public void testOrdering() {
-        
+
         TreeSet<ConnectionPool> pools = new TreeSet<>();
         pools.addAll(connectionPools);
         Iterator<ConnectionPool> itr = pools.iterator();
         ConnectionPool p = null;
-        
+
         p = itr.next();
         Assert.assertEquals("INGEST", p.getPoolName());
         Assert.assertEquals("ADMIN", p.getPriority());

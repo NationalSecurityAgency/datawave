@@ -25,10 +25,10 @@ import javax.ws.rs.Produces;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class ListUserAuthorizationsBean {
-    
+
     @Inject
     private RemoteAdminService remoteAdminService;
-    
+
     @Path("/ListUserAuthorizations/{userName}")
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml"})
     @GET

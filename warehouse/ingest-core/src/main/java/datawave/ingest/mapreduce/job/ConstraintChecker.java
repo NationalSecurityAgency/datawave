@@ -12,11 +12,11 @@ import java.util.Collection;
  * Runs all configured VisibilityConstraints for all tables.
  */
 public class ConstraintChecker {
-    
+
     private static final Logger log = Logger.getLogger(ConstraintChecker.class);
-    
+
     public static final String INITIALIZERS = "visibility.constraint.initializers";
-    
+
     /**
      * Factory method to create a new ConstraintChecker from a Configuration.
      *
@@ -25,39 +25,39 @@ public class ConstraintChecker {
      * @return constraint checker
      */
     public static ConstraintChecker create(Configuration conf) {
-        
+
         Multimap<Text,VisibilityConstraint> constraints = null;
-        
+
         String[] initializerClasses = conf.getStrings(INITIALIZERS);
-        
+
         if (initializerClasses != null) {
             for (String initializerClass : initializerClasses) {
                 if (constraints == null) {
                     constraints = HashMultimap.create();
                 }
-                
+
                 try {
                     ConstraintInitializer initializer = Class.forName(initializerClass).asSubclass(ConstraintInitializer.class).newInstance();
                     initializer.addConstraints(conf, constraints);
-                    
+
                 } catch (Exception e) {
                     log.error("Could invoke ConstraintInitializer: " + initializerClass, e);
                     throw new RuntimeException("Could invoke ConstraintInitializer: " + initializerClass, e);
                 }
             }
         }
-        
+
         return new ConstraintChecker(constraints);
     }
-    
+
     private final Multimap<Text,VisibilityConstraint> constraints;
     private final boolean isConfigured;
-    
+
     private ConstraintChecker(Multimap<Text,VisibilityConstraint> constraints) {
         this.constraints = constraints;
         this.isConfigured = (constraints != null && !constraints.isEmpty());
     }
-    
+
     /**
      * Tells if this feature is currently enabled.
      *
@@ -66,7 +66,7 @@ public class ConstraintChecker {
     public boolean isConfigured() {
         return isConfigured;
     }
-    
+
     /**
      * Runs the configured validation on the given table/visibility.
      *
@@ -82,9 +82,9 @@ public class ConstraintChecker {
         if (!isConfigured) {
             return;
         }
-        
+
         Collection<VisibilityConstraint> tableConstraints = constraints.get(table);
-        
+
         if (tableConstraints != null && !tableConstraints.isEmpty()) {
             for (VisibilityConstraint constraint : tableConstraints) {
                 if (!constraint.isValid(visibility)) {
@@ -93,7 +93,7 @@ public class ConstraintChecker {
             }
         }
     }
-    
+
     /**
      * Thrown when a violation is encountered.
      */

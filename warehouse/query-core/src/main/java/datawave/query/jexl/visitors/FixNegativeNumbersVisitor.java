@@ -9,12 +9,12 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 public class FixNegativeNumbersVisitor extends RebuildingVisitor {
-    
+
     public static ASTJexlScript fix(JexlNode root) {
         FixNegativeNumbersVisitor visitor = new FixNegativeNumbersVisitor();
         return (ASTJexlScript) root.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode astumn, Object data) {
         if (astumn.jjtGetNumChildren() == 1 && astumn.jjtGetChild(0) instanceof ASTNumberLiteral) {
@@ -35,7 +35,7 @@ public class FixNegativeNumbersVisitor extends RebuildingVisitor {
         } else {
             return super.visit(astumn, data);
         }
-        
+
     }
-    
+
 }

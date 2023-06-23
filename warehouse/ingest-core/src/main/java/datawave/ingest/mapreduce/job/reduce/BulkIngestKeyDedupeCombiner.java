@@ -23,29 +23,29 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import com.google.common.collect.Iterators;
 
 public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkIngestKey,Value,K2,V2> {
-    
+
     public static final String CONTEXT_WRITER_CLASS = "ingest.dedupe.combiner.context.writer.class";
     public static final String CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS = "ingest.dedupe.combiner.context.writer.output.table.counters";
     public static final String USING_COMBINER = "ingest.using.combiner";
     public static final String MAPRED_OUTPUT_VALUE_CLASS = "mapreduce.job.output.value.class";
     protected static final String COUNTER_CLASS_NAME = BulkIngestKeyDedupeCombiner.class.getSimpleName();
-    
+
     private ContextWriter<K2,V2> contextWriter = null;
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public void setup(Configuration conf) throws IOException, InterruptedException {
         super.setup(conf);
-        
+
         setupContextWriter(conf);
-        
+
         // Throw an error if the flag is not set. If this combiner is being used then others need to know
         // about it.
         if (!conf.getBoolean(USING_COMBINER, false)) {
             throw new IOException("Expected " + USING_COMBINER + " to be set to true when using this class");
         }
     }
-    
+
     protected void setupContextWriter(Configuration conf) throws IOException {
         Class<ContextWriter<K2,V2>> contextWriterClass = null;
         if (Mutation.class.equals(conf.getClass(MAPRED_OUTPUT_VALUE_CLASS, null))) {
@@ -60,29 +60,29 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
             throw new IOException("Failed to initialized " + contextWriterClass + " from property " + CONTEXT_WRITER_CLASS, e);
         }
     }
-    
+
     public void setContextWriter(ContextWriter<?,?> writer) {
         this.contextWriter = (ContextWriter<K2,V2>) writer;
     }
-    
+
     public ContextWriter<K2,V2> getContextWriter() {
         return this.contextWriter;
     }
-    
+
     @Override
     public void finish(TaskInputOutputContext<?,?,K2,V2> context) throws IOException, InterruptedException {
         super.finish(context);
         contextWriter.cleanup(context);
     }
-    
+
     public void flush(TaskInputOutputContext<?,?,K2,V2> context) throws IOException, InterruptedException {
         contextWriter.commit(context);
     }
-    
+
     /**
      * This method can be overwritten to write directly to the context if K2, V2 are BulkIngestKey, Value, or this method can translate to something else such
      * as Text, Mutation
-     * 
+     *
      * @param key
      *            a key
      * @param value
@@ -99,16 +99,16 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
         // the combiner needs to preserve order writing out, so lets avoid any caching
         contextWriter.commit(ctx);
     }
-    
+
     @Override
     public void doReduce(BulkIngestKey key, Iterable<Value> values, TaskInputOutputContext<?,?,K2,V2> ctx) throws IOException, InterruptedException {
         long ts = 0;
         boolean useTSDedup = false;
-        
+
         if (useAggregators(key.getTableName())) {
-            
+
             List<Combiner> aggList = getAggregators(key.getTableName(), key.getKey());
-            
+
             if (aggList.isEmpty()) {
                 /**
                  * if we have a key that matches on TableNAme row_key columnFamily columnQualifier timestamp then it is a dup This works for the case where no
@@ -116,9 +116,9 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
                  */
                 boolean firstValue = true;
                 int duplicates = 0;
-                
+
                 for (Value value : values) {
-                    
+
                     if (firstValue) {
                         writeBulkIngestKey(key, value, ctx);
                         firstValue = false;
@@ -131,29 +131,29 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
             } else {
                 /***
                  * Dedup tables either by timestamp or by use of the value Currently there are tables that use aggregators that use this deduping functionality.
-                 * 
+                 *
                  * edge: we use the timestamp to the ms to remove duplicate counts from the same record/event
-                 * 
+                 *
                  * Global indices (term and reverse) : Contain counts of uuids so they are deduped by the uniqueness of the value
-                 * 
+                 *
                  * DataWaveMetadata: Counts are aggregated as number of times fields appear. There really is no concept of dups here
-                 * 
+                 *
                  */
                 if (TSDedupTables.contains(key.getTableName())) {
                     useTSDedup = true;
                 }
                 if (noTSDedupTables.contains(key.getTableName())) {
-                    
+
                     useTSDedup = false;
                 }
-                
+
                 BulkIngestKey outKey = new BulkIngestKey(key.getTableName(), key.getKey());
                 if (useTSDedup && outKey.getKey().getTimestamp() > 0) {
                     /**
                      * Congratulations you have selected to use timestamp deduping
-                     * 
+                     *
                      */
-                    
+
                     ts = (outKey.getKey().getTimestamp()) / MILLISPERDAY;
                     outKey.getKey().setTimestamp(-1 * ts);
                     boolean firstValue = true;
@@ -169,33 +169,33 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
                     }
                     ctx.getCounter(IngestOutput.TIMESTAMP_DUPLICATE).increment(duplicates);
                 } else {
-                    
+
                     Iterator<Value> valueItr = values.iterator();
-                    
+
                     Value reducedValue = null;
-                    
+
                     long mergedValues = 0;
                     for (Combiner agg : aggList) {
-                        
+
                         reducedValue = agg.reduce(key.getKey(), valueItr);
-                        
+
                         valueItr = Iterators.singletonIterator(reducedValue);
-                        
+
                         ctx.progress();
-                        
+
                         mergedValues++;
-                        
+
                         if (agg instanceof PropogatingCombiner) {
                             ((PropogatingCombiner) agg).reset();
                         }
                     }
-                    
+
                     writeBulkIngestKey(outKey, reducedValue, ctx);
-                    
+
                     ctx.getCounter(IngestOutput.MERGED_VALUE).increment(mergedValues);
-                    
+
                 }
-                
+
             }
         } else {
             for (Value value : values) {
@@ -204,9 +204,9 @@ public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkI
             }
         }
         ctx.progress();
-        
+
     }
-    
+
     public static long bytesToLong(byte[] b) throws IOException {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(b));
         return WritableUtils.readVLong(dis);

@@ -17,24 +17,24 @@ import java.util.ArrayList;
  * class is created by the MetadataHelperCacheListenerContext.xml which is not loaded in unit tests
  */
 public class MetadataHelperCacheManagementListener {
-    
+
     private static final Logger log = Logger.getLogger(MetadataHelperCacheManagementListener.class);
-    
+
     private final String zookeepers;
     private final MetadataCacheManager metadataCacheManager;
     private final ArrayList<SharedCacheCoordinator> cacheCoordinators;
-    
+
     public MetadataHelperCacheManagementListener(String zookeepers, MetadataCacheManager metadataCacheManager, String[] metadataTableNames) {
         this.zookeepers = zookeepers;
         this.metadataCacheManager = metadataCacheManager;
-        
+
         cacheCoordinators = new ArrayList<>(metadataTableNames.length);
         for (String metadataTableName : metadataTableNames) {
             SharedCacheCoordinator watcher = registerCacheListener(metadataTableName);
             cacheCoordinators.add(watcher);
         }
     }
-    
+
     private SharedCacheCoordinator registerCacheListener(final String metadataTableName) {
         log.debug("created CacheManagement listener for table:" + metadataTableName);
         final SharedCacheCoordinator watcher = new SharedCacheCoordinator(metadataTableName, this.zookeepers, 30, 300, 10);
@@ -53,7 +53,7 @@ public class MetadataHelperCacheManagementListener {
                         log.trace("stateChanged(" + client + ", " + newState + ")");
                     }
                 }
-                
+
                 @Override
                 public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception {
                     if (log.isDebugEnabled()) {
@@ -80,10 +80,10 @@ public class MetadataHelperCacheManagementListener {
         } catch (Error e) {
             throw new RuntimeException("Unable to create shared counters: " + e.getMessage(), e);
         }
-        
+
         return watcher;
     }
-    
+
     /**
      * Cleans up {@link SharedCacheCoordinator}s used by this class. This method should be named as the "destroy-method" when this class is declared as a Spring
      * bean.
