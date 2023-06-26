@@ -1,6 +1,6 @@
 package datawave.ingest.table.volumeChoosers;
 
-import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.HashSet;
