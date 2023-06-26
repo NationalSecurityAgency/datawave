@@ -1,8 +1,8 @@
 package datawave.query.iterator;
 
-import com.google.common.collect.PeekingIterator;
-
 import java.util.Iterator;
+
+import com.google.common.collect.PeekingIterator;
 
 public class CachingIterator<T> implements PeekingIterator<T> {
     private Iterator<T> delegate;

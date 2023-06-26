@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce.job.statsd;
 
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
 
 /**
  * Created on 4/25/16.

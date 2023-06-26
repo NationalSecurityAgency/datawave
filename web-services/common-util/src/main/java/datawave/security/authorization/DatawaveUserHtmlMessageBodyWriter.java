@@ -1,14 +1,15 @@
 package datawave.security.authorization;
 
-import datawave.webservice.util.AbstractHtmlProviderMessageBodyWriter;
-
-import javax.ws.rs.core.MediaType;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import javax.ws.rs.core.MediaType;
+
+import datawave.webservice.util.AbstractHtmlProviderMessageBodyWriter;
 
 public class DatawaveUserHtmlMessageBodyWriter extends AbstractHtmlProviderMessageBodyWriter<DatawaveUser> {
     protected static final String TITLE = "Datawave User", EMPTY = "";

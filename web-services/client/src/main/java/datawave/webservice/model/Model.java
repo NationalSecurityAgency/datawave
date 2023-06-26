@@ -2,9 +2,10 @@ package datawave.webservice.model;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.TreeSet;
 
-import javax.inject.Inject;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
@@ -12,12 +13,15 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import datawave.webservice.HtmlProvider;
-import datawave.webservice.result.BaseResponse;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
+
+import datawave.query.model.Direction;
+import datawave.query.model.FieldMapping;
+import datawave.query.model.QueryModel;
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "Model")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -129,16 +133,30 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
         builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
 
-        builder.append("<thead><tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th></tr></thead>");
+        builder.append("<thead><tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th><th>Lenient</th></tr></thead>");
         builder.append("<tbody>");
 
+        // first gather the model fields that are deemed "lenient" (i.e. where the model field name has a mapping to the field called "lenient")
+        Set<String> lenientModelFields = new HashSet<>();
+        for (FieldMapping field : this.getFields()) {
+            if (field.getDirection() == Direction.FORWARD) {
+                if (field.isLenientMarker()) {
+                    lenientModelFields.add(field.getModelFieldName());
+                }
+            }
+        }
+
         for (FieldMapping f : this.getFields()) {
-            builder.append("<td>").append(f.getColumnVisibility()).append("</td>");
-            builder.append("<td>").append(f.getFieldName()).append("</td>");
-            builder.append("<td>").append(f.getDatatype()).append("</td>");
-            builder.append("<td>").append(f.getModelFieldName()).append("</td>");
-            builder.append("<td>").append(f.getDirection()).append("</td>");
-            builder.append("</tr>");
+            // don't include the lenient marker itself
+            if (!f.isLenientMarker()) {
+                builder.append("<td>").append(f.getColumnVisibility()).append("</td>");
+                builder.append("<td>").append(f.getFieldName()).append("</td>");
+                builder.append("<td>").append(f.getDatatype()).append("</td>");
+                builder.append("<td>").append(f.getModelFieldName()).append("</td>");
+                builder.append("<td>").append(f.getDirection()).append("</td>");
+                builder.append("<td>").append(lenientModelFields.contains(f.getModelFieldName())).append("</td>");
+                builder.append("</tr>");
+            }
         }
 
         builder.append("</tbody>");

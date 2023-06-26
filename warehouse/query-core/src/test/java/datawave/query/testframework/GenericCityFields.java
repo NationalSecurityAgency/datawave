@@ -1,11 +1,11 @@
 package datawave.query.testframework;
 
-import datawave.query.testframework.CitiesDataType.CityField;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import datawave.query.testframework.CitiesDataType.CityField;
 
 /**
  * Base field configuration settings for the data in the generic-cities CSV file. The default settings are:

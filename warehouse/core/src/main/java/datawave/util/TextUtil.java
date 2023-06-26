@@ -1,10 +1,10 @@
 package datawave.util;
 
-import org.apache.accumulo.core.iterators.LongCombiner;
-import org.apache.hadoop.io.Text;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
+
+import org.apache.accumulo.core.iterators.LongCombiner;
+import org.apache.hadoop.io.Text;
 
 public class TextUtil {
     /**

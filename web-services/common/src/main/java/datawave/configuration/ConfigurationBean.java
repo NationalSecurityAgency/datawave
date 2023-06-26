@@ -14,10 +14,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-import com.codahale.metrics.annotation.Timed;
-import datawave.webservice.result.GenericResponse;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
+
+import com.codahale.metrics.annotation.Timed;
+
+import datawave.webservice.result.GenericResponse;
 
 @MBean
 @Singleton

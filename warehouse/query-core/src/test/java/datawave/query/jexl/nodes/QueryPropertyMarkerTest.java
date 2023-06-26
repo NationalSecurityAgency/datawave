@@ -1,22 +1,5 @@
 package datawave.query.jexl.nodes;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-
 import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
 import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
 import static org.junit.Assert.assertEquals;
@@ -25,6 +8,26 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.DroppedExpression;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 public class QueryPropertyMarkerTest {
 
@@ -240,5 +243,17 @@ public class QueryPropertyMarkerTest {
     private void assertInstance(QueryPropertyMarker.Instance instance, Class<? extends QueryPropertyMarker> type, String source) {
         assertEquals(type, instance.getType());
         assertEquals(source, buildQuery(instance.getSource()));
+    }
+
+    @Test
+    public void getDroppedExpression() {
+        JexlNode source = JexlNodeFactory.buildERNode("FOO", "ba.*");
+        String expected = "((_Drop_ = true) && (_Query_ = 'FOO =~ \\'ba.*\\''))";
+        JexlNode marked = QueryPropertyMarker.create(source, DroppedExpression.class);
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
+
+        expected = "((_Drop_ = true) && ((_Reason_ = 'my reason') && (_Query_ = 'FOO =~ \\'ba.*\\'')))";
+        marked = DroppedExpression.create(source, "my reason");
+        assertEquals(expected, JexlStringBuildingVisitor.buildQueryWithoutParse(marked));
     }
 }

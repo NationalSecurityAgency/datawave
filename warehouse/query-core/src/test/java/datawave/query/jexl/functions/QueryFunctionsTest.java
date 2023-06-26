@@ -1,19 +1,21 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.collect.Lists;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.Type;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.function.Function;
+
 import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
-import java.util.function.Function;
+import com.google.common.collect.Lists;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 
 /**
  * Due to the expansive nature of {@link QueryFunctions}, tests for individual methods are encapsulated within their own test suites represented by the nested

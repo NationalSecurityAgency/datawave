@@ -1,16 +1,5 @@
 package datawave.query.ancestor;
 
-import datawave.query.function.Equality;
-import datawave.query.Constants;
-import datawave.query.function.AncestorEquality;
-import datawave.query.util.IteratorToSortedKeyValueIterator;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -19,6 +8,18 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import datawave.query.Constants;
+import datawave.query.function.AncestorEquality;
+import datawave.query.function.Equality;
+import datawave.query.util.IteratorToSortedKeyValueIterator;
 
 public class AncestorChildExpansionIteratorTest {
     private List<String> children = Arrays.asList("a", "a.1", "a.1.1", "a.1.2", "a.1.2.1", "a.10", "a.2", "a.3", "a.4", "a.4.1", "a.4.1.1", "a.4.1.2", "a.4.2",

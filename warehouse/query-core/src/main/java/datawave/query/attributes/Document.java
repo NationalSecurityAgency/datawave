@@ -1,27 +1,5 @@
 package datawave.query.attributes;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.composite.CompositeMetadata;
-import datawave.query.function.KeyToFieldName;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.ValueToAttributes;
-import datawave.query.util.TypeMetadata;
-import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.hadoop.io.WritableUtils;
-import org.apache.log4j.Logger;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -36,6 +14,30 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.log4j.Logger;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Sets;
+
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.KeyToFieldName;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.ValueToAttributes;
+import datawave.query.util.TypeMetadata;
+import datawave.util.time.DateHelper;
 
 public class Document extends AttributeBag<Document> implements Serializable {
     private static final long serialVersionUID = 1L;

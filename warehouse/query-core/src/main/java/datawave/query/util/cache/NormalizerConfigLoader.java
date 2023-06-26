@@ -13,15 +13,15 @@ import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import datawave.data.type.Type;
-import datawave.ingest.util.cache.Loader;
-
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.data.type.Type;
+import datawave.ingest.util.cache.Loader;
 
 /**
  *

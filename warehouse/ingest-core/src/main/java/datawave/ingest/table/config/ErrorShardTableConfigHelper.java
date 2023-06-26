@@ -3,14 +3,14 @@ package datawave.ingest.table.config;
 import java.util.HashSet;
 import java.util.Set;
 
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 /**
  * TableConfigHelper implementation for the "sharded" error tables. This class should perform the majority of the same operations that the

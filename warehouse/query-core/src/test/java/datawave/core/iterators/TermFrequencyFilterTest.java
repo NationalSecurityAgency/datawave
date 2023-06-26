@@ -1,13 +1,9 @@
 package datawave.core.iterators;
 
-import datawave.query.iterator.SortedListKeyValueIterator;
-import datawave.query.postprocessing.tf.TermOffsetPopulator;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.io.Text;
-import org.junit.Test;
+import static datawave.query.Constants.NULL;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -19,10 +15,15 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import static datawave.query.Constants.NULL;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.hadoop.io.Text;
+import org.junit.Test;
+
+import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.postprocessing.tf.TermOffsetPopulator;
 
 /**
  * Copy of {@link TermFrequencyIteratorTest} but validates {@link TermFrequencyFilter}

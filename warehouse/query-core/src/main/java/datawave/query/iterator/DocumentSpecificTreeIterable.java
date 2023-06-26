@@ -6,9 +6,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Document;
-import datawave.query.iterator.aggregation.DocumentData;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -16,6 +13,9 @@ import org.apache.accumulo.core.data.Range;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Document;
+import datawave.query.iterator.aggregation.DocumentData;
 
 /**
  *

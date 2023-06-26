@@ -1,6 +1,7 @@
 package datawave.ingest.data;
 
 import org.apache.hadoop.conf.Configuration;
+
 import datawave.ingest.data.config.ingest.IgnorableErrorHelperInterface;
 
 public class TestIgnorableHelper implements IgnorableErrorHelperInterface {

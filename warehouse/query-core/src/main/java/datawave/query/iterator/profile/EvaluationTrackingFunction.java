@@ -1,7 +1,8 @@
 package datawave.query.iterator.profile;
 
-import com.google.common.base.Function;
 import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
 
 public class EvaluationTrackingFunction<F,T> implements Function<F,T> {
 

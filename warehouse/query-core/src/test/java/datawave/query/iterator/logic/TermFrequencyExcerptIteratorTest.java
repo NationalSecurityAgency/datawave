@@ -1,12 +1,18 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.ingest.protobuf.TermWeight;
-import datawave.query.Constants;
-import datawave.query.iterator.SortedListKeyValueIterator;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -23,18 +29,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.query.Constants;
+import datawave.query.iterator.SortedListKeyValueIterator;
 
 @RunWith(EasyMockRunner.class)
 public class TermFrequencyExcerptIteratorTest extends EasyMockSupport {

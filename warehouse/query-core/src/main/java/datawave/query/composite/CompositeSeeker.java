@@ -1,14 +1,16 @@
 package datawave.query.composite;
 
-import com.google.common.collect.Multimap;
-import datawave.data.type.DiscreteIndexType;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.Multimap;
+
+import datawave.data.type.DiscreteIndexType;
 
 /**
  * The CompositeSeeker can be used within an Accumulo iterator in order to determing whether or not the current key is within the bounds of the composite range.

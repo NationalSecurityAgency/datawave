@@ -1,6 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -12,8 +14,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class SplitBasedHashPartitionerTest {
     private static final String TEST_FILE_LOCATION = "datawave/ingest/mapreduce/job/full_splits.txt";

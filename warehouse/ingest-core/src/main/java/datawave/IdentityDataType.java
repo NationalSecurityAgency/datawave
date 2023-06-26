@@ -1,6 +1,7 @@
 package datawave;
 
 import java.util.Collection;
+
 import datawave.data.type.Type;
 
 public class IdentityDataType implements Type<String> {

@@ -1,11 +1,13 @@
 package datawave.query.attributes;
 
-import com.google.common.base.Objects;
-import datawave.data.type.Type;
-import datawave.query.util.Tuple3;
+import java.util.Collection;
+
 import org.apache.commons.lang.builder.CompareToBuilder;
 
-import java.util.Collection;
+import com.google.common.base.Objects;
+
+import datawave.data.type.Type;
+import datawave.query.util.Tuple3;
 
 /**
  *

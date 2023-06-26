@@ -11,10 +11,11 @@ import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
 import datawave.webservice.websocket.messages.CancelMessage;
 import datawave.webservice.websocket.messages.CreateQueryMessage;
 import datawave.webservice.websocket.messages.QueryMessage;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 /**
  * Decodes incoming JSON text into a {@link QueryMessage}. Based on the message content, the returned object will be one of the known types of query messages.

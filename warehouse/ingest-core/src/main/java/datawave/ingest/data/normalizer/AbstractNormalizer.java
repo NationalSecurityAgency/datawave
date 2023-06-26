@@ -5,14 +5,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.data.normalizer.NormalizationException;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
 
 public abstract class AbstractNormalizer implements TextNormalizer {
     private static final Logger log = Logger.getLogger(AbstractNormalizer.class);

@@ -3,13 +3,12 @@ package datawave.ingest.mapreduce.job.writer;
 import java.io.IOException;
 import java.util.Map;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import org.apache.accumulo.core.data.Value;
-
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 /**
  * A simple context writer that simply passes the key and value directly to the context.

@@ -1,6 +1,26 @@
 package datawave.security.authorization.simple;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
+import javax.inject.Inject;
+import javax.sql.DataSource;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.HashMultimap;
+
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawaveUser;
@@ -8,24 +28,6 @@ import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.util.StringUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Resource;
-import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 
 /**
  * A {@link DatawaveUserService} that retrieves {@link DatawaveUser} objects from a SQL database. This login module expects the supplied {@link DataSource} to

@@ -1,16 +1,9 @@
 package datawave.webservice.common.health;
 
-import com.sun.management.OperatingSystemMXBean;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactoryBean;
-import datawave.webservice.result.GenericResponse;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.resteasy.annotations.GZIP;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RunAs;
@@ -41,10 +34,20 @@ import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.jboss.resteasy.annotations.GZIP;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.sun.management.OperatingSystemMXBean;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.webservice.common.connection.AccumuloConnectionFactoryBean;
+import datawave.webservice.result.GenericResponse;
 
 @PermitAll
 @Path("/Common/Health")

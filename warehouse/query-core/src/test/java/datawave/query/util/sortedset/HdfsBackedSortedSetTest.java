@@ -1,7 +1,11 @@
 package datawave.query.util.sortedset;
 
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FsStatus;
@@ -12,11 +16,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
 public class HdfsBackedSortedSetTest {
 

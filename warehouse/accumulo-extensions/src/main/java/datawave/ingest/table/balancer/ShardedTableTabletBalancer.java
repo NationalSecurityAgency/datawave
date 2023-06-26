@@ -1,21 +1,21 @@
 package datawave.ingest.table.balancer;
 
-import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.data.TabletId;
-import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment.Configuration;
-import org.apache.accumulo.core.spi.balancer.GroupBalancer;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.Logger;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.function.Function;
+
+import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.data.TabletId;
+import org.apache.accumulo.core.spi.balancer.GroupBalancer;
+import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableComparator;
+import org.apache.log4j.Logger;
 
 /**
  * A custom tablet balancer designed to work with a date-partitioned (sharded) table. This balancer is based on the {@link GroupBalancer}, which spreads tablets

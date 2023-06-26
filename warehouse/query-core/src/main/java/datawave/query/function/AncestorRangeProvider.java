@@ -1,8 +1,9 @@
 package datawave.query.function;
 
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
+
+import datawave.query.tld.TLD;
 
 /**
  * For use in the {@link datawave.query.ancestor.AncestorQueryIterator}

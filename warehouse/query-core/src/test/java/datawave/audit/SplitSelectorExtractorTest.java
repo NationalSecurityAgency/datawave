@@ -1,12 +1,14 @@
 package datawave.audit;
 
-import com.google.common.collect.Lists;
 import java.util.List;
 
-import datawave.webservice.query.QueryImpl;
 import org.apache.commons.lang.math.IntRange;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
+
+import datawave.webservice.query.QueryImpl;
 
 public class SplitSelectorExtractorTest {
 

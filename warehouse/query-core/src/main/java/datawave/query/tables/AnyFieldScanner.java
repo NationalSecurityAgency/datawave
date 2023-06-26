@@ -3,14 +3,14 @@ package datawave.query.tables;
 import java.util.Collection;
 import java.util.Set;
 
-import datawave.webservice.query.Query;
-
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.webservice.query.Query;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation

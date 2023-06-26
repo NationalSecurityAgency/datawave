@@ -1,14 +1,14 @@
 package datawave.query.language.functions.lucene;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+
 import datawave.query.language.functions.QueryFunction;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
 
 @Deprecated
 public class EvaluationOnly extends LuceneQueryFunction {

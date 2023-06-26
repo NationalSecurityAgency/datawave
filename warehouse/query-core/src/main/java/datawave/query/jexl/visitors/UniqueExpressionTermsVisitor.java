@@ -1,10 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.log4j.Logger;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -14,7 +10,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.log4j.Logger;
 
 /**
  * Visitor that enforces node uniqueness within AND or OR expressions. Nodes can be single nodes or subtrees.

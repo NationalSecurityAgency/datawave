@@ -1,14 +1,15 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.collect.MapMaker;
-import org.apache.log4j.Logger;
-
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.MapMaker;
 
 /**
  * Data structure for storing counts in a thread-safe manner. This data structure supports concurrent writes. The flush() operation will cause all other

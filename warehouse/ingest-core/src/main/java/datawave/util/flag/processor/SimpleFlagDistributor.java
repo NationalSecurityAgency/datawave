@@ -11,10 +11,11 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.util.flag.InputFile;
-import datawave.util.flag.config.FlagDataTypeConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.util.flag.InputFile;
+import datawave.util.flag.config.FlagDataTypeConfig;
 
 /**
  * No groupings, just returns files that are pending in no specific order

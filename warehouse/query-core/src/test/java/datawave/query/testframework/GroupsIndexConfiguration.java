@@ -1,10 +1,10 @@
 package datawave.query.testframework;
 
-import datawave.query.testframework.GroupsDataType.GroupField;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import datawave.query.testframework.GroupsDataType.GroupField;
 
 public class GroupsIndexConfiguration extends AbstractFields {
 

@@ -1,14 +1,14 @@
 package datawave.ingest.config;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.MarkingsHelper;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.metadata.EventMetadata;
 import datawave.ingest.metadata.RawRecordMetadata;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
 
 public class IngestConfigurationImpl implements IngestConfiguration {
 

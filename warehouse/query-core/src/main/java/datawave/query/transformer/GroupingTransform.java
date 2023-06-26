@@ -1,24 +1,7 @@
 package datawave.query.transformer;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import datawave.data.type.NumberType;
-import datawave.marking.MarkingFunctions;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.common.grouping.GroupingUtil;
-import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
-import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
-import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.model.QueryModel;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.slf4j.Logger;
-import org.springframework.util.Assert;
+import static org.slf4j.LoggerFactory.getLogger;
 
-import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,7 +12,27 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.slf4j.LoggerFactory.getLogger;
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.slf4j.Logger;
+import org.springframework.util.Assert;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+
+import datawave.data.type.NumberType;
+import datawave.marking.MarkingFunctions;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.common.grouping.GroupingUtil;
+import datawave.query.common.grouping.GroupingUtil.GroupCountingHashMap;
+import datawave.query.common.grouping.GroupingUtil.GroupingTypeAttribute;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.model.QueryModel;
 
 /**
  * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this transform will group into unique combinations of values and assign a count

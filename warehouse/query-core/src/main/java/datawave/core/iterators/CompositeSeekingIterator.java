@@ -1,7 +1,14 @@
 package datawave.core.iterators;
 
-import datawave.query.composite.CompositeSeeker.ShardIndexCompositeSeeker;
-import datawave.data.type.DiscreteIndexType;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -11,14 +18,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import datawave.data.type.DiscreteIndexType;
+import datawave.query.composite.CompositeSeeker.ShardIndexCompositeSeeker;
 
 /**
  * Skips rows whose composite terms are outside of the range defined by the upper and lower composite bounds.

@@ -1,10 +1,5 @@
 package datawave.query.testframework;
 
-import au.com.bytecode.opencsv.CSVReader;
-import datawave.query.testframework.CitiesDataType.CityField;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -14,6 +9,12 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import au.com.bytecode.opencsv.CSVReader;
+import datawave.query.testframework.CitiesDataType.CityField;
 
 /**
  * Provides a mapping of the raw ingest data for query analysis. This will allow dynamic calculation of expected results and modification of the test data

@@ -1,5 +1,12 @@
 package datawave.edge.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
@@ -11,8 +18,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import datawave.edge.util.EdgeValue.EdgeValueBuilder;
-
 import org.apache.accumulo.core.data.Value;
 import org.junit.After;
 import org.junit.Before;
@@ -20,12 +25,7 @@ import org.junit.Test;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertNotNull;
+import datawave.edge.util.EdgeValue.EdgeValueBuilder;
 
 public class EdgeValueTest {
 

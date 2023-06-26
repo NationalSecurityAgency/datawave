@@ -1,5 +1,28 @@
 package datawave.query.config;
 
+import java.io.Serializable;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
@@ -7,6 +30,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
@@ -33,28 +57,6 @@ import datawave.util.UniversalSet;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -386,6 +388,15 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // fields exempt from query model expansion
     private Set<String> noExpansionFields = new HashSet<>();
 
+    // fields for which normalizations can be dropped if they do not normalize
+    // properly for the type. This can include model fields in which case the
+    // concept will pass on to the expanded fields.
+    private Set<String> lenientFields = new HashSet<>();
+
+    // fields for which normalizations cannot be dropped because of normalization issues
+    // (e.g. a model field may be marked lenient in the QueryModel. This will override.)
+    private Set<String> strictFields = new HashSet<>();
+
     /**
      * The max execution time per page of results - after it has elapsed, an intermediate result page will be returned.
      */
@@ -609,6 +620,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setWhindexMappingFields(other.getWhindexMappingFields());
         this.setWhindexFieldMappings(other.getWhindexFieldMappings());
         this.setNoExpansionFields(other.getNoExpansionFields());
+        this.setLenientFields(other.getLenientFields());
+        this.setStrictFields(other.getStrictFields());
         this.setExcerptFields(ExcerptFields.copyOf(other.getExcerptFields()));
         this.setExcerptIterator(other.getExcerptIterator());
         this.setFiFieldSeek(other.getFiFieldSeek());
@@ -2312,6 +2325,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setNoExpansionFields(Set<String> noExpansionFields) {
         this.noExpansionFields = noExpansionFields;
+    }
+
+    public Set<String> getLenientFields() {
+        return lenientFields;
+    }
+
+    public void setLenientFields(Set<String> lenientFields) {
+        this.lenientFields = lenientFields;
+    }
+
+    public Set<String> getStrictFields() {
+        return strictFields;
+    }
+
+    public void setStrictFields(Set<String> strictFields) {
+        this.strictFields = strictFields;
     }
 
     public ExcerptFields getExcerptFields() {

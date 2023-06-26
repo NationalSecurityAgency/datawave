@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.SortedSet;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 

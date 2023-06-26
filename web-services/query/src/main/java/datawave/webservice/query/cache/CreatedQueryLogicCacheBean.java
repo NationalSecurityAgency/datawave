@@ -1,16 +1,10 @@
 package datawave.webservice.query.cache;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.logic.QueryLogic;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PreDestroy;
 import javax.annotation.security.PermitAll;
@@ -21,11 +15,20 @@ import javax.ejb.LocalBean;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.logic.QueryLogic;
 
 @Startup
 @Singleton

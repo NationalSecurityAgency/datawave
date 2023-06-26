@@ -1,11 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
-import datawave.query.QueryParameters;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
-import datawave.query.jexl.functions.QueryFunctions;
+import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
+import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
@@ -16,15 +20,13 @@ import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
+import datawave.query.QueryParameters;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
+import datawave.query.jexl.functions.QueryFunctions;
 
 /**
  * Visits the query tree and extracts the parameters from any options functions present and adds them to the provided data {@link Map}. Any options function
@@ -33,6 +35,10 @@ import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTORNODE;
  * <ul>
  * <li>{@code f:options()}: Expects a comma-delimited list of key/value pairs, e.g. {@code f:options('hit.list','true','limit.fields','FOO_1_BAR=3)}</li>
  * <li>{@code f:groupby()}: Expects a comma-delimited list of fields to group by, e.g. {@code f:groupby('field1','field2',field3')}</li>
+ * <li>{@code f:noexpansion()}: Expects a comma-delimited list of fields, e.g. {@code f:noExpansion('field1','field2',field3')}</li>
+ * <li>{@code f:lenient()}: Expects a comma-delimited list of fields, e.g. {@code f:lenient('field1','field2',field3')}</li>
+ * <li>{@code f:strict()}: Expects a comma-delimited list of fields, e.g. {@code f:strict('field1','field2',field3')}</li>
+ * <li>{@code f:excerpt_fields()}: Expects a comma-delimited list of fields, e.g. {@code f:excerpt_fields('field1','field2',field3')}</li>
  * <li>{@code f:unique()}: Expects a comma-delimited list of fields to be unique and their granularity levels, e.g.
  * {@code f:unique('field1[ALL]','field2[DAY]','field3[MINUTE,SECOND]')}</li>
  * <li>{@code f:unique_by_day()}: Expects a comma-delimited list of fields to be unique with a granularity level of by DAY, e.g.
@@ -51,7 +57,8 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     QueryFunctions.UNIQUE_FUNCTION, UniqueFunction.UNIQUE_BY_DAY_FUNCTION, UniqueFunction.UNIQUE_BY_HOUR_FUNCTION,
                     UniqueFunction.UNIQUE_BY_MINUTE_FUNCTION, UniqueFunction.UNIQUE_BY_TENTH_OF_HOUR_FUNCTION, UniqueFunction.UNIQUE_BY_MONTH_FUNCTION,
                     UniqueFunction.UNIQUE_BY_SECOND_FUNCTION, UniqueFunction.UNIQUE_BY_MILLISECOND_FUNCTION, UniqueFunction.UNIQUE_BY_YEAR_FUNCTION,
-                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION);
+                    QueryFunctions.GROUPBY_FUNCTION, QueryFunctions.EXCERPT_FIELDS_FUNCTION, QueryFunctions.NO_EXPANSION,
+                    QueryFunctions.LENIENT_FIELDS_FUNCTION, QueryFunctions.STRICT_FIELDS_FUNCTION);
 
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T collect(T node, Object data) {
@@ -185,7 +192,20 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                     for (int i = 0; i + 1 < optionsList.size(); i++) {
                         String key = optionsList.get(i++);
                         String value = optionsList.get(i);
-                        optionsMap.put(key, value);
+                        switch (key) {
+                            case QueryParameters.UNIQUE_FIELDS:
+                                updateUniqueFieldsOption(optionsMap, UniqueFields.from(value));
+                                break;
+                            case QueryParameters.GROUP_FIELDS:
+                            case QueryParameters.EXCERPT_FIELDS:
+                            case QueryParameters.NO_EXPANSION_FIELDS:
+                            case QueryParameters.LENIENT_FIELDS:
+                            case QueryParameters.STRICT_FIELDS:
+                                updateFieldsOption(optionsMap, key, Collections.singletonList(value));
+                                break;
+                            default:
+                                optionsMap.put(key, value);
+                        }
                     }
                     return null;
                 }
@@ -215,13 +235,31 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
                 case QueryFunctions.GROUPBY_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
-                    optionsMap.put(QueryParameters.GROUP_FIELDS, JOINER.join(optionsList));
+                    updateFieldsOption(optionsMap, QueryParameters.GROUP_FIELDS, optionsList);
                     return null;
                 }
                 case QueryFunctions.EXCERPT_FIELDS_FUNCTION: {
                     List<String> optionsList = new ArrayList<>();
                     this.visit(node, optionsList);
-                    optionsMap.put(QueryParameters.EXCERPT_FIELDS, JOINER.join(optionsList));
+                    updateFieldsOption(optionsMap, QueryParameters.EXCERPT_FIELDS, optionsList);
+                    return null;
+                }
+                case QueryFunctions.NO_EXPANSION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    updateFieldsOption(optionsMap, QueryParameters.NO_EXPANSION_FIELDS, optionsList);
+                    return null;
+                }
+                case QueryFunctions.LENIENT_FIELDS_FUNCTION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    updateFieldsOption(optionsMap, QueryParameters.LENIENT_FIELDS, optionsList);
+                    return null;
+                }
+                case QueryFunctions.STRICT_FIELDS_FUNCTION: {
+                    List<String> optionsList = new ArrayList<>();
+                    this.visit(node, optionsList);
+                    updateFieldsOption(optionsMap, QueryParameters.STRICT_FIELDS, optionsList);
                     return null;
                 }
             }
@@ -244,6 +282,18 @@ public class QueryOptionsFromQueryVisitor extends RebuildingVisitor {
             uniqueFields.putAll(existingFields.getFieldMap());
         }
         optionsMap.put(QueryParameters.UNIQUE_FIELDS, uniqueFields.toString());
+    }
+
+    // Update the option with the additional fields
+    private void updateFieldsOption(Map<String,String> optionsMap, String option, List<String> fields) {
+        // Combine with any previously found field lists
+        if (optionsMap.containsKey(option)) {
+            List<String> fieldsUnion = new ArrayList<>();
+            fieldsUnion.addAll(fields);
+            fieldsUnion.add(optionsMap.get(option));
+            fields = fieldsUnion;
+        }
+        optionsMap.put(option, JOINER.join(fields));
     }
 
     /**

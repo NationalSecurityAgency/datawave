@@ -1,6 +1,14 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.fate.zookeeper.ZooCache;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
@@ -24,14 +32,7 @@ import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 
 public class TableSplitsCacheTest {
 

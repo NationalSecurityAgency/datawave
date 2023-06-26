@@ -1,40 +1,8 @@
 package datawave.query.tables;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.DnUtils;
-import datawave.webservice.common.json.DefaultMapperDecorator;
-import datawave.webservice.common.remote.TestJSSESecurityDomain;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.remote.RemoteQueryServiceImpl;
-import datawave.webservice.query.result.event.DefaultEvent;
-import datawave.webservice.query.result.event.DefaultField;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.result.DefaultEventQueryResponse;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.VoidResponse;
-import org.apache.commons.io.IOUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.X509v3CertificateBuilder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.operator.ContentSigner;
-import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -58,8 +26,43 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.DnUtils;
+import datawave.webservice.common.json.DefaultMapperDecorator;
+import datawave.webservice.common.remote.TestJSSESecurityDomain;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.QueryParameters;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.remote.RemoteQueryServiceImpl;
+import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.result.event.DefaultField;
+import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.result.DefaultEventQueryResponse;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 
 public class RemoteEventQueryLogicHttpTest {
 

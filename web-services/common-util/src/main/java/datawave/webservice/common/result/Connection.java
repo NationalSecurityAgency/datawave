@@ -11,8 +11,9 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import com.google.common.base.Objects;
 import org.apache.commons.lang.builder.CompareToBuilder;
+
+import com.google.common.base.Objects;
 
 @XmlRootElement(name = "Connection")
 @XmlAccessorType(XmlAccessType.NONE)

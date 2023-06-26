@@ -1,18 +1,5 @@
 package datawave.query.jexl.nodes;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ASTReferenceExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-
 import java.lang.reflect.Constructor;
 import java.util.Arrays;
 import java.util.Collection;
@@ -21,6 +8,22 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.DroppedExpression;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 
 /**
  * This is a node that can be put in place of an underlying reference node to place a property on an underlying query sub-tree (e.g. ExceededValueThreshold)
@@ -88,6 +91,7 @@ public abstract class QueryPropertyMarker extends ASTReference {
                     IndexHoleMarkerJexlNode.class,
                     ASTDelayedPredicate.class,
                     ASTEvaluationOnly.class,
+                    DroppedExpression.class,
                     ExceededOrThresholdMarkerJexlNode.class,
                     ExceededTermThresholdMarkerJexlNode.class,
                     ExceededValueThresholdMarkerJexlNode.class

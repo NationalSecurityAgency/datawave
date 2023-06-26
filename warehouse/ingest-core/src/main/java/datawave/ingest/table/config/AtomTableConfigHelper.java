@@ -3,8 +3,6 @@ package datawave.ingest.table.config;
 import java.util.EnumSet;
 import java.util.HashMap;
 
-import datawave.ingest.data.config.ConfigurationHelper;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.TableOperations;
@@ -12,6 +10,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.AgeOffFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.data.config.ConfigurationHelper;
 
 public class AtomTableConfigHelper extends AbstractTableConfigHelper {
 

@@ -1,15 +1,14 @@
 package datawave.resteasy.interceptor;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
 
 import java.lang.annotation.Annotation;
 
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 
-import datawave.annotation.GenerateQuerySessionId;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -24,6 +23,8 @@ import org.jboss.resteasy.specimpl.BuiltResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import datawave.annotation.GenerateQuerySessionId;
 
 /**
  *

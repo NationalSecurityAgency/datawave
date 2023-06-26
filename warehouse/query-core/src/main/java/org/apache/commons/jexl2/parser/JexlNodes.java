@@ -1,11 +1,12 @@
 package org.apache.commons.jexl2.parser;
 
-import com.google.common.base.Preconditions;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.google.common.base.Preconditions;
+
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * A utility class that can introspect JexlNodes for useful things like raw access to the children array and type ID. This makes cloning and mutation easier.

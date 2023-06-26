@@ -1,7 +1,23 @@
 package datawave.query.predicate;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+
 import datawave.data.normalizer.Normalizer;
 import datawave.data.type.BaseType;
 import datawave.data.type.Type;
@@ -10,20 +26,6 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.function.KeyToFieldName;
 import datawave.query.function.KeyToFieldNameTest;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Similar to {@link KeyToFieldNameTest}, tests a smaller integration between {@link KeyToFieldName} and {@link ValueToAttribute}

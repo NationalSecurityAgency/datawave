@@ -1,11 +1,16 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.AgeOffTtlUnits;
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -14,16 +19,12 @@ import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.AgeOffTtlUnits;
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
  * Tests to verify capability of merging configs that use filters that inherit from {@code TokenizingFilterBase}

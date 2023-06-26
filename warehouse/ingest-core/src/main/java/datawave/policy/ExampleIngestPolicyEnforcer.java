@@ -1,10 +1,10 @@
 package datawave.policy;
 
+import org.apache.log4j.Logger;
+
 import datawave.ingest.data.RawDataErrorNames;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
-import org.apache.log4j.Logger;
 
 /**
  * The purpose of this class is to demonstrate a likely usage pattern for an IngestPolicyEnforcer implementation

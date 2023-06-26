@@ -1,15 +1,16 @@
 package datawave.query.iterator.filter;
 
-import datawave.query.config.EdgeQueryConfiguration;
+import java.io.IOException;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-import java.io.IOException;
-import java.util.Map;
 import datawave.edge.util.EdgeKey;
+import datawave.query.config.EdgeQueryConfiguration;
 
 /**
  *

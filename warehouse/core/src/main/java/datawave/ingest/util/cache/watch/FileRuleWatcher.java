@@ -1,8 +1,19 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -15,18 +26,9 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
  *

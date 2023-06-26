@@ -1,14 +1,15 @@
 package datawave.webservice.common.health;
 
+import java.io.IOException;
+import java.util.Properties;
+
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
+
 import datawave.webservice.common.health.HealthBean.BuildInfo;
 import datawave.webservice.common.health.HealthBean.CommitInfo;
 import datawave.webservice.common.health.HealthBean.GitInfo;
 import datawave.webservice.common.health.HealthBean.VersionInfo;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.support.PropertiesLoaderUtils;
-
-import java.io.IOException;
-import java.util.Properties;
 
 public class DefaultHealthInfoContributor implements HealthInfoContributor {
     @Override

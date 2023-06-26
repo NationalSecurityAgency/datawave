@@ -5,11 +5,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
 
 import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Prevents excessive n-gram tokenization without sacrificing small field values in relation to a handful of very large field values. Tokenization is limited
