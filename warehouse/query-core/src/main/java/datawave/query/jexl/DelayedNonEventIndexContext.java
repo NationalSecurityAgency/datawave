@@ -34,12 +34,12 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
     private Collection<ByteSequence> columnFamilies;
     private boolean inclusive;
     private Equality equality;
-    
+
     /**
      * track which fields have been fetched already
      */
     private Set<String> fetched;
-    
+
     public DelayedNonEventIndexContext(DatawaveJexlContext delegate, IteratorBuildingVisitor iteratorBuildingVisitor,
                     Multimap<String,JexlNode> delayedNonEventFieldMap, Range docRange, Collection<ByteSequence> columnFamilies, boolean inclusive,
                     Equality equality) {
@@ -50,15 +50,15 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
         this.equality = equality;
-        
+
         fetched = new HashSet<>();
     }
-    
+
     @Override
     public void set(String name, Object value) {
         delegate.set(name, value);
     }
-    
+
     @Override
     public Object get(String name) {
         // only do something special if there is delayed work to do
@@ -70,23 +70,23 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
             } catch (IOException e) {
                 throw new RuntimeException("Failed to fetch delayed index only fragments for field: " + name, e);
             }
-            
+
             // aggregate all of that into the delegate
             for (Document document : documentFragments) {
                 document.visit(Collections.singleton(name), delegate);
             }
-            
+
             // flag that this field has now been fetched
             fetched.add(name);
         }
-        
+
         return delegate.get(name);
     }
-    
+
     /**
      * Use the IteratorBuildingVisitor limit to the current docRange to parse all delayed sub trees of the query. From those delayed sub trees initialize all
      * iterators matching the target field and aggregate all partial Documents into a list
-     * 
+     *
      * @param name
      *            the name of the field to fetch on demand
      * @return the list of Document objects that were fetched from all delayed iterators associated with the on-demand field
@@ -95,20 +95,20 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
      */
     private List<Document> fetchOnDemand(String name) throws IOException {
         List<Document> documentList = new ArrayList<>();
-        
+
         // limit the ranges to use to the current document
         iteratorBuildingVisitor.limit(docRange);
-        
+
         // for each sub tree build the nested iterator
         for (JexlNode delayedNonEventNode : delayedNonEventFieldMap.get(name)) {
             // sanity check
             if (delayedNonEventNode == null) {
                 throw new IllegalStateException("Delayed nonEventNode must not be null");
             }
-            
+
             // reset the root
             iteratorBuildingVisitor.resetRoot();
-            
+
             // construct the index iterator for this node
             delayedNonEventNode.jjtAccept(iteratorBuildingVisitor, null);
             NestedIterator<Key> delayedNodeIterator = iteratorBuildingVisitor.root();
@@ -122,7 +122,7 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
                     if (leaf instanceof SeekableIterator) {
                         ((SeekableIterator) leaf).seek(docRange, columnFamilies, inclusive);
                     }
-                    
+
                     // for each value off the leaf add it to the document list as long as equality accepts it
                     while (leaf.hasNext()) {
                         Key nextKey = leaf.next();
@@ -133,13 +133,13 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
                 }
             }
         }
-        
+
         return documentList;
     }
-    
+
     /**
      * Add the elements fetched by this context to the main document
-     * 
+     *
      * @param d
      *            the main document
      */
@@ -156,22 +156,22 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
             }
         }
     }
-    
+
     @Override
     public boolean has(String name) {
         return delegate.has(name);
     }
-    
+
     @Override
     public void clear() {
         this.delegate.clear();
     }
-    
+
     @Override
     public int size() {
         return this.delegate.size();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -191,7 +191,7 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
                 && Objects.equal(fetched, that.fetched);
         // @formatter:on
     }
-    
+
     @Override
     public int hashCode() {
         // @formatter:off

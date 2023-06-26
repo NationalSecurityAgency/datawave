@@ -8,18 +8,18 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 public abstract class LocationStrategy implements Funnel<RangeSplit> {
-    
+
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 5311164371626270099L;
-    
+
     private static final Logger log = Logger.getLogger(LocationStrategy.class);
-    
+
     protected LocationStrategy() {
-        
+
     }
-    
+
     public void funnel(RangeSplit rangeSplit, PrimitiveSink sink) {
         try {
             for (String location : rangeSplit.getLocations()) {
@@ -29,5 +29,5 @@ public abstract class LocationStrategy implements Funnel<RangeSplit> {
             log.error(e);
         }
     }
-    
+
 }

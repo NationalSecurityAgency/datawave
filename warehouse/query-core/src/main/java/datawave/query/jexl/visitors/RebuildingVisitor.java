@@ -14,6 +14,7 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 
 import org.apache.commons.jexl3.parser.ASTAddNode;
+import org.apache.commons.jexl3.parser.ASTAmbiguous;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
 import org.apache.commons.jexl3.parser.ASTAnnotation;
@@ -109,20 +110,20 @@ import com.google.common.base.Function;
  *
  */
 public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlScript,ASTJexlScript> {
-    
+
     protected QueryStopwatch timers = null;
     protected String description = "Configurable script";
     protected String scriptName = "";
-    
+
     public RebuildingVisitor(final QueryStopwatch timers, final String scriptName) {
         this.timers = timers;
         this.scriptName = scriptName;
     }
-    
+
     public RebuildingVisitor() {
-        
+
     }
-    
+
     /**
      * Helper method to return a copy of the tree denoted by the given root
      *
@@ -136,12 +137,12 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
         copy.jjtSetParent(root.jjtGetParent());
         return copy;
     }
-    
+
     public static JexlNode copyInto(JexlNode root, JexlNode target) {
         RebuildingVisitor visitor = new RebuildingVisitor();
-        
+
         JexlNode copyRoot = (JexlNode) root.jjtAccept(visitor, null);
-        
+
         if (null != copyRoot) {
             target.jjtSetParent(copyRoot.jjtGetParent());
             for (int i = 0; i < copyRoot.jjtGetNumChildren(); i++) {
@@ -150,10 +151,10 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
                 child.jjtSetParent(target);
             }
         }
-        
+
         return target;
     }
-    
+
     private <T extends JexlNode> T copy(T node, Object data) {
         T newNode = newInstanceOfType(node);
         ArrayList<JexlNode> children = newArrayList();
@@ -165,470 +166,494 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
         }
         return setChildren(newNode, children.toArray(new JexlNode[children.size()]));
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         ASTIdentifier copy = copy(node, data);
-        
+
         JexlNodes.setIdentifier(copy, node.getName());
-        
+
         copy.setRedefined(node.isRedefined());
         copy.setShaded(node.isShaded());
         copy.setCaptured(node.isCaptured());
         copy.setLexical(node.isLexical());
         copy.setConstant(node.isConstant());
-        
+
         if (copy instanceof ASTNamespaceIdentifier) {
             ((ASTNamespaceIdentifier) copy).setNamespace(node.getNamespace(), node.getName());
         }
-        
+
         return copy;
     }
-    
+
     @Override
     protected Object visit(ASTArguments node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         ASTStringLiteral copy = copy(node, data);
         JexlNodes.setLiteral(copy, node.getLiteral());
         return copy;
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         ASTNumberLiteral copy = copy(node, data);
-        
+
         if (!JexlNodes.setLiteral(copy, node.getLiteral())) {
             QueryException qe = new QueryException(DatawaveErrorCode.ASTNUMBERLITERAL_TYPE_ASCERTAIN_ERROR, MessageFormat.format("Node: {0}", node));
             throw new DatawaveFatalQueryException(qe);
         }
-        
+
         return copy;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
+
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTDoWhileStatement node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTContinue node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTBreak node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTNullpNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftLeftNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftRightNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftRightUnsignedNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSWNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTNSWNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTEWNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTNEWNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTAddNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSubNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTUnaryPlusNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTRegexLiteral node, Object data) {
         ASTRegexLiteral copy = copy(node, data);
         JexlNodes.setLiteral(copy, node.getLiteral().pattern());
         return copy;
     }
-    
+
     @Override
     protected Object visit(ASTSetLiteral node, Object data) {
         ASTSetLiteral copy = copy(node, data);
         copy.jjtClose();
         return copy;
     }
-    
+
     @Override
     protected Object visit(ASTExtendedLiteral node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTRangeNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTIdentifierAccess node, Object data) {
         ASTIdentifierAccess copy = copy(node, data);
         JexlNodes.setIdentifierAccess(copy, node.getName());
         return copy;
     }
-    
+
     @Override
     protected Object visit(ASTDefineVars node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetAddNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetSubNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetMultNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetDivNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetModNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetAndNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetOrNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetXorNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftLeftNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftRightNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTGetDecrementNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTGetIncrementNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTDecrementGetNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTIncrementGetNode node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTJxltLiteral node, Object data) {
         ASTJxltLiteral copy = copy(node, data);
         JexlNodes.setLiteral(copy, node.getLiteral());
         return copy;
     }
-    
+
     @Override
     protected Object visit(ASTAnnotation node, Object data) {
         ASTAnnotation copy = copy(node, data);
         JexlNodes.setAnnotation(copy, node.getName());
         return copy;
     }
-    
+
     @Override
     protected Object visit(ASTAnnotatedStatement node, Object data) {
         return copy(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
         ASTQualifiedIdentifier copy = copy(node, data);
         JexlNodes.setQualifiedIdentifier(copy, node.getName());
         return copy;
     }
-    
+
     /**
      * Base setup so that we can eventually move to a more functional model
-     * 
+     *
      * @param input
      *            the input script
      * @return the script with applied models
@@ -644,10 +669,10 @@ public class RebuildingVisitor extends BaseVisitor implements Function<ASTJexlSc
             stopwatch.stop();
         return script;
     }
-    
+
     public RebuildingVisitor setDescription(String description) {
         this.description = description;
         return this;
     }
-    
+
 }

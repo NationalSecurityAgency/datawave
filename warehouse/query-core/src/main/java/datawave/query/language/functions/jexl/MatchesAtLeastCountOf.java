@@ -16,11 +16,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * </pre>
  */
 public class MatchesAtLeastCountOf extends JexlQueryFunction {
-    
+
     public MatchesAtLeastCountOf() {
         super("matches_at_least_count_of", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 3) {
@@ -36,7 +36,7 @@ public class MatchesAtLeastCountOf extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -57,10 +57,10 @@ public class MatchesAtLeastCountOf extends JexlQueryFunction {
         sb.append(")");
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new MatchesAtLeastCountOf();
     }
-    
+
 }

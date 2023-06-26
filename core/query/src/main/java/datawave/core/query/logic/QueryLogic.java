@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidator {
-    
+
     /**
      * A mechanism to get the normalized query without actually setting up the query. This can be called with having to call initialize.
      * <p>
@@ -47,10 +47,10 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception;
-    
+
     /**
      * Implementations create a configuration using the connection, settings, and runtimeQueryAuthorizations.
-     * 
+     *
      * @param client
      *            - Accumulo client to use for this query
      * @param settings
@@ -62,16 +62,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *             if there are issues
      */
     GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception;
-    
+
     /**
      * @param settings
      *            - query settings (query, begin date, end date, etc.)
      * @return list of selectors used in the Query
      */
     List<String> getSelectors(Query settings);
-    
+
     SelectorExtractor getSelectorExtractor();
-    
+
     /**
      * Implementations use the configuration to run their query. It is expected that initialize has already been called.
      *
@@ -81,28 +81,28 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *             if there are issues
      */
     void setupQuery(GenericQueryConfiguration configuration) throws Exception;
-    
+
     /**
      * @return a copy of this instance
      * @throws CloneNotSupportedException
      *             if the clone is not supported
      */
     Object clone() throws CloneNotSupportedException;
-    
+
     /**
      * @return priority from AccumuloConnectionFactory
      */
     AccumuloConnectionFactory.Priority getConnectionPriority();
-    
+
     /**
      * @param settings
      *            query settings
      * @return Transformer that will convert Key,Value to a Result object
      */
     QueryLogicTransformer getTransformer(Query settings);
-    
+
     QueryLogicTransformer getEnrichedTransformer(Query settings);
-    
+
     default String getResponseClass(Query query) throws QueryException {
         try {
             QueryLogicTransformer t = this.getEnrichedTransformer(query);
@@ -112,7 +112,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
             throw new QueryException(DatawaveErrorCode.QUERY_TRANSFORM_ERROR);
         }
     }
-    
+
     /**
      * Allows for the customization of handling query results, e.g. allows for aggregation of query results before returning to the client.
      *
@@ -121,105 +121,105 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return Return a TransformIterator for the QueryLogic implementation
      */
     TransformIterator getTransformIterator(Query settings);
-    
+
     /**
      * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
      *
      * @return Return whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)
      */
     boolean isLongRunningQuery();
-    
+
     /**
      * release resources
      */
     void close();
-    
+
     /**
      * @return the tableName
      */
     String getTableName();
-    
+
     /**
      * @return max number of results to pass back to the caller
      */
     long getMaxResults();
-    
+
     /**
      * @return max number of concurrent tasks to run for this query
      */
     int getMaxConcurrentTasks();
-    
+
     /**
      * @return the results of getMaxWork
      */
     @Deprecated
     long getMaxRowsToScan();
-    
+
     /**
      * @return max number of nexts + seeks performed by the underlying iterators in total
      */
     long getMaxWork();
-    
+
     /**
      * @return max number of records to return in a page (max pagesize allowed)
      */
     int getMaxPageSize();
-    
+
     /**
      * @return the number of bytes at which a page will be returned, even if pagesize has not been reached
      */
     long getPageByteTrigger();
-    
+
     /**
      * Returns the base iterator priority.
      *
      * @return base iterator priority
      */
     int getBaseIteratorPriority();
-    
+
     /**
      * @param tableName
      *            the name of the table
      */
     void setTableName(String tableName);
-    
+
     /**
      * @param maxResults
      *            max number of results to pass back to the caller
      */
     void setMaxResults(long maxResults);
-    
+
     /**
      * @param maxConcurrentTasks
      *            max number of concurrent tasks to run for this query
      */
     void setMaxConcurrentTasks(int maxConcurrentTasks);
-    
+
     /**
      * @param maxRowsToScan
      *            This is now deprecated and setMaxWork should be used instead. This is equivalent to setMaxWork.
      */
     @Deprecated
     void setMaxRowsToScan(long maxRowsToScan);
-    
+
     /**
      * @param maxWork
      *            max work which is normally calculated as the number of next + seek calls made by the underlying iterators
      */
     void setMaxWork(long maxWork);
-    
+
     /**
      * @param maxPageSize
      *            max number of records in a page (max pagesize allowed)
      */
     void setMaxPageSize(int maxPageSize);
-    
+
     /**
      * @param pageByteTrigger
      *            the number of bytes at which a page will be returned, even if pagesize has not been reached
      */
     void setPageByteTrigger(long pageByteTrigger);
-    
+
     /**
      * Sets the base iterator priority
      *
@@ -227,76 +227,76 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            base iterator priority
      */
     void setBaseIteratorPriority(final int priority);
-    
+
     /**
      * @param logicName
      *            name of the query logic
      */
     void setLogicName(String logicName);
-    
+
     /**
      * @return name of the query logic
      */
     String getLogicName();
-    
+
     /**
      * @param logicDescription
      *            a brief description of this logic type
      */
     void setLogicDescription(String logicDescription);
-    
+
     /**
      * @param query
      *            the query
      * @return the audit level for this logic
      */
     AuditType getAuditType(Query query);
-    
+
     /**
      * @return the audit level for this logic for a specific query
      */
     AuditType getAuditType();
-    
+
     /**
      * @param auditType
      *            the audit level for this logic
      */
     void setAuditType(AuditType auditType);
-    
+
     /**
      * @return a brief description of this logic type
      */
     String getLogicDescription();
-    
+
     /**
      * @return should query metrics be collected for this query logic
      */
     boolean getCollectQueryMetrics();
-    
+
     /**
      * @param collectQueryMetrics
      *            whether query metrics be collected for this query logic
      */
     void setCollectQueryMetrics(boolean collectQueryMetrics);
-    
+
     /**
      * List of parameters that can be used in the 'params' parameter to Query/create
      *
      * @return the supported parameters
      */
     Set<String> getOptionalQueryParameters();
-    
+
     /**
      * @param connPoolName
      *            The name of the connection pool to set.
      */
     void setConnPoolName(String connPoolName);
-    
+
     /**
      * @return the connPoolName
      */
     String getConnPoolName();
-    
+
     /**
      * Check that the user has one of the required roles. userRoles my be null when there is no intent to control access to QueryLogic
      *
@@ -305,38 +305,39 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return true/false
      */
     boolean canRunQuery(Collection<String> userRoles);
-    
+
     void setRequiredRoles(Set<String> requiredRoles);
-    
+
     Set<String> getRequiredRoles();
-    
+
     MarkingFunctions getMarkingFunctions();
-    
+
     void setMarkingFunctions(MarkingFunctions markingFunctions);
-    
+
     ResponseObjectFactory getResponseObjectFactory();
-    
+
     void setResponseObjectFactory(ResponseObjectFactory responseObjectFactory);
-    
+
     /**
      * List of parameters that must be passed from the client for this query logic to work
      *
      * @return the required parameters
      */
     Set<String> getRequiredQueryParameters();
-    
+
     /**
+     *
      * @return set of example queries
      */
     Set<String> getExampleQueries();
-    
+
     /**
      * Return the DNs authorized access to this query logic.
      *
      * @return the set of DNs authorized access to this query logic, possibly null or empty
      */
     Set<String> getAuthorizedDNs();
-    
+
     /**
      * Set the DNs authorized access to this query logic.
      *
@@ -344,7 +345,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            the DNs authorized access
      */
     void setAuthorizedDNs(Set<String> allowedDNs);
-    
+
     /**
      * Return whether or not the provided collection of DNs contains at least oneDN that is authorized for access to this query logic. This will return true in
      * the following cases:
@@ -361,7 +362,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
         Set<String> authorizedDNs = getAuthorizedDNs();
         return authorizedDNs == null || authorizedDNs.isEmpty() || (dns != null && dns.stream().anyMatch(authorizedDNs::contains));
     }
-    
+
     /**
      * Set the map of DNs to query result limits. This should override the default limit returned by {@link #getMaxResults()} for any included DNs.
      *
@@ -369,14 +370,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            the map of DNs to query result limits
      */
     void setDnResultLimits(Map<String,Long> dnResultLimits);
-    
+
     /**
      * Return the map of DNs to result limits.
      *
      * @return the map of DNs to query result limits
      */
     Map<String,Long> getDnResultLimits();
-    
+
     /**
      * Set the map of DNs to query result limits. This should override the default limit returned by {@link #getMaxResults()} for any included DNs.
      *
@@ -384,14 +385,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            the map of system from values to query result limits
      */
     void setSystemFromResultLimits(Map<String,Long> systemFromResultLimits);
-    
+
     /**
      * Return a map of System From values to results limits.
      *
      * @return the map of system from values to query result limits.
      */
     Map<String,Long> getSystemFromResultLimits();
-    
+
     /**
      * Return the maximum number of results to include for the query based on criteria including the DN or systemFrom stored in the query setting object that is
      * provided. If limits are found for multiple criteria in the collection, the smallest value will be returned. If no limits are found for any criteria, the
@@ -405,7 +406,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     default long getResultLimit(Query settings) {
         long maxResults = getMaxResults();
-        
+
         Map<String,Long> systemFromLimits = getSystemFromResultLimits();
         QueryImpl.Parameter systemFromParam = settings.findParameter("systemFrom");
         if (systemFromLimits != null && systemFromParam != null) {
@@ -413,16 +414,16 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
             // as the value if the parameter is not present.
             maxResults = systemFromLimits.getOrDefault(systemFromParam.getParameterValue(), maxResults);
         }
-        
+
         Map<String,Long> dnResultLimits = getDnResultLimits();
         Collection<String> dns = settings.getDnList();
         if (dnResultLimits != null && dns != null) {
             maxResults = dns.stream().filter(dnResultLimits::containsKey).map(dnResultLimits::get).min(Long::compareTo).orElse(maxResults);
         }
-        
+
         return maxResults;
     }
-    
+
     /**
      * inform the logic of when a new page of results processing starts. Logics may ignore this information, or pass it to interested transformers, but the
      * logics shouldn't store this property.
@@ -431,7 +432,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            the processing start time
      */
     void setPageProcessingStartTime(long pageProcessingStartTime);
-    
+
     /**
      * Normally this simply returns null as the query logic simply uses the user within the local system. However sometimes we may have a query that goes off
      * system and hence needs to use a different set of auths when downgrading.
@@ -439,13 +440,13 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      * @return A user operations interface implementation. Null if NA (i.e. the local principal is sufficient)
      */
     UserOperations getUserOperations();
-    
+
     ProxiedUserDetails getCurrentUser();
-    
+
     void setCurrentUser(ProxiedUserDetails currentUser);
-    
+
     ProxiedUserDetails getServerUser();
-    
+
     void setServerUser(ProxiedUserDetails serverUser);
-    
+
 }

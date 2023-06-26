@@ -10,17 +10,17 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 
 /**
- * 
+ *
  */
 public interface PushDownPlanner {
-    
+
     void setRules(Collection<PushDownRule> rules);
-    
+
     Collection<PushDownRule> getRules();
-    
+
     /**
      * Returns a re-written tree that reflects pushed down Predicates
-     * 
+     *
      * @param queryTree
      *            the query tree
      * @param scannerFactory

@@ -18,22 +18,22 @@ import java.util.Iterator;
  * implementation.
  */
 public abstract class BaseIndexStream implements IndexStream {
-    
+
     protected RangeStreamScanner rangeStreamScanner;
-    
+
     protected EntryParser entryParser;
-    
+
     protected JexlNode node;
-    
+
     protected StreamContext context;
-    
+
     protected IndexStream debugDelegate;
-    
+
     // variables to support the PeekingIterator interface
     protected Iterator<Tuple2<String,IndexInfo>> backingIter;
     protected Tuple2<String,IndexInfo> peekedElement;
     protected boolean hasPeeked = false;
-    
+
     /**
      * This constructor is used by BaseIndexStreams that have a backing range stream scanner. I.e., this will actually scan the global index
      *
@@ -56,7 +56,7 @@ public abstract class BaseIndexStream implements IndexStream {
         this.context = context;
         this.debugDelegate = debugDelegate;
     }
-    
+
     /**
      * This constructor is for terms that do not have a range stream scanner.
      *
@@ -79,12 +79,12 @@ public abstract class BaseIndexStream implements IndexStream {
         this.context = context;
         this.debugDelegate = debugDelegate;
     }
-    
+
     // Empty constructor used by the Union and Intersection classes.
     public BaseIndexStream() {
-        
+
     }
-    
+
     /**
      * Reset the backing iterator after a seek. State must stay in sync with changes to the RangeStreamScanner.
      */
@@ -95,12 +95,12 @@ public abstract class BaseIndexStream implements IndexStream {
             this.backingIter = Iterators.transform(this.rangeStreamScanner, this.entryParser);
         }
     }
-    
+
     @Override
     public boolean hasNext() {
         return (hasPeeked && peekedElement != null) || backingIter.hasNext();
     }
-    
+
     @Override
     public Tuple2<String,IndexInfo> peek() {
         if (!hasPeeked) {
@@ -113,7 +113,7 @@ public abstract class BaseIndexStream implements IndexStream {
         }
         return peekedElement;
     }
-    
+
     @Override
     public Tuple2<String,IndexInfo> next() {
         if (!hasPeeked) {
@@ -124,20 +124,20 @@ public abstract class BaseIndexStream implements IndexStream {
         peekedElement = null;
         return result;
     }
-    
+
     @Override
     public Tuple2<String,IndexInfo> next(String context) {
         return next();
     }
-    
+
     @Override
     public void remove() {}
-    
+
     @Override
     public StreamContext context() {
         return context;
     }
-    
+
     @Override
     public String getContextDebug() {
         if (debugDelegate == null) {
@@ -146,10 +146,10 @@ public abstract class BaseIndexStream implements IndexStream {
             return debugDelegate.getContextDebug();
         }
     }
-    
+
     @Override
     public JexlNode currentNode() {
         return node;
     }
-    
+
 }

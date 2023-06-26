@@ -15,10 +15,10 @@ import org.apache.commons.jexl3.parser.JexlNode;
  * sent to the tservers.
  */
 public class DateIndexCleanupVisitor extends RebuildingVisitor {
-    
+
     /**
      * This will cleanup/remove the SHARDS_AND_DAYS assignment node.
-     * 
+     *
      * @param node
      *            the node
      * @param <T>
@@ -28,10 +28,10 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T cleanup(T node) {
         DateIndexCleanupVisitor visitor = new DateIndexCleanupVisitor();
-        
+
         return (T) node.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         JexlNode retnode = (JexlNode) (super.visit(node, data));
@@ -43,7 +43,7 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
         }
         return retnode;
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         JexlNode retnode = (JexlNode) (super.visit(node, data));
@@ -55,7 +55,7 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
         }
         return retnode;
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         JexlNode retnode = (JexlNode) (super.visit(node, data));
@@ -64,7 +64,7 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
         }
         return retnode;
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         JexlNode retnode = (JexlNode) (super.visit(node, data));
@@ -73,7 +73,7 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
         }
         return retnode;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         JexlNode retnode = (JexlNode) (super.visit(node, data));
@@ -86,10 +86,10 @@ public class DateIndexCleanupVisitor extends RebuildingVisitor {
                 retnode = (JexlNode) retnode.jjtGetChild(0).jjtAccept(this, null);
             }
         }
-        
+
         return retnode;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         String identifier = JexlASTHelper.getIdentifier(node);

@@ -10,26 +10,26 @@ import java.io.Serializable;
 
 public class QueryKey implements Serializable {
     private static final long serialVersionUID = -2589618312956104322L;
-    
+
     public static final String QUERY_ID_PREFIX = "Q-";
     public static final String POOL_PREFIX = "P-";
     public static final String LOGIC_PREFIX = "L-";
-    
+
     @JsonProperty
     private String queryPool;
     @JsonProperty
     private String queryId;
     @JsonProperty
     private String queryLogic;
-    
+
     /**
      * Default constructor for deserialization
      */
     public QueryKey() {}
-    
+
     /**
      * This method id to allow deserialization of the toKey() or toString() value used when this is in a map
-     * 
+     *
      * @param value
      *            The toString() from a task key
      */
@@ -39,7 +39,7 @@ public class QueryKey implements Serializable {
             setPart(part);
         }
     }
-    
+
     protected void setPart(String part) {
         if (part.startsWith(QUERY_ID_PREFIX)) {
             queryId = part.substring(QUERY_ID_PREFIX.length());
@@ -49,43 +49,43 @@ public class QueryKey implements Serializable {
             queryLogic = part.substring(LOGIC_PREFIX.length());
         }
     }
-    
+
     @JsonCreator
     public QueryKey(@JsonProperty("queryPool") String queryPool, @JsonProperty("queryId") String queryId, @JsonProperty("queryLogic") String queryLogic) {
         this.queryPool = queryPool;
         this.queryId = queryId;
         this.queryLogic = queryLogic;
     }
-    
+
     public String getQueryPool() {
         return queryPool;
     }
-    
+
     public String getQueryId() {
         return queryId;
     }
-    
+
     public String getQueryLogic() {
         return queryLogic;
     }
-    
+
     public static String toUUIDKey(String queryId) {
         return QUERY_ID_PREFIX + queryId;
     }
-    
+
     public String toUUIDKey() {
         return toUUIDKey(queryId);
     }
-    
+
     public String toKey() {
         return toUUIDKey() + '.' + POOL_PREFIX + queryPool + '.' + LOGIC_PREFIX + queryLogic;
     }
-    
+
     @Override
     public String toString() {
         return toKey();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryKey) {
@@ -95,7 +95,7 @@ public class QueryKey implements Serializable {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(getQueryPool()).append(getQueryId()).append(getQueryLogic()).toHashCode();

@@ -58,18 +58,18 @@ import java.util.List;
 @Lock(LockType.READ)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloTableCacheBean implements AccumuloTableCache {
-    
+
     private final Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private JMSContext jmsContext;
-    
+
     @Resource(mappedName = "java:/topic/AccumuloTableCache")
     private Destination cacheTopic;
-    
+
     @Resource
     private ManagedExecutorService executorService;
-    
+
     @Inject
     @ConfigProperty(name = "dw.warehouse.zookeepers")
     private String zookeepers = null;
@@ -92,49 +92,49 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
     @Inject
     @ConfigProperty(name = "dw.cacheCoordinator.maxRetries", defaultValue = "10")
     private int maxRetries;
-    
+
     private AccumuloTableCacheImpl tableCache;
-    
+
     public AccumuloTableCacheBean() {}
-    
+
     @PostConstruct
     private void setup() {
         AccumuloTableCacheProperties config = new AccumuloTableCacheProperties().withTableNames(tableNames).withPoolName(poolName).withNumLocks(numLocks)
                         .withZookeepers(zookeepers).withMaxRetries(maxRetries).withReloadInterval(reloadInterval)
                         .withEvictionReaperIntervalInSeconds(evictionReaperIntervalInSeconds);
-        
+
         log.debug("Called AccumuloTableCacheBean and accumuloTableCacheConfiguration = " + config);
-        
+
         tableCache = new AccumuloTableCacheImpl(executorService, config);
     }
-    
+
     @Override
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
         tableCache.setConnectionFactory(connectionFactory);
     }
-    
+
     @Override
     public InMemoryInstance getInstance() {
         return tableCache.getInstance();
     }
-    
+
     @Schedule(hour = "*", minute = "*", second = "1", persistent = false)
     @Override
     public void submitReloadTasks() {
         tableCache.submitReloadTasks();
     }
-    
+
     @PreDestroy
     public void stop() {
         close();
     }
-    
+
     @Override
     public void close() {
         tableCache.close();
         tableCache = null;
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
@@ -146,7 +146,7 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *                
+     *
      * @HTTP 200 success
      * @HTTP 404 queries not found using {@code id}
      * @HTTP 500 internal server error
@@ -167,13 +167,13 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
         }
         return response;
     }
-    
+
     @Override
     public void reloadTableCache(String tableName) {
         tableCache.reloadTableCache(tableName);
         sendCacheReloadMessage(tableName);
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
@@ -183,7 +183,7 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
      * @RequestHeader query-session-id session id value used for load balancing purposes. query-session-id can be placed in the request in a Cookie header or as
      *                a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *                
+     *
      * @HTTP 200 success
      */
     @GET
@@ -196,16 +196,16 @@ public class AccumuloTableCacheBean implements AccumuloTableCache {
         response.getCaches().addAll(getTableCaches());
         return response;
     }
-    
+
     @Override
     public List<TableCacheDescription> getTableCaches() {
         return tableCache.getTableCaches();
     }
-    
+
     private void sendCacheReloadMessage(String tableName) {
         log.warn("table:" + tableName + " sending cache reload message about table " + tableName);
-        
+
         jmsContext.createProducer().send(cacheTopic, tableName);
     }
-    
+
 }

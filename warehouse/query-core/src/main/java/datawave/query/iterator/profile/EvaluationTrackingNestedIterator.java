@@ -11,17 +11,17 @@ import java.io.IOException;
 import java.util.Collection;
 
 public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<T> {
-    
+
     protected QuerySpan mySpan;
     protected QuerySpan.Stage stageName;
     private Logger log = Logger.getLogger(EvaluationTrackingNestedIterator.class);
-    
+
     public EvaluationTrackingNestedIterator(QuerySpan.Stage stageName, QuerySpan mySpan, NestedIterator<T> itr, IteratorEnvironment env) {
         super(itr, env);
         this.mySpan = mySpan;
         this.stageName = stageName;
     }
-    
+
     @Override
     public T next() {
         mySpan.next();
@@ -30,7 +30,7 @@ public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<
         mySpan.addStageTimer(stageName, System.currentTimeMillis() - start);
         return next;
     }
-    
+
     @Override
     public T move(T minimum) {
         mySpan.seek();
@@ -39,7 +39,7 @@ public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<
         mySpan.addStageTimer(stageName, System.currentTimeMillis() - start);
         return next;
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         mySpan.seek();

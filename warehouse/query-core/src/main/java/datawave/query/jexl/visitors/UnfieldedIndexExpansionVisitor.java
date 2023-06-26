@@ -38,26 +38,26 @@ import java.util.Set;
  */
 public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(UnfieldedIndexExpansionVisitor.class);
-    
+
     protected Set<String> expansionFields;
     protected Set<Type<?>> allTypes;
-    
+
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected UnfieldedIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
                     throws TableNotFoundException, IllegalAccessException, InstantiationException {
         super(config, scannerFactory, helper, null, "FieldNameIndexExpansion");
-        
+
         this.expansionFields = helper.getExpansionFields(config.getDatatypeFilter());
         if (this.expansionFields == null) {
             this.expansionFields = new HashSet<>();
         }
-        
+
         this.allTypes = helper.getAllDatatypes();
     }
-    
+
     /**
      * Visits the Jexl script, looks for unfielded terms, and replaces them with fielded terms from the index
-     * 
+     *
      * @param config
      *            the query configuration, not null
      * @param scannerFactory
@@ -86,7 +86,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             return script;
         }
     }
-    
+
     private static <T extends JexlNode> T ensureTreeNotEmpty(T script) throws EmptyUnfieldedTermExpansionException {
         if (script.jjtGetNumChildren() == 0) {
             NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.NO_UNFIELDED_TERM_EXPANSION_MATCH);
@@ -95,11 +95,11 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
         return script;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         List<JexlNode> children = visitChildren(node, data);
-        
+
         switch (children.size()) {
             case 0:
                 return null;
@@ -109,12 +109,12 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
                 return JexlNodeFactory.createOrNode(children);
         }
     }
-    
+
     protected List<JexlNode> visitChildren(JexlNode node, Object data) {
         List<JexlNode> children = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode newChild = (JexlNode) node.jjtGetChild(i).jjtAccept(this, data);
-            
+
             // keep the child as long as it's not an empty AND/OR node
             if (newChild != null && !((newChild instanceof ASTOrNode || newChild instanceof ASTAndNode) && newChild.jjtGetNumChildren() == 0)) {
                 children.add(newChild);
@@ -122,16 +122,16 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
         }
         return children;
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // ignore already marked expressions
         if (QueryPropertyMarker.findInstance(node).isAnyType()) {
             return node;
         }
-        
+
         List<JexlNode> children = visitChildren(node, data);
-        
+
         switch (children.size()) {
             case 0:
                 return null;
@@ -141,12 +141,12 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
                 return JexlNodeFactory.createAndNode(children);
         }
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return buildIndexLookup(node, true, negated, () -> createLookup(node));
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         toggleNegation();
@@ -156,12 +156,12 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             toggleNegation();
         }
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return buildIndexLookup(node, true, negated, () -> createLookup(node));
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         toggleNegation();
@@ -171,27 +171,27 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             toggleNegation();
         }
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return buildIndexLookup(node, true, negated, () -> createLookup(node));
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return buildIndexLookup(node, true, negated, () -> createLookup(node));
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return buildIndexLookup(node, true, negated, () -> createLookup(node));
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return buildIndexLookup(node, true, negated, () -> createLookup(node));
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         ASTReferenceExpression ref = (ASTReferenceExpression) super.visit(node, data);
@@ -201,7 +201,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
             return ref;
         }
     }
-    
+
     /**
      * Expand if we have an unfielded identifier
      *
@@ -213,7 +213,7 @@ public class UnfieldedIndexExpansionVisitor extends RegexIndexExpansionVisitor {
     protected boolean shouldExpand(JexlNode node) {
         return (!negated || expandUnfieldedNegations) && hasUnfieldedIdentifier(node);
     }
-    
+
     @Override
     protected IndexLookup createLookup(JexlNode node) {
         try {

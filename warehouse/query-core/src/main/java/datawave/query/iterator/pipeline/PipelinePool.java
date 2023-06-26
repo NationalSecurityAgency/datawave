@@ -33,7 +33,7 @@ public class PipelinePool {
     protected QueryIterator sourceIterator;
     protected SortedKeyValueIterator<Key,Value> sourceForDeepCopy;
     protected IteratorEnvironment env;
-    
+
     public PipelinePool(int maxPipelines, QuerySpanCollector querySpanCollector, QueryIterator sourceIterator,
                     SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env) {
         this.maxPipelines = maxPipelines;
@@ -44,10 +44,10 @@ public class PipelinePool {
         this.sourceForDeepCopy = sourceForDeepCopy;
         this.env = env;
     }
-    
+
     /**
      * Checkout a pipeline initialized with the specified document, creating a new pipeline if needed
-     * 
+     *
      * @param key
      *            a key
      * @param doc
@@ -90,7 +90,7 @@ public class PipelinePool {
         }
         return pipeline;
     }
-    
+
     /*
      * Checkin a used pipeline.
      */

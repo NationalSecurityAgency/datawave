@@ -27,18 +27,18 @@ import java.util.Map.Entry;
 
 @SuppressWarnings("rawtypes")
 public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Entry<Key,Value>,EventBase> {
-    
+
     private final Query query;
     private final Authorizations auths;
     private final ResponseObjectFactory responseObjectFactory;
-    
+
     public TermFrequencyQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.query = query;
         this.responseObjectFactory = responseObjectFactory;
         this.auths = new Authorizations(StringUtils.split(this.query.getQueryAuthorizations(), ','));
     }
-    
+
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         EventQueryResponseBase response = responseObjectFactory.getEventQueryResponse();
@@ -51,17 +51,17 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
         response.setReturnedEvents((long) eventList.size());
         return response;
     }
-    
+
     @Override
     public EventBase transform(Entry<Key,Value> entry) throws EmptyObjectException {
         if (entry.getKey() == null && entry.getValue() == null) {
             return null;
         }
-        
+
         if (entry.getKey() == null || entry.getValue() == null) {
             throw new IllegalArgumentException("Null keyy or value. Key:" + entry.getKey() + ", Value: " + entry.getValue());
         }
-        
+
         TermFrequencyKeyValue tfkv;
         try {
             tfkv = TermFrequencyKeyValueFactory.parse(entry.getKey(), entry.getValue(), auths, markingFunctions);
@@ -69,24 +69,24 @@ public class TermFrequencyQueryTransformer extends BaseQueryLogicTransformer<Ent
             throw new IllegalArgumentException("Unable to parse visibility", e);
         }
         EventBase e = responseObjectFactory.getEvent();
-        
+
         e.setMarkings(tfkv.getMarkings());
-        
+
         Metadata m = new Metadata();
         m.setRow(tfkv.getShardId());
         m.setDataType(tfkv.getDatatype());
         m.setInternalId(tfkv.getUid());
         e.setMetadata(m);
-        
+
         List<FieldBase> fields = ImmutableList.of(createField(tfkv, entry, "FIELD_NAME", tfkv.getFieldName()),
                         createField(tfkv, entry, "FIELD_VALUE", tfkv.getFieldValue()),
                         createField(tfkv, entry, "OFFSET_COUNT", String.valueOf(tfkv.getCount())),
                         createField(tfkv, entry, "OFFSETS", tfkv.getOffsets().toString()));
         e.setFields(fields);
-        
+
         return e;
     }
-    
+
     protected FieldBase createField(TermFrequencyKeyValue tfkv, Entry<Key,Value> e, String name, String value) {
         FieldBase field = responseObjectFactory.getField();
         field.setMarkings(tfkv.getMarkings());

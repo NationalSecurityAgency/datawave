@@ -12,9 +12,9 @@ import java.util.Set;
 
 /**
  * Defines the logic to collect all of the results from the former query logic and issue one query against the latter query logic
- * 
- * 
- * 
+ *
+ *
+ *
  * @param <T1>
  *            Type of former {@link QueryLogic}
  * @param <T2>
@@ -22,38 +22,38 @@ import java.util.Set;
  */
 public abstract class FullChainStrategy<T1,T2> implements ChainStrategy<T1,T2> {
     protected final Logger log = Logger.getLogger(FullChainStrategy.class);
-    
+
     @Override
     public Iterator<T2> runChainedQuery(AccumuloClient client, Query initialQuery, Set<Authorizations> auths, Iterator<T1> initialQueryResults,
                     QueryLogic<T2> latterQueryLogic) throws Exception {
         Query latterQuery = buildLatterQuery(initialQuery, initialQueryResults, latterQueryLogic.getLogicName());
-        
+
         if (null == latterQuery) {
             log.info("Could not compute a query to run.");
-            
+
             // Stub out an empty iterator to return if we couldn't generate a query to run
             return new Iterator<T2>() {
                 @Override
                 public boolean hasNext() {
                     return false;
                 }
-                
+
                 @Override
                 public T2 next() {
                     return null;
                 }
-                
+
                 @Override
                 public void remove() {}
             };
         }
-        
+
         GenericQueryConfiguration config = latterQueryLogic.initialize(client, latterQuery, auths);
-        
+
         latterQueryLogic.setupQuery(config);
-        
+
         return latterQueryLogic.iterator();
     }
-    
+
     protected abstract Query buildLatterQuery(Query initialQuery, Iterator<T1> initialQueryResults, String latterLogicName);
 }

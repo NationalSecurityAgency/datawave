@@ -35,30 +35,30 @@ import java.util.Set;
  * query.
  */
 public class GeoWavePruningVisitor extends RebuildingVisitor {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(GeoWavePruningVisitor.class);
-    
+
     private final Multimap<String,String> prunedTerms;
     private final MetadataHelper metadataHelper;
-    
+
     private GeoWavePruningVisitor(Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
         this.prunedTerms = prunedTerms;
         this.metadataHelper = metadataHelper;
     }
-    
+
     public static <T extends JexlNode> T pruneTree(JexlNode node) {
         return pruneTree(node, null, null);
     }
-    
+
     public static <T extends JexlNode> T pruneTree(JexlNode node, Multimap<String,String> prunedTerms, MetadataHelper metadataHelper) {
         GeoWavePruningVisitor pruningVisitor = new GeoWavePruningVisitor(prunedTerms, metadataHelper);
         return (T) node.jjtAccept(pruningVisitor, null);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         Multimap<String,Geometry> fieldToGeometryMap = (data instanceof Multimap) ? (Multimap<String,Geometry>) data : HashMultimap.create();
-        
+
         // if one of the anded nodes is a geowave function, pass down the geometry and field name in the multimap
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = JexlASTHelper.dereference(node.jjtGetChild(i));
@@ -78,7 +78,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         }
         return super.visit(node, (fieldToGeometryMap.isEmpty() ? null : fieldToGeometryMap));
     }
-    
+
     private boolean isPrunable(GeoWaveFunctionsDescriptor.GeoWaveJexlArgumentDescriptor geoWaveDesc) {
         Set<String> fields = geoWaveDesc.fields(metadataHelper, null);
         // @formatter:off
@@ -87,15 +87,15 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                                 type -> (type instanceof AbstractGeometryType || type instanceof GeoType)));
         // @formatter:on
     }
-    
+
     private boolean isGeoWaveType(String field) {
         return getDatatypesForField(field).stream().anyMatch(type -> type instanceof AbstractGeometryType);
     }
-    
+
     private boolean isGeoType(String field) {
         return getDatatypesForField(field).stream().anyMatch(type -> type instanceof GeoType);
     }
-    
+
     private Set<Type<?>> getDatatypesForField(String field) {
         Set<Type<?>> dataTypes = new HashSet<>();
         try {
@@ -105,34 +105,34 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
         }
         return dataTypes;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         JexlNode copiedNode = (JexlNode) super.visit(node, data);
-        
+
         // if all of the children were dropped, turn this into a false node
         if (copiedNode.jjtGetNumChildren() == 0) {
             copiedNode = new ASTFalseNode(ParserTreeConstants.JJTFALSENODE);
         }
-        
+
         return copiedNode;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         JexlNode rebuiltNode = (JexlNode) super.visit(node, data);
         return (rebuiltNode.jjtGetNumChildren() == 0) ? null : rebuiltNode;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (data instanceof Multimap) {
             Multimap<String,Geometry> fieldToGeometryMap = (Multimap<String,Geometry>) data;
-            
+
             String field = JexlASTHelper.getIdentifier(node);
-            
+
             Collection<Geometry> queryGeometries = fieldToGeometryMap.get(field);
-            
+
             if (queryGeometries != null && !queryGeometries.isEmpty()) {
                 String value = (String) JexlASTHelper.getLiteralValue(node);
                 if (value != null) {
@@ -158,7 +158,7 @@ public class GeoWavePruningVisitor extends RebuildingVisitor {
                 }
             }
         }
-        
+
         return super.visit(node, data);
     }
 }

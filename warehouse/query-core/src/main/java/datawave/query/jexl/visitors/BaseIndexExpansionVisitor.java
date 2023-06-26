@@ -31,28 +31,28 @@ import java.util.function.Supplier;
  */
 public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
     private static final int MIN_THREADS = 1;
-    
+
     protected ShardQueryConfiguration config;
     protected ScannerFactory scannerFactory;
     protected MetadataHelper helper;
     protected boolean expandFields;
     protected boolean expandValues;
     protected String threadName;
-    
+
     protected Set<String> indexOnlyFields;
     protected Set<String> allFields;
-    
+
     protected CostEstimator costAnalysis;
-    
+
     protected ExecutorService executor;
     protected Map<String,IndexLookup> lookupMap;
     protected List<FutureJexlNode> futureJexlNodes;
-    
+
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, String threadName)
                     throws TableNotFoundException {
         this(config, scannerFactory, helper, null, threadName);
     }
-    
+
     // The constructor should not be made public so that we can ensure that the executor is set up and shutdown correctly
     protected BaseIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper, Map<String,IndexLookup> lookupMap,
                     String threadName) throws TableNotFoundException {
@@ -62,31 +62,31 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         this.expandFields = config.isExpandFields();
         this.expandValues = config.isExpandValues();
         this.threadName = threadName;
-        
+
         this.indexOnlyFields = helper.getIndexOnlyFields(config.getDatatypeFilter());
         this.allFields = helper.getAllFields(config.getDatatypeFilter());
-        
+
         this.costAnalysis = new CostEstimator(config, scannerFactory, helper);
-        
+
         this.lookupMap = (lookupMap != null) ? lookupMap : new HashMap<>();
         this.futureJexlNodes = new ArrayList<>();
     }
-    
+
     protected void setupExecutor() {
         int threads = Math.max(this.config.getNumIndexLookupThreads(), MIN_THREADS);
         executor = new ThreadPoolExecutor(threads, threads, 0, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>(),
                         new IndexExpansionThreadFactory(this.config, this.threadName));
     }
-    
+
     protected void shutdownExecutor() {
         if (executor != null) {
             executor.shutdownNow();
         }
     }
-    
+
     /**
      * The expand method is the entrypoint which should be called to run index expansion on a given Jexl tree.
-     * 
+     *
      * @param script
      *            the Jexl tree to expand, not null
      * @param <T>
@@ -101,22 +101,22 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
                 QueryException qe = new QueryException(DatawaveErrorCode.DATATYPESFORINDEXFIELDS_MULTIMAP_MISSING);
                 throw new DatawaveFatalQueryException(qe);
             }
-            
+
             T rebuiltScript = (T) (script.jjtAccept(this, null));
-            
+
             rebuildFutureJexlNodes();
-            
+
             // handle the case where the root node was expanded
             if (rebuiltScript instanceof FutureJexlNode) {
                 rebuiltScript = (T) ((FutureJexlNode) rebuiltScript).getRebuiltNode();
             }
-            
+
             return rebuiltScript;
         } finally {
             shutdownExecutor();
         }
     }
-    
+
     /**
      *
      * @param node
@@ -131,15 +131,15 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
      */
     protected JexlNode buildIndexLookup(JexlNode node, boolean ignoreComposites, boolean keepOriginalNode, Supplier<IndexLookup> indexLookupSupplier) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(node), true);
-        
+
         IndexLookup lookup = lookupMap.computeIfAbsent(nodeString, k -> indexLookupSupplier.get());
-        
+
         return createFutureJexlNode(lookup, node, ignoreComposites, keepOriginalNode);
     }
-    
+
     /**
      * Creates a special Jexl node which serves as an intermediate placeholder for the node which will be expanded
-     * 
+     *
      * @param lookup
      *            the index lookup, not null
      * @param node
@@ -156,24 +156,24 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         if (lookup instanceof AsyncIndexLookup) {
             ((AsyncIndexLookup) lookup).submit();
         }
-        
+
         FutureJexlNode futureNode = new FutureJexlNode(node, lookup, ignoreComposites, keepOriginalNode);
         futureNode.jjtSetParent(node.jjtGetParent());
         futureJexlNodes.add(futureNode);
-        
+
         return futureNode;
     }
-    
+
     protected void rebuildFutureJexlNodes() {
         for (FutureJexlNode futureJexlNode : futureJexlNodes) {
             // this call waits for the index lookup to complete, and
             // uses the configured timeout from ShardQueryConfiguration
             futureJexlNode.getLookup().lookup();
-            
+
             rebuildFutureJexlNode(futureJexlNode);
-            
+
             JexlNode newNode = futureJexlNode.getRebuiltNode();
-            
+
             // if the parent is not null, replace the child
             // if the parent is null, this is the root node, and we will handle that in the expand method
             if (futureJexlNode.jjtGetParent() != null) {
@@ -181,15 +181,15 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             }
         }
     }
-    
+
     /**
      * Each Index Expansion visitor should define its own method for creating a final expanded node from a FutureJexlNode
-     * 
+     *
      * @param futureJexlNode
      *            the future jexl
      */
     protected abstract void rebuildFutureJexlNode(FutureJexlNode futureJexlNode);
-    
+
     /**
      * Serves as a placeholder Jexl node which can eventually be replaced with an expanded Jexl node once the Index Lookup has finished
      */
@@ -198,9 +198,9 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         private final IndexLookup lookup;
         private final boolean ignoreComposites;
         private final boolean keepOriginalNode;
-        
+
         private JexlNode rebuiltNode;
-        
+
         public FutureJexlNode(JexlNode origNode, IndexLookup lookup, boolean ignoreComposites, boolean keepOriginalNode) {
             super(origNode.getId());
             this.origNode = origNode;
@@ -208,32 +208,32 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             this.ignoreComposites = ignoreComposites;
             this.keepOriginalNode = keepOriginalNode;
         }
-        
+
         public JexlNode getOrigNode() {
             return origNode;
         }
-        
+
         public IndexLookup getLookup() {
             return lookup;
         }
-        
+
         public boolean isIgnoreComposites() {
             return ignoreComposites;
         }
-        
+
         public boolean isKeepOriginalNode() {
             return keepOriginalNode;
         }
-        
+
         public JexlNode getRebuiltNode() {
             return rebuiltNode;
         }
-        
+
         public void setRebuiltNode(JexlNode rebuiltNode) {
             this.rebuiltNode = rebuiltNode;
         }
     }
-    
+
     /**
      * Serves as a means to associate index lookup threads with a particular Index Expansion Visitor
      */
@@ -243,7 +243,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
         private int threadNum = 1;
         private final String threadIdentifier;
         protected String name;
-        
+
         public IndexExpansionThreadFactory(ShardQueryConfiguration config, String name) {
             this.config = config;
             if (config.getQuery() == null || config.getQuery().getId() == null) {
@@ -253,7 +253,7 @@ public abstract class BaseIndexExpansionVisitor extends RebuildingVisitor {
             }
             this.name = name;
         }
-        
+
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = dtf.newThread(r);

@@ -9,7 +9,7 @@ public class UIDQueryCriteria extends GetUUIDCriteria {
     public UIDQueryCriteria(final String uuid, final String uuidType, MultiValueMap<String,String> queryParameters) {
         super(uuid, uuidType, queryParameters);
     }
-    
+
     @Override
     public String getRawQueryString() {
         return this.uuidType + LookupUUIDUtil.UUID_TERM_DELIMITER + this.uuid; // No quotes!

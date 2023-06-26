@@ -53,27 +53,27 @@ import org.apache.commons.jexl3.parser.JexlNode;
  * Validates that every ASTAndNode and every ASTOrNode has more than one child
  */
 public class JunctionValidatingVisitor extends BaseVisitor {
-    
+
     private boolean isValid = true;
-    
+
     public static boolean validate(JexlNode script) {
         JunctionValidatingVisitor visitor = new JunctionValidatingVisitor();
         script.jjtAccept(visitor, null);
         return visitor.isValid();
     }
-    
+
     private JunctionValidatingVisitor() {}
-    
+
     public boolean isValid() {
         return this.isValid;
     }
-    
+
     /*
      * Pass through visit to ASTJexlScript
-     * 
+     *
      * Attempt to short circuit on ASTReference, ASTReferenceExpressions, SimpleNode, ASTFunctionNode, and ASTNotNode
      */
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         if (isValid) {
@@ -81,7 +81,7 @@ public class JunctionValidatingVisitor extends BaseVisitor {
         }
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         if (isValid) {
@@ -89,7 +89,7 @@ public class JunctionValidatingVisitor extends BaseVisitor {
         }
         return data;
     }
-    
+
     // check the argument nodes of a function
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
@@ -98,7 +98,7 @@ public class JunctionValidatingVisitor extends BaseVisitor {
         }
         return data;
     }
-    
+
     // descend into negated branches of the query
     @Override
     public Object visit(ASTNotNode node, Object data) {
@@ -107,21 +107,21 @@ public class JunctionValidatingVisitor extends BaseVisitor {
         }
         return data;
     }
-    
+
     /*
      * Validation methods
      */
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         return visitJunction(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         return visitJunction(node, data);
     }
-    
+
     private Object visitJunction(JexlNode node, Object data) {
         if (!isValid) {
             return data;
@@ -133,10 +133,10 @@ public class JunctionValidatingVisitor extends BaseVisitor {
             return data;
         }
     }
-    
+
     /**
      * A junction is valid if it has two or more children
-     * 
+     *
      * @param node
      *            an ASTOrNode or ASTAndNode
      * @return true if the junction is valid
@@ -144,209 +144,209 @@ public class JunctionValidatingVisitor extends BaseVisitor {
     private boolean isJunctionValid(JexlNode node) {
         return node.jjtGetNumChildren() >= 2;
     }
-    
+
     /*
      * Short circuits
      */
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAddNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSubNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return data;
     }
-    
+
 }

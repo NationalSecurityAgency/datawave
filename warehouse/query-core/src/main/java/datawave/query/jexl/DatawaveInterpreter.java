@@ -12,7 +12,7 @@ import datawave.query.jexl.functions.ContentFunctionsDescriptor;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.pushdown.ExceededOr;
+import datawave.query.jexl.nodes.ExceededOr;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl3.JexlContext;
@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 
 /**
@@ -59,21 +60,26 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
  * arithmetic.
  *
  * Also added in the ability to count attributes pulled from the ValueTuples which contribute to the positive evaluation.
+ *
+ * In general visiting an expression can return true, false, a functional set, or null. The boolean value of an expression is true if true or a non-empty
+ * functional set is returned. The boolean value of an expression is false if false or an empty functional set is returned. Return null means that the
+ * (sub)expression will not contribute to the boolean value of the overall expression.
+ *
  */
 public class DatawaveInterpreter extends Interpreter {
-    
+
     protected Map<String,Object> resultMap;
-    
+
     private static final Logger log = Logger.getLogger(DatawaveInterpreter.class);
-    
+
     public DatawaveInterpreter(Engine jexl, JexlOptions opts, JexlContext aContext, Frame eFrame) {
         super(jexl, opts, aContext, eFrame);
         resultMap = Maps.newHashMap();
     }
-    
+
     /**
      * This convenience method can be used to interpret the result of the script.execute() result which calls the interpret method below.
-     * 
+     *
      * @param scriptExecuteResult
      *            the script result
      * @return true if we matched, false otherwise.
@@ -94,32 +100,32 @@ public class DatawaveInterpreter extends Interpreter {
         }
         return matched;
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        
+
         Object result = resultMap.get(nodeString);
         if (null != result) {
             return result;
         }
-        
+
         result = super.visit(node, data);
-        
+
         boolean isPhraseFunc = (nodeString.startsWith("content:phrase") || nodeString.startsWith("content:scoredPhrase"));
         // special handling for phrase functions and HIT_TERMs
         if (isPhraseFunc) {
             addHitsForFunction(result, node);
         }
-        
+
         // If a content:phrase returned a collection translate that to a true or a false
         if (isPhraseFunc && result instanceof Collection) {
             Collection<String> hitFields = (Collection<String>) result;
             result = hitFields.isEmpty() ? Boolean.FALSE : Boolean.TRUE;
         }
-        
+
         addHits(result);
-        
+
         // if the function stands alone, then it needs to return ag boolean
         // if the function is paired with a method that is called on its results (like 'size') then the
         // actual results must be returned.
@@ -130,7 +136,7 @@ public class DatawaveInterpreter extends Interpreter {
         resultMap.put(nodeString, result instanceof Collection ? !((Collection) result).isEmpty() : result);
         return result instanceof Collection ? !((Collection) result).isEmpty() : result;
     }
-    
+
     /**
      * Triggered when variable can not be resolved.
      *
@@ -150,7 +156,7 @@ public class DatawaveInterpreter extends Interpreter {
         // do not warn
         return null;
     }
-    
+
     /**
      * Triggered when method, function or constructor invocation fails.
      *
@@ -169,11 +175,11 @@ public class DatawaveInterpreter extends Interpreter {
         }
         throw super.invocationException(node, methodName, xany);
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        
+
         Object result = resultMap.get(nodeString);
         if (null != result)
             return result;
@@ -181,11 +187,11 @@ public class DatawaveInterpreter extends Interpreter {
         resultMap.put(nodeString, result);
         return result;
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         String nodeString = JexlStringBuildingVisitor.buildQueryWithoutParse(node);
-        
+
         Object result = resultMap.get(nodeString);
         if (null != result)
             return result;
@@ -193,28 +199,28 @@ public class DatawaveInterpreter extends Interpreter {
         resultMap.put(nodeString, result);
         return result;
     }
-    
+
     public Object visit(ASTMethodNode node, Object data) {
         if (data == null) {
             data = new FunctionalSet(); // an empty set
         }
         return super.visit(node, data);
     }
-    
+
     public Object visit(ASTOrNode node, Object data) {
         Deque<JexlNode> children = new ArrayDeque<>();
         Deque<JexlNode> stack = new ArrayDeque<>();
         stack.push(node);
-        
+
         boolean allIdentifiers = true;
-        
+
         // iterative depth-first traversal of tree to avoid stack
         // overflow when traversing large or'd lists
         JexlNode current;
         JexlNode child;
         while (!stack.isEmpty()) {
             current = stack.pop();
-            
+
             if (current instanceof ASTOrNode) {
                 for (int i = current.jjtGetNumChildren() - 1; i >= 0; i--) {
                     child = JexlASTHelper.dereference(current.jjtGetChild(i));
@@ -227,7 +233,7 @@ public class DatawaveInterpreter extends Interpreter {
                 }
             }
         }
-        
+
         // If all ASTIdentifiers, then traverse the whole queue. Otherwise we can attempt to short circuit.
         Object result = null;
         if (allIdentifiers) {
@@ -244,76 +250,96 @@ public class DatawaveInterpreter extends Interpreter {
                 result = interpretOr(children.pollLast().jjtAccept(this, data), result);
             }
         }
-        
+
         return result;
     }
-    
-    public Object interpretOr(Object left, Object right) {
-        FunctionalSet leftFunctionalSet = null;
-        FunctionalSet rightFunctionalSet = null;
-        if (left == null)
-            left = FunctionalSet.empty();
-        if (!(left instanceof Collection)) {
-            try {
-                boolean leftValue = arithmetic.toBoolean(left);
-                if (leftValue) {
-                    return Boolean.TRUE;
-                }
-            } catch (ArithmeticException xrt) {
-                throw new RuntimeException(left.toString() + " boolean coercion error", xrt);
-            }
-        } else {
-            leftFunctionalSet = new FunctionalSet();
-            leftFunctionalSet.addAll((Collection) left);
-        }
-        if (right == null)
-            right = FunctionalSet.empty();
-        if (!(right instanceof Collection)) {
-            try {
-                boolean rightValue = arithmetic.toBoolean(right);
-                if (rightValue) {
-                    return Boolean.TRUE;
-                }
-            } catch (ArithmeticException xrt) {
-                throw new RuntimeException(right.toString() + " boolean coercion error", xrt);
-            }
-        } else {
-            rightFunctionalSet = new FunctionalSet();
-            rightFunctionalSet.addAll((Collection) right);
-        }
+
+    /**
+     * Determine the result of or'ing left with right. null means no result, empty functional set is essentially a false, otherwise true.
+     *
+     * @param left
+     *            left object
+     * @param right
+     *            right object
+     * @return null of a functional set
+     */
+    protected Object interpretOr(Object left, Object right) {
+        FunctionalSet leftFunctionalSet = getFunctionalSet(left);
+        FunctionalSet rightFunctionalSet = getFunctionalSet(right);
+
         // when an identifier is expanded by the data model within a Function node, the results of the matches
-        // for both (all?) fields must be gathered into a single collection to be returned.
+        // for both fields must be gathered into a single collection to be returned.
         if (leftFunctionalSet != null && rightFunctionalSet != null) { // add left and right
             FunctionalSet functionalSet = new FunctionalSet(leftFunctionalSet);
             functionalSet.addAll(rightFunctionalSet);
             return functionalSet;
         } else if (leftFunctionalSet != null) {
             return leftFunctionalSet;
-        } else if (rightFunctionalSet != null) {
-            return rightFunctionalSet;
         } else {
-            return getBooleanOr(left, right);
+            return rightFunctionalSet;
         }
     }
-    
+
+    /**
+     * Turn a value into a functional set
+     *
+     * @param value
+     *            a value
+     * @return a functional set containing the value. null if value is null.
+     */
+    protected FunctionalSet getFunctionalSet(Object value) {
+        FunctionalSet functionalSet = null;
+        // use value if already a functional set
+        if (value instanceof FunctionalSet) {
+            functionalSet = (FunctionalSet) value;
+        }
+        // if a collection, then create a functional set out of that
+        else if (value instanceof Collection) {
+            functionalSet = new FunctionalSet((Collection) value);
+        }
+        // otherwise create a functional set from the value iff true
+        // ignore null (e.g. assignments should not affect results)
+        else if (value != null) {
+            functionalSet = new FunctionalSet();
+            if (arithmetic.toBoolean(value)) {
+                functionalSet.add(getTuple(value));
+            }
+        }
+        return functionalSet;
+    }
+
+    /**
+     * Create a tuple from a value
+     *
+     * @param o
+     *            an object
+     * @return a tuple containing value
+     */
+    protected ValueTuple getTuple(Object o) {
+        if (o instanceof ValueTuple) {
+            return (ValueTuple) o;
+        }
+        return new ValueTuple("_unknown_", o, o, null);
+    }
+
     private JexlNode dereference(JexlNode node) {
         while (node.jjtGetNumChildren() == 1 && node instanceof ASTReferenceExpression) {
             node = node.jjtGetChild(0);
         }
         return node;
     }
-    
+
     /**
      * This will determine if this ANDNode contains a range, and will invoke the appropriate range function instead of evaluating the LT/LE and GT/GE nodes *
      * independently as that does not work when there are sets of values in the context.
-     * 
+     *
      * @param node
      *            a node
      * @return a collection of hits (or empty set) if we evaluated a range. null otherwise.
      */
     private Collection<?> evaluateRange(ASTAndNode node) {
         Collection<?> evaluation = null;
-        
+
         LiteralRange range = JexlASTHelper.findRange().getRange(node);
         if (range != null) {
             JexlNode left = range.getLowerNode();
@@ -358,7 +384,7 @@ public class DatawaveInterpreter extends Interpreter {
         }
         return evaluation;
     }
-    
+
     private void addHits(Object fieldValue) {
         if (this.arithmetic instanceof HitListArithmetic && fieldValue != null) {
             HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
@@ -371,10 +397,10 @@ public class DatawaveInterpreter extends Interpreter {
             }
         }
     }
-    
+
     /**
      * Wrapper method for adding fielded phrases to the HIT_TERM
-     * 
+     *
      * @param o
      *            a collection of fields that hit for this function
      * @param node
@@ -391,7 +417,7 @@ public class DatawaveInterpreter extends Interpreter {
             }
         }
     }
-    
+
     /**
      * Add a fielded phrase to the HIT_TERM
      *
@@ -408,7 +434,7 @@ public class DatawaveInterpreter extends Interpreter {
         Collection<ColumnVisibility> cvs = new HashSet<>();
         Attributes source = new Attributes(true);
         ContentFunctionsDescriptor.ContentJexlArgumentDescriptor jexlArgDescriptor = new ContentFunctionsDescriptor().getArgumentDescriptor(node);
-        
+
         Set<String> values = jexlArgDescriptor.getHitTermValues();
         FunctionalSet<?> set = (FunctionalSet<?>) this.context.get(field);
         if (set != null) {
@@ -420,7 +446,7 @@ public class DatawaveInterpreter extends Interpreter {
                 }
             }
         }
-        
+
         try {
             cv = MarkingFunctionsFactory.createMarkingFunctions().combine(cvs);
         } catch (MarkingFunctions.Exception e) {
@@ -429,45 +455,54 @@ public class DatawaveInterpreter extends Interpreter {
             return;
         }
         source.setColumnVisibility(cv);
-        
+
         // create an Attributes<?> backed ValueTuple
         String phrase = jexlArgDescriptor.getHitTermValue();
-        
+
         ValueTuple vt = new ValueTuple(field, phrase, phrase, source);
         hitListArithmetic.add(vt);
     }
-    
+
     public Object visit(ASTAndNode node, Object data) {
-        
+
+        QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         // we could have arrived here after the node was dereferenced
-        if (QueryPropertyMarker.findInstance(node).isType(EXCEEDED_OR)) {
+        if (instance.isType(EXCEEDED_OR)) {
             return visitExceededOrThresholdMarker(node);
+        } else if (instance.isType(DROPPED)) {
+            return null;
         }
-        
+
         // check for the special case of a range (conjunction of a G/GE and a L/LE node) and reinterpret as a function
         Object evaluation = evaluateRange(node);
         if (evaluation != null) {
             return evaluation;
         }
-        
+
         // holds all values for intersection
-        FunctionalSet functionalSet = new FunctionalSet<>();
+        FunctionalSet functionalSet = null;
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
             Object o = child.jjtAccept(this, data);
+            // null return means there was no actual evaluation
             if (o == null) {
-                o = FunctionalSet.empty();
+                continue;
+            }
+            if (functionalSet == null) {
+                functionalSet = new FunctionalSet();
             }
             if (o instanceof Collection) {
-                if (((Collection<?>) o).isEmpty()) {
+                if (((Collection) o).isEmpty()) {
                     return Boolean.FALSE;
-                } else {
-                    functionalSet.addAll((Collection<?>) o);
                 }
+                functionalSet.addAll((Collection<?>) o);
             } else {
                 try {
                     boolean value = arithmetic.toBoolean(o);
-                    if (!value) {
+                    if (value) {
+                        functionalSet.add(getTuple(o));
+                    } else {
+                        // we got a false value, so return false
                         return Boolean.FALSE;
                     }
                 } catch (RuntimeException xrt) {
@@ -475,67 +510,41 @@ public class DatawaveInterpreter extends Interpreter {
                 }
             }
         }
-        
-        // the expression evaluated to true. either return the functional set of hits, or boolean true
-        if (!functionalSet.isEmpty()) {
-            return functionalSet;
-        } else {
-            return Boolean.TRUE;
-        }
+
+        return functionalSet;
     }
-    
-    // this handles the case where one side is a boolean and the other is a collection
-    private boolean getBooleanAnd(Object left, Object right) {
-        if (left instanceof Collection) {
-            left = ((Collection) left).isEmpty() == false;
-        }
-        if (right instanceof Collection) {
-            right = ((Collection) right).isEmpty() == false;
-        }
-        return arithmetic.toBoolean(left) && arithmetic.toBoolean(right);
-    }
-    
-    private boolean getBooleanOr(Object left, Object right) {
-        if (left instanceof Collection) {
-            left = ((Collection) left).isEmpty() == false;
-        }
-        if (right instanceof Collection) {
-            right = ((Collection) right).isEmpty() == false;
-        }
-        return arithmetic.toBoolean(left) || arithmetic.toBoolean(right);
-    }
-    
+
     /**
      * a function node that has siblings has a method paired with it, like the size method in includeRegex(foo,bar).size() It must return its collection of
      * results for the other method to use, instead of a boolean indicating that there were results
-     * 
+     *
      * @param node
      *            a node
      * @return if the node has siblings
      */
     private boolean hasSiblings(ASTFunctionNode node) {
-        
+
         JexlNode parent = node.jjtGetParent();
-        
+
         if (parent.jjtGetNumChildren() > 1) {
             return true;
         }
-        
+
         JexlNode grandparent = parent.jjtGetParent();
-        
+
         if (grandparent instanceof ASTMethodNode) {
             return true;
         }
         return false;
     }
-    
+
     private Object visitExceededOrThresholdMarker(JexlNode node) {
         ExceededOr exceededOr = new ExceededOr(node);
-        
+
         Set<String> evalValues = null;
         FST evalFst = null;
         SortedSet<Range> evalRanges = null;
-        
+
         // if the context isn't cached, load it now
         if (!context.has(exceededOr.getId())) {
             try {
@@ -553,7 +562,7 @@ public class DatawaveInterpreter extends Interpreter {
                 log.warn("Unable to load ExceededOrThreshold Parameters during evaluation", e);
             }
         }
-        
+
         // determine what we're dealing with
         Object contextObj = context.get(exceededOr.getId());
         if (contextObj instanceof FST) {
@@ -568,7 +577,7 @@ public class DatawaveInterpreter extends Interpreter {
                     evalValues = (Set<String>) contextObj;
             }
         }
-        
+
         // get all of the values for this field from the context
         Collection<?> contextValues;
         Object fieldValue = context.get(exceededOr.getField());
@@ -577,9 +586,9 @@ public class DatawaveInterpreter extends Interpreter {
         } else {
             contextValues = (Collection<?>) fieldValue;
         }
-        
+
         Set evaluation = new HashSet<>();
-        
+
         // check for value matches
         if (evalValues != null && !evalValues.isEmpty()) {
             for (Object contextValue : contextValues) {
@@ -591,7 +600,7 @@ public class DatawaveInterpreter extends Interpreter {
                 }
             }
         }
-        
+
         // check for FST matches
         else if (evalFst != null && arithmetic instanceof DatawaveArithmetic) {
             for (Object contextValue : contextValues) {
@@ -601,7 +610,7 @@ public class DatawaveInterpreter extends Interpreter {
                 }
             }
         }
-        
+
         // check for range matches
         else if (evalRanges != null && !evalRanges.isEmpty()) {
             for (Object contextValue : contextValues) {
@@ -616,12 +625,12 @@ public class DatawaveInterpreter extends Interpreter {
                 }
             }
         }
-        
+
         if (evaluation.isEmpty())
             return Boolean.FALSE;
-        
+
         addHits(evaluation);
-        
+
         return evaluation;
     }
 }

@@ -10,12 +10,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class FixNegativeNumbersVisitor extends RebuildingVisitor {
-    
+
     public static ASTJexlScript fix(JexlNode root) {
         FixNegativeNumbersVisitor visitor = new FixNegativeNumbersVisitor();
         return (ASTJexlScript) root.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode astumn, Object data) {
         if (astumn.jjtGetNumChildren() == 1 && astumn.jjtGetChild(0) instanceof ASTNumberLiteral) {
@@ -31,7 +31,7 @@ public class FixNegativeNumbersVisitor extends RebuildingVisitor {
             return super.visit(astumn, data);
         }
     }
-    
+
     private Number negate(Number number) {
         Number negated = null;
         if (number instanceof Integer) {
@@ -49,5 +49,5 @@ public class FixNegativeNumbersVisitor extends RebuildingVisitor {
         }
         return negated;
     }
-    
+
 }

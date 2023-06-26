@@ -24,26 +24,26 @@ import java.util.Set;
  *
  */
 public class CompositeTerm extends Composite {
-    
+
     public static final Set<Class<?>> INVALID_LEAF_NODE_CLASSES = Collections
                     .unmodifiableSet(Sets.newHashSet(ASTNENode.class, ASTGTNode.class, ASTGENode.class, ASTLTNode.class, ASTLENode.class, ASTAndNode.class));
     public static final Set<Class<?>> VALID_LEAF_NODE_CLASSES = Collections.unmodifiableSet(Sets.newHashSet(ASTEQNode.class, ASTERNode.class));
-    
+
     public CompositeTerm(String compositeName, String separator) {
         super(compositeName, separator);
     }
-    
+
     public CompositeTerm(Composite other) {
         this(other.compositeName, other.separator);
         for (JexlNode node : other.jexlNodeList)
             addComponent(node);
     }
-    
+
     @Override
     public Composite clone() {
         return new CompositeRange(this);
     }
-    
+
     public void addComponent(JexlNode node) {
         Object lit = JexlASTHelper.getLiteralValue(node);
         String identifier = JexlASTHelper.getIdentifier(node);
@@ -51,23 +51,23 @@ public class CompositeTerm extends Composite {
         fieldNameList.add(identifier);
         expressionList.add(lit == null ? null : lit.toString());
     }
-    
+
     @Override
     public String toString() {
         return "CompositeTerm [compositeName=" + compositeName + ", separator=" + separator + ", fieldNameList=" + fieldNameList + ", jexlNodeList="
                         + jexlNodeList + ", expressionList=" + expressionList + "]";
     }
-    
+
     public void getNodesAndExpressions(List<Class<? extends JexlNode>> nodeClasses, List<String> expressions,
                     Map<String,DiscreteIndexType<?>> discreteIndexFieldMap, boolean includeOldData) {
         Class nodeClass = (jexlNodeList.stream().anyMatch(x -> x instanceof ASTERNode)) ? ASTERNode.class : ASTEQNode.class;
         String expression = getAppendedExpressions();
-        
+
         if (includeOldData) {
             if (nodeClass.equals(ASTEQNode.class)) {
                 expressions.add(expressionList.get(0));
                 nodeClasses.add(ASTGENode.class);
-                
+
                 expressions.add(expression);
                 nodeClasses.add(ASTLENode.class);
             } else if (nodeClass.equals(ASTERNode.class)) {
@@ -79,11 +79,11 @@ public class CompositeTerm extends Composite {
             expressions.add(expression);
         }
     }
-    
+
     private String getAppendedExpressions() {
         return String.join(separator, expressionList);
     }
-    
+
     // what this essentially boils down to is that the only valid nodes are equals or equals regex nodes
     // this composite is invalid if:
     // - it doesn't contain any nodes, or they are all null
@@ -93,22 +93,22 @@ public class CompositeTerm extends Composite {
         // if we have no nodes, or they are all null
         if (jexlNodeList.isEmpty() || jexlNodeList.stream().allMatch(Objects::isNull) || expressionList.stream().anyMatch(Objects::isNull))
             return false;
-        
+
         for (JexlNode node : jexlNodeList) {
             Class nodeClass = node.getClass();
-            
+
             // if this is an invalid leaf node, or not a valid leaf node, we're done
             if (INVALID_LEAF_NODE_CLASSES.contains(nodeClass) || !VALID_LEAF_NODE_CLASSES.contains(nodeClass))
                 return false;
         }
-        
+
         return true;
     }
-    
+
     public boolean contains(JexlNode node) {
         return jexlNodeList.contains(node);
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -119,7 +119,7 @@ public class CompositeTerm extends Composite {
         result = prime * result + ((jexlNodeList == null) ? 0 : jexlNodeList.hashCode());
         return result;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)
@@ -151,5 +151,5 @@ public class CompositeTerm extends Composite {
             return false;
         return true;
     }
-    
+
 }

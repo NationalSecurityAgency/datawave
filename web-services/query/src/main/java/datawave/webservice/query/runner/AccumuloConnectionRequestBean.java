@@ -13,16 +13,16 @@ import javax.inject.Singleton;
 @Singleton
 // CDI singleton
 public class AccumuloConnectionRequestBean extends AccumuloConnectionRequestMap {
-    
+
     private static Logger log = Logger.getLogger(AccumuloConnectionRequestBean.class);
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     private AccumuloConnectionRequestMap getConnectionThreadMap = new AccumuloConnectionRequestMap();
-    
+
     public boolean cancelConnectionRequest(String id) {
         return cancelConnectionRequest(id, ctx.getCallerPrincipal().getName());
     }
-    
+
 }

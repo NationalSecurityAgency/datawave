@@ -13,7 +13,7 @@ import java.text.ParseException;
 import java.util.Date;
 
 public class DashboardQuery {
-    
+
     private static final String queryString = "USER > '0' && USER < 'ZZZZZZZ'";
     private static final String logicName = "DashboardQueryLogic";
     private static final String queryName = "DashboardQueryLogic";
@@ -24,13 +24,13 @@ public class DashboardQuery {
     private static final int pageSize = 10000;
     private static final int pageTimeout = -1;
     private static final Long maxResultsOverride = null;
-    
+
     private DashboardQuery() {}
-    
+
     @SuppressWarnings("unchecked")
     public static ExtJsResponse<DashboardSummary> createQuery(QueryExecutor queryExecutor, String auths, Date beginDate, Date endDate, Date now)
                     throws ParseException {
-        
+
         return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName,
                         MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(logicName, queryString, queryName, columnVisibility, beginDate, endDate,
                                         auths, DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride, persistence, parameters, trace)));

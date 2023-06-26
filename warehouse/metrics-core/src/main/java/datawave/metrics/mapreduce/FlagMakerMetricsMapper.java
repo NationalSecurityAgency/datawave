@@ -28,9 +28,9 @@ import org.apache.log4j.Logger;
  *
  */
 public class FlagMakerMetricsMapper extends Mapper<Text,Counters,Text,Mutation> {
-    
+
     private static final Logger log = Logger.getLogger(FlagMakerMetricsMapper.class);
-    
+
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         InputSplit split = context.getInputSplit();
@@ -41,20 +41,20 @@ public class FlagMakerMetricsMapper extends Mapper<Text,Counters,Text,Mutation> 
         }
         super.setup(context);
     }
-    
+
     @Override
     public void map(Text flagFile, Counters counters, Context context) throws IOException, InterruptedException {
         System.out.println("Received counters for job " + flagFile);
-        
+
         log.info(counters);
-        
+
         long endTime = counters.findCounter(InputFile.FLAGMAKER_END_TIME).getValue();
         long startTime = counters.findCounter(InputFile.FLAGMAKER_START_TIME).getValue();
-        
+
         Mutation statsPersist = new Mutation("flagFile\u0000" + flagFile);
         statsPersist.put("", "", new Value(serializeCounters(counters)));
         context.write(null, statsPersist);
-        
+
         // Breaking it down into individual counters... Can't get individual stats when batch-processing in the FlagMaker
         for (Counter c : counters.getGroup(InputFile.class.getSimpleName())) {
             Text outFile = new Text(c.getName());
@@ -73,7 +73,7 @@ public class FlagMakerMetricsMapper extends Mapper<Text,Counters,Text,Mutation> 
             }
         }
     }
-    
+
     public static byte[] serializeCounters(final Counters c) throws IOException {
         if (c == null) {
             throw new IllegalArgumentException("Writable cannot be null");

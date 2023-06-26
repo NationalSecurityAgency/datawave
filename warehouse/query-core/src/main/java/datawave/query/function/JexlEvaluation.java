@@ -28,92 +28,92 @@ import datawave.query.util.Tuple3;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
-    
+
     public static final String HIT_TERM_FIELD = "HIT_TERM";
-    
+
     private String query;
     private JexlArithmetic arithmetic;
     private DatawaveJexlEngine engine;
-    
+
     // do we need to gather phrase offsets
     private boolean gatherPhraseOffsets = false;
-    
+
     /**
      * Compiled and flattened jexl script
      */
     protected DatawaveJexlScript script;
-    
+
     public JexlEvaluation(String query) {
         this(query, new DefaultArithmetic());
     }
-    
+
     public JexlEvaluation(String query, JexlArithmetic arithmetic) {
         this.query = query;
         this.arithmetic = arithmetic;
-        
+
         // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
         this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
-        
+
         // Evaluate the JexlContext against the Script
         this.script = DatawaveJexlScript.create((Script) this.engine.createScript(this.query));
     }
-    
+
     public JexlArithmetic getArithmetic() {
         return arithmetic;
     }
-    
+
     public DatawaveJexlEngine getEngine() {
         return engine;
     }
-    
+
     public ASTJexlScript parse(String expression) {
         return engine.parse(expression);
     }
-    
+
     public boolean isMatched(Object o) {
         return ArithmeticJexlEngines.isMatched(o);
     }
-    
+
     @Override
     public boolean apply(Tuple3<Key,Document,DatawaveJexlContext> input) {
-        
+
         // setup the term offset map to gather phrase indexes if requested.
         TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
         if (termOffsetMap != null && isGatherPhraseOffsets() && arithmetic instanceof HitListArithmetic) {
             termOffsetMap.setGatherPhraseOffsets(true);
         }
-        
+
         // now evaluate
         Object o = script.execute(input.third());
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against " + input.third() + " returned " + o);
         }
-        
+
         boolean matched = isMatched(o);
-        
+
         // Add delayed info to document
         if (matched && input.third() instanceof DelayedNonEventIndexContext) {
             ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
         }
-        
+
         if (arithmetic instanceof HitListArithmetic) {
             HitListArithmetic hitListArithmetic = (HitListArithmetic) arithmetic;
             if (matched) {
                 Document document = input.second();
-                
+
                 Attributes attributes = new Attributes(input.second().isToKeep());
-                
+
                 for (ValueTuple hitTuple : hitListArithmetic.getHitTuples()) {
-                    
+
                     ColumnVisibility cv = null;
                     Key metadata = null;
                     String term = hitTuple.getFieldName() + ':' + hitTuple.getValue();
-                    
+
                     if (hitTuple.getSource() != null) {
                         cv = hitTuple.getSource().getColumnVisibility();
                         metadata = hitTuple.getSource().getMetadata();
                     }
-                    
+
                     // fall back to extracting column visibility from document
                     if (cv == null) {
                         // get the visibility for the record with this hit
@@ -124,7 +124,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                     if (metadata == null) {
                         metadata = document.getMetadata();
                     }
-                    
+
                     if (cv != null) {
                         // unused
                         long timestamp = document.getTimestamp(); // will force an update to make the metadata valid
@@ -136,7 +136,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
                 if (attributes.size() > 0) {
                     document.put(HIT_TERM_FIELD, attributes);
                 }
-                
+
                 // Put the phrase indexes into the document so that we can add phrase excerpts if desired later.
                 if (termOffsetMap != null) {
                     PhraseIndexes phraseIndexes = termOffsetMap.getPhraseIndexes();
@@ -154,13 +154,13 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         }
         return matched;
     }
-    
+
     public boolean isGatherPhraseOffsets() {
         return gatherPhraseOffsets;
     }
-    
+
     public void setGatherPhraseOffsets(boolean gatherPhraseOffsets) {
         this.gatherPhraseOffsets = gatherPhraseOffsets;
     }
-    
+
 }

@@ -22,15 +22,15 @@ import static datawave.core.common.connection.AccumuloConnectionFactory.Priority
 
 public class ModificationCache {
     private static Logger log = Logger.getLogger(ModificationCache.class);
-    
+
     private static final Text MODIFICATION_COLUMN = new Text("m");
-    
+
     private Map<String,Set<String>> cache = new HashMap<>();
-    
+
     private final AccumuloConnectionFactory connectionFactory;
-    
+
     private ModificationConfiguration modificationConfiguration;
-    
+
     public ModificationCache(AccumuloConnectionFactory connectionFactory, ModificationConfiguration modificationConfiguration) {
         this.connectionFactory = connectionFactory;
         this.modificationConfiguration = modificationConfiguration;
@@ -40,7 +40,7 @@ public class ModificationCache {
             log.error("modificationConfiguration was null");
         }
     }
-    
+
     /**
      * Reload the cache
      */
@@ -87,14 +87,14 @@ public class ModificationCache {
             }
         }
     }
-    
+
     /**
      * List the mutable fields in the cache
      */
     public String listMutableFields() {
         return cache.toString();
     }
-    
+
     /**
      * Check to see if field for specified datatype is mutable
      *
@@ -107,12 +107,12 @@ public class ModificationCache {
         log.trace("datatype = " + datatype + ", field = " + field);
         return cache.get(datatype).contains(field);
     }
-    
+
     public Map<String,Set<String>> getCachedMutableFieldList() {
         log.trace("cache = " + cache);
         return Collections.unmodifiableMap(cache);
     }
-    
+
     public ModificationConfiguration getModificationConfiguration() {
         return modificationConfiguration;
     }

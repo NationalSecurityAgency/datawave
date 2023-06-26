@@ -28,16 +28,16 @@ import java.util.List;
  * </p>
  */
 public class TestLogCollector extends ExternalResource {
-    
+
     private List<String> messages = new ArrayList<>();
-    
+
     private List<LogAppender> loggers;
     private Writer writer = new CharArrayWriter();
-    
+
     private TestLogCollector(Builder b) {
         this.loggers = b.classLoggers;
     }
-    
+
     @Override
     protected void before() {
         StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
@@ -51,7 +51,7 @@ public class TestLogCollector extends ExternalResource {
         appender.start();
         this.loggers.stream().forEach(l -> l.setAppender(appender));
     }
-    
+
     @Override
     protected void after() {
         this.loggers.stream().forEach(l -> l.reset());
@@ -62,57 +62,57 @@ public class TestLogCollector extends ExternalResource {
             e.printStackTrace();
         }
     }
-    
+
     public List<String> getMessages() {
         return this.messages;
     }
-    
+
     public void clearMessages() {
         this.messages.clear();
     }
-    
+
     public static class Builder {
-        
+
         private ArrayList<LogAppender> classLoggers = new ArrayList<>();
-        
+
         public Builder with(Class<?> clazz, org.apache.log4j.Level level) {
             classLoggers.add(new LogAppender(clazz, Level.valueOf(level.toString())));
             return this;
         }
-        
+
         public Builder with(Class<?> clazz, Level level) {
             classLoggers.add(new LogAppender(clazz, level));
             return this;
         }
-        
+
         public Builder with(Class<?> clazz, String level) {
             classLoggers.add(new LogAppender(clazz, Level.valueOf(level)));
             return this;
         }
-        
+
         public TestLogCollector build() {
             return new TestLogCollector(this);
         }
     }
-    
+
     private static class LogAppender {
         Class<?> clazz;
         Logger logger;
         Appender appender;
         Level oldLevel;
-        
+
         LogAppender(Class<?> clazz, Level level) {
             this.logger = (org.apache.logging.log4j.core.Logger) LogManager.getLogger(clazz);
             this.oldLevel = logger.getLevel();
             this.clazz = clazz;
             Configurator.setLevel(clazz.getCanonicalName(), level);
         }
-        
+
         void setAppender(Appender appender) {
             this.appender = appender;
             this.logger.addAppender(this.appender);
         }
-        
+
         void reset() {
             this.logger.removeAppender(this.appender);
             Configurator.setLevel(clazz.getCanonicalName(), oldLevel);

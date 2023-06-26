@@ -10,30 +10,30 @@ import org.apache.log4j.Logger;
 
 /**
  * Keeps state about the particular session that you are within.
- * 
+ *
  * Note that spans imply a hierarchy. We don't need that hierarchy. We just want aggregated times.
- * 
+ *
  */
 public class QuerySpan {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     protected Collection<QuerySpan> sources;
-    
+
     protected QueryStatsDClient client;
-    
+
     protected long sourceCount = 1;
-    
+
     protected long next = 0;
-    
+
     protected long seek = 0;
-    
+
     protected boolean yield = false;
-    
+
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
-    
+
     private long stageTimerTotal = 0;
-    
+
     public enum Stage {
         EmptyTree,
         DocumentSpecificTree,
@@ -52,26 +52,26 @@ public class QuerySpan {
         LimitFields,
         RemoveGroupingContext
     };
-    
+
     public QuerySpan(QueryStatsDClient client) {
         this.client = client;
         this.sources = Lists.newArrayList();
         this.sourceCount = 1;
     }
-    
+
     public QuerySpan createSource() {
         QuerySpan newSpan = new QuerySpan(client);
         addSource(newSpan);
         return newSpan;
     }
-    
+
     public void addSource(QuerySpan sourceSpan) {
         if (client != null) {
             client.addSource();
         }
         sources.add(sourceSpan);
     }
-    
+
     public long getSourceCount() {
         long sourceCount = this.sourceCount;
         for (QuerySpan subSpan : sources) {
@@ -79,7 +79,7 @@ public class QuerySpan {
         }
         return sourceCount;
     }
-    
+
     public long getNextCount() {
         long nextCount = next;
         for (QuerySpan subSpan : sources) {
@@ -87,7 +87,7 @@ public class QuerySpan {
         }
         return nextCount;
     }
-    
+
     public long getSeekCount() {
         long seekCount = seek;
         for (QuerySpan subSpan : sources) {
@@ -95,7 +95,7 @@ public class QuerySpan {
         }
         return seekCount;
     }
-    
+
     public boolean getYield() {
         if (yield) {
             return true;
@@ -107,14 +107,14 @@ public class QuerySpan {
         }
         return false;
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString()).append(" sources:").append(getSourceCount()).append(" next:").append(getNextCount()).append(" seek:").append(getSeekCount())
                         .append(" yield:").append(getYield());
         return sb.toString();
     }
-    
+
     public void logStack(String prefix) {
         StackTraceElement[] stack = Thread.currentThread().getStackTrace();
         StringBuilder sb = new StringBuilder();
@@ -125,7 +125,7 @@ public class QuerySpan {
         }
         log.trace(sb.toString());
     }
-    
+
     public synchronized void next() {
         next++;
         if (client != null) {
@@ -135,7 +135,7 @@ public class QuerySpan {
             logStack("next()");
         }
     }
-    
+
     public synchronized void seek() {
         seek++;
         if (client != null) {
@@ -145,7 +145,7 @@ public class QuerySpan {
             logStack("seek()");
         }
     }
-    
+
     public synchronized void yield() {
         yield = true;
         if (client != null) {
@@ -155,7 +155,7 @@ public class QuerySpan {
             logStack("yield()");
         }
     }
-    
+
     public void reset() {
         for (QuerySpan source : sources) {
             source.reset();
@@ -167,7 +167,7 @@ public class QuerySpan {
         stageTimerTotal = 0;
         stageTimers.clear();
     }
-    
+
     public void addStageTimer(QuerySpan.Stage stageName, long elapsed) {
         stageTimers.put(stageName.toString(), elapsed);
         stageTimerTotal += elapsed;
@@ -175,7 +175,7 @@ public class QuerySpan {
             client.timing(stageName.toString(), elapsed);
         }
     }
-    
+
     public boolean hasEntries() {
         if (this.getSeekCount() > 0 || this.getNextCount() > 0 || this.getYield() || this.getSourceCount() > 0 || !this.stageTimers.isEmpty()) {
             return true;
@@ -183,35 +183,35 @@ public class QuerySpan {
             return false;
         }
     }
-    
+
     public Long getStageTimer(String stageName) {
         return stageTimers.get(stageName);
     }
-    
+
     public Map<String,Long> getStageTimers() {
         return stageTimers;
     }
-    
+
     public long getStageTimerTotal() {
         return stageTimerTotal;
     }
-    
+
     public void setSeek(long seek) {
         this.seek = seek;
     }
-    
+
     public void setNext(long next) {
         this.next = next;
     }
-    
+
     public void setYield(boolean yield) {
         this.yield = yield;
     }
-    
+
     public void setSourceCount(long sourceCount) {
         this.sourceCount = sourceCount;
     }
-    
+
     public void setStageTimers(Map<String,Long> stageTimers) {
         this.stageTimers.clear();
         for (Map.Entry<String,Long> entry : stageTimers.entrySet()) {

@@ -24,18 +24,20 @@ import java.util.stream.StreamSupport;
  **/
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.QueryFunctionsDescriptor")
 public class QueryFunctions {
-    
+
     public static final String QUERY_FUNCTION_NAMESPACE = "f";
     public static final String OPTIONS_FUNCTION = "options";
     public static final String UNIQUE_FUNCTION = "unique";
     public static final String GROUPBY_FUNCTION = "groupby";
     public static final String EXCERPT_FIELDS_FUNCTION = "excerpt_fields";
+    public static final String LENIENT_FIELDS_FUNCTION = "lenient";
+    public static final String STRICT_FIELDS_FUNCTION = "strict";
     public static final String MATCH_REGEX = "matchRegex";
     public static final String INCLUDE_TEXT = "includeText";
     public static final String NO_EXPANSION = "noExpansion";
-    
+
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
-    
+
     protected static String getHitTermString(Object valueTuple) {
         Object value = ValueTuple.getStringValue(valueTuple);
         Object fieldName = ValueTuple.getFieldName(valueTuple);
@@ -45,7 +47,7 @@ public class QueryFunctions {
             return "";
         }
     }
-    
+
     public static Collection<?> length(Object field, long lower, long upper) {
         Set<String> matches = Collections.emptySet();
         if (field != null) {
@@ -59,7 +61,7 @@ public class QueryFunctions {
         }
         return matches;
     }
-    
+
     public static Collection<?> length(Iterable<?> values, long lower, long upper) {
         if (values != null) {
             for (Object value : values) {
@@ -71,11 +73,11 @@ public class QueryFunctions {
         }
         return Collections.emptySet();
     }
-    
+
     public static Collection<?> between(Object field, String left, String right) {
         return between(field, left, true, right, true);
     }
-    
+
     public static Collection<?> between(Object field, String left, boolean leftInclusive, String right, boolean rightInclusive) {
         if (field != null) {
             // we only want to test against the normalized variant to be consistent with the DatawaveArithmetic
@@ -92,11 +94,11 @@ public class QueryFunctions {
         }
         return Collections.emptySet();
     }
-    
+
     public static Collection<?> between(Iterable<?> values, String left, String right) {
         return between(values, left, true, right, true);
     }
-    
+
     public static Collection<?> between(Iterable<?> values, String left, boolean leftInclusive, String right, boolean rightInclusive) {
         if (values != null) {
             for (Object value : values) {
@@ -108,11 +110,11 @@ public class QueryFunctions {
         }
         return Collections.emptySet();
     }
-    
+
     public static Collection<?> between(Object field, float left, float right) {
         return between(field, left, true, right, true);
     }
-    
+
     public static Collection<?> between(Object field, float left, boolean leftInclusive, float right, boolean rightInclusive) {
         Number value = null;
         if (field != null) {
@@ -145,11 +147,11 @@ public class QueryFunctions {
         }
         return Collections.emptySet();
     }
-    
+
     public static Collection<?> between(Iterable<?> values, float left, float right) {
         return between(values, left, true, right, true);
     }
-    
+
     public static Collection<?> between(Iterable<?> values, float left, boolean leftInclusive, float right, boolean rightInclusive) {
         if (values != null) {
             for (Object value : values) {
@@ -161,23 +163,23 @@ public class QueryFunctions {
         }
         return Collections.emptySet();
     }
-    
+
     public static Collection<?> between(Object fieldValue, long left, long right) {
         return between(fieldValue, left, true, right, true);
     }
-    
+
     public static Collection<?> between(Object fieldValue, long left, boolean leftInclusive, long right, boolean rightInclusive) {
         return between(fieldValue, (float) left, leftInclusive, (float) right, rightInclusive);
     }
-    
+
     public static Collection<?> between(Iterable<?> values, long left, long right) {
         return between(values, left, true, right, true);
     }
-    
+
     public static Collection<?> between(Iterable<?> values, long left, boolean leftInclusive, long right, boolean rightInclusive) {
         return between(values, (float) left, leftInclusive, (float) right, rightInclusive);
     }
-    
+
     /**
      * Returns a set that contains the hit term for the given field value if the regex matches against the value of the field value. If the regex string
      * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
@@ -200,7 +202,7 @@ public class QueryFunctions {
         }
         return FunctionalSet.emptySet();
     }
-    
+
     /**
      * Returns a set that contains the hit term if the non-normalized value of the field value matches the given string.
      *
@@ -216,7 +218,7 @@ public class QueryFunctions {
         }
         return FunctionalSet.emptySet();
     }
-    
+
     /**
      * Returns a set that contains the hit term for the first field value where the regex matches against the value of the field value. If the regex string
      * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
@@ -246,7 +248,7 @@ public class QueryFunctions {
         }
         return FunctionalSet.emptySet();
     }
-    
+
     /**
      * Returns a set that contains the hit term for the first field value where the non-normalized value matches the given string.
      *
@@ -270,7 +272,7 @@ public class QueryFunctions {
         }
         return FunctionalSet.emptySet();
     }
-    
+
     // Returns whether the pattern matches against either the non-normalized value or, if caseInsensitive is false, the normalized value.
     private static boolean isMatchForPattern(Pattern pattern, boolean caseInsensitive, Object value) {
         Matcher matcher = pattern.matcher(ValueTuple.getStringValue(value));

@@ -37,28 +37,28 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 /**
  * A visitor that checks the query tree to determine if the query can be satisfied by only looking in the field index. The result of this is passed to the
  * IteratorBuildingVisitor
- * 
+ *
  */
 public class SatisfactionVisitor extends BaseVisitor {
     private static final Logger log = Logger.getLogger(SatisfactionVisitor.class);
-    
+
     protected Set<String> nonEventFields;
     private Collection<String> unindexedFields = Lists.newArrayList();
     protected boolean isQueryFullySatisfied;
     protected Collection<String> includeReferences = UniversalSet.instance();
     protected Collection<String> excludeReferences = Collections.emptyList();
-    
+
     public boolean isQueryFullySatisfied() {
         return isQueryFullySatisfied;
     }
-    
+
     public SatisfactionVisitor(Set<String> nonEventFields, Collection<String> includes, Collection<String> excludes, boolean isQueryFullySatisfied) {
         this.nonEventFields = nonEventFields;
         this.isQueryFullySatisfied = isQueryFullySatisfied;
         this.includeReferences = includes;
         this.excludeReferences = excludes;
     }
-    
+
     private JexlNode defensiveGetLiteral(JexlNode node) {
         JexlNode literal = null;
         try {
@@ -73,7 +73,7 @@ public class SatisfactionVisitor extends BaseVisitor {
         }
         return literal;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         /**
@@ -83,7 +83,7 @@ public class SatisfactionVisitor extends BaseVisitor {
             isQueryFullySatisfied = false;
             return null;
         }
-        
+
         if (defensiveGetLiteral(node) instanceof ASTNullLiteral) {
             isQueryFullySatisfied = false;
             return null;
@@ -91,7 +91,7 @@ public class SatisfactionVisitor extends BaseVisitor {
         String field = JexlASTHelper.getIdentifier(node);
         final boolean included = includeReferences.contains(field);
         final boolean excluded = excludeReferences.contains(field);
-        
+
         if (excluded || !included) {
             isQueryFullySatisfied = false;
             return null;
@@ -102,7 +102,7 @@ public class SatisfactionVisitor extends BaseVisitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visit(ASTAndNode and, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(and);
@@ -114,18 +114,18 @@ public class SatisfactionVisitor extends BaseVisitor {
         } else {
             isQueryFullySatisfied = false;
         }
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object o) {
         // Recurse
         node.jjtGetChild(0).jjtAccept(this, o);
-        
+
         return null;
     }
-    
+
     /**
      * This method only do anything when the function is a content function. In that case, we take the set of term frequency fields and supply it to the
      * {@link ContentFunctionsDescriptor.ContentJexlArgumentDescriptor}, which produces a tree of JexlNodes. This will allow us to create an iterator tree
@@ -139,46 +139,46 @@ public class SatisfactionVisitor extends BaseVisitor {
         if (!namespaceNode.getNamespace().equals(QueryFunctions.QUERY_FUNCTION_NAMESPACE)) {
             isQueryFullySatisfied = false;
         }
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         // if a method on a field, then not fully satisfied
         isQueryFullySatisfied = false;
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object o) {
         String field = JexlASTHelper.getIdentifier(node);
         final boolean included = includeReferences.contains(field);
         final boolean excluded = excludeReferences.contains(field);
-        
+
         if (excluded || !included) {
             isQueryFullySatisfied = false;
         }
         if (isUnindexed(node)) {
             isQueryFullySatisfied = false;
         }
-        
+
         return null;
     }
-    
+
     /**
      * Negated regular expression nodes can be ignored when creating the iterator tree and used a post filter.
      */
     @Override
     public Object visit(ASTNRNode node, Object data) {
         isQueryFullySatisfied = false;
-        
+
         // we have an ER node that we are not going to process because we know already that it will
         // not match anything.true
         return null;
     }
-    
+
     /**
      * Regular expression nodes that are part of a conjunction can be ignored, as they may be implemented via a post filter. We will still need to handle the OR
      * case.
@@ -186,50 +186,50 @@ public class SatisfactionVisitor extends BaseVisitor {
     @Override
     public Object visit(ASTERNode node, Object data) {
         isQueryFullySatisfied = false;
-        
+
         // we have an ER node that we are not going to process because we know already that it will
         // not match anything.
         return null;
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         isQueryFullySatisfied = false;
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         isQueryFullySatisfied = false;
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         isQueryFullySatisfied = false;
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         isQueryFullySatisfied = false;
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         isQueryFullySatisfied = false;
         if (log.isDebugEnabled()) {
             log.debug("isQueryFullySatisfied set to false because " + PrintingVisitor.formattedQueryString(node) + " is an assignment node");
         }
-        
+
         return null;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         isQueryFullySatisfied = false;
@@ -238,7 +238,7 @@ public class SatisfactionVisitor extends BaseVisitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         /**
@@ -251,7 +251,7 @@ public class SatisfactionVisitor extends BaseVisitor {
             }
             return null;
         }
-        
+
         if (defensiveGetLiteral(node) instanceof ASTNullLiteral) {
             isQueryFullySatisfied = false;
             if (log.isDebugEnabled()) {
@@ -262,7 +262,7 @@ public class SatisfactionVisitor extends BaseVisitor {
         String field = JexlASTHelper.getIdentifier(node);
         final boolean included = includeReferences.contains(field);
         final boolean excluded = excludeReferences.contains(field);
-        
+
         if (excluded || !included) {
             isQueryFullySatisfied = false;
             if (log.isDebugEnabled()) {
@@ -270,20 +270,20 @@ public class SatisfactionVisitor extends BaseVisitor {
                                 + " or not in " + includeReferences);
             }
         }
-        
+
         return null;
     }
-    
+
     protected boolean isUnindexed(JexlNode node) {
         final String fieldName = JexlASTHelper.getIdentifier(node);
         return this.unindexedFields.contains(fieldName);
     }
-    
+
     protected boolean isUnindexed(ASTIdentifier node) {
         final String fieldName = JexlASTHelper.deconstructIdentifier(node.getName());
         return this.unindexedFields.contains(fieldName);
     }
-    
+
     public SatisfactionVisitor setUnindexedFields(Collection<String> unindexedField) {
         this.unindexedFields.addAll(unindexedField);
         return this;

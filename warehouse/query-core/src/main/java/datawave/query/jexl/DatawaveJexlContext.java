@@ -11,35 +11,35 @@ import datawave.query.collections.FunctionalSet;
 import org.apache.commons.jexl3.MapContext;
 
 public class DatawaveJexlContext extends MapContext {
-    
+
     private final Comparator<?> valueComparator;
     private final Map<String,Object> map;
-    
+
     public DatawaveJexlContext() {
         this(new HashMap<>(), null);
     }
-    
+
     public DatawaveJexlContext(Comparator<?> comparator) {
         this(new HashMap<>(), comparator);
     }
-    
+
     private DatawaveJexlContext(Map<String,Object> map, Comparator<?> valueComparator) {
         super(map);
         this.map = map;
         this.valueComparator = valueComparator;
     }
-    
+
     /**
      * Clears the map
      */
     public void clear() {
         this.map.clear();
     }
-    
+
     public int size() {
         return this.map.size();
     }
-    
+
     @Override
     public void set(String name, Object value) {
         if (valueComparator != null) {
@@ -53,16 +53,16 @@ public class DatawaveJexlContext extends MapContext {
         }
         super.set(name, value);
     }
-    
+
     @Override
     // why is this not implemented in MapContext
     public boolean equals(Object o) {
         if (!(o instanceof DatawaveJexlContext)) {
             return false;
         }
-        
+
         DatawaveJexlContext other = (DatawaveJexlContext) o;
-        
+
         if (this.size() != other.size()) {
             return false;
         }
@@ -73,25 +73,25 @@ public class DatawaveJexlContext extends MapContext {
             if (!other.has(key)) {
                 return false;
             }
-            
+
             if (!this.get(key).equals(other.get(key))) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     @Override
     public int hashCode() {
         return map.hashCode();
     }
-    
+
     @Override
     public String toString() {
         return this.map.toString();
     }
-    
+
     public Object get(String name) {
         // So the question is whether a mapping to nothing should return 'null' or an empty collection...
         // If we return an empty collection, then our tests that expect 'null' will need to change
@@ -105,7 +105,7 @@ public class DatawaveJexlContext extends MapContext {
         // return super.visit(node, data);
         // }
         // -- end---
-        
+
         // if(got == null) {
         // return FunctionalSet.empty();
         // }

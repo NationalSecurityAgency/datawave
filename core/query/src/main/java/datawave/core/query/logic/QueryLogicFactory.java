@@ -6,7 +6,7 @@ import datawave.webservice.query.exception.QueryException;
 import java.util.List;
 
 public interface QueryLogicFactory {
-    
+
     /**
      *
      * @param name
@@ -22,8 +22,8 @@ public interface QueryLogicFactory {
      *             if the query logic object failed to clone
      */
     QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws QueryException, IllegalArgumentException, CloneNotSupportedException;
-    
+
     QueryLogic<?> getQueryLogic(String name) throws QueryException, IllegalArgumentException, CloneNotSupportedException;
-    
+
     List<QueryLogic<?>> getQueryLogicList();
 }

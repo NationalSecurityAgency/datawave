@@ -14,24 +14,24 @@ import java.util.Collection;
  */
 public class QueryCheckpoint implements Serializable {
     private static final long serialVersionUID = -9201879510622137934L;
-    
+
     private final QueryKey queryKey;
     private final Collection<QueryData> queries;
-    
+
     public QueryCheckpoint(String queryPool, String queryId, String queryLogic, Collection<QueryData> queries) {
         this(new QueryKey(queryPool, queryId, queryLogic), queries);
     }
-    
+
     public QueryCheckpoint(QueryKey queryKey) {
         this.queryKey = queryKey;
         this.queries = null;
     }
-    
+
     public QueryCheckpoint(QueryKey queryKey, Collection<QueryData> queries) {
         this.queryKey = queryKey;
         this.queries = queries;
     }
-    
+
     public QueryCheckpoint(QueryCheckpoint checkpoint) {
         this.queryKey = new QueryKey(checkpoint.queryKey.toString());
         this.queries = new ArrayList<>(checkpoint.queries.size());
@@ -39,7 +39,7 @@ public class QueryCheckpoint implements Serializable {
             this.queries.add(new QueryData(query));
         }
     }
-    
+
     /**
      * Get the query key
      *
@@ -48,7 +48,7 @@ public class QueryCheckpoint implements Serializable {
     public QueryKey getQueryKey() {
         return queryKey;
     }
-    
+
     /**
      * Get the QueryData objects representing the state of the query.
      *
@@ -57,12 +57,12 @@ public class QueryCheckpoint implements Serializable {
     public Collection<QueryData> getQueries() {
         return queries;
     }
-    
+
     @Override
     public String toString() {
         return getQueryKey() + ": " + getQueries();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof QueryCheckpoint) {
@@ -71,7 +71,7 @@ public class QueryCheckpoint implements Serializable {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(getQueryKey()).append(getQueries()).toHashCode();

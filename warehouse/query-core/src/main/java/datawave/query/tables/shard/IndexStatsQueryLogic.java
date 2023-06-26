@@ -48,101 +48,101 @@ import java.util.TreeSet;
 
 public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
     private static final Logger log = Logger.getLogger(IndexStatsQueryLogic.class);
-    
+
     private AccumuloClient client;
-    
+
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.NORMAL;
     }
-    
+
     /**
      * The QL iterator returns FieldStats, so we don't have to transform anything
      */
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         return new AbstractQueryLogicTransformer<Object,Object>() {
-            
+
             @Override
             public Object transform(Object input) {
                 return input;
             }
-            
+
             @Override
             public BaseQueryResponse createResponse(List<Object> resultList) {
                 IndexStatsResponse resp = new IndexStatsResponse();
-                
+
                 for (Object o : resultList) {
                     resp.addFieldStat((FieldStat) o);
                 }
-                
+
                 return resp;
             }
-            
+
         };
     }
-    
+
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query query, Set<Authorizations> auths) throws Exception {
         this.client = client;
-        
+
         ShardQueryConfiguration config = new ShardQueryConfiguration();
-        
+
         // Get the datatype set if specified
         String typeList = query.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue();
         HashSet<String> typeFilter = null;
-        
+
         if (null != typeList && !typeList.isEmpty()) {
             typeFilter = new HashSet<>();
             typeFilter.addAll(Arrays.asList(StringUtils.split(typeList, Constants.PARAM_VALUE_SEP)));
-            
+
             if (!typeFilter.isEmpty()) {
                 config.setDatatypeFilter(typeFilter);
-                
+
                 if (log.isDebugEnabled()) {
                     log.debug("Type Filter: " + typeFilter);
                 }
             }
         }
-        
+
         config.setBeginDate(query.getBeginDate());
         config.setEndDate(query.getEndDate());
         config.setQueryString(query.getQuery());
         config.setAuthorizations(auths);
-        
+
         return config;
     }
-    
+
     @Override
     public void setupQuery(GenericQueryConfiguration config) throws Exception {
         ShardQueryConfiguration qConf = (ShardQueryConfiguration) config;
-        
+
         HashSet<String> fields = new HashSet<>();
         Collections.addAll(fields, config.getQueryString().split(" "));
-        
+
         StatsMonkey monkey = new StatsMonkey();
         monkey.client = client;
         monkey.table = TableName.INDEX_STATS;
         List<FieldStat> stats = monkey.getStat(fields, qConf.getDatatypeFilter(), qConf.getBeginDate(), qConf.getEndDate());
         this.iterator = stats.iterator();
     }
-    
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new IndexStatsQueryLogic();
     }
-    
+
     private static class StatsMonkey {
         AccumuloClient client;
         String table;
-        
+
         public List<FieldStat> getStat(Set<String> fields, Set<String> dataTypes, Date start, Date end) throws IOException {
             TreeSet<String> dates = new TreeSet<>();
             dates.add(DateHelper.format(start));
             dates.add(DateHelper.format(end));
             return getStat(fields, dataTypes, dates);
         }
-        
+
         public List<FieldStat> getStat(Set<String> fields, Set<String> dataTypes, SortedSet<String> dates) throws IOException {
             // To allow "fields" to be empty and configure the scanners the same,
             // I have to have to references to the Scanner implementation because
@@ -165,20 +165,20 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 log.error(e);
                 throw new IOException(e);
             }
-            
+
             configureScanIterators(scanner, dataTypes, dates);
-            
+
             List<FieldStat> results = scanResults(dataSource);
-            
+
             if (scanner instanceof BatchScanner) {
                 scanner.close();
             }
-            
+
             return results;
         }
-        
+
         public void configureScanIterators(ScannerBase scanner, Collection<String> dataTypes, SortedSet<String> dates) throws IOException {
-            
+
             if (!dates.isEmpty()) {
                 // Filters out sub sections of the column families for me
                 IteratorSetting cfg = new IteratorSetting(30, "mmi", MinMaxIterator.class);
@@ -186,7 +186,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 cfg.addOption(MinMaxIterator.MAX_OPT, dates.last());
                 scanner.addScanIterator(cfg);
             }
-            
+
             // only want these data types
             if (!dataTypes.isEmpty()) {
                 String dtypesCsv = StringUtils.join(dataTypes, ',');
@@ -196,13 +196,13 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 cfg.addOption(CsvKeyFilter.KEY_PART_OPT, "colq");
                 scanner.addScanIterator(cfg);
             }
-            
+
             /*
              * considers the date ranges and datatypes when calculating a weight for a given field
              */
             scanner.addScanIterator(new IteratorSetting(32, "issi", IndexStatsSummingIterator.class));
         }
-        
+
         public LinkedList<FieldStat> scanResults(Iterable<Entry<Key,Value>> data) {
             LinkedList<FieldStat> stats = new LinkedList<>();
             IndexStatsRecord tuple = new IndexStatsRecord();
@@ -222,7 +222,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
                 unique = tuple.getNumberOfUniqueWords().get();
                 total = tuple.getWordCount().get();
                 selectivity = ((double) unique) / ((double) total);
-                
+
                 FieldStat fs = new FieldStat();
                 fs.field = field;
                 fs.unique = unique;
@@ -232,7 +232,7 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
             }
             return stats;
         }
-        
+
         public SortedSet<Range> buildRanges(Collection<String> fields) {
             TreeSet<Range> ranges = new TreeSet<>();
             for (String field : fields) {
@@ -241,22 +241,22 @@ public class IndexStatsQueryLogic extends BaseQueryLogic<FieldStat> {
             return ranges;
         }
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> params = new TreeSet<>();
         params.add(QueryParameters.DATATYPE_FILTER_SET);
         return params;
     }
-    
+
     @Override
     public Set<String> getRequiredQueryParameters() {
         return Collections.emptySet();
     }
-    
+
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
     }
-    
+
 }

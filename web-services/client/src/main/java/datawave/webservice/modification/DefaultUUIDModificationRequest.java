@@ -19,28 +19,28 @@ import java.util.Map;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultUUIDModificationRequest extends ModificationRequestBase implements Serializable {
-    
+
     private static final long serialVersionUID = 3L;
-    
+
     @XmlElementWrapper(name = "Events", required = true)
     @XmlElement(name = "Event", required = true)
     private List<ModificationEvent> events = null;
-    
+
     public void setEvents(List<ModificationEvent> events) {
         this.events = events;
     }
-    
+
     public List<ModificationEvent> getEvents() {
         return events;
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);
         tsb.append("Events", events);
         return tsb.toString();
     }
-    
+
     @Override
     public Map<String,List<String>> toMap() {
         MultiValueMap<String,String> p = new LinkedMultiValueMap<>();

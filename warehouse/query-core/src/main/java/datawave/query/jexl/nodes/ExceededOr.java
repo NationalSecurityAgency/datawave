@@ -1,4 +1,4 @@
-package datawave.query.jexl.visitors.pushdown;
+package datawave.query.jexl.nodes;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -7,7 +7,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -29,60 +28,60 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 
 public class ExceededOr {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     public static final String EXCEEDED_OR_ID = "id";
     public static final String EXCEEDED_OR_FIELD = "field";
     public static final String EXCEEDED_OR_PARAMS = "params";
-    
+
     private final String id;
     private final String field;
     private final ExceededOrParams params;
     private final JexlNode jexlNode;
-    
+
     public ExceededOr(JexlNode jexlNode) {
         this.id = decodeId(jexlNode);
         this.field = decodeField(jexlNode);
         this.params = decodeParams(jexlNode);
         this.jexlNode = jexlNode;
     }
-    
+
     public ExceededOr(String field, URI fstPath) throws JsonProcessingException {
         this(field, new ExceededOrParams(fstPath.toString()));
     }
-    
+
     public ExceededOr(String field, SortedSet<String> values) throws JsonProcessingException {
         this(field, new ExceededOrParams(values, null));
     }
-    
+
     public ExceededOr(String field, List<Range> ranges) throws JsonProcessingException {
         this(field, new ExceededOrParams(null, ranges));
     }
-    
+
     private ExceededOr(String field, ExceededOrParams params) throws JsonProcessingException {
         this.id = UUID.randomUUID().toString();
         this.field = field;
         this.params = params;
         this.jexlNode = createJexlNode();
     }
-    
+
     public String getId() {
         return id;
     }
-    
+
     public String getField() {
         return field;
     }
-    
+
     public ExceededOrParams getParams() {
         return params;
     }
-    
+
     public JexlNode getJexlNode() {
         return jexlNode;
     }
-    
+
     /**
      * Get the id for this marker node
      *
@@ -93,12 +92,13 @@ public class ExceededOr {
     private String decodeId(JexlNode source) {
         Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
         Object paramsObj = parameters.get(EXCEEDED_OR_ID);
-        if (paramsObj != null)
+        if (paramsObj != null) {
             return String.valueOf(paramsObj);
-        else
+        } else {
             return null;
+        }
     }
-    
+
     /**
      * Get the field for this marker node
      *
@@ -109,12 +109,13 @@ public class ExceededOr {
     private String decodeField(JexlNode source) {
         Map<String,Object> parameters = JexlASTHelper.getAssignments(source);
         Object paramsObj = parameters.get(EXCEEDED_OR_FIELD);
-        if (paramsObj != null)
+        if (paramsObj != null) {
             return String.valueOf(paramsObj);
-        else
+        } else {
             return null;
+        }
     }
-    
+
     /**
      * Get the parameters for this marker node (see constructors)
      *
@@ -135,49 +136,49 @@ public class ExceededOr {
         }
         return null;
     }
-    
+
     protected JexlNode createJexlNode() throws JsonProcessingException {
         // Create an assignment for the params
         JexlNode idNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_ID, UUID.randomUUID().toString()));
         JexlNode fieldNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_FIELD, field));
         JexlNode paramsNode = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(EXCEEDED_OR_PARAMS, objectMapper.writeValueAsString(params)));
-        
+
         // now set the source
-        return QueryPropertyMarker.create(JexlNodeFactory.createAndNode(Arrays.asList(idNode, fieldNode, paramsNode)), EXCEEDED_OR);
+        return JexlNodeFactory.createAndNode(Arrays.asList(idNode, fieldNode, paramsNode));
     }
-    
+
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class ExceededOrParams {
         private String fstURI;
         private Set<String> values;
         private Collection<String[]> ranges;
-        
+
         // Required for deserialization.
         @SuppressWarnings("unused")
         private ExceededOrParams() {}
-        
+
         ExceededOrParams(String fstURI) {
             this.fstURI = fstURI;
         }
-        
+
         ExceededOrParams(Set<String> values, Collection<Range> ranges) {
             init(values, ranges);
         }
-        
+
         private void init(Set<String> values, Collection<Range> ranges) {
             if (ranges == null || ranges.isEmpty()) {
                 this.values = values;
             } else {
                 SortedSet<Range> rangeSet = new TreeSet<>();
-                
+
                 if (values != null)
                     values.forEach(value -> rangeSet.add(new Range(new Key(value), new Key(value))));
-                
+
                 rangeSet.addAll(ranges);
-                
+
                 List<Range> mergedRanges = Range.mergeOverlapping(rangeSet);
                 Collections.sort(mergedRanges);
-                
+
                 this.ranges = new ArrayList<>();
                 for (Range mergedRange : mergedRanges) {
                     if (mergedRange.getStartKey().getRow().equals(mergedRange.getEndKey().getRow())) {
@@ -189,7 +190,7 @@ public class ExceededOr {
                 }
             }
         }
-        
+
         private Range decodeRange(String[] range) {
             if (range != null) {
                 if (range.length == 1) {
@@ -201,32 +202,32 @@ public class ExceededOr {
             }
             return null;
         }
-        
+
         @JsonIgnore
         private boolean isLowerBoundValid(String lowerBound) {
             return lowerBound.length() > 1 && (lowerBound.charAt(0) == '[' || lowerBound.charAt(0) == '(');
         }
-        
+
         @JsonIgnore
         private boolean isUpperBoundValid(String upperBound) {
             return upperBound.length() > 1 && (upperBound.charAt(upperBound.length() - 1) == ']' || upperBound.charAt(upperBound.length() - 1) == ')');
         }
-        
+
         public String getFstURI() {
             return fstURI;
         }
-        
+
         public Collection<String> getValues() {
             return values;
         }
-        
+
         @JsonIgnore
         public SortedSet<Range> getSortedAccumuloRanges() {
             SortedSet<Range> accumuloRanges = new TreeSet<>();
             ranges.forEach(range -> accumuloRanges.add(decodeRange(range)));
             return accumuloRanges;
         }
-        
+
         public Collection<String[]> getRanges() {
             return ranges;
         }

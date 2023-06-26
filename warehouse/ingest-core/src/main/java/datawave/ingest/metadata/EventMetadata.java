@@ -86,12 +86,12 @@ import static org.slf4j.LoggerFactory.getLogger;
  * </table>
  */
 public class EventMetadata implements RawRecordMetadata {
-    
+
     private MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
     private MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CISEP);
     private MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
     private MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
-    
+
     private static final Logger log = getLogger(EventMetadata.class);
     private final Text metadataTableName;
     private final Text loadDatesTableName;
@@ -105,7 +105,7 @@ public class EventMetadata implements RawRecordMetadata {
     private final MetadataCounterGroup indexedFieldsLoadDateCounts;
     private final MetadataCounterGroup reverseIndexedFieldsLoadDateCounts;
     private boolean frequency = false;
-    
+
     /**
      * @param shardTableName
      *            used as part of column family within LOAD_DATES_TABLE_NAME.
@@ -125,64 +125,64 @@ public class EventMetadata implements RawRecordMetadata {
         this.metadataTableName = metadataTableName;
         this.loadDatesTableName = loadDatesTableName;
         this.frequency = frequency;
-        
+
         this.indexedFieldsLoadDateCounts = new MetadataCounterGroup("FIELD_NAME", shardIndexTableName);
         this.reverseIndexedFieldsLoadDateCounts = new MetadataCounterGroup("FIELD_NAME", shardReverseIndexTableName);
     }
-    
+
     @Override
     public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, long loadTimeInMillis) {
         addEvent(helper, event, fields, this.frequency, INCLUDE_LOAD_DATES, loadTimeInMillis);
     }
-    
+
     @Override
     public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields) {
         addEvent(helper, event, fields, this.frequency, INCLUDE_LOAD_DATES, System.currentTimeMillis());
     }
-    
+
     @Override
     public void addEventWithoutLoadDates(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields) {
         addEvent(helper, event, fields, this.frequency, EXCLUDE_LOAD_DATES, System.currentTimeMillis());
     }
-    
+
     @Override
     public void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, boolean frequency) {
         addEvent(helper, event, fields, frequency, INCLUDE_LOAD_DATES, System.currentTimeMillis());
     }
-    
+
     protected void addEvent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, boolean frequency,
                     boolean shouldIncludeLoadDates, long loadDateInMillis) {
         /***
          * TODO: move this into the ingest helpers and data handlers
          */
         long countDelta = getCountDelta(helper);
-        
+
         String loadDateStr = shouldIncludeLoadDates ? DateHelper.format(loadDateInMillis) : null;
-        
+
         for (String fieldName : fields.keySet()) {
             long fieldDelta = countDelta * fields.get(fieldName).size();
             addEventField(helper, event, fieldName, fieldDelta, frequency);
-            
+
             // if the field is indexed, reverse-indexed, or normalized, we need to write a dataType entry
             // using either the assigned dataType or the default dataType
             boolean shouldWriteDataType = false;
-            
+
             if (helper.isIndexedField(fieldName)) {
                 shouldWriteDataType = true;
                 updateForIndexedField(helper, event, fields, countDelta, loadDateStr, NO_TOKEN_DESIGNATOR, fieldName);
             }
-            
+
             if (helper.isReverseIndexedField(fieldName)) {
                 shouldWriteDataType = true;
                 updateForReverseIndexedField(helper, event, fields, countDelta, loadDateStr, NO_TOKEN_DESIGNATOR, fieldName);
             }
-            
+
             if (helper.isNormalizedField(fieldName)) {
                 shouldWriteDataType = true;
                 log.debug("{} is normalized", fieldName);
                 updateMetadata(this.normalizedFieldsInfo, helper, event, fields, fieldName);
             }
-            
+
             if (helper.isDataTypeField(fieldName) || shouldWriteDataType) {
                 log.debug("{} has a data type", fieldName);
                 // write a dataType entry
@@ -191,7 +191,7 @@ public class EventMetadata implements RawRecordMetadata {
             } else {
                 log.debug("{} apparently has no data type", fieldName);
             }
-            
+
             if (helper.isCompositeField(fieldName)) {
                 Collection<String> componentFields = helper.getCompositeFieldDefinitions().get(fieldName);
                 this.compositeFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), String.join(",", componentFields), event.getDate());
@@ -199,59 +199,59 @@ public class EventMetadata implements RawRecordMetadata {
                                 event.getDate());
             }
         }
-        
+
         addTokenizedContent(helper, event, fields, countDelta, loadDateStr);
     }
-    
+
     protected long getCountDelta(IngestHelperInterface helper) {
         return (helper.getDeleteMode()) ? -1L : 1L;
     }
-    
+
     protected void addEventField(IngestHelperInterface helper, RawRecordContainer event, String fieldName, long countDelta, boolean frequency) {
         // if only indexing this field, then do not add to event and frequency maps
         if (helper.isIndexOnlyField(fieldName)) {
             log.debug("{} is indexonly, not adding to event", fieldName);
             return;
         }
-        
+
         if (helper.isCompositeField(fieldName) && !helper.isOverloadedCompositeField(fieldName)) {
             log.debug("{} is a composite, not adding to event", fieldName);
             return;
         }
-        
+
         if (helper.isShardExcluded(fieldName)) {
             log.debug("{} is an excluded field, not adding to event", fieldName);
             return;
         }
-        
+
         log.debug("createOrUpdate for {}", fieldName);
         eventFieldsInfo.createOrUpdate(fieldName, event.getDataType().outputName(), MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
-        
+
         if (frequency) {
             addToFrequencyCounts(event, fieldName, countDelta);
         }
     }
-    
+
     protected void addToFrequencyCounts(RawRecordContainer event, String fieldName, long countDelta) {
         String date = DateHelper.format(event.getDate());
         frequencyCounts.addToCount(countDelta, event.getDataType().outputName(), fieldName, date);
     }
-    
+
     protected void updateForIndexedField(@SuppressWarnings("UnusedParameters") IngestHelperInterface helper, RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> fields, long countDelta, String loadDate, String tokenDesignator, String fieldName) {
         update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, indexedFieldsInfo, indexedFieldsLoadDateCounts);
     }
-    
+
     private void updateForCompositeField(@SuppressWarnings("UnusedParameters") IngestHelperInterface helper, RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> fields, long countDelta, String loadDate, String tokenDesignator, String fieldName) {
         update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, indexedFieldsInfo, indexedFieldsLoadDateCounts);
     }
-    
+
     protected void updateForReverseIndexedField(@SuppressWarnings("UnusedParameters") IngestHelperInterface helper, RawRecordContainer event,
                     Multimap<String,NormalizedContentInterface> fields, long countDelta, String loadDate, String tokenDesignator, String fieldName) {
         update(event, fields.get(fieldName), tokenDesignator, countDelta, loadDate, reverseIndexedFieldsInfo, reverseIndexedFieldsLoadDateCounts);
     }
-    
+
     protected void update(List<datawave.data.type.Type<?>> types, RawRecordContainer event, Collection<NormalizedContentInterface> norms,
                     String tokenDesignator, long countDelta, String loadDate, MetadataWithMostRecentDate mostRecentDatesByIdentifier,
                     MetadataCounterGroup counts) {
@@ -267,7 +267,7 @@ public class EventMetadata implements RawRecordMetadata {
             }
         }
     }
-    
+
     protected void update(String[] names, RawRecordContainer event, Collection<NormalizedContentInterface> norms,
                     @SuppressWarnings("UnusedParameters") String tokenDesignator, long countDelta, String loadDate,
                     MetadataWithMostRecentDate mostRecentDatesByIdentifier, MetadataCounterGroup counts) {
@@ -285,7 +285,7 @@ public class EventMetadata implements RawRecordMetadata {
             }
         }
     }
-    
+
     protected void update(RawRecordContainer event, Collection<NormalizedContentInterface> norms, String tokenDesignator, long countDelta, String loadDate,
                     MetadataWithMostRecentDate mostRecentDatesByIdentifier, MetadataCounterGroup counts) {
         Type dataType = event.getDataType();
@@ -297,13 +297,13 @@ public class EventMetadata implements RawRecordMetadata {
             }
         }
     }
-    
+
     protected void updateMetadata(MetadataWithMostRecentDate metadataInfo, @SuppressWarnings("UnusedParameters") IngestHelperInterface helper,
                     RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, String fieldName) {
         // will ignore the update load counters because it's null
         update(event, fields.get(fieldName), "", 0, null, metadataInfo, null);
     }
-    
+
     protected void addTokenizedContent(IngestHelperInterface helper, RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields,
                     long countDelta, String loadDate) {
         if (helper instanceof TermFrequencyIngestHelperInterface) {
@@ -315,7 +315,7 @@ public class EventMetadata implements RawRecordMetadata {
                 }
             }
         }
-        
+
         // The ContentIndexingColumnBasedHandler uses helpers with this interface
         if (helper instanceof AbstractContentIngestHelper) {
             String tokenDesignator = Objects.toString(((AbstractContentIngestHelper) helper).getTokenFieldNameDesignator(), "");
@@ -327,16 +327,16 @@ public class EventMetadata implements RawRecordMetadata {
                     termFrequencyFieldsInfo.createOrUpdate(field + fieldTokenDesignator, event.getDataType().outputName(),
                                     MetadataWithMostRecentDate.IGNORED_NORMALIZER_CLASS, event.getDate());
                 }
-                
+
                 if (h.isReverseContentIndexField(field) || h.isReverseIndexListField(field)) {
                     updateForReverseIndexedField(helper, event, fields, countDelta, loadDate, fieldTokenDesignator, field);
                 }
-                
+
                 // Update the T record for tokens in addition to the base fields.
                 if (h.isContentIndexField(field)) {
                     update(helper.getDataTypes(field), event, fields.get(field), fieldTokenDesignator, 0, null, this.dataTypeFieldsInfo, null);
                 }
-                
+
                 // Add T record indexed list field, as well as its token. Tokenized fields are always text and are not normalized in the handler
                 if (h.isIndexListField(field)) {
                     log.debug("{} as a data type", field);
@@ -346,7 +346,7 @@ public class EventMetadata implements RawRecordMetadata {
                 }
             }
         }
-        
+
         if (helper instanceof IndexOnlyIngestHelperInterface) {
             Set<String> indexOnlyFields = ((IndexOnlyIngestHelperInterface) helper).getIndexOnlyFields();
             for (String fieldName : indexOnlyFields) {
@@ -355,7 +355,7 @@ public class EventMetadata implements RawRecordMetadata {
                 }
             }
         }
-        
+
         if (helper instanceof CompositeIngestHelperInterface) {
             Set<String> compositeFields = ((CompositeIngestHelperInterface) helper).getCompositeFields();
             for (String fieldName : compositeFields) {
@@ -365,48 +365,48 @@ public class EventMetadata implements RawRecordMetadata {
             }
         }
     }
-    
+
     protected void updateLoadDateCounters(MetadataCounterGroup countGroup, RawRecordContainer event, String fieldName, long countDelta, String loadDate) {
         if (null != loadDate) {
             countGroup.addToCount(countDelta, event.getDataType().outputName(), fieldName, loadDate);
         }
     }
-    
+
     @Override
     public Multimap<BulkIngestKey,Value> getBulkMetadata() {
         Multimap<BulkIngestKey,Value> bulkData = HashMultimap.create();
-        
+
         addIndexedFieldToMetadata(bulkData, eventFieldsInfo);
         addIndexedFieldToMetadata(bulkData, termFrequencyFieldsInfo);
-        
+
         addIndexedFieldToMetadata(bulkData, indexedFieldsInfo);
         addIndexedFieldToMetadata(bulkData, reverseIndexedFieldsInfo);
-        
+
         addFrequenciesToMetadata(bulkData);
-        
+
         addIndexedFieldToMetadata(bulkData, dataTypeFieldsInfo);
         addIndexedFieldToMetadata(bulkData, normalizedFieldsInfo);
-        
+
         addIndexedFieldToMetadata(bulkData, this.compositeFieldsInfo);
         addIndexedFieldToMetadata(bulkData, this.compositeSeparators);
-        
+
         addToLoadDates(bulkData, this.indexedFieldsLoadDateCounts);
         addToLoadDates(bulkData, this.reverseIndexedFieldsLoadDateCounts);
-        
+
         return bulkData;
     }
-    
+
     protected void addToLoadDates(Multimap<BulkIngestKey,Value> results, MetadataCounterGroup countsGroup) {
         if (loadDatesTableName != null) {
             for (MetadataCounterGroup.CountAndKeyComponents entry : countsGroup.getEntries()) {
                 Long count = entry.getCount();
                 Key k = new Key(new Text(entry.getRowId()), countsGroup.getColumnFamily(), new Text(entry.getDate() + DELIMITER + entry.getDataType()));
-                
+
                 addToResults(results, count, k, loadDatesTableName);
             }
         }
     }
-    
+
     protected void addFrequenciesToMetadata(Multimap<BulkIngestKey,Value> results) {
         if (frequency) {
             for (MetadataCounterGroup.CountAndKeyComponents entry : frequencyCounts.getEntries()) {
@@ -417,12 +417,12 @@ public class EventMetadata implements RawRecordMetadata {
             }
         }
     }
-    
+
     protected void addToResults(Multimap<BulkIngestKey,Value> results, Long value, Key key, Text tableName) {
         BulkIngestKey bk = new BulkIngestKey(tableName, key);
         results.put(bk, new Value(SummingCombiner.VAR_LEN_ENCODER.encode(value)));
     }
-    
+
     protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithMostRecentDate mostRecentDates) {
         for (MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents entry : mostRecentDates.entries()) {
             long mostRecentDate = entry.getMostRecentDate();
@@ -436,16 +436,16 @@ public class EventMetadata implements RawRecordMetadata {
             results.put(bk, DataTypeHandler.NULL_VALUE);
         }
     }
-    
+
     @Override
     public void clear() {
         this.eventFieldsInfo.clear();
         this.termFrequencyFieldsInfo.clear();
         this.frequencyCounts.clear();
-        
+
         this.indexedFieldsInfo.clear();
         this.indexedFieldsLoadDateCounts.clear();
-        
+
         this.reverseIndexedFieldsInfo.clear();
         this.reverseIndexedFieldsLoadDateCounts.clear();
     }

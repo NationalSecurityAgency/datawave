@@ -101,37 +101,37 @@ import java.util.stream.Collectors;
  */
 public class TreeEqualityVisitor extends ParserVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(TreeEqualityVisitor.class);
-    
+
     private boolean equal = true;
-    
+
     public final static class Comparison {
-        
+
         private static final Comparison IS_EQUAL = new Comparison(true, null);
-        
+
         private static Comparison notEqual(String reason) {
             return new Comparison(false, reason);
         }
-        
+
         private final boolean equal;
         private final String reason;
-        
+
         private Comparison(boolean equal, String reason) {
             this.equal = equal;
             this.reason = reason;
         }
-        
+
         public boolean isEqual() {
             return equal;
         }
-        
+
         public String getReason() {
             return reason;
         }
     }
-    
+
     /**
      * Return whether or not the provided query trees are considered equivalent.
-     * 
+     *
      * @param first
      *            the first query tree
      * @param second
@@ -141,10 +141,10 @@ public class TreeEqualityVisitor extends ParserVisitor {
     public static boolean isEqual(JexlNode first, JexlNode second) {
         return checkEquality(first, second).isEqual();
     }
-    
+
     /**
      * Compare the provided query trees for equivalency and return the resulting comparison.
-     * 
+     *
      * @param first
      *            the first query tree
      * @param second
@@ -162,7 +162,7 @@ public class TreeEqualityVisitor extends ParserVisitor {
             return Comparison.notEqual("One tree is null: " + first + " vs " + second);
         }
     }
-    
+
     /**
      * Accept the visitor on all this node's children.
      *
@@ -215,7 +215,7 @@ public class TreeEqualityVisitor extends ParserVisitor {
         }
         return null;
     }
-    
+
     private List<SimpleNode> listChildren(SimpleNode node) {
         List<SimpleNode> list = new ArrayList<>();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -246,7 +246,7 @@ public class TreeEqualityVisitor extends ParserVisitor {
         }
         return list;
     }
-    
+
     public boolean equal(Object o1, Object o2) {
         if (o1 == o2) {
             return true;
@@ -256,427 +256,427 @@ public class TreeEqualityVisitor extends ParserVisitor {
             return o1.equals(o2);
         }
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTDoWhileStatement node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTContinue node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTBreak node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTDefineVars node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTNullpNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftLeftNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftRightNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftRightUnsignedNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSWNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTNSWNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTEWNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTNEWNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTAddNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSubNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTUnaryPlusNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTRegexLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTExtendedLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTRangeNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTIdentifierAccess node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTArguments node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetAddNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetSubNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetMultNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetDivNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetModNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetAndNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetOrNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetXorNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftLeftNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftRightNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTGetDecrementNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTGetIncrementNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTDecrementGetNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTIncrementGetNode node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTJxltLiteral node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTAnnotation node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTAnnotatedStatement node, Object data) {
         return visitEquality(node, (SimpleNode) data);
     }
-    
+
     @Override
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
         return visitEquality(node, (SimpleNode) data);

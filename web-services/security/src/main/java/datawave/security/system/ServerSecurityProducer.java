@@ -29,17 +29,17 @@ import java.util.Collections;
 public class ServerSecurityProducer {
     @Inject
     private JSSESecurityDomain domain;
-    
+
     @Inject
     private DatawaveUserService datawaveUserService;
-    
+
     @Inject
     private UserOperationsBean userOperationsBean;
-    
+
     /**
      * Produces a {@link DatawavePrincipal} that is {@link RequestScoped}. This is the principal of the calling user--that is, the principal that is available
      * from the {@link javax.ejb.EJBContext} of an EJB.
-     * 
+     *
      * @return the principal of the calling user
      * @throws Exception
      *             if there are issues
@@ -51,11 +51,11 @@ public class ServerSecurityProducer {
         DatawavePrincipal dp = userOperationsBean.getCurrentPrincipal();
         return dp == null ? DatawavePrincipal.anonymousPrincipal() : dp;
     }
-    
+
     /**
      * Produces a {@link DatawavePrincipal} that is {@link RequestScoped}. This is a principal that is filled in with the name and authorizations for the server
      * that is currently running DATAWAVE.
-     * 
+     *
      * @return a datawave principal
      * @throws Exception
      *             if there are issues
@@ -66,12 +66,12 @@ public class ServerSecurityProducer {
     public DatawavePrincipal produceServerPrincipal() throws Exception {
         return new DatawavePrincipal(datawaveUserService.lookup(Collections.singleton(lookupServerDN())));
     }
-    
+
     private SubjectIssuerDNPair lookupServerDN() throws KeyStoreException {
         if (domain == null) {
             throw new IllegalArgumentException("Unable to find security domain.");
         }
-        
+
         KeyStore keystore = domain.getKeyStore();
         final X509Certificate cert = (X509Certificate) keystore.getCertificate(keystore.aliases().nextElement());
         final String serverDN = cert.getSubjectX500Principal().getName();

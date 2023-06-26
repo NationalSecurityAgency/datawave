@@ -26,12 +26,12 @@ import java.util.stream.Collectors;
  */
 public class PhraseIndexes {
     private static final Logger log = Logger.getLogger(PhraseIndexes.class);
-    
+
     /**
      * A Map of fieldname to eventId,start,end phrase offsets. The eventId has the form as defined by TermFrequencyList.getEventid(key)
      */
     private final SortedSetMultimap<String,Triplet<String,Integer,Integer>> map = TreeMultimap.create();
-    
+
     /**
      * Returns a new {@link PhraseIndexes} parsed from the string. The provided string is expected to have the format returned by
      * {@link PhraseIndexes#toString()}.
@@ -41,7 +41,7 @@ public class PhraseIndexes {
      * <li>Given {@code BODY:1,2:3,5/CONTENT:5,6:7,6}, a {@link PhraseIndexes} will be returned with offsets [1,2] and [3,5] for field {@code BODY}, and offsets
      * [5,6] and [7,6] for field {@code CONTENT}.</li>
      * </ul>
-     * 
+     *
      * @param string
      *            the string to parse
      * @return the parsed {@link PhraseIndexes}
@@ -50,10 +50,10 @@ public class PhraseIndexes {
         if (string == null) {
             return null;
         }
-        
+
         // Strip whitespaces.
         string = StringUtils.deleteWhitespace(string);
-        
+
         PhraseIndexes phraseIndexes = new PhraseIndexes();
         String[] fieldParts = string.split(Constants.FORWARD_SLASH);
         for (String fieldPart : fieldParts) {
@@ -73,10 +73,10 @@ public class PhraseIndexes {
         }
         return phraseIndexes;
     }
-    
+
     /**
      * Add the phraseIndexes from another phrase indexes object
-     * 
+     *
      * @param phraseIndexes
      *            The other phrase index object
      */
@@ -87,7 +87,7 @@ public class PhraseIndexes {
             }
         }
     }
-    
+
     /**
      * Add an index pair identified as a phrase for a hit for the specified field. If this phrase overlaps with another, then they will be merged.
      *
@@ -107,7 +107,7 @@ public class PhraseIndexes {
             start = end;
             end = temp;
         }
-        
+
         // first remove any overlapping phrases and extend the start/end appropriately
         if (map.containsKey(field)) {
             Iterator<Triplet<String,Integer,Integer>> indices = map.get(field).iterator();
@@ -127,10 +127,10 @@ public class PhraseIndexes {
         }
         map.put(field, Triplet.with(eventId, start, end));
     }
-    
+
     /**
      * Add the specified index triplet to set of phrase indexes. If this phrase overlaps with another, then they will be merged.
-     * 
+     *
      * @param field
      *            The field name
      * @param offset
@@ -139,10 +139,10 @@ public class PhraseIndexes {
     public void addIndexTriplet(String field, Triplet<String,Integer,Integer> offset) {
         addIndexTriplet(field, offset.getValue0(), offset.getValue1(), offset.getValue2());
     }
-    
+
     /**
      * Get all index pairs found for matching hits for the specified field. May return null.
-     * 
+     *
      * @param field
      *            the field
      * @return the index pairs if any, otherwise null
@@ -150,35 +150,35 @@ public class PhraseIndexes {
     public Collection<Triplet<String,Integer,Integer>> getIndices(String field) {
         return map.get(field);
     }
-    
+
     /**
      * Return whether this {@link PhraseIndexes} has any phrase indexes
-     * 
+     *
      * @return true if at least one phrase index pair is found, or false otherwise
      */
     public boolean isEmpty() {
         return map.isEmpty();
     }
-    
+
     /**
      * Clear this {@link PhraseIndexes} of any phrase indexes
      */
     public void clear() {
         map.clear();
     }
-    
+
     /**
      * Return the fields for which phrase indexes have been found for hits.
-     * 
+     *
      * @return the fields
      */
     public Set<String> getFields() {
         return map.keySet();
     }
-    
+
     /**
      * Return whether this {@link PhraseIndexes} contains the given field.
-     * 
+     *
      * @param field
      *            the field
      * @return true if the field is found, or false otherwise
@@ -186,7 +186,7 @@ public class PhraseIndexes {
     public boolean containsField(String field) {
         return map.containsKey(field);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -198,16 +198,16 @@ public class PhraseIndexes {
         PhraseIndexes that = (PhraseIndexes) o;
         return Objects.equals(map, that.map);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(map);
     }
-    
+
     /**
      * Returns this {@link PhraseIndexes} as a formatted string that can later be parsed back into a {@link PhraseIndexes} using
      * {@link PhraseIndexes#from(String)}. The string will have the format FIELD:eventId,start,end:eventId,start,end:.../FIELD:eventId,start,end:...
-     * 
+     *
      * @return a formatted string
      */
     @Override
@@ -237,10 +237,10 @@ public class PhraseIndexes {
         }
         return sb.toString();
     }
-    
+
     /**
      * Utility function to see if two offset ranges overlap
-     * 
+     *
      * @param start1
      *            start1
      * @param end1
@@ -254,10 +254,10 @@ public class PhraseIndexes {
     public static boolean overlaps(int start1, int end1, int start2, int end2) {
         return (start1 <= end2 && end1 >= start2);
     }
-    
+
     /**
      * Utility function to see if a triplet overlaps with a term weight position
-     * 
+     *
      * @param triplet
      *            triplet
      * @param pos
@@ -267,7 +267,7 @@ public class PhraseIndexes {
     public static boolean overlaps(Triplet<String,Integer,Integer> triplet, TermWeightPosition pos) {
         return overlaps(triplet.getValue1(), triplet.getValue2(), pos.getLowOffset(), pos.getOffset());
     }
-    
+
     /**
      * Get the overlapping triplet if any
      *
@@ -296,7 +296,7 @@ public class PhraseIndexes {
         }
         return null;
     }
-    
+
     /**
      * Get the overlapping term weight position if any
      *
@@ -311,15 +311,15 @@ public class PhraseIndexes {
     public TermWeightPosition getOverlappingPosition(String fieldName, String eventId, TermWeight.Info twInfo) {
         // get the phases for this fieldname
         Collection<Triplet<String,Integer,Integer>> triplets = getIndices(fieldName);
-        
+
         if (triplets != null) {
             // get the triplets is reverse sorted order base on the end index and filtered by event id
             List<Triplet<String,Integer,Integer>> reverseEndIndexSortedList = triplets.stream().filter(t -> Objects.equals(eventId, t.getValue0()))
                             .sorted(endOffsetComparator.reversed()).collect(Collectors.toList());
-            
+
             if (!reverseEndIndexSortedList.isEmpty()) {
                 TermWeightPosition.Builder position = new TermWeightPosition.Builder();
-                
+
                 // first ensure we have a sorted list of term offsets
                 if (!(Ordering.<Integer> natural().isOrdered(twInfo.getTermOffsetList()))) {
                     log.warn("Term offset list is not ordered, reverting to brute force search");
@@ -337,10 +337,10 @@ public class PhraseIndexes {
                     if (twInfo.getPrevSkipsCount() > 0) {
                         maxSkip = Ordering.<Integer> natural().max(twInfo.getPrevSkipsList());
                     }
-                    
+
                     // starting at the last term offset
                     int start = twInfo.getTermOffsetCount() - 1;
-                    
+
                     // iterator through the phrase triplets
                     for (Triplet<String,Integer,Integer> triplet : reverseEndIndexSortedList) {
                         // find the index of the first offset before or equal to the triplet end offset plus the max skip value
@@ -368,11 +368,11 @@ public class PhraseIndexes {
         }
         return null;
     }
-    
+
     /**
      * Find the last index starting at the specified startIndex of the offset that is less than or equal to the specified offset plus the maxSkip if any. -1
      * returned if none found.
-     * 
+     *
      * @param twInfo
      *            term weight info
      * @param startIndex
@@ -384,30 +384,30 @@ public class PhraseIndexes {
     private static int findPrevOffset(TermWeight.Info twInfo, int startIndex, int offset) {
         // to find the offset that is less than or equal to the specified offset, we need to reverse the list and use a reverse comparator
         int nextOffset = Collections.binarySearch(Lists.reverse(twInfo.getTermOffsetList().subList(0, startIndex + 1)), offset, reverseIntegerCompare);
-        
+
         // if a negative number is returned, then this would be the (-(insertion point) - 1)
         if (nextOffset < 0) {
             nextOffset = -1 - nextOffset;
         }
-        
+
         // now revert to the offset in the positive direction
         nextOffset = startIndex - nextOffset;
-        
+
         return nextOffset;
     }
-    
+
     private static final Comparator<Triplet<String,Integer,Integer>> endOffsetComparator = new Comparator<Triplet<String,Integer,Integer>>() {
         @Override
         public int compare(Triplet<String,Integer,Integer> o1, Triplet<String,Integer,Integer> o2) {
             return o1.getValue2() - o2.getValue2();
         }
     };
-    
+
     private static final Comparator<Integer> reverseIntegerCompare = new Comparator<Integer>() {
         @Override
         public int compare(Integer o1, Integer o2) {
             return o1.compareTo(o2);
         }
     }.reversed();
-    
+
 }

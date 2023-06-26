@@ -19,16 +19,16 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
-    
+
     private static final Logger log = Logger.getLogger(FindLiteralsAndPatternsVisitor.class);
-    
+
     private final QueryValues values = new QueryValues();
-    
+
     private FindLiteralsAndPatternsVisitor() {}
-    
+
     /**
      * Returns a pair containing the set of literals and the set of patterns in this script.
-     * 
+     *
      * @param root
      *            the root node
      * @return a set of literals and patterns
@@ -39,7 +39,7 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
         root.jjtAccept(vis, null);
         return vis.values;
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         // strings are NEVER wrapped in a reference node, so the op is the parent
@@ -56,7 +56,7 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         JexlNode op = node.jjtGetParent();
@@ -66,7 +66,7 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         LiteralRange range = JexlASTHelper.findRange().getRange(node);
@@ -75,34 +75,34 @@ public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
         } else {
             super.visit(node, data);
         }
-        
+
         return null;
     }
-    
+
     public static class QueryValues {
         private Multimap<String,String> literals = HashMultimap.create(), patterns = HashMultimap.create();
         private Multimap<String,LiteralRange<?>> ranges = HashMultimap.create();
-        
+
         public Multimap<String,String> getLiterals() {
             return literals;
         }
-        
+
         public void addLiteral(String field, String literal) {
             literals.put(field, literal);
         }
-        
+
         public Multimap<String,String> getPatterns() {
             return patterns;
         }
-        
+
         public void addPattern(String field, String pattern) {
             patterns.put(field, pattern);
         }
-        
+
         public Multimap<String,LiteralRange<?>> getRanges() {
             return ranges;
         }
-        
+
         public void addRange(String field, LiteralRange<?> range) {
             ranges.put(field, range);
         }

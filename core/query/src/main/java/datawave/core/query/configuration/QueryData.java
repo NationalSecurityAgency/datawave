@@ -48,59 +48,59 @@ public class QueryData implements ResultContext, Externalizable {
     @JsonDeserialize(using = KeyDeserializer.class)
     private Key lastResult;
     boolean finished = false;
-    
+
     public QueryData() {}
-    
+
     public QueryData(String tableName, String query, Collection<Range> ranges, List<IteratorSetting> settings) {
         setTableName(tableName);
         setQuery(query);
         setRanges(ranges);
         setSettings(settings);
     }
-    
+
     public QueryData(QueryData other) {
         this(other.getTableName(), other.getQuery(), other.getRanges(), other.getSettings(), other.getColumnFamilies());
         this.lastResult = other.lastResult;
         this.finished = other.finished;
     }
-    
+
     public QueryData(QueryData other, Collection<Range> ranges) {
         this(other);
         setRanges(ranges);
     }
-    
+
     public QueryData(String tableName, String queryString, Collection<Range> ranges, List<IteratorSetting> settings, Collection<String> columnFamilies) {
         this(tableName, queryString, ranges, settings);
         this.columnFamilies.addAll(columnFamilies);
     }
-    
+
     public List<IteratorSetting> getSettings() {
         return settings;
     }
-    
+
     public void setSettings(List<IteratorSetting> settings) {
         this.settings.clear();
         if (settings != null) {
             this.settings.addAll(settings);
         }
     }
-    
+
     public String getQuery() {
         return query;
     }
-    
+
     public void setQuery(String query) {
         this.query = query;
     }
-    
+
     public String getTableName() {
         return tableName;
     }
-    
+
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-    
+
     public Collection<Range> getRanges() {
         if (isFinished()) {
             return Collections.emptySet();
@@ -117,56 +117,56 @@ public class QueryData implements ResultContext, Externalizable {
         }
         return ranges;
     }
-    
+
     public Collection<String> getColumnFamilies() {
         return columnFamilies;
     }
-    
+
     public void setColumnFamilies(Collection<String> columnFamilies) {
         this.columnFamilies.clear();
         if (columnFamilies != null) {
             this.columnFamilies.addAll(columnFamilies);
         }
     }
-    
+
     public void addColumnFamily(String cf) {
         this.columnFamilies.add(cf);
     }
-    
+
     public void addColumnFamily(Text cf) {
         this.columnFamilies.add(cf.toString());
     }
-    
+
     public void setRanges(Collection<Range> ranges) {
         this.ranges.clear();
         if (null != ranges) {
             this.ranges.addAll(ranges);
         }
     }
-    
+
     public void addRange(Range range) {
         this.ranges.add(range);
     }
-    
+
     public void addIterator(IteratorSetting cfg) {
         this.settings.add(cfg);
     }
-    
+
     public void setLastResult(Key result) {
         this.lastResult = result;
         if (this.lastResult == null) {
             this.finished = true;
         }
     }
-    
+
     public boolean isFinished() {
         return this.finished;
     }
-    
+
     public Key getLastResult() {
         return lastResult;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder(256);
@@ -174,7 +174,7 @@ public class QueryData implements ResultContext, Externalizable {
                         .append(", Settings: ").append(this.settings);
         return sb.toString();
     }
-    
+
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeUTF(tableName);
@@ -204,7 +204,7 @@ public class QueryData implements ResultContext, Externalizable {
         }
         out.writeBoolean(finished);
     }
-    
+
     @Override
     public void readExternal(ObjectInput in) throws IOException {
         tableName = in.readUTF();
@@ -235,17 +235,17 @@ public class QueryData implements ResultContext, Externalizable {
         }
         finished = in.readBoolean();
     }
-    
+
     public QueryData(ObjectInput in) throws IOException {
         readExternal(in);
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(tableName).append(settings).append(query).append(ranges).append(columnFamilies).append(lastResult).append(finished)
                         .toHashCode();
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof QueryData)) {
@@ -255,35 +255,35 @@ public class QueryData implements ResultContext, Externalizable {
         return new EqualsBuilder().append(tableName, other.tableName).append(settings, other.settings).append(query, other.query).append(ranges, other.ranges)
                         .append(columnFamilies, other.columnFamilies).append(lastResult, other.lastResult).append(finished, other.finished).isEquals();
     }
-    
+
     /**
      * A json deserializer for a list of IteratorSetting which handles the json deserialization issues. The accumulo IteratorSetting does not have a default
      * constructor.
      */
     public static class IteratorSettingListDeserializer extends StdDeserializer<List<IteratorSetting>> {
         private ObjectMapper mapper = new ObjectMapper();
-        
+
         public IteratorSettingListDeserializer() {
             this(null);
         }
-        
+
         public IteratorSettingListDeserializer(Class<?> valueClass) {
             super(valueClass);
         }
-        
+
         @Override
         public List<IteratorSetting> deserialize(JsonParser parser, DeserializationContext deserializer) throws IOException, JsonProcessingException {
             List<IteratorSetting> list = new ArrayList<>();
             ObjectCodec codec = parser.getCodec();
             JsonNode node = codec.readTree(parser);
-            
+
             for (int i = 0; i < node.size(); i++) {
                 list.add(getIteratorSetting(node.get(i)));
             }
-            
+
             return list;
         }
-        
+
         private IteratorSetting getIteratorSetting(JsonNode node) throws JsonProcessingException {
             IteratorSetting setting = new IteratorSetting(1, "a", "a");
             JsonNode child = node.get("priority");
@@ -308,22 +308,22 @@ public class QueryData implements ResultContext, Externalizable {
             return setting;
         }
     }
-    
+
     /**
      * A json deserializer for a list of Range which handles the json deserialization issues. The accumulo Range and Key classes do not have appropriate
      * setters.
      */
     public static class RangeListSerializer extends StdSerializer<Collection<Range>> {
         private ObjectMapper mapper = new ObjectMapper();
-        
+
         public RangeListSerializer() {
             this(null);
         }
-        
+
         public RangeListSerializer(Class<Collection<Range>> type) {
             super(type);
         }
-        
+
         @Override
         public void serialize(Collection<Range> ranges, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             jgen.writeStartArray(ranges == null ? 0 : ranges.size());
@@ -334,7 +334,7 @@ public class QueryData implements ResultContext, Externalizable {
             }
             jgen.writeEndArray();
         }
-        
+
         public void serialize(Range range, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             jgen.writeStartObject();
             if (range.getStartKey() != null) {
@@ -350,7 +350,7 @@ public class QueryData implements ResultContext, Externalizable {
             jgen.writeEndObject();
         }
     }
-    
+
     /**
      * A json deserializer for a list of Range which handles the json deserialization issues. The accumulo Range and Key classes do not have appropriate
      * setters.
@@ -359,18 +359,18 @@ public class QueryData implements ResultContext, Externalizable {
         public RangeListDeserializer() {
             this(null);
         }
-        
+
         public RangeListDeserializer(Class<?> valueClass) {
             super(valueClass);
         }
-        
+
         @Override
         public Collection<Range> deserialize(JsonParser parser, DeserializationContext deserializer) throws IOException {
             ObjectCodec codec = parser.getCodec();
             JsonNode node = codec.readTree(parser);
             return deserialize(node);
         }
-        
+
         public Collection<Range> deserialize(JsonNode node) throws IOException {
             Collection<Range> list = new ArrayList<>();
             for (int i = 0; i < node.size(); i++) {
@@ -378,7 +378,7 @@ public class QueryData implements ResultContext, Externalizable {
             }
             return list;
         }
-        
+
         private Range getRange(JsonNode node) throws IOException {
             JsonNode start = node.get("startKey");
             JsonNode startInclusive = node.get("startKeyInclusive");
@@ -386,12 +386,12 @@ public class QueryData implements ResultContext, Externalizable {
             JsonNode endInclusive = node.get("endKeyInclusive");
             return new Range(getKey(start), startInclusive.asBoolean(), getKey(end), endInclusive.asBoolean());
         }
-        
+
         private Key getKey(JsonNode node) throws IOException {
             return new KeyDeserializer().deserialize(node);
         }
     }
-    
+
     /**
      * A json deserializer for a list of Range which handles the json deserialization issues. The accumulo Range and Key classes do not have appropriate
      * setters.
@@ -400,11 +400,11 @@ public class QueryData implements ResultContext, Externalizable {
         public KeySerializer() {
             this(null);
         }
-        
+
         public KeySerializer(Class<Key> type) {
             super(type);
         }
-        
+
         @Override
         public void serialize(Key key, JsonGenerator jgen, SerializerProvider provider) throws IOException {
             jgen.writeStartObject();
@@ -417,7 +417,7 @@ public class QueryData implements ResultContext, Externalizable {
             jgen.writeEndObject();
         }
     }
-    
+
     /**
      * A json deserializer for a list of Range which handles the json deserialization issues. The accumulo Range and Key classes do not have appropriate
      * setters.
@@ -426,18 +426,18 @@ public class QueryData implements ResultContext, Externalizable {
         public KeyDeserializer() {
             this(null);
         }
-        
+
         public KeyDeserializer(Class<?> type) {
             super(type);
         }
-        
+
         @Override
         public Key deserialize(JsonParser parser, DeserializationContext deserializer) throws IOException, JsonProcessingException {
             ObjectCodec codec = parser.getCodec();
             JsonNode node = codec.readTree(parser);
             return deserialize(node);
         }
-        
+
         public Key deserialize(JsonNode node) throws IOException {
             if (node == null) {
                 return null;

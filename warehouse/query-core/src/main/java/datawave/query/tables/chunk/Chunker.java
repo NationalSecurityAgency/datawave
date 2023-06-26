@@ -10,22 +10,22 @@ import java.util.Iterator;
  */
 public abstract class Chunker implements Iterator<Query>, Cloneable {
     public abstract void setBaseQuery(Query query);
-    
+
     public void remove() {
         throw new UnsupportedOperationException();
     }
-    
+
     public boolean preInitializeQueryLogic() {
         return false;
     }
-    
+
     /**
      * Do any extra chunker initialization. If you need extra initialization you probably also need to override preInitializeQueryLogic to have it return true.
-     * 
+     *
      * @param config
      *            a query configuration
      */
     public void initialize(GenericQueryConfiguration config) {}
-    
+
     public abstract Chunker clone();
 }

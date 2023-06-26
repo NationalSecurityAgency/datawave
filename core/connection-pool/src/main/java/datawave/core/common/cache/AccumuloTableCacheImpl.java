@@ -26,51 +26,48 @@ import java.util.concurrent.TimeUnit;
  * Object that caches data from Accumulo tables.
  */
 public class AccumuloTableCacheImpl implements AccumuloTableCache {
-    
     private final Logger log = Logger.getLogger(this.getClass());
-    
+
     private final ExecutorService executorService;
     private final AccumuloTableCacheProperties accumuloTableCacheProperties;
-    
     private InMemoryInstance instance;
     private Map<String,TableCache> details;
     private List<SharedCacheCoordinator> cacheCoordinators;
     private boolean connectionFactoryProvided = false;
-    
+
     public AccumuloTableCacheImpl(ExecutorService executorService, AccumuloTableCacheProperties accumuloTableCacheProperties) {
         log.debug("Called AccumuloTableCacheImpl with accumuloTableCacheConfiguration = " + accumuloTableCacheProperties);
         this.executorService = executorService;
         this.accumuloTableCacheProperties = accumuloTableCacheProperties;
         setup();
     }
-    
+
     public AccumuloTableCacheImpl(AccumuloTableCacheProperties accumuloTableCacheProperties) {
         this(getThreadPoolExecutor(accumuloTableCacheProperties), accumuloTableCacheProperties);
     }
-    
+
     private static ExecutorService getThreadPoolExecutor(AccumuloTableCacheProperties accumuloTableCacheProperties) {
         return new ThreadPoolExecutor(Math.max(accumuloTableCacheProperties.getTableNames().size() / 2, 1),
                         Math.max(accumuloTableCacheProperties.getTableNames().size(), 1), 5, TimeUnit.MINUTES, new LinkedBlockingDeque<>(),
                         new ThreadFactoryBuilder().setNameFormat("TableCacheReloader %d").build());
     }
-    
+
     public void setup() {
         log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheProperties);
-        
         instance = new InMemoryInstance();
         details = new HashMap<>();
         cacheCoordinators = new ArrayList<>();
-        
+
         String zookeepers = accumuloTableCacheProperties.getZookeepers();
-        
+
         for (String tableName : accumuloTableCacheProperties.getTableNames()) {
             BaseTableCache detail = new BaseTableCache();
             detail.setTableName(tableName);
             detail.setConnectionPoolName(accumuloTableCacheProperties.getPoolName());
             detail.setReloadInterval(accumuloTableCacheProperties.getReloadInterval());
-            
+
             detail.setInstance(instance);
-            
+
             final SharedCacheCoordinator cacheCoordinator = new SharedCacheCoordinator(tableName, zookeepers,
                             accumuloTableCacheProperties.getEvictionReaperIntervalInSeconds(), accumuloTableCacheProperties.getNumLocks(),
                             accumuloTableCacheProperties.getMaxRetries());
@@ -80,7 +77,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             } catch (Exception e) {
                 throw new RuntimeException("Error starting AccumuloTableCache", e);
             }
-            
+
             try {
                 cacheCoordinator.registerTriState(tableName + ":needsUpdate", new SharedTriStateListener() {
                     @Override
@@ -89,7 +86,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
                             log.trace("table:" + tableName + " stateHasChanged(" + reader + ", " + value + "). This listener does nothing");
                         }
                     }
-                    
+
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
                         if (log.isTraceEnabled()) {
@@ -100,14 +97,14 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             } catch (Exception e) {
                 log.debug("Failure registering a triState for " + tableName, e);
             }
-            
+
             try {
                 cacheCoordinator.registerCounter(tableName, new SharedCountListener() {
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
                         // TODO Auto-generated method stub
                     }
-                    
+
                     @Override
                     public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception {
                         if (!cacheCoordinator.checkCounter(tableName, newCount)) {
@@ -122,7 +119,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             details.put(tableName, detail);
         }
     }
-    
+
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
         for (Entry<String,TableCache> entry : details.entrySet()) {
             TableCache detail = entry.getValue();
@@ -130,19 +127,19 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         }
         connectionFactoryProvided = true;
     }
-    
+
     @Override
     public InMemoryInstance getInstance() {
         return this.instance;
     }
-    
+
     @Override
     public void submitReloadTasks() {
         if (!connectionFactoryProvided) {
             log.trace("NOT submitting reload tasks since our connection factory hasn't been provided yet.");
             return;
         }
-        
+
         // Check results of running tasks. If complete, set the references to null
         for (Entry<String,TableCache> entry : details.entrySet()) {
             Future<Boolean> ref = entry.getValue().getReference();
@@ -150,7 +147,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
                 log.info("Reloading complete for table: " + entry.getKey());
                 entry.getValue().setReference(null);
             }
-            
+
         }
         // Start new tasks
         long now = System.currentTimeMillis();
@@ -170,7 +167,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             }
         }
     }
-    
+
     @Override
     public void close() {
         for (Entry<String,TableCache> entry : details.entrySet()) {
@@ -182,7 +179,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             cacheCoordinator.stop();
         cacheCoordinators.clear();
     }
-    
+
     /**
      * Reload a table cache
      *
@@ -204,7 +201,7 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
         handleReload(tableName);
         handleReloadTypeMetadata(tableName);
     }
-    
+
     private void handleReloadTypeMetadata(String tableName) {
         String triStateName = tableName + ":needsUpdate";
         try {
@@ -217,11 +214,11 @@ public class AccumuloTableCacheImpl implements AccumuloTableCache {
             log.debug("table:" + tableName + " could not update the triState '" + triStateName + " on watcher for table " + tableName, e);
         }
     }
-    
+
     private void handleReload(String tableName) {
         details.get(tableName).setLastRefresh(new Date(0));
     }
-    
+
     /**
      * Get the table caches
      */

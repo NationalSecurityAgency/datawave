@@ -14,13 +14,13 @@ import java.util.Map;
  * Creates a cache of compiled Jexl scripts
  */
 public class EdgePreconditionCacheHelper {
-    
+
     private JexlEngine engine;
-    
+
     public EdgePreconditionCacheHelper(EdgePreconditionArithmetic arithmetic) {
         createEngine(arithmetic);
     }
-    
+
     private void createEngine(EdgePreconditionArithmetic arithmetic) {
         // @formatter:off
         this.setEngine(new EdgeJexlEngine(new JexlBuilder()
@@ -29,11 +29,11 @@ public class EdgePreconditionCacheHelper {
                 .cache(50))); // Set cache size lower than default value of 512
         // @formatter:on
     }
-    
+
     public Map<String,JexlScript> createScriptCacheFromEdges(Map<String,EdgeDefinitionConfigurationHelper> edges) {
-        
+
         Map<String,JexlScript> scriptCache = new HashMap<>();
-        
+
         for (String dataTypeKey : edges.keySet()) {
             List<EdgeDefinition> edgeList = edges.get(dataTypeKey).getEdges();
             for (EdgeDefinition edge : edgeList) {
@@ -42,18 +42,18 @@ public class EdgePreconditionCacheHelper {
                 }
             }
         }
-        
+
         return scriptCache;
     }
-    
+
     public JexlScript createScriptFromString(String jexlPrecondition) {
         return engine.createScript(jexlPrecondition);
     }
-    
+
     public JexlEngine getEngine() {
         return engine;
     }
-    
+
     public void setEngine(JexlEngine engine) {
         this.engine = engine;
     }

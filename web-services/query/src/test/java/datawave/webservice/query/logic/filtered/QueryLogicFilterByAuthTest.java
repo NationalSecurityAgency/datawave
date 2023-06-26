@@ -24,7 +24,7 @@ public class QueryLogicFilterByAuthTest {
         set.add(new Authorizations("FOOBAR"));
         assertFalse(filter.canRunQuery(null, set));
     }
-    
+
     @Test
     public void testFirstMatch() {
         QueryLogicFilterByAuth filter = new QueryLogicFilterByAuth();
@@ -40,7 +40,7 @@ public class QueryLogicFilterByAuthTest {
         set.add(new Authorizations("FOOBAR"));
         assertTrue(filter.canRunQuery(null, set));
     }
-    
+
     @Test
     public void testNegated() {
         QueryLogicFilterByAuth filter = new QueryLogicFilterByAuth();

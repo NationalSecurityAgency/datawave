@@ -26,66 +26,66 @@ import datawave.webservice.result.BaseQueryResponse;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class BulkResultsInfoResponseList extends BaseQueryResponse implements Serializable, Message<BulkResultsInfoResponseList> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "BulkResults")
     @XmlElement(name = "BulkResult")
     List<BulkResultsInfoResponse> bulkResults = new ArrayList<BulkResultsInfoResponse>();
-    
+
     public List<BulkResultsInfoResponse> getBulkResults() {
         return bulkResults;
     }
-    
+
     public void setBulkResults(List<BulkResultsInfoResponse> bulkResults) {
         this.bulkResults = bulkResults;
     }
-    
+
     @Override
     public Schema<BulkResultsInfoResponseList> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<BulkResultsInfoResponseList> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<BulkResultsInfoResponseList> SCHEMA = new Schema<BulkResultsInfoResponseList>() {
         // schema methods
-        
+
         public BulkResultsInfoResponseList newMessage() {
             return new BulkResultsInfoResponseList();
         }
-        
+
         public Class<BulkResultsInfoResponseList> typeClass() {
             return BulkResultsInfoResponseList.class;
         }
-        
+
         public String messageName() {
             return BulkResultsInfoResponseList.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return BulkResultsInfoResponseList.class.getName();
         }
-        
+
         public boolean isInitialized(BulkResultsInfoResponseList message) {
             return true;
         }
-        
+
         public void writeTo(Output output, BulkResultsInfoResponseList message) throws IOException {
-            
+
             if (message.getQueryId() != null) {
                 output.writeString(1, message.getQueryId(), false);
             }
-            
+
             if (message.getLogicName() != null) {
                 output.writeString(2, message.getLogicName(), false);
             }
-            
+
             output.writeUInt64(3, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -93,7 +93,7 @@ public class BulkResultsInfoResponseList extends BaseQueryResponse implements Se
                         output.writeString(4, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -101,7 +101,7 @@ public class BulkResultsInfoResponseList extends BaseQueryResponse implements Se
                         output.writeObject(5, exception, QueryExceptionType.getSchema(), true);
                 }
             }
-            
+
             if (message.bulkResults != null) {
                 for (BulkResultsInfoResponse result : message.bulkResults) {
                     if (result != null)
@@ -109,7 +109,7 @@ public class BulkResultsInfoResponseList extends BaseQueryResponse implements Se
                 }
             }
         }
-        
+
         public void mergeFrom(Input input, BulkResultsInfoResponseList message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
             int number;
@@ -145,7 +145,7 @@ public class BulkResultsInfoResponseList extends BaseQueryResponse implements Se
             if (exceptions != null)
                 message.setExceptions(exceptions);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -164,12 +164,12 @@ public class BulkResultsInfoResponseList extends BaseQueryResponse implements Se
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("queryId", 1);
@@ -180,5 +180,5 @@ public class BulkResultsInfoResponseList extends BaseQueryResponse implements Se
             fieldMap.put("bulkResults", 6);
         }
     };
-    
+
 }

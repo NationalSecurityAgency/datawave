@@ -11,23 +11,22 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 /**
  * Extension of the JexlEngine.
- * 
+ *
  */
 public class DatawaveJexlEngine extends Engine {
-    
     public DatawaveJexlEngine() {
         super(new JexlBuilder().debug(false).namespaces(ArithmeticJexlEngines.functions()).permissions(JexlPermissions.UNRESTRICTED));
     }
-    
+
     public DatawaveJexlEngine(JexlBuilder conf) {
         super(conf);
     }
-    
+
     @Override
     protected Interpreter createInterpreter(JexlContext context, Frame frame, JexlOptions opts) {
         return new DatawaveInterpreter(this, opts, context, frame);
     }
-    
+
     public ASTJexlScript parse(String expression) {
         return super.parse(null, true, expression, null);
     }

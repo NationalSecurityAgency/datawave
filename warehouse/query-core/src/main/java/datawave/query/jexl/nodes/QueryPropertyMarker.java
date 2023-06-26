@@ -22,43 +22,45 @@ import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
  * This is a node that can be put in place of a given node to place a property on an underlying query sub-tree (e.g. ExceededValueThreshold)
  */
 public class QueryPropertyMarker {
-    
+
     public enum MarkerType {
         INDEX_HOLE("_Hole_", false, true),
         DELAYED("_Delayed_", false, true),
         EVALUATION_ONLY("_Eval_", false, true),
+        DROPPED("_Drop_", false, true),
         EXCEEDED_OR("_List_", true, true),
         EXCEEDED_TERM("_Term_", true, true),
         EXCEEDED_VALUE("_Value_", true, true),
-        BOUNDED_RANGE("_Bounded_", false, false);
-        
+        BOUNDED_RANGE("_Bounded_", false, false),
+        LENIENT("_Lenient_", false, false);
+
         private final String label;
         private final boolean ivarator;
         private final boolean delayed;
-        
+
         MarkerType(String label, boolean ivarator, boolean delayed) {
             this.label = label;
             this.ivarator = ivarator;
             this.delayed = delayed;
         }
-        
+
         public String getLabel() {
             return label;
         }
-        
+
         public boolean isIvarator() {
             return ivarator;
         }
-        
+
         public boolean isDelayed() {
             return delayed;
         }
-        
+
         @Override
         public String toString() {
             return label;
         }
-        
+
         public static MarkerType forLabel(String label) {
             MarkerType result = null;
             for (MarkerType type : MarkerType.values()) {
@@ -70,56 +72,56 @@ public class QueryPropertyMarker {
             return result;
         }
     }
-    
+
     private static final Set<MarkerType> DELAYED_TYPES;
     private static final Set<MarkerType> IVARATOR_TYPES;
-    
+
     static {
         HashSet<MarkerType> delayedTypes = new HashSet<>();
         HashSet<MarkerType> ivaratorTypes = new HashSet<>();
-        
+
         for (MarkerType markerType : MarkerType.values()) {
             if (markerType.isDelayed()) {
                 delayedTypes.add(markerType);
             }
-            
+
             if (markerType.isIvarator()) {
                 ivaratorTypes.add(markerType);
             }
         }
-        
+
         DELAYED_TYPES = Collections.unmodifiableSet(delayedTypes);
         IVARATOR_TYPES = Collections.unmodifiableSet(ivaratorTypes);
     }
-    
+
     public static JexlNode create(JexlNode source, MarkerType type) {
         if (isSourceMarked(source, type) || isAncestorMarked(source, type)) {
             return source;
         }
-        
+
         JexlNode parent = source.jjtGetParent();
-        
+
         // create the assignment using the label wrapped in an expression
         JexlNode refExpNode1 = JexlNodeFactory.createExpression(JexlNodeFactory.createAssignment(type.getLabel(), true));
-        
+
         // copy the source, and wrap in an expression, but only if needed
         JexlNode refExpNode2 = JexlNodeFactory.createExpression(copy(source));
-        
+
         // wrap the assignment and source in an AND node
         JexlNode andNode = JexlNodeFactory.createAndNode(Arrays.asList(refExpNode1, refExpNode2));
-        
+
         JexlNode finalNode = andNode;
         if (!(parent instanceof ASTReferenceExpression)) {
             // wrap the and node with an expression (see JexlNodeFactory.createAndNode)
             finalNode = JexlNodes.makeRefExp();
-            
+
             andNode.jjtSetParent(finalNode);
             finalNode.jjtAddChild(andNode, 0);
         }
-        
+
         return finalNode;
     }
-    
+
     /**
      * Determines if this source node is already marked with the provided marker class
      *
@@ -132,7 +134,7 @@ public class QueryPropertyMarker {
     public static boolean isSourceMarked(JexlNode source, MarkerType type) {
         return QueryPropertyMarker.findInstance(source).isType(type);
     }
-    
+
     /**
      * Determine if one the source node's ancestors is already marked. This method does not check the source node for markers (see
      * {@link #isSourceMarked(JexlNode, MarkerType)}).
@@ -159,7 +161,7 @@ public class QueryPropertyMarker {
         }
         return false;
     }
-    
+
     /**
      * Unwrap a marker node, fully. Intended to handle the odd edge case when multiple instances of the same marker is applied to the same node
      *
@@ -176,7 +178,7 @@ public class QueryPropertyMarker {
         }
         return node;
     }
-    
+
     /**
      * Determine if the specified node represents a query property marker, and return an {@link Instance} with the marker type and sources, if present.
      *
@@ -187,11 +189,11 @@ public class QueryPropertyMarker {
     public static Instance findInstance(JexlNode node) {
         return QueryPropertyMarkerVisitor.getInstance(node);
     }
-    
+
     public static final class Instance {
-        
+
         private static final Instance EMPTY_INSTANCE = new Instance(null, null);
-        
+
         /**
          * Return an immutable instance of {@link Instance} with a null type and null source.
          *
@@ -200,7 +202,7 @@ public class QueryPropertyMarker {
         public static Instance of() {
             return EMPTY_INSTANCE;
         }
-        
+
         /**
          * Return a new {@link Instance} with the specified type and sources.
          *
@@ -213,7 +215,7 @@ public class QueryPropertyMarker {
         public static Instance of(MarkerType type, List<JexlNode> sources) {
             return new Instance(type, sources);
         }
-        
+
         /**
          * Return a new {@link Instance} with the specified type and source.
          *
@@ -226,19 +228,19 @@ public class QueryPropertyMarker {
         public static Instance of(MarkerType type, JexlNode source) {
             return new Instance(type, Lists.newArrayList(source));
         }
-        
+
         /**
          * The {@link QueryPropertyMarker} type that the node this {@link Instance} represents is.
          */
         private final MarkerType type;
-        
+
         private final List<JexlNode> sources;
-        
+
         private Instance(MarkerType type, List<JexlNode> sources) {
             this.type = type;
             this.sources = sources == null ? Collections.emptyList() : sources;
         }
-        
+
         /**
          * Return the class of the {@link QueryPropertyMarker} type that the node this instance represents is, or null if the node is not any marker type.
          *
@@ -247,7 +249,7 @@ public class QueryPropertyMarker {
         public MarkerType getType() {
             return type;
         }
-        
+
         /**
          * Return whether this instance represents a node that is any {@link QueryPropertyMarker} type.
          *
@@ -256,7 +258,7 @@ public class QueryPropertyMarker {
         public boolean isAnyType() {
             return type != null;
         }
-        
+
         /**
          * Return whether this instance has the specified type.
          *
@@ -267,7 +269,7 @@ public class QueryPropertyMarker {
         public boolean isType(MarkerType type) {
             return type == this.type;
         }
-        
+
         /**
          * Return whether this instance represents a node that is a marker of any of the specified types.
          *
@@ -278,7 +280,7 @@ public class QueryPropertyMarker {
         public boolean isAnyTypeOf(MarkerType... types) {
             return isAnyType() && Arrays.stream(types).anyMatch(this::isType);
         }
-        
+
         /**
          * Return whether this instance represents a node that is a marker of the specified types.
          *
@@ -291,7 +293,7 @@ public class QueryPropertyMarker {
         public boolean isAnyTypeOf(Collection<MarkerType> types) {
             return isAnyType() && types.stream().anyMatch(this::isType);
         }
-        
+
         /**
          * Return whether this instance represents a node that is a marker, but is not a marker of the specified types.
          *
@@ -302,7 +304,7 @@ public class QueryPropertyMarker {
         public boolean isAnyTypeExcept(MarkerType... types) {
             return isAnyType() && Arrays.stream(types).noneMatch(this::isType);
         }
-        
+
         /**
          * Return whether this instance represents a node that is a marker, but is not a marker of the specified types.
          *
@@ -315,7 +317,7 @@ public class QueryPropertyMarker {
         public boolean isAnyTypeExcept(Collection<MarkerType> types) {
             return isAnyType() && types.stream().noneMatch(this::isType);
         }
-        
+
         /**
          * Return whether this instance represents a node that is not a marker of the specified types. It is possible that this instance is not a marker at all.
          *
@@ -326,7 +328,7 @@ public class QueryPropertyMarker {
         public boolean isNotAnyTypeOf(MarkerType... types) {
             return !isAnyType() || Arrays.stream(types).noneMatch(this::isType);
         }
-        
+
         /**
          * Return whether this instance represents a node that is not a marker of the specified types. It is possible that this instance is not a marker at all.
          *
@@ -339,7 +341,7 @@ public class QueryPropertyMarker {
         public boolean isNotAnyTypeOf(Collection<MarkerType> types) {
             return !isAnyType() || types.stream().noneMatch(this::isType);
         }
-        
+
         /**
          * Return whether this instance is any delayed predicate type.
          *
@@ -348,7 +350,7 @@ public class QueryPropertyMarker {
         public boolean isDelayedPredicate() {
             return isAnyTypeOf(DELAYED_TYPES);
         }
-        
+
         /**
          * Return whether this instance is any ivarator type.
          *
@@ -357,40 +359,40 @@ public class QueryPropertyMarker {
         public boolean isIvarator() {
             return isAnyTypeOf(IVARATOR_TYPES);
         }
-        
+
         /**
          * Return the list of all source nodes found if this instance is a marker, or an empty list if no marker was found.
-         * 
+         *
          * @return the list of sources
          */
         public List<JexlNode> getSources() {
             return sources;
         }
-        
+
         /**
          * Return the total number of sources.
-         * 
+         *
          * @return the number of sources
          */
         public int totalSources() {
             return sources.size();
         }
-        
+
         /**
          * Return whether there is more than one source.
-         * 
+         *
          * @return true if there is more than one source or false otherwise
          */
         public boolean hasMutipleSources() {
             return totalSources() > 1;
         }
-        
+
         /**
          * Return a singular source node. If only one source node was found, that specific source will be returned. If multiple source nodes were found, a new
          * unwrapped {@link ASTAndNode} will be returned with the source nodes as its children. NOTE: original parentage is preserved; the new
          * {@link ASTAndNode} will not be set as the parent for the source nodes, and thus a node with an invalid structure will be returned if there are
          * multiple sources.
-         * 
+         *
          * @return a singular source node if this instance is a marker, or null otherwise
          */
         public JexlNode getSource() {

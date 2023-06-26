@@ -18,9 +18,9 @@ import java.util.HashMap;
  */
 public class MockAccumuloRecordWriter extends RecordWriter<Text,Mutation> {
     private static final Logger log = Logger.getLogger(MockAccumuloRecordWriter.class);
-    
+
     private final HashMap<Text,BatchWriter> writerMap = new HashMap<>();
-    
+
     @Override
     public void write(Text key, Mutation value) throws IOException, InterruptedException {
         try {
@@ -36,7 +36,7 @@ public class MockAccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             throw new IOException("Error adding mutation", e);
         }
     }
-    
+
     @Override
     public void close(TaskAttemptContext context) throws IOException, InterruptedException {
         try {
@@ -48,7 +48,7 @@ public class MockAccumuloRecordWriter extends RecordWriter<Text,Mutation> {
             throw new IOException("Error closing Batch Writer", e);
         }
     }
-    
+
     public void addWriter(Text tableName, BatchWriter batchWriter) {
         this.writerMap.put(tableName, batchWriter);
     }

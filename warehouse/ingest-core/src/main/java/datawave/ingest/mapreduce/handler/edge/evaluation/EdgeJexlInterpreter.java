@@ -11,7 +11,7 @@ public class EdgeJexlInterpreter extends Interpreter {
     public EdgeJexlInterpreter(EdgeJexlEngine engine, JexlOptions opts, JexlContext context, Frame eFrame) {
         super(engine, opts, context, eFrame);
     }
-    
+
     // we want to avoid short circuiting an OR so we generate all possible edges if they are group aware
     @Override
     public Object visit(ASTOrNode node, Object data) {
@@ -37,5 +37,5 @@ public class EdgeJexlInterpreter extends Interpreter {
         }
         return (matchesL || matchesR);
     }
-    
+
 }

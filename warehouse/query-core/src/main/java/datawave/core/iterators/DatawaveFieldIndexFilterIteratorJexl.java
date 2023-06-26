@@ -13,74 +13,74 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * 
+ *
  * An iterator for the Datawave shard table, it searches FieldIndex keys and returns Event keys (its topKey must be an Event key).
  *
  * This version will take in an arbitrary range, and matching function and will return a sorted set of UIDs matching the supplied function.
- * 
+ *
  * FieldIndex keys: fi\0{fieldName}:{fieldValue}\0datatype\0uid
- * 
+ *
  * Event key: CF, {datatype}\0{UID}
- * 
+ *
  */
 public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRangeIteratorJexl {
     private Filter filter;
-    
+
     public static class Builder<B extends Builder<B>> extends DatawaveFieldIndexRangeIteratorJexl.Builder<B> {
         private Filter filter;
-        
+
         public B withFilter(Filter filter) {
             this.filter = filter;
             return self();
         }
-        
+
         public DatawaveFieldIndexFilterIteratorJexl build() {
             return new DatawaveFieldIndexFilterIteratorJexl(this);
         }
-        
+
     }
-    
+
     public static Builder<?> builder() {
         return new Builder();
     }
-    
+
     protected DatawaveFieldIndexFilterIteratorJexl(Builder builder) {
         super(builder);
         this.filter = builder.filter;
     }
-    
+
     // -------------------------------------------------------------------------
     // ------------- Constructors
     public DatawaveFieldIndexFilterIteratorJexl() {
         super();
     }
-    
+
     public DatawaveFieldIndexFilterIteratorJexl(DatawaveFieldIndexFilterIteratorJexl other, IteratorEnvironment env) {
         super(other, env);
         this.filter = other.filter;
     }
-    
+
     // -------------------------------------------------------------------------
     // ------------- Overrides
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new DatawaveFieldIndexFilterIteratorJexl(this, env);
     }
-    
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("DatawaveFieldIndexFilterIteratorJexl (").append(queryId).append(") fName=").append(getFieldName()).append(", filter=").append(filter)
                         .append(", lowerBound=").append(getFieldValue()).append(", lowerInclusive=").append(lowerInclusive).append(", upperBound=")
                         .append(upperBound).append(", upperInclusive=").append(upperInclusive).append(", negated=").append(isNegated()).append("}");
-        
+
         return builder.toString();
     }
-    
+
     /**
      * Unlike the super class's buildBoundingFiRanges, we want the same bounding range even if we are negated. negation in this case only refers to the supplied
      * filter.
-     * 
+     *
      * @param rowId
      *            the row id
      * @param fiName
@@ -109,7 +109,7 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
         }
         this.boundingFiRangeStringBuilder.append(NULL_BYTE);
         startKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
-        
+
         // we cannot simply use endKeyInclusive in the Range as the datatype and UID follow the value in the keys
         // hence we need to compute the max possibly value that would be inclusive
         this.boundingFiRangeStringBuilder.setLength(0);
@@ -124,10 +124,10 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
         endKey = new Key(rowId, fiName, new Text(boundingFiRangeStringBuilder.toString()));
         return new RangeSplitter(new Range(startKey, true, endKey, true), getMaxRangeSplit());
     }
-    
+
     // -------------------------------------------------------------------------
     // ------------- Other stuff
-    
+
     /**
      * Does this key match our range and filter. NOTE: This must be thread safe NOTE: The caller takes care of the negation
      *
@@ -141,5 +141,5 @@ public class DatawaveFieldIndexFilterIteratorJexl extends DatawaveFieldIndexRang
     protected boolean matches(Key k) throws IOException {
         return super.matches(k) && filter.keep(k);
     }
-    
+
 }

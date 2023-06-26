@@ -11,15 +11,15 @@ import java.util.stream.Collectors;
 public class LookupUIDQueryLogic<T> extends LookupQueryLogic<T> {
     private static final String UID_TERM_SEPARATOR = " ";
     private static final String EVENT_FIELD = "event";
-    
+
     public LookupUIDQueryLogic(BaseQueryLogic<T> delegateQueryLogic) {
         super(delegateQueryLogic);
     }
-    
+
     public LookupUIDQueryLogic(LookupQueryLogic<T> other) throws CloneNotSupportedException {
         super(other);
     }
-    
+
     @Override
     public String createQueryFromLookupTerms(MultiValueMap<String,String> lookupUIDPairs) {
         // @formatter:off
@@ -29,17 +29,17 @@ public class LookupUIDQueryLogic<T> extends LookupQueryLogic<T> {
                 .collect(Collectors.joining(UID_TERM_SEPARATOR));
         // @formatter:on
     }
-    
+
     @Override
     public boolean isEventLookupRequired(MultiValueMap<String,String> lookupTerms) {
         return !(lookupTerms.keySet().size() == 1 && lookupTerms.containsKey(EVENT_FIELD));
     }
-    
+
     @Override
     public Set<String> getContentLookupTerms(MultiValueMap<String,String> lookupTerms) {
         return lookupTerms.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
     }
-    
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new LookupUIDQueryLogic<>(this);

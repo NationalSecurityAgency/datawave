@@ -12,11 +12,11 @@ import java.util.List;
 
 public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction {
     WildcardFieldedFilter.BooleanType type = null;
-    
+
     public AbstractEvaluationPhaseFunction(String functionName) {
         super(functionName, new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         // super initialize will call validate
@@ -36,7 +36,7 @@ public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction 
             this.parameterList.remove(0);
         }
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         // special case where we allow one value to be run against _ANYFIELD_
@@ -62,17 +62,17 @@ public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction 
             }
         }
     }
-    
+
     protected String toString(String prefix, String suffix, String operation) {
         StringBuilder sb = new StringBuilder();
-        
+
         if (parameterList.size() == 1) {
             sb.append(prefix).append(Constants.ANY_FIELD).append(", ").append(escapeString(parameterList.get(0))).append(suffix);
         } else {
-            
+
             if (parameterList.size() > 2) // do not wrap single term functions
                 sb.append("(");
-            
+
             int x = 0;
             while (x < parameterList.size()) {
                 if (x >= 2) {
@@ -82,11 +82,11 @@ public abstract class AbstractEvaluationPhaseFunction extends JexlQueryFunction 
                 String regex = parameterList.get(x++);
                 sb.append(prefix).append(field).append(", ").append(escapeString(regex)).append(suffix);
             }
-            
+
             if (parameterList.size() > 2)
                 sb.append(")");
         }
         return sb.toString();
     }
-    
+
 }

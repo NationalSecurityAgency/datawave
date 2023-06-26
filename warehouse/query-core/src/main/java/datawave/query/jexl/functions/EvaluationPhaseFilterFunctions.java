@@ -41,32 +41,32 @@ import java.util.stream.StreamSupport;
  **/
 @JexlFunctions(descriptorFactory = "datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor")
 public class EvaluationPhaseFilterFunctions {
-    
+
     public static final String EVAL_PHASE_FUNCTION_NAMESPACE = "filter";
-    
+
     /**
      * This regex matches against regex strings that contain case-insensitive flags, e.g. {@code (?i).*(?-i)}.
      */
     public static final String CASE_INSENSITIVE = ".*\\(\\?[idmsux]*-[dmsux]*i[idmsux]*\\).*";
-    
+
     private static final Logger log = Logger.getLogger(EvaluationPhaseFilterFunctions.class);
-    
+
     public static boolean occurrence(Iterable<?> fieldValues, String operator, int count) {
         return compareSizeToCount(fieldValues, operator, count);
     }
-    
+
     public static boolean occurrence(Object fieldValue, String operator, int count) {
         return compareSizeToCount(fieldValue, operator, count);
     }
-    
+
     public static boolean occurrence(Object fieldValue, int count) {
         return occurrence(fieldValue, "==", count);
     }
-    
+
     public static boolean occurrence(Iterable<?> values, int count) {
         return occurrence(values, "==", count);
     }
-    
+
     private static int getSizeOf(Iterable<?> iterable) {
         if (iterable != null) {
             int sourcedFromEvent = 0;
@@ -99,7 +99,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return 0;
     }
-    
+
     /**
      * Returns the size of the given object. If the value is null or a non-iterable object, a value of 1 will be returned. If the value is an {@link Iterable},
      * the result of {@link EvaluationPhaseFilterFunctions#getSizeOf(Iterable)} will be returned.
@@ -116,7 +116,7 @@ public class EvaluationPhaseFilterFunctions {
             return 1;
         }
     }
-    
+
     private static boolean compareSizeToCount(Object obj, String operatorString, int count) {
         int size = getSizeOf(obj);
         if (log.isDebugEnabled()) {
@@ -124,7 +124,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return OperationEvaluator.compare(size, count, operatorString);
     }
-    
+
     /**
      * Returns a {@link FunctionalSet} of hit terms found for {@code fieldValue}. If {@code fieldValue} is a singular value tuple, a singleton
      * {@link FunctionalSet} with the hit term from it will be returned. If {@code fieldValue} is a non-empty collection of value tuples, a
@@ -142,14 +142,14 @@ public class EvaluationPhaseFilterFunctions {
                 if (!values.isEmpty()) {
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
-                
+
             } else {
                 return FunctionalSet.singleton(getHitTerm(fieldValue));
             }
         }
         return FunctionalSet.emptySet();
     }
-    
+
     /**
      * Returns whether {@code fieldValue} is considered an equivalently null field value.
      *
@@ -160,7 +160,7 @@ public class EvaluationPhaseFilterFunctions {
     public static boolean isNull(Object fieldValue) {
         return fieldValue instanceof Collection ? ((Collection<?>) fieldValue).isEmpty() : fieldValue == null;
     }
-    
+
     /**
      * Return whether no match was found for the given regex against the value of the field value. If the regex string contains case-insensitive flags, e.g.
      * {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
@@ -176,7 +176,7 @@ public class EvaluationPhaseFilterFunctions {
     public static boolean excludeRegex(Object fieldValue, String regex) {
         return includeRegex(fieldValue, regex).isEmpty();
     }
-    
+
     /**
      * Returns whether no match was found for the given regex against the value of any field value provided in the given {@link Iterable}. If the regex string
      * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field values.
@@ -193,7 +193,7 @@ public class EvaluationPhaseFilterFunctions {
     public static boolean excludeRegex(Iterable<?> values, String regex) {
         return includeRegex(values, regex).isEmpty();
     }
-    
+
     /**
      * Returns a {@link FunctionalSet} with {@link ValueTuple} of matches found in the field value for each given regex, if the number of matches meets the
      * minimum parsed from the given minimum number of required matches. If the minimum was not met, then an empty {@link FunctionalSet} will be returned.
@@ -213,14 +213,14 @@ public class EvaluationPhaseFilterFunctions {
      *
      * @param args
      *            the arguments array
-     *            
+     *
      * @return the {@link FunctionalSet} of matches.
      */
     public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object... args) {
         Object minimumRequired = args[0];
         Object fieldValue = args[1];
         Object[] regexes = Arrays.copyOfRange(args, 2, args.length);
-        
+
         FunctionalSet<ValueTuple> matches = new FunctionalSet<>();
         int minimum = Integer.parseInt(minimumRequired.toString());
         // Find all matches.
@@ -243,7 +243,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return FunctionalSet.unmodifiableSet(matches);
     }
-    
+
     /**
      * Returns a set that contains the hit term for the given field value if the regex matches against the value of the field value. If the regex string
      * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
@@ -266,7 +266,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return FunctionalSet.emptySet();
     }
-    
+
     /**
      * Returns a set that contains the hit term for the first field value where the regex matches against the value of the field value. If the regex string
      * contains case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
@@ -296,7 +296,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return FunctionalSet.emptySet();
     }
-    
+
     /**
      * Returns a set that contains the hit term for each field value where the regex matches against the value of the field value. If the regex string contains
      * case-insensitive flags, e.g. {@code (?i).*(?-i)}, a search for a match will also be done against the normalized value of the field value.
@@ -313,10 +313,10 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> getAllMatches(Iterable<?> values, String regex) {
         return getAllMatchesStream(values, regex).collect(Collectors.toCollection(FunctionalSet::new));
     }
-    
+
     /**
      * Return a stream for getAllMatches (@see getAllMatches)
-     * 
+     *
      * @param values
      *            the values to evaluate
      * @param regex
@@ -337,10 +337,10 @@ public class EvaluationPhaseFilterFunctions {
         }
         return Collections.EMPTY_LIST.stream();
     }
-    
+
     /**
      * Functionally equivalent to {@link #includeRegex(Object, String)}.
-     * 
+     *
      * @param fieldValue
      *            field value string
      * @param regex
@@ -351,7 +351,7 @@ public class EvaluationPhaseFilterFunctions {
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
         return includeRegex(fieldValue, regex);
     }
-    
+
     // Returns whether the pattern matches against either the non-normalized value or, if caseInsensitive is false, the normalized value.
     private static boolean isMatchForPattern(Pattern pattern, boolean caseInsensitive, Object value) {
         Matcher matcher = pattern.matcher(ValueTuple.getStringValue(value));
@@ -360,7 +360,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matcher.matches();
     }
-    
+
     /**
      * Searches for a load date after start (exclusively)
      *
@@ -385,7 +385,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date after start (exclusively)
      *
@@ -414,7 +414,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date after start (exclusively)
      *
@@ -443,7 +443,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date after start (exclusively)
      *
@@ -475,7 +475,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date before end (exclusively)
      *
@@ -500,7 +500,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date before end (exclusively)
      *
@@ -528,7 +528,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date before end (exclusively)
      *
@@ -556,7 +556,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date before end (exclusively)
      *
@@ -587,7 +587,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date between start and end (inclusively)
      *
@@ -614,7 +614,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date between start and end (inclusively)
      *
@@ -645,7 +645,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date between start and end (inclusively)
      *
@@ -677,7 +677,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a load date between start and end (inclusively)
      *
@@ -713,7 +713,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -736,7 +736,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -763,7 +763,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date after start (exclusively)
      *
@@ -790,7 +790,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date after start (exclusively)
      *
@@ -821,7 +821,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date after start (exclusively)
      *
@@ -855,7 +855,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date after start (exclusively)
      *
@@ -892,7 +892,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date before end (exclusively)
      *
@@ -915,7 +915,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date before end (exclusively)
      *
@@ -943,7 +943,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date before end (exclusively)
      *
@@ -969,7 +969,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date before end (exclusively)
      *
@@ -999,9 +999,9 @@ public class EvaluationPhaseFilterFunctions {
             }
         }
         return matches;
-        
+
     }
-    
+
     /**
      * Searches for a date before end (exclusively)
      *
@@ -1033,7 +1033,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date before end (exclusively)
      *
@@ -1068,7 +1068,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -1093,7 +1093,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -1127,7 +1127,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -1156,7 +1156,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -1192,7 +1192,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -1224,7 +1224,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * Searches for a date between start and end (inclusively)
      *
@@ -1263,12 +1263,12 @@ public class EvaluationPhaseFilterFunctions {
         }
         return matches;
     }
-    
+
     /**
      * A special format denoting the time since epoch format
      */
     public static final String TIME_SINCE_EPOCH_FORMAT = "e";
-    
+
     /**
      * The list of formats attempted At a minimum the following are found in existing data: "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", "yyyy-MM-dd HH:mm:ssz",
      * "yyyy-MM-dd", "yyyy-MM-dd'T'HH'|'mm", "EEE MMM dd HH:mm:ss zzz yyyy", "yyyyMMddhhmmss" "yyyyMMddHHmm", "yyyyMMddHH", "yyyyMMdd",
@@ -1302,10 +1302,10 @@ public class EvaluationPhaseFilterFunctions {
                     "yyyyMMddHH",
                     "yyyyMMdd"};
     // @formatter:on
-    
+
     static final List<DateFormat> dateFormatList = new ArrayList<>();
     static final List<Integer> dateGranularityList = new ArrayList<>();
-    
+
     static {
         for (String fs : DATE_FORMAT_STRINGS) {
             DateFormat format = newSimpleDateFormat(fs);
@@ -1313,7 +1313,7 @@ public class EvaluationPhaseFilterFunctions {
             dateGranularityList.add(getGranularity(fs));
         }
     }
-    
+
     /**
      * Create a new simple date format, with a GMT time zone
      *
@@ -1338,7 +1338,7 @@ public class EvaluationPhaseFilterFunctions {
         newFormat.setTimeZone(TimeZone.getTimeZone("GMT"));
         return newFormat;
     }
-    
+
     /**
      * Determine the granularity of the provided date format and return a {@link Calendar} constant suitable for the {@link Calendar#add(int, int)} method. For
      * example, if the granularity of the date format is to the minute, then {@link Calendar#MINUTE} is returned. NOTE: This was verified in Java 6.0: the
@@ -1353,7 +1353,7 @@ public class EvaluationPhaseFilterFunctions {
         if (dateFormat.equals(TIME_SINCE_EPOCH_FORMAT)) {
             return Calendar.MILLISECOND;
         }
-        
+
         // start with a year granularity
         int granularity = Calendar.YEAR;
         boolean escaped = false;
@@ -1383,7 +1383,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return granularity;
     }
-    
+
     public static FunctionalSet<ValueTuple> timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal) {
         FunctionalSet<ValueTuple> matches = new FunctionalSet<>();
         if (time1 != null && time2 != null) {
@@ -1399,7 +1399,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return FunctionalSet.unmodifiableSet(matches);
     }
-    
+
     public static long getMaxTime(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>) {
             return getMaxTime((Iterable<?>) dates);
@@ -1407,7 +1407,7 @@ public class EvaluationPhaseFilterFunctions {
             return getTime(dates);
         }
     }
-    
+
     public static long getMaxTime(Iterable<?> dates) throws ParseException {
         long max = Long.MIN_VALUE;
         if (dates != null) {
@@ -1417,7 +1417,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return max;
     }
-    
+
     public static long getMinTime(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>) {
             return getMinTime((Iterable<?>) dates);
@@ -1425,7 +1425,7 @@ public class EvaluationPhaseFilterFunctions {
             return getTime(dates);
         }
     }
-    
+
     public static long getMinTime(Iterable<?> dates) throws ParseException {
         long min = Long.MAX_VALUE;
         for (Object date : dates) {
@@ -1433,7 +1433,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return min;
     }
-    
+
     public static Object getMaxValue(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>) {
             return getMaxValue((Iterable<?>) dates);
@@ -1441,7 +1441,7 @@ public class EvaluationPhaseFilterFunctions {
             return dates;
         }
     }
-    
+
     public static Object getMaxValue(Iterable<?> dates) throws ParseException {
         long max = Long.MIN_VALUE;
         Object value = null;
@@ -1454,7 +1454,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return value;
     }
-    
+
     public static Object getMinValue(Object dates) throws ParseException {
         if (dates instanceof Iterable<?>) {
             return getMinValue((Iterable<?>) dates);
@@ -1462,7 +1462,7 @@ public class EvaluationPhaseFilterFunctions {
             return dates;
         }
     }
-    
+
     public static Object getMinValue(Iterable<?> dates) throws ParseException {
         long min = Long.MAX_VALUE;
         Object value = null;
@@ -1475,7 +1475,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return value;
     }
-    
+
     /**
      * Given a Calendar constant as returned by getGranularity(format), get the next unit of time determine by incrementing by the specified granularity. For
      * example getNextUnit(x, DAY) would return {@code x+<ms/day>}.
@@ -1492,7 +1492,7 @@ public class EvaluationPhaseFilterFunctions {
         c.add(granularity, 1);
         return c.getTimeInMillis();
     }
-    
+
     /**
      * Get the time using the supplied format
      *
@@ -1509,7 +1509,7 @@ public class EvaluationPhaseFilterFunctions {
             return format.parse(ValueTuple.getStringValue(value)).getTime();
         }
     }
-    
+
     /**
      * Given a Calendar constant as returned by getGranularity(format), get the next unit of time determine by incrementing by the specified granularity. For
      * example getNextUnit(x, DAY) would return {@code x+<ms/day>}.
@@ -1527,7 +1527,7 @@ public class EvaluationPhaseFilterFunctions {
     public static long getNextTime(Object value, DateFormat format, int granularity) throws ParseException {
         return getNextTime(getTime(value, format), granularity);
     }
-    
+
     /**
      * Get the time for a value
      *
@@ -1540,7 +1540,7 @@ public class EvaluationPhaseFilterFunctions {
     public static long getTime(Object value) throws ParseException {
         return getTime(value, false);
     }
-    
+
     /**
      * Return the time parsed for the given value in ms. If {@code nextTime} is true, the next unit of time will be returned based on the granularity of the
      * given time, e.g. if the time given is to the day, then the next day will be returned.
@@ -1569,7 +1569,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         throw new ParseException("Unable to parse value using known date formats: " + value, 0);
     }
-    
+
     /**
      * Return whether the given value is inclusively between the given left and right of the range.
      *
@@ -1584,7 +1584,7 @@ public class EvaluationPhaseFilterFunctions {
     static boolean betweenInclusive(long value, long left, long right) {
         return (value >= left && value <= right);
     }
-    
+
     /**
      * Return the given object as a {@link ValueTuple}.
      *
@@ -1596,7 +1596,7 @@ public class EvaluationPhaseFilterFunctions {
     public static ValueTuple getHitTerm(Object valueTuple) {
         return ValueTuple.toValueTuple(valueTuple);
     }
-    
+
     /**
      * Returns a string that is a substring of the given string. The substring starts at the index of the first '.', and extends to the index of the Nth
      * occurrence of the character '.' from the left, where N is specified by {@code pos}.
@@ -1623,7 +1623,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return input.substring(0, indices[indices.length - pos - 1]);
     }
-    
+
     /**
      * Returns a string that is a substring of the given string. The substring starts at the index of the Nth occurrence of the character '.' from the left,
      * where N is specified by {@code pos} and extends to the end of the string.
@@ -1649,9 +1649,9 @@ public class EvaluationPhaseFilterFunctions {
         }
         return input.substring(indices[indices.length - pos - 1] + 1);
     }
-    
+
     private static final CharMatcher IS_PERIOD = CharMatcher.is('.');
-    
+
     /**
      * Return an array containing the indices where periods were found in the given input string.
      *
@@ -1669,7 +1669,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return indices;
     }
-    
+
     /**
      * Compare the set of normalized values between two fields using the comparison strategy indicated by {@code operator}, taking into account
      * {@code compareMode} to indicate if the comparison strategy may either match against any value or must match against all values.
@@ -1742,7 +1742,7 @@ public class EvaluationPhaseFilterFunctions {
         boolean matchAny = CompareFunctionValidator.Mode.valueOf(compareMode.toUpperCase()).equals(CompareFunctionValidator.Mode.ANY);
         return compareFields(set1, set2, operator, matchAny);
     }
-    
+
     /**
      * Convert the given value as a {@link FunctionalSet}.
      *
@@ -1763,7 +1763,7 @@ public class EvaluationPhaseFilterFunctions {
         }
         return set;
     }
-    
+
     /**
      * Compare the normalized values in {@code set1} to {@code set2}.
      *
@@ -1812,7 +1812,7 @@ public class EvaluationPhaseFilterFunctions {
                 return false;
         }
     }
-    
+
     /**
      * Return the result of comparing the normalized value of the minimum element in {@code set1} to the normalized value of the maximum element in {@code set2}
      * .
@@ -1829,7 +1829,7 @@ public class EvaluationPhaseFilterFunctions {
         // noinspection unchecked
         return ((Comparable<Object>) min.getNormalizedValue()).compareTo(max.getNormalizedValue());
     }
-    
+
     /**
      * Return whether the set of normalized values between {@code set1} and {@code set2} are considered equal.
      *
@@ -1854,7 +1854,7 @@ public class EvaluationPhaseFilterFunctions {
             return SetUtils.isEqualSet(fields1Values, fields2Values);
         }
     }
-    
+
     /**
      * Return whether the set of normalized values between {@code set1} and {@code set2} are considered non-equal.
      *
@@ -1879,7 +1879,7 @@ public class EvaluationPhaseFilterFunctions {
             return SetUtils.intersection(fields1Values, fields2Values).isEmpty();
         }
     }
-    
+
     /**
      * Return a {@link Set} containing all normalized values in the given {@link FunctionalSet}.
      *

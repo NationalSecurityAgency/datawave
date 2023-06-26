@@ -15,26 +15,26 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class TLDQueryIteratorTest {
-    
+
     @Test
     public void testBuildTfFunction() throws ParseException {
         TermFrequencyConfig config = new TermFrequencyConfig();
         config.setTypeMetadata(new TypeMetadata());
         config.setScript(JexlASTHelper.parseAndFlattenJexlQuery("FOO == 'bar'"));
         assertFalse("tld flag should be false by default", config.isTld());
-        
+
         TLDQueryIterator tldIter = new TLDQueryIterator();
         tldIter.buildTfFunction(config);
         assertTrue("TLDQueryIterator sets the isTld flag during build", config.isTld());
     }
-    
+
     @Test
     public void testGetRangeProvider() {
         TLDQueryIterator iterator = new TLDQueryIterator();
         RangeProvider provider = iterator.getRangeProvider();
         assertEquals(TLDRangeProvider.class.getSimpleName(), provider.getClass().getSimpleName());
     }
-    
+
     @Test
     public void testGetEquality() {
         TLDQueryIterator iterator = new TLDQueryIterator();

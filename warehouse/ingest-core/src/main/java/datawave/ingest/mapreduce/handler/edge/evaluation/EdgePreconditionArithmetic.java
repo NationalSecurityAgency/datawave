@@ -12,24 +12,24 @@ import java.util.Map;
 import java.util.Set;
 
 public class EdgePreconditionArithmetic extends JexlArithmetic {
-    
+
     private Map<String,Set<String>> matchingGroups = new HashMap<>();
-    
+
     public EdgePreconditionArithmetic() {
         super(false);
     }
-    
+
     /*
      * Currently only EQ options are supplied.
      */
-    
+
     @Override
     public boolean equals(final Object left, final Object right) {
         boolean matches = false;
-        
+
         if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = EventFieldValueTuple.getValue(right);
-            
+
             Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -39,10 +39,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                     matches = true;
                 }
             }
-            
+
         } else if (!(left instanceof Collection) && (right instanceof Collection)) {
             Object newLeft = EventFieldValueTuple.getValue(left);
-            
+
             Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -52,9 +52,9 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                     matches = true;
                 }
             }
-            
+
         } else if ((left instanceof Collection) && (right instanceof Collection)) {
-            
+
             Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object lefttuple = iter.next();
@@ -73,18 +73,18 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
         } else {
             Object newLeft = EventFieldValueTuple.getValue(left);
             Object newRight = EventFieldValueTuple.getValue(right);
-            
+
             if (super.equals(newLeft, newRight)) {
                 addMatchingGroup(newLeft);
                 addMatchingGroup(newRight);
                 matches = true;
-                
+
             }
         }
-        
+
         return matches;
     }
-    
+
     @Override
     public Boolean contains(Object container, Object value) {
         if (value == null && container == null) {
@@ -107,14 +107,14 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
         }
         return matches;
     }
-    
+
     @Override
     public boolean lessThan(final Object left, final Object right) {
         boolean matches = false;
-        
+
         if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = EventFieldValueTuple.getValue(right);
-            
+
             Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -124,10 +124,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                     matches = true;
                 }
             }
-            
+
         } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
-            
+
             Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -138,29 +138,29 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
         }
-        
+
         else {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
-            
+
             if (super.lessThan(newLeft, newRight)) {
                 addMatchingGroup(newLeft);
                 addMatchingGroup(newRight);
                 matches = true;
-                
+
             }
         }
-        
+
         return matches;
     }
-    
+
     @Override
     public boolean lessThanOrEqual(final Object left, final Object right) {
         boolean matches = false;
-        
+
         if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
-            
+
             Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -170,10 +170,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                     matches = true;
                 }
             }
-            
+
         } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
-            
+
             Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -184,29 +184,29 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
         }
-        
+
         else {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
-            
+
             if (super.lessThanOrEqual(newLeft, newRight)) {
                 addMatchingGroup(newLeft);
                 addMatchingGroup(newRight);
                 matches = true;
-                
+
             }
         }
-        
+
         return matches;
     }
-    
+
     @Override
     public boolean greaterThan(final Object left, final Object right) {
         boolean matches = false;
-        
+
         if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
-            
+
             Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -216,10 +216,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                     matches = true;
                 }
             }
-            
+
         } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
-            
+
             Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -230,29 +230,29 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
         }
-        
+
         else {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
-            
+
             if (super.greaterThan(newLeft, newRight)) {
                 addMatchingGroup(newLeft);
                 addMatchingGroup(newRight);
                 matches = true;
-                
+
             }
         }
-        
+
         return matches;
     }
-    
+
     @Override
     public boolean greaterThanOrEqual(final Object left, final Object right) {
         boolean matches = false;
-        
+
         if (left instanceof Collection && !(right instanceof Collection)) {
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
-            
+
             Iterator iter = ((Collection) left).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -262,10 +262,10 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                     matches = true;
                 }
             }
-            
+
         } else if (right instanceof Collection) {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
-            
+
             Iterator iter = ((Collection) right).iterator();
             while (iter.hasNext()) {
                 Object tuple = iter.next();
@@ -276,22 +276,22 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 }
             }
         }
-        
+
         else {
             Object newLeft = Long.parseLong(EventFieldValueTuple.getValue(left));
             Object newRight = Long.parseLong(EventFieldValueTuple.getValue(right));
-            
+
             if (super.greaterThanOrEqual(newLeft, newRight)) {
                 addMatchingGroup(newLeft);
                 addMatchingGroup(newRight);
                 matches = true;
-                
+
             }
         }
-        
+
         return matches;
     }
-    
+
     private void addMatchingGroup(Object o) {
         if (o instanceof EventFieldValueTuple) {
             String fieldName = EventFieldValueTuple.getFieldName(o);
@@ -306,13 +306,13 @@ public class EdgePreconditionArithmetic extends JexlArithmetic {
                 groups.add(group);
         }
     }
-    
+
     public Map<String,Set<String>> getMatchingGroups() {
         return matchingGroups;
     }
-    
+
     public void clearMatchingGroups() {
         matchingGroups = new HashMap<>();
     }
-    
+
 }

@@ -97,66 +97,65 @@ import org.apache.commons.jexl3.parser.SimpleNode;
  * Counts the total number of nodes for each node type present in a query tree.
  */
 public class NodeTypeCountVisitor extends ParserVisitor {
-    
     public static <T extends JexlNode> NodeTypeCount countNodes(T script) {
         return (NodeTypeCount) script.jjtAccept(new NodeTypeCountVisitor(), null);
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
@@ -166,175 +165,175 @@ public class NodeTypeCountVisitor extends ParserVisitor {
             return count(node, ASTAndNode.class, data);
         }
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         return count(node, data);
     }
-    
+
     /**
      * Increment the count for the type of the provided node
-     * 
+     *
      * @param node
      *            the node
      * @param data
@@ -344,10 +343,10 @@ public class NodeTypeCountVisitor extends ParserVisitor {
     private Object count(SimpleNode node, Object data) {
         return count(node, node.getClass(), data);
     }
-    
+
     /**
      * Increment the count for the specified type, and count the node's children.
-     * 
+     *
      * @param node
      *            the node whose children must be visited
      * @param type
@@ -362,7 +361,7 @@ public class NodeTypeCountVisitor extends ParserVisitor {
         node.childrenAccept(this, count);
         return count;
     }
-    
+
     /**
      * Increment the count for the specified type, and count the node's children.
      *
@@ -380,202 +379,202 @@ public class NodeTypeCountVisitor extends ParserVisitor {
         node.childrenAccept(this, count);
         return count;
     }
-    
+
     @Override
     protected Object visit(ASTDoWhileStatement node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTContinue node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTBreak node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTDefineVars node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTNullpNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftLeftNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftRightNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTShiftRightUnsignedNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSWNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTNSWNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTEWNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTNEWNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTAddNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSubNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTUnaryPlusNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTRegexLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTExtendedLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTRangeNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTIdentifierAccess node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTArguments node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetAddNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetSubNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetMultNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetDivNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetModNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetAndNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetOrNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetXorNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftLeftNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftRightNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTSetShiftRightUnsignedNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTGetDecrementNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTGetIncrementNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTDecrementGetNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTIncrementGetNode node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTJxltLiteral node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTAnnotation node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTAnnotatedStatement node, Object data) {
         return count(node, data);
     }
-    
+
     @Override
     protected Object visit(ASTQualifiedIdentifier node, Object data) {
         return count(node, data);

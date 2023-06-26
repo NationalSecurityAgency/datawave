@@ -9,22 +9,22 @@ import org.apache.log4j.Logger;
 import java.util.Iterator;
 
 public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
-    
+
     private Logger log = Logger.getLogger(DatawaveTransformIterator.class);
     private O next = null;
-    
+
     public DatawaveTransformIterator() {
         super();
     }
-    
+
     public DatawaveTransformIterator(Iterator iterator) {
         super(iterator);
     }
-    
+
     public DatawaveTransformIterator(Iterator iterator, Transformer transformer) {
         super(iterator, transformer);
     }
-    
+
     @Override
     public boolean hasNext() {
         if (next == null) {
@@ -32,10 +32,10 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
         }
         return (next != null);
     }
-    
+
     @Override
     public O next() {
-        
+
         O o = null;
         if (next == null) {
             o = getNext();
@@ -45,9 +45,9 @@ public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
         }
         return o;
     }
-    
+
     private O getNext() {
-        
+
         boolean done = false;
         O o = null;
         while (super.hasNext() && !done) {

@@ -13,40 +13,40 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "(\n    BAR == 'foo' || \n    BAR == 'blah'\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testSimpleOr1() throws ParseException {
         String query = "BAR == 'foo' || BAR == 'blah'";
         String expected = "BAR == 'foo' || \nBAR == 'blah'";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testSimpleOr2() throws ParseException {
         String query = "(BAR == 'foo' || BAR == 'blah' || BAR == 'test' || BAR == 'FOO')";
         String expected = "(\n    BAR == 'foo' || \n    BAR == 'blah' || \n    BAR == 'test' || \n    BAR == 'FOO'\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testNestedOr() throws ParseException {
         String query = "((BAR == 'foo' || BAR == 'blah') || (BAR == 'test' || BAR == 'FOO'))";
         String expected = "(\n    (\n        BAR == 'foo' || \n        BAR == 'blah'\n    ) || \n    (\n        BAR == 'test' || \n        BAR == 'FOO'\n    )\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testNestedOrAnd() throws ParseException {
         String query = "((BAR == 'foo' && (BAR == 'blah' || BAR == 'test')) || ((BAR == 'abc' || BAR == '123') && BAR == 'FOO'))";
@@ -54,10 +54,10 @@ public class JexlFormattedStringBuildingVisitorTest {
                         + "|| \n    (\n        (\n            BAR == 'abc' || \n            BAR == '123'\n        ) && \n        BAR == 'FOO'\n    )\n)";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testComplicatedQuery() throws ParseException {
         String query = "((FIELD == 'some value') && " + "((geowave:intersects(GEO, 'POLYGON((0.5 2, 1.5 2, 1.5 10, 0.5 10, 0.5 2))') && "
@@ -85,10 +85,10 @@ public class JexlFormattedStringBuildingVisitorTest {
                         + "    ((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))\n" + ")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testComplicatedQuerySimpler() throws ParseException {
         String query = "((_Eval_ = true) && (FOO == 'bar' && (BAR == 'foo' || BAR == 'blah'))) && ((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))";
@@ -97,10 +97,10 @@ public class JexlFormattedStringBuildingVisitorTest {
                         + "((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testBoundedNodeRange() throws ParseException {
         // Marker bounded node anded with range, should be printed on same line
@@ -108,10 +108,10 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "((_Bounded_ = true) && (POINT >= '1f20004a1400000000' && POINT <= '1f20004a1fffffffff'))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testBoundedNodeSingleTerm() throws ParseException {
         // Marker bounded node anded with single term, should be printed on same line
@@ -119,10 +119,10 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "((_Bounded_ = true) && (POINT == '1f20004a1400000000'))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMarkerNodesSingleTerm() throws ParseException {
         // Marker node anded with a single term, should be printed on same line
@@ -130,10 +130,10 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "(_Value_ = true) && (BAR == 'foo')";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMarkerNodesSingleTerm1() throws ParseException {
         // Nested marker node anded with a single term, should be printed on same line
@@ -141,10 +141,10 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "((_Value_ = true) && (BAR == 'foo'))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMarkerNodesSingleTerm2() throws ParseException {
         // Nested marker node anded with a single term, should be printed on same line
@@ -152,10 +152,10 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "(((_Value_ = true) && (BAR == 'foo')))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMarkerNodeAndedMultipleTerms() throws ParseException {
         // Marker node anded with subtree (not single term or range), should be printed on separate lines
@@ -164,10 +164,10 @@ public class JexlFormattedStringBuildingVisitorTest {
                         + "            BAR == 'blah'\n" + "        )\n" + "    )\n" + ")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMarkerNodeAndedMultipleTerms1() throws ParseException {
         // Marker node anded with subtree (not single term or range), should be printed on separate lines
@@ -175,10 +175,10 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "(\n" + "    (_Eval_ = true) && \n" + "    (\n" + "        BAR == 'foo' || \n" + "        BAR == 'blah'\n" + "    )\n" + ")";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testNestedMarkerNodes() throws ParseException {
         // Nested marker nodes anded with a single term or range, should be printed as a single line
@@ -186,20 +186,20 @@ public class JexlFormattedStringBuildingVisitorTest {
         String expected = "((_Value_ = true) && ((_Bounded_ = true) && (NUM >= 0 && NUM <= 10)))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMultiParensIndentation() throws ParseException {
         String query = "((((FOO == 'BAR' && ((_Eval_ = true) && (THIS == 'THAT'))))))";
         String expected = "((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n))))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMultiParensIndentation1() throws ParseException {
         String query = "((((FOO == 'BAR' && ((_Eval_ = true) && (THIS == 'THAT')))))) || ((((FOO == 'BAR' && ((_Eval_ = true) && (THIS == 'THAT'))))))";
@@ -207,10 +207,10 @@ public class JexlFormattedStringBuildingVisitorTest {
                         + "\n((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n))))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
-    
+
     @Test
     public void testMultiParensIndentation2() throws ParseException {
         String query = "((((FOO == 'BAR' && ((_Eval_ = true) && (THIS == 'THAT')))))) && ((((FOO == 'BAR' && ((_Eval_ = true) && (THIS == 'THAT'))))))";
@@ -218,7 +218,7 @@ public class JexlFormattedStringBuildingVisitorTest {
                         + "\n((((\n    FOO == 'BAR' && \n    ((_Eval_ = true) && (THIS == 'THAT'))\n))))";
         JexlNode node = JexlASTHelper.parseJexlQuery(query);
         String builtQuery = JexlFormattedStringBuildingVisitor.buildQuery(node);
-        
+
         Assert.assertEquals(expected, builtQuery);
     }
 }

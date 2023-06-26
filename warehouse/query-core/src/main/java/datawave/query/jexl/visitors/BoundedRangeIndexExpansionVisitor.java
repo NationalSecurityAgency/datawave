@@ -18,6 +18,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
@@ -29,20 +30,20 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
  */
 public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(BoundedRangeIndexExpansionVisitor.class);
-    
+
     private final JexlASTHelper.RangeFinder rangeFinder;
-    
+
     // The constructor should not be made public so that we can ensure that the executor is setup and shutdown correctly
     protected BoundedRangeIndexExpansionVisitor(ShardQueryConfiguration config, ScannerFactory scannerFactory, MetadataHelper helper)
                     throws TableNotFoundException {
         super(config, scannerFactory, helper, "BoundedRangeIndexExpansion");
-        
+
         rangeFinder = JexlASTHelper.findRange().indexedOnly(this.config.getDatatypeFilter(), this.helper).notDelayed();
     }
-    
+
     /**
      * Visits the Jexl script, looks for bounded ranges, and replaces them with concrete values from the index
-     * 
+     *
      * @param config
      *            the query configuration, not null
      * @param scannerFactory
@@ -67,13 +68,13 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
             return script;
         }
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
-        
+
         // don't traverse delayed nodes
-        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, EXCEEDED_VALUE, EXCEEDED_TERM, EXCEEDED_OR)) {
+        if (instance.isAnyTypeOf(INDEX_HOLE, EVALUATION_ONLY, DROPPED, EXCEEDED_VALUE, EXCEEDED_TERM, EXCEEDED_OR)) {
             return RebuildingVisitor.copy(node);
         }
         // handle bounded range
@@ -89,19 +90,19 @@ public class BoundedRangeIndexExpansionVisitor extends BaseIndexExpansionVisitor
                 }
             }
         }
-        
+
         return super.visit(node, data);
     }
-    
+
     protected IndexLookup createLookup(LiteralRange<?> range) {
         return ShardIndexQueryTableStaticMethods.expandRange(config, scannerFactory, range, executor);
     }
-    
+
     @Override
     protected void rebuildFutureJexlNode(FutureJexlNode futureJexlNode) {
         JexlNode currentNode = futureJexlNode.getOrigNode();
         IndexLookupMap fieldsToTerms = futureJexlNode.getLookup().lookup();
-        
+
         futureJexlNode.setRebuiltNode(JexlNodeFactory.createNodeTreeFromFieldsToValues(JexlNodeFactory.ContainerType.OR_NODE, false, currentNode, fieldsToTerms,
                         expandFields, expandValues, futureJexlNode.isKeepOriginalNode()));
     }

@@ -20,18 +20,18 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
     private Iterator<Map.Entry<Key,Value>> iterator;
     private int size = -1;
     private static final Range ALL = new Range();
-    
+
     public RFileKeyInputStream(InputStream inputStream, long length) throws IOException {
         this.inputStream = inputStream;
         this.length = length;
     }
-    
+
     public RFileKeyInputStream(InputStream inputStream, long length, Key start, Key end) throws IOException {
         this(inputStream, length);
         this.start = start;
         this.end = end;
     }
-    
+
     private Iterator<Map.Entry<Key,Value>> iterator() {
         if (iterator == null) {
             Range r = ALL;
@@ -43,7 +43,7 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
         }
         return iterator;
     }
-    
+
     @Override
     public Key readObject() throws IOException {
         if (iterator().hasNext()) {
@@ -56,7 +56,7 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
         }
         return null;
     }
-    
+
     @Override
     public int readSize() throws IOException {
         if (size < 0) {
@@ -69,7 +69,7 @@ public class RFileKeyInputStream implements FileSortedSet.SortedSetInputStream<K
         }
         return size;
     }
-    
+
     @Override
     public void close() {
         if (reader != null) {

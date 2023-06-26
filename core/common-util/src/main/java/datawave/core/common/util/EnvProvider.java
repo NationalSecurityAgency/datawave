@@ -5,16 +5,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class EnvProvider {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(EnvProvider.class);
-    
+
     private static final String ENV_PREFIX = "env:";
-    
+
     private EnvProvider() {}
-    
+
     /**
      * Resolves a property with a <code>'env:'</code> prefix, or returns the original value
-     * 
+     *
      * @param property
      *            the property value
      * @return the property value

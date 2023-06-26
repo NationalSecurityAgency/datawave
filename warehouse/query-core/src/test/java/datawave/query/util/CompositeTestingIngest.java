@@ -29,24 +29,24 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class CompositeTestingIngest {
-    
+
     public enum WhatKindaRange {
         SHARD, DOCUMENT;
     }
-    
+
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
     private static final Type<?> ipAddressType = new IpAddressType();
     private static final Type<?> numberType = new NumberType();
     private static final Type<?> dateType = new DateType();
     private static final Type<?> ucType = new UcType();
-    
+
     protected static final String datatype = "test";
     protected static final String date = "20130101";
     protected static final String shard = date + "_0";
     protected static final ColumnVisibility columnVisibility = new ColumnVisibility("ALL");
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
-    
+
     protected static String normalizeColVal(Map.Entry<String,String> colVal) throws Exception {
         if ("FROM_ADDRESS".equals(colVal.getKey()) || "TO_ADDRESS".equals(colVal.getKey())) {
             return ipAddressType.normalize(colVal.getValue());
@@ -54,7 +54,7 @@ public class CompositeTestingIngest {
             return lcNoDiacriticsType.normalize(colVal.getValue());
         }
     }
-    
+
     protected static String normalizerForColumn(String column) {
         if ("AGE".equals(column) || "MAGIC".equals(column) || "ETA".equals(column)) {
             return numberType.getClass().getName();
@@ -64,48 +64,48 @@ public class CompositeTestingIngest {
             return lcNoDiacriticsType.getClass().getName();
         }
     }
-    
+
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
-        
+
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation mutation = null;
-        
+
         String oneUUID = UID.builder().newId("One".getBytes(), (Date) null).toString();
         String twoUUID = UID.builder().newId("Two".toString().getBytes(), (Date) null).toString();
         String threeUUID = UID.builder().newId("Three".toString().getBytes(), (Date) null).toString();
-        
+
         try {
             // write the shard table :
             bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
-            
+
             mutation.put(datatype + "\u0000" + oneUUID, "COLOR.0" + "\u0000" + "red", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + oneUUID, "COLOR.1" + "\u0000" + "blue", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + oneUUID, "MAKE.0" + "\u0000" + "Ford", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + oneUUID, "MAKE.1" + "\u0000" + "Chevy", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + oneUUID, "UUID.0" + "\u0000" + "One", columnVisibility, timeStamp, emptyValue);
-            
+
             mutation.put(datatype + "\u0000" + twoUUID, "COLOR.0" + "\u0000" + "pink", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + twoUUID, "COLOR.1" + "\u0000" + "green", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + twoUUID, "MAKE.0" + "\u0000" + "Toyota", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + twoUUID, "MAKE.1" + "\u0000" + "VW", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + twoUUID, "UUID.0" + "\u0000" + "Two", columnVisibility, timeStamp, emptyValue);
-            
+
             mutation.put(datatype + "\u0000" + threeUUID, "COLOR.0" + "\u0000" + "cyan", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + threeUUID, "COLOR.1" + "\u0000" + "purple", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + threeUUID, "MAKE.0" + "\u0000" + "Subaru", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + threeUUID, "MAKE.1" + "\u0000" + "Nissan", columnVisibility, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + threeUUID, "UUID.0" + "\u0000" + "CAPONE", columnVisibility, timeStamp, emptyValue);
-            
+
             bw.addMutation(mutation);
-            
+
         } finally {
             if (null != bw) {
                 bw.close();
             }
         }
-        
+
         try {
             // write shard index table:
             bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
@@ -133,7 +133,7 @@ public class CompositeTestingIngest {
             mutation.put("MAKE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(oneUUID));
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation(ucType.normalize("Ford" + CompositeIngest.DEFAULT_SEPARATOR + "red"));
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(oneUUID));
@@ -150,7 +150,7 @@ public class CompositeTestingIngest {
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(oneUUID));
             bw.addMutation(mutation);
-            
+
             // Two
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("Two"));
@@ -175,7 +175,7 @@ public class CompositeTestingIngest {
             mutation.put("MAKE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(twoUUID));
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation(ucType.normalize("Toyota" + CompositeIngest.DEFAULT_SEPARATOR + "pink"));
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(twoUUID));
@@ -192,7 +192,7 @@ public class CompositeTestingIngest {
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(twoUUID));
             bw.addMutation(mutation);
-            
+
             // Three
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("Three"));
@@ -217,7 +217,7 @@ public class CompositeTestingIngest {
             mutation.put("MAKE".toUpperCase(), shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(threeUUID));
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation(ucType.normalize("Subaru" + CompositeIngest.DEFAULT_SEPARATOR + "cyan"));
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(threeUUID));
@@ -234,19 +234,19 @@ public class CompositeTestingIngest {
             mutation.put("MAKE_COLOR", shard + "\u0000" + datatype, columnVisibility, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(threeUUID));
             bw.addMutation(mutation);
-            
+
         } finally {
             if (null != bw) {
                 bw.close();
             }
         }
-        
+
         try {
-            
+
             // write the field index table:
-            
+
             bw = client.createBatchWriter(TableName.SHARD, bwConfig);
-            
+
             mutation = new Mutation(shard);
             // corleones
             // uuid
@@ -257,7 +257,7 @@ public class CompositeTestingIngest {
             mutation.put("fi\u0000" + "COLOR", ucType.normalize("Blue") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE", ucType.normalize("Ford") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE", ucType.normalize("Chevy") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility, timeStamp, emptyValue);
-            
+
             // sopranos
             // uuid
             mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("Two") + "\u0000" + datatype + "\u0000" + twoUUID, columnVisibility, timeStamp,
@@ -278,7 +278,7 @@ public class CompositeTestingIngest {
                             emptyValue);
             mutation.put("fi\u0000" + "MAKE", ucType.normalize("Subaru") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
             mutation.put("fi\u0000" + "MAKE", ucType.normalize("Nissan") + "\u0000" + datatype + "\u0000" + threeUUID, columnVisibility, timeStamp, emptyValue);
-            
+
             mutation.put("fi\u0000" + "MAKE_COLOR",
                             ucType.normalize("Ford" + CompositeIngest.DEFAULT_SEPARATOR + "red") + "\u0000" + datatype + "\u0000" + oneUUID, columnVisibility,
                             timeStamp, emptyValue);
@@ -315,19 +315,19 @@ public class CompositeTestingIngest {
             mutation.put("fi\u0000" + "MAKE_COLOR",
                             ucType.normalize("Nissan" + CompositeIngest.DEFAULT_SEPARATOR + "purple") + "\u0000" + datatype + "\u0000" + threeUUID,
                             columnVisibility, timeStamp, emptyValue);
-            
+
             bw.addMutation(mutation);
-            
+
         } finally {
             if (null != bw) {
                 bw.close();
             }
         }
-        
+
         try {
             // write metadata table:
             bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
-            
+
             mutation = new Mutation("UUID");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
@@ -335,7 +335,7 @@ public class CompositeTestingIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + normalizerForColumn("UUID")), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("COLOR");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
@@ -343,7 +343,7 @@ public class CompositeTestingIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + UcType.class.getName()), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("MAKE");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(19L)));
@@ -351,22 +351,22 @@ public class CompositeTestingIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + UcType.class.getName()), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("MAKE_COLOR");
             mutation.put(ColumnFamilyConstants.COLF_I, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_CI, new Text(datatype + "\u0000" + "MAKE,COLOR"), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_CITD, new Text(datatype + "\u0000" + "20010101 000000.000"), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_CISEP, new Text(datatype + "\u0000" + CompositeIngest.DEFAULT_SEPARATOR), emptyValue);
             bw.addMutation(mutation);
-            
+
         } finally {
             if (null != bw) {
                 bw.close();
             }
         }
-        
+
     }
-    
+
     private static Value getValueForBuilderFor(String... in) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         for (String s : in) {
@@ -376,10 +376,10 @@ public class CompositeTestingIngest {
         builder.setIGNORE(false);
         return new Value(builder.build().toByteArray());
     }
-    
+
     /**
      * forces a shard range
-     * 
+     *
      * @return a value
      */
     private static Value getValueForNuthinAndYourHitsForFree() {
@@ -388,11 +388,11 @@ public class CompositeTestingIngest {
         builder.setIGNORE(true); // better be true!!!
         return new Value(builder.build().toByteArray());
     }
-    
+
     public static class PigLatinNormalizer extends AbstractNormalizer<String> {
-        
+
         final String vowels = "aeiou";
-        
+
         public String normalize(String fieldValue) {
             fieldValue = fieldValue.toLowerCase();
             if (!fieldValue.isEmpty()) {
@@ -405,7 +405,7 @@ public class CompositeTestingIngest {
             }
             return fieldValue;
         }
-        
+
         public String normalizeRegex(String fieldRegex) {
             if (null == fieldRegex) {
                 return null;
@@ -418,38 +418,38 @@ public class CompositeTestingIngest {
                 throw new IllegalArgumentException("Unable to parse regex " + fieldRegex, e);
             }
         }
-        
+
         @Override
         public String normalizeDelegateType(String delegateIn) {
             return normalize(delegateIn);
         }
-        
+
         @Override
         public String denormalize(String in) {
             return in;
         }
     }
-    
+
     public static class PigLatinType extends BaseType<String> {
-        
+
         private static final long serialVersionUID = -5102714749195917406L;
-        
+
         public PigLatinType() {
             super(new PigLatinNormalizer());
         }
-        
+
         public PigLatinType(String delegateString) {
             super(delegateString, new PigLatinNormalizer());
         }
-        
+
     }
-    
+
     public static class UcNormalizer extends AbstractNormalizer<String> {
-        
+
         public String normalize(String fieldValue) {
             return fieldValue.toUpperCase(Locale.ENGLISH);
         }
-        
+
         public String normalizeRegex(String fieldRegex) {
             if (null == fieldRegex) {
                 return null;
@@ -462,30 +462,30 @@ public class CompositeTestingIngest {
                 throw new IllegalArgumentException("Unable to parse regex " + fieldRegex, e);
             }
         }
-        
+
         @Override
         public String normalizeDelegateType(String delegateIn) {
             return normalize(delegateIn);
         }
-        
+
         @Override
         public String denormalize(String in) {
             return in;
         }
     }
-    
+
     public static class UcType extends BaseType<String> {
-        
+
         private static final long serialVersionUID = -5102714749195917406L;
-        
+
         public UcType() {
             super(new UcNormalizer());
         }
-        
+
         public UcType(String delegateString) {
             super(delegateString, new UcNormalizer());
         }
-        
+
     }
-    
+
 }

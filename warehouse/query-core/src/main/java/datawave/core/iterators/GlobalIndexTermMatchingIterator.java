@@ -17,30 +17,30 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilter implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    
+
     public static final String UNIQUE_TERMS_IN_FIELD = "term.unique";
     private static final Logger log = Logger.getLogger(GlobalIndexTermMatchingIterator.class);
-    
+
     private SortedKeyValueIterator<Key,Value> source;
-    
+
     private boolean foundMatch = false;
-    
+
     private Range scanRange;
     private Collection<ByteSequence> scanCFs;
     private boolean scanInclusive;
-    
+
     protected boolean uniqueTermsOnly = false;
-    
+
     public GlobalIndexTermMatchingIterator() throws IOException {}
-    
+
     public GlobalIndexTermMatchingIterator deepCopy(IteratorEnvironment env) {
         return new GlobalIndexTermMatchingIterator(this, env);
     }
-    
+
     private GlobalIndexTermMatchingIterator(GlobalIndexTermMatchingIterator other, IteratorEnvironment env) {
         setSource(other.getSource().deepCopy(env));
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
@@ -48,7 +48,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
             throw new IOException("Iterator options are not correct");
         setSource(source);
     }
-    
+
     @Override
     public Key getTopKey() {
         Key key = null;
@@ -57,7 +57,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
         }
         return key;
     }
-    
+
     @Override
     public Value getTopValue() {
         if (foundMatch) {
@@ -66,12 +66,12 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
             return null;
         }
     }
-    
+
     @Override
     public boolean hasTop() {
         return foundMatch && getSource().hasTop();
     }
-    
+
     @Override
     public void next() throws IOException {
         if (foundMatch && uniqueTermsOnly) {
@@ -80,14 +80,14 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
             getSource().next();
         findTopEntry();
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         this.scanRange = range;
         this.scanCFs = columnFamilies;
         this.scanInclusive = inclusive;
         getSource().seek(range, columnFamilies, inclusive);
-        
+
         // if we have been reseeked after being torn down, and we are only returning unique terms, then advance to the next unique row/cf
         if (!range.isStartKeyInclusive() && uniqueTermsOnly && getSource().hasTop()) {
             Key start = range.getStartKey();
@@ -97,10 +97,10 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
                 advance(start);
             }
         }
-        
+
         findTopEntry();
     }
-    
+
     private void findTopEntry() throws IOException {
         foundMatch = false;
         if (log.isTraceEnabled())
@@ -116,10 +116,10 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
             }
         }
     }
-    
+
     /**
      * Advances to the next top key
-     * 
+     *
      * @param top
      *            current key that we see
      * @throws IOException
@@ -149,15 +149,15 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
                 log.trace("not seeking to " + next);
         }
     }
-    
+
     protected void setSource(SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
     }
-    
+
     protected SortedKeyValueIterator<Key,Value> getSource() {
         return source;
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions io = super.describeOptions();
@@ -168,20 +168,20 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
         io.setDescription("GlobalIndexTermMatchingIterator uses a set of literals and regexs to match global index keys");
         return io;
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = super.validateOptions(options);
-        
+
         if (options.containsKey(UNIQUE_TERMS_IN_FIELD)) {
             /*
              * note that boolean will ONLY return true if the value in the map is 'true' or 'TRUE'. we don't need the above conditional, but we are being
              * defensive.
              */
             uniqueTermsOnly = new Boolean(options.get(UNIQUE_TERMS_IN_FIELD));
-            
+
         }
         return valid;
     }
-    
+
 }

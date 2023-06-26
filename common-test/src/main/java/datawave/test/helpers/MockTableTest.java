@@ -22,7 +22,7 @@ public abstract class MockTableTest {
     protected AccumuloClient client;
     protected BatchWriter writer;
     protected TableOperations tableOperations;
-    
+
     @Before
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
         InMemoryInstance i = new InMemoryInstance(this.getClass().toString());
@@ -33,21 +33,21 @@ public abstract class MockTableTest {
         writer = createBatchWriter();
         tableOperations = client.tableOperations();
     }
-    
+
     @After
     public void cleanup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         client.tableOperations().delete(TABLE_NAME);
     }
-    
+
     protected BatchWriter createBatchWriter() throws TableNotFoundException {
         return client.createBatchWriter(TABLE_NAME,
                         new BatchWriterConfig().setMaxMemory(10000L).setMaxLatency(1000L, TimeUnit.MILLISECONDS).setMaxWriteThreads(4));
     }
-    
+
     protected BatchWriter getWriter() {
         return this.writer;
     }
-    
+
     public BatchScanner createBatchScanner(Authorizations authorizations, int threads) throws TableNotFoundException {
         return client.createBatchScanner(TABLE_NAME, authorizations, threads);
     }

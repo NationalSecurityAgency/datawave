@@ -100,11 +100,10 @@ import java.util.List;
  */
 public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends AbstractColumnBasedHandler<KEYIN>
                 implements ExtendedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> {
-    
     private static final Logger log = Logger.getLogger(ErrorShardedDataTypeHandler.class);
-    
+
     public static final String ERROR_PROP_PREFIX = "error.";
-    
+
     public static final String JOB_NAME_FIELD = "JOB_NAME";
     public static final String JOB_ID_FIELD = "JOB_ID";
     public static final String UUID_FIELD = "EVENT_UUID";
@@ -112,30 +111,30 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
     public static final String STACK_TRACE_FIELD = "STACKTRACE";
     public static final String EVENT_CONTENT_FIELD = "EVENT";
     public static final String PROCESSED_COUNT = ErrorDataTypeHandler.PROCESSED_COUNT;
-    
+
     protected MarkingsHelper markingsHelper;
-    
+
     private ErrorShardedIngestHelper errorHelper = null;
-    
+
     private byte[] defaultVisibility = null;
-    
+
     private Configuration conf = null;
-    
+
     @Override
     public void setup(TaskAttemptContext context) {
         IngestConfiguration ingestConfiguration = IngestConfigurationFactory.getIngestConfiguration();
         markingsHelper = ingestConfiguration.getMarkingsHelper(context.getConfiguration(), TypeRegistry.getType(TypeRegistry.ERROR_PREFIX));
-        
+
         super.setup(context);
-        
+
         this.errorHelper = (ErrorShardedIngestHelper) (TypeRegistry.getType("error").getIngestHelper(context.getConfiguration()));
         this.errorHelper.setDelegateHelper(this.helper);
         this.helper = this.errorHelper;
-        
+
         this.conf = context.getConfiguration();
-        
+
         this.setupDictionaryCache(conf.getInt(ERROR_PROP_PREFIX + SHARD_DICTIONARY_CACHE_ENTRIES, ShardedDataTypeHandler.SHARD_DINDEX_CACHE_DEFAULT_SIZE));
-        
+
         setShardTableName(new Text(ConfigurationHelper.isNull(conf, ERROR_PROP_PREFIX + SHARD_TNAME, String.class)));
         String tableName = conf.get(ERROR_PROP_PREFIX + SHARD_GIDX_TNAME);
         setShardIndexTableName(tableName == null ? null : new Text(tableName));
@@ -152,16 +151,16 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         }
         tableName = conf.get(ERROR_PROP_PREFIX + SHARD_DINDX_NAME);
         setShardDictionaryIndexTableName(tableName == null ? null : new Text(tableName));
-        
+
         try {
             defaultVisibility = flatten(markingFunctions.translateToColumnVisibility(markingsHelper.getDefaultMarkings()));
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to parse security marking configuration", e);
         }
-        
+
         log.info("ShardedErrorDataTypeHandler configured.");
     }
-    
+
     @Override
     public String[] getTableNames(Configuration conf) {
         List<String> tables = new ArrayList<>();
@@ -182,10 +181,10 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         if (table != null) {
             tables.add(table);
         }
-        
+
         return tables.toArray(new String[tables.size()]);
     }
-    
+
     @Override
     public int[] getTableLoaderPriorities(Configuration conf) {
         int[] priorities = new int[5];
@@ -203,39 +202,39 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         if (conf.get(ERROR_PROP_PREFIX + SHARD_DINDX_NAME) != null) {
             priorities[i++] = ConfigurationHelper.isNull(conf, ERROR_PROP_PREFIX + SHARD_DINDX_LPRIORITY, Integer.class);
         }
-        
+
         if (i != priorities.length) {
             return Arrays.copyOf(priorities, i);
         } else {
             return priorities;
         }
     }
-    
+
     @Override
     public long process(KEYIN key, RawRecordContainer record, Multimap<String,NormalizedContentInterface> eventFields,
                     TaskInputOutputContext<KEYIN,? extends RawRecordContainer,KEYOUT,VALUEOUT> context, ContextWriter<KEYOUT,VALUEOUT> contextWriter)
                     throws IOException, InterruptedException {
-        
+
         // write out the event into a value before we muck with it
         DataOutputBuffer buffer = new DataOutputBuffer();
         record.write(buffer);
         Value value = new Value(buffer.getData(), 0, buffer.getLength());
         buffer.reset();
-        
+
         // make a copy of the event to avoid side effects
         record = record.copy();
-        
+
         // set the event date to now to enable keeping track of when this error occurred (determines date for shard)
         record.setDate(System.currentTimeMillis());
-        
+
         // TODO: May want to check validity of record's security markings here and set defaults if necessary
-        
+
         // add the error fields to our list of fields
         Multimap<String,NormalizedContentInterface> allFields = HashMultimap.create();
         if (eventFields != null) {
             for (NormalizedContentInterface n : eventFields.values()) {
                 /* TODO: May want to check validity of the field's security markings here and set defaults if necessary */
-                
+
                 // if we had an error, then add a field for that
                 if (n.getError() != null) {
                     String fieldName = n.getEventFieldName() + '_' + STACK_TRACE_FIELD;
@@ -256,17 +255,17 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
                 allFields.put(UUID_FIELD, new NormalizedFieldAndValue(UUID_FIELD, uuid));
             }
         }
-        
+
         // processed count if any
         if (record.getAuxProperty(PROCESSED_COUNT) != null) {
             allFields.put(PROCESSED_COUNT, new NormalizedFieldAndValue(PROCESSED_COUNT, record.getAuxProperty(PROCESSED_COUNT)));
         }
-        
+
         // event errors
         for (String error : record.getErrors()) {
             allFields.put(ERROR_FIELD, new NormalizedFieldAndValue(ERROR_FIELD, error));
         }
-        
+
         // event runtime exception if any
         if (record.getAuxData() instanceof Exception) {
             allFields.put(ERROR_FIELD, new NormalizedFieldAndValue(ERROR_FIELD, RawDataErrorNames.RUNTIME_EXCEPTION));
@@ -274,52 +273,52 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
             allFields.put(STACK_TRACE_FIELD, new NormalizedFieldAndValue(STACK_TRACE_FIELD, new String(buffer.getData(), 0, buffer.getLength())));
             buffer.reset();
         }
-        
+
         // normalize the new set of fields.
         allFields = errorHelper.normalizeMap(allFields);
-        
+
         // add metadata for the new fields
         getMetadata().addEvent(errorHelper, record, allFields);
-        
+
         // include the original fields
         if (eventFields != null) {
             allFields.putAll(eventFields);
         }
-        
+
         if (record instanceof Configurable) {
             ((Configurable) record).setConf(conf);
         }
-        
+
         // now that we have captured the fields, revalidate the event
         try {
             this.errorHelper.getEmbeddedHelper().getPolicyEnforcer().validate(record);
         } catch (Throwable e) {
             log.error("Failed to re-validate", e);
         }
-        
+
         // ensure we get a uid with a time element
         record.setId(UID.builder().newId(record.getRawData(), new Date(record.getDate())));
-        
+
         // empty the errors to enable the super.processBulk to process normally.
         record.clearErrors();
-        
+
         // now get the sharded event keys
         Multimap<BulkIngestKey,Value> shardedKeys = super.processBulk(key, record, allFields, new ContextWrappedStatusReporter(context));
         contextWriter.write(shardedKeys, context);
-        
+
         // ShardId 'd' DataType\0UID\0Name for document content event using Event.Writable
         String colq = record.getDataType().outputName() + '\0' + record.getId() + '\0' + EVENT_CONTENT_FIELD;
         Key k = createKey(getShardId(record), new Text(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY), new Text(colq), getVisibility(record, null),
                         record.getDate(), this.helper.getDeleteMode());
         BulkIngestKey ebKey = new BulkIngestKey(getShardTableName(), k);
         contextWriter.write(ebKey, value, context);
-        
+
         return allFields.size();
     }
-    
+
     /**
      * Get the stack trace for a throwable
-     * 
+     *
      * @param buffer
      *            the writing buffer
      * @param e
@@ -330,7 +329,7 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         e.printStackTrace(stream); // Prints to DataOutputBuffer
         stream.flush();
     }
-    
+
     /**
      * A helper routine to determine the visibility for a field.
      *
@@ -357,39 +356,39 @@ public class ErrorShardedDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> extends Abstract
         }
         return visibility;
     }
-    
+
     @Override
     public Multimap<BulkIngestKey,Value> processBulk(KEYIN key, RawRecordContainer event, Multimap<String,NormalizedContentInterface> eventFields,
                     StatusReporter reporter) {
         throw new UnsupportedOperationException("processBulk is not supported, please use process");
     }
-    
+
     @Override
     public IngestHelperInterface getHelper(Type datatype) {
         IngestHelperInterface helper = datatype.getIngestHelper(conf);
         this.errorHelper.setDelegateHelper(helper);
         return this.errorHelper;
     }
-    
+
     @Override
     public void close(TaskAttemptContext context) {
         // does nothing
     }
-    
+
     public byte[] getDefaultVisibility() {
         return defaultVisibility;
     }
-    
+
     @Override
     protected boolean hasIndexTerm(String fieldName) {
         // we want field index terms for everything, so return true
         return true;
     }
-    
+
     @Override
     protected boolean hasReverseIndexTerm(String fieldName) {
         // we want field index terms for everything, so return true
         return true;
     }
-    
+
 }

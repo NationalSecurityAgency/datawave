@@ -39,7 +39,7 @@ public class JAXBQueryExample {
     private static final String CREATE_PATH = "{0}/DataWave/Query/{1}/create";
     private static final String NEXT_PATH = "{0}/DataWave/Query/{1}/next";
     private static final String CLOSE_PATH = "{0}/DataWave/Query/{1}/close";
-    
+
     public static void main(String[] args) throws Exception {
         Options options = new Options();
         JCommander jCommander = new JCommander(options);
@@ -54,33 +54,33 @@ public class JAXBQueryExample {
             jCommander.usage();
             System.exit(-1);
         }
-        
+
         if (args.length < 1) {
             System.err.println("usage: " + JacksonQueryExample.class.getName() + " baseURI [pagesize]");
             System.exit(-1);
         }
-        
+
         String baseURI = options.baseURI;
         if (baseURI.endsWith("/"))
             baseURI = baseURI.substring(0, baseURI.length() - 1);
-        
+
         KeyStore ts = KeyStore.getInstance(System.getProperty("javax.net.ssl.trustStoreType"));
         ts.load(new FileInputStream(System.getProperty("javax.net.ssl.trustStore")), System.getProperty("javax.net.ssl.trustStorePassword").toCharArray());
-        
+
         SSLContext sslContext = SSLContextBuilder.create().setProtocol("TLSv1.2").setKeyStoreType(System.getProperty("javax.net.ssl.keyStoreType"))
                         .loadKeyMaterial(new File(System.getProperty("javax.net.ssl.keyStore")),
                                         System.getProperty("javax.net.ssl.keyStorePassword").toCharArray(),
                                         System.getProperty("javax.net.ssl.keyStorePassword").toCharArray())
                         .loadTrustMaterial(ts, new TrustSelfSignedStrategy()).build();
-        
+
         Class<? extends BaseQueryResponse> responseClass = Class.forName(options.responseClass).asSubclass(BaseQueryResponse.class);
-        
+
         // Set up the JAXB context--we have to tell it about the root of the class hierarchies we want to deserialize
         JAXBContext jaxbContext = JAXBContext.newInstance(GenericResponse.class, VoidResponse.class, responseClass);
         Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-        
+
         CloseableHttpClient client = HttpClients.custom().setSSLContext(sslContext).setSSLHostnameVerifier(NoopHostnameVerifier.INSTANCE).build();
-        
+
         // Create the query
         HttpPost create = new HttpPost(MessageFormat.format(CREATE_PATH, baseURI, options.queryLogic));
         List<NameValuePair> formparams = new ArrayList<>();
@@ -96,7 +96,7 @@ public class JAXBQueryExample {
         }
         UrlEncodedFormEntity entity = new UrlEncodedFormEntity(formparams);
         create.setEntity(entity);
-        
+
         HttpResponse response = client.execute(create);
         int responseCode = response.getStatusLine().getStatusCode();
         if (responseCode != HttpStatus.SC_OK) {
@@ -105,12 +105,12 @@ public class JAXBQueryExample {
             System.err.println();
             System.exit(-1);
         }
-        
+
         @SuppressWarnings("unchecked")
         GenericResponse<String> createResponse = (GenericResponse<String>) unmarshaller.unmarshal(response.getEntity().getContent());
         String queryId = createResponse.getResult();
         System.out.println("Query ID: " + queryId);
-        
+
         // Iterate over results
         HttpGet next = new HttpGet(MessageFormat.format(NEXT_PATH, baseURI, queryId));
         do {
@@ -136,7 +136,7 @@ public class JAXBQueryExample {
                 }
             }
         } while (true);
-        
+
         // Close the query to release server resources.
         HttpPut close = new HttpPut(MessageFormat.format(CLOSE_PATH, baseURI, queryId));
         response = client.execute(close);

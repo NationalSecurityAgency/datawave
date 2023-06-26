@@ -18,20 +18,20 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 
 public class JexlControlledQueryParser implements QueryParser, ControlledQueryParser {
-    
+
     private Map<String,Set<String>> includedValues = new HashMap<>();
     private Map<String,Set<String>> excludedValues = new HashMap<>();
     private Set<String> allowedFields = new HashSet<>();
-    
+
     public JexlControlledQueryParser() {
         this.allowedFields.add("_ANYFIELD_");
     }
-    
+
     @Override
     public QueryNode parse(String query) throws ParseException {
-        
+
         checkIfQueryAllowed(query);
-        
+
         StringBuilder sb = new StringBuilder();
         if (!includedValues.isEmpty()) {
             sb.append("(");
@@ -50,7 +50,7 @@ public class JexlControlledQueryParser implements QueryParser, ControlledQueryPa
         if (!includedValues.isEmpty()) {
             sb.append(")");
         }
-        
+
         if (!excludedValues.isEmpty()) {
             if (!includedValues.isEmpty()) {
                 sb.append(" && ");
@@ -71,25 +71,25 @@ public class JexlControlledQueryParser implements QueryParser, ControlledQueryPa
         if (!excludedValues.isEmpty()) {
             sb.append(")");
         }
-        
+
         if (sb.length() > 0) {
             query = "(" + query + ")" + " && (" + sb + ")";
         }
-        
+
         QueryNode node = new ServerHeadNode();
         node.setOriginalQuery(query);
         return node;
     }
-    
+
     private void checkIfQueryAllowed(String query) throws ParseException {
-        
+
         JexlNode node;
         try {
             node = JexlASTHelper.parseJexlQuery(query);
         } catch (Throwable e) {
             throw new ParseException(e.getMessage());
         }
-        
+
         Set<String> fields = new TreeSet<>();
         List<ASTIdentifier> idList = JexlASTHelper.getIdentifiers(node);
         for (ASTIdentifier id : idList) {
@@ -108,32 +108,32 @@ public class JexlControlledQueryParser implements QueryParser, ControlledQueryPa
             throw new ParseException("Unallowed field(s) '" + fields + "' for this type of query");
         }
     }
-    
+
     @Override
     public void setExcludedValues(Map<String,Set<String>> excludedValues) {
         this.excludedValues = excludedValues;
     }
-    
+
     @Override
     public Map<String,Set<String>> getExcludedValues() {
         return this.excludedValues;
     }
-    
+
     @Override
     public void setIncludedValues(Map<String,Set<String>> includedValues) {
         this.includedValues = includedValues;
     }
-    
+
     @Override
     public Map<String,Set<String>> getIncludedValues() {
         return this.includedValues;
     }
-    
+
     @Override
     public Set<String> getAllowedFields() {
         return allowedFields;
     }
-    
+
     @Override
     public void setAllowedFields(Set<String> allowedFields) {
         this.allowedFields = allowedFields;

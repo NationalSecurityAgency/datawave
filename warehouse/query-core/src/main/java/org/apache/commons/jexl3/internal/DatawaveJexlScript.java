@@ -12,7 +12,7 @@ import java.util.Set;
  * Lifted from {@link Script}. Modified to flatten the resulting {@link ASTJexlScript}.
  */
 public class DatawaveJexlScript extends Script implements JexlExpression {
-    
+
     /** The engine for this expression. */
     protected Engine jexl;
     /**
@@ -23,7 +23,7 @@ public class DatawaveJexlScript extends Script implements JexlExpression {
      * The resulting AST we can interpret.
      */
     protected ASTJexlScript script;
-    
+
     /**
      * Do not let this be generally instantiated with a 'new'.
      *
@@ -40,11 +40,11 @@ public class DatawaveJexlScript extends Script implements JexlExpression {
         expression = expr;
         script = TreeFlatteningRebuildingVisitor.flatten(ref);
     }
-    
+
     public static DatawaveJexlScript create(Script expression) {
         return new DatawaveJexlScript(expression.jexl, expression.source, expression.script);
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -55,7 +55,7 @@ public class DatawaveJexlScript extends Script implements JexlExpression {
         Interpreter interpreter = jexl.createInterpreter(context, script.createFrame((Object[]) null), null);
         return interpreter.interpret(script.jjtGetChild(0));
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -64,17 +64,17 @@ public class DatawaveJexlScript extends Script implements JexlExpression {
         boolean d = debug.debug(script);
         return debug.data(script) + (d ? " /*" + debug.start() + ":" + debug.end() + "*/" : "/*?:?*/ ");
     }
-    
+
     /**
      * {@inheritDoc}
      */
     public String getExpression() {
         return expression;
     }
-    
+
     /**
      * Provide a string representation of this expression.
-     * 
+     *
      * @return the expression or blank if it's null.
      */
     @Override
@@ -82,14 +82,14 @@ public class DatawaveJexlScript extends Script implements JexlExpression {
         String expr = getExpression();
         return expr == null ? "" : expr;
     }
-    
+
     /**
      * {@inheritDoc}
      */
     public String getText() {
         return toString();
     }
-    
+
     /**
      * {@inheritDoc}
      */
@@ -97,70 +97,70 @@ public class DatawaveJexlScript extends Script implements JexlExpression {
         Interpreter interpreter = jexl.createInterpreter(context, script.createFrame((Object[]) null), null);
         return interpreter.interpret(script);
     }
-    
+
     /**
      * {@inheritDoc}
-     * 
+     *
      * @since 2.1
      */
     public Object execute(JexlContext context, Object... args) {
         Interpreter interpreter = jexl.createInterpreter(context, script.createFrame(args), null);
         return interpreter.interpret(script);
     }
-    
+
     /**
      * {@inheritDoc}
-     * 
+     *
      * @since 2.1
      */
     public String[] getParameters() {
         return script.getParameters();
     }
-    
+
     /**
      * {@inheritDoc}
-     * 
+     *
      * @since 2.1
      */
     public String[] getLocalVariables() {
         return script.getLocalVariables();
     }
-    
+
     /**
      * {@inheritDoc}
-     * 
+     *
      * @since 2.1
      */
     public Set<List<String>> getVariables() {
         return jexl.getVariables(script);
     }
-    
+
     /**
      * {@inheritDoc}
-     * 
+     *
      * @since 2.1
      */
     public Callable callable(JexlContext context) {
         return callable(context, (Object[]) null);
     }
-    
+
     /**
      * {@inheritDoc}
-     * 
+     *
      * @since 2.1
      */
     public Callable callable(JexlContext context, Object... args) {
         final Interpreter interpreter = jexl.createInterpreter(context, script.createFrame(args), null);
-        
+
         return new Callable(interpreter) {
-            
             public Object call() throws Exception {
                 if (result == interpreter) {
                     result = interpreter.interpret(script);
                 }
                 return result;
             }
-            
+
         };
     }
+
 }

@@ -16,13 +16,13 @@ public final class TokenTtlTrie {
     protected static final short DELIMITER_CHAR_CLASS = -1;
     protected static final short UNRECOGNIZED_CHAR_CLASS = -2;
     protected static final int REJECT_TOKEN = -1;
-    
+
     protected final int charClassCount;
     protected final short[] charClasses;
     protected final int[] transitionTable;
     protected final int[] statePriorities;
     protected final long[] stateTTLs;
-    
+
     TokenTtlTrie(int charClassCount, short[] charClasses, int[] transitionTable, int[] statePriorities, long[] stateTTLs) {
         this.charClassCount = charClassCount;
         this.charClasses = charClasses;
@@ -30,11 +30,11 @@ public final class TokenTtlTrie {
         this.statePriorities = statePriorities;
         this.stateTTLs = stateTTLs;
     }
-    
+
     public int size() {
         return stateTTLs.length;
     }
-    
+
     /**
      * Scan the specified string for tokens, returning the ttl of the best priority token found, or null if no tokens were found.
      */
@@ -77,7 +77,7 @@ public final class TokenTtlTrie {
         }
         return bestPriority == Integer.MAX_VALUE ? null : (long) ttl;
     }
-    
+
     /**
      * Trie construction.
      */
@@ -88,26 +88,26 @@ public final class TokenTtlTrie {
         private final List<Integer> statePriorityList = new ArrayList<>();
         private final Set<Byte> delimiters = new HashSet<>();
         private boolean isMerge;
-        
+
         public enum MERGE_MODE {
             ON, OFF
         };
-        
+
         Builder() {
             this(MERGE_MODE.OFF);
         }
-        
+
         Builder(MERGE_MODE mergeMode) {
             transitionMaps.add(new HashMap<>());
             stateTtlList.add(null);
             statePriorityList.add(null);
             this.isMerge = mergeMode.equals(MERGE_MODE.ON);
         }
-        
+
         public int size() {
             return entryCount;
         }
-        
+
         /**
          * Set the delimiter set.
          */
@@ -118,7 +118,7 @@ public final class TokenTtlTrie {
             }
             return this;
         }
-        
+
         /**
          * Add a token to the TtlTrie under construction, along with the TTL value the specified token should be associated with.
          */
@@ -151,10 +151,10 @@ public final class TokenTtlTrie {
             }
             return this;
         }
-        
+
         public TokenTtlTrie build() {
             long startTime = System.currentTimeMillis();
-            
+
             // To compress the transition table width, only create transition table entries for characters which are
             // actually relevant during parsing.
             short[] charClasses = new short[256];
@@ -171,25 +171,25 @@ public final class TokenTtlTrie {
                 charClasses[0xff & (int) b] = (short) i;
             }
             int charClassCount = classReps.size();
-            
+
             for (byte b : delimiters) {
                 if (charClasses[0xff & (int) b] != TokenTtlTrie.UNRECOGNIZED_CHAR_CLASS) {
                     throw new IllegalArgumentException(String.format("Some token contains delimiter %c", (char) b));
                 }
                 charClasses[0xff & (int) b] = TokenTtlTrie.DELIMITER_CHAR_CLASS;
             }
-            
+
             // Next build the raw transition table. For each state and each character class, the transition table
             // holds the index of the next state.
             int[] transitionTable = new int[transitionMaps.size() * charClassCount];
             int[] statePriorities = new int[transitionMaps.size()];
             long[] stateTtls = new long[transitionMaps.size()];
-            
+
             for (int state = 0; state < transitionMaps.size(); state++) {
                 Map<Byte,Integer> transMap = transitionMaps.get(state);
                 stateTtls[state] = stateTtlList.get(state) == null ? Long.MAX_VALUE : stateTtlList.get(state);
                 statePriorities[state] = statePriorityList.get(state) == null ? Integer.MAX_VALUE : statePriorityList.get(state);
-                
+
                 for (int charClass = 0; charClass < classReps.size(); charClass++) {
                     Integer nextState = transMap.get(classReps.get(charClass));
                     if (nextState == null) {
@@ -199,12 +199,12 @@ public final class TokenTtlTrie {
                     }
                 }
             }
-            
+
             if (log.isTraceEnabled()) {
                 log.trace(String.format("Constructed trie on %d entries with %d states and %d character classes in %dms", this.entryCount,
                                 transitionMaps.size(), charClassCount, System.currentTimeMillis() - startTime));
             }
-            
+
             return new TokenTtlTrie(charClassCount, charClasses, transitionTable, statePriorities, stateTtls);
         }
     }

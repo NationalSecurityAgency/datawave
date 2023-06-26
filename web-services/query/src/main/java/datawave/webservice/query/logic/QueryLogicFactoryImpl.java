@@ -22,34 +22,33 @@ import java.util.Set;
 // TODO: JWO: Remove this once we finally move away from the WildFly Webservice
 @Deprecated
 public class QueryLogicFactoryImpl implements QueryLogicFactory {
-    
+
     /**
      * Configuration for parameters that are for all query logic types
      */
     @Inject
     @SpringBean(refreshable = true)
     private QueryLogicFactoryConfiguration queryLogicFactoryConfiguration;
-    
+
     @Inject
     private ApplicationContext applicationContext;
-    
+
     @Inject
     @ServerPrincipal
     private DatawavePrincipal serverPrincipal;
-    
+
     @Override
     public QueryLogic<?> getQueryLogic(String name, ProxiedUserDetails currentUser) throws IllegalArgumentException, CloneNotSupportedException {
         return getQueryLogic(name, currentUser, true);
     }
-    
+
     @Override
     public QueryLogic<?> getQueryLogic(String name) throws IllegalArgumentException, CloneNotSupportedException {
         return getQueryLogic(name, null, false);
     }
-    
+
     public QueryLogic<?> getQueryLogic(String queryLogic, ProxiedUserDetails currentUser, boolean checkRoles)
                     throws IllegalArgumentException, CloneNotSupportedException {
-        
         String beanName = queryLogic;
         if (queryLogicFactoryConfiguration.hasLogicMap()) {
             beanName = queryLogicFactoryConfiguration.getLogicMap().get(queryLogic);
@@ -57,7 +56,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         if (beanName == null) {
             throw new IllegalArgumentException("Logic name '" + queryLogic + "' is not configured for this system");
         }
-        
+
         QueryLogic<?> logic;
         try {
             logic = (QueryLogic<?>) applicationContext.getBean(beanName);
@@ -69,12 +68,12 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
                 throw new IllegalArgumentException("Logic name '" + queryLogic + "' which maps to '" + beanName + "' does not exist in the configuration");
             }
         }
-        
+
         Set<String> userRoles = new HashSet<>(currentUser.getPrimaryUser().getRoles());
         if (checkRoles && !logic.canRunQuery(userRoles)) {
             throw new UnauthorizedException(new IllegalAccessException("User does not have required role(s): " + logic.getRequiredRoles()), new VoidResponse());
         }
-        
+
         logic.setLogicName(queryLogic);
         if (logic.getMaxPageSize() == 0) {
             logic.setMaxPageSize(queryLogicFactoryConfiguration.getMaxPageSize());
@@ -82,13 +81,13 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         if (logic.getPageByteTrigger() == 0) {
             logic.setPageByteTrigger(queryLogicFactoryConfiguration.getPageByteTrigger());
         }
-        
+
         logic.setCurrentUser(currentUser);
         logic.setServerUser(serverPrincipal);
-        
+
         return logic;
     }
-    
+
     @Override
     public List<QueryLogic<?>> getQueryLogicList() {
         Map<String,QueryLogic> logicMap = applicationContext.getBeansOfType(QueryLogic.class);
@@ -101,15 +100,15 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
             }
             logicMap = renamedLogicMap;
         }
-        
+
         List<QueryLogic<?>> logicList = new ArrayList<>();
-        
+
         for (Map.Entry<String,QueryLogic> entry : logicMap.entrySet()) {
             QueryLogic<?> logic = entry.getValue();
             logic.setLogicName(entry.getKey());
             logicList.add(logic);
         }
         return logicList;
-        
+
     }
 }

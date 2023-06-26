@@ -21,12 +21,12 @@ import java.util.regex.Pattern;
 public class RegexReplacementTransformRule implements NodeTransformRule {
     private final Pattern pattern;
     private final String replacement;
-    
+
     public RegexReplacementTransformRule(String pattern, String replacement) {
         this.pattern = Pattern.compile(pattern);
         this.replacement = replacement;
     }
-    
+
     @Override
     public JexlNode apply(JexlNode node, ShardQueryConfiguration config, MetadataHelper helper) {
         if (node instanceof ASTERNode || node instanceof ASTNRNode) {
@@ -44,7 +44,7 @@ public class RegexReplacementTransformRule implements NodeTransformRule {
         }
         return node;
     }
-    
+
     private String processPattern(String regex) {
         boolean changed = false;
         Matcher matcher = pattern.matcher(regex);

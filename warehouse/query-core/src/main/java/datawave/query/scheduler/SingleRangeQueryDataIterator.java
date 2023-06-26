@@ -12,11 +12,11 @@ import java.util.Queue;
 public class SingleRangeQueryDataIterator implements Iterator<QueryData> {
     private final Iterator<QueryData> delegate;
     private Queue<QueryData> pending = new LinkedList<QueryData>();
-    
+
     public SingleRangeQueryDataIterator(Iterator<QueryData> queries) {
         this.delegate = queries;
     }
-    
+
     /**
      * Returns {@code true} if the iteration has more elements. (In other words, returns {@code true} if {@link #next} would return an element rather than
      * throwing an exception.)
@@ -31,7 +31,7 @@ public class SingleRangeQueryDataIterator implements Iterator<QueryData> {
             return true;
         }
     }
-    
+
     /**
      * Returns the next element in the iteration.
      *

@@ -72,14 +72,14 @@ import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescri
  * </ul>
  */
 public class RewriteNullFunctionsVisitor extends BaseVisitor {
-    
+
     // used to rebuild flattened unions
     private boolean rebuiltMultiFieldedFunction = false;
-    
+
     private static final String IS_NOT_NULL = "isNotNull";
-    
+
     private RewriteNullFunctionsVisitor() {}
-    
+
     /**
      *
      * @param node
@@ -93,7 +93,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         node.jjtAccept(new RewriteNullFunctionsVisitor(), null);
         return (T) node;
     }
-    
+
     /**
      * Rewrite <code>filter:isNull</code> and <code>filter:isNotNull</code> functions to the more efficient <code>FIELD == null</code> or
      * <code>!(FIELD == null)</code>
@@ -106,18 +106,18 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
      */
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
-        
+
         FunctionJexlNodeVisitor visitor = new FunctionJexlNodeVisitor();
         node.jjtAccept(visitor, null);
-        
+
         if (visitor.namespace().equals(EVAL_PHASE_FUNCTION_NAMESPACE) && (visitor.name().equals(IS_NULL) || visitor.name().equals(IS_NOT_NULL))) {
             JexlNode rewritten = rewriteFilterFunction(visitor);
             JexlNodes.replaceChild(node.jjtGetParent(), node, rewritten);
         }
-        
+
         return data;
     }
-    
+
     /**
      * Given the output of a {@link FunctionJexlNodeVisitor}, produce a rewritten filter function
      *
@@ -126,11 +126,11 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
      * @return the rewritten function
      */
     private JexlNode rewriteFilterFunction(FunctionJexlNodeVisitor visitor) {
-        
+
         JexlNode args = visitor.args().get(0);
         List<ASTIdentifier> identifiers = JexlASTHelper.getIdentifiers(args);
         List<JexlNode> children = new ArrayList<>(identifiers.size());
-        
+
         for (ASTIdentifier identifier : identifiers) {
             if (visitor.name().equals(IS_NOT_NULL)) {
                 children.add(buildIsNotNullNode(identifier));
@@ -138,7 +138,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
                 children.add(buildIsNullNode(identifier));
             }
         }
-        
+
         switch (children.size()) {
             case 0:
                 return null;
@@ -155,7 +155,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
                 }
         }
     }
-    
+
     /**
      * Builds a rewritten "isNotNull" function for the provided identifier
      *
@@ -166,7 +166,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     private JexlNode buildIsNotNullNode(ASTIdentifier identifier) {
         return JexlNodes.negate(buildIsNullNode(identifier));
     }
-    
+
     /**
      * Builds a rewritten "isNull" function
      *
@@ -178,7 +178,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         ASTNullLiteral nullLiteral = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
         return JexlNodeFactory.buildNode(new ASTEQNode(ParserTreeConstants.JJTEQNODE), identifier.getName(), nullLiteral);
     }
-    
+
     /**
      * This is required to produce a flattened query tree
      *
@@ -192,7 +192,7 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     public Object visit(ASTAndNode node, Object data) {
         return visitJunction(node, data);
     }
-    
+
     /**
      * This is required to produce a flattened query tree
      *
@@ -206,18 +206,18 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
     public Object visit(ASTOrNode node, Object data) {
         return visitJunction(node, data);
     }
-    
+
     private Object visitJunction(JexlNode node, Object data) {
         node.childrenAccept(this, data);
-        
+
         if (rebuiltMultiFieldedFunction) {
             flattenJunction(node);
             rebuiltMultiFieldedFunction = false;
         }
-        
+
         return data;
     }
-    
+
     private void flattenJunction(JexlNode node) {
         boolean junctionType = node instanceof ASTAndNode;
         List<JexlNode> children = new ArrayList<>();
@@ -240,228 +240,228 @@ public class RewriteNullFunctionsVisitor extends BaseVisitor {
         }
         JexlNodes.setChildren(node, children.toArray(new JexlNode[0]));
     }
-    
+
     // +-----------------------------+
     // | Descend through these nodes |
     // +-----------------------------+
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         node.childrenAccept(this, data);
         return data;
     }
-    
+
     // +-----------------------------+
     // | Short circuit at leaf nodes |
     // +-----------------------------+
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTAddNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSubNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
         return data;
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return data;

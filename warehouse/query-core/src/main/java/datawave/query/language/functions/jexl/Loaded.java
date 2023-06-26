@@ -16,11 +16,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 */
 public class Loaded extends JexlQueryFunction {
     private static final Set<String> COMMANDS = Sets.newHashSet("after", "before", "between");
-    
+
     public Loaded() {
         super("loaded", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 1) {
@@ -50,7 +50,7 @@ public class Loaded extends JexlQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         Iterator<String> param = getParameterList().iterator();
@@ -72,10 +72,10 @@ public class Loaded extends JexlQueryFunction {
         f.append(')');
         return f.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Loaded();
     }
-    
+
 }

@@ -45,49 +45,49 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(EasyMockRunner.class)
 public class ExcerptTransformTest extends EasyMockSupport {
-    
+
     @Mock
     private TermFrequencyExcerptIterator iterator;
-    
+
     @Mock
     private IteratorEnvironment env;
-    
+
     @Mock
     private SortedKeyValueIterator<Key,Value> source;
-    
+
     private PhraseIndexes phraseIndexes;
     private ExcerptFields excerptFields;
-    
+
     private Document document;
     private ExcerptTransform excerptTransform;
-    
+
     private static final String EVENT_ID = "shard\u0000dt\u0000uid";
-    
+
     @Before
     public void setUp() throws Exception {
         phraseIndexes = new PhraseIndexes();
         excerptFields = new ExcerptFields();
     }
-    
+
     @After
     public void tearDown() throws Exception {
         document = null;
         excerptTransform = null;
     }
-    
+
     /**
      * Verify that a null entry is returned for a null input.
      */
     @Test
     public void testNullDocumentEntry() {
         initTransform();
-        
+
         replayAll();
-        
+
         assertNull(excerptTransform.apply(null));
         verifyAll();
     }
-    
+
     /**
      * Verify that excerpts are not added for documents that are not marked as to-keep.
      */
@@ -96,13 +96,13 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenDocument(new Document(new Key(), false));
         initTransform();
         replayAll();
-        
+
         applyTransform();
-        
+
         assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
         verifyAll();
     }
-    
+
     /**
      * Verify that excerpts are not added for documents that don't have PHRASE_INDEXES_ATTRIBUTE.
      */
@@ -111,13 +111,13 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenDocument(new Document(new Key(), true));
         initTransform();
         replayAll();
-        
+
         applyTransform();
-        
+
         assertFalse(document.containsKey(ExcerptTransform.HIT_EXCERPT));
         verifyAll();
     }
-    
+
     /**
      * Verify that excerpts are retrieved with the expected inputs.
      */
@@ -125,30 +125,30 @@ public class ExcerptTransformTest extends EasyMockSupport {
     public void testExcerpts() throws IOException {
         // Setup our excerpts to match 2 words on either side of the BODY
         givenExcerptField("BODY", 2);
-        
+
         // setup a matching phrase at 10-14
         // end offset is inclusive
         givenPhraseIndex("BODY", 10, 14);
-        
+
         // setup a matching term for BODY:word
         givenMockDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
         givenMatchingPhrase("BODY", 22, 26, "and the word from bird");
-        
+
         // also setup a phrase to match on either side of the matching phrase
         // end offset is inclusive
         givenMatchingPhrase("BODY", 8, 16, "the quick brown fox jumped over the lazy dog");
-        
+
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-        
+
         initTransform();
         replayAll();
-        
+
         applyTransform();
         verifyAll();
-        
+
         Attributes arg = capturedArg.getValue();
         assertEquals(2, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
@@ -156,7 +156,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertTrue(excerpts.contains("and the word from bird"));
         assertTrue(excerpts.contains("the quick brown fox jumped over the lazy dog"));
     }
-    
+
     /**
      * Verify that excerpts are retrieved with the expected inputs.
      */
@@ -164,34 +164,34 @@ public class ExcerptTransformTest extends EasyMockSupport {
     public void testExcerptOverlapped() throws IOException {
         // Setup our excerpts to match 2 words on either side of the BODY
         givenExcerptField("BODY", 2);
-        
+
         // setup a matching phrase at 10-14
         // end offset is inclusive
         givenPhraseIndex("BODY", 10, 14);
-        
+
         // setup a matching term for BODY:quick brown overlapping the phrase match
         givenMockDocumentWithHitTerm("BODY", "quick brown");
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
         // note that the start is relative to index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // end offset is inclusive
         givenMatchingPhrase("BODY", 7, 16, "and the quick brown fox jumped over the lazy dog");
-        
+
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-        
+
         initTransform();
         replayAll();
-        
+
         applyTransform();
         verifyAll();
-        
+
         Attributes arg = capturedArg.getValue();
         assertEquals(1, arg.size());
         String excerpt = arg.getAttributes().iterator().next().getData().toString();
         // only one excerpt should return
         assertEquals("and the quick brown fox jumped over the lazy dog", excerpt);
     }
-    
+
     /**
      * Verify that excerpts are retrieved with the expected inputs.
      */
@@ -199,13 +199,13 @@ public class ExcerptTransformTest extends EasyMockSupport {
     public void testExcerptOverlappedAndPhraseOverlapped() throws IOException {
         // Setup our excerpts to match 2 words on either side of the BODY
         givenExcerptField("BODY", 2);
-        
+
         // setup a matching phrase at 10-14, ...
         // end offset is inclusive
         givenPhraseIndex("BODY", 10, 14);
         givenPhraseIndex("BODY", 25, 26);
         givenPhraseIndex("BODY", 4, 5);
-        
+
         // setup a matching term for BODY:quick brown overlapping the phrase match
         givenMockDocumentWithHitTerm("BODY", "quick brown");
         givenMatchingTermFrequencies("BODY", new int[][] {{1, 2}, {2, 3}, {9, 10}, {20, 21}}, "quick brown");
@@ -214,16 +214,16 @@ public class ExcerptTransformTest extends EasyMockSupport {
         // note that the start is relative to overlapping term index 9 (i.e. 9-2=7) because the overlapping term starts at 9
         // AND then we combined the phrase from 2 to 7 with the one from 7 to 16
         givenMatchingPhrase("BODY", 2, 16, "the brown chicken layed an egg and the quick brown fox jumped over the lazy dog");
-        
+
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-        
+
         initTransform();
         replayAll();
-        
+
         applyTransform();
         verifyAll();
-        
+
         Attributes arg = capturedArg.getValue();
         assertEquals(2, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
@@ -231,7 +231,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
         assertTrue(excerpts.contains("Jack and Jill jumped over the"));
         assertTrue(excerpts.contains("the brown chicken layed an egg and the quick brown fox jumped over the lazy dog"));
     }
-    
+
     /**
      * Verify that when a start index is less than the specified excerpt offset, that the excerpt start defaults to 0.
      */
@@ -240,26 +240,26 @@ public class ExcerptTransformTest extends EasyMockSupport {
         givenExcerptField("CONTENT", 2);
         // end offset is inclusive
         givenPhraseIndex("CONTENT", 1, 5);
-        
+
         givenMockDocument();
         // end offset is inclusive
         givenMatchingPhrase("CONTENT", 0, 7, "the quick brown fox jumped over the lazy dog");
-        
+
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-        
+
         initTransform();
         replayAll();
-        
+
         applyTransform();
         verifyAll();
-        
+
         Attributes arg = capturedArg.getValue();
         assertEquals(1, arg.size());
         Attribute<?>[] attributes = arg.getAttributes().toArray(new Attribute[0]);
         assertEquals("the quick brown fox jumped over the lazy dog", ((Content) attributes[0]).getContent());
     }
-    
+
     /**
      * Verify that a phrase index with the end before the start does not mess us up
      */
@@ -267,40 +267,40 @@ public class ExcerptTransformTest extends EasyMockSupport {
     public void testEmptyPhraseIndexes() throws IOException {
         // Setup our excerpts to match 2 words on either side of the BODY
         givenExcerptField("BODY", 2);
-        
+
         // setup a matching term for BODY:word with an empty phrase index attribute
         givenMockDocumentWithHitTerm("BODY", "word");
         givenMatchingTermFrequencies("BODY", new int[][] {{24, 24}}, "word");
         // end offset is inclusive
         givenMatchingPhrase("BODY", 22, 26, "and the word from bird");
-        
+
         Capture<Attributes> capturedArg = Capture.newInstance();
         document.put(eq(ExcerptTransform.HIT_EXCERPT), and(capture(capturedArg), isA(Attributes.class)));
-        
+
         initTransform();
         replayAll();
-        
+
         applyTransform();
         verifyAll();
-        
+
         Attributes arg = capturedArg.getValue();
         assertEquals(1, arg.size());
         Set<String> excerpts = arg.getAttributes().stream().map(a -> a.getData().toString()).collect(Collectors.toSet());
         // both excerpts should be returned
         assertTrue(excerpts.contains("and the word from bird"));
     }
-    
+
     private void initTransform() {
         excerptTransform = new ExcerptTransform(excerptFields, env, source, iterator);
     }
-    
+
     private void applyTransform() {
         excerptTransform.apply(getDocumentEntry());
     }
-    
+
     private void givenMockDocument() {
         Document document = mock(Document.class);
-        
+
         expect(document.isToKeep()).andReturn(true);
         expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
         @SuppressWarnings("rawtypes")
@@ -308,15 +308,15 @@ public class ExcerptTransformTest extends EasyMockSupport {
         Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
         // noinspection unchecked
         expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
-        
+
         expect(document.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(false);
-        
+
         givenDocument(document);
     }
-    
+
     private void givenMockDocumentWithHitTerm(String field, String value) {
         Document document = mock(Document.class);
-        
+
         expect(document.isToKeep()).andReturn(true);
         expect(document.containsKey(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(true);
         @SuppressWarnings("rawtypes")
@@ -324,36 +324,36 @@ public class ExcerptTransformTest extends EasyMockSupport {
         Attribute phraseIndexAttribute = new Content(phraseIndexes.toString(), metadata, false);
         // noinspection unchecked
         expect(document.get(ExcerptTransform.PHRASE_INDEXES_ATTRIBUTE)).andReturn(phraseIndexAttribute);
-        
+
         expect(document.containsKey(JexlEvaluation.HIT_TERM_FIELD)).andReturn(true);
-        
+
         Attribute hitTerms = new Attributes(Collections.singletonList(new Content(field + ":" + value, metadata, true)), true);
         expect(document.get(JexlEvaluation.HIT_TERM_FIELD)).andReturn(hitTerms);
-        
+
         givenDocument(document);
     }
-    
+
     private void givenDocument(Document document) {
         this.document = document;
     }
-    
+
     private Map.Entry<Key,Document> getDocumentEntry() {
         return new AbstractMap.SimpleEntry<>(new Key(), document);
     }
-    
+
     private void givenExcerptField(String field, int offset) {
         excerptFields.put(field, offset);
     }
-    
+
     private void givenPhraseIndex(String field, int start, int end) {
         // end offset is inclusive
         phraseIndexes.addIndexTriplet(field, EVENT_ID, start, end);
     }
-    
+
     private void givenHitTerm(String field, String value) {
-        
+
     }
-    
+
     private void givenMatchingPhrase(String field, int start, int end, String phrase) throws IOException {
         Map<String,String> options = getOptions(field, start, end);
         iterator.init(source, options, env);
@@ -366,7 +366,7 @@ public class ExcerptTransformTest extends EasyMockSupport {
             expect(iterator.hasTop()).andReturn(false);
         }
     }
-    
+
     private void givenMatchingTermFrequencies(String field, int[][] offsets, String value) throws IOException {
         TermWeight.Info.Builder builder = TermWeight.Info.newBuilder();
         for (int[] offset : offsets) {
@@ -374,14 +374,14 @@ public class ExcerptTransformTest extends EasyMockSupport {
             builder.addPrevSkips(offset[1] - offset[0]);
             builder.addScore(1);
         }
-        
+
         Value tfpb = new Value(builder.build().toByteArray());
-        
+
         source.seek(anyObject(), anyObject(), eq(false));
         expect(source.hasTop()).andReturn(true);
         expect(source.getTopValue()).andReturn(tfpb);
     }
-    
+
     private Map<String,String> getOptions(String field, int start, int end) {
         Map<String,String> options = new HashMap<>();
         options.put(TermFrequencyExcerptIterator.FIELD_NAME, field);

@@ -52,21 +52,21 @@ import java.util.HashMap;
 import static org.junit.Assert.assertEquals;
 
 public class RemoteUserOperationsImplHttpTest {
-    
+
     private static final int keysize = 2048;
-    
+
     private static final String commonName = "cn=www.test.us";
     private static final String alias = "tomcat";
     private static final char[] keyPass = "changeit".toCharArray();
-    
+
     private X500Principal x500Principal;
-    
+
     private static final int PORT = 0;
-    
+
     private HttpServer server;
-    
+
     private RemoteUserOperationsImpl remote;
-    
+
     @Before
     public void setup() throws Exception {
         final ObjectMapper objectMapper = new DefaultMapperDecorator().decorate(new ObjectMapper());
@@ -83,15 +83,15 @@ public class RemoteUserOperationsImplHttpTest {
                         .setNotValidBefore(start).setNotValidAfter(until).setSubjectDn(x500Principal).setPublicKey(keypair.getPublic())
                         .setSigningKey(keypair.getPrivate()).setSignatureAlgorithmName("SHA256withRSA");
         chain[0] = builder.build();
-        
+
         server = HttpServer.create(new InetSocketAddress(PORT), 0);
         server.setExecutor(null);
         server.start();
-        
+
         DefaultAuthorizationsList listEffectiveAuthResponse = new DefaultAuthorizationsList();
         listEffectiveAuthResponse.setUserAuths("testuserDn", "testissuerDn", Arrays.asList("auth1", "auth2"));
         listEffectiveAuthResponse.setAuthMapping(new HashMap<>());
-        
+
         HttpHandler listEffectiveAuthorizationsHandler = new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
@@ -102,10 +102,10 @@ public class RemoteUserOperationsImplHttpTest {
                 exchange.close();
             }
         };
-        
+
         GenericResponse<String> flushResponse = new GenericResponse<>();
         flushResponse.setResult("test flush result");
-        
+
         HttpHandler flushHandler = new HttpHandler() {
             @Override
             public void handle(HttpExchange exchange) throws IOException {
@@ -116,10 +116,10 @@ public class RemoteUserOperationsImplHttpTest {
                 exchange.close();
             }
         };
-        
+
         server.createContext("/Security/User/listEffectiveAuthorizations", listEffectiveAuthorizationsHandler);
         server.createContext("/Security/User/flushCachedCredentials", flushHandler);
-        
+
         // create a remote event query logic that has our own server behind it
         remote = new RemoteUserOperationsImpl();
         remote.setQueryServiceURI("/Security/User/");
@@ -131,106 +131,106 @@ public class RemoteUserOperationsImplHttpTest {
         remote.setResponseObjectFactory(new MockResponseObjectFactory());
         remote.setJsseSecurityDomain(new TestJSSESecurityDomain(alias, privKey, keyPass, chain));
     }
-    
+
     @After
     public void after() {
         if (server != null) {
             server.stop(0);
         }
     }
-    
+
     @Test
     public void testRemoteUserOperations() throws Exception {
         DatawavePrincipal principal = new DatawavePrincipal(commonName);
-        
+
         AuthorizationsListBase auths = remote.listEffectiveAuthorizations(principal);
         assertEquals(2, auths.getAllAuths().size());
-        
+
         GenericResponse flush = remote.flushCachedCredentials(principal);
         assertEquals("test flush result", flush.getResult());
     }
-    
+
     public static class MockResponseObjectFactory extends ResponseObjectFactory {
-        
+
         @Override
         public EventBase getEvent() {
             return null;
         }
-        
+
         @Override
         public FieldBase getField() {
             return null;
         }
-        
+
         @Override
         public EventQueryResponseBase getEventQueryResponse() {
             return null;
         }
-        
+
         @Override
         public CacheableQueryRow getCacheableQueryRow() {
             return null;
         }
-        
+
         @Override
         public EdgeBase getEdge() {
             return null;
         }
-        
+
         @Override
         public EdgeQueryResponseBase getEdgeQueryResponse() {
             return null;
         }
-        
+
         @Override
         public FacetQueryResponseBase getFacetQueryResponse() {
             return null;
         }
-        
+
         @Override
         public FacetsBase getFacets() {
             return null;
         }
-        
+
         @Override
         public FieldCardinalityBase getFieldCardinality() {
             return null;
         }
-        
+
         @Override
         public KeyBase getKey() {
             return null;
         }
-        
+
         @Override
         public AuthorizationsListBase getAuthorizationsList() {
             return new DefaultAuthorizationsList();
         }
-        
+
         @Override
         public Query getQueryImpl() {
             return null;
         }
-        
+
         @Override
         public DataDictionaryBase getDataDictionary() {
             return null;
         }
-        
+
         @Override
         public FieldsBase getFields() {
             return null;
         }
-        
+
         @Override
         public DescriptionBase getDescription() {
             return null;
         }
-        
+
         @Override
         public MetadataFieldBase getMetadataField() {
             return null;
         }
     }
-    
+
 }

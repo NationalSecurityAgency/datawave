@@ -84,37 +84,37 @@ import static datawave.query.config.ShardQueryConfiguration.PARAM_VALUE_SEP_STR;
  * occurrences of the term by type by day.
  */
 public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implements CheckpointableQueryLogic {
-    
+
     private static final Logger log = Logger.getLogger(ShardIndexQueryTable.class);
     protected ScannerFactory scannerFactory;
     private ShardIndexQueryConfiguration config;
     private MetadataHelperFactory metadataHelperFactory;
-    
+
     public ShardIndexQueryTable() {}
-    
+
     public ShardIndexQueryTable(ShardIndexQueryTable other) {
         super(other);
         this.config = ShardIndexQueryConfiguration.create(other);
     }
-    
+
     @Override
     public ShardIndexQueryConfiguration getConfig() {
         if (this.config == null) {
             this.config = ShardIndexQueryConfiguration.create();
         }
-        
+
         return this.config;
     }
-    
+
     @Override
     public ShardIndexQueryTable clone() {
         return new ShardIndexQueryTable(this);
     }
-    
+
     @Override
     public void close() {
         super.close();
-        
+
         if (scannerFactory == null) {
             if (log.isDebugEnabled()) {
                 log.debug("ScannerFactory is null; not closing it.");
@@ -131,10 +131,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             }
         }
     }
-    
+
     /**
      * Create and initialize a metadata helper
-     * 
+     *
      * @param client
      *            the client
      * @param metadataTableName
@@ -146,65 +146,65 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
     protected MetadataHelper initializeMetadataHelper(AccumuloClient client, String metadataTableName, Set<Authorizations> auths) {
         return this.metadataHelperFactory.createMetadataHelper(client, metadataTableName, auths);
     }
-    
+
     public MetadataHelperFactory getMetadataHelperFactory() {
         return metadataHelperFactory;
     }
-    
+
     public void setMetadataHelperFactory(MetadataHelperFactory metadataHelperFactory) {
         this.metadataHelperFactory = metadataHelperFactory;
     }
-    
+
     public void setMetadataTableName(String tableName) {
         getConfig().setMetadataTableName(tableName);
     }
-    
+
     public String getMetadataTableName() {
         return getConfig().getMetadataTableName();
     }
-    
+
     public String getIndexTableName() {
         return getConfig().getIndexTableName();
     }
-    
+
     public void setIndexTableName(String indexTableName) {
         getConfig().setIndexTableName(indexTableName);
     }
-    
+
     public String getReverseIndexTableName() {
         return getConfig().getReverseIndexTableName();
     }
-    
+
     public void setReverseIndexTableName(String reverseIndexTableName) {
         getConfig().setReverseIndexTableName(reverseIndexTableName);
     }
-    
+
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         this.config = new ShardIndexQueryConfiguration(this, settings);
         this.scannerFactory = new ScannerFactory(client);
         MetadataHelper metadataHelper = initializeMetadataHelper(client, getConfig().getMetadataTableName(), auths);
-        
+
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
         }
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Query parameters set to " + settings.getParameters());
         }
-        
+
         String tModelName = getTrimmedOrNull(settings, QueryParameters.PARAMETER_MODEL_NAME);
         if (tModelName != null) {
             getConfig().setModelName(tModelName);
         }
-        
+
         String tModelTableName = getTrimmedOrNull(settings, QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         if (tModelTableName != null) {
             getConfig().setModelTableName(tModelTableName);
         }
-        
+
         getConfig().setQueryModel(metadataHelper.getQueryModel(getConfig().getModelTableName(), getConfig().getModelName(), null));
-        
+
         String datatypeFilterString = getTrimmedOrNull(settings, QueryParameters.DATATYPE_FILTER_SET);
         if (datatypeFilterString != null) {
             getConfig().setDatatypeFilter(new HashSet<>(Arrays.asList(datatypeFilterString.split(PARAM_VALUE_SEP_STR))));
@@ -212,10 +212,10 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                 log.debug("Data type filter set to " + getConfig().getDatatypeFilterAsString());
             }
         }
-        
+
         getConfig().setClient(client);
         getConfig().setAuthorizations(auths);
-        
+
         if (settings.getBeginDate() != null) {
             getConfig().setBeginDate(settings.getBeginDate());
         } else {
@@ -224,7 +224,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                 log.debug("No begin date supplied in settings.");
             }
         }
-        
+
         if (settings.getEndDate() != null) {
             getConfig().setEndDate(settings.getEndDate());
         } else {
@@ -233,7 +233,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
                 log.debug("No end date supplied in settings.");
             }
         }
-        
+
         // start with a trimmed version of the query, converted to JEXL
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
         parser.setAllowLeadingWildCard(this.isAllowLeadingWildcard());
@@ -244,10 +244,9 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             log.debug("Original Query = " + settings.getQuery().trim());
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
-        
+
         // Parse & flatten the query.
         ASTJexlScript origScript = JexlASTHelper.parseAndFlattenJexlQuery(getConfig().getQueryString());
-        
         ASTJexlScript script;
         try {
             script = UnfieldedIndexExpansionVisitor.expandUnfielded(getConfig(), this.scannerFactory, metadataHelper, origScript);
@@ -257,72 +256,71 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             getConfig().setNormalizedPatterns(emptyMap);
             return getConfig();
         }
-        
+
         Set<String> dataTypes = getConfig().getDatatypeFilter();
         Set<String> allFields = metadataHelper.getAllFields(dataTypes);
-        
+
         script = QueryModelVisitor.applyModel(script, getConfig().getQueryModel(), allFields);
-        
         if (log.isTraceEnabled()) {
             log.trace("fetching dataTypes from FetchDataTypesVisitor");
         }
         Multimap<String,Type<?>> fieldToDataTypeMap = FetchDataTypesVisitor.fetchDataTypes(metadataHelper, getConfig().getDatatypeFilter(), script);
         getConfig().setDataTypes(fieldToDataTypeMap);
         getConfig().setQueryFieldsDatatypes(fieldToDataTypeMap);
-        
+
         final Set<String> indexedFields = metadataHelper.getIndexedFields(dataTypes);
         getConfig().setIndexedFields(indexedFields);
-        
+
         final Set<String> reverseIndexedFields = metadataHelper.getReverseIndexedFields(dataTypes);
         getConfig().setReverseIndexedFields(reverseIndexedFields);
-        
+
         final Multimap<String,Type<?>> normalizedFields = metadataHelper.getFieldsToDatatypes(dataTypes);
         getConfig().setNormalizedFieldsDatatypes(normalizedFields);
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Normalizers:");
             for (String field : fieldToDataTypeMap.keySet()) {
                 log.trace(field + ": " + fieldToDataTypeMap.get(field));
             }
         }
-        
+
         script = ExpandMultiNormalizedTerms.expandTerms(getConfig(), metadataHelper, script);
-        
+
         Multimap<String,String> literals = LiteralNodeVisitor.getLiterals(script);
         Multimap<String,String> patterns = PatternNodeVisitor.getPatterns(script);
         Map<Entry<String,String>,Range> rangesForTerms = Maps.newHashMap();
         Map<Entry<String,String>,Entry<Range,Boolean>> rangesForPatterns = Maps.newHashMap();
-        
+
         getConfig().setNormalizedTerms(literals);
         getConfig().setNormalizedPatterns(patterns);
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Normalized Literals = " + literals);
             log.debug("Normalized Patterns = " + patterns);
         }
-        
+
         for (Entry<String,String> entry : literals.entries()) {
             rangesForTerms.put(entry, ShardIndexQueryTableStaticMethods.getLiteralRange(entry));
-            
+
         }
         for (Entry<String,String> entry : patterns.entries()) {
             ShardIndexQueryTableStaticMethods.RefactoredRangeDescription r = ShardIndexQueryTableStaticMethods.getRegexRange(entry, isFullTableScanEnabled(),
                             metadataHelper, getConfig());
-            
+
             rangesForPatterns.put(entry, Maps.immutableEntry(r.range, r.isForReverseIndex));
         }
-        
+
         getConfig().setRangesForTerms(rangesForTerms);
         getConfig().setRangesForPatterns(rangesForPatterns);
-        
+
         getConfig().setQueries(createQueries(getConfig()));
-        
+
         return getConfig();
     }
-    
+
     public List<QueryData> createQueries(ShardIndexQueryConfiguration config) throws QueryException, TableNotFoundException, IOException, ExecutionException {
         final List<QueryData> queries = Lists.newLinkedList();
-        
+
         for (Entry<String,String> termEntry : getConfig().getNormalizedTerms().entries()) {
             String query = termEntry.getKey();
             Range range = getConfig().getRangesForTerms().get(termEntry);
@@ -331,7 +329,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             List<String> cfs = ShardIndexQueryTableStaticMethods.getColumnFamilies(getConfig(), false, Collections.singleton(termEntry.getKey()));
             queries.add(new QueryData(config.getIndexTableName(), query, Collections.singleton(range), settings, cfs));
         }
-        
+
         for (Entry<String,String> patternEntry : getConfig().getNormalizedPatterns().entries()) {
             String query = patternEntry.getKey();
             Entry<Range,Boolean> rangeEntry = getConfig().getRangesForPatterns().get(patternEntry);
@@ -344,51 +342,51 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         }
         return queries;
     }
-    
+
     private String getTrimmedOrNull(Query settings, String value) {
         QueryImpl.Parameter param = settings.findParameter(value);
         if (param == null) {
             return null;
         }
-        
+
         String val = param.getParameterValue().trim();
         if (val.isEmpty()) {
             return null;
         }
-        
+
         return val;
     }
-    
+
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws QueryException, TableNotFoundException, IOException, ExecutionException {
         if (!genericConfig.getClass().getName().equals(ShardIndexQueryConfiguration.class.getName())) {
             throw new QueryException("Did not receive a ShardIndexQueryConfiguration instance!!");
         }
-        
+
         this.config = (ShardIndexQueryConfiguration) genericConfig;
         final List<Entry<BatchScanner,QueryData>> batchscanners = Lists.newLinkedList();
-        
+
         for (QueryData qd : config.getQueries()) {
             // scan the table
             BatchScanner bs = scannerFactory.newScanner(qd.getTableName(), config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
-            
+
             bs.setRanges(qd.getRanges());
             for (IteratorSetting setting : qd.getSettings()) {
                 bs.addScanIterator(setting);
             }
-            
+
             for (String cf : qd.getColumnFamilies()) {
                 bs.fetchColumnFamily(new Text(cf));
             }
-            
+
             batchscanners.add(Maps.immutableEntry(bs, qd));
         }
-        
+
         final Iterator<Entry<BatchScanner,QueryData>> batchScannerIterator = batchscanners.iterator();
-        
+
         this.iterator = concat(transform(new CloseableIterator(batchScannerIterator), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
             DataInputBuffer in = new DataInputBuffer();
-            
+
             @Override
             public Iterator<DiscoveredThing> apply(Entry<Key,Value> from) {
                 Value value = from.getValue();
@@ -407,7 +405,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             }
         }));
     }
-    
+
     /**
      * Implementations use the configuration to setup execution of a portion of their query. getTransformIterator should be used to get the partial results if
      * any.
@@ -423,24 +421,24 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         ShardIndexQueryConfiguration config = (ShardIndexQueryConfiguration) baseConfig;
         baseConfig.setQueries(checkpoint.getQueries());
         config.setClient(client);
-        
+
         scannerFactory = new ScannerFactory(client);
         MetadataHelper metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), config.getAuthorizations());
         config.setQueryModel(metadataHelper.getQueryModel(config.getModelTableName(), config.getModelName(), null));
-        
+
         setupQuery(config);
     }
-    
+
     @Override
     public boolean isCheckpointable() {
         return getConfig().isCheckpointable();
     }
-    
+
     @Override
     public void setCheckpointable(boolean checkpointable) {
         getConfig().setCheckpointable(checkpointable);
     }
-    
+
     /**
      * This can be called at any point to get a checkpoint such that this query logic instance can be torn down to be rebuilt later. At a minimum this should be
      * called after the getTransformIterator is depleted of results.
@@ -454,7 +452,7 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         if (!isCheckpointable()) {
             throw new UnsupportedOperationException("Cannot checkpoint a query that is not checkpointable.  Try calling setCheckpointable(true) first.");
         }
-        
+
         // if we have started returning results, then capture the state of the query data objects
         if (this.iterator != null) {
             List<QueryCheckpoint> checkpoints = Lists.newLinkedList();
@@ -468,109 +466,109 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             return Lists.newArrayList(new QueryCheckpoint(queryKey));
         }
     }
-    
+
     @Override
     public QueryCheckpoint updateCheckpoint(QueryCheckpoint checkpoint) {
         // for the shard index query logic, the query data objects automatically get update with
         // the last result returned, so the checkpoint should already be updated!
         return checkpoint;
     }
-    
+
     public static List<IteratorSetting> getIteratorSettingsForDiscovery(ShardQueryConfiguration config, Collection<String> literals,
                     Collection<String> patterns, boolean reverseIndex, boolean uniqueTermsOnly) {
-        
+
         // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
         // the times in the index table have been truncated to the day.
         Date begin = DateUtils.truncate(config.getBeginDate(), Calendar.DAY_OF_MONTH);
         // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
         Date end = config.getEndDate();
-        
+
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
-        
+
         List<IteratorSetting> settings = Lists.newLinkedList();
         settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, dateRange));
         settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, config.getDatatypeFilter()));
-        
+
         settings.add(ShardIndexQueryTableStaticMethods.configureGlobalIndexTermMatchingIterator(config, literals, patterns, reverseIndex, uniqueTermsOnly));
-        
+
         settings.add(new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class));
         return settings;
     }
-    
+
     public boolean isFullTableScanEnabled() {
         return getConfig().getFullTableScanEnabled();
     }
-    
+
     public void setFullTableScanEnabled(boolean fullTableScanEnabled) {
         this.getConfig().setFullTableScanEnabled(fullTableScanEnabled);
     }
-    
+
     public boolean isAllowLeadingWildcard() {
         return getConfig().isAllowLeadingWildcard();
     }
-    
+
     public void setAllowLeadingWildcard(boolean allowLeadingWildcard) {
         getConfig().setAllowLeadingWildcard(allowLeadingWildcard);
     }
-    
+
     @Override
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return AccumuloConnectionFactory.Priority.NORMAL;
     }
-    
+
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         return new DiscoveryTransformer(this, settings, getConfig().getQueryModel());
     }
-    
+
     /**
      * Query model
-     * 
+     *
      * @return the model name
      */
     public String getModelName() {
         return getConfig().getModelName();
     }
-    
+
     public void setModelName(String modelName) {
         getConfig().setModelName(modelName);
     }
-    
+
     public String getModelTableName() {
         return getConfig().getModelTableName();
     }
-    
+
     public void setModelTableName(String modelTableName) {
         getConfig().setModelTableName(modelTableName);
     }
-    
+
     public QueryModel getQueryModel() {
         return getConfig().getQueryModel();
     }
-    
+
     public void setQueryModel(QueryModel model) {
         getConfig().setQueryModel(model);
     }
-    
+
     public class CloseableIterator implements Iterator<Entry<Key,Value>>, Closeable {
-        
+
         private final Iterator<Entry<BatchScanner,QueryData>> batchScannerIterator;
-        
+
         protected Boolean reverseIndex = false;
         protected Entry<Key,Value> currentEntry = null;
         protected BatchScanner currentBS = null;
         protected Iterator<Entry<Key,Value>> currentIter = null;
         protected QueryData queryData = null;
-        
+
         protected volatile boolean closed = false;
-        
+
         public CloseableIterator(Iterator<Entry<BatchScanner,QueryData>> batchScannerIterator) {
             this.batchScannerIterator = batchScannerIterator;
         }
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see java.util.Iterator#hasNext()
          */
         @Override
@@ -578,35 +576,35 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             if (closed) {
                 return false;
             }
-            
+
             if (null != this.currentEntry) {
                 return true;
             } else if (null != this.currentBS && null != this.currentIter) {
                 if (this.currentIter.hasNext()) {
                     this.currentEntry = this.currentIter.next();
-                    
+
                     return hasNext();
                 } else {
                     this.currentBS.close();
                 }
             }
-            
+
             if (batchScannerIterator.hasNext()) {
                 Entry<BatchScanner,QueryData> entry = batchScannerIterator.next();
                 this.currentBS = entry.getKey();
                 this.queryData = entry.getValue();
                 this.reverseIndex = entry.getValue().getTableName().equals(getConfig().getReverseIndexTableName());
                 this.currentIter = this.currentBS.iterator();
-                
+
                 return hasNext();
             }
-            
+
             return false;
         }
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see java.util.Iterator#next()
          */
         @Override
@@ -614,47 +612,47 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
             if (closed) {
                 return null;
             }
-            
+
             if (hasNext()) {
                 Entry<Key,Value> cur = this.currentEntry;
                 this.currentEntry = null;
-                
+
                 queryData.setLastResult(cur.getKey());
-                
+
                 if (this.reverseIndex) {
                     Text term = new Text((new StringBuilder(cur.getKey().getRow().toString())).reverse().toString());
                     cur = Maps.immutableEntry(new Key(term, cur.getKey().getColumnFamily(), cur.getKey().getColumnQualifier(),
                                     cur.getKey().getColumnVisibility(), cur.getKey().getTimestamp()), cur.getValue());
                 }
-                
+
                 return cur;
             }
-            
+
             return null;
         }
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see java.util.Iterator#remove()
          */
         @Override
         public void remove() {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public void close() {
             if (!closed) {
                 closed = true;
             }
-            
+
             if (null != this.currentBS) {
                 this.currentBS.close();
             }
         }
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> optionalParams = new TreeSet<>();
@@ -665,23 +663,23 @@ public class ShardIndexQueryTable extends BaseQueryLogic<DiscoveredThing> implem
         optionalParams.add(datawave.microservice.query.QueryParameters.QUERY_END);
         return optionalParams;
     }
-    
+
     @Override
     public Set<String> getRequiredQueryParameters() {
         return Collections.emptySet();
     }
-    
+
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
     }
-    
+
     public List<String> getRealmSuffixExclusionPatterns() {
         return getConfig().getRealmSuffixExclusionPatterns();
     }
-    
+
     public void setRealmSuffixExclusionPatterns(List<String> realmSuffixExclusionPatterns) {
         getConfig().setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
     }
-    
+
 }

@@ -9,15 +9,15 @@ import java.util.stream.Collectors;
 
 public class LookupUUIDQueryLogic<T> extends LookupQueryLogic<T> {
     private static final String UUID_TERM_SEPARATOR = " OR ";
-    
+
     public LookupUUIDQueryLogic(BaseQueryLogic<T> delegateQueryLogic) {
         super(delegateQueryLogic);
     }
-    
+
     public LookupUUIDQueryLogic(LookupQueryLogic<T> other) throws CloneNotSupportedException {
         super(other);
     }
-    
+
     @Override
     public String createQueryFromLookupTerms(MultiValueMap<String,String> lookupUUIDPairs) {
         // @formatter:off
@@ -27,21 +27,21 @@ public class LookupUUIDQueryLogic<T> extends LookupQueryLogic<T> {
                 .collect(Collectors.joining(UUID_TERM_SEPARATOR));
         // @formatter:on
     }
-    
+
     @Override
     public boolean isEventLookupRequired(MultiValueMap<String,String> lookupTerms) {
         // always, regardless of the terms
         return true;
     }
-    
+
     @Override
     public Set<String> getContentLookupTerms(MultiValueMap<String,String> lookupTerms) throws UnsupportedOperationException {
         throw new UnsupportedOperationException("Cannot convert lookup terms to event lookups for LookupUUIDQueryLogic");
     }
-    
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new LookupUUIDQueryLogic<>(this);
     }
-    
+
 }

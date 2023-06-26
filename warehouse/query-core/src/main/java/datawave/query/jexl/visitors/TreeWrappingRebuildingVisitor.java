@@ -9,15 +9,15 @@ import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
 public class TreeWrappingRebuildingVisitor extends RebuildingVisitor {
-    
+
     private static final Logger log = Logger.getLogger(TreeWrappingRebuildingVisitor.class);
-    
+
     public static ASTJexlScript wrap(JexlNode node) {
         TreeWrappingRebuildingVisitor visitor = new TreeWrappingRebuildingVisitor();
-        
+
         return (ASTJexlScript) node.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         ASTOrNode newNode = new ASTOrNode(ParserTreeConstants.JJTORNODE);

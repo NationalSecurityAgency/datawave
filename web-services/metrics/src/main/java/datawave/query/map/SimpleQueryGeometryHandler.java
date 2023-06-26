@@ -33,20 +33,20 @@ import static datawave.query.QueryParameters.QUERY_SYNTAX;
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ShardTableQueryMetricHandler.class);
-    
+
     private static final String LUCENE = "LUCENE";
     private static final String JEXL = "JEXL";
-    
+
     private LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
-    
+
     @Inject
     @ConfigProperty(name = "dw.basemaps", defaultValue = "{}")
     private String basemaps;
-    
+
     @Override
     public QueryGeometryResponse getQueryGeometryResponse(String id, List<? extends BaseQueryMetric> metrics) {
         QueryGeometryResponse response = new QueryGeometryResponse(id, basemaps);
-        
+
         if (metrics != null) {
             Set<QueryGeometry> queryGeometries = new LinkedHashSet<>();
             for (BaseQueryMetric metric : metrics) {
@@ -61,28 +61,28 @@ public class SimpleQueryGeometryHandler implements QueryGeometryHandler {
             }
             response.setResult(new ArrayList<>(queryGeometries));
         }
-        
+
         return response;
     }
-    
+
     private static boolean isLuceneQuery(Set<QueryImpl.Parameter> parameters) {
         return parameters.stream().anyMatch(p -> p.getParameterName().equals(QUERY_SYNTAX) && p.getParameterValue().equals(LUCENE));
     }
-    
+
     private String toJexlQuery(String query) throws ParseException {
         return toJexlQuery(query, parser);
     }
-    
+
     private static String toJexlQuery(String query, LuceneToJexlQueryParser parser) throws ParseException {
         return parser.parse(query).getOriginalQuery();
     }
-    
+
     public static boolean isGeoQuery(BaseQueryMetric metric) {
         try {
             String jexlQuery = metric.getQuery();
             if (isLuceneQuery(metric.getParameters()))
                 jexlQuery = toJexlQuery(jexlQuery, new LuceneToJexlQueryParser());
-            
+
             return !GeoFeatureVisitor.getGeoFeatures(JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery)).isEmpty();
         } catch (Exception e) {
             log.trace(new Exception("Unable to parse the geo features"));

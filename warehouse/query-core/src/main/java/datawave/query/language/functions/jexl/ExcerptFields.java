@@ -14,11 +14,11 @@ import java.util.ArrayList;
  * additional documentation on supported formatting.
  */
 public class ExcerptFields extends JexlQueryFunction {
-    
+
     public ExcerptFields() {
         super(QueryFunctions.EXCERPT_FIELDS_FUNCTION, new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.isEmpty()) {
@@ -36,10 +36,10 @@ public class ExcerptFields extends JexlQueryFunction {
             }
         }
     }
-    
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(QueryFunctions.EXCERPT_FIELDS_FUNCTION);
         if (parameterList.isEmpty()) {
             sb.append("()");
@@ -51,10 +51,10 @@ public class ExcerptFields extends JexlQueryFunction {
             }
             sb.append(')');
         }
-        
+
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new ExcerptFields();

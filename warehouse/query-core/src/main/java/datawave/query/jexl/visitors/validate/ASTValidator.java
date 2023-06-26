@@ -24,23 +24,23 @@ import java.util.List;
  * </pre>
  */
 public class ASTValidator {
-    
+
     private static final Logger log = Logger.getLogger(ASTValidator.class);
-    
+
     private boolean isValid;
     private final List<String> reasons = new ArrayList<>();
-    
+
     // toggles
     private boolean validateLineage;
     private boolean validateFlatten;
     private boolean validateJunctions;
     private boolean validateReferenceExpressions;
     private boolean validateQueryPropertyMarkers;
-    
+
     public ASTValidator() {
         // empty constructor
     }
-    
+
     /**
      * Determines if the provided AST meets all basic assumptions. Intended to be called outside of normal visitor validation
      *
@@ -53,7 +53,7 @@ public class ASTValidator {
     public boolean isValid(JexlNode root) throws InvalidQueryTreeException {
         return isValid(root, null, true);
     }
-    
+
     /**
      * Determines if the provided AST meets all basic assumptions of validity. Intended to be called after a visitor is done visiting a query tree.
      *
@@ -68,7 +68,7 @@ public class ASTValidator {
     public boolean isValid(JexlNode root, String sourceVisitor) throws InvalidQueryTreeException {
         return isValid(root, sourceVisitor, true);
     }
-    
+
     /**
      * Determines if the AST meets all basic assumptions of validity. Throws an exception if the AST is not valid.
      *
@@ -83,18 +83,18 @@ public class ASTValidator {
      *             if the query tree is invalid
      */
     public boolean isValid(JexlNode root, String sourceVisitor, boolean failHard) throws InvalidQueryTreeException {
-        
+
         log.info("Validating tree after visiting " + sourceVisitor);
-        
+
         isValid = true;
         reasons.clear();
-        
+
         validateLineage(root);
         validateFlatten(root);
         validateJunctions(root);
         validateReferenceExpressionsValid(root);
         validateQueryPropertyMarkers(root);
-        
+
         if (!isValid) {
             String joined = "[" + Joiner.on(',').join(reasons) + "]";
             log.error(sourceVisitor + " produced an invalid query tree for reasons " + joined);
@@ -108,7 +108,7 @@ public class ASTValidator {
         }
         return isValid;
     }
-    
+
     /**
      * Validate the lineage of all nodes under this root
      *
@@ -122,7 +122,7 @@ public class ASTValidator {
             reasons.add("Lineage");
         }
     }
-    
+
     /**
      * Determine if this AST is flattened
      *
@@ -140,7 +140,7 @@ public class ASTValidator {
             }
         }
     }
-    
+
     /**
      * Determine if this AST is valid with respect to And/Or nodes and the number of children
      *
@@ -153,7 +153,7 @@ public class ASTValidator {
             reasons.add("Junctions");
         }
     }
-    
+
     /**
      * Validate the AST with respect to minimal reference expressions
      *
@@ -166,10 +166,10 @@ public class ASTValidator {
             reasons.add("RefExpr");
         }
     }
-    
+
     /**
      * Validate that all query property markers in this AST are properly structured
-     * 
+     *
      * @param node
      *            an arbitrary JexlNode
      */
@@ -179,43 +179,43 @@ public class ASTValidator {
             reasons.add("Markers");
         }
     }
-    
+
     public boolean isValidateLineage() {
         return validateLineage;
     }
-    
+
     public void setValidateLineage(boolean validateLineage) {
         this.validateLineage = validateLineage;
     }
-    
+
     public boolean getValidateFlatten() {
         return validateFlatten;
     }
-    
+
     public void setValidateFlatten(boolean validateFlatten) {
         this.validateFlatten = validateFlatten;
     }
-    
+
     public boolean getValidateJunctions() {
         return validateJunctions;
     }
-    
+
     public void setValidateJunctions(boolean validateJunctions) {
         this.validateJunctions = validateJunctions;
     }
-    
+
     public boolean getValidateReferenceExpressions() {
         return validateReferenceExpressions;
     }
-    
+
     public void setValidateReferenceExpressions(boolean validateReferenceExpressions) {
         this.validateReferenceExpressions = validateReferenceExpressions;
     }
-    
+
     public boolean getValidateQueryPropertyMarkers() {
         return validateQueryPropertyMarkers;
     }
-    
+
     public void setValidateQueryPropertyMarkers(boolean validateQueryPropertyMarkers) {
         this.validateQueryPropertyMarkers = validateQueryPropertyMarkers;
     }

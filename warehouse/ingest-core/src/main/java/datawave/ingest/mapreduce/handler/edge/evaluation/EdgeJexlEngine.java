@@ -11,7 +11,7 @@ public class EdgeJexlEngine extends Engine {
     public EdgeJexlEngine(JexlBuilder conf) {
         super(conf);
     }
-    
+
     @Override
     protected Interpreter createInterpreter(JexlContext context, Frame frame, JexlOptions opts) {
         return new EdgeJexlInterpreter(this, opts, context, frame);

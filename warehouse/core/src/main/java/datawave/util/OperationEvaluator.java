@@ -11,14 +11,14 @@ import java.util.Date;
  * Provides utility functions for evaluating arithmetic and logical operations given relevant arguments and a non-constant operator.
  */
 public class OperationEvaluator {
-    
+
     // Arithmetic operators.
     public static final String ADD = "+";
     public static final String SUBTRACT = "-";
     public static final String MULTIPLY = "*";
     public static final String DIVIDE = "/";
     public static final String MODULO = "%";
-    
+
     // Logical operators.
     public static final String EQUALS = "=";
     public static final String DOUBLE_EQUALS = "==";
@@ -27,7 +27,7 @@ public class OperationEvaluator {
     public static final String GREATER_THAN_EQUALS = ">=";
     public static final String LESS_THAN = "<";
     public static final String LESS_THAN_EQUALS = "<=";
-    
+
     /**
      * Return the result of the calculation for the provided integers using the provided calculation operator. Supported operators:
      * <ul>
@@ -37,7 +37,7 @@ public class OperationEvaluator {
      * <li>/ returns the quotient of the left and right</li>
      * <li>% returns the modulo of the left and right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -64,7 +64,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid calculation operator");
         }
     }
-    
+
     /**
      * Return the result of the calculation for the provided longs using the provided calculation operator. Supported operators:
      * <ul>
@@ -74,7 +74,7 @@ public class OperationEvaluator {
      * <li>/ returns the quotient of the left and right</li>
      * <li>% returns the modulo of the left and right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -101,7 +101,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid calculation operator");
         }
     }
-    
+
     /**
      * Return the result of the calculation for the provided floats using the provided calculation operator. Supported operators:
      * <ul>
@@ -111,7 +111,7 @@ public class OperationEvaluator {
      * <li>/ returns the quotient of the left and right</li>
      * <li>% returns the modulo of the left and right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -138,7 +138,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid calculation operator");
         }
     }
-    
+
     /**
      * Return the result of the calculation for the provided doubles using the provided calculation operator. Supported operators:
      * <ul>
@@ -148,7 +148,7 @@ public class OperationEvaluator {
      * <li>/ returns the quotient of the left and right</li>
      * <li>% returns the modulo of the left and right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -175,7 +175,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid calculation operator");
         }
     }
-    
+
     /**
      * Return the result of the calculation for the time in milliseconds of the provided dates using the provided calculation operator. Supported operators:
      * <ul>
@@ -185,7 +185,7 @@ public class OperationEvaluator {
      * <li>/ returns the quotient of the left and right</li>
      * <li>% returns the modulo of the left and right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -199,7 +199,7 @@ public class OperationEvaluator {
         operator = CharMatcher.whitespace().removeFrom(operator);
         return calculate(left.getTime(), right.getTime(), operator);
     }
-    
+
     /**
      * Return the result of the comparison of the provided integers using the provided logical operator. Supported operators:
      * <ul>
@@ -210,7 +210,7 @@ public class OperationEvaluator {
      * <li>&gt; returns whether the left is greater than the right</li>
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -240,7 +240,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid comparison operator");
         }
     }
-    
+
     /**
      * Return the result of the comparison of the provided longs using the provided logical operator. Supported operators:
      * <ul>
@@ -251,7 +251,7 @@ public class OperationEvaluator {
      * <li>&gt; returns whether the left is greater than the right</li>
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -281,7 +281,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid comparison operator");
         }
     }
-    
+
     /**
      * Return the result of the comparison of the provided floats using the provided logical operator. Supported operators:
      * <ul>
@@ -292,7 +292,7 @@ public class OperationEvaluator {
      * <li>&gt; returns whether the left is greater than the right</li>
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -322,7 +322,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid comparison operator");
         }
     }
-    
+
     /**
      * Return the result of the comparison of the provided doubles using the provided logical operator. Supported operators:
      * <ul>
@@ -333,7 +333,7 @@ public class OperationEvaluator {
      * <li>&gt; returns whether the left is greater than the right</li>
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -363,7 +363,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid comparison operator");
         }
     }
-    
+
     /**
      * Return the result of the comparison of the time in milliseconds of the provided dates using the provided logical operator. Supported operators:
      * <ul>
@@ -374,7 +374,7 @@ public class OperationEvaluator {
      * <li>&gt; returns whether the left is greater than the right</li>
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -388,7 +388,7 @@ public class OperationEvaluator {
         operator = CharMatcher.whitespace().removeFrom(operator);
         return compare(left.getTime(), right.getTime(), operator);
     }
-    
+
     /**
      * Return the result of the comparison of the provided comparables using the provided logical operator. Supported operators:
      * <ul>
@@ -399,7 +399,7 @@ public class OperationEvaluator {
      * <li>&gt; returns whether the left is greater than the right</li>
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -429,7 +429,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid comparison operator");
         }
     }
-    
+
     /**
      * Return the result of the comparison of the provided objects using the provided logical operator and comparator. Supported operators:
      * <ul>
@@ -440,7 +440,7 @@ public class OperationEvaluator {
      * <li>&gt; returns whether the left is greater than the right</li>
      * <li>&gt;= returns whether the left is greater than or equal to the right</li>
      * </ul>
-     * 
+     *
      * @param left
      *            the left side of the expression
      * @param right
@@ -471,7 +471,7 @@ public class OperationEvaluator {
                 throw new IllegalArgumentException(operator + " is not a valid comparison operator");
         }
     }
-    
+
     private OperationEvaluator() {
         throw new UnsupportedOperationException();
     }

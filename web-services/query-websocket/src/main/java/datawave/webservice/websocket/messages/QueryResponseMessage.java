@@ -21,44 +21,44 @@ public class QueryResponseMessage {
         /** There was an error during query execution. Expect {@link #getBaseResponse()} to return a response. */
         ERROR
     }
-    
+
     @JsonProperty("type")
     private ResponseType responseType;
-    
+
     @JsonProperty("message")
     private String message;
-    
+
     @JsonProperty("response")
     private BaseResponse baseResponse;
-    
+
     public QueryResponseMessage(ResponseType responseType) {
         this.responseType = responseType;
     }
-    
+
     public QueryResponseMessage(ResponseType responseType, String message) {
         this.responseType = responseType;
         this.message = message;
     }
-    
+
     public QueryResponseMessage(ResponseType responseType, BaseResponse response) {
         this.responseType = responseType;
         this.baseResponse = response;
     }
-    
+
     public QueryResponseMessage(ResponseType responseType, String message, BaseResponse response) {
         this.responseType = responseType;
         this.message = message;
         this.baseResponse = response;
     }
-    
+
     public ResponseType getResponseType() {
         return responseType;
     }
-    
+
     public String getMessage() {
         return message;
     }
-    
+
     public BaseResponse getBaseResponse() {
         return baseResponse;
     }

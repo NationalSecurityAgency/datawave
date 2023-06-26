@@ -35,56 +35,56 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 
 /**
- * 
+ *
  */
 public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
     private static final Logger log = Logger.getLogger(FunctionNormalizationRebuildingVisitor.class);
-    
+
     private static final NoOpType NO_OP = new NoOpType();
-    
+
     protected final List<Type<?>> normalizers;
     protected final JexlArgumentDescriptor descriptor;
     protected final MetadataHelper helper;
     protected final Set<String> datatypeFilter;
-    
+
     protected Boolean normalizationFailed = false;
-    
+
     public FunctionNormalizationRebuildingVisitor(List<Type<?>> normalizers, JexlArgumentDescriptor descriptor, MetadataHelper helper,
                     Set<String> datatypeFilter) {
         Preconditions.checkNotNull(normalizers);
         Preconditions.checkNotNull(descriptor);
         Preconditions.checkNotNull(helper);
         Preconditions.checkNotNull(datatypeFilter);
-        
+
         this.normalizers = normalizers;
         this.descriptor = descriptor;
         this.helper = helper;
         this.datatypeFilter = datatypeFilter;
     }
-    
+
     public static JexlNode normalize(ASTFunctionNode function, Multimap<String,Type<?>> allNormalizers, MetadataHelper helper, Set<String> datatypeFilter) {
         Preconditions.checkNotNull(function);
         Preconditions.checkNotNull(allNormalizers);
         Preconditions.checkNotNull(helper);
-        
+
         JexlArgumentDescriptor descriptor = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
-        
+
         List<ASTFunctionNode> functions = Lists.newArrayList();
-        
+
         // create the distinct normalization lists.
         List<List<Type<?>>> lists = getNormalizerListsForArgs((ASTArguments) function.jjtGetChild(1), allNormalizers, descriptor, helper, datatypeFilter);
-        
+
         // now for each unique list of normalizers, lets normalize the function arguments
         for (List<Type<?>> list : lists) {
             FunctionNormalizationRebuildingVisitor visitor = new FunctionNormalizationRebuildingVisitor(list, descriptor, helper, datatypeFilter);
-            
+
             ASTFunctionNode node = (ASTFunctionNode) function.jjtAccept(visitor, null);
-            
+
             if (!visitor.normalizationFailed) {
                 functions.add(node);
             }
         }
-        
+
         // now reduce the set of functions by eliminating those variants with identical normalized values
         Comparator<ASTFunctionNode> comparator = new ASTFunctionNodeComparator();
         Collections.sort(functions, comparator);
@@ -97,14 +97,14 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
                 last = test;
             }
         }
-        
+
         if (functions.isEmpty()) {
             return copy(function);
         } else if (1 == functions.size()) {
             return functions.iterator().next();
         } else {
             JexlArgumentDescriptor desc = JexlFunctionArgumentDescriptorFactory.F.getArgumentDescriptor(function);
-            
+
             if (desc.useOrForExpansion()) {
                 return JexlNodeFactory.createOrNode(functions);
             } else {
@@ -112,12 +112,12 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
             }
         }
     }
-    
+
     public static class ASTFunctionNodeComparator implements Comparator<ASTFunctionNode> {
-        
+
         /*
          * (non-Javadoc)
-         * 
+         *
          * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
          */
         @Override
@@ -134,7 +134,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
             }
             return comparison;
         }
-        
+
         protected int compareChild(JexlNode n1, JexlNode n2) {
             int comparison = n1.getClass().getName().compareTo(n2.getClass().getName());
             if (comparison == 0) {
@@ -156,13 +156,13 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
             }
             return comparison;
         }
-        
+
     }
-    
+
     /**
      * Create lists of normalizers that maps to the function arguments. Each list is a unique list of normalizers. Each list will be applied to the arguments to
      * produce a separate function instance.
-     * 
+     *
      * @param arguments
      *            the function arguments
      * @param allNormalizers
@@ -178,9 +178,9 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
     private static List<List<Type<?>>> getNormalizerListsForArgs(ASTArguments arguments, Multimap<String,Type<?>> allNormalizers,
                     JexlArgumentDescriptor descriptor, MetadataHelper helper, Set<String> datatypeFilter) {
         List<List<Type<?>>> lists = new ArrayList<>();
-        
+
         lists.add(new ArrayList<>(Arrays.asList(new Type<?>[arguments.jjtGetNumChildren()])));
-        
+
         // first we go through the arguments and determine those that reference the same field.
         // this is done by assuming that if the fields returned by descriptor.fields is the same
         // for two separate arguments, then those arguments will refer to each field separately.
@@ -206,7 +206,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
                 fieldGroups.put(fields, args);
             }
         }
-        
+
         // now for each group of fields, get the set of normalizers and create the cross-product with
         // the other groups.
         for (Map.Entry<Set<String>,Set<Integer>> argGroup : fieldGroups.entrySet()) {
@@ -219,7 +219,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
                     normalizers.addAll(allNormalizers.get(field));
                 }
             }
-            
+
             // and now expand the lists of normalizers per the normalizers for this argument
             if (normalizers.size() == 1) {
                 Type<?> normalizer = normalizers.iterator().next();
@@ -246,7 +246,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         }
         return lists;
     }
-    
+
     @Override
     public Object visit(ASTArguments node, Object data) {
         ASTArguments newNode = newInstanceOfType(node);
@@ -260,7 +260,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         }
         return setChildren(newNode, children.toArray(new JexlNode[0]));
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         // Fail fast
@@ -270,7 +270,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
         Type<?> normalizer = null;
         // get the argument index
         int index = (Integer) data;
-        
+
         try {
             normalizer = normalizers.get(index);
             String normalizedValue = (descriptor.regexArguments() ? normalizer.normalizeRegex(node.getLiteral()) : normalizer.normalize(node.getLiteral()));
@@ -282,7 +282,7 @@ public class FunctionNormalizationRebuildingVisitor extends RebuildingVisitor {
             if (log.isTraceEnabled()) {
                 log.trace("Failed to normalized " + node.getLiteral() + " with " + normalizer != null ? normalizer.getClass().getName() : null + " normalizer");
             }
-            
+
             this.normalizationFailed = true;
             return node;
         }

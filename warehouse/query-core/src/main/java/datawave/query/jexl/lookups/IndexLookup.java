@@ -11,11 +11,11 @@ import java.util.Set;
 public abstract class IndexLookup {
     protected ShardQueryConfiguration config;
     protected ScannerFactory scannerFactory;
-    
+
     protected Set<String> fields;
-    
+
     protected IndexLookupMap indexLookupMap;
-    
+
     /**
      *
      * @param config
@@ -27,6 +27,6 @@ public abstract class IndexLookup {
         this.config = config;
         this.scannerFactory = scannerFactory;
     }
-    
+
     public abstract IndexLookupMap lookup();
 }

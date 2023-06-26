@@ -20,11 +20,11 @@ import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
  */
 public class GetAllMatches extends JexlQueryFunction {
     WildcardFieldedFilter.BooleanType type = null;
-    
+
     public GetAllMatches() {
         super("get_all_matches", new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
@@ -43,7 +43,7 @@ public class GetAllMatches extends JexlQueryFunction {
             this.parameterList.remove(0);
         }
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 2) {
@@ -65,15 +65,15 @@ public class GetAllMatches extends JexlQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         String operation = (this.type.equals(WildcardFieldedFilter.BooleanType.AND)) ? " && " : " || ";
-        
+
         if (parameterList.size() > 2) // do not wrap single terms
             sb.append("(");
-        
+
         int x = 0;
         while (x < parameterList.size()) {
             if (x >= 2) {
@@ -83,13 +83,13 @@ public class GetAllMatches extends JexlQueryFunction {
             String regex = parameterList.get(x++);
             sb.append("filter:getAllMatches(").append(field).append(", ").append(escapeString(regex)).append(")");
         }
-        
+
         if (parameterList.size() > 2)
             sb.append(")");
-        
+
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new GetAllMatches();

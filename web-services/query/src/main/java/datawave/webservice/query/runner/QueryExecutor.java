@@ -14,14 +14,14 @@ import javax.ws.rs.core.UriInfo;
 import java.util.Date;
 
 public interface QueryExecutor {
-    
+
     /**
      * List QueryLogic types that are currently available
      *
      * @return base response
      */
     QueryLogicResponse listQueryLogic();
-    
+
     /**
      * @param logicName
      *            the logic name
@@ -30,7 +30,7 @@ public interface QueryExecutor {
      * @return a generic response
      */
     GenericResponse<String> predictQuery(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * @param logicName
      *            the logic name
@@ -39,7 +39,7 @@ public interface QueryExecutor {
      * @return a generic response
      */
     GenericResponse<String> defineQuery(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * @param logicName
      *            the logic name
@@ -48,7 +48,7 @@ public interface QueryExecutor {
      * @return a generic response
      */
     GenericResponse<String> createQuery(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * @param logicName
      *            the logic name
@@ -57,7 +57,7 @@ public interface QueryExecutor {
      * @return a query response
      */
     BaseQueryResponse createQueryAndNext(String logicName, MultivaluedMap<String,String> queryParameters);
-    
+
     /**
      * Resets the query named by {@code id}. If the query is not alive, meaning that the current session has expired (due to either timeout, or server failure),
      * then this will reload the query and start it over. If the query is alive, it closes it and starts the query over.
@@ -67,9 +67,9 @@ public interface QueryExecutor {
      * @return an empty response
      */
     VoidResponse reset(String id);
-    
+
     /**
-     * 
+     *
      * @param uuid
      *            a uuid
      * @param uuidType
@@ -87,7 +87,7 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *                 
+     *
      * @HTTP 200 success
      * @HTTP 202 if asynch is true - see Location response header for the job URI location
      * @HTTP 204 success and no results
@@ -95,9 +95,9 @@ public interface QueryExecutor {
      * @HTTP 500 internal server error
      */
     <T> T lookupContentByUUID(String uuidType, String uuid, UriInfo uriInfo, HttpHeaders httpHeaders);
-    
+
     /**
-     * 
+     *
      * @param queryParameters
      *            query parameters
      * @param httpHeaders
@@ -111,16 +111,16 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *                 
+     *
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
      * @HTTP 500 internal server error
      */
     <T> T lookupContentByUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
-    
+
     /**
-     * 
+     *
      * @param uuidType
      *            the uuid type
      * @param uuid
@@ -138,14 +138,14 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *                 
+     *
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
      * @HTTP 500 internal server error
      */
     <T> T lookupUUID(String uuidType, String uuid, UriInfo uriInfo, HttpHeaders httpHeaders);
-    
+
     /**
      *
      * @param queryParameters
@@ -161,14 +161,14 @@ public interface QueryExecutor {
      *                 query-session-id header in the request in a Cookie header or as a query parameter
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
      * @ResponseHeader X-Partial-Results true if the page contains less than the requested number of results
-     *                 
+     *
      * @HTTP 200 success
      * @HTTP 204 success and no results
      * @HTTP 400 invalid or missing parameter
      * @HTTP 500 internal server error
      */
     <T> T lookupUUIDBatch(MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
-    
+
     /**
      * Gets the plan from the query object. If the object is no longer alive, meaning that the current session has expired, then this will fail.
      *
@@ -177,7 +177,7 @@ public interface QueryExecutor {
      * @return the plan
      */
     GenericResponse<String> plan(String id);
-    
+
     /**
      * Gets the latest query predictions from the query object. If the object is no longer alive, meaning that the current session has expired, then this will
      * fail.
@@ -187,7 +187,7 @@ public interface QueryExecutor {
      * @return the predictions
      */
     GenericResponse<String> predictions(String id);
-    
+
     /**
      * Gets the next page of results from the query object. If the object is no longer alive, meaning that the current session has expired, then this will fail.
      *
@@ -196,7 +196,7 @@ public interface QueryExecutor {
      * @return set of Row objects
      */
     BaseQueryResponse next(String id);
-    
+
     /**
      * Locates queries for the current user by name.
      *
@@ -205,13 +205,13 @@ public interface QueryExecutor {
      * @return the query named {@code name}, if any
      */
     QueryImplListResponse list(String name);
-    
+
     /**
      *
      * @return list of users queries.
      */
     QueryImplListResponse listUserQueries();
-    
+
     /**
      * Updates a query object
      *
@@ -246,7 +246,7 @@ public interface QueryExecutor {
     GenericResponse<String> updateQuery(String id, String queryLogicName, String newQuery, String newColumnVisibility, Date newBeginDate, Date newEndDate,
                     String newQueryAuthorizations, Date newExpirationDate, Integer newPagesize, Integer newPageTimeout, Long newMaxResultsOverride,
                     QueryPersistence newPersistenceMode, String newParameters);
-    
+
     /**
      * Duplicates a query and allows modification of optional properties
      *
@@ -285,7 +285,7 @@ public interface QueryExecutor {
     GenericResponse<String> duplicateQuery(String id, String newQueryName, String newQueryLogicName, String newQuery, String newColumnVisibility,
                     Date newBeginDate, Date newEndDate, String newQueryAuthorizations, Date newExpirationDate, Integer newPagesize, Integer newPageTimeout,
                     Long newMaxResultsOverride, QueryPersistence newPersistenceMode, String newParameters, boolean trace);
-    
+
     /**
      * Release the resources associated with this query
      *
@@ -294,9 +294,9 @@ public interface QueryExecutor {
      * @return base response
      */
     VoidResponse close(String id);
-    
+
     VoidResponse adminClose(String id);
-    
+
     /**
      * Cancels the current query and releases the resources associated with it.
      *
@@ -305,18 +305,18 @@ public interface QueryExecutor {
      * @return base response
      */
     VoidResponse cancel(String id);
-    
+
     VoidResponse adminCancel(String id);
-    
+
     /**
      * remove query
-     * 
+     *
      * @return base response
      * @param id
      *            the id
      */
     VoidResponse remove(String id);
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      * <p>
@@ -334,13 +334,13 @@ public interface QueryExecutor {
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user, by specifying a chain of DNs of the identities to proxy
      * @RequestHeader X-ProxiedIssuersChain required when using X-ProxiedEntitiesChain, specify one issuer DN per subject DN listed in X-ProxiedEntitiesChain
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 400 if neither queryRegex nor user are specified
      * @HTTP 401 if the user does not have Administrative credentials
      */
     VoidResponse enableTracing(String queryRegex, String user);
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      * <p>
@@ -351,13 +351,13 @@ public interface QueryExecutor {
      * @param user
      *            (optional) the user name for which to disable query tracing
      * @return datawave.webservice.result.VoidResponse
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 400 if neither queryRegex nor user are specified
      * @HTTP 401 if the user does not have Administrative credentials
      */
     VoidResponse disableTracing(String queryRegex, String user);
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      * <p>
@@ -370,12 +370,12 @@ public interface QueryExecutor {
      * @HTTP 401 if the user does not have Administrative credentials
      */
     VoidResponse disableAllTracing();
-    
+
     /**
      * Creates a query object for the user and returns all of the pages in a stream. When done, closes the query. This method is a convenience for users so that
      * they don't have to call create/next/next/next/.../close. Callers should utilize the max.override.results parameter to limit the number of results that
      * they receive.
-     * 
+     *
      * @param logicName
      *            a logic name
      * @param queryParameters
@@ -385,5 +385,5 @@ public interface QueryExecutor {
      * @return all of the pages in a stream
      */
     StreamingOutput execute(String logicName, MultivaluedMap<String,String> queryParameters, HttpHeaders httpHeaders);
-    
+
 }

@@ -22,7 +22,7 @@ import java.io.ObjectInputStream;
 public class EmbeddedServerPrincipalProducer {
     private boolean initialized = false;
     private DatawavePrincipal serverPrincipal;
-    
+
     @Produces
     @ServerPrincipal
     public DatawavePrincipal produceServerPrincipal() {
@@ -32,14 +32,14 @@ public class EmbeddedServerPrincipalProducer {
         }
         return serverPrincipal;
     }
-    
+
     private void initializeServerPrincipal() {
         String encodedServerPrincipal = System.getProperty("server.principal");
         if (encodedServerPrincipal == null) {
             throw new IllegalStateException("System property server.principal must be set to a serialized, base64 encoded principal.");
         }
         byte[] decodedServerPrincipal = Base64.decodeBase64(encodedServerPrincipal);
-        
+
         try (ByteArrayInputStream bais = new ByteArrayInputStream(decodedServerPrincipal); ObjectInputStream ois = new ObjectInputStream(bais)) {
             serverPrincipal = (DatawavePrincipal) ois.readObject();
         } catch (Exception e) {

@@ -13,14 +13,14 @@ import java.util.List;
  * A utility class that can introspect JexlNodes for useful things like raw access to the children array and type ID. This makes cloning and mutation easier.
  */
 public class JexlNodes {
-    
+
     private JexlNodes() {
         // this is a static utility
     }
-    
+
     /**
      * Ensures that the child array as at least {i} capacity.
-     * 
+     *
      * @param <T>
      *            type of node
      * @param node
@@ -40,7 +40,7 @@ public class JexlNodes {
         }
         return node;
     }
-    
+
     /**
      * Returns the internal {id} of the supplied node.
      *
@@ -53,7 +53,7 @@ public class JexlNodes {
     public static int id(JexlNode n) {
         return n.id;
     }
-    
+
     /**
      * Returns a new instance of type of node supplied to this method.
      *
@@ -74,7 +74,7 @@ public class JexlNodes {
             throw new IllegalArgumentException(e);
         }
     }
-    
+
     /**
      * Sets the supplied child array as the children member of {node} and sets the parent reference of each element in {children} to {node}.
      *
@@ -92,27 +92,27 @@ public class JexlNodes {
             newParent(child, node);
         return node;
     }
-    
+
     public static ASTReferenceExpression makeRefExp() {
         return new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
     }
-    
+
     public static ASTFunctionNode makeFunction(String namespace, String name, JexlNode... arguments) {
         ASTNamespaceIdentifier namespaceNode = new ASTNamespaceIdentifier(ParserTreeConstants.JJTNAMESPACEIDENTIFIER);
         namespaceNode.setNamespace(namespace, name);
-        
+
         ASTArguments argumentNode = new ASTArguments(ParserTreeConstants.JJTARGUMENTS);
         argumentNode.jjtSetChildren(arguments);
-        
+
         ASTFunctionNode functionNode = new ASTFunctionNode(ParserTreeConstants.JJTFUNCTIONNODE);
         functionNode.jjtSetChildren(new JexlNode[] {namespaceNode, argumentNode});
-        
+
         return functionNode;
     }
-    
+
     /**
      * Wraps some node in a ReferenceExpression, so when rebuilding, the subtree will be surrounded by parens
-     * 
+     *
      * @param node
      *            the jexl node
      * @return the node wrapped in a reference expression
@@ -121,11 +121,11 @@ public class JexlNodes {
         ASTReferenceExpression ref = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
         return setChildren(ref, node);
     }
-    
+
     public static boolean isWrapped(JexlNode node) {
         return id(node.jjtGetParent()) == ParserTreeConstants.JJTREFERENCEEXPRESSION;
     }
-    
+
     /**
      * Fluid wrapper for calling {child.jjtSetParent(parent)}.
      *
@@ -141,10 +141,10 @@ public class JexlNodes {
         child.jjtSetParent(parent);
         return child;
     }
-    
+
     /**
      * Swaps {childA} with {childB} in {parent}'s list of children, but does not reset {childA}'s parent.
-     * 
+     *
      * @param <T>
      *            type of the parent
      * @param a
@@ -164,10 +164,10 @@ public class JexlNodes {
         }
         return parent;
     }
-    
+
     /**
      * Swaps {childA} with {childB} in {parent}'s list of children and resets {childA}'s parent to null.
-     * 
+     *
      * @param <T>
      *            type of the parent
      * @param a
@@ -188,7 +188,7 @@ public class JexlNodes {
         }
         return parent;
     }
-    
+
     public static JexlNode promote(JexlNode parent, JexlNode child) {
         JexlNode grandpa = parent.jjtGetParent();
         if (grandpa == null) {
@@ -198,13 +198,13 @@ public class JexlNodes {
             return swap(parent.jjtGetParent(), parent, child);
         }
     }
-    
+
     public static boolean setLiteral(ASTNumberLiteral literal, Number value) {
         boolean success = false;
-        
+
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
-        
+
         if (isNaturalNumber(value.getClass())) {
             literal.setNatural(value.toString());
             success = true;
@@ -212,67 +212,67 @@ public class JexlNodes {
             literal.setReal(value.toString());
             success = true;
         }
-        
+
         return success;
     }
-    
+
     protected static boolean isNaturalNumber(Class<? extends Number> clazz) {
         return clazz == Integer.class || clazz == Long.class || clazz == BigInteger.class;
     }
-    
+
     protected static boolean isRealNumber(Class<? extends Number> clazz) {
         return clazz == Float.class || clazz == Double.class || clazz == BigDecimal.class;
     }
-    
+
     public static void setLiteral(ASTStringLiteral literal, String value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
-        
+
         literal.setLiteral(value);
     }
-    
+
     public static void setLiteral(ASTRegexLiteral literal, String value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
-        
+
         literal.setLiteral(value);
     }
-    
+
     public static void setLiteral(ASTJxltLiteral literal, String value) {
         Preconditions.checkNotNull(literal);
         Preconditions.checkNotNull(value);
-        
+
         literal.setLiteral(value);
     }
-    
+
     public static void setAnnotation(ASTAnnotation annotation, String name) {
         Preconditions.checkNotNull(annotation);
         Preconditions.checkNotNull(name);
-        
+
         annotation.setName(name);
     }
-    
+
     public static void setQualifiedIdentifier(ASTQualifiedIdentifier identifier, String value) {
         Preconditions.checkNotNull(identifier);
         Preconditions.checkNotNull(value);
-        
+
         identifier.setName(value);
     }
-    
+
     public static void setIdentifier(ASTIdentifier identifier, String name) {
         Preconditions.checkNotNull(identifier);
         Preconditions.checkNotNull(name);
-        
+
         identifier.setSymbol(name);
     }
-    
+
     public static void setIdentifierAccess(ASTIdentifierAccess identifierAccess, String value) {
         Preconditions.checkNotNull(identifierAccess);
         Preconditions.checkNotNull(value);
-        
+
         identifierAccess.setIdentifier(value);
     }
-    
+
     public static Object getImage(JexlNode node) {
         Object value = null;
         if (node instanceof ASTIdentifier) {
@@ -284,7 +284,7 @@ public class JexlNodes {
         }
         return value;
     }
-    
+
     public static boolean setImage(JexlNode node, Object value) {
         boolean success = false;
         if (node instanceof ASTIdentifier && value instanceof String) {
@@ -296,11 +296,11 @@ public class JexlNodes {
         }
         return success;
     }
-    
+
     public static boolean copyImage(JexlNode original, JexlNode copy) {
         return setImage(copy, getImage(original));
     }
-    
+
     /**
      * Negate the provided JexlNode
      *
@@ -315,25 +315,25 @@ public class JexlNodes {
         }
         return setChildren(new ASTNotNode(ParserTreeConstants.JJTNOTNODE), wrap(node));
     }
-    
+
     public static ASTIdentifier makeIdentifier() {
         return new ASTIdentifier(ParserTreeConstants.JJTIDENTIFIER);
     }
-    
+
     public static ASTNumberLiteral makeNumberLiteral() {
         return new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
     }
-    
+
     public static ASTStringLiteral makeStringLiteral() {
         return new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
     }
-    
+
     public static ASTIdentifier makeIdentifierWithImage(String identifier) {
         ASTIdentifier id = makeIdentifier();
         id.setSymbol(identifier);
         return id;
     }
-    
+
     public static JexlNode otherChild(JexlNode parent, JexlNode child) {
         Preconditions.checkArgument(parent.jjtGetNumChildren() == 2, "Jexl tree must be binary, but received node with %s children.",
                         parent.jjtGetNumChildren());
@@ -346,22 +346,22 @@ public class JexlNodes {
         }
         return Preconditions.checkNotNull(otherChild);
     }
-    
+
     public static ASTStringLiteral literal(String s) {
         ASTStringLiteral l = new ASTStringLiteral(ParserTreeConstants.JJTSTRINGLITERAL);
         setLiteral(l, s);
         return l;
     }
-    
+
     public static ASTNumberLiteral literal(Number n) {
         ASTNumberLiteral l = new ASTNumberLiteral(ParserTreeConstants.JJTNUMBERLITERAL);
         setLiteral(l, n);
         return l;
     }
-    
+
     /**
      * Remove childToRemove from parent, updating all references on both the parent and childToRemove to be consistent
-     * 
+     *
      * @param parent
      *            the parent to remove from
      * @param childToRemove
@@ -373,12 +373,12 @@ public class JexlNodes {
         if (childToRemove == null || parent == null) {
             return false;
         }
-        
+
         boolean found = false;
         // at most as many children as currently exist
         List<JexlNode> children = new ArrayList<>(parent.jjtGetNumChildren());
         JexlNode[] nodeArray = new JexlNode[0];
-        
+
         for (int i = 0; i < parent.jjtGetNumChildren(); i++) {
             JexlNode child = parent.jjtGetChild(i);
             if (child != childToRemove) {
@@ -389,19 +389,19 @@ public class JexlNodes {
                 found = true;
             }
         }
-        
+
         // update the children references if they changed
         if (found) {
             // reset the children on the parent node to remove this one
             JexlNodes.setChildren(parent, children.toArray(nodeArray));
         }
-        
+
         return found;
     }
-    
+
     /**
      * Return whether or not the node has at least one child.
-     * 
+     *
      * @param node
      *            the node
      * @return true if the node is not null and has at least one child, or false otherwise.
@@ -409,7 +409,7 @@ public class JexlNodes {
     public static boolean isNotChildless(JexlNode node) {
         return node != null && node.jjtGetNumChildren() > 0;
     }
-    
+
     /**
      * Ascends the entire Jexl tree searching for a negation. In the case of an unflattened tree this may be an expensive operation
      *

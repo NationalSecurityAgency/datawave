@@ -63,7 +63,7 @@ import java.util.concurrent.TimeUnit;
 
 public class BulkResultsJobConfiguration extends MapReduceJobConfiguration implements NeedCallerDetails, NeedAccumuloConnectionFactory, NeedAccumuloDetails,
                 NeedQueryLogicFactory, NeedQueryPersister, NeedQueryCache, NeedSecurityDomain {
-    
+
     /**
      * Container for query settings
      *
@@ -74,7 +74,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         private String base64EncodedQuery = null;
         private Set<Authorizations> runtimeQueryAuthorizations = null;
         private Class<? extends Query> queryImplClass;
-        
+
         public QuerySettings(QueryLogic<?> logic, GenericQueryConfiguration queryConfig, String base64EncodedQuery, Class<? extends Query> queryImplClass,
                         Set<Authorizations> runtimeQueryAuthorizations) {
             super();
@@ -84,30 +84,30 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             this.queryImplClass = queryImplClass;
             this.runtimeQueryAuthorizations = runtimeQueryAuthorizations;
         }
-        
+
         public QueryLogic<?> getLogic() {
             return logic;
         }
-        
+
         public GenericQueryConfiguration getQueryConfig() {
             return queryConfig;
         }
-        
+
         public String getBase64EncodedQuery() {
             return base64EncodedQuery;
         }
-        
+
         public Class<? extends Query> getQueryImplClass() {
             return queryImplClass;
         }
-        
+
         public Set<Authorizations> getRuntimeQueryAuthorizations() {
             return runtimeQueryAuthorizations;
         }
     }
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     private JSSESecurityDomain jsseSecurityDomain = null;
     private AccumuloConnectionFactory connectionFactory;
     private QueryLogicFactory queryFactory;
@@ -120,14 +120,14 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     private String zookeepers;
     private String sid;
     private Principal principal;
-    
+
     private String tableName = null;
     private Class<? extends OutputFormat> outputFormatClass = SequenceFileOutputFormat.class;
-    
+
     @Override
     public void _initializeConfiguration(Job job, Path jobDir, String jobId, Map<String,String> runtimeParameters, DatawavePrincipal serverPrincipal)
                     throws IOException, QueryException {
-        
+
         String queryId = runtimeParameters.get("queryId");
         SerializationFormat format = SerializationFormat.valueOf(runtimeParameters.get("format"));
         String outputFormatParameter = runtimeParameters.get("outputFormat");
@@ -136,14 +136,14 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         }
         if (runtimeParameters.containsKey("outputTableName"))
             this.tableName = runtimeParameters.get("outputTableName");
-        
+
         // Initialize the Query
         QueryLogic<?> logic;
         GenericQueryConfiguration queryConfig;
         String base64EncodedQuery;
         Class<? extends Query> queryImplClass;
         Set<Authorizations> runtimeQueryAuthorizations;
-        
+
         try {
             QuerySettings settings = setupQuery(sid, queryId, principal);
             logic = settings.getLogic();
@@ -158,12 +158,12 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             log.error("Error setting up Query for id: " + queryId, e);
             throw new QueryException(e);
         }
-        
+
         // Setup and run the MapReduce job
         try {
-            
+
             setupJob(job, jobDir, queryConfig, logic, base64EncodedQuery, queryImplClass, runtimeQueryAuthorizations, serverPrincipal);
-            
+
             if (null == this.tableName) {
                 // Setup job for output to HDFS
                 // set the mapper
@@ -193,7 +193,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 job.setOutputValueClass(Mutation.class);
                 job.setNumReduceTasks(0);
                 job.setOutputFormatClass(AccumuloOutputFormat.class);
-                
+
                 // @formatter:off
                 Properties clientProps = Accumulo.newClientProperties()
                         .to(instanceName, zookeepers)
@@ -210,7 +210,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                         .defaultTable(tableName)
                         .store(job);
                 // @formatter:on
-                
+
                 // AccumuloOutputFormat.loglevel
                 // TODO: this is not supported on the new output format -- just use normal logging configuration
                 // AccumuloOutputFormat.setLogLevel(job, Level.INFO);
@@ -221,9 +221,9 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             log.error("Error starting job", e);
             throw new QueryException(DatawaveErrorCode.JOB_STARTING_ERROR, e);
         }
-        
+
     }
-    
+
     /**
      * Common MapReduce setup methods
      *
@@ -251,35 +251,35 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
     private void setupJob(Job job, Path jobDir, GenericQueryConfiguration queryConfig, QueryLogic<?> logic, String base64EncodedQuery,
                     Class<? extends Query> queryImplClass, Set<Authorizations> runtimeQueryAuthorizations, DatawavePrincipal serverPrincipal)
                     throws IOException, AccumuloSecurityException {
-        
+
         job.setInputFormatClass(BulkInputFormat.class);
-        
+
         QueryData queryData = null;
         Collection<Range> ranges = new ArrayList<>();
-        
+
         if (!queryConfig.canRunQuery()) {
             throw new UnsupportedOperationException("Unable to run query");
         }
-        
+
         Iterator<QueryData> iter = queryConfig.getQueriesIter();
         while (iter.hasNext()) {
             queryData = iter.next();
             ranges.addAll(queryData.getRanges());
         }
-        
+
         if (ranges.isEmpty()) {
             throw new NoResultsException(new QueryException("No scan ranges produced for query."));
         }
-        
+
         BulkInputFormat.setWorkingDirectory(job.getConfiguration(), jobDir.toString());
-        
+
         // Copy the information from the GenericQueryConfiguration to the job.
         BulkInputFormat.setRanges(job, ranges);
-        
+
         for (IteratorSetting cfg : queryData.getSettings()) {
             BulkInputFormat.addIterator(job.getConfiguration(), cfg);
         }
-        
+
         BulkInputFormat.setZooKeeperInstance(job.getConfiguration(), this.instanceName, this.zookeepers);
         Iterator<Authorizations> authsIter = (runtimeQueryAuthorizations == null || runtimeQueryAuthorizations.isEmpty()) ? null
                         : runtimeQueryAuthorizations.iterator();
@@ -291,11 +291,11 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             cfg.addOption(ConfigurableVisibilityFilter.AUTHORIZATIONS_OPT, authsIter.next().toString());
             BulkInputFormat.addIterator(job.getConfiguration(), cfg);
         }
-        
+
         job.getConfiguration().set(WeldBulkResultsFileOutputMapper.QUERY_LOGIC_SETTINGS, base64EncodedQuery);
         job.getConfiguration().set(WeldBulkResultsFileOutputMapper.QUERY_IMPL_CLASS, queryImplClass.getName());
         job.getConfiguration().set(WeldBulkResultsFileOutputMapper.QUERY_LOGIC_NAME, logic.getLogicName());
-        
+
         job.getConfiguration().set(WeldBulkResultsFileOutputMapper.APPLICATION_CONTEXT_PATH,
                         "classpath*:datawave/configuration/spring/CDIBeanPostProcessor.xml," + "classpath*:datawave/query/*QueryLogicFactory.xml,"
                                         + "classpath*:/MarkingFunctionsContext.xml," + "classpath*:/MetadataHelperContext.xml,"
@@ -312,22 +312,22 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         job.getConfiguration().set("mapreduce.map.java.opts", javaOpts);
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
-        
+
         job.setWorkingDirectory(jobDir);
     }
-    
+
     private String encodePrincipal(DatawavePrincipal principal) throws IOException {
-        
+
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            
+
             // create a copy because this DatawavePrincipal might be CDI injected and have a reference to Weld
             oos.writeObject(new DatawavePrincipal(principal.getProxiedUsers(), principal.getCreationTime()));
             return Base64.encodeBase64String(baos.toByteArray());
         }
     }
-    
+
     private QuerySettings setupQuery(String sid, String queryId, Principal principal) throws Exception {
-        
+
         AccumuloClient client = null;
         QueryLogic<?> logic = null;
         try {
@@ -336,7 +336,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             if (!sid.equals(q.getOwner()))
                 throw new QueryException("This query does not belong to you. expected: " + q.getOwner() + ", value: " + sid,
                                 Response.Status.UNAUTHORIZED.getStatusCode());
-            
+
             String userDN = null;
             Collection<String> proxyServers = null;
             if (principal instanceof DatawavePrincipal) {
@@ -344,14 +344,14 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                 userDN = dp.getUserDN().subjectDN();
                 proxyServers = dp.getProxyServers();
             }
-            
+
             // will throw IllegalArgumentException if not defined
             logic = queryFactory.getQueryLogic(q.getQueryLogicName(), (DatawavePrincipal) principal);
-            
+
             // Get an accumulo connection
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(userDN, proxyServers, logic.getConnectionPriority(), trackingMap);
-            
+
             // Merge user auths with the auths that they use in the Query
             // the query principal is our local principal unless the query logic has a different user operations
             DatawavePrincipal queryPrincipal = (DatawavePrincipal) ((logic.getUserOperations() == null) ? principal
@@ -361,22 +361,22 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                             : userOperations.getRemoteUser((DatawavePrincipal) principal));
             Set<Authorizations> runtimeQueryAuthorizations = WSAuthorizationsUtil.getDowngradedAuthorizations(q.getQueryAuthorizations(), overallPrincipal,
                             queryPrincipal);
-            
+
             // Initialize the logic so that the configuration contains all of the iterator options
             GenericQueryConfiguration queryConfig = logic.initialize(client, q, runtimeQueryAuthorizations);
-            
+
             String base64EncodedQuery = WeldBulkResultsFileOutputMapper.serializeQuery(q);
-            
+
             return new QuerySettings(logic, queryConfig, base64EncodedQuery, q.getClass(), runtimeQueryAuthorizations);
         } finally {
             if (null != logic && null != client)
                 connectionFactory.returnClient(client);
         }
-        
+
     }
-    
+
     private Query getQueryById(String id) throws QueryException {
-        
+
         RunningQuery runningQuery = runningQueryCache.get(id);
         if (null != runningQuery) {
             return runningQuery.getSettings();
@@ -389,23 +389,23 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
             return queries.get(0);
         }
     }
-    
+
     @Override
     public void setSecurityDomain(JSSESecurityDomain jsseSecurityDomain) {
         this.jsseSecurityDomain = jsseSecurityDomain;
     }
-    
+
     public void setUserOperations(UserOperations userOperations) {
         this.userOperations = userOperations;
     }
-    
+
     protected void exportSystemProperties(String jobId, Job job, FileSystem fs, Path classpath) {
         Properties systemProperties = new Properties();
         systemProperties.putAll(System.getProperties());
         if (this.jobSystemProperties != null) {
             systemProperties.putAll(this.jobSystemProperties);
         }
-        
+
         if (this.jsseSecurityDomain != null) {
             String useJobCacheString = systemProperties.getProperty("dw.mapreduce.securitydomain.useJobCache");
             boolean useJobCache = Boolean.parseBoolean(useJobCacheString);
@@ -429,7 +429,7 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
                     log.error(e.getMessage(), e);
                 }
             }
-            
+
             if (jsseSecurityDomain.getClientAlias() != null) {
                 systemProperties.setProperty("dw.mapreduce.securitydomain.clientAlias", jsseSecurityDomain.getClientAlias());
             }
@@ -446,52 +446,52 @@ public class BulkResultsJobConfiguration extends MapReduceJobConfiguration imple
         }
         writeProperties(jobId, job, fs, classpath, systemProperties);
     }
-    
+
     @Override
     public void setQueryLogicFactory(QueryLogicFactory factory) {
         this.queryFactory = factory;
     }
-    
+
     @Override
     public void setUsername(String username) {
         this.user = username;
     }
-    
+
     @Override
     public void setPassword(String password) {
         this.password = password;
     }
-    
+
     @Override
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
     }
-    
+
     @Override
     public void setZookeepers(String zookeepers) {
         this.zookeepers = zookeepers;
     }
-    
+
     @Override
     public void setAccumuloConnectionFactory(AccumuloConnectionFactory factory) {
         this.connectionFactory = factory;
     }
-    
+
     @Override
     public void setUserSid(String sid) {
         this.sid = sid;
     }
-    
+
     @Override
     public void setPrincipal(Principal principal) {
         this.principal = principal;
     }
-    
+
     @Override
     public void setPersister(Persister persister) {
         this.persister = persister;
     }
-    
+
     @Override
     public void setQueryCache(QueryCache cache) {
         this.runningQueryCache = cache;

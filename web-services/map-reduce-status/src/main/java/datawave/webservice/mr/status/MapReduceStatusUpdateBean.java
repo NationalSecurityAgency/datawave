@@ -35,12 +35,12 @@ import org.jboss.resteasy.annotations.GZIP;
 @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
 @TransactionManagement(TransactionManagementType.BEAN)
 public class MapReduceStatusUpdateBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private MapReduceStatePersisterBean mapReduceState;
-    
+
     /**
      * This method is meant to be a callback from the Hadoop infrastructure and is not protected. When a BulkResults job is submitted the
      * "job.end.notification.url" property is set to public URL endpoint for this servlet. The Hadoop infrastructure will call back to this servlet. If the call
@@ -51,13 +51,13 @@ public class MapReduceStatusUpdateBean {
      *            the job id
      * @param jobStatus
      *            the job status
-     *            
+     *
      * @HTTP 200 success
      * @HTTP 500 failure
-     *            
+     *
      * @return datawave.webservice.result.VoidResponse
      * @ResponseHeader X-OperationTimeInMS time spent on the server performing the operation, does not account for network or result serialization
-     *            
+     *
      */
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
@@ -68,7 +68,7 @@ public class MapReduceStatusUpdateBean {
     @Interceptors({ResponseInterceptor.class, RequiredInterceptor.class})
     public VoidResponse updateState(@Required("jobId") @QueryParam("jobId") String jobId, @Required("jobStatus") @QueryParam("jobStatus") String jobStatus) {
         log.info("Received MapReduce status update for job: " + jobId + ", new status: " + jobStatus);
-        
+
         VoidResponse response = new VoidResponse();
         try {
             mapReduceState.updateState(jobId, MapReduceState.valueOf(jobStatus));
@@ -80,5 +80,5 @@ public class MapReduceStatusUpdateBean {
             throw new DatawaveWebApplicationException(qe, response);
         }
     }
-    
+
 }

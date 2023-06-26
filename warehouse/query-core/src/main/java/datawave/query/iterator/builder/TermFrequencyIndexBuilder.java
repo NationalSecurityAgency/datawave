@@ -23,7 +23,7 @@ import org.apache.commons.jexl3.parser.JexlNode;
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
  * traversing a subtree in a query. This allows arbitrary ordering of the arguments.
- * 
+ *
  */
 public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected String field;
@@ -38,87 +38,87 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected TermFrequencyAggregator termFrequencyAggregator;
     protected IteratorEnvironment iteratorEnvironment;
     protected JexlNode node;
-    
+
     public void setNode(JexlNode node) {
         this.node = node;
     }
-    
+
     public JexlNode getNode() {
         return node;
     }
-    
+
     public void setSource(final SortedKeyValueIterator<Key,Value> source) {
         this.source = source;
     }
-    
+
     public String getField() {
         return this.field;
     }
-    
+
     public void setField(String field) {
         this.field = field;
     }
-    
+
     public void setRange(Range range) {
         this.range = range;
     }
-    
+
     public TypeMetadata getTypeMetadata() {
         return typeMetadata;
     }
-    
+
     public void setTypeMetadata(TypeMetadata typeMetadata) {
         this.typeMetadata = typeMetadata;
     }
-    
+
     public Set<String> getFieldsToAggregate() {
         return fieldsToAggregate;
     }
-    
+
     public void setFieldsToAggregate(Set<String> fields) {
         fieldsToAggregate = fields;
     }
-    
+
     public Set<String> getCompositeFields() {
         return compositeFields;
     }
-    
+
     public void setCompositeFields(Set<String> compositeFields) {
         this.compositeFields = compositeFields;
     }
-    
+
     public Predicate<Key> getDatatypeFilter() {
         return datatypeFilter;
     }
-    
+
     public void setDatatypeFilter(Predicate<Key> datatypeFilter) {
         this.datatypeFilter = datatypeFilter;
     }
-    
+
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
-    
+
     public void setTimeFilter(TimeFilter timeFilter) {
         this.timeFilter = timeFilter;
     }
-    
+
     public EventDataQueryFilter getAttrFilter() {
         return attrFilter;
     }
-    
+
     public void setAttrFilter(EventDataQueryFilter attrFilter) {
         this.attrFilter = attrFilter;
     }
-    
+
     public void setTermFrequencyAggregator(TermFrequencyAggregator termFrequencyAggregator) {
         this.termFrequencyAggregator = termFrequencyAggregator;
     }
-    
+
     public void setEnv(IteratorEnvironment env) {
         this.iteratorEnvironment = env;
     }
-    
+
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
         if (notNull(field, range, source, datatypeFilter, timeFilter)) {
@@ -148,7 +148,7 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
             throw new IllegalStateException(msg.toString());
         }
     }
-    
+
     public static boolean notNull(Object... os) {
         for (Object o : os) {
             if (o == null) {

@@ -21,7 +21,7 @@ import java.util.List;
  * original QueryPropertyMarker instance, as the marked node. Children of the marker node will not be identified as marked.
  */
 public class QueryPropertyMarkerVisitor extends BaseVisitor {
-    
+
     /**
      * Examine the specified node to see if it represents a query property marker, and return an {@link Instance} with the marker's type and source node. If the
      * specified node is not a marker type, an empty {@link Instance} will be returned.
@@ -40,13 +40,13 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         }
         return Instance.of();
     }
-    
+
     private MarkerType marker;
     private List<JexlNode> sourceNodes;
     private boolean visitedFirstAndNode;
-    
+
     private QueryPropertyMarkerVisitor() {}
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         // Do not search for a marker in any assignment nodes that are not within the first AND node.
@@ -58,22 +58,22 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         }
         return null;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         // Do not descend into children of OR nodes.
         return null;
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // Only the first AND node is a potential marker candidate.
         if (!visitedFirstAndNode) {
             visitedFirstAndNode = true;
-            
+
             // Get the flattened children.
             List<JexlNode> children = getFlattenedChildren(node);
-            
+
             // Examine each child for a marker identifier.
             List<JexlNode> siblings = new ArrayList<>();
             for (JexlNode child : children) {
@@ -85,17 +85,17 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
                         continue;
                     }
                 }
-                
+
                 siblings.add(JexlASTHelper.dereference(child));
             }
-            
+
             // If a marker was found, assign the source nodes.
             if (markerFound())
                 sourceNodes = siblings;
         }
         return null;
     }
-    
+
     /**
      * Return the flattened children of the specified node. Nested {@link ASTAndNode} nodes are ignored, and their children are considered direct children for
      * the parent {@link ASTAndNode} node.
@@ -122,7 +122,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
         // Ensure we return the children in their original order.
         return children.size() == 1 ? children : Lists.reverse(children);
     }
-    
+
     /**
      * Return whether a {@link QueryPropertyMarker} has been found yet.
      *

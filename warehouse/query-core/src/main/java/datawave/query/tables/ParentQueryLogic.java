@@ -16,41 +16,41 @@ import java.util.Map.Entry;
 
 public class ParentQueryLogic extends ShardQueryLogic {
     public ParentQueryLogic() {}
-    
+
     public ParentQueryLogic(ParentQueryLogic other) {
         super(other);
         setIter();
     }
-    
+
     @Override
     public void setQueryPlanner(QueryPlanner planner) {
         super.setQueryPlanner(planner);
         setIter();
     }
-    
+
     protected void setIter() {
         getQueryPlanner().setQueryIteratorClass(ParentQueryIterator.class);
     }
-    
+
     @Override
     public ParentQueryLogic clone() {
         return new ParentQueryLogic(this);
     }
-    
+
     @Override
     public Iterator<Entry<Key,Value>> iterator() {
         return Iterators.filter(super.iterator(), new DedupeColumnFamilies());
     }
-    
+
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        
+
         DocumentTransformer transformer = new ParentDocumentTransformer(this, settings, this.getMarkingFunctions(), this.getResponseObjectFactory(),
                         this.isReducedResponse());
         transformer.setEventQueryDataDecoratorTransformer(eventQueryDataDecoratorTransformer);
-        
+
         transformer.setQm(queryModel);
-        
+
         return transformer;
     }
 }

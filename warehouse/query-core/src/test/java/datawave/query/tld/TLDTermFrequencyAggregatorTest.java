@@ -33,17 +33,17 @@ import static org.junit.Assert.assertTrue;
 
 public class TLDTermFrequencyAggregatorTest {
     private TLDTermFrequencyAggregator aggregator;
-    
+
     @Before
     public void setup() {
         aggregator = new TLDTermFrequencyAggregator(null, null, -1);
     }
-    
+
     @Test
     public void apply_buildDocNotKeep() throws IOException, ParseException {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
-        
+
         TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE2", "dataType1", "123.345.456.1", 10), new Value());
@@ -58,33 +58,33 @@ public class TLDTermFrequencyAggregatorTest {
         treeMap.put(getTF("123", "FIELD1", "VALUE2", "dataType1", "123.345.456.10.1", 10), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE2", "dataType1", "123.345.456.11.1.1", 10), new Value());
         treeMap.put(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10), new Value());
-        
+
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
-        
+
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
-        
+
         EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'abc'"), Collections.emptySet());
         aggregator = new TLDTermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
-        
+
         // test result key
         assertTrue(result == null);
-        
+
         // test that the doc is empty
         assertTrue(doc.size() == 0);
-        
+
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
         assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
     }
-    
+
     @Test
     public void apply_buildDocKeep() throws IOException, ParseException {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
-        
+
         TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         treeMap.put(getTF("123", "FIELD2", "VALUE2", "dataType1", "123.345.456.1", 10), new Value());
@@ -99,19 +99,19 @@ public class TLDTermFrequencyAggregatorTest {
         treeMap.put(getTF("123", "FIELD2", "VALUE11", "dataType1", "123.345.456.10.1", 10), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE12", "dataType1", "123.345.456.11.1.1", 10), new Value());
         treeMap.put(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "123.345.457", 10), new Value());
-        
+
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
-        
+
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD1");
         keepFields.add("FIELD2");
-        
+
         EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD1 == 'VALUE1' && FIELD2 == 'VALUE2'"),
                         Collections.emptySet());
         aggregator = new TLDTermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
-        
+
         // test result key
         assertTrue(result != null);
         DatawaveKey parsedResult = new DatawaveKey(result);
@@ -119,7 +119,7 @@ public class TLDTermFrequencyAggregatorTest {
         assertTrue(parsedResult.getUid().equals("123.345.456"));
         assertTrue(parsedResult.getFieldName(), parsedResult.getFieldName().equals("FIELD1"));
         assertTrue(parsedResult.getFieldValue().equals("VALUE1"));
-        
+
         // test that the doc is empty
         assertTrue(doc.size() == 5);
         assertTrue(doc.get("RECORD_ID").getData().equals("123/dataType1/123.345.456"));
@@ -145,61 +145,61 @@ public class TLDTermFrequencyAggregatorTest {
             assertTrue(expected.remove(ta.getData().toString()));
         }
         assertTrue(expected.size() == 0);
-        
+
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
         assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "123.345.457", 10)));
     }
-    
+
     @Test
     public void apply_buildDocOnlyKeepToKeep() throws IOException, ParseException {
         Document doc = new Document();
         AttributeFactory attributeFactory = new AttributeFactory(new TypeMetadata());
-        
+
         TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456.1", 10), new Value());
         treeMap.put(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10), new Value());
-        
+
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
-        
+
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
-        
+
         EventDataQueryFilter filter = new EventDataQueryFieldFilter(JexlASTHelper.parseJexlQuery("FIELD2 == 'VALUE1'"), Collections.emptySet());
         aggregator = new TLDTermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);
-        
+
         // test result key
         assertTrue(result == null);
-        
+
         // test that the doc is empty
         assertTrue(doc.size() == 0);
-        
+
         // test that the iterator is in the correct position
         assertTrue(itr.hasTop());
         assertTrue(itr.getTopKey().equals(getTF("123", "NEXT_DOC_FIELD", "VALUE1", "dataType1", "124.345.456", 10)));
     }
-    
+
     @Test
     public void apply_testNormal() throws IOException {
         TreeMap<Key,Value> treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
-        
+
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         Key result = aggregator.apply(itr);
-        
+
         assertFalse(itr.hasTop());
-        
+
         itr.seek(new Range(), null, true);
         Key result2 = aggregator.apply(itr, new Range(), null, false);
-        
+
         assertFalse(itr.hasTop());
         assertTrue(result.equals(result2));
     }
-    
+
     @Test
     public void apply_testSeek() throws IOException {
         aggregator = new TLDTermFrequencyAggregator(null, null, 1);
@@ -208,21 +208,21 @@ public class TLDTermFrequencyAggregatorTest {
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 9), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 8), new Value());
         treeMap.put(getTF("1234", "FIELD1", "VALUE1", "dataType1", "123.345.456", 7), new Value());
-        
+
         SortedKeyValueIterator<Key,Value> itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         Key result = aggregator.apply(itr);
-        
+
         assertTrue(itr.hasTop());
         assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
-        
+
         itr.seek(new Range(), null, true);
         Key result2 = aggregator.apply(itr, new Range(), null, false);
-        
+
         assertTrue(itr.hasTop());
         assertTrue(itr.getTopKey().getRow().toString().equals("1234"));
         assertTrue(result.equals(result2));
-        
+
         // test a change to the datatype
         treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
@@ -232,11 +232,11 @@ public class TLDTermFrequencyAggregatorTest {
         itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         result2 = aggregator.apply(itr, new Range(), null, false);
-        
+
         assertTrue(itr.hasTop());
         assertTrue(itr.getTopKey().getTimestamp() == 7);
         assertTrue(result.equals(result2));
-        
+
         // test a change to the uid
         treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
@@ -244,29 +244,29 @@ public class TLDTermFrequencyAggregatorTest {
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 8), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456.1", 7), new Value());
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "432.345.456", 6), new Value());
-        
+
         itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         result2 = aggregator.apply(itr, new Range(), null, false);
-        
+
         assertTrue(itr.hasTop());
         assertTrue(itr.getTopKey().getTimestamp() == 6);
         assertTrue(result.equals(result2));
-        
+
         treeMap = Maps.newTreeMap();
         treeMap.put(getTF("123", "FIELD1", "VALUE1", "dataType1", "123.345.456", 10), new Value());
         itr = new SortedMapIterator(treeMap);
         itr.seek(new Range(), null, true);
         result2 = aggregator.apply(itr, new Range(), null, false);
-        
+
         assertFalse(itr.hasTop());
         assertTrue(result.equals(result2));
     }
-    
+
     private Key getTF(String row, String field, String value, String dataType, String uid, long timestamp) {
         // CQ = dataType\0UID\0Normalized field value\0Field name
         return new Key(row, "tf", dataType + Constants.NULL_BYTE_STRING + uid + Constants.NULL_BYTE_STRING + value + Constants.NULL_BYTE_STRING + field,
                         timestamp);
     }
-    
+
 }

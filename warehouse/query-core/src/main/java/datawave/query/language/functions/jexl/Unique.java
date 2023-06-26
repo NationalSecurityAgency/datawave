@@ -16,14 +16,14 @@ import java.util.stream.Collectors;
  * additional documentation on supported formatting.
  */
 public class Unique extends JexlQueryFunction {
-    
+
     public Unique() {
         super(QueryFunctions.UNIQUE_FUNCTION, new ArrayList<>());
     }
-    
+
     /**
      * query options contain a list of fields. Cannot be the empty list.
-     * 
+     *
      * @throws IllegalArgumentException
      *             for illegal arguments
      */
@@ -44,11 +44,11 @@ public class Unique extends JexlQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(QueryFunctions.UNIQUE_FUNCTION);
         if (parameterList.isEmpty()) {
             sb.append("()");
@@ -60,13 +60,13 @@ public class Unique extends JexlQueryFunction {
             }
             sb.append(')');
         }
-        
+
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Unique();
     }
-    
+
 }

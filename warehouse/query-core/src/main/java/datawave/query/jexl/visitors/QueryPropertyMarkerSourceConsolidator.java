@@ -14,17 +14,17 @@ import java.util.stream.Collectors;
  * new {@link ASTAndNode} which will in turn be set as the new source node.
  */
 public class QueryPropertyMarkerSourceConsolidator extends RebuildingVisitor {
-    
+
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T consolidate(T node) {
         if (node == null) {
             return null;
         }
-        
+
         QueryPropertyMarkerSourceConsolidator visitor = new QueryPropertyMarkerSourceConsolidator();
         return (T) node.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getInstance(node);

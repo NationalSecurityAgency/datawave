@@ -17,11 +17,11 @@ import java.util.Set;
  * Utility that reduces the set of fields prior to serialization
  */
 public class ReduceFields {
-    
+
     private ReduceFields() {
         // this is a static utility
     }
-    
+
     /**
      * Get all query fields. Identifiers have the leading character stripped off.
      *
@@ -36,7 +36,7 @@ public class ReduceFields {
         }
         return queryFields;
     }
-    
+
     /**
      * Reduce the fields for an option
      *
@@ -57,7 +57,7 @@ public class ReduceFields {
             }
         }
     }
-    
+
     /**
      * Intersect fields from the query and the option
      *
@@ -70,17 +70,17 @@ public class ReduceFields {
     public static String intersectFields(Set<String> queryFields, String option) {
         Set<String> optionFields = new HashSet<>(Arrays.asList(org.apache.commons.lang3.StringUtils.split(option, ',')));
         optionFields = intersectFields(queryFields, optionFields);
-        
+
         if (optionFields.isEmpty()) {
             return null;
         } else {
             return Joiner.on(',').join(optionFields);
         }
     }
-    
+
     /**
      * Intersect the query fields with the option fields
-     * 
+     *
      * @param queryFields
      *            set of fields in the query
      * @param optionFields

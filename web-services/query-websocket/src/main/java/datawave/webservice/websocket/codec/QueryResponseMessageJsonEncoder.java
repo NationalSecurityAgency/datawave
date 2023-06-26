@@ -22,14 +22,14 @@ import datawave.webservice.websocket.messages.QueryResponseMessage;
  */
 public class QueryResponseMessageJsonEncoder implements Encoder.TextStream<QueryResponseMessage> {
     private ObjectMapper mapper;
-    
+
     @Override
     public void encode(QueryResponseMessage object, Writer writer) throws EncodeException, IOException {
         try (JsonGenerator jsonGenerator = mapper.getFactory().createGenerator(writer)) {
             jsonGenerator.writeObject(object);
         }
     }
-    
+
     @Override
     public void init(EndpointConfig config) {
         mapper = new ObjectMapper();
@@ -41,7 +41,7 @@ public class QueryResponseMessageJsonEncoder implements Encoder.TextStream<Query
         // Don't include NULL properties.
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Override
     public void destroy() {}
 }

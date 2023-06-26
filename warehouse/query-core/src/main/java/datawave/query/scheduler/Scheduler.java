@@ -17,24 +17,23 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * 
+ *
  */
 public abstract class Scheduler implements CloseableIterable<Result> {
-    
     protected Collection<IteratorSetting> settings = Lists.newArrayList();
-    
+
     public abstract BatchScanner createBatchScanner(ShardQueryConfiguration config, ScannerFactory scannerFactory, QueryData qd) throws TableNotFoundException;
-    
+
     /**
      * Returns the scan session stats provided by this scheduler
-     * 
+     *
      * @return the scan session stats
      */
     public abstract ScanSessionStats getSchedulerStats();
-    
+
     public void addSetting(IteratorSetting customSetting) {
         settings.add(customSetting);
     }
-    
+
     public abstract List<QueryCheckpoint> checkpoint(QueryKey queryKey);
 }

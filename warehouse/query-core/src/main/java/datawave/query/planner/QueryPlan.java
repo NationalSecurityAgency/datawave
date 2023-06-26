@@ -25,9 +25,9 @@ import java.util.stream.Collectors;
  * Base representation of a query plan
  */
 public class QueryPlan {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(QueryPlan.class);
-    
+
     protected String tableName = null;
     protected JexlNode queryTree = null;
     protected String queryTreeString = null;
@@ -35,11 +35,11 @@ public class QueryPlan {
     protected int hashCode;
     protected List<String> columnFamilies = Lists.newArrayList();
     protected List<IteratorSetting> settings = Lists.newArrayList();
-    
+
     public QueryPlan(String tableName, String queryTreeString, JexlNode queryTree, Iterable<Range> ranges) {
         this(tableName, queryTreeString, queryTree, ranges, null);
     }
-    
+
     public QueryPlan(String tableName, String queryTreeString, JexlNode queryTree, Iterable<Range> ranges, List<IteratorSetting> settings) {
         Preconditions.checkNotNull(queryTree);
         this.tableName = tableName;
@@ -50,7 +50,7 @@ public class QueryPlan {
             this.settings = settings;
         buildHashCode();
     }
-    
+
     public QueryPlan(String tableName, JexlNode queryTree, Iterable<Range> ranges, Collection<String> columnFamilies) {
         Preconditions.checkNotNull(queryTree);
         this.tableName = tableName;
@@ -59,7 +59,7 @@ public class QueryPlan {
         this.columnFamilies = Lists.newArrayList(columnFamilies);
         buildHashCode();
     }
-    
+
     public QueryPlan(String tableName, JexlNode queryTree, Range range) {
         Preconditions.checkNotNull(queryTree);
         this.tableName = tableName;
@@ -67,37 +67,37 @@ public class QueryPlan {
         this.ranges = Lists.newArrayList(range);
         buildHashCode();
     }
-    
+
     public void setQuery(String queryString, JexlNode queryTree) {
         this.queryTree = queryTree;
         this.queryTreeString = queryString;
         buildHashCode();
     }
-    
+
     private void buildHashCode() {
-        
+
         HashCodeBuilder builder = new HashCodeBuilder();
-        
+
         if (null != queryTree) {
             builder = builder.append(queryTree);
         } else if (null != queryTreeString) {
             builder = builder.append(queryTreeString);
         }
-        
+
         for (Range range : ranges) {
             builder = builder.append(range);
         }
-        
+
         for (String cf : columnFamilies) {
             builder = builder.append(cf);
         }
-        
+
         builder.append(settings);
-        
+
         hashCode = builder.toHashCode();
-        
+
     }
-    
+
     public QueryPlan(QueryData currentQueryData) throws ParseException {
         this.tableName = currentQueryData.getTableName();
         this.queryTreeString = currentQueryData.getQuery();
@@ -106,7 +106,7 @@ public class QueryPlan {
         this.columnFamilies.addAll(currentQueryData.getColumnFamilies());
         buildHashCode();
     }
-    
+
     /**
      * @param queryTree
      * @param rangeIter
@@ -125,13 +125,13 @@ public class QueryPlan {
                 newSetting.addOption(QueryIterator.RANGES, this.ranges.stream().map(Range::toString).collect(Collectors.joining(",", "[", "]")));
             }
             this.settings.add(newSetting);
-            
+
         }
         if (null != columnFamilies)
             this.columnFamilies.addAll(columnFamilies);
         buildHashCode();
     }
-    
+
     /**
      * @param queryTree
      * @param rangeIter
@@ -140,21 +140,21 @@ public class QueryPlan {
     public QueryPlan(String tableName, JexlNode queryTree, Iterable<Range> rangeIter, List<IteratorSetting> settings) {
         this(tableName, queryTree, rangeIter, settings, null);
     }
-    
+
     public JexlNode getQueryTree() {
         if (null == queryTree) {
             Preconditions.checkNotNull(queryTreeString);
-            
+
             try {
                 queryTree = JexlASTHelper.parseAndFlattenJexlQuery(queryTreeString);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
-            
+
         }
         return queryTree;
     }
-    
+
     public String getQueryString() {
         if (null == queryTreeString) {
             Preconditions.checkNotNull(queryTree);
@@ -162,54 +162,54 @@ public class QueryPlan {
         }
         return queryTreeString;
     }
-    
+
     public void addColumnFamily(String cf) {
         columnFamilies.add(cf);
     }
-    
+
     public Collection<String> getColumnFamilies() {
         return columnFamilies;
     }
-    
+
     public void addRange(Range range) {
         ranges.add(range);
         buildHashCode();
     }
-    
+
     public void addRanges(Collection<Range> ranges) {
         this.ranges.addAll(ranges);
         buildHashCode();
     }
-    
+
     public void addRanges(Iterable<Range> ranges) {
         Iterables.addAll(this.ranges, ranges);
         buildHashCode();
     }
-    
+
     public void setRanges(Collection<Range> ranges) {
         this.ranges.clear();
         addRanges(ranges);
     }
-    
+
     public Collection<Range> getRanges() {
         return ranges;
     }
-    
+
     public String getTableName() {
         return tableName;
     }
-    
+
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-    
+
     /**
      * @return
      */
     public List<IteratorSetting> getSettings() {
         return settings;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof QueryPlan) {
@@ -217,26 +217,26 @@ public class QueryPlan {
             equalsBuilder.append(tableName, ((QueryPlan) obj).tableName);
             equalsBuilder.append(columnFamilies, ((QueryPlan) obj).columnFamilies);
             return hashCode == ((QueryPlan) obj).hashCode && equalsBuilder.append(ranges, ((QueryPlan) obj).ranges).isEquals();
-            
+
         } else
             return false;
     }
-    
+
     @Override
     public int hashCode() {
         return hashCode;
     }
-    
+
     @Override
     public String toString() {
         return new StringBuilder().append(tableName).append(ranges).append(getQueryString()).append(columnFamilies).toString().intern();
     }
-    
+
     public void setQuery(String queryString, ASTJexlScript queryTree) {
         this.queryTree = queryTree;
         this.queryTreeString = queryString;
         buildHashCode();
-        
+
     }
-    
+
 }

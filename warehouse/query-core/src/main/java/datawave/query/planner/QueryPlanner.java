@@ -15,11 +15,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 public abstract class QueryPlanner implements PushDownPlanner {
-    
+
     protected Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass = CreateUidsIterator.class;
-    
+
     protected UidIntersector uidIntersector = new IndexInfo();
-    
+
     /**
      * Process the {@code query} with the provided {@code config} to generate an {@link Iterable}&lt;QueryData&gt; to apply each to a BatchScanner.
      *
@@ -37,33 +37,33 @@ public abstract class QueryPlanner implements PushDownPlanner {
      */
     public abstract CloseableIterable<QueryData> process(GenericQueryConfiguration config, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException;
-    
+
     public abstract long maxRangesPerQueryPiece();
-    
+
     public abstract void close(GenericQueryConfiguration config, Query settings);
-    
+
     public abstract void setQueryIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> clazz);
-    
+
     public abstract Class<? extends SortedKeyValueIterator<Key,Value>> getQueryIteratorClass();
-    
+
     public abstract String getPlannedScript();
-    
+
     public abstract QueryPlanner clone();
-    
+
     public Class<? extends SortedKeyValueIterator<Key,Value>> getCreateUidsIteratorClass() {
         return createUidsIteratorClass;
     }
-    
+
     public void setCreateUidsIteratorClass(Class<? extends SortedKeyValueIterator<Key,Value>> createUidsIteratorClass) {
         this.createUidsIteratorClass = createUidsIteratorClass;
     }
-    
+
     public UidIntersector getUidIntersector() {
         return uidIntersector;
     }
-    
+
     public void setUidIntersector(UidIntersector uidIntersector) {
         this.uidIntersector = uidIntersector;
     }
-    
+
 }

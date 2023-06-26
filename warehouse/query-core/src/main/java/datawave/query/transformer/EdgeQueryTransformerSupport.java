@@ -30,20 +30,20 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
     protected Authorizations auths;
     protected ResponseObjectFactory responseObjectFactory;
     protected EdgeModelFields fields;
-    
+
     public EdgeQueryTransformerSupport(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory, EdgeModelFields fields) {
         super(markingFunctions);
         this.responseObjectFactory = responseObjectFactory;
         auths = new Authorizations(settings.getQueryAuthorizations().split(","));
         this.fields = fields;
     }
-    
+
     private static final String ERROR_INCORRECT_BYTE_ARRAY_SIZE = "The bitmask byte array is invalid. The array should have four bytes, but has %d bytes";
     private static final String ERROR_INVALID_HOUR = "The supplied hour must be a value of 0-23. Supplied hour: %d";
-    
+
     /**
      * Returns the bit for a given hour from within the bytes of an int32 Protobuf bitmask.
-     * 
+     *
      * @param bytes
      *            The bitmask bytes
      * @param hour
@@ -57,20 +57,20 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         if (hour < -1 || hour > 24) {
             throw new IllegalArgumentException(String.format(ERROR_INVALID_HOUR, hour));
         }
-        
+
         int tmpInt = 23 - hour;
         Double tmpDbl = Math.floor(((double) tmpInt) / 8);
         int idx = tmpDbl.intValue() + 1;
-        
+
         byte b = bytes[idx];
         tmpDbl = ((double) hour) / 8;
         int pos = hour - (tmpDbl.intValue() * 8);
         return (b >> pos & 1);
     }
-    
+
     /**
      * Returns a boolean array with the decoded hourly activity from the Value's bitmask.
-     * 
+     *
      * @param value
      *            a value
      * @return the hourly activity
@@ -91,12 +91,12 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         }
         return hourlyActivity;
     }
-    
+
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         try {
             EdgeQueryResponseBase response = responseObjectFactory.getEdgeQueryResponse();
-            
+
             Set<ColumnVisibility> uniqueColumnVisibilities = Sets.newHashSet();
             for (Object result : resultList) {
                 EdgeBase edge = (EdgeBase) result;
@@ -104,7 +104,7 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
                 uniqueColumnVisibilities.add(this.markingFunctions.translateToColumnVisibility(markings));
                 response.addEdge(edge);
             }
-            
+
             ColumnVisibility combinedVisibility = this.markingFunctions.combine(uniqueColumnVisibilities);
             response.setMarkings(this.markingFunctions.translateFromColumnVisibility(combinedVisibility));
             return response;
@@ -112,18 +112,18 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
             throw new RuntimeException("could not handle markings in resultList ", ex);
         }
     }
-    
+
     @Override
     public CacheableQueryRow writeToCache(Object o) throws QueryException {
         EdgeBase edge = (EdgeBase) o;
-        
+
         CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
         cqo.setMarkingFunctions(this.markingFunctions);
         cqo.setColFam("");
         cqo.setDataType("");
         cqo.setEventId(generateEventId(edge));
         cqo.setRow("");
-        
+
         if (edge.getSource() != null) {
             cqo.addColumn(fields.getSourceFieldName(), edge.getSource(), edge.getMarkings(), "", 0l);
         }
@@ -166,17 +166,17 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         }
         return cqo;
     }
-    
+
     @Override
     public Object readFromCache(CacheableQueryRow cacheableQueryRow) {
         Map<String,String> markings = cacheableQueryRow.getMarkings();
-        
+
         EdgeBase edge = (EdgeBase) responseObjectFactory.getEdge();
-        
+
         edge.setMarkings(markings);
-        
+
         Map<String,String> columnValues = cacheableQueryRow.getColumnValues();
-        
+
         if (columnValues.containsKey(fields.getSourceFieldName())) {
             edge.setSource(columnValues.get(fields.getSourceFieldName()));
         }
@@ -226,12 +226,12 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         }
         return edge;
     }
-    
+
     public String generateEventId(EdgeBase edge) {
-        
+
         int hashCode = new HashCodeBuilder().append(this.getClass().getCanonicalName()).append(edge.getDate()).append(edge.getSource()).append(edge.getSink())
                         .append(edge.getEdgeRelationship()).toHashCode();
-        
+
         return Integer.toString(hashCode);
     }
 }

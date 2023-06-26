@@ -47,25 +47,25 @@ import java.util.Set;
 // by default all methods are non-blocking
 @MBean
 public class ModificationCacheBean {
-    
+
     private static final Text MODIFICATION_COLUMN = new Text("m");
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     private ModificationCache cache;
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private ModificationConfiguration modificationConfiguration;
-    
+
     @PostConstruct
     public void init() {
         cache = new ModificationCache(connectionFactory, modificationConfiguration);
     }
-    
+
     /**
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
@@ -88,12 +88,12 @@ public class ModificationCacheBean {
         this.cache.reloadMutableFieldCache();
         return new VoidResponse();
     }
-    
+
     @JmxManaged
     public String listMutableFields() {
         return cache.listMutableFields();
     }
-    
+
     /**
      * Check to see if field for specified datatype is mutable
      *
@@ -106,7 +106,7 @@ public class ModificationCacheBean {
     public boolean isFieldMutable(String datatype, String field) {
         return cache.isFieldMutable(datatype, field);
     }
-    
+
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
@@ -123,17 +123,17 @@ public class ModificationCacheBean {
         }
         return lists;
     }
-    
+
     public Map<String,Set<String>> getCachedMutableFieldList() {
         return cache.getCachedMutableFieldList();
     }
-    
+
     public ModificationConfiguration getModificationConfiguration() {
         return modificationConfiguration;
     }
-    
+
     public ModificationCache getCache() {
         return cache;
     }
-    
+
 }

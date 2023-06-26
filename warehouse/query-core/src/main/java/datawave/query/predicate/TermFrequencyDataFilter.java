@@ -10,7 +10,7 @@ import java.util.Set;
  * A data filter that operates on TermFrequency keys
  */
 public class TermFrequencyDataFilter extends EventDataQueryExpressionFilter {
-    
+
     /**
      * Constructor matching {@link EventDataQueryExpressionFilter}
      *
@@ -24,7 +24,7 @@ public class TermFrequencyDataFilter extends EventDataQueryExpressionFilter {
     public TermFrequencyDataFilter(JexlNode node, TypeMetadata typeMetadata, Set<String> nonEventFields) {
         super(node, typeMetadata, nonEventFields);
     }
-    
+
     /**
      * TermFrequency ranges necessitate a full value match
      *

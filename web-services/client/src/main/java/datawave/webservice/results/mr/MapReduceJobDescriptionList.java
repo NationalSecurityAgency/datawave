@@ -18,15 +18,15 @@ import java.util.List;
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class MapReduceJobDescriptionList extends BaseResponse implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "MapReduceJobDescriptionList")
     @XmlElement(name = "MapReduceJobDescription")
     List<MapReduceJobDescription> results = new ArrayList<MapReduceJobDescription>();
-    
+
     public List<MapReduceJobDescription> getResults() {
         return results;
     }
-    
+
     public void setResults(List<MapReduceJobDescription> results) {
         this.results = results;
     }

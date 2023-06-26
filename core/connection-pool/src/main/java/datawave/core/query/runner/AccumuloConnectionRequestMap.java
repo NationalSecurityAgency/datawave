@@ -14,14 +14,14 @@ import java.util.Map;
  * For storing a map of queryId to Thread that is requesting an AccumuloConnection
  */
 public class AccumuloConnectionRequestMap {
-    
+
     private static Logger log = Logger.getLogger(AccumuloConnectionRequestMap.class);
-    
+
     /**
      * This maps the query-id to a pair containing the tracking map (see the AccumuloConnectionFactory) and the thread handling the request
      */
     private Map<String,List<Pair<Map<String,String>,Thread>>> getConnectionThreadMap = new HashMap<>();
-    
+
     public boolean cancelConnectionRequest(String id, String userDn) {
         // this call checks that the Principal used for the connection request and th connection cancel are the same
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
@@ -47,7 +47,7 @@ public class AccumuloConnectionRequestMap {
         }
         return connectionRequestCanceled;
     }
-    
+
     public boolean adminCancelConnectionRequest(String id) {
         // it is assumed that admin status is already checked, so this call does not check the calling Principals
         // if query is waiting for an accumulo connection in create or reset, then interrupt it
@@ -65,10 +65,10 @@ public class AccumuloConnectionRequestMap {
                 }
             }
         }
-        
+
         return connectionRequestCanceled;
     }
-    
+
     public void requestBegin(String id, String userDN, Map<String,String> trackingMap) {
         synchronized (getConnectionThreadMap) {
             List<Pair<Map<String,String>,Thread>> connectionRequestPairs = getConnectionThreadMap.get(id);
@@ -82,7 +82,7 @@ public class AccumuloConnectionRequestMap {
             connectionRequestPairs.add(connectionRequestPair);
         }
     }
-    
+
     public void requestEnd(String id) {
         synchronized (getConnectionThreadMap) {
             List<Pair<Map<String,String>,Thread>> connectionRequestPairs = getConnectionThreadMap.get(id);

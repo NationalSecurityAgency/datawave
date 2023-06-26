@@ -21,19 +21,19 @@ import java.util.stream.Collectors;
  * SHARDS_AND_DAYS assignment node if one exists, or by creating and appending a new SHARDS_AND_DAYS assignment node into the query tree structure.
  */
 public class AddShardsAndDaysVisitor extends RebuildingVisitor {
-    
+
     private static final Joiner JOINER = Joiner.on(',').skipNulls();
-    
+
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T update(T node, String shardsAndDays) {
         if (node == null) {
             return null;
         }
-        
+
         if (shardsAndDays == null) {
             return node;
         }
-        
+
         // @formatter:off
         List<String> validShardsAndDays = Arrays.stream(StringUtils.split(shardsAndDays, ','))
                         .map(String::trim)              // Strip whitespace.
@@ -44,7 +44,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
         if (validShardsAndDays.isEmpty()) {
             return node;
         }
-        
+
         AddShardsAndDaysVisitor visitor = new AddShardsAndDaysVisitor(validShardsAndDays);
         T modifiedCopy = (T) node.jjtAccept(visitor, null);
         // If the shards and days hints were not added to an existing SHARDS_AND_DAYS node, then we need to create one and add it to the query body.
@@ -53,7 +53,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
         }
         return modifiedCopy;
     }
-    
+
     // Create and append a new SHARDS_AND_DAYS hint node to the given query tree.
     private static void addNewShardAndDaysNode(JexlNode node, String shardsAndDays) {
         // If the root node is an ASTJexlScript, go down one level before adding the SHARDS_AND_DAYS node.
@@ -64,7 +64,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
             addNewShardsAndDaysNode(node, shardsAndDays);
         }
     }
-    
+
     // Create and append a new SHARDS_AND_DAYS hint node and AND it to the given node.
     private static void addNewShardsAndDaysNode(JexlNode node, String shardsAndDays) {
         JexlNode originalParent = node.jjtGetParent();
@@ -77,14 +77,14 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
             JexlNodes.replaceChild(originalParent, node, andNode);
         }
     }
-    
+
     private final List<String> shardsAndDays;
     private boolean updatedShardsAndDays = false;
-    
+
     private AddShardsAndDaysVisitor(List<String> shardsAndDays) {
         this.shardsAndDays = shardsAndDays;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         ASTAssignment copy = (ASTAssignment) super.visit(node, data);
@@ -99,7 +99,7 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
         }
         return copy;
     }
-    
+
     // Merge the given shards and days with the shard and days in this visitor's list.
     private String mergeShardsAndDays(String shardsAndDays) {
         // Remove any duplicate shards and days hints from the initial list.
@@ -116,5 +116,5 @@ public class AddShardsAndDaysVisitor extends RebuildingVisitor {
             return shardsAndDays + "," + JOINER.join(this.shardsAndDays);
         }
     }
-    
+
 }

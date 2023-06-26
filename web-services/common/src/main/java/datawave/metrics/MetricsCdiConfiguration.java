@@ -16,7 +16,7 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 @ApplicationScoped
 public class MetricsCdiConfiguration {
     private ScheduledReporter statsReporter;
-    
+
     @Produces
     @ApplicationScoped
     public MetricRegistry metricRegistry(@ConfigProperty(name = "dw.metrics.reporter.host", defaultValue = "localhost") String reportHost,
@@ -38,7 +38,7 @@ public class MetricsCdiConfiguration {
         }
         return metricRegistry;
     }
-    
+
     @PreDestroy
     public void shutdown() {
         if (statsReporter != null) {

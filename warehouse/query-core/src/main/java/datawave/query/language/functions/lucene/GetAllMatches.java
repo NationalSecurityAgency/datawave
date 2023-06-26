@@ -17,7 +17,7 @@ public class GetAllMatches extends LuceneQueryFunction {
     public GetAllMatches() {
         super("getAllMatches", new ArrayList<>());
     }
-    
+
     @Override
     public void initialize(List<String> parameterList, int depth, QueryNode parent) throws IllegalArgumentException {
         super.initialize(parameterList, depth, parent);
@@ -35,14 +35,14 @@ public class GetAllMatches extends LuceneQueryFunction {
             x = 1;
         }
         this.fieldedFilter = new WildcardFieldedFilter(true, type);
-        
+
         while (x < parameterList.size()) {
             String field = parameterList.get(x++);
             String regex = parameterList.get(x++);
             this.fieldedFilter.addCondition(field, regex);
         }
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.depth != 1) {
@@ -70,12 +70,12 @@ public class GetAllMatches extends LuceneQueryFunction {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         return this.fieldedFilter.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new GetAllMatches();

@@ -18,9 +18,9 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     private Multimap<String,LiteralRange<String>> ranges;
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
-    
+
     public DiscoveryQueryConfiguration() {}
-    
+
     public DiscoveryQueryConfiguration(DiscoveryQueryConfiguration other) {
         super(other);
         setSeparateCountsByColVis(other.separateCountsByColVis);
@@ -29,12 +29,12 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         setPatterns(other.patterns);
         setRanges(other.ranges);
     }
-    
+
     public DiscoveryQueryConfiguration(DiscoveryLogic logic, Query query) {
         this(logic.getConfig());
         setQuery(query);
     }
-    
+
     public DiscoveryQueryConfiguration(DiscoveryQueryConfiguration other, Collection<QueryData> queries) {
         super(other, queries);
         setSeparateCountsByColVis(other.separateCountsByColVis);
@@ -43,7 +43,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         setPatterns(other.patterns);
         setRanges(other.ranges);
     }
-    
+
     /**
      * Factory method that instantiates a fresh DiscoveryQueryConfiguration
      *
@@ -52,7 +52,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     public static DiscoveryQueryConfiguration create() {
         return new DiscoveryQueryConfiguration();
     }
-    
+
     /**
      * Factory method that returns a deep copy of the provided DiscoveryQueryConfiguration
      *
@@ -63,7 +63,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
     public static DiscoveryQueryConfiguration create(DiscoveryQueryConfiguration other) {
         return new DiscoveryQueryConfiguration(other);
     }
-    
+
     /**
      * Factory method that creates a DiscoveryQueryConfiguration deep copy from a DiscoveryQueryLogic
      *
@@ -75,7 +75,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         DiscoveryQueryConfiguration config = create(shardQueryLogic.getConfig());
         return config;
     }
-    
+
     /**
      * Factory method that creates a DiscoveryQueryConfiguration from a DiscoveryQueryLogic and a Query
      *
@@ -90,54 +90,54 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         config.setQuery(query);
         return config;
     }
-    
+
     public Multimap<String,String> getLiterals() {
         return literals;
     }
-    
+
     public void setLiterals(Multimap<String,String> literals) {
         this.literals = literals;
     }
-    
+
     public Multimap<String,LiteralRange<String>> getRanges() {
         return ranges;
     }
-    
+
     public void setRanges(Multimap<String,LiteralRange<String>> ranges) {
         this.ranges = ranges;
     }
-    
+
     public Multimap<String,String> getPatterns() {
         return patterns;
     }
-    
+
     public void setPatterns(Multimap<String,String> patterns) {
         this.patterns = patterns;
     }
-    
+
     public Boolean getSeparateCountsByColVis() {
         return separateCountsByColVis;
     }
-    
+
     public Boolean getShowReferenceCount() {
         return showReferenceCount;
     }
-    
+
     public void setSeparateCountsByColVis(boolean separateCountsByColVis) {
         this.separateCountsByColVis = separateCountsByColVis;
     }
-    
+
     public void setShowReferenceCount(Boolean showReferenceCount) {
         this.showReferenceCount = showReferenceCount;
-        
+
     }
-    
+
     @Override
     public DiscoveryQueryConfiguration checkpoint() {
         // Create a new config that only contains what is needed to execute the specified ranges
         return new DiscoveryQueryConfiguration(this, getQueries());
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o)
@@ -150,7 +150,7 @@ public class DiscoveryQueryConfiguration extends ShardIndexQueryConfiguration im
         return Objects.equals(literals, that.literals) && Objects.equals(patterns, that.patterns) && Objects.equals(ranges, that.ranges)
                         && Objects.equals(separateCountsByColVis, that.separateCountsByColVis) && Objects.equals(showReferenceCount, that.showReferenceCount);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), literals, patterns, ranges, separateCountsByColVis, showReferenceCount);

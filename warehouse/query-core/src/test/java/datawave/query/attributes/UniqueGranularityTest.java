@@ -12,16 +12,16 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 public class UniqueGranularityTest {
-    
+
     private static final ObjectMapper objectMapper = new ObjectMapper();
-    
+
     @Test
     public void testAll() {
         assertEquals("ALL", UniqueGranularity.ALL.getName());
         assertNull(UniqueGranularity.ALL.transform(null));
         assertEquals("nonNullValue", UniqueGranularity.ALL.transform("nonNullValue"));
     }
-    
+
     @Test
     public void testTruncateTemporalToDay() {
         assertEquals("DAY", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY.getName());
@@ -29,7 +29,7 @@ public class UniqueGranularityTest {
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY.transform("nonDateValue"));
         assertEquals("2019-01-15", UniqueGranularity.TRUNCATE_TEMPORAL_TO_DAY.transform("2019-01-15 12:30:15"));
     }
-    
+
     @Test
     public void testTruncateTemporalToHour() {
         assertEquals("HOUR", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR.getName());
@@ -37,7 +37,7 @@ public class UniqueGranularityTest {
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR.transform("nonDateValue"));
         assertEquals("2019-01-15T12", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR.transform("2019-01-15 12:30:15"));
     }
-    
+
     @Test
     public void testTruncateTemporalToMinute() {
         assertEquals("MINUTE", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName());
@@ -45,7 +45,7 @@ public class UniqueGranularityTest {
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("nonDateValue"));
         assertEquals("2019-01-15T12:30", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:30:15"));
     }
-    
+
     @Test
     public void testTruncateTemporalToSecond() {
         assertEquals("SECOND", UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND.getName());
@@ -53,7 +53,7 @@ public class UniqueGranularityTest {
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND.transform("nonDateValue"));
         assertEquals("2019-01-15T12:30:15", UniqueGranularity.TRUNCATE_TEMPORAL_TO_SECOND.transform("2019-01-15 12:30:15"));
     }
-    
+
     @Test
     public void testTruncateTemporalToMillisecond() {
         assertEquals("MILLISECOND", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.getName());
@@ -61,7 +61,7 @@ public class UniqueGranularityTest {
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.transform("nonDateValue"));
         assertEquals("2022-11-03T12:30:00.976", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.transform("2022-11-03T12:30:00.976Z"));
     }
-    
+
     @Test
     public void testTruncateTemporalToMonth() {
         assertEquals("MONTH", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH.getName());
@@ -69,7 +69,7 @@ public class UniqueGranularityTest {
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform("nonDateValue"));
         assertEquals("2019-01", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MONTH.transform("2019-01-15 12:30:15"));
     }
-    
+
     @Test
     public void testMinuteTruncation() {
         assertEquals("MINUTE", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.getName());
@@ -77,7 +77,7 @@ public class UniqueGranularityTest {
         assertEquals("nonDateValue", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("nonDateValue"));
         assertEquals("2019-01-15T12:30", UniqueGranularity.TRUNCATE_TEMPORAL_TO_MINUTE.transform("2019-01-15 12:30:15"));
     }
-    
+
     @Test
     public void testTenthMinuteTruncation() {
         assertEquals("TENTH_OF_HOUR", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.getName());
@@ -86,7 +86,7 @@ public class UniqueGranularityTest {
         assertEquals("2019-01-15T12:3", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 12:30:15"));
         assertEquals("2019-01-15T03:1", UniqueGranularity.TRUNCATE_TEMPORAL_TO_TENTH_OF_HOUR.transform("2019-01-15 3:10:15"));
     }
-    
+
     @Test
     public void testNamesForUniqueness() {
         Set<String> names = new HashSet<>();
@@ -95,7 +95,7 @@ public class UniqueGranularityTest {
             names.add(transformer.getName());
         }
     }
-    
+
     @Test
     public void testStaticOf() {
         for (UniqueGranularity transformer : UniqueGranularity.values()) {
@@ -103,7 +103,7 @@ public class UniqueGranularityTest {
             assertEquals("Incorrect transformer " + actual + " returned for name " + transformer.getName(), transformer, actual);
         }
     }
-    
+
     @Test
     public void testSerialization() throws JsonProcessingException {
         assertEquals("\"" + UniqueGranularity.ALL.getName() + "\"", objectMapper.writeValueAsString(UniqueGranularity.ALL));
@@ -118,7 +118,7 @@ public class UniqueGranularityTest {
         assertEquals("\"" + UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND.getName() + "\"",
                         objectMapper.writeValueAsString(UniqueGranularity.TRUNCATE_TEMPORAL_TO_MILLISECOND));
     }
-    
+
     @Test
     public void testDeserialization() throws JsonProcessingException {
         assertEquals(UniqueGranularity.ALL, objectMapper.readValue("\"" + UniqueGranularity.ALL.getName() + "\"", UniqueGranularity.class));

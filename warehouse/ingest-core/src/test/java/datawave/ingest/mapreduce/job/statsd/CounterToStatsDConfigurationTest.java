@@ -16,7 +16,7 @@ import java.util.Iterator;
  * Created on 4/27/16.
  */
 public class CounterToStatsDConfigurationTest {
-    
+
     @Test
     public void testConfig() {
         Configuration conf = new Configuration();
@@ -37,7 +37,7 @@ public class CounterToStatsDConfigurationTest {
         conf.set("statsd.live.time.MyGroup8", "CounterGroup8/Counter1/extra");
         conf.set("statsd.live.time.MyGroup9.MyCounter9", "CounterGroup9");
         CounterToStatsDConfiguration config = new CounterToStatsDConfiguration(conf);
-        
+
         Assert.assertTrue(config.isConfigured());
         Assert.assertEquals("localhost", config.getHost());
         Assert.assertEquals(8125, config.getPort());
@@ -59,7 +59,7 @@ public class CounterToStatsDConfigurationTest {
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", "Counter2"));
         Assert.assertEquals(new CounterToStatsDConfiguration.StatsDAspect(CounterToStatsDConfiguration.StatsDType.TIME, "MyGroup3", "MyCounter2"),
                         config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", "Counter2"));
-        
+
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup1", (String) null));
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup2", "Counter1"));
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup2", (String) null));
@@ -67,7 +67,7 @@ public class CounterToStatsDConfigurationTest {
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.FINAL, "CounterGroup3", "Counter2"));
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", "Counter3"));
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup3", (String) null));
-        
+
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup4", (String) null));
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup5", (String) null));
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup6", (String) null));
@@ -75,136 +75,136 @@ public class CounterToStatsDConfigurationTest {
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup8", (String) null));
         Assert.assertNull(config.getAspect(CounterToStatsDConfiguration.StatsDOutputType.LIVE, "CounterGroup9", (String) null));
     }
-    
+
     public static class TestCounterGroup implements CounterGroup {
         private String name;
-        
+
         public TestCounterGroup(String name) {
             this.name = name;
         }
-        
+
         @Override
         public String getName() {
             return name;
         }
-        
+
         @Override
         public String getDisplayName() {
             return null;
         }
-        
+
         @Override
         public void setDisplayName(String displayName) {
-            
+
         }
-        
+
         @Override
         public void addCounter(Counter counter) {
-            
+
         }
-        
+
         @Override
         public Counter addCounter(String name, String displayName, long value) {
             return null;
         }
-        
+
         @Override
         public Counter findCounter(String counterName, String displayName) {
             return null;
         }
-        
+
         @Override
         public Counter findCounter(String counterName, boolean create) {
             return null;
         }
-        
+
         @Override
         public Counter findCounter(String counterName) {
             return null;
         }
-        
+
         @Override
         public int size() {
             return 0;
         }
-        
+
         @Override
         public void incrAllCounters(CounterGroupBase<Counter> rightGroup) {
-            
+
         }
-        
+
         @Override
         public CounterGroupBase<Counter> getUnderlyingGroup() {
             return null;
         }
-        
+
         @Override
         public Iterator<Counter> iterator() {
             return null;
         }
-        
+
         @Override
         public void write(DataOutput out) throws IOException {
-            
+
         }
-        
+
         @Override
         public void readFields(DataInput in) throws IOException {
-            
+
         }
     }
-    
+
     public static class TestCounter implements Counter {
         private String name;
         private long value = 0;
-        
+
         public TestCounter(String name) {
             this.name = name;
         }
-        
+
         @Override
         public void setDisplayName(String displayName) {
-            
+
         }
-        
+
         @Override
         public String getName() {
             return name;
         }
-        
+
         @Override
         public String getDisplayName() {
             return null;
         }
-        
+
         @Override
         public long getValue() {
             return value;
         }
-        
+
         @Override
         public void setValue(long value) {
             this.value = value;
         }
-        
+
         @Override
         public void increment(long incr) {
             this.value = this.value + 1;
         }
-        
+
         @Override
         public Counter getUnderlyingCounter() {
             return this;
         }
-        
+
         @Override
         public void write(DataOutput out) throws IOException {
-            
+
         }
-        
+
         @Override
         public void readFields(DataInput in) throws IOException {
-            
+
         }
     }
 }

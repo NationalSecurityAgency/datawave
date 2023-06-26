@@ -62,37 +62,37 @@ import java.util.Map;
 @MBean
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Resource
     private EJBContext context;
-    
+
     @EJB
     private AccumuloTableCache cache;
-    
+
     @Inject
     @ConfigProperty(name = "dw.connectionPool.default", defaultValue = "WAREHOUSE")
     private String defaultPool = null;
-    
+
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @Inject
     @ConfigProperty(name = "dw.connectionPool.pools", defaultValue = "WAREHOUSE,METRICS")
     private List<String> poolNames;
-    
+
     private AccumuloConnectionFactory factory;
-    
+
     @PostConstruct
     public void init() {
         ConnectionPoolsConfiguration config = new ConnectionPoolsConfiguration().withDefaultPool(defaultPool).withPoolNames(poolNames).build();
         factory = AccumuloConnectionFactoryImpl.getInstance(cache, config);
     }
-    
+
     @PreDestroy
     public void tearDown() {
         close();
     }
-    
+
     @Override
     public void close() {
         try {
@@ -103,7 +103,7 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
             factory = null;
         }
     }
-    
+
     /**
      * Gets a client from the pool with the assigned priority
      *
@@ -120,12 +120,12 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     public AccumuloClient getClient(Priority priority, Map<String,String> trackingMap) throws Exception {
         return getClient(getCurrentUserDN(), getCurrentProxyServers(), priority, trackingMap);
     }
-    
+
     @Override
     public AccumuloClient getClient(String userDN, Collection<String> proxyServers, Priority priority, Map<String,String> trackingMap) throws Exception {
         return factory.getClient(userDN, proxyServers, priority, trackingMap);
     }
-    
+
     /**
      * Gets a client from the named pool with the assigned priority
      *
@@ -142,13 +142,13 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     public AccumuloClient getClient(final String cpn, final Priority priority, final Map<String,String> trackingMap) throws Exception {
         return getClient(getCurrentUserDN(), getCurrentProxyServers(), cpn, priority, trackingMap);
     }
-    
+
     @Override
     public AccumuloClient getClient(String userDN, Collection<String> proxyServers, String cpn, Priority priority, Map<String,String> trackingMap)
                     throws Exception {
         return factory.getClient(userDN, proxyServers, cpn, priority, trackingMap);
     }
-    
+
     /**
      * Returns the client to the pool with the associated priority.
      *
@@ -162,14 +162,14 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
     public void returnClient(AccumuloClient client) throws Exception {
         factory.returnClient(client);
     }
-    
+
     @PermitAll
     // permit anyone to get the report
     @JmxManaged
     public String report() {
         return factory.report();
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong> Returns metrics for the AccumuloConnectionFactoryBean
      *
@@ -187,44 +187,44 @@ public class AccumuloConnectionFactoryBean implements AccumuloConnectionFactory 
         response.setConnectionPools(getConnectionPools());
         return response;
     }
-    
+
     @Override
     public List<ConnectionPool> getConnectionPools() {
         return factory.getConnectionPools();
     }
-    
+
     @PermitAll
     @JmxManaged
     public int getConnectionUsagePercent() {
         return factory.getConnectionUsagePercent();
     }
-    
+
     @Override
     @PermitAll
     public Map<String,String> getTrackingMap(StackTraceElement[] stackTrace) {
         return factory.getTrackingMap(stackTrace);
     }
-    
+
     public String getCurrentUserDN() {
-        
+
         String currentUserDN = null;
         Principal p = context.getCallerPrincipal();
-        
+
         if (p instanceof DatawavePrincipal) {
             currentUserDN = ((DatawavePrincipal) p).getUserDN().subjectDN();
         }
-        
+
         return currentUserDN;
     }
-    
+
     public Collection<String> getCurrentProxyServers() {
         List<String> currentProxyServers = null;
         Principal p = context.getCallerPrincipal();
-        
+
         if (p instanceof DatawavePrincipal) {
             currentProxyServers = ((DatawavePrincipal) p).getProxyServers();
         }
-        
+
         return currentProxyServers;
     }
 }

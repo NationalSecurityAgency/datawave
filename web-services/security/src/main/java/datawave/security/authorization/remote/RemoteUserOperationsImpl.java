@@ -21,22 +21,22 @@ import javax.ws.rs.core.MediaType;
 @EnableCaching
 public class RemoteUserOperationsImpl extends RemoteHttpService implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(RemoteUserOperationsImpl.class);
-    
+
     public static final String PROXIED_ENTITIES_HEADER = DatawaveAuthenticationMechanism.PROXIED_ENTITIES_HEADER;
     public static final String PROXIED_ISSUERS_HEADER = DatawaveAuthenticationMechanism.PROXIED_ISSUERS_HEADER;
-    
+
     private static final String LIST_EFFECTIVE_AUTHS = "listEffectiveAuthorizations";
-    
+
     private static final String FLUSH_CREDS = "flushCachedCredentials";
-    
+
     private static final String INCLUDE_REMOTE_SERVICES = "includeRemoteServices";
-    
+
     private ObjectReader genericResponseReader;
-    
+
     private ObjectReader authResponseReader;
-    
+
     private boolean initialized = false;
-    
+
     @Override
     @PostConstruct
     public void init() {
@@ -47,7 +47,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
             initialized = true;
         }
     }
-    
+
     @Override
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
         init();
@@ -64,7 +64,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
             return readResponse(entity, authResponseReader);
         }, () -> suffix);
     }
-    
+
     @Override
     public GenericResponse<String> flushCachedCredentials(Object callerObject) throws AuthorizationException {
         init();
@@ -81,19 +81,19 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
     }
-    
+
     @Override
     @Cacheable(value = "remoteUser", key = "{#principal}", cacheManager = "remoteUserOperationsCacheManager")
     public ProxiedUserDetails getRemoteUser(ProxiedUserDetails currentUser) throws AuthorizationException {
         log.info("Cache fault: Retrieving user for " + currentUser.getPrimaryUser().getDn());
         return UserOperations.super.getRemoteUser(currentUser);
     }
-    
+
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             return (DatawavePrincipal) callerObject;
         }
         throw new RuntimeException("Cannot handle a " + callerObject.getClass() + ". Only DatawavePrincipal is accepted");
     }
-    
+
 }

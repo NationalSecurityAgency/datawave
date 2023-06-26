@@ -8,19 +8,19 @@ import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  * Determine the depth of the query (nested and, or, or parens) up to maxDepth+1.
- * 
+ *
  */
 public class DepthVisitor extends BaseVisitor {
     private int maxDepth = 100;
-    
+
     public DepthVisitor(int maxDepth) {
         this.maxDepth = maxDepth;
     }
-    
+
     public static class Depth {
         int currentDepth = 0;
         int maxDepth = 0;
-        
+
         public int dive() {
             currentDepth++;
             if (currentDepth > maxDepth) {
@@ -28,19 +28,19 @@ public class DepthVisitor extends BaseVisitor {
             }
             return currentDepth;
         }
-        
+
         public void rise() {
             currentDepth--;
         }
-        
+
         public int getMaxDepth() {
             return maxDepth;
         }
     }
-    
+
     /**
      * Determine the depth of the query (nested and, or, or parens) up to maxDepth+1.
-     * 
+     *
      * @param maxDepth
      *            the max depth
      * @param root
@@ -53,7 +53,7 @@ public class DepthVisitor extends BaseVisitor {
         root.jjtAccept(vis, depth);
         return depth.getMaxDepth();
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         int depth = ((Depth) data).dive();
@@ -67,7 +67,7 @@ public class DepthVisitor extends BaseVisitor {
             ((Depth) data).rise();
         }
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         int depth = ((Depth) data).dive();
@@ -81,7 +81,7 @@ public class DepthVisitor extends BaseVisitor {
             ((Depth) data).rise();
         }
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         int depth = ((Depth) data).dive();
@@ -95,7 +95,7 @@ public class DepthVisitor extends BaseVisitor {
             ((Depth) data).rise();
         }
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         int depth = ((Depth) data).dive();
@@ -109,5 +109,5 @@ public class DepthVisitor extends BaseVisitor {
             ((Depth) data).rise();
         }
     }
-    
+
 }

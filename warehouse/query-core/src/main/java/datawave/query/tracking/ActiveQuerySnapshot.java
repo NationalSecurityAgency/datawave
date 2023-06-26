@@ -8,24 +8,24 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ActiveQuerySnapshot {
-    
+
     public static final Comparator<ActiveQuerySnapshot> greatestElapsedTime = Comparator.comparingLong(ActiveQuerySnapshot::totalElapsedTime).reversed();
-    
+
     private final String activeQueryLogName;
     private final String queryId;
     private final long lastSourceCount;
     private final long lastNextCount;
     private final long lastSeekCount;
     private final long documentSizeBytes;
-    
+
     private final long totalElapsedTime;
     private final long currentCallTime;
     private final boolean isInCall;
     private final int numActiveRanges;
-    
+
     private final Map<ActiveQuery.CallType,Long> numCallsMap = new HashMap<>();
     private final Map<ActiveQuery.CallType,Snapshot> snapshotMap = new HashMap<>();
-    
+
     public ActiveQuerySnapshot(String activeQueryLogName, String queryId, long lastSourceCount, long lastNextCount, long lastSeekCount, long documentSizeBytes,
                     int numActiveRanges, long totalElapsedTime, boolean isInCall, long currentCallTime, Map<ActiveQuery.CallType,Long> numCallsMap,
                     Map<ActiveQuery.CallType,Timer> timerMap) {
@@ -36,7 +36,7 @@ public class ActiveQuerySnapshot {
         this.lastSeekCount = lastSeekCount;
         this.documentSizeBytes = documentSizeBytes;
         this.numActiveRanges = numActiveRanges;
-        
+
         this.totalElapsedTime = totalElapsedTime;
         this.currentCallTime = currentCallTime;
         this.isInCall = isInCall;
@@ -47,7 +47,7 @@ public class ActiveQuerySnapshot {
             this.snapshotMap.put(entry.getKey(), entry.getValue().getSnapshot());
         }
     }
-    
+
     public long getNumCalls(ActiveQuery.CallType type) {
         if (this.numCallsMap.containsKey(type)) {
             return this.numCallsMap.get(type);
@@ -55,11 +55,11 @@ public class ActiveQuerySnapshot {
             return 0;
         }
     }
-    
+
     public long totalElapsedTime() {
         return totalElapsedTime;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -81,7 +81,7 @@ public class ActiveQuerySnapshot {
                                 .append(s.getMin() / 1000000).append(" ");
             }
         }
-        
+
         if (this.documentSizeBytes > 0) {
             sb.append("(lastDoc bytes/sources/seek/next) ");
             sb.append(this.documentSizeBytes).append("/");

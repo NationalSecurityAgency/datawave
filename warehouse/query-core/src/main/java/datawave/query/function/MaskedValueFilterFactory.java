@@ -9,18 +9,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class MaskedValueFilterFactory {
-    
+
     public static final Logger log = LoggerFactory.getLogger(MaskedValueFilterFactory.class);
     public static final String MASKED_VALUE_FILTER_CLASSNAME = "masked.value.filter.classname";
-    
+
     private static MaskedValueFilterInterface[] maskedValueFilters;
-    
+
     static {
         initializeCache();
     }
-    
+
     private static MaskedValueFilterInterface createInstance() {
-        
+
         ClassLoader thisClassLoader = MaskedValueFilterFactory.class.getClassLoader();
         if (log.isDebugEnabled()) {
             if (thisClassLoader instanceof VFSClassLoader) {
@@ -69,7 +69,7 @@ public class MaskedValueFilterFactory {
         }
         return instance;
     }
-    
+
     public static MaskedValueFilterInterface get(boolean includeGroupingContext, boolean reducedResponse) {
         int index = 2 * (includeGroupingContext ? 1 : 0) + (reducedResponse ? 1 : 0);
         if (null == maskedValueFilters) {
@@ -77,12 +77,12 @@ public class MaskedValueFilterFactory {
         }
         return maskedValueFilters[index];
     }
-    
+
     private static void initializeCache() {
         maskedValueFilters = new MaskedValueFilterInterface[] {createInstance(false, false), createInstance(false, true), createInstance(true, false),
                 createInstance(true, true)};
     }
-    
+
     private static MaskedValueFilterInterface createInstance(boolean includeGroupingContext, boolean reducedResponse) {
         MaskedValueFilterInterface result = createInstance();
         result.setIncludeGroupingContext(includeGroupingContext);

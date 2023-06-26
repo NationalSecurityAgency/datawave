@@ -10,16 +10,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
-    
+
     public static boolean findUnmarkedBoundedRanges(JexlNode script) {
         UnmarkedBoundedRangeDetectionVisitor visitor = new UnmarkedBoundedRangeDetectionVisitor();
-        
+
         AtomicBoolean unmarked = new AtomicBoolean(false);
         script.jjtAccept(visitor, unmarked);
-        
+
         return unmarked.get();
     }
-    
+
     @Override
     public Object visit(ASTReference node, Object data) {
         // determine if we have a marked range that is not actually a range
@@ -28,7 +28,7 @@ public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
                 AtomicBoolean hasBounded = (AtomicBoolean) data;
                 hasBounded.set(true);
             }
-            
+
             return false;
         }
         // determine if we have a range that is not marked
@@ -37,7 +37,7 @@ public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
                 AtomicBoolean hasBounded = (AtomicBoolean) data;
                 hasBounded.set(true);
             }
-            
+
             return false;
         } else {
             return super.visit(node, data);

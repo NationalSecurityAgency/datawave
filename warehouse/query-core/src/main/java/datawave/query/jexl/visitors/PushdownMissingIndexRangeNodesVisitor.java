@@ -29,9 +29,9 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOL
  * Visitor meant to 'push down' predicates for expressions that are not executable against the index because of missing data in the global index.
  */
 public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
-    
+
     private static final Logger log = Logger.getLogger(PushdownMissingIndexRangeNodesVisitor.class);
-    
+
     // a metadata helper
     protected MetadataHelper helper;
     // the begin and end dates for the query
@@ -41,10 +41,10 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
     protected Set<String> dataTypeFilter;
     // the set of holes known to exist in the index
     protected SortedSet<IndexHole> indexHoles = new TreeSet<>();
-    
+
     /**
      * Construct the visitor
-     * 
+     *
      * @param config
      *            the logic configuration
      * @param helper
@@ -58,10 +58,10 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         this.dataTypeFilter = config.getDatatypeFilter();
         this.indexHoles.addAll(config.getIndexHoles());
     }
-    
+
     /**
      * helper method that constructs and applies the visitor.
-     * 
+     *
      * @param config
      *            a config
      * @param helper
@@ -76,20 +76,20 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         PushdownMissingIndexRangeNodesVisitor visitor = new PushdownMissingIndexRangeNodesVisitor(config, helper);
         return (T) (queryTree.jjtAccept(visitor, null));
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if not already delayed somehow
         if (!QueryPropertyMarker.findInstance(node).isAnyTypeExcept(BOUNDED_RANGE)) {
             LiteralRange range = JexlASTHelper.findRange().indexedOnly(this.dataTypeFilter, this.helper).notDelayed().getRange(node);
-            
+
             if (range != null) {
                 return delayBoundedIndexHole(range, node, data);
             } else {
                 JexlNode andNode = JexlNodes.newInstanceOfType(node);
                 JexlNodes.copyImage(node, andNode);
                 andNode.jjtSetParent(node.jjtGetParent());
-                
+
                 // We have no bounded range to replace, just proceed as normal
                 JexlNodes.ensureCapacity(andNode, node.jjtGetNumChildren());
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -103,10 +103,10 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
             return node;
         }
     }
-    
+
     /**
      * Delay the ranges that overlap holes. The range map is expected to only be indexed ranges.
-     * 
+     *
      * @param data
      *            the node data
      * @param range
@@ -116,15 +116,15 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
      * @return a jexl node
      */
     protected JexlNode delayBoundedIndexHole(LiteralRange range, ASTAndNode currentNode, Object data) {
-        
+
         if (missingIndexRange(range)) {
             return QueryPropertyMarker.create(currentNode, INDEX_HOLE);
         } else {
             return currentNode;
         }
-        
+
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not already delayed somehow
@@ -133,7 +133,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         }
         return node;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         if (isIndexed(node) && missingIndexRange(node)) {
@@ -141,7 +141,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         }
         return node;
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         if (isIndexed(node) && missingIndexRange(node)) {
@@ -149,7 +149,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         }
         return node;
     }
-    
+
     public boolean isIndexed(JexlNode node) {
         String field = JexlASTHelper.getIdentifier(node);
         try {
@@ -158,7 +158,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
             throw new IllegalStateException("Unable to find metadata table", e);
         }
     }
-    
+
     private boolean missingIndexRange(ASTEQNode node) {
         Object literal = JexlASTHelper.getLiteralValue(node);
         if (literal != null) {
@@ -173,7 +173,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         }
         return false;
     }
-    
+
     private boolean missingIndexRange(ASTERNode node) {
         Object literal = JexlASTHelper.getLiteralValue(node);
         if (literal != null) {
@@ -191,7 +191,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
                     } else {
                         endRange.append((char) 0);
                     }
-                    
+
                     for (IndexHole hole : indexHoles) {
                         if (hole.overlaps(this.beginDate, this.endDate, leadingLiteral, endRange.toString())) {
                             return true;
@@ -207,7 +207,7 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         }
         return false;
     }
-    
+
     private boolean missingIndexRange(LiteralRange range) {
         String strUpper = String.valueOf(range.getUpper());
         String strLower = String.valueOf(range.getLower());
@@ -220,5 +220,5 @@ public class PushdownMissingIndexRangeNodesVisitor extends RebuildingVisitor {
         }
         return false;
     }
-    
+
 }

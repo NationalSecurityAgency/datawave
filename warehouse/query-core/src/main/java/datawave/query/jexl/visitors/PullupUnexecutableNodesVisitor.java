@@ -66,14 +66,14 @@ import static org.apache.commons.jexl3.parser.JexlNodes.wrap;
  * expanded and some of them are not, then we need to expand the other nodes.
  */
 public class PullupUnexecutableNodesVisitor extends BaseVisitor {
-    
+
     protected MetadataHelper helper;
     protected ShardQueryConfiguration config;
     protected Set<String> nonEventFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> indexedFields;
     protected boolean forFieldIndex;
-    
+
     public PullupUnexecutableNodesVisitor(ShardQueryConfiguration config, boolean forFieldIndex, Set<String> indexedFields, Set<String> indexOnlyFields,
                     Set<String> nonEventFields, MetadataHelper helper) {
         this.helper = helper;
@@ -111,19 +111,19 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
             }
         }
     }
-    
+
     private static final Logger log = Logger.getLogger(PullupUnexecutableNodesVisitor.class);
-    
+
     public static JexlNode pullupDelayedPredicates(JexlNode queryTree, boolean forFieldIndex, ShardQueryConfiguration config, Set<String> indexedFields,
                     Set<String> indexOnlyFields, Set<String> nonEventFields, MetadataHelper helper) {
         PullupUnexecutableNodesVisitor visitor = new PullupUnexecutableNodesVisitor(config, forFieldIndex, indexedFields, indexOnlyFields, nonEventFields,
                         helper);
-        
+
         // rewrite the trees by pushing down all negations first
         JexlNode pushDownTree = PushdownNegationVisitor.pushdownNegations(queryTree);
         return (JexlNode) pushDownTree.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
@@ -131,7 +131,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         }
         return node;
     }
-    
+
     private boolean containsChild(JexlNode node, ExecutableDeterminationVisitor.STATE state) {
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
@@ -141,35 +141,35 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         }
         return false;
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // if a delayed predicate, then change it to a regular reference
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(node);
         if (instance.isType(DELAYED)) {
             JexlNode source = QueryPropertyMarker.unwrapFully(node, DELAYED);
-            
+
             JexlNode parent = (node.jjtGetParent() instanceof ASTReferenceExpression) ? node.jjtGetParent() : node;
             source = (source instanceof ASTReferenceExpression) ? source.jjtGetChild(0) : source;
-            
+
             // when pulling up a delayed marker that is negated, a reference expression must be persisted
             source = wrapIfNeeded(source);
-            
+
             swap(parent.jjtGetParent(), parent, source);
             return source;
         } else if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
             // we need to make sure one of these nodes executable, and we have no partials
             // TODO we should use some cost/index stats info
-            
+
             // determine if we have any executable children
             if (!ExecutableDeterminationVisitor.isExecutable(node, config, indexedFields, indexOnlyFields, nonEventFields, forFieldIndex, null, helper)) {
-                
+
                 boolean executable = containsChild(node, ExecutableDeterminationVisitor.STATE.EXECUTABLE);
-                
+
                 // TODO: this will basically eliminate any work we have done based on cost to delayed
                 // contained predicates. However cost got us into a non-executable situation in the first
                 // place so now we are looking for anything we can do to make this query executable.
-                
+
                 // first flip the error states regardless of the executable state
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
                     JexlNode child = node.jjtGetChild(i);
@@ -184,7 +184,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
                         executable = true;
                     }
                 }
-                
+
                 // then try flipping the partial states
                 for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
                     JexlNode child = node.jjtGetChild(i);
@@ -199,7 +199,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
                         executable = true;
                     }
                 }
-                
+
                 // if no executable nodes found, then flip any non-executable nodes
                 for (int i = 0; i < node.jjtGetNumChildren() && !executable; i++) {
                     JexlNode child = node.jjtGetChild(i);
@@ -214,13 +214,14 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
                         executable = true;
                     }
                 }
-                
+
                 super.visit(node, data);
             }
         }
+
         return node;
     }
-    
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
         // if not executable, then visit all non-executable children
@@ -234,7 +235,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         }
         return node;
     }
-    
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
         // if not executable, then visit all children
@@ -243,7 +244,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         }
         return node;
     }
-    
+
     @Override
     public Object visit(ASTNotNode node, Object data) {
         // if not executable, then visit all children
@@ -252,7 +253,7 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         }
         return node;
     }
-    
+
     /**
      * When pulling up a delayed marker that is negated a reference expression must be persisted for correct query evaluation
      *
@@ -267,210 +268,210 @@ public class PullupUnexecutableNodesVisitor extends BaseVisitor {
         }
         return node;
     }
-    
+
     @Override
     public Object visit(ASTBlock node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTIfStatement node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTWhileStatement node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTForeachStatement node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTAssignment node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTTernaryNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseOrNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseXorNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseAndNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTEQNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTNENode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTLTNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTGTNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTLENode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTGENode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTNRNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTAddNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTSubNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTMulNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTDivNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTModNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTUnaryMinusNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTBitwiseComplNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTIdentifier node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTNullLiteral node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTTrueNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTFalseNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTStringLiteral node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTArrayLiteral node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTMapLiteral node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTMapEntry node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTEmptyFunction node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTSizeFunction node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTFunctionNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTMethodNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTConstructorNode node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTArrayAccess node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTReturnStatement node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTVar node, Object data) {
         return node;
     }
-    
+
     @Override
     public Object visit(ASTNumberLiteral node, Object data) {
         return node;
     }
-    
+
 }

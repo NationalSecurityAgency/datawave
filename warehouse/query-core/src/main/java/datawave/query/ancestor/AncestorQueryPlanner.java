@@ -19,22 +19,22 @@ public class AncestorQueryPlanner extends DefaultQueryPlanner {
     public AncestorQueryPlanner() {
         super();
     }
-    
+
     public AncestorQueryPlanner(long maxRangesPerQueryPiece) {
         super(maxRangesPerQueryPiece);
     }
-    
+
     public AncestorQueryPlanner(long maxRangesPerQueryPiece, boolean limitScanners) {
         super(maxRangesPerQueryPiece, limitScanners);
     }
-    
+
     public AncestorQueryPlanner(AncestorQueryPlanner other) {
         super(other);
     }
-    
+
     /**
      * Test for top level negation in query and throw exception otherwise proceed
-     * 
+     *
      * @param scannerFactory
      *            the scanner factory
      * @param metadataHelper
@@ -53,7 +53,7 @@ public class AncestorQueryPlanner extends DefaultQueryPlanner {
         if (RootNegationCheckVisitor.hasTopLevelNegation(queryTree)) {
             throw new InvalidQueryException();
         }
-        
+
         return super.getQueryRanges(scannerFactory, metadataHelper, config, queryTree);
     }
 }

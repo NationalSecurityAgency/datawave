@@ -55,65 +55,65 @@ import static datawave.metrics.analytic.MetricsDailySummaryReducer.WeightedPair;
  * time the job is re-run, we will see the up-to-minute stats for whatever metrics have been collected.
  */
 public class IngestMetricsSummaryLoader extends Configured implements Tool {
-    
+
     private static final Logger log = Logger.getLogger(IngestMetricsSummaryLoader.class);
-    
+
     /**
      * Convert file latencies into daily metric values.
      */
     private static class IngestMetricsMapper extends Mapper<Key,Value,Key,Value> {
-        
+
         /*
          * TODO: Determine whether this entire file should be removed or refactored, as it is currently not in use and its applicability toward general ingest
          * usage patterns is somewhat questionable
          */
-        
+
         private Pattern radixRegex = Pattern.compile("TODO: <PATTERN-PLACEHOLDER>");
         private Set<String> processedJobs = new HashSet<>();
         private Scanner ingestScanner;
         private Text holder = new Text();
         private FileLatency fileLatency = new FileLatency();
         private boolean useHourlyPrecision = false;
-        
+
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             super.setup(context);
-            
+
             Configuration conf = context.getConfiguration();
             String user = conf.get(MetricsConfig.USER);
             String password = conf.get(MetricsConfig.PASS);
             String instance = conf.get(MetricsConfig.INSTANCE);
             String zookeepers = conf.get(MetricsConfig.ZOOKEEPERS);
-            
+
             useHourlyPrecision = HourlyPrecisionHelper.checkForHourlyPrecisionOption(context.getConfiguration(), log);
-            
+
             try (AccumuloClient client = Accumulo.newClient().to(instance, zookeepers).as(user, password).build()) {
                 ingestScanner = client.createScanner(conf.get(MetricsConfig.INGEST_TABLE, MetricsConfig.DEFAULT_INGEST_TABLE), Authorizations.EMPTY);
             } catch (TableNotFoundException e) {
                 throw new IOException(e);
             }
         }
-        
+
         @Override
         protected void map(Key key, Value value, Context context) throws IOException, InterruptedException {
             key.getRow(holder);
             long loadTime = Long.parseLong(holder.toString());
-            
+
             Date date = new Date(loadTime);
             String outRow = useHourlyPrecision ? DateHelper.formatToHour(date) : DateHelper.format(date);
-            
+
             fileLatency.readFields(ByteStreams.newDataInput(value.get()));
             String jobName = findJobName(fileLatency);
-            
+
             String columnQualifier = key.getColumnQualifier().toString().toUpperCase();
-            
+
             String ingestLabel = extractIngestLabelOverride(columnQualifier);
             if (null == ingestLabel) {
                 ingestLabel = columnQualifier;
             } else {
                 ingestLabel = ingestLabel.toUpperCase();
             }
-            
+
             writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getRawFileTransformDuration(), "RAW_FILE_" + ingestLabel + "_ASRAW_LATENCY_MS");
             writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getDelayRawFileTransformToIngest(),
                             "RAW_FILE_" + ingestLabel + "_DELAY_ASRAW_INGEST_MS");
@@ -123,13 +123,13 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
                 writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getLoaderDuration(), "RAW_FILE_" + ingestLabel + "_LOADER_LATENCY_MS");
             }
             writeTimeDurationForStatsAnalysis(context, outRow, fileLatency.getTotalLatency(), "RAW_FILE_" + ingestLabel + "_INGEST_LATENCY_MS");
-            
+
             key.getColumnFamily(holder);
             Matcher m = radixRegex.matcher(holder.toString());
             if (m.matches()) {
                 context.write(makeKey(outRow, "R_LABEL", m.group(1), "PUBLIC"), makeValue(fileLatency.getEventCount()));
             }
-            
+
             // If we've already processed this job, then there's nothing else to do.
             // We can have multiple records per jobName, but they will all have the
             // same completion time, therefore the same row, and will therefore sent
@@ -137,32 +137,32 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             // whether or not we've already processed a job.
             if (processedJobs.contains(jobName))
                 return;
-            
+
             Counters ingestJobCounters = getCounters(jobName);
             writeCounterGroup(context, ingestJobCounters.getGroup("CB Insert"), outRow, "ROWS_LOADED_BY_TABLE");
             writeCounterGroup(context, ingestJobCounters.getGroup(IngestInput.class.getName()), outRow, "INGEST_PROBLEMS");
             writeCounterGroup(context, ingestJobCounters.getGroup(IngestOutput.class.getName()), outRow, "INGEST_OUTPUT");
             long eventCount = writeCounterGroup(context, ingestJobCounters.getGroup("EVENTS_PROCESSED"), outRow, "EVENTS_LOADED"); // events by datatype
-            
+
             boolean isLive = ingestJobCounters.findCounter(IngestProcess.LIVE_INGEST).getValue() > 0;
             context.write(makeKey(outRow, "EVENTS_LOADED", "TOTAL"), makeValue(eventCount));
-            
+
             String label = checkForIngestLabelOverride(ingestJobCounters);
             if (null == label) {
                 label = isLive ? "LIVE" : "BULK";
             } else {
                 label = label.toUpperCase();
             }
-            
+
             context.write(makeKey(outRow, "EVENTS_LOADED", label), makeValue(eventCount));
         }
-        
+
         private void writeTimeDurationForStatsAnalysis(Context context, String outRow, long totalLatency, String totalLatencyCF)
                         throws IOException, InterruptedException {
             WeightedPair valuePair = new WeightedPair(totalLatency, fileLatency.getEventCount());
             context.write(makeKey(outRow, totalLatencyCF, MetricsDailySummaryReducer.PERCENTILE_STATS_METRIC_VALUE), valuePair.toValue());
         }
-        
+
         private String findJobName(FileLatency fileLatency) {
             for (Phase phase : fileLatency.getPhases()) {
                 if (phase.name().startsWith("job_"))
@@ -170,7 +170,7 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             }
             return "";
         }
-        
+
         private long writeCounterGroup(Context context, CounterGroup group, String row, String cf) throws IOException, InterruptedException {
             long counterTotal = 0;
             for (Counter c : group) {
@@ -181,10 +181,10 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
             }
             return counterTotal;
         }
-        
+
         private Counters getCounters(String jobId) {
             Counters counters = new Counters();
-            
+
             Range r = new Range("jobId\0" + jobId);
             ingestScanner.setRange(r);
             for (Map.Entry<Key,Value> entry : ingestScanner) {
@@ -202,27 +202,27 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
                 System.err.println("Couldn't find ingest counters for job " + jobId);
                 processedJobs.add(jobId);
             }
-            
+
             return counters;
         }
-        
+
         private Key makeKey(String row, String cf, String cq) {
             return new Key(row, cf, cq);
         }
-        
+
         private Key makeKey(String row, String cf, String cq, String cv) {
             return new Key(row, cf, cq, cv);
         }
-        
+
         private Value makeValue(String value) {
             return new Value(value.getBytes());
         }
-        
+
         private Value makeValue(long value) {
             return makeValue(Long.toString(value));
         }
     }
-    
+
     private static String checkForIngestLabelOverride(Counters ingestJobCounters) {
         CounterGroup jobQueueName = ingestJobCounters.getGroup(IngestProcess.METRICS_LABEL_OVERRIDE.name());
         if (jobQueueName.size() > 0) {
@@ -231,7 +231,7 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
         }
         return null;
     }
-    
+
     // if the metrics label is overridden, it will be something like this: fifteen\u0000live or proto\u0000bulk
     public static String extractIngestLabelOverride(String fullLabel) {
         if (fullLabel.contains("\u0000")) {
@@ -239,31 +239,31 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
         }
         return null;
     }
-    
+
     @Override
     public int run(String[] args) throws Exception {
         Configuration conf = JobSetupUtil.configure(args, getConf(), log);
-        
+
         JobSetupUtil.printConfig(getConf(), log);
-        
+
         Job job = Job.getInstance(conf);
         Configuration jconf = job.getConfiguration();
         job.setJarByClass(this.getClass());
-        
+
         boolean useHourlyPrecision = Boolean.valueOf(jconf.get(MetricsConfig.USE_HOURLY_PRECISION, MetricsConfig.DEFAULT_USE_HOURLY_PRECISION));
-        
+
         if (useHourlyPrecision) {
             job.setJobName("IngestMetricsSummaries (hourly)");
         } else {
             job.setJobName("IngestMetricsSummaries");
         }
-        
+
         try {
             Connections.initTables(conf);
         } catch (AccumuloException | AccumuloSecurityException e) {
             throw new IOException(e);
         }
-        
+
         String inputTable = jconf.get(MetricsConfig.FILE_GRAPH_TABLE, MetricsConfig.DEFAULT_FILE_GRAPH_TABLE);
         String outputTable = HourlyPrecisionHelper.getOutputTable(jconf, useHourlyPrecision);
         String userName = jconf.get(MetricsConfig.USER);
@@ -273,7 +273,7 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
         Range dayRange = JobSetupUtil.computeTimeRange(jconf, log);
         long delta = Long.parseLong(dayRange.getEndKey().getRow().toString()) - Long.parseLong(dayRange.getStartKey().getRow().toString());
         int numDays = (int) Math.max(1, delta / TimeUnit.DAYS.toMillis(1));
-        
+
         job.setMapperClass(IngestMetricsMapper.class);
         job.setMapOutputKeyClass(Key.class);
         job.setMapOutputValueClass(Value.class);
@@ -283,25 +283,25 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
         AccumuloInputFormat.setInputTableName(job, inputTable);
         AccumuloInputFormat.setScanAuthorizations(job, Authorizations.EMPTY);
         AccumuloInputFormat.setRanges(job, Collections.singletonList(dayRange));
-        
+
         // Ensure all data for a day goes to the same reducer so that we aggregate it correctly before sending to Accumulo
         RowPartitioner.configureJob(job);
-        
+
         // Configure the reducer and output format to write out our metrics
         MetricsDailySummaryReducer.configureJob(job, numDays, jconf.get(MetricsConfig.INSTANCE), jconf.get(MetricsConfig.ZOOKEEPERS), userName, password,
                         outputTable);
-        
+
         job.submit();
         JobSetupUtil.changeJobPriority(job, log);
-        
+
         job.waitForCompletion(true);
-        
+
         return 0;
     }
-    
+
     /**
      * Expects to receive args in the order of [config opts] [dates] ... where [dates] are the last two
-     * 
+     *
      * @param args
      *            string arguments
      */

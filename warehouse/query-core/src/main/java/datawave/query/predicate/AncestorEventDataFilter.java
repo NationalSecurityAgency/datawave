@@ -15,7 +15,7 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * Initialize the query field filter with all of the fields required to evaluation this query
-     * 
+     *
      * @param script
      *            a script
      * @param nonEventFields
@@ -26,15 +26,15 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
     public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
         super(script, metadata, nonEventFields);
     }
-    
+
     public AncestorEventDataFilter(AncestorEventDataFilter other) {
         super(other);
         docUid = other.docUid;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.query.function.Filter#accept(org.apache.accumulo.core.data.Key)
      */
     @Override
@@ -46,18 +46,18 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
             return super.apply(input);
         }
     }
-    
+
     protected String docUid = null;
-    
+
     @Override
     public void startNewDocument(Key document) {
         super.startNewDocument(document);
         this.docUid = getUid(document);
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.query.function.Filter#keep(org.apache.accumulo.core.data.Key)
      */
     @Override
@@ -65,7 +65,7 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
         // only keep the data for the document of interest
         return (docUid == null || docUid.equals(getUid(k)));
     }
-    
+
     protected String getUid(Key k) {
         String uid;
         String cf = k.getColumnFamily().toString();
@@ -81,7 +81,7 @@ public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
         }
         return uid;
     }
-    
+
     @Override
     public EventDataQueryFilter clone() {
         return new AncestorEventDataFilter(this);

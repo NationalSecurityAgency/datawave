@@ -13,18 +13,18 @@ import java.util.List;
 /**
  * <pre>
  * Function arguments are a field name, an operator, a mode(ALL/ANY) and another field name
- * 
+ *
  * compare(FOO, '&gt;=', BAR) will return true if both sets are empty or any elements evaluate to true
  * </pre>
  */
 public class CompareFunctionValidator {
-    
+
     public enum Mode {
         ANY, ALL
     }
-    
+
     public static final List<String> operators = Collections.unmodifiableList(Arrays.asList("<", "<=", ">", ">=", "==", "=", "!="));
-    
+
     public static void validate(String function, List<JexlNode> args) throws IllegalArgumentException {
         if (args.size() != 4) {
             BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
@@ -36,7 +36,7 @@ public class CompareFunctionValidator {
                                 MessageFormat.format("{0} requires valid comparison operator (<, <=, >, >=, ==/= or !=) as 2nd arguments", function));
                 throw new IllegalArgumentException(qe);
             }
-            
+
             try {
                 Mode.valueOf(String.valueOf(JexlNodes.getImage(args.get(2))));
             } catch (IllegalArgumentException iae) {

@@ -44,9 +44,9 @@ import static datawave.query.testframework.FileType.CSV;
  * Abstract base class that contains the configuration settings for test data types.
  */
 public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
-    
+
     private static final Logger log = Logger.getLogger(AbstractDataTypeConfig.class);
-    
+
     // ===============================================
     // common constants for all data types
     protected static final String DATE_FIELD_FORMAT = "yyyyMMdd";
@@ -54,7 +54,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     private static final String TEST_VISIBILITY = "public";
     private static final String[] AUTH_VALUES = new String[] {"public", "Euro", "NA"};
     private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
-    
+
     /**
      * Retrieves an {@link Authorizations} object to use for query.
      *
@@ -63,25 +63,25 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     public static Authorizations getTestAuths() {
         return TEST_AUTHS;
     }
-    
+
     /**
      * Returns the default visibility applied to all datatypes.
-     * 
+     *
      * @return default column visibility
      */
     public static ColumnVisibility getDefaultVisibility() {
         return new ColumnVisibility(TEST_VISIBILITY);
     }
-    
+
     private static List<String> mappingToNames(final Collection<Set<String>> mapping) {
         final List<String> names = new ArrayList<>();
         for (final Set<String> composite : mapping) {
             names.add(String.join("_", composite));
         }
-        
+
         return names;
     }
-    
+
     private static List<String> mappingToFields(final Collection<Set<String>> mapping) {
         final List<String> fields = new ArrayList<>();
         for (final Set<String> virtual : mapping) {
@@ -89,7 +89,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         }
         return fields;
     }
-    
+
     // ===============================================
     // inherited instance members
     protected final String dataType;
@@ -99,7 +99,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
      */
     private final FieldConfig fieldConfig;
     protected final Configuration hConf = new Configuration();
-    
+
     /**
      * @param dt
      *            datatype name
@@ -118,7 +118,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
                     throws IOException, URISyntaxException {
         this(dt, ingestFile, CSV, config, manager);
     }
-    
+
     /**
      * @param dt
      *            datatype name
@@ -138,7 +138,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
     protected AbstractDataTypeConfig(final String dt, final String ingestFile, final FileType format, final FieldConfig config, final RawDataManager manager)
                     throws IOException, URISyntaxException {
         log.info("---------  loading datatype (" + dt + ") ingest file(" + ingestFile + ") ---------");
-        
+
         // RawDataManager manager = mgr;
         URL url = this.getClass().getClassLoader().getResource(ingestFile);
         Assert.assertNotNull("unable to resolve ingest file(" + ingestFile + ")", url);
@@ -153,10 +153,10 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.ingestPath = url.toURI();
         this.dataType = dt;
         this.fieldConfig = config;
-        
+
         // default Hadoop settings - override if needed
         this.hConf.set(DataTypeHelper.Properties.DATA_NAME, this.dataType);
-        
+
         switch (format) {
             case CSV:
                 // load raw data into POJO for CSV
@@ -165,7 +165,7 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
                 manager.addTestData(this.ingestPath, this.dataType, anyFieldIndexes);
                 this.hConf.set(this.dataType + TypeRegistry.INGEST_HELPER, ExtendedTestCSVIngestHelper.class.getName());
                 this.hConf.set(this.dataType + TypeRegistry.RAW_READER, CSVRecordReader.class.getName());
-                
+
                 this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_NAMES, getSecurityMarkingFieldNames());
                 this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS, getSecurityMarkingFieldDomains());
                 break;
@@ -180,22 +180,22 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
             default:
                 throw new AssertionError("unhandled format type: " + format.name());
         }
-        
+
         this.hConf.set(this.dataType + TypeRegistry.HANDLER_CLASSES, AbstractColumnBasedHandler.class.getName());
         this.hConf.set(this.dataType + BaseIngestHelper.DEFAULT_TYPE, LcNoDiacriticsType.class.getName());
         this.hConf.set(this.dataType + CSVHelper.DATA_SEP, ",");
         this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_SEPARATOR, RawDataManager.MULTIVALUE_SEP);
-        
+
         this.hConf.set(this.dataType + DataTypeHelper.Properties.INGEST_POLICY_ENFORCER_CLASS, IngestPolicyEnforcer.NoOpIngestPolicyEnforcer.class.getName());
-        
+
         this.hConf.set(this.dataType + ".data.auth.id.mode", "NEVER");
         this.hConf.set(ShardedDataTypeHandler.METADATA_TERM_FREQUENCY, "true");
-        
+
         this.hConf.set(this.dataType + MarkingsHelper.DEFAULT_MARKING, new String(getDefaultVisibility().getExpression(), StandardCharsets.UTF_8));
-        
+
         // virtual field separator
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_VALUE_SEPARATOR, "|");
-        
+
         // index fields also include composite fields
         Set<String> indexEntries = new HashSet<>(this.fieldConfig.getIndexFields());
         List<String> compositeNames = mappingToNames(this.fieldConfig.getCompositeFields());
@@ -203,58 +203,58 @@ public abstract class AbstractDataTypeConfig implements DataTypeHadoopConfig {
         this.hConf.set(this.dataType + BaseIngestHelper.INDEX_FIELDS, String.join(",", indexEntries));
         this.hConf.set(this.dataType + BaseIngestHelper.INDEX_ONLY_FIELDS, String.join(",", this.fieldConfig.getIndexOnlyFields()));
         this.hConf.set(this.dataType + BaseIngestHelper.REVERSE_INDEX_FIELDS, String.join(",", this.fieldConfig.getReverseIndexFields()));
-        
+
         // setup composite field mappings
         Iterator<Set<String>> componentFieldsIter = this.fieldConfig.getCompositeFields().iterator();
         for (final String composite : compositeNames) {
             this.hConf.set(this.dataType + "." + composite + CompositeIngest.COMPOSITE_FIELD_MAP, String.join(",", componentFieldsIter.next()));
         }
-        
+
         // virtual fields
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_NAMES, String.join(",", mappingToNames(this.fieldConfig.getVirtualFields())));
         this.hConf.set(this.dataType + VirtualIngest.VIRTUAL_FIELD_MEMBERS, String.join(",", mappingToFields(this.fieldConfig.getVirtualFields())));
-        
+
         // multivalue fields - only set if there are values
         Set<String> multi = this.fieldConfig.getMultiValueFields();
         if (!multi.isEmpty()) {
             this.hConf.set(this.dataType + CSVHelper.MULTI_VALUED_FIELDS, String.join(",", multi));
         }
     }
-    
+
     public String getSecurityMarkingFieldNames() {
         return "";
     }
-    
+
     public String getSecurityMarkingFieldDomains() {
         return "";
     }
-    
+
     /**
      * Returns the default list of shards from the class {@link BaseShardIdRange}. Test data types that use a different set of shard ids should override this
      * method.
-     * 
+     *
      * @return list of shard id values
      */
     @Override
     public Collection<String> getShardIds() {
         return BaseShardIdRange.getShardDates();
     }
-    
+
     @Override
     public Configuration getHadoopConfiguration() {
         return this.hConf;
     }
-    
+
     @Override
     public String dataType() {
         return this.dataType;
     }
-    
+
     @Override
     public URI getIngestFile() {
         return this.ingestPath;
     }
-    
+
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "{" + "dataType='" + dataType + '\'' + ", ingestPath=" + ingestPath + ", fieldConfig=" + fieldConfig + '}';

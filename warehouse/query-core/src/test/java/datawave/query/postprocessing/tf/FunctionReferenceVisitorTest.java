@@ -28,28 +28,28 @@ import static org.junit.Assert.fail;
  * The {@link FunctionReferenceVisitor} is purpose built for TermFrequency functions, but will also work on other functions
  */
 public class FunctionReferenceVisitorTest {
-    
+
     private String currentNamespace;
     private String currentFunctionName;
     private Multimap<String,Function> functions;
-    
+
     @Test
     public void testArbitraryFunction() throws ParseException {
         String query = "f:func(x1,x2,x3,x4,x5)";
         ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-        
+
         Multimap<String,Function> functions = FunctionReferenceVisitor.functions(script);
-        
+
         assertTrue(functions.containsKey("f"));
         assertEquals(1, functions.keySet().size());
-        
+
         Collection<Function> functionsInNamespace = functions.get("f");
         assertEquals(1, functionsInNamespace.size());
-        
+
         Function f = functionsInNamespace.iterator().next();
         assertEquals("func", f.name());
         assertEquals(5, f.args().size());
-        
+
         Iterator<JexlNode> iter = f.args().iterator();
         assertEquals("x1", JexlNodes.getImage(iter.next()));
         assertEquals("x2", JexlNodes.getImage(iter.next()));
@@ -58,7 +58,7 @@ public class FunctionReferenceVisitorTest {
         assertEquals("x5", JexlNodes.getImage(iter.next()));
         assertFalse(iter.hasNext());
     }
-    
+
     @Test
     public void testContentFunctionAdjacent() {
         String query = "content:adjacent(termOffsetMap, 'hello', 'world')";
@@ -66,14 +66,14 @@ public class FunctionReferenceVisitorTest {
         assertNamespace("content");
         assertFunctionName("adjacent");
         assertFunctionArgs(Arrays.asList("termOffsetMap", "hello", "world"));
-        
+
         query = "content:adjacent(BODY, termOffsetMap, 'hello', 'world')";
         parseFunctions(query);
         assertNamespace("content");
         assertFunctionName("adjacent");
         assertFunctionArgs(Arrays.asList("BODY", "termOffsetMap", "hello", "world"));
     }
-    
+
     @Test
     public void testContentFunctionPhrase() {
         String query = "content:phrase(termOffsetMap, 'hello', 'world')";
@@ -81,14 +81,14 @@ public class FunctionReferenceVisitorTest {
         assertNamespace("content");
         assertFunctionName("phrase");
         assertFunctionArgs(Arrays.asList("termOffsetMap", "hello", "world"));
-        
+
         query = "content:phrase(BODY, termOffsetMap, 'hello', 'world')";
         parseFunctions(query);
         assertNamespace("content");
         assertFunctionName("phrase");
         assertFunctionArgs(Arrays.asList("BODY", "termOffsetMap", "hello", "world"));
     }
-    
+
     @Test
     public void testContentFunctionScoredPhrase() {
         String query = "content:scoredPhrase(-1.5, 'red', 'car')";
@@ -96,14 +96,14 @@ public class FunctionReferenceVisitorTest {
         assertNamespace("content");
         assertFunctionName("scoredPhrase");
         assertFunctionArgs(Arrays.asList("1.5", "red", "car"));
-        
+
         query = "content:scoredPhrase(BODY, -1.5, 'red', 'car')";
         parseFunctions(query);
         assertNamespace("content");
         assertFunctionName("scoredPhrase");
         assertFunctionArgs(Arrays.asList("BODY", "1.5", "red", "car"));
     }
-    
+
     @Test
     public void testContentFunctionWithin() {
         String query = "content:within(2, termOffsetMap,'brown', 'fox')";
@@ -111,14 +111,14 @@ public class FunctionReferenceVisitorTest {
         assertNamespace("content");
         assertFunctionName("within");
         assertFunctionArgs(Arrays.asList("2", "termOffsetMap", "brown", "fox"));
-        
+
         query = "content:within(BODY, 2, termOffsetMap, 'brown', 'fox')";
         parseFunctions(query);
         assertNamespace("content");
         assertFunctionName("within");
         assertFunctionArgs(Arrays.asList("BODY", "2", "termOffsetMap", "brown", "fox"));
     }
-    
+
     @Test
     public void testFilterIsNull() {
         String query = "filter:isNull(FIELD)";
@@ -126,14 +126,14 @@ public class FunctionReferenceVisitorTest {
         assertNamespace("filter");
         assertFunctionName("isNull");
         assertFunctionArgs(Collections.singletonList("FIELD"));
-        
+
         query = "filter:isNull(FIELD_A||FIELD_B)";
         parseFunctions(query);
         assertNamespace("filter");
         assertFunctionName("isNull");
         assertFunctionArgs(Collections.singletonList("(FIELD_A || FIELD_B)"));
     }
-    
+
     @Test
     public void testFilterIsNotNull() {
         String query = "filter:isNotNull(FIELD)";
@@ -141,14 +141,14 @@ public class FunctionReferenceVisitorTest {
         assertNamespace("filter");
         assertFunctionName("isNotNull");
         assertFunctionArgs(Collections.singletonList("FIELD"));
-        
+
         query = "filter:isNotNull(FIELD_A||FIELD_B)";
         parseFunctions(query);
         assertNamespace("filter");
         assertFunctionName("isNotNull");
         assertFunctionArgs(Collections.singletonList("(FIELD_A || FIELD_B)"));
     }
-    
+
     @Test
     public void testFilterIncludeRegex() {
         String query = "filter:includeRegex(FIELD, 'ba.*')";
@@ -157,7 +157,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("includeRegex");
         assertFunctionArgs(Arrays.asList("FIELD", "ba.*"));
     }
-    
+
     @Test
     public void testFilterExcludeRegex() {
         String query = "filter:excludeRegex(FIELD, 'ba.*')";
@@ -166,7 +166,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("excludeRegex");
         assertFunctionArgs(Arrays.asList("FIELD", "ba.*"));
     }
-    
+
     @Test
     public void testFilterMatchesAtLeastCountOf() {
         String query = "filter:matchesAtLeastCountOf(3, FIELD, 'v1', 'v2', 'v3')";
@@ -175,7 +175,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("matchesAtLeastCountOf");
         assertFunctionArgs(Arrays.asList("3", "FIELD", "v1", "v2", "v3"));
     }
-    
+
     @Test
     public void testFilterOccurrence() {
         String query = "filter:occurrence(FOO, '==', 1)";
@@ -184,7 +184,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("occurrence");
         assertFunctionArgs(Arrays.asList("FOO", "==", "1"));
     }
-    
+
     @Test
     public void testFilterCompare() {
         String query = "filter:compare(FOO, '==', 'all', BAR)";
@@ -193,7 +193,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("compare");
         assertFunctionArgs(Arrays.asList("FOO", "==", "all", "BAR"));
     }
-    
+
     @Test
     public void testGetMaxTime() {
         String query = "filter:getMaxTime(FIELD)";
@@ -202,7 +202,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("getMaxTime");
         assertFunctionArgs(Collections.singletonList("FIELD"));
     }
-    
+
     @Test
     public void testTimeFunction() {
         String query = "filter:timeFunction(DEATH_DATE,BIRTH_DATE,'-','>',2522880000000L)";
@@ -211,7 +211,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("timeFunction");
         assertFunctionArgs(Arrays.asList("DEATH_DATE", "BIRTH_DATE", "-", ">", "2522880000000"));
     }
-    
+
     @Test
     public void testBeforeLoadDate() {
         String query = "filter:afterLoadDate(FOO, '20140101')";
@@ -220,7 +220,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("afterLoadDate");
         assertFunctionArgs(Arrays.asList("FOO", "20140101"));
     }
-    
+
     @Test
     public void testAfterLoadDate() {
         String query = "filter:beforeLoadDate(FOO, '20140101')";
@@ -229,7 +229,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("beforeLoadDate");
         assertFunctionArgs(Arrays.asList("FOO", "20140101"));
     }
-    
+
     @Test
     public void testBetweenLoadDates() {
         String query = "filter:betweenLoadDates(FOO, '20140101', '20140102')";
@@ -238,7 +238,7 @@ public class FunctionReferenceVisitorTest {
         assertFunctionName("betweenLoadDates");
         assertFunctionArgs(Arrays.asList("FOO", "20140101", "20140102"));
     }
-    
+
     @Test
     public void testSingleNamespaceMultipleFunctionNames() {
         String query = "filter:isNotNull(FIELD) && filter:afterLoadDate(FOO,'20140101')";
@@ -246,7 +246,7 @@ public class FunctionReferenceVisitorTest {
         assertNamespace("filter");
         assertFunctionNames("isNotNull", "afterLoadDate");
     }
-    
+
     @Test
     public void testMultipleNamespaceMultipleFunctionNames() {
         String query = "filter:isNotNull(FIELD) && content:phrase(FOO,termOffsetMap, 'brown', 'fox')";
@@ -254,7 +254,7 @@ public class FunctionReferenceVisitorTest {
         assertNameSpaces("filter", "content");
         assertFunctionNames("isNotNull", "phrase");
     }
-    
+
     @Test
     public void testMultipleFunctionsWithNamespaceFilter() {
         Set<String> filter = Sets.newHashSet("filter", "content");
@@ -263,7 +263,7 @@ public class FunctionReferenceVisitorTest {
         assertNameSpaces("filter", "content");
         assertFunctionNames("isNotNull", "phrase");
     }
-    
+
     @Test
     public void testMultipleFunctionsWithContentNamespaceFilter() {
         Set<String> filter = Collections.singleton("content");
@@ -272,7 +272,7 @@ public class FunctionReferenceVisitorTest {
         assertNameSpaces("content");
         assertFunctionNames("phrase");
     }
-    
+
     @Test
     public void testMultipleFunctionsWithFilterNamespaceFilter() {
         Set<String> filter = Collections.singleton("filter");
@@ -281,7 +281,7 @@ public class FunctionReferenceVisitorTest {
         assertNameSpaces("filter");
         assertFunctionNames("isNotNull");
     }
-    
+
     @Test
     public void testNamespaceFilterWithNoHits() {
         Set<String> filter = Collections.singleton("fourOhFourNamespaceNotfound");
@@ -289,13 +289,13 @@ public class FunctionReferenceVisitorTest {
         parseFunctions(query, filter);
         assertTrue(functions.isEmpty());
     }
-    
+
     // helper methods
-    
+
     private void parseFunctions(String query) {
         parseFunctions(query, Collections.emptySet());
     }
-    
+
     private void parseFunctions(String query, Set<String> namespaceFilter) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
@@ -304,10 +304,10 @@ public class FunctionReferenceVisitorTest {
             fail("Failed to parse query: " + query);
         }
     }
-    
+
     /**
      * Assert single namespace exists
-     * 
+     *
      * @param namespace
      *            single function namespace
      */
@@ -316,10 +316,10 @@ public class FunctionReferenceVisitorTest {
         assertTrue(functions.containsKey(currentNamespace));
         assertEquals(1, functions.keySet().size());
     }
-    
+
     /**
      * Assert multiple namespaces
-     * 
+     *
      * @param namespaces
      *            multiple function namespaces
      */
@@ -328,10 +328,10 @@ public class FunctionReferenceVisitorTest {
             assertTrue(functions.containsKey(namespace));
         }
     }
-    
+
     /**
      * Assert function name, assumes only one function exists
-     * 
+     *
      * @param functionName
      *            the function name
      */
@@ -341,10 +341,10 @@ public class FunctionReferenceVisitorTest {
         Function f = functions.get(currentNamespace).iterator().next();
         assertEquals(currentFunctionName, f.name());
     }
-    
+
     /**
      * Assert multiple function names, assumes multiple functions exist
-     * 
+     *
      * @param functionNames
      *            the function names
      */
@@ -364,10 +364,10 @@ public class FunctionReferenceVisitorTest {
             assertTrue(found);
         }
     }
-    
+
     /**
      * Assert function args for a query. Assumes
-     * 
+     *
      * @param args
      *            list of expected args
      */
@@ -375,7 +375,7 @@ public class FunctionReferenceVisitorTest {
         assertTrue(functions.containsKey(currentNamespace));
         Function f = functions.get(currentNamespace).iterator().next();
         assertEquals(args.size(), f.args().size());
-        
+
         Iterator<JexlNode> iter = f.args().iterator();
         for (String arg : args) {
             assertTrue(iter.hasNext());

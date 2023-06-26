@@ -8,21 +8,21 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class AndIteratorBuilder extends AbstractIteratorBuilder {
-    
+
     Set<JexlNode> compositePredicates = new HashSet<>();
-    
+
     public Set<JexlNode> getCompositePredicates() {
         return compositePredicates;
     }
-    
+
     public void addCompositePredicate(JexlNode compositePredicate) {
         this.compositePredicates.add(compositePredicate);
     }
-    
+
     public void setCompositePredicates(Set<JexlNode> compositePredicates) {
         this.compositePredicates = compositePredicates;
     }
-    
+
     @SuppressWarnings({"rawtypes", "unchecked"})
     public <T> NestedIterator<T> build() {
         if (includes.isEmpty()) {

@@ -25,12 +25,12 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class EntryParserTest {
-    
+
     private static void addToExpected(Collection<IndexMatch> expected, String prefix, Iterable<String> docIds, JexlNode node) {
         for (String docId : docIds)
             expected.add(new IndexMatch(prefix + '\u0000' + docId, node));
     }
-    
+
     /**
      * Assert when EntryParser is set to skip node delays
      */
@@ -43,21 +43,21 @@ public class EntryParserTest {
         builder.setCOUNT(docIds.size());
         builder.setIGNORE(false);
         Value hasDocs = new Value(builder.build().toByteArray());
-        
+
         List<IndexMatch> expected = new LinkedList<>();
-        
+
         data.put(new Key("row", "cf", "20190314\u0000A"), hasDocs);
         addToExpected(expected, "A", docIds, JexlNodeFactory.buildEQNode("hello", "world"));
-        
+
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
         iterator.seek(new Range(), Collections.emptySet(), false);
-        
+
         EntryParser parser = new EntryParser("hello", "world", true);
         Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
         assertTrue(iterator.hasTop());
-        
+
         assertNotNull(tuple);
         assertEquals("20190314", tuple.first());
         for (IndexMatch match : tuple.second().uids()) {
@@ -65,7 +65,7 @@ public class EntryParserTest {
         }
         assertTrue(expected.isEmpty());
     }
-    
+
     /**
      * Assert when the IndexInfo has no document ids and the range is a day range
      */
@@ -76,28 +76,28 @@ public class EntryParserTest {
         builder.setCOUNT(30);
         builder.setIGNORE(true);
         Value hasDocs = new Value(builder.build().toByteArray());
-        
+
         List<IndexMatch> expected = new LinkedList<>();
-        
+
         data.put(new Key("row", "cf", "20190314\u0000A"), hasDocs);
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
         addToExpected(expected, "A", docIds, JexlNodeFactory.buildEQNode("hello", "world"));
-        
+
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
         iterator.seek(new Range(), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
-        
+
         EntryParser parser = new EntryParser("hello", "world", false);
         Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
-        
+
         assertNotNull(tuple);
         assertEquals("20190314", tuple.first());
         assertEquals(0, tuple.second().uids().size());
         assertEquals("((_Delayed_ = true) && (hello == 'world'))", JexlStringBuildingVisitor.buildQuery(tuple.second().getNode()));
     }
-    
+
     /**
      * Assert when the IndexInfo has no document ids and the range is a day range
      */
@@ -108,22 +108,22 @@ public class EntryParserTest {
         builder.setCOUNT(30);
         builder.setIGNORE(true);
         Value hasDocs = new Value(builder.build().toByteArray());
-        
+
         List<IndexMatch> expected = new LinkedList<>();
-        
+
         data.put(new Key("row", "cf", "20190314_0\u0000A"), hasDocs);
         List<String> docIds = Arrays.asList("doc1", "doc2", "doc3", "doc4");
         addToExpected(expected, "A", docIds, JexlNodeFactory.buildEQNode("hello", "world"));
-        
+
         CreateUidsIterator iterator = new CreateUidsIterator();
         iterator.init(new SortedMapIterator(data), null, null);
         iterator.seek(new Range(), Collections.emptySet(), false);
         assertTrue(iterator.hasTop());
-        
+
         EntryParser parser = new EntryParser("hello", "world", false);
         Result top = new Result(iterator.getTopKey(), iterator.getTopValue());
         Tuple2<String,IndexInfo> tuple = parser.apply(top);
-        
+
         assertNotNull(tuple);
         assertEquals("20190314_0", tuple.first());
         assertEquals(0, tuple.second().uids().size());

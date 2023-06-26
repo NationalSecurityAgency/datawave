@@ -13,17 +13,17 @@ import static datawave.query.planner.DefaultQueryPlanner.logQuery;
  * Handles boilerplate code execution for operations like timing a visit call, logging the query tree, and eventualy validating the resulting query tree.
  */
 public class TimedVisitorManager {
-    
+
     private boolean debugEnabled; // log query tree after visit?
     private boolean validateAst; // validate the query tree after visit?
-    
+
     private ASTValidator validator = new ASTValidator();
-    
+
     // default, do not log, do not validate
     public TimedVisitorManager() {
         this(false, false);
     }
-    
+
     /**
      * Sets flags to log the query or validate the query
      *
@@ -36,7 +36,7 @@ public class TimedVisitorManager {
         this.debugEnabled = isDebugEnabled;
         this.validateAst = validateAst;
     }
-    
+
     /**
      * Wrap visitor execution with a timer and debug msg
      *
@@ -51,17 +51,17 @@ public class TimedVisitorManager {
      *             if something goes wrong
      */
     public ASTJexlScript timedVisit(QueryStopwatch timers, String stageName, VisitorManager visitorManager) throws DatawaveQueryException {
-        
+
         ASTJexlScript script;
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stageName);
-        
+
         try {
             script = visitorManager.apply();
-            
+
             if (debugEnabled) {
                 logQuery(script, "Query after visit: " + stageName);
             }
-            
+
             if (validateAst) {
                 try {
                     validator.isValid(script, stageName);
@@ -74,11 +74,11 @@ public class TimedVisitorManager {
         }
         return script;
     }
-    
+
     // no timers, only validate
     public ASTJexlScript validateAndVisit(VisitorManager visitorManager) throws DatawaveQueryException {
         ASTJexlScript script = visitorManager.apply();
-        
+
         if (validateAst) {
             try {
                 validator.isValid(script);
@@ -86,30 +86,30 @@ public class TimedVisitorManager {
                 throw new DatawaveQueryException(e);
             }
         }
-        
+
         return script;
     }
-    
+
     public boolean isDebugEnabled() {
         return debugEnabled;
     }
-    
+
     public void setDebugEnabled(boolean debugEnabled) {
         this.debugEnabled = debugEnabled;
     }
-    
+
     public boolean isValidateAst() {
         return validateAst;
     }
-    
+
     public void setValidateAst(boolean validateAst) {
         this.validateAst = validateAst;
     }
-    
+
     public ASTValidator getValidator() {
         return validator;
     }
-    
+
     public void setValidator(ASTValidator validator) {
         this.validator = validator;
     }

@@ -29,19 +29,19 @@ import java.util.concurrent.TimeUnit;
  * will create maker key/values for the specified data types if requested
  */
 public class GenerateShardSplits {
-    
+
     private static final ColumnVisibility EMPTY_VIS = new ColumnVisibility();
     private static final Text EMPTY_TEXT = new Text();
     private static final Value EMPTY_VALUE = new Value(EMPTY_TEXT.getBytes());
-    
+
     private static void printUsageAndExit() {
         System.out.println(
                         "Usage: datawave.ingest.util.GenerateShardSplits <startDate (yyyyMMDD)> <daysToGenerate> <numShardsPerDay> <numShardsPerSplit> [-markersOnly] [-addShardMarkers] [-addDataTypeMarkers <comma delim data types>] [<username> <password> <tableName> [<instanceName> <zookeepers>]]");
         System.exit(-1);
     }
-    
+
     public static void main(String[] args) throws Exception {
-        
+
         if (args.length < 3) {
             printUsageAndExit();
         }
@@ -120,16 +120,16 @@ public class GenerateShardSplits {
                 }
             }
         }
-        
+
         SortedSet<Text> splits = new TreeSet<>();
         List<Mutation> mutations = new ArrayList<>();
         for (int x = 0; x < DAYS_TO_GENERATE; x++) {
-            
+
             // Generate configured shards per day
             for (int i = 0; i < SHARDS; i += splitStep) {
                 Text split = new Text(DateHelper.format(startDate) + "_" + i);
                 splits.add(split);
-                
+
                 // add markers as required
                 if (addShardMarkers || shardMarkerTypes != null) {
                     Date nextYear = DateUtils.addYears(startDate, 1);
@@ -150,10 +150,10 @@ public class GenerateShardSplits {
                     }
                 }
             }
-            
+
             startDate = DateUtils.addDays(startDate, 1);
         }
-        
+
         if (username != null) {
             // Connect to accumulo
             try (AccumuloClient client = Accumulo.newClient().to(instanceName, zookeepers).as(username, new PasswordToken(password)).build()) {
@@ -161,7 +161,7 @@ public class GenerateShardSplits {
                 if (addSplits) {
                     client.tableOperations().addSplits(tableName, splits);
                 }
-                
+
                 // add the markers
                 if (!mutations.isEmpty()) {
                     try (BatchWriter w = client.createBatchWriter(tableName,
@@ -183,7 +183,7 @@ public class GenerateShardSplits {
                                     + new String(update.getValue()));
                 }
             }
-            
+
         }
     }
 }
