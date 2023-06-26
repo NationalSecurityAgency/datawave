@@ -394,7 +394,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogicFactory.getQueryLogic("ql1", principal)).andReturn((QueryLogic) this.queryLogic1);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getCollectQueryMetrics()).andReturn(false);
-        expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
+        // expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         expect(this.queryLogic1.getUserOperations()).andReturn(null);
@@ -999,6 +999,15 @@ public class ExtendedQueryExecutorBeanTest {
         PowerMock.expectLastCall().anyTimes();
         
         expect(this.responseObjectFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
+        
+        // cleanup execution
+        this.connectionFactory.returnConnection(this.connector);
+        EasyMock.expectLastCall().times(2);
+        queryLogic1.close();
+        EasyMock.expectLastCall();
+        this.persister.remove(this.query);
+        EasyMock.expectLastCall();
+        
         this.transaction.commit();
         QueryExecutorBean subject = new QueryExecutorBean();
         // Run the test
@@ -1109,7 +1118,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getAuditType(this.query)).andReturn(AuditType.NONE);
         expect(this.queryLogic1.getConnectionPriority()).andReturn(Priority.NORMAL);
         expect(this.queryLogic1.getConnPoolName()).andReturn("connPool1");
-        expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
+        // expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.connectionFactory.getTrackingMap(isA(StackTraceElement[].class))).andReturn(null);
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.connectionFactory.getConnection("connPool1", Priority.NORMAL, null)).andReturn(this.connector);
@@ -2834,7 +2843,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getExpirationDate()).andReturn(null).anyTimes();
         expect(this.query.getParameters()).andReturn((Set) Collections.emptySet()).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
-        expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
+        // expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
         expect(this.queryLogic1.getResultLimit(this.query)).andReturn(-1L);
         expect(this.queryLogic1.getMaxResults()).andReturn(-1L);
         expect(this.queryLogic1.getUserOperations()).andReturn(null);
