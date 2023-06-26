@@ -1,16 +1,16 @@
 package datawave.ingest.data.config;
 
-import datawave.ingest.data.TypeRegistry;
+import static org.hamcrest.core.Is.is;
 
-import datawave.policy.IngestPolicyEnforcer;
+import java.io.InputStream;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.InputStream;
-
-import static org.hamcrest.core.Is.is;
+import datawave.ingest.data.TypeRegistry;
+import datawave.policy.IngestPolicyEnforcer;
 
 public class DataTypeHelperImplTest {
 

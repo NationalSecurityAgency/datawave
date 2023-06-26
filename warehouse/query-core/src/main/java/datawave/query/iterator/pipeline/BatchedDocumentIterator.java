@@ -5,10 +5,11 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.SortedSet;
 
-import datawave.query.attributes.Document;
 import org.apache.accumulo.core.data.Key;
 
 import com.google.common.collect.Sets;
+
+import datawave.query.attributes.Document;
 
 public class BatchedDocumentIterator implements Iterator<Entry<Key,Document>> {
 

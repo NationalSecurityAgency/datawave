@@ -1,13 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * This visitor will ensure that query marker nodes always have a singular, root source node. If multiple source nodes are found, they will be bundled within a

@@ -6,10 +6,11 @@ import java.util.Enumeration;
 
 import javax.security.auth.login.LoginException;
 
-import datawave.security.util.DnUtils;
 import org.jboss.logging.Logger;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.spi.UsersRolesLoginModule;
+
+import datawave.security.util.DnUtils;
 
 /**
  * A specialized version of {@link UsersRolesLoginModule} that fails the login if there are no roles for a given user. The parent module will take the supplied

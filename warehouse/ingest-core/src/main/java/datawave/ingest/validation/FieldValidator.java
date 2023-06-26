@@ -1,12 +1,12 @@
 package datawave.ingest.validation;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Event validator that will be used to validate events against a known configuration.

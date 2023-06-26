@@ -1,5 +1,51 @@
 package datawave.query.planner;
 
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
+
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTNRNode;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
@@ -9,6 +55,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.AbstractGeometryType;
 import datawave.data.type.Type;
@@ -68,7 +115,6 @@ import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
 import datawave.query.jexl.visitors.IvaratorRequiredVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.NoExpansionFunctionVisitor;
 import datawave.query.jexl.visitors.NodeTypeCountVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.PullupUnexecutableNodesVisitor;
@@ -121,51 +167,6 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTERNode;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTNRNode;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.text.MessageFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.PatternSyntaxException;
-import java.util.stream.Collectors;
 
 public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
@@ -211,17 +212,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
      * Allows developers to cache data types
      */
     protected boolean cacheDataTypes = false;
-
-    /**
-     * Overrides behavior with doc specific ranges
-     */
-    protected boolean docSpecificOverride = false;
-
-    /**
-     * Number of documents to combine for concurrent evaluation
-     *
-     */
-    protected int docsToCombineForEvaluation = -1;
 
     /**
      * The max number of child nodes that we will print with the PrintingVisitor. If trace is enabled, all nodes will be printed.
@@ -335,7 +325,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         preloadOptions = other.preloadOptions;
         rangeStreamClass = other.rangeStreamClass;
         setSourceLimit(other.sourceLimit);
-        setDocsToCombineForEvaluation(other.getDocsToCombineForEvaluation());
         setPushdownThreshold(other.getPushdownThreshold());
         setVisitorManager(other.getVisitorManager());
     }
@@ -479,9 +468,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         this.plannedScript = newQueryString;
         config.setQueryString(this.plannedScript);
-        // docsToCombineForEvaluation is only enabled when threading is used
-        if (config.getMaxEvaluationPipelines() == 1)
-            docsToCombineForEvaluation = -1;
 
         if (!config.isGeneratePlanOnly()) {
             // add the geo query comparator to sort by geo range granularity if this is a geo query
@@ -510,9 +496,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     .setQueryTree(config.getQueryTree())
                     .setRanges(queryRanges.first())
                     .setMaxRanges(maxRangesPerQueryPiece())
-                    .setDocsToCombine(docsToCombineForEvaluation)
                     .setSettings(settings)
-                    .setDocSpecificLimitOverride(docSpecificOverride)
                     .setMaxRangeWaitMillis(maxRangeWaitMillis)
                     .setQueryPlanComparators(queryPlanComparators)
                     .setNumRangesToBuffer(config.getNumRangesToBuffer())
@@ -725,9 +709,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 config.setQueryTree(timedAddShardsAndDaysFromOptions(timers, config.getQueryTree(), optionsMap));
             }
         }
-
-        // extract #NO_EXPANSION function, if it exists
-        config.setQueryTree(parseNoExpansionFields(timers, config.getQueryTree(), config));
 
         // flatten the tree
         config.setQueryTree(timedFlatten(timers, config.getQueryTree()));
@@ -1231,19 +1212,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                     throws DatawaveQueryException {
         String shardsAndDays = optionsMap.get(QueryParameters.SHARDS_AND_DAYS);
         return visitorManager.timedVisit(timers, "Add SHARDS_AND_DAYS From Options", () -> (AddShardsAndDaysVisitor.update(script, shardsAndDays)));
-    }
-
-    protected ASTJexlScript parseNoExpansionFields(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config) throws DatawaveQueryException {
-        return visitorManager.timedVisit(timers, "Parse #NO_EXPANSION From Query", () -> (extractNoExpansionFields(script, config)));
-    }
-
-    private ASTJexlScript extractNoExpansionFields(ASTJexlScript script, ShardQueryConfiguration config) {
-        NoExpansionFunctionVisitor.VisitResult result = NoExpansionFunctionVisitor.findNoExpansionFields(script);
-
-        // merge parsed expansion fields into any existing no expansion fields
-        config.setNoExpansionFields(Sets.union(config.getNoExpansionFields(), result.noExpansionFields));
-
-        return result.script;
     }
 
     protected ASTJexlScript timedApplyRules(QueryStopwatch timers, ASTJexlScript script, ShardQueryConfiguration config, MetadataHelper metadataHelper,
@@ -1818,11 +1786,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
-        if (!config.getNoExpansionFields().isEmpty()) {
-            config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields()));
-        } else {
-            config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields));
-        }
+        config.setQueryTree(QueryModelVisitor.applyModel(config.getQueryTree(), queryModel, allFields, config.getNoExpansionFields(), config.getLenientFields(),
+                        config.getStrictFields()));
 
         if (log.isTraceEnabled())
             log.trace("queryTree:" + PrintingVisitor.formattedQueryString(config.getQueryTree()));
@@ -2881,14 +2846,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         return new DefaultQueryPlanner(this);
     }
 
-    public void setDocSpecificOverride(boolean docSpecificOverride) {
-        this.docSpecificOverride = docSpecificOverride;
-    }
-
-    public boolean getDocSpecificOverride() {
-        return docSpecificOverride;
-    }
-
     public void setMaxRangeWaitMillis(long maxRangeWaitMillis) {
         this.maxRangeWaitMillis = maxRangeWaitMillis;
     }
@@ -2903,14 +2860,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
     public long getPushdownThreshold() {
         return pushdownThreshold;
-    }
-
-    public int getDocsToCombineForEvaluation() {
-        return docsToCombineForEvaluation;
-    }
-
-    public void setDocsToCombineForEvaluation(final int docsToCombineForEvaluation) {
-        this.docsToCombineForEvaluation = docsToCombineForEvaluation;
     }
 
     public boolean getExecutableExpansion() {

@@ -1,6 +1,11 @@
 package datawave.mapreduce.shardStats;
 
-import datawave.ingest.mapreduce.job.IngestJob;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
@@ -9,11 +14,7 @@ import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import datawave.ingest.mapreduce.job.IngestJob;
 
 public class StatsJobTest {
     private static final Logger log = Logger.getLogger(StatsJobTest.class);

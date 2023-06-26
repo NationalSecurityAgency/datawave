@@ -1,7 +1,5 @@
 package datawave.query.cardinality;
 
-import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,9 +11,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import datawave.common.cl.OptionBuilder;
-import datawave.security.util.ScannerHelper;
-import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -24,8 +19,8 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -35,6 +30,13 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.javatuples.Pair;
+
+import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+
+import datawave.common.cl.OptionBuilder;
+import datawave.security.util.ScannerHelper;
+import datawave.util.cli.PasswordConverter;
 
 public class CardinalityScanner {
 

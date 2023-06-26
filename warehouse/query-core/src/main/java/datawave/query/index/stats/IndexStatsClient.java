@@ -14,13 +14,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.google.common.collect.ImmutableMap;
-
-import datawave.core.iterators.filter.CsvKeyFilter;
-import datawave.iterators.IteratorSettingHelper;
-import datawave.query.Constants;
-
-import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -33,6 +26,13 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.ImmutableMap;
+
+import datawave.core.iterators.filter.CsvKeyFilter;
+import datawave.iterators.IteratorSettingHelper;
+import datawave.query.Constants;
+import datawave.util.TableName;
 
 /**
  * API for getting stats for field names and data types.

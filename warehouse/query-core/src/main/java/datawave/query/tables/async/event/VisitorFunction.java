@@ -1,8 +1,37 @@
 package datawave.query.tables.async.event;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -31,32 +60,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
 
 /**
  * Purpose: Perform intermediate transformations on ScannerChunks as they are before being sent to the tablet server.
@@ -275,18 +278,16 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                     if (config.getSerializeQueryIterator()) {
                         serializeQuery(newIteratorSetting);
                     } else {
-                        if (!evaluatedPreviously) {
+                        if (!evaluatedPreviously && config.getHdfsSiteConfigURLs() != null) {
                             // if we have an hdfs configuration, then we can pushdown large fielded lists to an ivarator
-                            if (config.getHdfsSiteConfigURLs() != null && setting.getOptions().get(QueryOptions.BATCHED_QUERY) == null) {
-                                if (null == script) {
-                                    script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-                                }
-                                try {
-                                    script = pushdownLargeFieldedLists(config, script);
-                                    madeChange = true;
-                                } catch (IOException ioe) {
-                                    log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
-                                }
+                            if (null == script) {
+                                script = JexlASTHelper.parseAndFlattenJexlQuery(query);
+                            }
+                            try {
+                                script = pushdownLargeFieldedLists(config, script);
+                                madeChange = true;
+                            } catch (IOException ioe) {
+                                log.error("Unable to pushdown large fielded lists....leaving in expanded form", ioe);
                             }
                         }
                     }

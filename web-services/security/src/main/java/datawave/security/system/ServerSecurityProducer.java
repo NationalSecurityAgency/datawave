@@ -1,22 +1,24 @@
 package datawave.security.system;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUserService;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.user.UserOperationsBean;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.jboss.security.JSSESecurityDomain;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.cert.X509Certificate;
+import java.util.Collections;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.cert.X509Certificate;
-import java.util.Collections;
+
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.jboss.security.JSSESecurityDomain;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.user.UserOperationsBean;
 
 /**
  * A producer class for generating server-security related artifacts. For one, we produce the server DN of the server that we are running inside of. We allso

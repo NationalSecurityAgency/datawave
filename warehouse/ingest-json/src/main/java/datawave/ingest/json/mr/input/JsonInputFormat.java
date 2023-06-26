@@ -2,15 +2,15 @@ package datawave.ingest.json.mr.input;
 
 import java.io.IOException;
 
-import datawave.ingest.data.RawRecordContainer;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+
+import datawave.ingest.data.RawRecordContainer;
 
 public class JsonInputFormat extends SequenceFileInputFormat<LongWritable,RawRecordContainer> {
 

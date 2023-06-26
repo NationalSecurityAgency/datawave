@@ -2,18 +2,18 @@ package datawave.query.iterator;
 
 import java.util.Map.Entry;
 
-import datawave.query.function.Aggregation;
-import datawave.query.function.KeyToDocumentData;
-import datawave.query.attributes.Document;
-import datawave.query.tld.TLD;
-import datawave.query.util.EntryToTuple;
-import datawave.query.util.Tuple2;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Document;
+import datawave.query.function.Aggregation;
+import datawave.query.function.KeyToDocumentData;
+import datawave.query.tld.TLD;
+import datawave.query.util.EntryToTuple;
+import datawave.query.util.Tuple2;
 
 public class GetParentDocument implements Function<Entry<Key,Document>,Tuple2<Key,Document>> {
     private final KeyToDocumentData fetchDocData;

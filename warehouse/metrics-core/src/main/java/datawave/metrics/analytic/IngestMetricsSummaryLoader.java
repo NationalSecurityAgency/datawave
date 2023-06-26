@@ -1,14 +1,16 @@
 package datawave.metrics.analytic;
 
-import com.google.common.io.ByteStreams;
+import static datawave.metrics.analytic.MetricsDailySummaryReducer.WeightedPair;
 
-import datawave.ingest.metric.IngestInput;
-import datawave.ingest.metric.IngestOutput;
-import datawave.ingest.metric.IngestProcess;
-import datawave.metrics.config.MetricsConfig;
-import datawave.metrics.mapreduce.util.JobSetupUtil;
-import datawave.metrics.util.Connections;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -35,17 +37,15 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.common.io.ByteStreams;
 
-import static datawave.metrics.analytic.MetricsDailySummaryReducer.WeightedPair;
+import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
+import datawave.ingest.metric.IngestProcess;
+import datawave.metrics.config.MetricsConfig;
+import datawave.metrics.mapreduce.util.JobSetupUtil;
+import datawave.metrics.util.Connections;
+import datawave.util.time.DateHelper;
 
 /**
  * This MapReduce job computes a by-day summary of ingest job activity. We look at each file that was marked as loaded during the specified range, and output

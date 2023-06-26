@@ -1,10 +1,10 @@
 package datawave.query.testframework;
 
-import org.apache.hadoop.conf.Configuration;
-
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Collection;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Defines the methods for retrieval of Hadoop configuration information for a data type. This is one of the major components that is required for building a

@@ -16,17 +16,16 @@ package org.apache.lucene.queryparser.flexible.core.nodes;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import datawave.query.language.parser.lucene.ParseException;
 
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax;
 import org.apache.lucene.queryparser.flexible.core.parser.EscapeQuerySyntax.Type;
 import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
 import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
+
+import datawave.query.language.parser.lucene.ParseException;
 
 /**
  * A {@link FieldQueryNode} represents a element that contains field/text tuple

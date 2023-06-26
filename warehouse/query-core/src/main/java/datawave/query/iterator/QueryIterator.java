@@ -1,14 +1,56 @@
 package datawave.query.iterator;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
+
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import org.apache.accumulo.tserver.tablet.TabletClosedException;
+import org.apache.commons.collections4.iterators.EmptyIterator;
+import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.pool.BasePoolableObjectFactory;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
+
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
@@ -34,8 +76,8 @@ import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
-import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.RangeProvider;
+import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -55,7 +97,6 @@ import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.iterator.profile.QuerySpanCollector;
 import datawave.query.iterator.profile.SourceTrackingIterator;
 import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.StatefulArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -82,47 +123,6 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.TupleToEntry;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.tserver.tablet.TabletClosedException;
-import org.apache.commons.collections4.iterators.EmptyIterator;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.pool.BasePoolableObjectFactory;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
 /**
  * <p>
@@ -640,113 +640,26 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      */
     protected NestedIterator<Key> buildDocumentIterator(Range documentRange, Range seekRange, Collection<ByteSequence> columnFamilies, boolean inclusive)
                     throws IOException, ConfigException, InstantiationException, IllegalAccessException {
-        NestedIterator<Key> docIter = null;
+
+        // If we had an event-specific range previously, we need to reset it back
+        // to the source we created during init
+        NestedIterator<Key> docIter = getOrSetKeySource(documentRange, script);
+
+        initKeySource = docIter;
+
         if (log.isTraceEnabled()) {
-            log.trace("Batched queries is " + batchedQueries);
+            log.trace("Using init()'ialized source: " + this.initKeySource.getClass().getName());
         }
-        if (batchedQueries >= 1) {
-            List<NestedQuery<Key>> nests = Lists.newArrayList();
 
-            for (Entry<Range,String> queries : batchStack) {
-
-                Range myRange = queries.getKey();
-
-                if (log.isTraceEnabled()) {
-                    log.trace("Adding " + myRange + " from seekrange " + seekRange);
-                }
-
-                /*
-                 * Only perform the following checks if start key is not infinite and document range is specified
-                 */
-                if (null != seekRange && !seekRange.isInfiniteStartKey()) {
-                    Key seekStartKey = seekRange.getStartKey();
-                    Key myStartKey = myRange.getStartKey();
-
-                    /*
-                     * if our seek key is greater than our start key we can skip this batched query. myStartKey.compareTo(seekStartKey) must be <= 0, which
-                     * means that startKey must be greater than or equal be seekStartKey
-                     */
-                    if (null != myStartKey && null != seekStartKey && !seekRange.contains(myStartKey)) {
-
-                        if (log.isTraceEnabled()) {
-                            log.trace("skipping " + myRange);
-                        }
-
-                        continue;
-                    }
-                }
-
-                JexlArithmetic myArithmetic;
-                if (arithmetic instanceof StatefulArithmetic) {
-                    myArithmetic = ((StatefulArithmetic) arithmetic).clone();
-                } else {
-                    myArithmetic = new DefaultArithmetic();
-                }
-
-                // Parse the query
-                ASTJexlScript myScript = null;
-                JexlEvaluation eval = null;
-                try {
-
-                    myScript = JexlASTHelper.parseJexlQuery(queries.getValue());
-                    eval = getJexlEvaluation(queries.getValue(), myArithmetic);
-
-                } catch (Exception e) {
-                    throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
-                }
-                // If we had an event-specific range previously, we need to
-                // reset it back
-                // to the source we created during init
-                NestedIterator<Key> subDocIter = getOrSetKeySource(myRange, myScript);
-
-                if (log.isTraceEnabled()) {
-                    log.trace("Using init()'ialized source: " + subDocIter.getClass().getName());
-                }
-
-                if (gatherTimingDetails()) {
-                    subDocIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, subDocIter, myEnvironment);
-                }
-
-                // Seek() the boolean logic stuff
-                ((SeekableIterator) subDocIter).seek(myRange, columnFamilies, inclusive);
-
-                NestedQuery<Key> nestedQueryObj = new NestedQuery<>();
-                nestedQueryObj.setQuery(queries.getValue());
-                nestedQueryObj.setIterator(subDocIter);
-                nestedQueryObj.setQueryScript(myScript);
-                nestedQueryObj.setEvaluation(eval);
-                nestedQueryObj.setRange(queries.getKey());
-                nests.add(nestedQueryObj);
-            }
-
-            docIter = new NestedQueryIterator<>(nests);
-
-            // now lets start off the nested iterator
-            docIter.initialize();
-
-            initKeySource = docIter;
-
-        } else {
-            // If we had an event-specific range previously, we need to reset it back
-            // to the source we created during init
-            docIter = getOrSetKeySource(documentRange, script);
-
-            initKeySource = docIter;
-
-            if (log.isTraceEnabled()) {
-                log.trace("Using init()'ialized source: " + this.initKeySource.getClass().getName());
-            }
-
-            if (gatherTimingDetails()) {
-                docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
-            }
-
-            // Seek() the boolean logic stuff
-            ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
-
-            // now lets start off the nested iterator
-            docIter.initialize();
+        if (gatherTimingDetails()) {
+            docIter = new EvaluationTrackingNestedIterator(QuerySpan.Stage.FieldIndexTree, trackingSpan, docIter, myEnvironment);
         }
+
+        // Seek() the boolean logic stuff
+        ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
+
+        // now lets start off the nested iterator
+        docIter.initialize();
 
         return docIter;
     }
@@ -1418,7 +1331,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // query)
         if (!this.isFullTableScanOnly()) {
 
-            boolean isQueryFullySatisfiedInitialState = batchedQueries <= 0;
+            // we assume the query is satisfiable as an initial state
+            boolean isQueryFullySatisfiedInitialState = true;
             String hitListOptionString = documentOptions.get(QueryOptions.HIT_LIST);
 
             if (hitListOptionString != null) {
@@ -1580,15 +1494,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         String hdfsPrefix = null;
         if (isDocumentSpecificRange(this.range)) {
             hdfsPrefix = range.getStartKey().getColumnFamily().toString().replace('\0', '_');
-        } else if (batchedQueries > 0) {
-            StringBuilder sb = new StringBuilder();
-            for (Entry<Range,String> queries : batchStack) {
-                if (sb.length() > 0) {
-                    sb.append('-');
-                }
-                sb.append(queries.getKey().getStartKey().getColumnFamily().toString().replace('\0', '_'));
-            }
-            hdfsPrefix = sb.toString();
         }
         return hdfsPrefix;
     }

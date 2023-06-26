@@ -1,11 +1,13 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import com.google.common.base.Predicate;
+import java.util.Collection;
+
 import org.apache.commons.jexl2.JexlArithmetic;
 import org.apache.commons.jexl2.Script;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Collection;
+
+import com.google.common.base.Predicate;
 
 /**
  *

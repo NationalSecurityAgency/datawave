@@ -1,10 +1,11 @@
 package datawave.query.jexl;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -13,11 +14,12 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.junit.Test;
 
-import java.util.List;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 public class JexlNodeFactoryTest {
 

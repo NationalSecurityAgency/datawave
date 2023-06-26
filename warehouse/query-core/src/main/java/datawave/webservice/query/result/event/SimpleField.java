@@ -14,17 +14,17 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-import datawave.data.type.Type;
-import datawave.webservice.query.util.TypedValue;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.google.common.collect.Maps;
+
+import datawave.data.type.Type;
+import datawave.webservice.query.util.TypedValue;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 /**
  * This object is contained inside of Event objects to describe name/value pairs of data in the Event.

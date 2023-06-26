@@ -6,9 +6,6 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.model.QueryModel;
-
-import datawave.util.StringUtils;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -19,6 +16,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
+
+import datawave.query.model.FieldMapping;
+import datawave.query.model.QueryModel;
+import datawave.util.StringUtils;
 
 /**
  *
@@ -128,9 +129,12 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
 
                 for (String part : parts) {
                     if ("forward".equalsIgnoreCase(part)) {
+                        if (replacement.equals(FieldMapping.LENIENT)) {
+                            queryModel.addLenientForwardMappings(original);
+                        }
                         // Do *not* add a forward mapping entry
                         // when the replacement does not exist in the database
-                        if (allFields == null || allFields.contains(replacement)) {
+                        else if (allFields == null || allFields.contains(replacement)) {
                             queryModel.addTermToModel(original, replacement);
                         } else if (log.isTraceEnabled()) {
                             log.trace("Ignoring forward mapping of " + replacement + " for " + original + " because the metadata table has no reference to it");

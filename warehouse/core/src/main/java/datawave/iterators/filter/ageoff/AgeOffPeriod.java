@@ -1,9 +1,9 @@
 package datawave.iterators.filter.ageoff;
 
+import org.apache.log4j.Logger;
+
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.AgeOffTtlUnits;
-
-import org.apache.log4j.Logger;
 
 /**
  * Description: Identifies an age off period

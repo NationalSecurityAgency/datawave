@@ -1,10 +1,10 @@
 package datawave.webservice.query.logic;
 
+import java.security.Principal;
+
 import datawave.marking.MarkingFunctions;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-
-import java.security.Principal;
 
 public interface ResponseEnricherBuilder {
     public ResponseEnricherBuilder withConfig(GenericQueryConfiguration config);

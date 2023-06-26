@@ -4,12 +4,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.modification.ModificationRequestBase;
 import datawave.webservice.query.runner.QueryExecutorBean;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
 
 public abstract class ModificationServiceConfiguration {
 

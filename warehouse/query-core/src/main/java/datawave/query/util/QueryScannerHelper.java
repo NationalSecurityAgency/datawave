@@ -2,16 +2,16 @@ package datawave.query.util;
 
 import java.util.Collection;
 
-import datawave.query.iterator.QueryInformationIterator;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.query.Query;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.security.Authorizations;
+
+import datawave.query.iterator.QueryInformationIterator;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.query.Query;
 
 /**
  *

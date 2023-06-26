@@ -3,16 +3,16 @@ package datawave.query.table.parser;
 import java.util.HashMap;
 import java.util.Map;
 
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import com.google.common.collect.Maps;
+
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.util.StringUtils;
 
 public class EventKeyValueFactory {
 

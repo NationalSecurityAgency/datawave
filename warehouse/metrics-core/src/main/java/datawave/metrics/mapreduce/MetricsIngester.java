@@ -1,11 +1,19 @@
 package datawave.metrics.mapreduce;
 
-import datawave.metrics.config.MetricsConfig;
-import datawave.metrics.config.MetricsOptions;
-import datawave.metrics.mapreduce.error.ProcessingErrorsMapper;
-import datawave.metrics.mapreduce.error.ProcessingErrorsReducer;
-import datawave.metrics.util.Connections;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -41,19 +49,12 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
+import datawave.metrics.config.MetricsConfig;
+import datawave.metrics.config.MetricsOptions;
+import datawave.metrics.mapreduce.error.ProcessingErrorsMapper;
+import datawave.metrics.mapreduce.error.ProcessingErrorsReducer;
+import datawave.metrics.util.Connections;
+import datawave.util.time.DateHelper;
 
 /**
  * This is a pretty generic wrapper class intended to allow users to specify what type of metrics they're processing at runtime. This simplifies maintenance, as

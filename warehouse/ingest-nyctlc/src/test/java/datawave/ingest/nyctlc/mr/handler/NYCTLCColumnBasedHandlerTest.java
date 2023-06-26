@@ -1,14 +1,9 @@
 package datawave.ingest.nyctlc.mr.handler;
 
-import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtil;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.nyctlc.NYCTLCHelper;
-import datawave.ingest.nyctlc.NYCTLCIngestHelper;
-import datawave.ingest.nyctlc.NYCTLCReader;
-import datawave.util.TableName;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.TimeZone;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -21,9 +16,15 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.TimeZone;
+import datawave.ingest.csv.mr.handler.ColumnBasedHandlerTestUtil;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.nyctlc.NYCTLCHelper;
+import datawave.ingest.nyctlc.NYCTLCIngestHelper;
+import datawave.ingest.nyctlc.NYCTLCReader;
+import datawave.util.TableName;
 
 public class NYCTLCColumnBasedHandlerTest {
 

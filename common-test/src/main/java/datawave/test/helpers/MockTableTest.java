@@ -1,6 +1,7 @@
 package datawave.test.helpers;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -10,12 +11,12 @@ import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.After;
 import org.junit.Before;
 
-import java.util.concurrent.TimeUnit;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
 
 public abstract class MockTableTest {
     public static final String TABLE_NAME = "test";

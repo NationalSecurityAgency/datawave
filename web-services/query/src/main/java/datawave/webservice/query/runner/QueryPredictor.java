@@ -1,11 +1,10 @@
 package datawave.webservice.query.runner;
 
+import java.io.Serializable;
 import java.util.Set;
 
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
-
-import java.io.Serializable;
 
 /**
  * Created on 7/6/16.

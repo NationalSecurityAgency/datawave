@@ -7,13 +7,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.postprocessing.tf.TermOffsetMap;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
+
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 
 /**
  * An abstract class to for the ordered and unordered content evaluators.

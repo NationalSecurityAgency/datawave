@@ -9,24 +9,24 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
-import datawave.data.type.Type;
-import datawave.query.util.TypeMetadata;
+import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Function;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import javax.annotation.Nullable;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.Type;
+import datawave.query.util.TypeMetadata;
 
 public class AttributeFactory {
     private static final Logger log = Logger.getLogger(AttributeFactory.class);

@@ -1,7 +1,11 @@
 package datawave.query.util;
 
-import datawave.data.normalizer.GeometryNormalizer;
-import datawave.data.normalizer.PointNormalizer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.locationtech.geowave.core.geotime.util.GeometryUtils;
@@ -13,11 +17,8 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.io.WKTReader;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.normalizer.PointNormalizer;
 
 public class GeoWaveUtilsTest {
 

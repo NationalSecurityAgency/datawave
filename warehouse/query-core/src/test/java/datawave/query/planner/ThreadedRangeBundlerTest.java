@@ -1,25 +1,24 @@
 package datawave.query.planner;
 
-import datawave.query.CloseableIterable;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import static org.easymock.EasyMock.mock;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Comparator;
 
-import static org.easymock.EasyMock.mock;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import datawave.query.CloseableIterable;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.QueryData;
 
 public class ThreadedRangeBundlerTest {
 
@@ -35,8 +34,6 @@ public class ThreadedRangeBundlerTest {
         assertEquals(0L, bundler.getMaxRanges());
         assertNull(bundler.getSettings());
         assertNull(bundler.getQueryTree());
-        assertFalse(bundler.isDocSpecificLimitOverride());
-        assertEquals(-1, bundler.getDocsToCombine());
         assertNull(bundler.getQueryPlanComparators());
         assertEquals(0, bundler.getNumRangesToBuffer());
         assertEquals(0L, bundler.getRangeBufferTimeoutMillis());
@@ -59,8 +56,6 @@ public class ThreadedRangeBundlerTest {
                         .setMaxRanges(100)
                         .setSettings(settings)
                         .setQueryTree(queryTree)
-                        .setDocSpecificLimitOverride(true)
-                        .setDocsToCombine(10)
                         .setMaxRangeWaitMillis(1)
                         .setQueryPlanComparators(queryPlanComparators)
                         .setNumRangesToBuffer(1)
@@ -74,8 +69,6 @@ public class ThreadedRangeBundlerTest {
         assertEquals(100L, bundler.getMaxRanges());
         assertEquals(settings, bundler.getSettings());
         assertEquals(queryTree, bundler.getQueryTree());
-        assertTrue(bundler.isDocSpecificLimitOverride());
-        assertEquals(10, bundler.getDocsToCombine());
         assertEquals(queryPlanComparators, bundler.getQueryPlanComparators());
         assertEquals(1, bundler.getNumRangesToBuffer());
         assertEquals(10L, bundler.getRangeBufferTimeoutMillis());

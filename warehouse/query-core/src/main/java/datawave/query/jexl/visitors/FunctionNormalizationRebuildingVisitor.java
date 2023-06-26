@@ -15,14 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.data.type.NoOpType;
-import datawave.data.type.Type;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.util.MetadataHelper;
-
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -32,6 +24,14 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+
+import datawave.data.type.NoOpType;
+import datawave.data.type.Type;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.util.MetadataHelper;
 
 /**
  *

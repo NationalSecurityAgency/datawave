@@ -1,10 +1,5 @@
 package datawave.security.util;
 
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.user.AuthorizationsListBase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -15,6 +10,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.user.AuthorizationsListBase;
 
 public class DnUtils {
 

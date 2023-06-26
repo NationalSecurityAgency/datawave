@@ -1,12 +1,13 @@
 package datawave.query.util;
 
-import com.google.common.collect.TreeMultimap;
-import org.apache.accumulo.core.client.TableNotFoundException;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
+
+import com.google.common.collect.TreeMultimap;
 
 public class MockDateIndexHelper extends DateIndexHelper {
 

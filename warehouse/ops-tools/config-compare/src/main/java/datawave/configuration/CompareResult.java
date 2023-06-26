@@ -1,7 +1,7 @@
 package datawave.configuration;
 
-import java.util.Collections;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Houses the results from running a comparison on two different type configurations.

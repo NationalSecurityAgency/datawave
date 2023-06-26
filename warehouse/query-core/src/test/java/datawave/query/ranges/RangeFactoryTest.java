@@ -1,9 +1,9 @@
 package datawave.query.ranges;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class RangeFactoryTest {
 

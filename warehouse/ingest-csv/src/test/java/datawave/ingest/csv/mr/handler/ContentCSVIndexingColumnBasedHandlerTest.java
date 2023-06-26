@@ -8,18 +8,6 @@ import java.nio.file.Paths;
 import java.util.Enumeration;
 import java.util.TimeZone;
 
-import datawave.ingest.csv.mr.input.CSVRecordReader;
-import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
-import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-
-import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -37,6 +25,18 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
+import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
+import datawave.ingest.csv.mr.input.CSVRecordReader;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.TableName;
 
 public class ContentCSVIndexingColumnBasedHandlerTest {
 

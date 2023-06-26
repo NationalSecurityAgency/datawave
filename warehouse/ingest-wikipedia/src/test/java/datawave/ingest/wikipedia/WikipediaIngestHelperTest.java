@@ -3,15 +3,15 @@ package datawave.ingest.wikipedia;
 import java.util.Collection;
 import java.util.Set;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  *

@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -10,6 +9,8 @@ import org.apache.commons.jexl2.parser.ASTLENode;
 import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.JexlNode;
+
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Class to detect field to field comparison nodes and turns it into ASTEvaluationOnly node

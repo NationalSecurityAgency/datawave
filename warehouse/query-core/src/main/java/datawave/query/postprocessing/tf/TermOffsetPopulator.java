@@ -1,33 +1,11 @@
 package datawave.query.postprocessing.tf;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import com.google.common.collect.TreeMultimap;
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.core.iterators.TermFrequencyIterator;
-import datawave.data.type.NoOpType;
-import datawave.data.type.Type;
-import datawave.ingest.protobuf.TermWeight;
-import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.data.parsers.TermFrequencyKey;
-import datawave.query.jexl.functions.TermFrequencyList;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.Constants;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
-import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
+import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -42,12 +20,36 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
 
-import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_ADJACENT_FUNCTION_NAME;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_PHRASE_FUNCTION_NAME;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRASE_FUNCTION_NAME;
-import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.common.collect.TreeMultimap;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.core.iterators.TermFrequencyIterator;
+import datawave.data.type.NoOpType;
+import datawave.data.type.Type;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.Constants;
+import datawave.query.attributes.Content;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.TermFrequencyKey;
+import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.jexl.visitors.LiteralNodeSubsetVisitor;
+import datawave.query.predicate.EventDataQueryFilter;
 
 public class TermOffsetPopulator {
     private static final Logger log = Logger.getLogger(TermOffsetPopulator.class);

@@ -1,6 +1,24 @@
 package datawave.ingest.data.config;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.util.List;
+import java.util.Scanner;
+
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.sun.net.httpserver.HttpServer;
+
 import datawave.TestBaseIngestHelper;
 import datawave.data.type.DateType;
 import datawave.data.type.HexStringType;
@@ -11,22 +29,6 @@ import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
-import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.util.List;
-import java.util.Scanner;
-
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class XMLFieldConfigHelperTest {
 

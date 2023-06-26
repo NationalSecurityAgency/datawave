@@ -5,15 +5,15 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Document;
-import datawave.query.util.TraceIterators;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Document;
+import datawave.query.util.TraceIterators;
 
 /**
  * An iterable interface for wrapping a tree of iterators. This class provides a convenience mechanism for holding on to a tree, allowing clients to use Java's

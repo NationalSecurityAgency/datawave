@@ -16,11 +16,7 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.Collections;
-
-import datawave.query.language.parser.jexl.JexlGroupingNode;
-import datawave.query.language.parser.jexl.JexlNode;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -28,6 +24,9 @@ import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.GroupQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 import org.apache.lucene.search.Query;
+
+import datawave.query.language.parser.jexl.JexlGroupingNode;
+import datawave.query.language.parser.jexl.JexlNode;
 
 /**
  * Builds no object, it only returns the {@link Query} object set on the {@link GroupQueryNode} object using a {@link QueryTreeBuilder#QUERY_TREE_BUILDER_TAGID}

@@ -1,71 +1,5 @@
 package datawave.query.iterator;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.google.common.base.CharMatcher;
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.base.Splitter;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Queues;
-import com.google.common.collect.Sets;
-import datawave.core.iterators.ColumnRangeIterator;
-import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
-import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.core.iterators.querylock.QueryLock;
-import datawave.data.type.Type;
-import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.query.Constants;
-import datawave.query.DocumentSerialization;
-import datawave.query.attributes.Document;
-import datawave.query.composite.CompositeMetadata;
-import datawave.query.function.ConfiguredFunction;
-import datawave.query.function.DocumentPermutation;
-import datawave.query.function.Equality;
-import datawave.query.function.GetStartKey;
-import datawave.query.function.PrefixEquality;
-import datawave.query.iterator.filter.EventKeyDataTypeFilter;
-import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
-import datawave.query.iterator.filter.KeyIdentity;
-import datawave.query.iterator.filter.StringToText;
-import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
-import datawave.query.jexl.DefaultArithmetic;
-import datawave.query.jexl.HitListArithmetic;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.predicate.ConfiguredPredicate;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.predicate.TimeFilter;
-import datawave.query.statsd.QueryStatsDClient;
-import datawave.query.tables.async.Scan;
-import datawave.query.tracking.ActiveQueryLog;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.util.TypeMetadata;
-import datawave.query.util.sortedset.FileSortedSet;
-import datawave.util.StringUtils;
-import datawave.util.UniversalSet;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.OptionDescriber;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -86,11 +20,76 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.base.Splitter;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
+import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.core.iterators.querylock.QueryLock;
+import datawave.data.type.Type;
+import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.query.Constants;
+import datawave.query.DocumentSerialization;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.function.ConfiguredFunction;
+import datawave.query.function.DocumentPermutation;
+import datawave.query.function.Equality;
+import datawave.query.function.GetStartKey;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.function.PrefixEquality;
+import datawave.query.iterator.filter.EventKeyDataTypeFilter;
+import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
+import datawave.query.iterator.filter.KeyIdentity;
+import datawave.query.iterator.filter.StringToText;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.jexl.DefaultArithmetic;
+import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.predicate.ConfiguredPredicate;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.TimeFilter;
+import datawave.query.statsd.QueryStatsDClient;
+import datawave.query.tables.async.Scan;
+import datawave.query.tracking.ActiveQueryLog;
+import datawave.query.util.TypeMetadata;
+import datawave.query.util.sortedset.FileSortedSet;
+import datawave.util.StringUtils;
+import datawave.util.UniversalSet;
 
 /**
  * QueryOptions are set on the iterators.
@@ -109,7 +108,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String SCAN_ID = Scan.SCAN_ID;
     public static final String DISABLE_EVALUATION = "disable.evaluation";
     public static final String DISABLE_FIELD_INDEX_EVAL = "disable.fi";
-    public static final String LIMIT_OVERRIDE = "disable.fi.override";
     public static final String LIMIT_SOURCES = "sources.limit.count";
     public static final String DISABLE_DOCUMENTS_WITHOUT_EVENTS = "disable.index.only.documents";
     public static final String QUERY = "query";
@@ -234,13 +232,6 @@ public class QueryOptions implements OptionDescriber {
     public static final String SERIAL_EVALUATION_PIPELINE = "serial.evaluation.pipeline";
 
     public static final String MAX_PIPELINE_CACHED_RESULTS = "max.pipeline.cached.results";
-
-    public static final String BATCHED_QUERY = "query.iterator.batch";
-
-    public static final String BATCHED_QUERY_RANGE_PREFIX = "query.iterator.batch.range.";
-
-    public static final String BATCHED_QUERY_PREFIX = "query.iterator.batch.query.";
-
     public static final String DATE_INDEX_TIME_TRAVEL = "date.index.time.travel";
 
     public static final String SORTED_UIDS = "sorted.uids";
@@ -379,7 +370,6 @@ public class QueryOptions implements OptionDescriber {
     protected boolean compressResults = false;
 
     protected Boolean compressedMappings = false;
-    protected boolean limitOverride = false;
 
     // determine whether sortedUIDs are required. Normally they are, however if the query contains
     // only one indexed term, then there is no need to sort which can be a lot faster if an ivarator
@@ -394,10 +384,6 @@ public class QueryOptions implements OptionDescriber {
     protected QueryStatsDClient statsdClient = null;
 
     protected boolean serialEvaluationPipeline = false;
-
-    protected Queue<Entry<Range,String>> batchStack;
-
-    protected int batchedQueries = 0;
 
     protected String metadataTableName;
 
@@ -511,16 +497,12 @@ public class QueryOptions implements OptionDescriber {
         this.hitsOnlySet = other.hitsOnlySet;
 
         this.compressedMappings = other.compressedMappings;
-        this.limitOverride = other.limitOverride;
-
         this.sortedUIDs = other.sortedUIDs;
 
         this.termFrequenciesRequired = other.termFrequenciesRequired;
         this.termFrequencyFields = other.termFrequencyFields;
         this.contentExpansionFields = other.contentExpansionFields;
 
-        this.batchedQueries = other.batchedQueries;
-        this.batchStack = other.batchStack;
         this.maxEvaluationPipelines = other.maxEvaluationPipelines;
 
         this.dateIndexTimeTravel = other.dateIndexTimeTravel;
@@ -1116,7 +1098,6 @@ public class QueryOptions implements OptionDescriber {
         options.put(DISABLE_EVALUATION, "If provided, JEXL evaluation is not performed against any document.");
         options.put(DISABLE_FIELD_INDEX_EVAL,
                         "If provided, a query tree is not evaluated against the field index. Only used in the case of doc specific ranges");
-        options.put(LIMIT_OVERRIDE, "If provided, we will not assume the FI ranges can be constructed from the query");
         options.put(LIMIT_SOURCES, "Allows client to limit the number of sources used for this scan");
         options.put(DISABLE_DOCUMENTS_WITHOUT_EVENTS, "Removes documents in which only hits against the index were found, and no event");
         options.put(QUERY, "The JEXL query to evaluate documents against");
@@ -1229,10 +1210,6 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
             this.disableFiEval = Boolean.parseBoolean(options.get(DISABLE_FIELD_INDEX_EVAL));
-        }
-
-        if (options.containsKey(LIMIT_OVERRIDE)) {
-            this.limitOverride = Boolean.parseBoolean(options.get(LIMIT_OVERRIDE));
         }
 
         if (options.containsKey(LIMIT_SOURCES)) {
@@ -1660,36 +1637,6 @@ public class QueryOptions implements OptionDescriber {
         }
         this.setTermFrequencyFields(parseTermFrequencyFields(options));
         this.setContentExpansionFields(parseContentExpansionFields(options));
-
-        if (options.containsKey(BATCHED_QUERY)) {
-            this.batchedQueries = Integer.parseInt(options.get(BATCHED_QUERY));
-
-            if (this.batchedQueries > 0) {
-
-                // override query options since this is a mismatch of options
-                // combining is only meant to be used when threading is enabled
-                if (maxEvaluationPipelines == 1) {
-                    maxEvaluationPipelines = 2;
-                }
-
-                batchStack = Queues.newArrayDeque();
-                for (int i = 0; i < batchedQueries; i++) {
-                    String rangeValue = options.get(BATCHED_QUERY_RANGE_PREFIX + i);
-                    String queryValue = options.get(BATCHED_QUERY_PREFIX + i);
-                    if (null != rangeValue && null != queryValue) {
-                        try {
-                            Range decodedRange = ColumnRangeIterator.decodeRange(rangeValue);
-                            if (log.isTraceEnabled()) {
-                                log.trace("Adding batch " + decodedRange + " " + queryValue);
-                            }
-                            batchStack.offer(Maps.immutableEntry(decodedRange, queryValue));
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-            }
-        }
 
         if (options.containsKey(DATE_INDEX_TIME_TRAVEL)) {
             this.dateIndexTimeTravel = Boolean.parseBoolean(options.get(DATE_INDEX_TIME_TRAVEL));

@@ -1,11 +1,12 @@
 package org.apache.commons.jexl2;
 
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 
 /**
  * Lifted from {@link ExpressionImpl}. Modified to flatten the resulting {@link ASTJexlScript}.

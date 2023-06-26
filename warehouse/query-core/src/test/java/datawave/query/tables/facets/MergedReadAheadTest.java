@@ -1,17 +1,19 @@
 package datawave.query.tables.facets;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import static org.junit.Assert.assertArrayEquals;
+import javax.annotation.Nullable;
+
+import org.junit.Test;
+
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 
 public class MergedReadAheadTest {
     @Test

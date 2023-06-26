@@ -1,10 +1,5 @@
 package datawave.mapreduce.shardStats;
 
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.io.VIntWritable;
-import org.apache.hadoop.io.VLongWritable;
-import org.apache.hadoop.io.WritableComparable;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -12,6 +7,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Objects;
+
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.VIntWritable;
+import org.apache.hadoop.io.VLongWritable;
+import org.apache.hadoop.io.WritableComparable;
 
 /**
  * POJO containing the statistical counts produced by the reducer for a field name/datatype pair. The data produced by this object are:

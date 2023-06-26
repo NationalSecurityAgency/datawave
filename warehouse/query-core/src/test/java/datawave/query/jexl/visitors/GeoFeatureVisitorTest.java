@@ -1,15 +1,16 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.webservice.query.map.QueryGeometry;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.junit.Test;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.webservice.query.map.QueryGeometry;
 
 public class GeoFeatureVisitorTest {
     private static final String GEO_FIELD_QUERY = "(((GEO_FIELD >= '0208' && GEO_FIELD <= '020d') || GEO_FIELD == '0202') && (geowave:intersects(GEO_FIELD, 'POLYGON((10 10, -10 10, -10 -10, 10 -10, 10 10 ))')))";

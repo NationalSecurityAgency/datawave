@@ -12,11 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.query.Constants;
-import datawave.util.TextUtil;
-
-import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -32,6 +27,11 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.query.Constants;
+import datawave.util.TextUtil;
+import datawave.util.time.DateHelper;
 
 /**
  * <p>

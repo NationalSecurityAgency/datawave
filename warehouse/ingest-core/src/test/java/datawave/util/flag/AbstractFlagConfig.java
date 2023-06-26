@@ -10,17 +10,17 @@ import java.util.UUID;
 
 import javax.xml.bind.JAXBException;
 
-import datawave.util.StringUtils;
-import datawave.util.flag.config.ConfigUtil;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
+
+import datawave.util.StringUtils;
+import datawave.util.flag.config.ConfigUtil;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
 
 public class AbstractFlagConfig {
 

@@ -8,11 +8,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map.Entry;
 
-import datawave.ingest.metric.IngestInput;
-import datawave.ingest.metric.IngestOutput;
-import datawave.ingest.metric.IngestProcess;
-import datawave.metrics.mapreduce.util.TypeNameConverter;
-
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.fs.Path;
@@ -25,6 +20,11 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
+import datawave.ingest.metric.IngestProcess;
+import datawave.metrics.mapreduce.util.TypeNameConverter;
 
 /**
  * A map task to import Bulk Ingest metrics. Given a Counters object from a Bulk Ingest job, this mapper will format the data into a table structure similar to:

@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
-import org.apache.hadoop.fs.FileSystem;
-
 import java.util.Observable;
+
+import org.apache.hadoop.fs.FileSystem;
 
 public class JobObservable extends Observable {
     private final FileSystem fs;

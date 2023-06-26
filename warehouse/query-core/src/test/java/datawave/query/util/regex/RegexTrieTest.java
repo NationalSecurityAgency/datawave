@@ -1,10 +1,10 @@
 package datawave.query.util.regex;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.regex.Pattern;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class RegexTrieTest {
     @Test

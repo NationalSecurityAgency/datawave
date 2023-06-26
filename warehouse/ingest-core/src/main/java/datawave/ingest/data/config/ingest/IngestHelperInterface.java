@@ -5,16 +5,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.hadoop.conf.Configuration;
+
+import com.google.common.collect.Multimap;
+
 import datawave.data.type.Type;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.data.config.NormalizedContentInterface;
-
-import org.apache.hadoop.conf.Configuration;
-
-import com.google.common.collect.Multimap;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and

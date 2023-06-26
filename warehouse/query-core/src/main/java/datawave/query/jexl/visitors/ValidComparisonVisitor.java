@@ -1,6 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.exceptions.DatawaveFatalQueryException;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTDivNode;
@@ -23,6 +22,8 @@ import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang3.mutable.MutableInt;
+
+import datawave.query.exceptions.DatawaveFatalQueryException;
 
 /**
  * Validates all expressions in a query tree (e.g. literal == literal is considered invalid)

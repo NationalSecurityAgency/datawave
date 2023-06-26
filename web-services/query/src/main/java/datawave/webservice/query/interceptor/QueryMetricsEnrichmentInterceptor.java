@@ -12,26 +12,26 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
+import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.util.FindAnnotation;
+
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.resteasy.interceptor.BaseMethodStatsInterceptor;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.annotation.EnrichQueryMetrics.MethodType;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
-
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
-import org.jboss.resteasy.util.FindAnnotation;
 
 @Provider
 @Priority(Priorities.USER)

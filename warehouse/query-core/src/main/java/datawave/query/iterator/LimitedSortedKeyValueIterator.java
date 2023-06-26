@@ -1,15 +1,15 @@
 package datawave.query.iterator;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * Not thread safe

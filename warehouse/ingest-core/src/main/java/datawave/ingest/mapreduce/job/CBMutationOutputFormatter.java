@@ -1,6 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import java.io.IOException;
 
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
@@ -9,7 +9,7 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class CBMutationOutputFormatter extends AccumuloOutputFormat {
 

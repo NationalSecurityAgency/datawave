@@ -1,8 +1,11 @@
 package datawave.metrics.analytic;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
-import com.google.common.primitives.Longs;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -15,11 +18,9 @@ import org.apache.hadoop.mapred.lib.aggregate.LongValueSum;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
+import com.google.common.primitives.Longs;
 
 /**
  * Writes daily/hourly summary metrics information out to Accumulo. All incoming keys having the same date, metric name, metric value have their counts added

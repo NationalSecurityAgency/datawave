@@ -5,13 +5,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.hadoop.io.Text;
+
+import com.google.common.collect.HashMultimap;
+
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.util.EdgeKey;
 import datawave.query.tables.edge.EdgeQueryLogic;
-
-import com.google.common.collect.HashMultimap;
 import datawave.util.StringUtils;
-import org.apache.hadoop.io.Text;
 
 /**
  * A Query context represents a group of ranges over which the same query parameters will be applied The Query context stores 3 data structures: rowContext -

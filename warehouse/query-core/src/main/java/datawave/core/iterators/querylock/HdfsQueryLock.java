@@ -5,11 +5,12 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.util.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+
+import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.util.StringUtils;
 
 /**
  * Created on 2/6/17. This query lock will do nothing on start, but will create a "closed" file in the specified directories upon close. If any closed file is

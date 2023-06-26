@@ -1,8 +1,8 @@
 package org.apache.commons.jexl2.parser;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-
 import java.util.function.Function;
+
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Represents a node which should only be used for jexl evaluation. If this reference expression exists, we should not perform any processing that may affect

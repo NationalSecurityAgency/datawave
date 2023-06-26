@@ -1,29 +1,7 @@
 package datawave.query.transformer;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.DiacriticContent;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
-import datawave.query.function.LogTiming;
-import datawave.query.jexl.JexlASTHelper;
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.collections4.Transformer;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.hadoop.io.Text;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -44,8 +22,32 @@ import java.util.Spliterators;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.collections4.Transformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.lang.RandomStringUtils;
+import org.apache.hadoop.io.Text;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.DiacriticContent;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
+import datawave.query.function.LogTiming;
+import datawave.query.jexl.JexlASTHelper;
 
 public class UniqueTransformTest {
 

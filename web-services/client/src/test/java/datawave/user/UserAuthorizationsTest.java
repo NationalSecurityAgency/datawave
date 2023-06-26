@@ -2,10 +2,10 @@ package datawave.user;
 
 import java.util.TreeSet;
 
-import datawave.webservice.ProtobufSerializationTestBase;
-
 import org.junit.Before;
 import org.junit.Test;
+
+import datawave.webservice.ProtobufSerializationTestBase;
 
 public class UserAuthorizationsTest extends ProtobufSerializationTestBase {
     @Before

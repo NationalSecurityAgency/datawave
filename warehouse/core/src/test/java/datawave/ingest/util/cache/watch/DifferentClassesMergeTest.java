@@ -1,9 +1,12 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.ColumnVisibilityLabeledFilter;
-import datawave.iterators.filter.EdgeColumnQualifierTokenFilter;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterRule;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.Collection;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -12,12 +15,10 @@ import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Collection;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.iterators.filter.ColumnVisibilityLabeledFilter;
+import datawave.iterators.filter.EdgeColumnQualifierTokenFilter;
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
  * Tests to verify capability of merging configs for rules that use different filters with overlapping matchPattern formats

@@ -1,11 +1,12 @@
 package datawave.query.testframework;
 
+import java.util.Set;
+
+import org.junit.Assert;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import org.junit.Assert;
-
-import java.util.Set;
 
 /**
  * Logic checker for the return fields in a {@link Document}.

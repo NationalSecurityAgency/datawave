@@ -1,9 +1,10 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.common.test.logging.TestLogCollector;
-import datawave.ingest.data.TypeRegistry;
-import datawave.data.hash.UID;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import java.io.IOException;
+import java.net.URL;
+import java.util.Date;
+import java.util.List;
+
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloOutputFormat;
 import org.apache.accumulo.hadoopImpl.mapreduce.AccumuloRecordWriter;
@@ -22,10 +23,10 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Date;
-import java.util.List;
+import datawave.common.test.logging.TestLogCollector;
+import datawave.data.hash.UID;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class CBMutationOutputFormatterTest {
 

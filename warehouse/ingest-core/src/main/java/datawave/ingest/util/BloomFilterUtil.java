@@ -7,15 +7,17 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Logger;
+import org.apache.lucene.analysis.ngram.NGramTokenizer;
+
 import com.google.common.collect.Multimap;
 import com.google.common.hash.BloomFilter;
+
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.AbstractContentIngestHelper;
 import datawave.ingest.mapreduce.MemberShipTest;
 import datawave.ingest.util.AbstractNGramTokenizationStrategy.TokenizationException;
 import datawave.ingest.util.TimeoutStrategy.TimeoutException;
-import org.apache.log4j.Logger;
-import org.apache.lucene.analysis.ngram.NGramTokenizer;
 
 /**
  * Utility class for creating bloom filters, such as those built from {@link Multimap}s and n-gram tokenenization

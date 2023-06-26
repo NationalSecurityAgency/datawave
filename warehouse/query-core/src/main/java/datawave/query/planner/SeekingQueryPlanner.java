@@ -1,7 +1,8 @@
 package datawave.query.planner;
 
-import datawave.query.config.ShardQueryConfiguration;
 import org.apache.accumulo.core.client.IteratorSetting;
+
+import datawave.query.config.ShardQueryConfiguration;
 
 /**
  * SeekingQueryPlanner sets additional QueryIterator settings to support the SeekingFilter

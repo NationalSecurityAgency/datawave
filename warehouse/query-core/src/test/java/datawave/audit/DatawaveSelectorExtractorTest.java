@@ -1,15 +1,16 @@
 package datawave.audit;
 
-import com.google.common.collect.Lists;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import datawave.webservice.query.QueryImpl;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
+
+import datawave.webservice.query.QueryImpl;
 
 public class DatawaveSelectorExtractorTest {
 

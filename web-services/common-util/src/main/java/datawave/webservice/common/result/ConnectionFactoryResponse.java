@@ -15,10 +15,10 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.result.BaseResponse;
-
-import org.apache.commons.lang.StringEscapeUtils;
 
 @XmlRootElement(name = "ConnectionFactoryResponse")
 @XmlAccessorType(XmlAccessType.NONE)

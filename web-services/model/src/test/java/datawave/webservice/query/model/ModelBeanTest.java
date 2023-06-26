@@ -16,21 +16,8 @@ import javax.ejb.EJBContext;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.model.ModelList;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
@@ -47,6 +34,20 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.query.model.ModelKeyParser;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.cache.AccumuloTableCache;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.model.ModelList;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ModelBean.class, ModelKeyParser.class})
@@ -96,7 +97,7 @@ public class ModelBeanTest {
          * In jdk 9+, java.lang.Package.getPackageInfo() may fail to load a package-info.class, which is needed to resolve our JAXB package-level annotations.
          * Here, this results in:
          *
-         * "javax.xml.bind.UnmarshalException: unexpected element (uri:"http://webservice.datawave/v1", local:"Model"). Expected elements are <{}Model>"
+         * "javax.xml.bind.UnmarshalException: unexpected element (uri:"http://webservice.datawave.nsa/v1", local:"Model"). Expected elements are <{}Model>"
          *
          * As a workaround, we can force it to load here in the same manner as in jdk 8's Package.getPackageInfo(), though there's likely a "better" (i.e.,
          * module-focused) way of handling this in jdk 9+

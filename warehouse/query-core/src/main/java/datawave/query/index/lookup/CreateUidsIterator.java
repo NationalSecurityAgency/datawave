@@ -9,11 +9,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.query.tld.TLD;
-import datawave.query.util.Tuple3;
-import datawave.query.util.Tuples;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -27,6 +22,11 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.query.tld.TLD;
+import datawave.query.util.Tuple3;
+import datawave.query.util.Tuples;
 
 /**
  * <pre>

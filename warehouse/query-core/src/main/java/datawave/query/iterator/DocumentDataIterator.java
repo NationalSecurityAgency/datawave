@@ -6,17 +6,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.Maps;
-import datawave.query.function.DocumentRangeProvider;
-import datawave.query.function.Equality;
-import datawave.query.function.PrefixEquality;
-import datawave.query.function.RangeProvider;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.attributes.Document;
-import datawave.query.function.KeyToDocumentData;
-import datawave.query.iterator.aggregation.DocumentData;
-import datawave.query.iterator.filter.KeyIdentity;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -30,6 +19,17 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Document;
+import datawave.query.function.DocumentRangeProvider;
+import datawave.query.function.Equality;
+import datawave.query.function.KeyToDocumentData;
+import datawave.query.function.PrefixEquality;
+import datawave.query.function.RangeProvider;
+import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.iterator.filter.KeyIdentity;
+import datawave.query.predicate.EventDataQueryFilter;
 
 public class DocumentDataIterator implements Iterator<DocumentData> {
     private static final Logger log = Logger.getLogger(DocumentDataIterator.class);
