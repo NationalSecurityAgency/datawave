@@ -1,7 +1,19 @@
 package datawave.iterators.filter;
 
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterOptions;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
@@ -17,20 +29,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterOptions;
 
 @RunWith(EasyMockRunner.class)
 public class ConfigurableAgeOffFilterTest extends EasyMockSupport {

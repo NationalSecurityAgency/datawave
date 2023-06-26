@@ -1,6 +1,7 @@
 package datawave.ingest.data.tokenize;
 
 import java.io.IOException;
+
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;

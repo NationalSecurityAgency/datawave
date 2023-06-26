@@ -3,14 +3,14 @@ package datawave.query.jexl.functions;
 import java.util.Collection;
 import java.util.TreeSet;
 
-import datawave.data.type.IpAddressType;
-import datawave.data.normalizer.NormalizationException;
-import datawave.query.attributes.ValueTuple;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
+
+import datawave.data.normalizer.NormalizationException;
+import datawave.data.type.IpAddressType;
+import datawave.query.attributes.ValueTuple;
 
 /**
  *

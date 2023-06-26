@@ -1,16 +1,31 @@
 package datawave.webservice.mr.state;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.results.mr.JobExecution;
-import datawave.webservice.results.mr.MapReduceInfoResponse;
-import datawave.webservice.results.mr.MapReduceInfoResponseList;
-import datawave.webservice.results.mr.ResultFile;
+import java.io.IOException;
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Queue;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJBContext;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.inject.Inject;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -32,30 +47,17 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.PermitAll;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJBContext;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Queue;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.results.mr.JobExecution;
+import datawave.webservice.results.mr.MapReduceInfoResponse;
+import datawave.webservice.results.mr.MapReduceInfoResponseList;
+import datawave.webservice.results.mr.ResultFile;
 
 /**
  * Maintains information in a table about the state of a MapReduce job <br>

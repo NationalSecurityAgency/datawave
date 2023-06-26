@@ -1,5 +1,15 @@
 package datawave.ingest.table.volumeChoosers;
 
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
@@ -12,16 +22,6 @@ import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.*;
 
 @RunWith(EasyMockRunner.class)
 public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSupport {

@@ -1,16 +1,18 @@
 package datawave.query.attributes;
 
-import com.google.common.collect.Sets;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctions.Exception;
-import datawave.marking.MarkingFunctionsFactory;
+import java.io.Serializable;
+import java.util.Collection;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.log4j.Logger;
 
-import java.io.Serializable;
-import java.util.Collection;
+import com.google.common.collect.Sets;
+
+import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctions.Exception;
+import datawave.marking.MarkingFunctionsFactory;
 
 public abstract class AttributeBag<T extends Comparable<T>> extends Attribute<T> implements Serializable {
 

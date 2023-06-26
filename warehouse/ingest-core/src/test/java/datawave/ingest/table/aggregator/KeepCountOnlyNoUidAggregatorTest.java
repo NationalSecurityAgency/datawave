@@ -1,19 +1,21 @@
 package datawave.ingest.table.aggregator;
 
-import datawave.ingest.protobuf.Uid;
+import static java.util.Arrays.asList;
+
+import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
+import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
-
-import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
-import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
-import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.ingest.protobuf.Uid;
 
 public class KeepCountOnlyNoUidAggregatorTest {
 

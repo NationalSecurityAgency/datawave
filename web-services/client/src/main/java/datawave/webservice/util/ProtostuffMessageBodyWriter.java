@@ -14,6 +14,7 @@ import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.core.io.IOContext;
 import com.fasterxml.jackson.core.json.UTF8JsonGenerator;
+
 import io.protostuff.JsonIOUtil;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.Message;

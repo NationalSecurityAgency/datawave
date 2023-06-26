@@ -1,11 +1,11 @@
 package datawave.configuration;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * A utility for comparing data type configuration files. The comparison will report fields that are the same and fields that are different.

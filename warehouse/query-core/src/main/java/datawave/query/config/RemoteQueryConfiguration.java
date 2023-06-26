@@ -1,12 +1,12 @@
 package datawave.query.config;
 
-import datawave.query.tables.RemoteEventQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Objects;
+
+import datawave.query.tables.RemoteEventQueryLogic;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * <p>

@@ -1,16 +1,17 @@
 package datawave.security.auth;
 
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
-import io.undertow.security.idm.Credential;
-import org.apache.commons.lang3.builder.CompareToBuilder;
-
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.builder.CompareToBuilder;
+
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
+import io.undertow.security.idm.Credential;
 
 /**
  * A {@link Credential} for use with Datawave authentication. The main reason for using this credential is to ensure that the JAAS cache inside of Wildfly works

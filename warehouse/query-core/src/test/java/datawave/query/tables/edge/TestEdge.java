@@ -3,13 +3,14 @@ package datawave.query.tables.edge;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.data.normalizer.AbstractNormalizer;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
+
+import datawave.data.normalizer.AbstractNormalizer;
 
 public class TestEdge {
 

@@ -4,19 +4,19 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Cardinality;
-import datawave.query.attributes.FieldValueCardinality;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Cardinality;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.FieldValueCardinality;
+import datawave.query.data.parsers.DatawaveKey;
 
 /**
  *

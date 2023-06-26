@@ -3,14 +3,14 @@ package datawave.ingest.data.config.ingest;
 import java.util.HashMap;
 import java.util.Map;
 
-import datawave.TestBaseIngestHelper;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.DataTypeHelper.Properties;
-
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import datawave.TestBaseIngestHelper;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.DataTypeHelper.Properties;
 
 public class FieldNameAliaserNormalizerTest {
 

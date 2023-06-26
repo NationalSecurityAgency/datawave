@@ -4,20 +4,17 @@ package datawave.ingest.data.config;
  * Class to hold the normalized field name and value.  One can set a field specific
  * visibility if desired.  If the visibility is not set, then the event visibility
  * will be used.
- *
- *
- *
  */
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
 
-import datawave.ingest.config.IngestConfiguration;
-import datawave.ingest.config.IngestConfigurationFactory;
-
-import datawave.ingest.config.MimeDecoder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.Text;
+
+import datawave.ingest.config.IngestConfiguration;
+import datawave.ingest.config.IngestConfigurationFactory;
+import datawave.ingest.config.MimeDecoder;
 
 public class NormalizedFieldAndValue extends BaseNormalizedContent implements GroupedNormalizedContentInterface {
     private boolean grouped = false;

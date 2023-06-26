@@ -6,15 +6,14 @@ import java.io.IOException;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Mapper;
-
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
 
 /**
  * A Map task that imports bulk loader metrics into Accumulo. The inputs are metrics files from MapFileLoader and it places the metrics into an accumulo table

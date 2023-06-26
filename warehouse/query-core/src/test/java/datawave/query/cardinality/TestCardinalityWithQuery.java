@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -27,10 +26,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import com.google.common.collect.Sets;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;

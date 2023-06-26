@@ -5,10 +5,8 @@
 
 package datawave.ingest.mapreduce.job.reduce;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
-import datawave.ingest.mapreduce.job.reduce.AggregatingReducer.CustomColumnToClassMapping;
+import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,8 +14,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
@@ -32,7 +31,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
+
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import datawave.ingest.mapreduce.job.reduce.AggregatingReducer.CustomColumnToClassMapping;
 
 @RunWith(PowerMockRunner.class)
 // @PrepareForTest({TableConfigurationUtil.class})

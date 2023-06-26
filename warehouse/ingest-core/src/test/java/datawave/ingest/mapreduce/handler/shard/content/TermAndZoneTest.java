@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.handler.shard.content;
 
 import org.junit.Assert;
-
 import org.junit.Test;
 
 /**

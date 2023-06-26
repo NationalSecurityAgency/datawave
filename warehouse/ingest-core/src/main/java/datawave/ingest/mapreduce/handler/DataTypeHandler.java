@@ -1,18 +1,18 @@
 package datawave.ingest.mapreduce.handler;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.metadata.RawRecordMetadata;
-
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.metadata.RawRecordMetadata;
 
 /**
  * Generic high level interface for processing Events. The EventMapper class uses instances of this interface to process Event objects that are read from the

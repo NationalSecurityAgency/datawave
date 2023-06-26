@@ -1,10 +1,10 @@
 package datawave.webservice.query.predicate;
 
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
-
 import java.util.List;
 import java.util.function.Predicate;
+
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
 
 /**
  * This is a predicate that will test the auths against a specified visibility (as defined by accumulo's ColumnVisibility). In addition to the visibility, one

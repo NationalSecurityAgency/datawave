@@ -1,6 +1,35 @@
 package datawave.webservice.query.runner;
 
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertEquals;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
@@ -17,35 +46,6 @@ import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.TestQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogic;
 import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
 
 public class RunningQueryTest {
 

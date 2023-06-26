@@ -1,9 +1,9 @@
 package datawave.webservice.query.predicate;
 
+import java.util.function.Predicate;
+
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-
-import java.util.function.Predicate;
 
 /**
  * This is a predicate that will test a specified query parameter matches a specified value. If no value is specified then the parameter is treated as a boolean

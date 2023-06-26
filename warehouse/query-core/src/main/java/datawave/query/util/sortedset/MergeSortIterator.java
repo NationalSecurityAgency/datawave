@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 

@@ -1,10 +1,7 @@
 package datawave.query.function;
 
-import com.google.common.collect.Multimap;
-import datawave.query.composite.CompositeMetadata;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.util.TypeMetadata;
+import java.util.Collection;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -12,7 +9,12 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Collection;
+import com.google.common.collect.Multimap;
+
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.util.TypeMetadata;
 
 /**
  * Builder for IndexOnlyContextCreator

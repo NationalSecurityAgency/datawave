@@ -1,5 +1,17 @@
 package datawave.webservice.result;
 
+import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+
+import javax.xml.bind.annotation.XmlAccessOrder;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorOrder;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.metadata.MetadataFieldBase;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
@@ -8,17 +20,6 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.istat.FieldStat;
 import datawave.webservice.query.result.istat.IndexStatsResponse;
-
-import javax.xml.bind.annotation.XmlAccessOrder;
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorOrder;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import java.text.MessageFormat;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 
 @XmlRootElement(name = "QueryWizardNextResult")
 @XmlAccessorType(XmlAccessType.NONE)

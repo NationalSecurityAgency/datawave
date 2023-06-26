@@ -1,6 +1,20 @@
 package datawave.query.transformer;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+
 import com.esotericsoftware.kryo.io.Input;
+
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.query.Constants;
@@ -14,18 +28,6 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-
-import java.io.ByteArrayInputStream;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 public class EventQueryTransformer extends EventQueryTransformerSupport<Entry<Key,Value>,EventBase> implements CacheableLogic {
 

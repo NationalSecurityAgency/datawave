@@ -1,10 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import datawave.data.MetadataCardinalityCounts;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.util.MetadataHelper;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -13,8 +11,11 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
-import java.util.Map;
-import java.util.NoSuchElementException;
+import datawave.data.MetadataCardinalityCounts;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.util.MetadataHelper;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that reference low selectable fields.

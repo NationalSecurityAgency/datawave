@@ -34,6 +34,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
 import datawave.interceptor.RequiredInterceptor;
@@ -49,13 +55,7 @@ import datawave.webservice.query.configuration.IdTranslatorConfiguration;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicFactory;
 import datawave.webservice.result.BaseQueryResponse;
-
 import datawave.webservice.result.VoidResponse;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 @Path("/Query")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

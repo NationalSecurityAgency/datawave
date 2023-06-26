@@ -1,14 +1,15 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.collect.Maps;
-import datawave.query.Constants;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.predicate.EventDataQueryFieldFilter;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.TypeMetadata;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -18,15 +19,16 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeMap;
+import com.google.common.collect.Maps;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
+import datawave.query.Constants;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.EventDataQueryFieldFilter;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.TypeMetadata;
 
 public class TermFrequencyAggregatorTest {
     private TermFrequencyAggregator aggregator;

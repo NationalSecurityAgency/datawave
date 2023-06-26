@@ -8,17 +8,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Before;
+import org.junit.Test;
+
 import datawave.query.QueryParameters;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.model.edge.EdgeQueryModel;
-
 import datawave.webservice.dictionary.edge.DefaultEdgeDictionary;
 import datawave.webservice.dictionary.edge.DefaultMetadata;
 import datawave.webservice.dictionary.edge.EventField;
-import org.junit.Before;
-import org.junit.Test;
-
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 

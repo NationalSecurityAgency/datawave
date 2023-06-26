@@ -1,7 +1,23 @@
 package datawave.ingest.mapreduce.handler.atom;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.StatusReporter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
@@ -15,20 +31,6 @@ import datawave.ingest.metadata.RawRecordMetadata;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 import datawave.util.TextUtil;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.StatusReporter;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  *

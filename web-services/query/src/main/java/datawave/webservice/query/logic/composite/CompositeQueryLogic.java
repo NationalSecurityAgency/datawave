@@ -1,26 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import com.google.common.base.Joiner;
-import datawave.audit.SelectorExtractor;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.WSAuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.result.BaseResponse;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.functors.NOPTransformer;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
-
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +13,28 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.functors.NOPTransformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Joiner;
+
+import datawave.audit.SelectorExtractor;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.result.BaseResponse;
 
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel and results are retrieved as they come

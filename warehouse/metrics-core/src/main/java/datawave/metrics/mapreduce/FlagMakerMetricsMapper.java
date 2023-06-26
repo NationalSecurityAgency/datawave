@@ -4,10 +4,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-import datawave.metrics.util.WritableUtil;
-import datawave.metrics.util.flag.FlagFile;
-import datawave.metrics.util.flag.InputFile;
-
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
@@ -17,6 +13,10 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
+
+import datawave.metrics.util.WritableUtil;
+import datawave.metrics.util.flag.FlagFile;
+import datawave.metrics.util.flag.InputFile;
 
 /**
  * A map task to import Flag Maker metrics into Accumulo. Given a Counters object from a Bulk Ingest job, this mapper will format the data into a table

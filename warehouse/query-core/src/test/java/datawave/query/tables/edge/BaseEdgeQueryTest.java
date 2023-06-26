@@ -14,15 +14,8 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.data.normalizer.Normalizer;
-import datawave.query.MockAccumuloRecordWriter;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.BaseQueryLogic;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -35,6 +28,13 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.data.normalizer.Normalizer;
+import datawave.query.MockAccumuloRecordWriter;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.logic.BaseQueryLogic;
 
 /**
  * A base test class to encapsulate everything needed to run query tests against an edge query logic.

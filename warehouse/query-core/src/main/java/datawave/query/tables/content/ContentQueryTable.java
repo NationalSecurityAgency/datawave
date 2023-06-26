@@ -1,18 +1,11 @@
 package datawave.query.tables.content;
 
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.query.QueryParameters;
-import datawave.query.config.ContentQueryConfiguration;
-import datawave.query.Constants;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.transformer.ContentQueryTransformer;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -26,11 +19,19 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
+import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.query.Constants;
+import datawave.query.QueryParameters;
+import datawave.query.config.ContentQueryConfiguration;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.transformer.ContentQueryTransformer;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.QueryLogicTransformer;
 
 /**
  * This query table implementation returns a QueryResults object that contains documents from the Shard table. The query will contain the shard id, datatype,

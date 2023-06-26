@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.time.DateHelper;
+import java.text.ParseException;
+import java.util.Date;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -10,8 +10,9 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
-import java.text.ParseException;
-import java.util.Date;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.time.DateHelper;
 
 /**
  * The ShardIdPartitioner will generate partitions for any table that's rows are in the format yyyyMMdd_n where n is an integer representing a shard id This

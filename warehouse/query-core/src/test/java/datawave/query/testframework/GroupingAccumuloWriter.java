@@ -1,17 +1,15 @@
 package datawave.query.testframework;
 
-import com.google.common.collect.Multimap;
-import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
-import datawave.data.normalizer.LcNoDiacriticsNormalizer;
-import datawave.data.normalizer.Normalizer;
-import datawave.data.normalizer.NumberNormalizer;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.protobuf.Uid;
-import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import static datawave.query.testframework.AbstractDataTypeConfig.YMD_DateFormat;
+
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -24,15 +22,19 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.Multimap;
 
-import static datawave.query.testframework.AbstractDataTypeConfig.YMD_DateFormat;
+import datawave.data.ColumnFamilyConstants;
+import datawave.data.hash.UID;
+import datawave.data.normalizer.LcNoDiacriticsNormalizer;
+import datawave.data.normalizer.Normalizer;
+import datawave.data.normalizer.NumberNormalizer;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 
 /**
  * Populates Accumulo with data utilizes the Grouping format.

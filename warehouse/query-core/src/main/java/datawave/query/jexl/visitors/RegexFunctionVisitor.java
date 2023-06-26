@@ -1,5 +1,17 @@
 package datawave.query.jexl.visitors;
 
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.EXCLUDE_REGEX;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
@@ -11,17 +23,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTIdentifier;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.EXCLUDE_REGEX;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX;
 
 /**
  * Rewrites evaluation phase filter functions for index only fields into their equivalent regex nodes. For a multi-fielded filter function like

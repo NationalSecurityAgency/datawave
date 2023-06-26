@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import datawave.query.model.Direction;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -46,6 +45,7 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
+import datawave.query.model.Direction;
 import datawave.util.TextUtil;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 

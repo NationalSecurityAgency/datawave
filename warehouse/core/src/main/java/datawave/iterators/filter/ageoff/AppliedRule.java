@@ -1,14 +1,16 @@
 package datawave.iterators.filter.ageoff;
 
-import com.google.common.base.Objects;
-import datawave.iterators.filter.AgeOffConfigParams;
+import java.lang.reflect.InvocationTargetException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
-import java.lang.reflect.InvocationTargetException;
+import com.google.common.base.Objects;
+
+import datawave.iterators.filter.AgeOffConfigParams;
 
 /**
  * Description: Identifies an applied rule.

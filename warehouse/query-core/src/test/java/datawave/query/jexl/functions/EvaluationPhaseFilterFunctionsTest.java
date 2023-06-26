@@ -1,19 +1,12 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.Type;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
-import org.apache.accumulo.core.data.Key;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.text.ParseException;
 import java.util.Calendar;
@@ -22,13 +15,22 @@ import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.data.Key;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.runners.Enclosed;
+import org.junit.runner.RunWith;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 
 /**
  * Due to the expansive nature of {@link EvaluationPhaseFilterFunctions}, tests for individual methods are encapsulated within their own test suites represented

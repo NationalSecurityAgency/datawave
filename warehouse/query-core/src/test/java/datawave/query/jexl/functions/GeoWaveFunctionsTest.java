@@ -1,9 +1,10 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
 import org.junit.Assert;
 import org.junit.Test;
+
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
 
 public class GeoWaveFunctionsTest {
 

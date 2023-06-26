@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.MemberShipTest;
-
-import datawave.util.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
@@ -16,6 +12,10 @@ import org.apache.lucene.analysis.standard.ClassicFilter;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 
 import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.MemberShipTest;
+import datawave.util.StringUtils;
 
 /**
  * Base implementation for tokenizing normalized content into n-grams, which are applied as an update to a BloomFilter

@@ -7,12 +7,12 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import datawave.query.util.QueryStopwatch;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.mutable.MutableLong;
 import org.apache.commons.lang.time.StopWatch;
 import org.apache.log4j.Logger;
+
+import datawave.query.util.QueryStopwatch;
 
 /**
  *

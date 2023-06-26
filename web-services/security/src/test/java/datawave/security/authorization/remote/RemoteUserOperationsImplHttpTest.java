@@ -1,9 +1,35 @@
 package datawave.security.authorization.remote;
 
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.math.BigInteger;
+import java.net.HttpURLConnection;
+import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+import java.time.ZonedDateTime;
+import java.util.Arrays;
+import java.util.HashMap;
+
+import javax.security.auth.x500.X500Principal;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.commons.io.IOUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.wildfly.security.x500.cert.X509CertificateBuilder;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
@@ -27,29 +53,6 @@ import datawave.webservice.response.objects.KeyBase;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
-import org.apache.commons.io.IOUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.wildfly.security.x500.cert.X509CertificateBuilder;
-
-import javax.security.auth.x500.X500Principal;
-import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.nio.charset.Charset;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.cert.X509Certificate;
-import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-
-import static org.junit.Assert.assertEquals;
 
 public class RemoteUserOperationsImplHttpTest {
 

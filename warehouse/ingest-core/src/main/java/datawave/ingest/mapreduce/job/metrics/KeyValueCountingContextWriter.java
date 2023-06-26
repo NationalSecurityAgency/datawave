@@ -1,21 +1,23 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
 /**
  * This {@link ContextWriter} wraps another writer and enables the counting of key/value pairs by table.

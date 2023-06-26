@@ -1,8 +1,8 @@
 package datawave.query.tables;
 
-import datawave.query.planner.IndexQueryPlanner;
-
 import com.google.common.base.Preconditions;
+
+import datawave.query.planner.IndexQueryPlanner;
 
 /**
  *

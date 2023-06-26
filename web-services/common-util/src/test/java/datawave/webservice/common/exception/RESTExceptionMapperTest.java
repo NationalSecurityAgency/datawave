@@ -8,14 +8,15 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.Response;
 
-import com.google.common.collect.Lists;
-import com.google.common.net.HttpHeaders;
-import datawave.Constants;
-import datawave.webservice.query.exception.QueryException;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
+import com.google.common.net.HttpHeaders;
+
+import datawave.Constants;
+import datawave.webservice.query.exception.QueryException;
 
 public class RESTExceptionMapperTest {
 

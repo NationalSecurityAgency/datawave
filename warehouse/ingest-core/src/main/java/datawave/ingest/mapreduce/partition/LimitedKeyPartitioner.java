@@ -1,12 +1,13 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 /**
  * Partitions a key into a defined number of bins instead of the entire reducer space This is meant to be used for tables that don't benefit from the row splits

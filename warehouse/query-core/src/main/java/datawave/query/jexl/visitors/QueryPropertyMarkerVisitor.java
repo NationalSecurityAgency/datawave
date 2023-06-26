@@ -1,23 +1,6 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.nodes.QueryPropertyMarker.Instance;
-import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTOrNode;
-import org.apache.commons.jexl2.parser.DroppedExpression;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.LenientExpression;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,7 +13,26 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTAssignment;
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTOrNode;
+import org.apache.commons.jexl2.parser.DroppedExpression;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.LenientExpression;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker.Instance;
 
 /**
  * This class is used to determine whether the specified node is an instance of a query marker. The reason for this functionality is that if the query is

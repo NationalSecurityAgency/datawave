@@ -7,14 +7,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import datawave.query.function.DocumentRangeProvider;
-import datawave.query.function.Equality;
-import datawave.query.function.PrefixEquality;
-import datawave.query.function.RangeProvider;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.aggregation.DocumentData;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -27,6 +19,14 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Document;
+import datawave.query.function.DocumentRangeProvider;
+import datawave.query.function.Equality;
+import datawave.query.function.PrefixEquality;
+import datawave.query.function.RangeProvider;
+import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.predicate.EventDataQueryFilter;
 
 /**
  * An iterable interface for wrapping Documents directly from the "shard" table. Also referred to as the "full-table query"

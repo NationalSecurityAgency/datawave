@@ -11,11 +11,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.core.iterators.GlobalIndexTermMatchingIterator;
-import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
-import datawave.query.iterator.UniqueColumnFamilyIterator;
-import datawave.query.jexl.LiteralRange;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -36,6 +31,11 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import datawave.core.iterators.GlobalIndexTermMatchingIterator;
+import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
+import datawave.query.iterator.UniqueColumnFamilyIterator;
+import datawave.query.jexl.LiteralRange;
 
 /**
  * A combination of {@link GlobalIndexTermMatchingIterator} and {@link GlobalIndexTermMatchingFilter} with the ability to consider column families.

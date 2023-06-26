@@ -1,12 +1,5 @@
 package datawave.webservice.query;
 
-import com.google.common.base.Preconditions;
-import com.google.common.base.Splitter;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateUtils;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -15,6 +8,14 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
 
 public class QueryParametersImpl implements QueryParameters {
 

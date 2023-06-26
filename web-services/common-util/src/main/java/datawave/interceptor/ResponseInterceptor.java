@@ -1,5 +1,7 @@
 package datawave.interceptor;
 
+import java.io.IOException;
+
 import javax.annotation.Priority;
 import javax.interceptor.AroundInvoke;
 import javax.interceptor.InvocationContext;
@@ -14,8 +16,6 @@ import datawave.Constants;
 import datawave.webservice.common.exception.NoResultsException;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.BaseResponse;
-
-import java.io.IOException;
 
 /**
  *

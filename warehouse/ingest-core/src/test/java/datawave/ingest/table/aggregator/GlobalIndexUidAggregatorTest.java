@@ -1,9 +1,16 @@
 package datawave.ingest.table.aggregator;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
+import static java.util.Arrays.asList;
+
+import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
+import static datawave.ingest.table.aggregator.UidTestUtils.legacyRemoveUidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.uidList;
+import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -19,16 +26,11 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import static datawave.ingest.table.aggregator.UidTestUtils.countOnlyList;
-import static datawave.ingest.table.aggregator.UidTestUtils.legacyRemoveUidList;
-import static datawave.ingest.table.aggregator.UidTestUtils.removeUidList;
-import static datawave.ingest.table.aggregator.UidTestUtils.uidList;
-import static datawave.ingest.table.aggregator.UidTestUtils.valueToUidList;
-import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.ingest.protobuf.Uid.List.Builder;
 
 public class GlobalIndexUidAggregatorTest {
 

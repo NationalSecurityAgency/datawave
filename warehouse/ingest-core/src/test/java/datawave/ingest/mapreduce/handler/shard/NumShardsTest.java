@@ -10,8 +10,6 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.util.TableName;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -25,8 +23,10 @@ import org.apache.hadoop.conf.Configuration;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.TableName;
 
 public class NumShardsTest {
     @Test

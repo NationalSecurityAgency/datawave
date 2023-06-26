@@ -1,8 +1,8 @@
 package datawave.query.testframework;
 
-import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
-
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 

@@ -1,12 +1,13 @@
 package datawave.query.testframework.cardata;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import datawave.query.testframework.FieldConfig;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import datawave.query.testframework.FieldConfig;
 
 public abstract class AbstractCarFields implements FieldConfig {
 

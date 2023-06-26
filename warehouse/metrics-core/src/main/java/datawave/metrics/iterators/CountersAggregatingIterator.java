@@ -1,7 +1,10 @@
 package datawave.metrics.iterators;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -13,10 +16,8 @@ import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.Map;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 
 /**
  *

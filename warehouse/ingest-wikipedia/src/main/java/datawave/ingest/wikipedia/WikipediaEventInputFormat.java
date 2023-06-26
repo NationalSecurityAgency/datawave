@@ -4,10 +4,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.DataTypeHelperImpl;
-import datawave.ingest.input.reader.AbstractEventRecordReader;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
@@ -22,6 +18,10 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.DataTypeHelperImpl;
+import datawave.ingest.input.reader.AbstractEventRecordReader;
 
 public class WikipediaEventInputFormat extends SequenceFileInputFormat<LongWritable,RawRecordContainer> {
     static final String NUM_INPUT_FILES = "mapreduce.input.num.files";

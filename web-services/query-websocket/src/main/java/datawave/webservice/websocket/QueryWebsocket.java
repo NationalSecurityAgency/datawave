@@ -14,6 +14,9 @@ import javax.websocket.Session;
 import javax.websocket.server.PathParam;
 import javax.websocket.server.ServerEndpoint;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import datawave.security.websocket.WebsocketSecurityConfigurator;
 import datawave.security.websocket.WebsocketSecurityInterceptor;
 import datawave.webservice.query.exception.QueryException;
@@ -29,8 +32,6 @@ import datawave.webservice.websocket.messages.CreateQueryMessage;
 import datawave.webservice.websocket.messages.QueryMessage;
 import datawave.webservice.websocket.messages.QueryResponseMessage;
 import datawave.webservice.websocket.messages.QueryResponseMessage.ResponseType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A websocket-based interface for running DATAWAVE queries. The websocket lifespan is a single query. A client connects to this endpoint and submits a query

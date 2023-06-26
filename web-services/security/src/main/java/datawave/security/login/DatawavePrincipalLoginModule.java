@@ -28,17 +28,6 @@ import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
-import datawave.security.authorization.DatawaveUserService;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.BeanProvider;
-import datawave.security.auth.DatawaveCredential;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.JWTTokenHandler;
-import datawave.util.StringUtils;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.jboss.logging.Logger;
 import org.jboss.security.JSSESecurityDomain;
@@ -48,6 +37,19 @@ import org.jboss.security.auth.callback.ObjectCallback;
 import org.jboss.security.auth.certs.X509CertificateVerifier;
 import org.jboss.security.auth.spi.AbstractServerLoginModule;
 import org.picketbox.util.StringUtil;
+
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.BeanProvider;
+import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.JWTTokenHandler;
+import datawave.util.StringUtils;
 
 @SuppressWarnings("SpringAutowiredFieldsWarningInspection")
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)

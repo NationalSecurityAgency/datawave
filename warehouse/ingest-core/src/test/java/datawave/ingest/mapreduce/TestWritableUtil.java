@@ -1,10 +1,5 @@
 package datawave.ingest.mapreduce;
 
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.MapWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -13,6 +8,11 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.hadoop.io.ArrayWritable;
+import org.apache.hadoop.io.MapWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.Writable;
 
 /**
  * Utilties for converting between Writables and non-writables.

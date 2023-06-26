@@ -1,10 +1,5 @@
 package datawave.query.jexl.visitors.validate;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -58,6 +53,12 @@ import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 
 /**
  * Detect if a query tree contains nodes surrounded by multiple reference expressions, or a child node with an extra wrap.

@@ -1,8 +1,8 @@
 package org.apache.commons.jexl2.parser;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-
 import java.util.function.Function;
+
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Represents a node which can be treated as lenient. Lenient means for example that the expression will be tolerant of normalizations that cannot be used

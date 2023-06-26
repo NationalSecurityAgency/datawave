@@ -1,11 +1,11 @@
 package datawave.query.discovery;
 
+import com.google.common.collect.Multimap;
+
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.tables.ShardIndexQueryTable;
 import datawave.webservice.query.Query;
-
-import com.google.common.collect.Multimap;
 
 /**
  * Adds the ability to hold on to two multimaps. They map literals and patterns to the fields they were associated with in the query.

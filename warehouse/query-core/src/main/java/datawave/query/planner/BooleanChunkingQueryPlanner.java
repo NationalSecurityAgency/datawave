@@ -4,6 +4,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Lists;
+
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -13,19 +19,13 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.jexl.visitors.TreeWrappingRebuildingVisitor;
-import datawave.query.util.QueryStopwatch;
-import datawave.util.time.TraceStopwatch;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.QueryStopwatch;
+import datawave.util.time.TraceStopwatch;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.QueryData;
-
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.Lists;
 
 public class BooleanChunkingQueryPlanner extends DefaultQueryPlanner {
     private static final Logger log = Logger.getLogger(BooleanChunkingQueryPlanner.class);

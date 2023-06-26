@@ -1,13 +1,8 @@
 package datawave.query.tracking;
 
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.iterator.profile.QuerySpan;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.lang.RandomStringUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,9 +11,15 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.lang.RandomStringUtils;
+import org.junit.Assert;
+import org.junit.Test;
+
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.iterator.profile.QuerySpan;
 
 public class ActiveQueryLogTest {
 

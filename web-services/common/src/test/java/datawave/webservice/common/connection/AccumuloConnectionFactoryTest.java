@@ -1,9 +1,9 @@
 package datawave.webservice.common.connection;
 
 import static org.easymock.MockType.STRICT;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.util.Collections;
@@ -11,13 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import com.google.common.collect.Lists;
-import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
-import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 import org.apache.accumulo.core.client.AccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
 import org.easymock.EasyMock;
@@ -30,6 +24,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
+
+import com.google.common.collect.Lists;
+
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.webservice.common.cache.AccumuloTableCache;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.config.ConnectionPoolConfiguration;
+import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 
 @RunWith(EasyMockRunner.class)
 public class AccumuloConnectionFactoryTest extends EasyMockSupport {

@@ -8,9 +8,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.data.hash.UIDConstants;
-import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -22,6 +19,9 @@ import org.apache.accumulo.core.iterators.SkippingIterator;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.data.hash.UIDConstants;
+import datawave.util.StringUtils;
 
 /**
  * <p>

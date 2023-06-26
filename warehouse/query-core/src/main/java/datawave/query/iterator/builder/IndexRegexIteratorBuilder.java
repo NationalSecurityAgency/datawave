@@ -1,16 +1,17 @@
 package datawave.query.iterator.builder;
 
-import datawave.core.iterators.DatawaveFieldIndexRegexIteratorJexl;
-import datawave.query.iterator.DocumentIterator;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.logic.DocumentAggregatingIterator;
-import datawave.query.iterator.logic.IndexIteratorBridge;
+import java.io.IOException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
+import datawave.core.iterators.DatawaveFieldIndexRegexIteratorJexl;
+import datawave.query.iterator.DocumentIterator;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.DocumentAggregatingIterator;
+import datawave.query.iterator.logic.IndexIteratorBridge;
 
 /**
  * A convenience class that aggregates a field, regex, source iterator, normalizer mappings, index only fields, data type filter and key transformer when

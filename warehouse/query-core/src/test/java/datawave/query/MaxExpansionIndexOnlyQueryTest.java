@@ -1,5 +1,19 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.NOT_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
 import datawave.query.testframework.AbstractFunctionalQuery;
@@ -9,19 +23,6 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.MaxExpandCityFields;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.NOT_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class MaxExpansionIndexOnlyQueryTest extends AbstractFunctionalQuery {
 

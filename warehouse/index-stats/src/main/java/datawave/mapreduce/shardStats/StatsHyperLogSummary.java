@@ -1,13 +1,5 @@
 package datawave.mapreduce.shardStats;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.io.BytesWritable;
-import org.apache.hadoop.io.VIntWritable;
-import org.apache.hadoop.io.VLongWritable;
-import org.apache.hadoop.io.WritableComparable;
-import org.apache.log4j.Logger;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
@@ -18,6 +10,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Objects;
+
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.BytesWritable;
+import org.apache.hadoop.io.VIntWritable;
+import org.apache.hadoop.io.VLongWritable;
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.log4j.Logger;
+
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 /**
  * POJO that contains the mapper summation of the statistical counts for each field name/dataype pair. The data consists of the following:

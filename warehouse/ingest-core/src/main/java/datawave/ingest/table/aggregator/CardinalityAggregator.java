@@ -1,13 +1,14 @@
 package datawave.ingest.table.aggregator;
 
-import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import java.io.IOException;
+import java.util.Iterator;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Iterator;
+import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 public class CardinalityAggregator extends PropogatingCombiner {
 

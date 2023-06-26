@@ -5,15 +5,17 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-import com.google.common.collect.Lists;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.Lists;
+
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
 
 public class DatawaveRoleManagerTest {
 

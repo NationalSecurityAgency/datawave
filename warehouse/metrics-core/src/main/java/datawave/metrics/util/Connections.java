@@ -1,7 +1,7 @@
 package datawave.metrics.util;
 
-import datawave.ingest.table.config.AbstractTableConfigHelper;
-import datawave.metrics.config.MetricsConfig;
+import java.util.LinkedList;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -12,7 +12,8 @@ import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import java.util.LinkedList;
+import datawave.ingest.table.config.AbstractTableConfigHelper;
+import datawave.metrics.config.MetricsConfig;
 
 public class Connections {
     private static final Logger log = Logger.getLogger(Connections.class);

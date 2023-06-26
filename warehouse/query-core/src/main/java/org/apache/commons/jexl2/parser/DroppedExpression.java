@@ -1,11 +1,12 @@
 package org.apache.commons.jexl2.parser;
 
+import java.util.function.Function;
+
 import com.google.common.collect.Lists;
+
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-
-import java.util.function.Function;
 
 /**
  * Represents a node which captures an expression which will be dropped/ignored. The ignored expression will be assigned to the _Query_ variable.

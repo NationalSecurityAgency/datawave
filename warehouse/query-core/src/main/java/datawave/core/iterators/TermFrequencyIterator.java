@@ -8,9 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.query.data.parsers.TermFrequencyKey;
-import datawave.query.Constants;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -24,6 +21,9 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
+
+import datawave.query.Constants;
+import datawave.query.data.parsers.TermFrequencyKey;
 
 /**
  * An iterator for the Datawave shard table, it searches TermFrequency keys for a list of terms and values. It is assumed that the range specified includes all

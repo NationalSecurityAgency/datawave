@@ -1,12 +1,12 @@
 package datawave.configuration;
 
-import org.apache.hadoop.conf.Configuration;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Runs a configuration comparison between two DATA-config.xml files.

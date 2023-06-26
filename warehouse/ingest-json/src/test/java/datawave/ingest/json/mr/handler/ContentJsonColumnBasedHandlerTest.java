@@ -1,16 +1,13 @@
 package datawave.ingest.json.mr.handler;
 
-import datawave.ingest.json.config.helper.JsonDataTypeHelper;
-import datawave.ingest.json.config.helper.JsonIngestHelper;
-import datawave.ingest.json.mr.input.JsonRecordReader;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
-import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.TableName;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Enumeration;
+import java.util.TimeZone;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -29,13 +26,17 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Enumeration;
-import java.util.TimeZone;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.json.config.helper.JsonDataTypeHelper;
+import datawave.ingest.json.config.helper.JsonIngestHelper;
+import datawave.ingest.json.mr.input.JsonRecordReader;
+import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.tokenize.ContentIndexingColumnBasedHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.TableName;
 
 public class ContentJsonColumnBasedHandlerTest {
 

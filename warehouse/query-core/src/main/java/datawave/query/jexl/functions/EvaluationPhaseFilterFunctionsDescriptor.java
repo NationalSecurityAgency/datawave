@@ -8,16 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.query.Constants;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
-import datawave.query.util.DateIndexHelper;
-import datawave.query.util.MetadataHelper;
-
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -28,6 +18,16 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+
+import datawave.query.Constants;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
+import datawave.query.util.DateIndexHelper;
+import datawave.query.util.MetadataHelper;
 
 /**
  * Evaluation phase filter functions cannot be evaluated against index-only fields

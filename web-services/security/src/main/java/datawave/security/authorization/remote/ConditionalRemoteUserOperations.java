@@ -1,16 +1,17 @@
 package datawave.security.authorization.remote;
 
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.user.AuthorizationsListBase;
-import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.result.GenericResponse;
+import java.util.Collections;
+import java.util.function.Function;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.function.Function;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.user.AuthorizationsListBase;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.GenericResponse;
 
 /**
  * A conditional remote user operations will only invoke the delegate remote service base on a specified function of the specified principal. For example we may

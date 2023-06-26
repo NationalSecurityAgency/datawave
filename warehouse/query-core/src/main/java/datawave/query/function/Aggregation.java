@@ -1,19 +1,21 @@
 package datawave.query.function;
 
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+
 import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-
-import java.util.Map.Entry;
 
 public class Aggregation implements Function<Entry<DocumentData,Document>,Entry<Key,Document>> {
     private static final Logger log = Logger.getLogger(Aggregation.class);

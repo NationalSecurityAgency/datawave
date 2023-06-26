@@ -1,37 +1,12 @@
 package datawave.webservice.query.model;
 
-import com.google.common.collect.Sets;
-import datawave.annotation.Required;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.query.model.FieldMapping;
-import datawave.query.model.ModelKeyParser;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.cache.AccumuloTableCache;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.exception.NotFoundException;
-import datawave.webservice.common.exception.PreConditionFailedException;
-import datawave.webservice.model.ModelList;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.result.VoidResponse;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.MutationsRejectedException;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.user.RegExFilter;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.StringUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -55,13 +30,41 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.user.RegExFilter;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.StringUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import com.google.common.collect.Sets;
+
+import datawave.annotation.Required;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.query.model.FieldMapping;
+import datawave.query.model.ModelKeyParser;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.cache.AccumuloTableCache;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.common.exception.NotFoundException;
+import datawave.webservice.common.exception.PreConditionFailedException;
+import datawave.webservice.model.ModelList;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * Service that supports manipulation of models. The models are contained in the data dictionary table.

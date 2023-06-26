@@ -1,7 +1,12 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -10,12 +15,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 
 /**
  * The TabletLocationHashPartitioner will look up the shard tablet servers, sort those tablet servers and then partition based on the index into that sorted

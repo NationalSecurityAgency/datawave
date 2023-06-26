@@ -31,19 +31,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.FailedLoginException;
 
-import com.google.common.collect.Lists;
-import datawave.security.auth.DatawaveCredential;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUserService;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.JWTTokenHandler;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
-import datawave.security.util.MockCallbackHandler;
-import datawave.security.util.MockDatawaveCertVerifier;
-
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
 import org.easymock.Mock;
@@ -54,6 +41,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
+
+import com.google.common.collect.Lists;
+
+import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.JWTTokenHandler;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
+import datawave.security.util.MockCallbackHandler;
+import datawave.security.util.MockDatawaveCertVerifier;
 
 @RunWith(EasyMockRunner.class)
 public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {

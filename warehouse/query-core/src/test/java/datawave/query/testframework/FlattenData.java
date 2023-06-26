@@ -1,9 +1,9 @@
 package datawave.query.testframework;
 
-import datawave.ingest.json.util.JsonObjectFlattener;
-
 import java.util.List;
 import java.util.Map;
+
+import datawave.ingest.json.util.JsonObjectFlattener;
 
 /**
  * POJO for data related to test classes that use a JSON cityFlatten.

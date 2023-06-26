@@ -1,10 +1,9 @@
 package datawave.query.iterator.logic;
 
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttributeFactory;
-import datawave.query.iterator.DocumentIterator;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.util.TypeMetadata;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -13,9 +12,11 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
+import datawave.query.iterator.DocumentIterator;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.util.TypeMetadata;
 
 /**
  * This iterator is a regex ivarator that enables datatype filtering, time filtering, and field index document aggregation

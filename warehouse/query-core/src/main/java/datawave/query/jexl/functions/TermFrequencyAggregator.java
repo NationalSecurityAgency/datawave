@@ -6,18 +6,18 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.Constants;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
 
 /**

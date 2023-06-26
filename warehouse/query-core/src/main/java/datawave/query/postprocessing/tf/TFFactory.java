@@ -1,16 +1,18 @@
 package datawave.query.postprocessing.tf;
 
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.data.type.Type;
 import datawave.query.attributes.Document;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class TFFactory {
     private static final Logger log = Logger.getLogger(TFFactory.class);

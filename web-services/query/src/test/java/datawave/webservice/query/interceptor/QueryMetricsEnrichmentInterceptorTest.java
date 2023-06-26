@@ -1,16 +1,30 @@
 package datawave.webservice.query.interceptor;
 
-import com.google.common.io.CountingOutputStream;
-import datawave.microservice.querymetric.QueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.security.util.DnUtils;
-import datawave.webservice.query.annotation.EnrichQueryMetrics;
-import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.runner.RunningQuery;
-import datawave.webservice.result.BaseQueryResponse;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.geq;
+import static org.easymock.EasyMock.gt;
+import static org.easymock.EasyMock.isA;
+import static org.powermock.reflect.Whitebox.setInternalState;
+
+import java.io.OutputStream;
+import java.lang.annotation.Annotation;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.UUID;
+
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.naming.spi.InitialContextFactory;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.ext.WriterInterceptorContext;
+
 import org.easymock.Capture;
 import org.easymock.IAnswer;
 import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
@@ -29,29 +43,18 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
-import javax.naming.spi.InitialContextFactory;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.ext.WriterInterceptorContext;
-import java.io.OutputStream;
-import java.lang.annotation.Annotation;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Hashtable;
-import java.util.UUID;
+import com.google.common.io.CountingOutputStream;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.geq;
-import static org.easymock.EasyMock.gt;
-import static org.easymock.EasyMock.isA;
-import static org.powermock.reflect.Whitebox.setInternalState;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.security.util.DnUtils;
+import datawave.webservice.query.annotation.EnrichQueryMetrics;
+import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.interceptor.QueryMetricsEnrichmentInterceptor.QueryCall;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.result.BaseQueryResponse;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(FindAnnotation.class)

@@ -1,5 +1,14 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
+import java.io.IOException;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.log4j.Logger;
+
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue.EdgeValueBuilder;
 import datawave.edge.util.EdgeValueHelper;
@@ -12,14 +21,6 @@ import datawave.ingest.mapreduce.handler.edge.define.VertexValue.ValueType;
 import datawave.marking.MarkingFunctions;
 import datawave.marking.MarkingFunctions.Exception;
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Combines an EdgeDefinition with values obtained from Event data.

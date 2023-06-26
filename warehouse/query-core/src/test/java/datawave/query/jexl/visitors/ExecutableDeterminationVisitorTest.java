@@ -1,9 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.util.MetadataHelper;
+import static org.hamcrest.CoreMatchers.any;
+import static org.hamcrest.CoreMatchers.anything;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -19,15 +25,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-
-import static org.hamcrest.CoreMatchers.any;
-import static org.hamcrest.CoreMatchers.anything;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.util.MetadataHelper;
 
 public class ExecutableDeterminationVisitorTest extends EasyMockSupport {
     private ShardQueryConfiguration config;

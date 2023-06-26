@@ -1,9 +1,9 @@
 package datawave.query.testframework;
 
-import org.apache.hadoop.conf.Configuration;
-
 import java.net.URI;
 import java.util.function.BiFunction;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Defines the types of files that are supported by the test framework.

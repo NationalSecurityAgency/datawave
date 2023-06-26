@@ -1,20 +1,23 @@
 package datawave.webservice.edgedictionary;
 
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectReader;
+
 import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.List;
 
 /**
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.

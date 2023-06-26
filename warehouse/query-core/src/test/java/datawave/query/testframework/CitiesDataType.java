@@ -1,18 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.data.type.GeoType;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
-import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.input.reader.EventRecordReader;
-import datawave.marking.MarkingFunctions;
-
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -23,6 +10,19 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
+import datawave.data.normalizer.Normalizer;
+import datawave.data.type.GeoType;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.input.reader.EventRecordReader;
+import datawave.marking.MarkingFunctions;
 
 /**
  * Contains all of the relevant data needed to configure any of the cities data types.

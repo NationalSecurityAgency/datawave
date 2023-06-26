@@ -1,16 +1,18 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.collect.Lists;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.Type;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.attributes.ValueTuple;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.apache.accumulo.core.data.Key;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collection;
-import java.util.Collections;
+import com.google.common.collect.Lists;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.attributes.ValueTuple;
 
 public class GroupingRequiredFilterFunctionsTest {
 

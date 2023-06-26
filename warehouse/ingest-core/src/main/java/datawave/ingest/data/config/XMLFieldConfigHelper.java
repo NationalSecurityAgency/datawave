@@ -1,17 +1,5 @@
 package datawave.ingest.data.config;
 
-import com.google.common.collect.ImmutableSet;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import org.apache.log4j.Logger;
-import org.apache.xerces.jaxp.SAXParserFactoryImpl;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -19,6 +7,21 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.log4j.Logger;
+import org.apache.xerces.jaxp.SAXParserFactoryImpl;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import com.google.common.collect.ImmutableSet;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
 
 /** Helper class to read XML based Field Configurations */
 public final class XMLFieldConfigHelper implements FieldConfigHelper {

@@ -1,7 +1,5 @@
 package datawave.core.iterators.uid;
 
-import datawave.ingest.protobuf.Uid;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Value;
@@ -9,6 +7,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
 
 /**
  * <p>
