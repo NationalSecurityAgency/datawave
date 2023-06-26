@@ -2,21 +2,6 @@ package datawave.ingest.mapreduce.handler.dateindex;
 
 import java.util.BitSet;
 
-import datawave.data.normalizer.DateNormalizer;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.RawRecordContainerImplTest;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.BaseNormalizedContent;
-import datawave.ingest.data.config.DataTypeHelper.Properties;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.table.config.DateIndexTableConfigHelper;
-import datawave.policy.IngestPolicyEnforcer;
-
-import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -31,6 +16,21 @@ import org.junit.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.data.normalizer.DateNormalizer;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.RawRecordContainerImplTest;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.BaseNormalizedContent;
+import datawave.ingest.data.config.DataTypeHelper.Properties;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.table.config.DateIndexTableConfigHelper;
+import datawave.policy.IngestPolicyEnforcer;
+import datawave.util.TableName;
 
 public class DateIndexDataTypeHandlerTest {
 

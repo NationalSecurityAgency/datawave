@@ -1,19 +1,21 @@
 package datawave.query.postprocessing.tf;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Collections;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.junit.Test;
+
 import com.google.common.collect.Sets;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.jexl.JexlASTHelper;
-import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
-
-import java.util.Collections;
-import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
 
 public class DocumentKeysFunctionTest {
 

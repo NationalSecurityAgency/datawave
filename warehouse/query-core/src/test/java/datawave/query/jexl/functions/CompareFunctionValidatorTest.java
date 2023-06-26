@@ -1,11 +1,12 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.jexl.JexlNodeFactory;
-import org.junit.Test;
+import static org.junit.Assert.assertThrows;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertThrows;
+import org.junit.Test;
+
+import datawave.query.jexl.JexlNodeFactory;
 
 public class CompareFunctionValidatorTest {
     @Test

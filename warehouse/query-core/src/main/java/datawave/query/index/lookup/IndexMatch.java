@@ -5,14 +5,14 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Set;
 
-import datawave.query.jexl.JexlNodeFactory;
-
-import datawave.query.language.parser.jexl.JexlNodeSet;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.hadoop.io.WritableComparable;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.language.parser.jexl.JexlNodeSet;
 
 public class IndexMatch implements WritableComparable<IndexMatch> {
 

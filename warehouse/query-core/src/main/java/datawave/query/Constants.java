@@ -1,10 +1,11 @@
 package datawave.query;
 
-import datawave.query.jexl.functions.ContentFunctions;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
+
+import datawave.query.jexl.functions.ContentFunctions;
 
 public class Constants {
     public static final String NULL = "\u0000";

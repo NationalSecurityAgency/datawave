@@ -6,9 +6,10 @@ import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.ScheduledReporter;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
 
 /**
  * Configuration for the CDI Dropwizard {@link MetricRegistry}.

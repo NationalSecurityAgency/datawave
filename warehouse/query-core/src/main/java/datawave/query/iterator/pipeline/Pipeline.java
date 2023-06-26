@@ -4,14 +4,15 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Document;
-import datawave.query.iterator.DocumentSpecificNestedIterator;
-import datawave.query.iterator.NestedQueryIterator;
-import datawave.query.iterator.profile.QuerySpanCollector;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+
+import datawave.query.attributes.Document;
+import datawave.query.iterator.DocumentSpecificNestedIterator;
+import datawave.query.iterator.NestedQueryIterator;
+import datawave.query.iterator.profile.QuerySpanCollector;
 
 /**
  * A pipeline that can be executed as a runnable

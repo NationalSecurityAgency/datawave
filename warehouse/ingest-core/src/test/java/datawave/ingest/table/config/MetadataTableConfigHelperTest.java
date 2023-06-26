@@ -6,8 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -22,6 +20,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
+
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class MetadataTableConfigHelperTest {
 

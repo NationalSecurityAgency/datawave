@@ -19,7 +19,6 @@ import javax.xml.bind.annotation.XmlType;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.result.event.DefaultFacets;
 import datawave.webservice.query.result.event.FacetsBase;
-
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;

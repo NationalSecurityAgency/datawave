@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -16,6 +14,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
+
+import datawave.iterators.filter.AgeOffConfigParams;
 
 /**
  * Data type age off filter. Traverses through indexed tables

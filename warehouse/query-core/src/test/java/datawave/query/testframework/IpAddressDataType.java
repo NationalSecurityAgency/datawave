@@ -1,13 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.data.type.IpAddressType;
-import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.input.reader.EventRecordReader;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -15,6 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.log4j.Logger;
+
+import datawave.data.normalizer.Normalizer;
+import datawave.data.type.IpAddressType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.input.reader.EventRecordReader;
 
 /**
  * Data configuration for IP address data.

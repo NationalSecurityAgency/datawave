@@ -1,6 +1,10 @@
 package datawave.mapreduce.shardStats;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -10,10 +14,7 @@ import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.lib.map.WrappedMapper;
 import org.apache.hadoop.mapreduce.lib.reduce.WrappedReducer;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 /**
  * Mock driver for Reducer testing.

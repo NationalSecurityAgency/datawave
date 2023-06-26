@@ -15,12 +15,12 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.result.BaseQueryResponse;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.result.BaseQueryResponse;
 
 @XmlRootElement(name = "BulkResultsInfoResponseList")
 @XmlAccessorType(XmlAccessType.NONE)

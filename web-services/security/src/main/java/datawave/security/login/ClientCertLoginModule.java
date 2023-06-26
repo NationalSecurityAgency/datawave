@@ -13,11 +13,12 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 
-import datawave.security.auth.DatawaveCredential;
 import org.jboss.logging.Logger;
 import org.jboss.security.ClientLoginModule;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.callback.ObjectCallback;
+
+import datawave.security.auth.DatawaveCredential;
 
 /**
  * A {@link LoginModule} intended for use with {@link ClientLoginModule}. Normally, when a client wishes to make a call to a secured EJB, it authenticates to

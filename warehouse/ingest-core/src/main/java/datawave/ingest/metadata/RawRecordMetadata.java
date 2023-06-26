@@ -1,13 +1,13 @@
 package datawave.ingest.metadata;
 
+import org.apache.accumulo.core.data.Value;
+
+import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
-
-import org.apache.accumulo.core.data.Value;
-
-import com.google.common.collect.Multimap;
 
 public interface RawRecordMetadata {
 

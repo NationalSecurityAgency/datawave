@@ -1,12 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlNodeFactory;
-
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+
+import datawave.query.jexl.JexlNodeFactory;
 
 public class TreeWrappingRebuildingVisitor extends RebuildingVisitor {
 

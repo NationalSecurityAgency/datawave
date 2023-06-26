@@ -1,15 +1,17 @@
 package datawave.query.predicate;
 
-import datawave.query.attributes.Document;
-import datawave.query.data.parsers.DatawaveKey;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
+import static java.util.AbstractMap.SimpleEntry;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Set;
 
-import static java.util.AbstractMap.SimpleEntry;
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
 
 /**
  * An EventDataQueryFilter for TermFrequencies, for use in a TLDQuery

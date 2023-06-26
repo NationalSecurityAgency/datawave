@@ -2,12 +2,12 @@ package datawave.resteasy.util;
 
 import java.lang.annotation.Annotation;
 
-import datawave.annotation.Required;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jboss.resteasy.spi.StringParameterUnmarshaller;
 import org.jboss.resteasy.util.FindAnnotation;
+
+import datawave.annotation.Required;
 
 public class RequiredProcessor implements StringParameterUnmarshaller<String> {
 

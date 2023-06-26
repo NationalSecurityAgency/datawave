@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import datawave.ingest.protobuf.Uid;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -18,6 +16,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
 
 /**
  *

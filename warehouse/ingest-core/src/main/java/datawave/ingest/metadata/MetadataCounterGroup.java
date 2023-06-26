@@ -3,9 +3,10 @@ package datawave.ingest.metadata;
 import java.util.Collection;
 import java.util.HashMap;
 
-import com.google.common.base.Objects;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import com.google.common.base.Objects;
 
 public class MetadataCounterGroup {
     private static final Logger log = Logger.getLogger(MetadataCounterGroup.class);

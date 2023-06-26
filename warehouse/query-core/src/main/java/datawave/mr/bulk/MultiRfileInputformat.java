@@ -6,14 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import java.util.concurrent.TimeUnit;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.job.RFileInputFormat;
-import datawave.mr.bulk.split.FileRangeSplit;
-import datawave.mr.bulk.split.RfileSplit;
-import datawave.mr.bulk.split.TabletSplitSplit;
-import datawave.query.util.Tuple2;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -42,6 +35,13 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
+
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.job.RFileInputFormat;
+import datawave.mr.bulk.split.FileRangeSplit;
+import datawave.mr.bulk.split.RfileSplit;
+import datawave.mr.bulk.split.TabletSplitSplit;
+import datawave.query.util.Tuple2;
 
 public class MultiRfileInputformat extends RFileInputFormat {
     /**

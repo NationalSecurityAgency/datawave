@@ -1,16 +1,32 @@
 package datawave.ingest.mapreduce.job.reduce;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
-import datawave.ingest.config.TableConfigCache;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
-import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.ingest.metric.IngestOutput;
+import static datawave.ingest.config.TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY;
+import static datawave.ingest.config.TableConfigCache.DEFAULT_ACCUMULO_CONFIG_CACHE_PATH;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.INSTANCE_NAME;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.PASSWORD;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.USERNAME;
+import static datawave.ingest.data.config.ingest.AccumuloHelper.ZOOKEEPERS;
+import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
+import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.INGEST_VALUE_DEDUP_AGGREGATION_KEY;
+import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.MILLISPERDAY;
+import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.USE_AGGREGATOR_PROPERTY;
+import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_CLASS;
+import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS;
+import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_COUNTERS;
+import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_PARTITIONING_COUNTERS;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
@@ -36,32 +52,18 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
 
-import static datawave.ingest.config.TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY;
-import static datawave.ingest.config.TableConfigCache.DEFAULT_ACCUMULO_CONFIG_CACHE_PATH;
-import static datawave.ingest.data.config.ingest.AccumuloHelper.INSTANCE_NAME;
-import static datawave.ingest.data.config.ingest.AccumuloHelper.PASSWORD;
-import static datawave.ingest.data.config.ingest.AccumuloHelper.USERNAME;
-import static datawave.ingest.data.config.ingest.AccumuloHelper.ZOOKEEPERS;
-import static datawave.ingest.mapreduce.job.TableConfigurationUtil.ITERATOR_CLASS_MARKER;
-import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.INGEST_VALUE_DEDUP_AGGREGATION_KEY;
-import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.MILLISPERDAY;
-import static datawave.ingest.mapreduce.job.reduce.AggregatingReducer.USE_AGGREGATOR_PROPERTY;
-import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_CLASS;
-import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS;
-import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_COUNTERS;
-import static datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer.VERBOSE_PARTITIONING_COUNTERS;
-import static org.junit.Assert.assertEquals;
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.ingest.metric.IngestOutput;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({AggregatingReducer.class, TableConfigurationUtil.class})

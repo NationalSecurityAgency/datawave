@@ -1,12 +1,13 @@
 package datawave.iterators;
 
-import datawave.data.MetadataCardinalityCounts;
+import java.util.Iterator;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.log4j.Logger;
 
-import java.util.Iterator;
+import datawave.data.MetadataCardinalityCounts;
 
 /**
  * Combines count metadata with different values.

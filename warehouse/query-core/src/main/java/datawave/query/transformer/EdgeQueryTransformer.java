@@ -1,6 +1,17 @@
 package datawave.query.transformer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.log4j.Logger;
+
 import com.google.protobuf.InvalidProtocolBufferException;
+
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue;
@@ -11,15 +22,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic, EdgeModelAware {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);

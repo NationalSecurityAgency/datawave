@@ -1,9 +1,9 @@
 package datawave.query.jexl.lookups;
 
+import java.util.Set;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
-
-import java.util.Set;
 
 /**
  * Abstract class which provides a framework for index lookups

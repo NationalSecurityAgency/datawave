@@ -1,8 +1,10 @@
 package datawave.core.iterators;
 
-import datawave.query.Constants;
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import java.io.File;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.conf.Configuration;
@@ -15,10 +17,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
+import datawave.query.Constants;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
 public class DatawaveFieldIndexIteratorJexlTest {
 

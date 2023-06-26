@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
@@ -19,6 +18,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 
 import datawave.query.iterator.QueryIterator;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.configuration.QueryData;

@@ -1,10 +1,13 @@
 package datawave.query.discovery;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSortedMap;
-import com.google.common.collect.Sets;
-import datawave.query.Constants;
+import static datawave.query.discovery.IndexMatchingIterator.CONF;
+import static datawave.query.discovery.IndexMatchingIterator.REVERSE_INDEX;
+import static datawave.query.discovery.IndexMatchingIterator.gson;
+import static org.junit.Assert.assertEquals;
+
+import java.util.ArrayList;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -15,13 +18,12 @@ import org.javatuples.Pair;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Set;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSortedMap;
+import com.google.common.collect.Sets;
 
-import static datawave.query.discovery.IndexMatchingIterator.CONF;
-import static datawave.query.discovery.IndexMatchingIterator.REVERSE_INDEX;
-import static datawave.query.discovery.IndexMatchingIterator.gson;
-import static org.junit.Assert.assertEquals;
+import datawave.query.Constants;
 
 public class IndexMatchingIteratorTest {
     static Set<Pair<String,String>> terms;

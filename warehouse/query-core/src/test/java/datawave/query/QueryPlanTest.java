@@ -1,5 +1,16 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -14,16 +25,6 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import static datawave.query.testframework.RawDataManager.RE_OP;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 /**
  * QueryPlanTest verifies that the query plan is being properly set in the query metrics, even in cases where the query fails during creation.

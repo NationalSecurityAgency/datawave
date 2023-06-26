@@ -1,12 +1,12 @@
 package datawave.ingest.data.config.ingest;
 
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Multimap;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Simple configuration object for use with the Metadata ingest software.

@@ -1,11 +1,11 @@
 package datawave.common.util;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class MultiComparatorTest {
 

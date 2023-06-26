@@ -1,8 +1,8 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.jexl.ArithmeticJexlEngines;
-
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
+
+import datawave.query.jexl.ArithmeticJexlEngines;
 
 /**
  * Utility for getting the function class associated with a JEXL function.

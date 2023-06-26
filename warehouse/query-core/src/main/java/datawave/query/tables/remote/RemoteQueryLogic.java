@@ -1,7 +1,7 @@
 package datawave.query.tables.remote;
 
-import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.security.authorization.UserOperations;
+import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.query.logic.QueryLogic;
 
 /**

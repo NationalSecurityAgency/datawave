@@ -1,13 +1,14 @@
 package datawave.query.jexl.functions;
 
+import java.util.ArrayList;
+
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
+
 import datawave.data.hash.UID;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
-
-import java.util.ArrayList;
 
 public class TLDEventFieldAggregator extends EventFieldAggregator {
     public TLDEventFieldAggregator(String field, EventDataQueryFilter filter, int maxNextCount, TypeMetadata typeMetadata, String defaultTypeClass) {

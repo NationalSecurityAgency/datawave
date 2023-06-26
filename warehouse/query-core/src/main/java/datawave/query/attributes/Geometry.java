@@ -1,13 +1,12 @@
 package datawave.query.attributes;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import datawave.data.normalizer.AbstractGeometryNormalizer;
-import datawave.data.normalizer.Normalizer;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.webservice.query.data.ObjectSizeOf;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
@@ -15,12 +14,15 @@ import org.locationtech.jts.io.ParseException;
 import org.locationtech.jts.io.WKBReader;
 import org.locationtech.jts.io.WKBWriter;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
+import datawave.data.normalizer.AbstractGeometryNormalizer;
+import datawave.data.normalizer.Normalizer;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.webservice.query.data.ObjectSizeOf;
 
 public class Geometry extends Attribute<Geometry> implements Serializable {
     private static final long serialVersionUID = 1L;

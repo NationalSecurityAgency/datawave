@@ -1,8 +1,11 @@
 package datawave.ingest.csv;
 
-import datawave.ingest.config.TableConfigCache;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -18,11 +21,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 
 public class TableConfigurationUtilTest {
 

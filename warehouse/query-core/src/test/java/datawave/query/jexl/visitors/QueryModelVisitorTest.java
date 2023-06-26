@@ -1,25 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
-import datawave.data.type.Type;
-import datawave.query.QueryParameters;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.model.QueryModel;
-import datawave.query.util.MockMetadataHelper;
-import datawave.test.JexlNodeAssert;
-import datawave.util.StringUtils;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ASTReference;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,9 +12,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTReference;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.Type;
+import datawave.query.QueryParameters;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.model.QueryModel;
+import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
+import datawave.util.StringUtils;
 
 public class QueryModelVisitorTest {
 

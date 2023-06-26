@@ -4,11 +4,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
-
-import datawave.query.iterator.NestedIterator;
+import org.apache.commons.jexl2.parser.JexlNode;
 
 import com.google.common.collect.HashMultimap;
-import org.apache.commons.jexl2.parser.JexlNode;
+
+import datawave.query.iterator.NestedIterator;
 
 /**
  * Provides semantics for adding sources to a nested iterator but deferring the creation of iterator. This is meant to be used in a visitor.

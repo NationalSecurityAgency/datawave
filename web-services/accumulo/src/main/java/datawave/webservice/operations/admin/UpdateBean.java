@@ -1,10 +1,5 @@
 package datawave.webservice.operations.admin;
 
-import datawave.webservice.operations.remote.RemoteAdminService;
-import datawave.webservice.request.UpdateRequest;
-import datawave.webservice.response.UpdateResponse;
-import datawave.webservice.response.ValidateVisibilityResponse;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
@@ -21,6 +16,11 @@ import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+
+import datawave.webservice.operations.remote.RemoteAdminService;
+import datawave.webservice.request.UpdateRequest;
+import datawave.webservice.response.UpdateResponse;
+import datawave.webservice.response.ValidateVisibilityResponse;
 
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})

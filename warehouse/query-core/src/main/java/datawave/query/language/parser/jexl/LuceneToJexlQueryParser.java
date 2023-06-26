@@ -6,21 +6,22 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.config.ConfigurationKey;
+import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
+import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfigHandler.ConfigurationKeys;
+
+import datawave.ingest.data.tokenize.StandardAnalyzer;
 import datawave.query.language.builder.jexl.JexlTreeBuilder;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.parser.lucene.AccumuloSyntaxParser;
 import datawave.query.language.parser.lucene.QueryConfigHandler;
+import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
-import datawave.query.language.processor.lucene.QueryNodeProcessorFactory;
-import org.apache.lucene.analysis.Analyzer;
-import datawave.ingest.data.tokenize.StandardAnalyzer;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.config.ConfigurationKey;
-import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
-import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfigHandler.ConfigurationKeys;
 
 public class LuceneToJexlQueryParser implements QueryParser {
     private static final String[] DEFAULT_TOKENIZED_FIELDS = {"TOKFIELD"};

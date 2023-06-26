@@ -1,16 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import org.apache.accumulo.core.client.TableExistsException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -25,6 +14,18 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 /**
  * Extracted from IngestJob Creates a splits file with all the requested tables, omitting the sharded ones Adds it to the specified work dir and sets the confi

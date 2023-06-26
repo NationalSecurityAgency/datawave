@@ -1,22 +1,17 @@
 package datawave.query.iterator;
 
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.hash.HashUID;
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDBuilder;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.data.parsers.EventKey;
-import datawave.query.data.parsers.FieldIndexKey;
-import datawave.query.data.parsers.KeyParser;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.tld.TLDFieldIndexAggregator;
-import datawave.query.util.TypeMetadata;
+import static datawave.util.TableName.SHARD;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -31,17 +26,24 @@ import org.apache.hadoop.io.Text;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
-import static datawave.util.TableName.SHARD;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.data.hash.HashUID;
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDBuilder;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.EventKey;
+import datawave.query.data.parsers.FieldIndexKey;
+import datawave.query.data.parsers.KeyParser;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.tld.TLDFieldIndexAggregator;
+import datawave.query.util.TypeMetadata;
 
 /**
  * Integration test for several field index related items

@@ -1,8 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.table.config.TableConfigHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.table.config.TableConfigHelper;
 
 /**
  * Creates {@link datawave.ingest.table.config.TableConfigHelper}s with optional Configuration overrides.

@@ -1,5 +1,19 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.GT_OP;
+import static datawave.query.testframework.RawDataManager.LT_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+
+import java.util.ArrayList;
+import java.util.Collection;
+
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -9,19 +23,6 @@ import datawave.query.testframework.GroupsDataType;
 import datawave.query.testframework.GroupsDataType.GroupField;
 import datawave.query.testframework.GroupsDataType.GroupsEntry;
 import datawave.query.testframework.GroupsIndexConfiguration;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.GT_OP;
-import static datawave.query.testframework.RawDataManager.LT_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
 
 public class GroupsQueryTest extends AbstractFunctionalQuery {
 

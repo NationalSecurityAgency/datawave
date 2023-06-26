@@ -7,15 +7,6 @@ import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
-import datawave.policy.ExampleIngestPolicyEnforcer;
-
-import datawave.util.TableName;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -28,6 +19,15 @@ import org.junit.Before;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.tokenize.ExtendedContentIndexingColumnBasedHandler;
+import datawave.policy.ExampleIngestPolicyEnforcer;
+import datawave.util.TableName;
 
 /**
  *

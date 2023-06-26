@@ -3,8 +3,10 @@ package datawave.core.iterators.querylock;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-import datawave.core.iterators.filesystem.FileSystemCache;
+
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+
+import datawave.core.iterators.filesystem.FileSystemCache;
 
 /**
  * Created on 2/6/17.

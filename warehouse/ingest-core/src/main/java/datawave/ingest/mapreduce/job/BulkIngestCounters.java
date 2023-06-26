@@ -1,14 +1,15 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
-import java.util.Map;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 /**
  * Counters for tracking the number of records inserted into bulk ingest tables. This class allows the user to register counters per table and then increment

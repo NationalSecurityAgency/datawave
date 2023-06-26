@@ -7,14 +7,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
 
 /**
  * The iterator skips entries in the global index for entries not matching one of a set of matching patterns

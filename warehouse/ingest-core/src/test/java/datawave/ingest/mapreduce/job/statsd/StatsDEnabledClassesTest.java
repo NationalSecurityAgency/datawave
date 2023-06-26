@@ -1,11 +1,10 @@
 package datawave.ingest.mapreduce.job.statsd;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.metadata.RawRecordMetadata;
+import java.io.IOException;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -28,10 +27,13 @@ import org.apache.hadoop.security.Credentials;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.metadata.RawRecordMetadata;
 
 /**
  * Created on 4/27/16.

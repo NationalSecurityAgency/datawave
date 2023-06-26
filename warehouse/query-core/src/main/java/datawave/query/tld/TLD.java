@@ -1,16 +1,17 @@
 package datawave.query.tld;
 
-import com.google.common.collect.Lists;
+import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.query.Constants.MAX_UNICODE_STRING;
+import static datawave.query.Constants.NULL;
+
+import java.util.ArrayList;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
-import java.util.ArrayList;
-
-import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
-import static datawave.query.Constants.MAX_UNICODE_STRING;
-import static datawave.query.Constants.NULL;
+import com.google.common.collect.Lists;
 
 /**
  * Provides a collection of utility methods for operating with Top Level Document keys.

@@ -4,10 +4,10 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.hadoop.conf.Configuration;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.util.time.DateHelper;
-
-import org.apache.hadoop.conf.Configuration;
 
 public class ShardIdFactory {
 

@@ -1,9 +1,10 @@
 package datawave.query.ancestor;
 
-import datawave.query.iterator.QueryIteratorIT;
+import java.io.IOException;
+
 import org.junit.Before;
 
-import java.io.IOException;
+import datawave.query.iterator.QueryIteratorIT;
 
 /**
  * AncestorQueryIterator integration tests. Ancestor Query should find any hits event query finds plus its own unique cases

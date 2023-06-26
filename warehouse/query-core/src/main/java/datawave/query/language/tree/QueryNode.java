@@ -6,9 +6,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import datawave.query.search.FieldedTerm;
-
 import org.apache.log4j.Logger;
+
+import datawave.query.search.FieldedTerm;
 
 /**
  * This class serves as the basis for all nodes in the query tree, so all query nodes must extend this class.

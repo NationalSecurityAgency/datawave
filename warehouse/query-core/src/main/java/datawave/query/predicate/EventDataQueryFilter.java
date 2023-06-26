@@ -1,12 +1,13 @@
 package datawave.query.predicate;
 
-import datawave.query.attributes.Document;
+import java.util.Map;
+
+import javax.annotation.Nullable;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
-import javax.annotation.Nullable;
-import java.util.Map;
+import datawave.query.attributes.Document;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.

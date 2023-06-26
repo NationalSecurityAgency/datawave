@@ -1,5 +1,16 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+import static org.junit.Assert.assertEquals;
+
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
@@ -12,16 +23,6 @@ import datawave.query.testframework.CitiesDataType.CityField;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
-import static org.junit.Assert.assertEquals;
 
 public class LuceneQueryTest extends AbstractFunctionalQuery {
 

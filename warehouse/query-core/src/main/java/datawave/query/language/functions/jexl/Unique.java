@@ -1,14 +1,14 @@
 package datawave.query.language.functions.jexl;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+
 import datawave.query.attributes.UniqueFields;
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 /**
  * Function to determine uniqueness among documents given a set of fields and the levels of granularity that should be used for each fields. This function

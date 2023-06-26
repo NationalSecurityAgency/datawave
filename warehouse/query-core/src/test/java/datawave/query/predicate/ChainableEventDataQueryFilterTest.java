@@ -1,6 +1,8 @@
 package datawave.query.predicate;
 
-import datawave.query.attributes.Document;
+import java.util.AbstractMap;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.easymock.EasyMock;
@@ -8,8 +10,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.AbstractMap;
-import java.util.Map;
+import datawave.query.attributes.Document;
 
 public class ChainableEventDataQueryFilterTest {
     private ChainableEventDataQueryFilter filter;

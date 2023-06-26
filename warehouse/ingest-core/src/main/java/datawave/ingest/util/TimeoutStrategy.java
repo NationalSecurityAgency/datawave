@@ -1,8 +1,8 @@
 package datawave.ingest.util;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Tokenizes n-grams until an allowed number of milliseconds has elapsed since a specified start time, at which point a TimeoutException is thrown

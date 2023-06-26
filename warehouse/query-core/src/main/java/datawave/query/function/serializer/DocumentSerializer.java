@@ -3,14 +3,14 @@ package datawave.query.function.serializer;
 import java.nio.ByteBuffer;
 import java.util.Map.Entry;
 
-import datawave.query.DocumentSerialization;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
+
+import datawave.query.DocumentSerialization;
+import datawave.query.attributes.Document;
 
 public abstract class DocumentSerializer implements Function<Entry<Key,Document>,Entry<Key,Value>> {
     protected boolean reducedResponse;

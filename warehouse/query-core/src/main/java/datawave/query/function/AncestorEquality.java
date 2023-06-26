@@ -1,8 +1,8 @@
 package datawave.query.function;
 
-import org.apache.accumulo.core.data.Key;
-
 import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+
+import org.apache.accumulo.core.data.Key;
 
 /**
  * A key equality implementation that compares key prefixes to determine ancestor equality.

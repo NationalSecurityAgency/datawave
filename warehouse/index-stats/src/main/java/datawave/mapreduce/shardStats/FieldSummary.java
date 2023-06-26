@@ -1,8 +1,8 @@
 package datawave.mapreduce.shardStats;
 
-import org.apache.accumulo.core.data.Value;
-
 import java.io.IOException;
+
+import org.apache.accumulo.core.data.Value;
 
 /**
  * Summary for all values processed by the reducer for a single field name/datatype pair.

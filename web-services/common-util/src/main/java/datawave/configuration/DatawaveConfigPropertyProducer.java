@@ -1,8 +1,13 @@
 package datawave.configuration;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.impl.config.DefaultConfigPropertyProducer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
@@ -13,14 +18,9 @@ import javax.enterprise.inject.Specializes;
 import javax.enterprise.inject.spi.InjectionPoint;
 import javax.interceptor.Interceptor;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import org.apache.commons.lang.StringUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.impl.config.DefaultConfigPropertyProducer;
 
 /**
  * Extensions to DeltaSpike's {@link ConfigProperty} to handle comma-separated property lists and maps.

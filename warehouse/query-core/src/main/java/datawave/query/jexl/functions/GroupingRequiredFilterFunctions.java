@@ -1,8 +1,5 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.attributes.ValueTuple;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,6 +8,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
+
+import org.apache.log4j.Logger;
+
+import datawave.query.attributes.ValueTuple;
 
 /**
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GroupingRequiredFilterFunctionsDescriptor. This is kept as a separate class to reduce

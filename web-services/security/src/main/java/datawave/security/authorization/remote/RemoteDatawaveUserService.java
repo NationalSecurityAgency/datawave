@@ -1,30 +1,5 @@
 package datawave.security.authorization.remote;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.annotation.Metric;
-import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectReader;
-import datawave.configuration.RefreshableScope;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.CachedDatawaveUserService;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUserInfo;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.http.HttpHeaders;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.entity.ContentType;
-import org.apache.http.util.EntityUtils;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.enterprise.inject.Alternative;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Base64;
@@ -33,6 +8,34 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Priority;
+import javax.enterprise.inject.Alternative;
+import javax.inject.Inject;
+import javax.interceptor.Interceptor;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.http.HttpHeaders;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.util.EntityUtils;
+
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.annotation.Metric;
+import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectReader;
+
+import datawave.configuration.RefreshableScope;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.CachedDatawaveUserService;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 
 /**
  * A {@link CachedDatawaveUserService} that delegates all methods to a remote authorization microservice.

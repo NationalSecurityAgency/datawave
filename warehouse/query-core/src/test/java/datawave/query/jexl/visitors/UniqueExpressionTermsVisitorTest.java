@@ -1,10 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.test.JexlNodeAssert;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 
 public class UniqueExpressionTermsVisitorTest {
 

@@ -8,14 +8,14 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.Assert;
-import datawave.query.language.parser.ParseException;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.language.tree.ServerHeadNode;
-
 import org.junit.Test;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+
+import datawave.query.language.parser.ParseException;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.language.tree.ServerHeadNode;
 
 public class TestLuceneToJexlControlledQueryParser {
 

@@ -1,20 +1,21 @@
 package datawave.query.rewrite.jexl.visitors;
 
-import datawave.data.MetadataCardinalityCounts;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
-import datawave.query.util.MockMetadataHelper;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import datawave.data.MetadataCardinalityCounts;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PushdownLowSelectivityNodesVisitor;
+import datawave.query.util.MockMetadataHelper;
 
 public class PushdownLowSelectivityNodesVisitorTest {
     private static final Logger log = Logger.getLogger(PushdownLowSelectivityNodesVisitorTest.class);

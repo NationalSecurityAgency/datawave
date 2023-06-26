@@ -1,6 +1,11 @@
 package datawave.query.util;
 
-import datawave.data.normalizer.GeometryNormalizer;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.locationtech.geowave.core.index.ByteArrayRange;
 import org.locationtech.geowave.core.index.sfc.data.MultiDimensionalNumericData;
 import org.locationtech.jts.geom.Envelope;
@@ -9,11 +14,7 @@ import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import datawave.data.normalizer.GeometryNormalizer;
 
 /**
  * This utility class contains a variety of methods which can be used to perform operations on GeoWave ranges.

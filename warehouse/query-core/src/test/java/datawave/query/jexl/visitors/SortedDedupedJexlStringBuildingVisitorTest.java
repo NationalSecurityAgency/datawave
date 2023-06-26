@@ -1,19 +1,20 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Lists;
-import datawave.query.jexl.JexlASTHelper;
+import static datawave.query.jexl.JexlNodeFactory.buildEQNode;
+import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQueryWithoutParse;
 
-import datawave.query.jexl.JexlNodeFactory;
+import java.util.Arrays;
+
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Arrays;
+import com.google.common.collect.Lists;
 
-import static datawave.query.jexl.JexlNodeFactory.buildEQNode;
-import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQueryWithoutParse;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 
 public class SortedDedupedJexlStringBuildingVisitorTest {
 

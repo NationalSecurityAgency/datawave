@@ -1,19 +1,20 @@
 package datawave.iterators.filter;
 
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.Assert;
+
+import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
 
 public class TokenTtlTrieTest {
     public static Logger log = Logger.getLogger(TokenTtlTrieTest.class);

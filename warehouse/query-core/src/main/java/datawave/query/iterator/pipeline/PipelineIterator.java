@@ -1,23 +1,5 @@
 package datawave.query.iterator.pipeline;
 
-import datawave.core.iterators.IteratorThreadPoolManager;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.NestedQuery;
-import datawave.query.iterator.NestedQueryIterator;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.iterator.profile.QuerySpanCollector;
-import datawave.query.util.Tuple2;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.log4j.Logger;
-
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -27,6 +9,25 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import org.apache.log4j.Logger;
+
+import datawave.core.iterators.IteratorThreadPoolManager;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.NestedQuery;
+import datawave.query.iterator.NestedQueryIterator;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.util.Tuple2;
 
 /**
  * This is the iterator that handles the evaluation pipelines. Essentially it will queue up N evaluations. On each hasNext and next call, it will pull the

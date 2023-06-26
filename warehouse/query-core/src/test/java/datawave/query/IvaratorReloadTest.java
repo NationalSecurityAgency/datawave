@@ -1,10 +1,15 @@
 package datawave.query;
 
-import com.google.common.collect.Maps;
-import datawave.core.iterators.DatawaveFieldIndexRangeIteratorJexl;
-import datawave.query.iterator.SortedListKeyValueIterator;
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
+
+import java.io.File;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -23,15 +28,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.File;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.Maps;
 
-import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
+import datawave.core.iterators.DatawaveFieldIndexRangeIteratorJexl;
+import datawave.query.iterator.SortedListKeyValueIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
 /**
  * Verify that a rebuild of an ivarator will reuse the files from after a tear-down/rebuild

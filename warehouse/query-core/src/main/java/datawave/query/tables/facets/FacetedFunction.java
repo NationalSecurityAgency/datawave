@@ -4,16 +4,16 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import datawave.query.function.MergeSummarization;
-import datawave.query.function.deserializer.DocumentDeserializer;
-import datawave.query.attributes.Document;
-import datawave.query.function.serializer.DocumentSerializer;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
+
+import datawave.query.attributes.Document;
+import datawave.query.function.MergeSummarization;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.serializer.DocumentSerializer;
 
 /**
  *

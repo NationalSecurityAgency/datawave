@@ -1,12 +1,12 @@
 package datawave.query.util;
 
+import java.util.List;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryCollection;
 import org.locationtech.jts.io.WKTReader;
-
-import java.util.List;
 
 public class GeoUtilsTest {
 

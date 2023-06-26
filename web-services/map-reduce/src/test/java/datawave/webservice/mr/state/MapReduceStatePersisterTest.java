@@ -2,8 +2,8 @@ package datawave.webservice.mr.state;
 
 import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.powermock.api.easymock.PowerMock.createMock;
 import static org.powermock.api.easymock.PowerMock.createStrictMock;
@@ -19,19 +19,8 @@ import java.util.UUID;
 
 import javax.ejb.EJBContext;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
-import datawave.webservice.results.mr.MapReduceInfoResponse;
-import datawave.webservice.results.mr.MapReduceInfoResponseList;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -44,6 +33,18 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils.NpeUtils;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.mr.state.MapReduceStatePersisterBean.MapReduceState;
+import datawave.webservice.results.mr.MapReduceInfoResponse;
+import datawave.webservice.results.mr.MapReduceInfoResponseList;
 
 public class MapReduceStatePersisterTest {
 

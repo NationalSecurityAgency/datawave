@@ -4,9 +4,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
-import datawave.webservice.query.logic.QueryLogic;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
 import org.easymock.EasyMock;
@@ -19,6 +16,9 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.collect.Sets;
+
+import datawave.webservice.query.cache.CreatedQueryLogicCacheBean.Triple;
+import datawave.webservice.query.logic.QueryLogic;
 
 /**
  *

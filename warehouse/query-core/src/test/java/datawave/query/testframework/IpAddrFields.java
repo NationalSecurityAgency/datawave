@@ -1,11 +1,11 @@
 package datawave.query.testframework;
 
-import datawave.query.testframework.IpAddressDataType.IpAddrField;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import datawave.query.testframework.IpAddressDataType.IpAddrField;
 
 /**
  * Defines the indexes for the {@link IpAddressDataType}.

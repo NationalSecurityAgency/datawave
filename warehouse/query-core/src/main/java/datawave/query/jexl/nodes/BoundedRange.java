@@ -1,10 +1,11 @@
 package datawave.query.jexl.nodes;
 
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import java.util.function.Function;
+
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import java.util.function.Function;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * This is a node that can wrap an expression to mark that the source expression is a bounded range. A bounded range is a range that can be applied to only one

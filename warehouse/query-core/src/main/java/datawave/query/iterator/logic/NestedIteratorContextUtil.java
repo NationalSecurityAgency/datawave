@@ -1,12 +1,13 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.collect.TreeMultimap;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.Util;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import com.google.common.collect.TreeMultimap;
+
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.Util;
 
 /**
  * Class contains utilities for use on iterators that require context for evaluation

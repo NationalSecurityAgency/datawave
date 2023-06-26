@@ -1,20 +1,20 @@
 package datawave.query.jexl.functions;
 
-import datawave.data.normalizer.GeoNormalizer;
-import datawave.data.normalizer.GeoNormalizer.GeoPoint;
-import datawave.data.normalizer.Normalizer;
-import datawave.query.attributes.ValueTuple;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
-import datawave.query.collections.FunctionalSet;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import datawave.data.normalizer.GeoNormalizer;
+import datawave.data.normalizer.GeoNormalizer.GeoPoint;
+import datawave.data.normalizer.Normalizer;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 
 /**
  * Provides functions for doing geo spacial queries, such as bounding boxes and circles of interest.

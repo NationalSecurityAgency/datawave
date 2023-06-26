@@ -1,7 +1,5 @@
 package datawave.ingest.table.config;
 
-import datawave.ingest.mapreduce.handler.summary.MetricsSummaryDataTypeHandler;
-import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -10,6 +8,9 @@ import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.handler.summary.MetricsSummaryDataTypeHandler;
+import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
 
 public class MetricsSummaryTableConfigHelper extends AbstractTableConfigHelper {
     protected Logger mLog;

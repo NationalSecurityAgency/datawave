@@ -2,14 +2,15 @@ package datawave.ingest.input.reader;
 
 import java.io.IOException;
 
-import com.google.common.base.Preconditions;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.util.TextUtil;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import com.google.common.base.Preconditions;
+
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.util.TextUtil;
 
 /**
  * This class aggregates Text values based on a start and end filter. An example use case for this would be XML data. This will not work with data that has

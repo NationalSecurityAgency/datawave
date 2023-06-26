@@ -1,7 +1,10 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.partition.DelegatePartitioner;
-import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -10,10 +13,8 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import datawave.ingest.mapreduce.partition.DelegatePartitioner;
+import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
 
 /**
  * Handles the creation of partitioner instances to be used by the DelegatingPartitioner.

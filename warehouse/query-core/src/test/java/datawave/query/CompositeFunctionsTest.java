@@ -1,22 +1,23 @@
 package datawave.query;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import java.io.File;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -36,22 +37,23 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
-import javax.inject.Inject;
-import java.io.File;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
+import datawave.configuration.spring.SpringBean;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests the composite functions, the #JEXL lucene function, the matchesAtLeastCountOf function. and others

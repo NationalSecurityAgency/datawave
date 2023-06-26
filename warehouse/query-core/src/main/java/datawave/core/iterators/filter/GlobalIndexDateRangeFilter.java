@@ -5,7 +5,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
 
-import datawave.query.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
@@ -14,6 +13,8 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.lang.math.LongRange;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
+
+import datawave.query.Constants;
 
 /**
  * The iterator skips entries in the global index for entries that lie outside the date range set on the BatchScanner

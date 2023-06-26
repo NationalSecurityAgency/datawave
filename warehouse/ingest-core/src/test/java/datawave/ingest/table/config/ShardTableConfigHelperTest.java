@@ -6,11 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
-import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
-import datawave.ingest.table.config.ShardTableConfigHelper.ShardTableType;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -25,6 +20,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
+
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
+import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
+import datawave.ingest.table.config.ShardTableConfigHelper.ShardTableType;
 
 public class ShardTableConfigHelperTest {
 

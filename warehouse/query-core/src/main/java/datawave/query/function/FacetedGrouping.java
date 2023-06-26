@@ -7,13 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Cardinality;
-import datawave.query.attributes.FieldValueCardinality;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Document;
-import datawave.query.tables.facets.FacetedConfiguration;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
@@ -24,6 +17,13 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.TreeMultimap;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Cardinality;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.FieldValueCardinality;
+import datawave.query.tables.facets.FacetedConfiguration;
 
 /**
  *

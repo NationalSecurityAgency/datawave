@@ -1,15 +1,16 @@
 package datawave.ingest.mapreduce.handler.facet;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import com.clearspring.analytics.stream.frequency.CountMinSketch;
-import org.apache.accumulo.core.data.Value;
-
 import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.accumulo.core.data.Value;
+
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import com.clearspring.analytics.stream.frequency.CountMinSketch;
 
 public class FacetValue extends Value {
     private HyperLogLogPlus cardinalityEstimate;
