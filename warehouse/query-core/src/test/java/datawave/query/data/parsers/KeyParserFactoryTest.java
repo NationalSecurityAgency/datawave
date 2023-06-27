@@ -1,9 +1,10 @@
 package datawave.query.data.parsers;
 
-import datawave.query.data.parsers.KeyParserFactory.PARSER_TYPE;
+import static org.junit.Assert.assertTrue;
+
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import datawave.query.data.parsers.KeyParserFactory.PARSER_TYPE;
 
 public class KeyParserFactoryTest {
 
