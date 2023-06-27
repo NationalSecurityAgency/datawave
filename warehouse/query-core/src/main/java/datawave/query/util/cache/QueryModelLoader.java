@@ -2,11 +2,11 @@ package datawave.query.util.cache;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
 import datawave.query.model.FieldMapping;
+import datawave.query.model.ModelKeyParser;
 import datawave.query.model.QueryModel;
 
 import datawave.util.StringUtils;
@@ -24,7 +24,7 @@ import com.google.common.collect.Maps;
 /**
  *
  */
-public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<QueryModel,Set<String>>> {
+public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,QueryModel> {
 
     private static final Logger log = Logger.getLogger(NormalizerLoader.class);
 
@@ -86,9 +86,9 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
      * @see com.google.common.cache.CacheLoader#load(java.lang.Object)
      */
     @Override
-    public Entry<QueryModel,Set<String>> load(Entry<String,String> key) throws Exception {
+    public QueryModel load(Entry<String,String> key) throws Exception {
 
-        Entry<QueryModel,Set<String>> queryModelEntry = entryCache.get(key);
+        QueryModel queryModelEntry = entryCache.get(key);
         if (null == queryModelEntry) {
             build(key);
 
@@ -108,49 +108,34 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
         if (log.isDebugEnabled())
             log.debug("== Requesting to store (" + storeKey.getKey() + "," + storeKey.getValue() + ") " + key);
 
-        Set<String> indexOnlyFields = new HashSet<>(); // will hold index only fields
         // We need the entire Model so we can do both directions.
+        QueryModel queryModel = entryCache.get(storeKey);
 
-        Entry<QueryModel,Set<String>> modelEntry = entryCache.get(storeKey);
-
-        QueryModel queryModel = null;
-
-        if (null == modelEntry)
+        if (queryModel == null) {
             queryModel = new QueryModel();
-        else
-            queryModel = modelEntry.getKey();
-
-        if (null != key.getColumnQualifier()) {
-            String original = key.getRow().toString();
-            Text cq = key.getColumnQualifier();
-            String[] parts = StringUtils.split(cq.toString(), "\0");
-            if (parts.length > 1 && null != parts[0] && !parts[0].isEmpty()) {
-                String replacement = parts[0];
-
-                for (String part : parts) {
-                    if ("forward".equalsIgnoreCase(part)) {
-                        if (replacement.equals(FieldMapping.LENIENT)) {
-                            queryModel.addLenientForwardMappings(original);
-                        }
-                        // Do *not* add a forward mapping entry
-                        // when the replacement does not exist in the database
-                        else if (allFields == null || allFields.contains(replacement)) {
-                            queryModel.addTermToModel(original, replacement);
-                        } else if (log.isTraceEnabled()) {
-                            log.trace("Ignoring forward mapping of " + replacement + " for " + original + " because the metadata table has no reference to it");
-
-                        }
-
-                    } else if ("reverse".equalsIgnoreCase(part)) {
-                        queryModel.addTermToReverseModel(original, replacement);
-                    } else if ("index_only".equalsIgnoreCase(part)) {
-                        indexOnlyFields.add(replacement);
-                    }
-                }
-            }
         }
 
-        entryCache.put(storeKey, Maps.immutableEntry(queryModel, indexOnlyFields));
+        FieldMapping mapping = ModelKeyParser.parseKey(key, value);
+        if (mapping.isFieldMapping()) {
+            // Do *not* add a forward mapping entry
+            // when the replacement does not exist in the database
+            if (allFields == null || allFields.contains(mapping.getFieldName())) {
+                switch (mapping.getDirection()) {
+                    case FORWARD:
+                        queryModel.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
+                        break;
+                    case REVERSE:
+                        queryModel.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
+                        break;
+                    default:
+                        log.error("Unknown direction: " + mapping.getDirection());
+                }
+            }
+        } else {
+            queryModel.setModelFieldAttributes(mapping.getModelFieldName(), mapping.getAttributes());
+        }
+
+        entryCache.put(storeKey, queryModel);
 
         return true;
 
@@ -162,7 +147,7 @@ public class QueryModelLoader extends AccumuloLoader<Entry<String,String>,Entry<
      * @see datawave.query.util.cache.Loader#merge(java.lang.Object, java.lang.Object)
      */
     @Override
-    protected void merge(Entry<String,String> key, Entry<QueryModel,Set<String>> value) throws Exception {
+    protected void merge(Entry<String,String> key, QueryModel value) throws Exception {
         throw new UnsupportedOperationException("Cannot nest in the query model cache");
     }
 }

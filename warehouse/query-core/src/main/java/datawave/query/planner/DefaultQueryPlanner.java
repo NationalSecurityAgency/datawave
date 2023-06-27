@@ -370,6 +370,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
+        visitorManager.setDebugEnabled(log.isDebugEnabled());
+
         if (!(genericConfig instanceof ShardQueryConfiguration)) {
             throw new ClassCastException("Config object must be an instance of ShardQueryConfiguration");
         }
