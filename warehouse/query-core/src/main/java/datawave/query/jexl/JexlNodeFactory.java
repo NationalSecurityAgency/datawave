@@ -48,6 +48,7 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl2.parser.StrictExpression;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
@@ -268,7 +269,7 @@ public class JexlNodeFactory {
     }
 
     /**
-     * This method is currently only used from the QueryModelVisitor to expand a binary node into multiple pairs. If one side contains the lenient marker, then
+     * This method is currently only used from the QueryModelVisitor to expand a binary node into multiple pairs. If one side contains the strict marker, then
      * that will be extended around the binary node.
      *
      * @param containerType
@@ -301,17 +302,26 @@ public class JexlNodeFactory {
             JexlNode rightNode = pair.get(1);
             QueryPropertyMarker.Instance leftType = QueryPropertyMarker.findInstance(leftNode);
             QueryPropertyMarker.Instance rightType = QueryPropertyMarker.findInstance(rightNode);
+            boolean strict = false;
             boolean lenient = false;
-            if (leftType.isType(LenientExpression.class)) {
+            if (leftType.isType(StrictExpression.class)) {
+                strict = true;
+                leftNode = leftType.getSource();
+            } else if (leftType.isType(LenientExpression.class)) {
                 lenient = true;
                 leftNode = leftType.getSource();
             }
-            if (rightType.isType(LenientExpression.class)) {
+            if (rightType.isType(StrictExpression.class)) {
+                strict = true;
+                rightNode = rightType.getSource();
+            } else if (rightType.isType(LenientExpression.class)) {
                 lenient = true;
                 rightNode = rightType.getSource();
             }
             JexlNode child = buildUntypedBinaryNode(node, leftNode, rightNode);
-            if (lenient) {
+            if (strict) {
+                child = StrictExpression.create(child);
+            } else if (lenient) {
                 child = LenientExpression.create(child);
             }
             parentNode.jjtAddChild(child, i);

@@ -10,7 +10,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
-import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
@@ -30,14 +29,13 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.commons.jexl2.parser.StrictExpression;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.SetMultimap;
 import com.google.common.collect.Sets;
 
@@ -319,7 +317,7 @@ public class QueryModelVisitor extends RebuildingVisitor {
         if (!fieldPairs.isEmpty()) {
             List<JexlNode> expressions = new ArrayList<>();
             for (List<String> fieldPair : fieldPairs) {
-                boolean lenient = isLenient(fieldPair.get(0)) || isLenient(fieldPair.get(1));
+                boolean strict = isStrict(fieldPair.get(0)) || isStrict(fieldPair.get(1));
                 Set<JexlNode> leftSet = left.get(fieldPair.get(0));
                 Set<JexlNode> rightSet = right.get(fieldPair.get(1));
                 product.addAll(Sets.cartesianProduct(leftSet, rightSet));
@@ -337,8 +335,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 } else {
                     expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.OR_NODE, node, product);
                 }
-                if (lenient) {
-                    expanded = LenientExpression.create(expanded);
+                if (strict) {
+                    expanded = StrictExpression.create(expanded);
                 }
                 if (log.isTraceEnabled())
                     log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
@@ -450,8 +448,45 @@ public class QueryModelVisitor extends RebuildingVisitor {
         this.strictFields.addAll(strictFields);
     }
 
+    /**
+     * We decided that we should be lenient by default
+     *
+     * @param field
+     * @return true if not explicitly marked as being strict.
+     */
     public boolean isLenient(String field) {
-        return !strictFields.contains(field) && (queryModel.isLenientForwardMapping(field) || lenientFields.contains(field));
+        // user specifications will override the model settings
+        boolean userLenient = lenientFields.contains(field);
+        boolean userStrict = strictFields.contains(field);
+        if (userLenient || userStrict) {
+            if (userLenient && userStrict) {
+                throw new IllegalArgumentException("Cannot specify the same field as being strict and lenient");
+            }
+            return !userStrict;
+        }
+
+        // determine what the model is treating this as
+        boolean modelLenient = queryModel.getModelFieldAttributes(field).contains(QueryModel.LENIENT);
+        boolean modelStrict = queryModel.getModelFieldAttributes(field).contains(QueryModel.STRICT);
+        if (modelLenient || modelStrict) {
+            if (modelLenient && modelStrict) {
+                throw new IllegalStateException("The model cannot have both a strict and lenient marker for the same field");
+            }
+            return !modelStrict;
+        }
+
+        // lenient by default
+        return true;
+    }
+
+    /**
+     * Strict if not lenient
+     *
+     * @param field
+     * @return true if not lenient
+     */
+    public boolean isStrict(String field) {
+        return !isLenient(field);
     }
 
     /**

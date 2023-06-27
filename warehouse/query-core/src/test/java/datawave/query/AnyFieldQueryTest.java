@@ -13,6 +13,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -54,6 +55,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         accumuloSetup.setData(FileType.CSV, dataType);
         client = accumuloSetup.loadTables(log);
+        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
     }
 
     public AnyFieldQueryTest() {
@@ -120,6 +122,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testNotEqual() throws Exception {
         log.info("------  testNotEqual  ------");
+
         for (final TestCities city : TestCities.values()) {
             String cityPhrase = " != " + "'" + city.name() + "'";
             String query = Constants.ANY_FIELD + cityPhrase;

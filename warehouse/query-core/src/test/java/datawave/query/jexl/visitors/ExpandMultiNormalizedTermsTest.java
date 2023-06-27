@@ -9,6 +9,7 @@ import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.commons.jexl2.parser.StrictExpression;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -593,6 +594,40 @@ public class ExpandMultiNormalizedTermsTest {
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "((" + LenientExpression.label() + " = true) && (FOO == 'ab32'))";
+        String expected = "((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'FOO == \\'ab32\\'')))";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testUnmarkedLenientWithAllFailedNormalization() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new PointType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "(FOO == 'ab32')";
+        String expected = "((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'FOO == \\'ab32\\'')))";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testStrictWithAllFailedNormalization() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new PointType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "((" + StrictExpression.label() + " = true) && (FOO == 'ab32'))";
         String expected = "((_Eval_ = true) && (FOO == 'ab32'))";
         expandTerms(original, expected);
     }
@@ -614,7 +649,7 @@ public class ExpandMultiNormalizedTermsTest {
 
         // in this case the numeric normalization fails, so we need to mark as evaluation only
         original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
-        expected = "((_Eval_ = true) && (FOO =~ '3.*2')) && ((_Eval_ = true) && (FOO !~ '3.*22'))";
+        expected = "FOO =~ '3.*2' && FOO !~ '3.*22'";
         expandTerms(original, expected);
     }
 
