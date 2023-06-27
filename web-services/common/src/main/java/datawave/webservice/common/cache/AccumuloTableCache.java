@@ -31,15 +31,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.result.AccumuloTableCacheStatus;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.result.VoidResponse;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.shared.SharedCountListener;
@@ -49,6 +40,16 @@ import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.annotation.Required;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.common.result.AccumuloTableCacheStatus;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * Object that caches data from Accumulo tables.
@@ -65,21 +66,21 @@ import org.jboss.resteasy.annotations.GZIP;
 @Lock(LockType.READ)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class AccumuloTableCache {
-    
+
     private final Logger log = Logger.getLogger(this.getClass());
-    
+
     @Inject
     private JMSContext jmsContext;
-    
+
     @Resource(mappedName = "java:/topic/AccumuloTableCache")
     private Destination cacheTopic;
-    
+
     @Resource
     private ManagedExecutorService executorService;
-    
+
     @Inject
     private AccumuloTableCacheConfiguration accumuloTableCacheConfiguration;
-    
+
     @Inject
     @ConfigProperty(name = "dw.cacheCoordinator.evictionReaperIntervalSeconds", defaultValue = "30")
     private int evictionReaperIntervalInSeconds;
@@ -89,34 +90,34 @@ public class AccumuloTableCache {
     @Inject
     @ConfigProperty(name = "dw.cacheCoordinator.maxRetries", defaultValue = "10")
     private int maxRetries;
-    
+
     public static final String MOCK_USERNAME = "";
     public static final PasswordToken MOCK_PASSWORD = new PasswordToken(new byte[0]);
-    
+
     private InMemoryInstance instance;
     private Map<String,TableCache> details;
     private List<SharedCacheCoordinator> cacheCoordinators;
     private boolean connectionFactoryProvided = false;
-    
+
     public AccumuloTableCache() {
         log.debug("Called AccumuloTableCacheBean and accumuloTableCacheConfiguration = " + accumuloTableCacheConfiguration);
     }
-    
+
     @PostConstruct
     private void setup() {
         log.debug("accumuloTableCacheConfiguration was setup as: " + accumuloTableCacheConfiguration);
-        
+
         instance = new InMemoryInstance();
         details = new HashMap<>();
         cacheCoordinators = new ArrayList<>();
-        
+
         String zookeepers = accumuloTableCacheConfiguration.getZookeepers();
-        
+
         for (Entry<String,TableCache> entry : accumuloTableCacheConfiguration.getCaches().entrySet()) {
             final String tableName = entry.getKey();
             TableCache detail = entry.getValue();
             detail.setInstance(instance);
-            
+
             final SharedCacheCoordinator cacheCoordinator = new SharedCacheCoordinator(tableName, zookeepers, evictionReaperIntervalInSeconds, numLocks,
                             maxRetries);
             cacheCoordinators.add(cacheCoordinator);
@@ -125,7 +126,7 @@ public class AccumuloTableCache {
             } catch (Exception e) {
                 throw new EJBException("Error starting AccumuloTableCache", e);
             }
-            
+
             try {
                 cacheCoordinator.registerTriState(tableName + ":needsUpdate", new SharedTriStateListener() {
                     @Override
@@ -134,7 +135,7 @@ public class AccumuloTableCache {
                             log.trace("table:" + tableName + " stateHasChanged(" + reader + ", " + value + "). This listener does nothing");
                         }
                     }
-                    
+
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
                         if (log.isTraceEnabled()) {
@@ -145,14 +146,14 @@ public class AccumuloTableCache {
             } catch (Exception e) {
                 log.debug("Failure registering a triState for " + tableName, e);
             }
-            
+
             try {
                 cacheCoordinator.registerCounter(tableName, new SharedCountListener() {
                     @Override
                     public void stateChanged(CuratorFramework client, ConnectionState newState) {
                         // TODO Auto-generated method stub
                     }
-                    
+
                     @Override
                     public void countHasChanged(SharedCountReader sharedCount, int newCount) throws Exception {
                         if (!cacheCoordinator.checkCounter(tableName, newCount)) {
@@ -165,10 +166,10 @@ public class AccumuloTableCache {
             }
             detail.setWatcher(cacheCoordinator);
             details.put(entry.getKey(), entry.getValue());
-            
+
         }
     }
-    
+
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
         for (Entry<String,TableCache> entry : accumuloTableCacheConfiguration.getCaches().entrySet()) {
             TableCache detail = entry.getValue();
@@ -176,18 +177,18 @@ public class AccumuloTableCache {
         }
         connectionFactoryProvided = true;
     }
-    
+
     public InMemoryInstance getInstance() {
         return this.instance;
     }
-    
+
     @Schedule(hour = "*", minute = "*", second = "1", persistent = false)
     public void submitReloadTasks() {
         if (!connectionFactoryProvided) {
             log.trace("NOT submitting reload tasks since our connection factory hasn't been provided yet.");
             return;
         }
-        
+
         // Check results of running tasks. If complete, set the references to null
         for (Entry<String,TableCache> entry : details.entrySet()) {
             Future<Boolean> ref = entry.getValue().getReference();
@@ -195,7 +196,7 @@ public class AccumuloTableCache {
                 log.info("Reloading complete for table: " + entry.getKey());
                 entry.getValue().setReference(null);
             }
-            
+
         }
         // Start new tasks
         long now = System.currentTimeMillis();
@@ -215,7 +216,7 @@ public class AccumuloTableCache {
             }
         }
     }
-    
+
     @PreDestroy
     public void stop() {
         for (Entry<String,TableCache> entry : details.entrySet()) {
@@ -227,7 +228,7 @@ public class AccumuloTableCache {
             cacheCoordinator.stop();
         cacheCoordinators.clear();
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
@@ -271,7 +272,7 @@ public class AccumuloTableCache {
         handleReloadTypeMetadata(tableName);
         return response;
     }
-    
+
     private void handleReloadTypeMetadata(String tableName) {
         String triStateName = tableName + ":needsUpdate";
         try {
@@ -284,11 +285,11 @@ public class AccumuloTableCache {
             log.debug("table:" + tableName + " could not update the triState '" + triStateName + " on watcher for table " + tableName, e);
         }
     }
-    
+
     private void handleReload(String tableName) {
         details.get(tableName).setLastRefresh(new Date(0));
     }
-    
+
     /**
      * <strong>JBossAdministrator or Administrator credentials required.</strong>
      *
@@ -321,10 +322,10 @@ public class AccumuloTableCache {
         }
         return response;
     }
-    
+
     private void sendCacheReloadMessage(String tableName) {
         log.warn("table:" + tableName + " sending cache reload message about table " + tableName);
-        
+
         jmsContext.createProducer().send(cacheTopic, tableName);
     }
 }

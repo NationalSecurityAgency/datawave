@@ -1,14 +1,14 @@
 package datawave.query.discovery;
 
-import datawave.ingest.protobuf.Uid;
-
-import datawave.query.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.query.Constants;
 
 public class TermInfo {
     protected long count = 0;
@@ -19,13 +19,13 @@ public class TermInfo {
     protected ColumnVisibility vis = null;
     protected boolean valid = false;
     private long listSize = 0;
-    
+
     public TermInfo(Key key, Value value) {
         // Get the shard id and datatype from the colq
         fieldValue = key.getRow().toString();
         fieldName = key.getColumnFamily().toString();
         String colq = key.getColumnQualifier().toString();
-        
+
         int separator = colq.indexOf(Constants.NULL_BYTE_STRING);
         if (separator != -1) {
             int end_separator = colq.lastIndexOf(Constants.NULL_BYTE_STRING);
@@ -47,7 +47,7 @@ public class TermInfo {
                 date = colq.substring(0, 8);
                 datatype = colq.substring(separator + 1);
             }
-            
+
             // Parse the UID.List object from the value
             Uid.List uidList = null;
             try {
@@ -60,20 +60,20 @@ public class TermInfo {
                 // Don't add UID information, at least we know what shard
                 // it is located in.
             }
-            
+
             Text tvis = key.getColumnVisibility();
             vis = new ColumnVisibility(tvis);
-            
+
             // we now have a valid info
             valid = true;
         }
     }
-    
+
     private void setListSize(int size) {
         listSize = size;
-        
+
     }
-    
+
     public long getListSize() {
         return listSize;
     }

@@ -1,5 +1,19 @@
 package datawave.query.config;
 
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ArrayListMultimap;
@@ -8,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+
 import datawave.data.type.DateType;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.GeometryType;
@@ -23,36 +38,23 @@ import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
 import datawave.webservice.query.QueryImpl;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 public class ShardQueryConfigurationTest {
-    
+
     private ShardQueryConfiguration config;
-    
+
     @Before
     public void setUp() {
         config = ShardQueryConfiguration.create();
     }
-    
+
     /**
      * Assert expected default values from an empty constructor call
      */
     @Test
     public void testEmptyConstructor() {
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
-        
+
         Assert.assertFalse(config.isTldQuery());
         Assert.assertEquals(Maps.newHashMap(), config.getFilterOptions());
         Assert.assertFalse(config.isDisableIndexOnlyDocuments());
@@ -206,7 +208,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
-        
+
         // seeks
         Assert.assertEquals(-1, config.getFiFieldSeek());
         Assert.assertEquals(-1, config.getFiNextSeek());
@@ -216,16 +218,16 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(-1, config.getTfNextSeek());
         Assert.assertEquals(-1, config.getDocAggregationThresholdMs());
     }
-    
+
     /**
      * Test that for a given set of collections, stored in a ShardQueryConfiguration, will in fact be deep-copied into a new ShardQueryConfiguration object.
      */
     @Test
     public void testDeepCopyConstructor() {
-        
+
         // Instantiate a 'other' ShardQueryConfiguration
         ShardQueryConfiguration other = ShardQueryConfiguration.create();
-        
+
         // Setup collections for deep copy
         List<String> realmSuffixExclusionPatterns = Lists.newArrayList("somePattern");
         SimpleDateFormat shardDateFormatter = new SimpleDateFormat("yyyyMMdd");
@@ -270,7 +272,7 @@ public class ShardQueryConfigurationTest {
         Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
         Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
         long visitorFunctionMaxWeight = 200L;
-        
+
         // Set collections on 'other' ShardQueryConfiguration
         other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
         other.setShardDateFormatter(shardDateFormatter);
@@ -315,10 +317,10 @@ public class ShardQueryConfigurationTest {
         other.setEventNextSeek(15);
         other.setTfFieldSeek(16);
         other.setTfNextSeek(17);
-        
+
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
-        
+
         // Modify original collections
         realmSuffixExclusionPatterns.add("anotherPattern");
         shardDateFormatter = new SimpleDateFormat("yyyyMMdd-mm:SS");
@@ -348,7 +350,7 @@ public class ShardQueryConfigurationTest {
         uniqueFields.put("uniqueFieldB", UniqueGranularity.ALL);
         contentFieldNames.add("fieldB");
         disallowedRegexPatterns.add("blah");
-        
+
         // Assert that copied collections were deep copied and remain unchanged
         Assert.assertEquals(Lists.newArrayList("somePattern"), config.getRealmSuffixExclusionPatterns());
         Assert.assertEquals(new SimpleDateFormat("yyyyMMdd"), config.getShardDateFormatter());
@@ -396,11 +398,12 @@ public class ShardQueryConfigurationTest {
         QueryModel expectedQueryModel = new QueryModel();
         Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
+        Assert.assertEquals(expectedQueryModel.getLenientForwardMappings(), config.getQueryModel().getLenientForwardMappings());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
         Assert.assertTrue(config.getReduceQueryFields());
-        
+
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
         expectedQuery.setId(config.getQuery().getId());
@@ -422,7 +425,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(16, other.getTfFieldSeek());
         Assert.assertEquals(17, other.getTfNextSeek());
     }
-    
+
     @Test
     public void testGetSetDataTypeFilter() {
         String expected = "filterA,filterB";
@@ -430,7 +433,7 @@ public class ShardQueryConfigurationTest {
         config.setDatatypeFilter(dataTypeFilters);
         Assert.assertEquals(expected, config.getDatatypeFilterAsString());
     }
-    
+
     @Test
     public void testGetSetProjectFields() {
         String expected = "projectB,projectA"; // Set ordering.
@@ -438,7 +441,7 @@ public class ShardQueryConfigurationTest {
         config.setProjectFields(projectFields);
         Assert.assertEquals(expected, config.getProjectFieldsAsString());
     }
-    
+
     @Test
     public void testGetSetConjunctionsWithinExpression() {
         ShardQueryLogic logic = new ShardQueryLogic();
@@ -462,47 +465,47 @@ public class ShardQueryConfigurationTest {
         config.setBlacklistedFields(blacklistedFields);
         Assert.assertEquals(expected, config.getBlacklistedFieldsAsString());
     }
-    
+
     @Test
     public void testGetSetIndexedFieldDataTypes() {
         Assert.assertEquals("", config.getIndexedFieldDataTypesAsString());
-        
+
         Set<String> indexedFields = Sets.newHashSet("fieldA", "fieldB");
         Multimap<String,Type<?>> queryFieldsDatatypes = ArrayListMultimap.create();
         queryFieldsDatatypes.put("fieldA", new DateType());
         queryFieldsDatatypes.put("fieldB", new StringType());
-        
+
         config.setIndexedFields(indexedFields);
         config.setQueryFieldsDatatypes(queryFieldsDatatypes);
-        
+
         String expected = "fieldA:datawave.data.type.DateType;fieldB:datawave.data.type.StringType;";
         Assert.assertEquals(expected, config.getIndexedFieldDataTypesAsString());
     }
-    
+
     @Test
     public void testGetSetNormalizedFieldNormalizers() {
         Assert.assertEquals("", config.getNormalizedFieldNormalizersAsString());
-        
+
         Set<String> normalizedFields = Sets.newHashSet("fieldA", "fieldB");
         Multimap<String,Type<?>> normalizedFieldsDatatypes = ArrayListMultimap.create();
         normalizedFieldsDatatypes.put("fieldA", new DateType());
         normalizedFieldsDatatypes.put("fieldB", new StringType());
-        
+
         config.setIndexedFields(normalizedFields);
         config.setNormalizedFieldsDatatypes(normalizedFieldsDatatypes);
-        
+
         String expected = "fieldA:datawave.data.type.DateType;fieldB:datawave.data.type.StringType;";
         Assert.assertEquals(expected, config.getNormalizedFieldNormalizersAsString());
     }
-    
+
     @Test
     public void testIsTldQuery() {
         Assert.assertFalse(config.isTldQuery());
-        
+
         config.setTldQuery(true);
         Assert.assertTrue(config.isTldQuery());
     }
-    
+
     /**
      * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
      *
@@ -511,7 +514,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 201;
+        int expectedObjectCount = 203;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
@@ -521,10 +524,10 @@ public class ShardQueryConfigurationTest {
             rootIter.next();
             objectCount++;
         }
-        
+
         Assert.assertEquals("New variable was added to or removed from the ShardQueryConfiguration", expectedObjectCount, objectCount);
     }
-    
+
     @Test
     public void whenRetrievingActiveQueryLogName_givenTableNameSource_thenReturnsTableName() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
@@ -532,20 +535,20 @@ public class ShardQueryConfigurationTest {
         configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.TABLE_NAME_SOURCE);
         Assert.assertEquals("shardTable", configuration.getActiveQueryLogName());
     }
-    
+
     @Test
     public void whenRetrievingActiveQueryLogName_givenQueryLogicNameSource_thenReturnsQueryLogicName() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
         configuration.setActiveQueryLogNameSource(ShardQueryConfiguration.QUERY_LOGIC_NAME_SOURCE);
         Assert.assertEquals(ShardQueryConfiguration.class.getSimpleName(), configuration.getActiveQueryLogName());
     }
-    
+
     @Test
     public void whenRetrievingActiveQueryLogName_givenNoActiveQueryLogNameValue_thenReturnsBlankString() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();
         Assert.assertEquals("", configuration.getActiveQueryLogName());
     }
-    
+
     @Test
     public void whenRetrievingActiveQueryLogName_givenOtherValue_thenReturnsBlankString() {
         ShardQueryConfiguration configuration = new ShardQueryConfiguration();

@@ -1,8 +1,19 @@
 package datawave.query.util;
 
-import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import datawave.security.util.ScannerHelper;
-import datawave.util.StringUtils;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -20,21 +31,12 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
+
 import com.github.benmanes.caffeine.cache.Cache;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
+import datawave.security.util.ScannerHelper;
+import datawave.util.StringUtils;
 
 /**
  * <p>
@@ -59,69 +61,69 @@ import java.util.TreeMap;
  * <td>shard bit string (see java.util.BitSet)</td>
  * </tr>
  * </table>
- * 
- * 
- * 
+ *
+ *
+ *
  */
 @Configuration
 @EnableCaching
 @Component("dateIndexHelper")
 public class DateIndexHelper implements ApplicationContextAware {
     private static final Logger log = Logger.getLogger(DateIndexHelper.class);
-    
+
     public static final String NULL_BYTE = "\0";
-    
+
     protected AccumuloClient client;
-    
+
     protected String dateIndexTableName;
     protected Set<Authorizations> auths;
     protected int numQueryThreads;
-    
+
     protected float collapseDatePercentThreshold;
     protected boolean timeTravel = false;
-    
+
     protected ApplicationContext applicationContext;
-    
+
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.applicationContext = applicationContext;
         log.warn("applicationcontextaware setting of applicationContext:" + applicationContext);
     }
-    
+
     public void setTimeTravel(boolean timeTravel) {
         this.timeTravel = timeTravel;
     }
-    
+
     public String getDateIndexTableName() {
         return dateIndexTableName;
     }
-    
+
     public AccumuloClient getClient() {
         return client;
     }
-    
+
     public Set<Authorizations> getAuths() {
         return auths;
     }
-    
+
     public int getNumQueryThreads() {
         return numQueryThreads;
     }
-    
+
     public float getCollapseDatePercentThreshold() {
         return collapseDatePercentThreshold;
     }
-    
+
     public boolean isTimeTravel() {
         return timeTravel;
     }
-    
+
     public ApplicationContext getApplicationContext() {
         return applicationContext;
     }
-    
+
     protected DateIndexHelper() {}
-    
+
     public static DateIndexHelper getInstance() {
         log.warn("DateIndexHelper created outside of dependency-injection context. This is fine for unit testing, but this is an error in production code");
         if (log.isDebugEnabled())
@@ -132,7 +134,7 @@ public class DateIndexHelper implements ApplicationContextAware {
 
     /**
      * Initializes the instance with a provided update interval.
-     * 
+     *
      * @param client
      *            A client connection to Accumulo
      * @param dateIndexTableName
@@ -157,7 +159,7 @@ public class DateIndexHelper implements ApplicationContextAware {
         this.auths = auths;
         this.numQueryThreads = numQueryThreads;
         this.collapseDatePercentThreshold = collapseDatePercentThreshold;
-        
+
         if (log.isTraceEnabled()) {
             log.trace("Constructor  connector: " + (client != null ? client.getClass().getCanonicalName() : client) + " with auths: " + auths
                             + " and date index table name: " + dateIndexTableName + "; " + numQueryThreads + " threads and " + collapseDatePercentThreshold
@@ -165,19 +167,19 @@ public class DateIndexHelper implements ApplicationContextAware {
         }
         return this;
     }
-    
+
     public static class DateTypeDescription {
         final Set<String> fields = new HashSet<>();
         final String[] dateRange = new String[2];
-        
+
         public Set<String> getFields() {
             return fields;
         }
-        
+
         public String[] getDateRange() {
             return dateRange;
         }
-        
+
         public Date getBeginDate() {
             try {
                 return DateIndexUtil.getBeginDate(dateRange[0]);
@@ -186,7 +188,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                 throw new IllegalStateException("Malformed date in date index table, expected yyyyMMdd: " + dateRange[0], pe);
             }
         }
-        
+
         public Date getEndDate() {
             try {
                 return DateIndexUtil.getEndDate(dateRange[1]);
@@ -195,7 +197,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                 throw new IllegalStateException("Malformed date in date index table, expected yyyyMMdd: " + dateRange[1], pe);
             }
         }
-        
+
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("field: ").append(fields);
@@ -203,10 +205,10 @@ public class DateIndexHelper implements ApplicationContextAware {
             return builder.toString();
         }
     }
-    
+
     /**
      * Get the date type description which includes the fields and the mapped date range.
-     * 
+     *
      * @param dateType
      *            date type
      * @param begin
@@ -228,24 +230,24 @@ public class DateIndexHelper implements ApplicationContextAware {
             this.showMeDaCache("before getTypeDescription");
         }
         long startTime = System.currentTimeMillis();
-        
+
         DateTypeDescription desc = new DateTypeDescription();
-        
+
         BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
         try {
-            
+
             // scan from begin to end
             bs.setRanges(Arrays.asList(new Range(DateIndexUtil.format(begin), DateIndexUtil.format(end) + '~')));
-            
+
             // restrict to our date type
             bs.fetchColumnFamily(new Text(dateType));
-            
+
             Iterator<Entry<Key,Value>> iterator = bs.iterator();
-            
+
             while (iterator.hasNext()) {
                 Entry<Key,Value> entry = iterator.next();
                 Key k = entry.getKey();
-                
+
                 String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
                 if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
                     desc.fields.add(parts[2]);
@@ -266,25 +268,25 @@ public class DateIndexHelper implements ApplicationContextAware {
         } finally {
             bs.close();
         }
-        
+
         // if the dates are still empty, then default to the incoming dates
         if (desc.dateRange[0] == null) {
             desc.dateRange[0] = DateIndexUtil.format(begin);
             desc.dateRange[1] = DateIndexUtil.format(end);
         }
-        
+
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
             log.debug("getTypeDescription from table: " + dateIndexTableName + ", " + auths + ", " + dateType + ", " + begin + ", " + end + ", "
                             + datatypeFilter + " returned " + desc + " in " + (endTime - startTime) + "ms");
         }
-        
+
         return desc;
     }
-    
+
     /**
      * Get a comma delimited set of shards and days to be used as the SHARDS_AND_DAYS hint to support to the RangeStream.
-     * 
+     *
      * @param field
      *            Note this is not the datetype, but the specific field
      * @param begin
@@ -301,8 +303,7 @@ public class DateIndexHelper implements ApplicationContextAware {
      * @throws TableNotFoundException
      *             if the table is not found
      */
-    @Cacheable(
-                    value = "getShardsAndDaysHint",
+    @Cacheable(value = "getShardsAndDaysHint",
                     key = "{#root.target.dateIndexTableName,#root.target.auths,#root.target.collapseDatePercentThreshold,#field,#begin,#end,#rangeBegin,#rangeEnd,#datatypeFilter}",
                     cacheManager = "dateIndexHelperCacheManager")
     public String getShardsAndDaysHint(String field, Date begin, Date end, Date rangeBegin, Date rangeEnd, Set<String> datatypeFilter)
@@ -319,22 +320,22 @@ public class DateIndexHelper implements ApplicationContextAware {
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd");
         String minShard = format.format(rangeBegin);
         String maxShard = format.format(rangeEnd);
-        
+
         TreeMap<String,BitSet> bitsets = new TreeMap<>();
-        
+
         BatchScanner bs = ScannerHelper.createBatchScanner(client, dateIndexTableName, auths, numQueryThreads);
-        
+
         try {
             bs.setRanges(Arrays.asList(new Range(DateIndexUtil.format(begin), DateIndexUtil.format(end) + '~')));
-            
+
             Iterator<Entry<Key,Value>> iterator = bs.iterator();
-            
+
             while (iterator.hasNext()) {
                 Entry<Key,Value> entry = iterator.next();
                 Key k = entry.getKey();
                 String[] parts = StringUtils.split(k.getColumnQualifier().toString(), '\0');
                 String date = parts[0];
-                
+
                 // If the event date is more than one day before the event actually happened,
                 // then skip it, unless time-travel has been enabled.
                 String[] columnFamilyParts = StringUtils.split(k.getColumnFamily().toString(), '\0');
@@ -357,7 +358,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                         log.info("problem during delorean check", ex);
                     }
                 }
-                
+
                 // If the date is outside of the min and max shard, then continue to the next entry
                 if (date.compareTo(minShard) < 0) {
                     continue;
@@ -365,7 +366,7 @@ public class DateIndexHelper implements ApplicationContextAware {
                 if (date.compareTo(maxShard) > 0) {
                     continue;
                 }
-                
+
                 if (parts[2].equals(field)) {
                     if (datatypeFilter == null || datatypeFilter.isEmpty() || datatypeFilter.contains(parts[1])) {
                         BitSet bits = BitSet.valueOf(entry.getValue().get());
@@ -378,28 +379,28 @@ public class DateIndexHelper implements ApplicationContextAware {
                     }
                 }
             }
-            
+
         } finally {
             bs.close();
         }
-        
+
         StringBuilder builder = new StringBuilder();
         for (Map.Entry<String,BitSet> entry : bitsets.entrySet()) {
             appendToShardsAndDays(builder, entry.getValue(), entry.getKey());
         }
-        
+
         String shardsAndDays = builder.toString();
-        
+
         if (log.isDebugEnabled()) {
             long endTime = System.currentTimeMillis();
             log.debug("getShardsAndDaysHint from table: " + dateIndexTableName + ", " + auths + ", " + collapseDatePercentThreshold + ", " + field + ", "
                             + begin + ", " + end + ", " + rangeBegin + ", " + rangeEnd + ", " + datatypeFilter + " returned " + shardsAndDays + " in "
                             + (endTime - startTime) + "ms");
         }
-        
+
         return shardsAndDays;
     }
-    
+
     private void appendToShardsAndDays(StringBuilder builder, BitSet bits, String date) {
         // If the shard density is near 100% (99% or more), then lets assume the entire day.
         log.debug("bits.length():" + bits.length() + ", bits.cardinality():" + bits.cardinality());
@@ -418,7 +419,7 @@ public class DateIndexHelper implements ApplicationContextAware {
             StringBuilder shard = new StringBuilder();
             shard.append(date).append('_');
             int baseShardLen = shard.length();
-            
+
             for (int i = 0; i < bits.length(); i++) {
                 if (bits.get(i)) {
                     shard.setLength(baseShardLen);
@@ -432,7 +433,7 @@ public class DateIndexHelper implements ApplicationContextAware {
             }
         }
     }
-    
+
     private void showMeDaCache(String when) {
         log.trace("from applicationContext:" + applicationContext);
         if (this.applicationContext != null) {
@@ -456,5 +457,5 @@ public class DateIndexHelper implements ApplicationContextAware {
             }
         }
     }
-    
+
 }

@@ -1,5 +1,69 @@
 package datawave.webservice.mr;
 
+import java.io.IOException;
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Properties;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
+
+import javax.annotation.Resource;
+import javax.annotation.security.DeclareRoles;
+import javax.annotation.security.RolesAllowed;
+import javax.ejb.EJBContext;
+import javax.ejb.LocalBean;
+import javax.ejb.Stateless;
+import javax.ejb.TransactionAttribute;
+import javax.ejb.TransactionAttributeType;
+import javax.ejb.TransactionManagement;
+import javax.ejb.TransactionManagementType;
+import javax.inject.Inject;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.StreamingOutput;
+
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.lang.StringUtils;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapred.JobClient;
+import org.apache.hadoop.mapred.JobConf;
+import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapreduce.InputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.JobID;
+import org.apache.log4j.Logger;
+import org.apache.oozie.client.OozieClient;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.jboss.security.JSSESecurityDomain;
+
 import datawave.annotation.Required;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.SpringBean;
@@ -45,68 +109,6 @@ import datawave.webservice.results.mr.JobExecution;
 import datawave.webservice.results.mr.MapReduceInfoResponse;
 import datawave.webservice.results.mr.MapReduceInfoResponseList;
 import datawave.webservice.results.mr.MapReduceJobDescription;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.apache.commons.lang.StringUtils;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RunningJob;
-import org.apache.hadoop.mapreduce.InputFormat;
-import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.JobID;
-import org.apache.log4j.Logger;
-import org.apache.oozie.client.OozieClient;
-import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.jboss.security.JSSESecurityDomain;
-
-import javax.annotation.Resource;
-import javax.annotation.security.DeclareRoles;
-import javax.annotation.security.RolesAllowed;
-import javax.ejb.EJBContext;
-import javax.ejb.LocalBean;
-import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
-import javax.ejb.TransactionManagement;
-import javax.ejb.TransactionManagementType;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.StreamingOutput;
-import java.io.IOException;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Properties;
-import java.util.Queue;
-import java.util.Set;
-import java.util.UUID;
 
 @javax.ws.rs.Path("/MapReduce")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})
@@ -117,53 +119,53 @@ import java.util.UUID;
 @TransactionManagement(TransactionManagementType.BEAN)
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class MapReduceBean {
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     @Resource
     private EJBContext ctx;
-    
+
     @Inject
     private JSSESecurityDomain jsseSecurityDomain;
-    
+
     @Inject
     private Persister queryPersister;
-    
+
     @Inject
     private QueryCache cache;
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     private QueryLogicFactory queryLogicFactory;
-    
+
     @Inject
     private MapReduceStatePersisterBean mapReduceState;
-    
+
     // reference "datawave/common/ConnectionPools.xml" and "datawave/mapreduce/MapReduceJobs.xml"
     @Inject
     @SpringBean(refreshable = true)
     private MapReduceConfiguration mapReduceConfiguration;
-    
+
     @Inject
     private ConnectionPoolsConfiguration connectionPoolsConfiguration;
-    
+
     @Inject
     @ServerPrincipal
     private DatawavePrincipal serverPrincipal;
-    
+
     @Inject
     private SecurityMarking marking;
-    
+
     @Inject
     private AuditBean auditor;
-    
+
     private static final String PARAMETER_SEPARATOR = ";";
     private static final String PARAMETER_NAME_VALUE_SEPARATOR = ":";
     private static final String JOB_ID = "MapReduce.id";
     private static final int BUFFER_SIZE = 16384;
-    
+
     /**
      * Returns a list of the MapReduce job names and their configurations
      *
@@ -192,10 +194,10 @@ public class MapReduceBean {
         }
         return jobs;
     }
-    
+
     /**
      * Execute a Oozie workflow with the given workFlow name and runtime parameters
-     * 
+     *
      * @param queryParameters
      *            the query parameters
      * @return GenericResponse
@@ -207,16 +209,16 @@ public class MapReduceBean {
     @GZIP
     public GenericResponse<String> ooziesubmit(MultivaluedMap<String,String> queryParameters) {
         GenericResponse<String> response = new GenericResponse<>();
-        
+
         String workFlow = queryParameters.getFirst(OozieJobConstants.WORKFLOW_PARAM);
         if (StringUtils.isBlank(workFlow)) {
             throw new BadRequestException(new IllegalArgumentException(OozieJobConstants.WORKFLOW_PARAM + " parameter missing"), response);
         }
         String parameters = queryParameters.getFirst(OozieJobConstants.PARAMETERS);
-        
+
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
-        
+
         String sid = null;
         String userDn = p.getName();
         DatawavePrincipal datawavePrincipal = null;
@@ -228,7 +230,7 @@ public class MapReduceBean {
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         OozieJobConfiguration job;
         try {
             MapReduceJobConfiguration mrConfig = this.mapReduceConfiguration.getConfiguration(workFlow);
@@ -242,12 +244,12 @@ public class MapReduceBean {
             response.addException(qe);
             throw new BadRequestException(qe, response);
         }
-        
+
         if (job instanceof NeedCallerDetails) {
             ((NeedCallerDetails) job).setUserSid(sid);
             ((NeedCallerDetails) job).setPrincipal(p);
         }
-        
+
         // Ensure that the user has the required roles and has passed the required auths
         if (null != job.getRequiredRoles() || null != job.getRequiredAuths()) {
             try {
@@ -258,11 +260,11 @@ public class MapReduceBean {
                 throw new UnauthorizedException(qe, response);
             }
         }
-        
+
         String id = sid + "_" + UUID.randomUUID();
         OozieClient oozieClient = null;
         Properties oozieConf = null;
-        
+
         try {
             oozieClient = new OozieClient((String) job.getJobConfigurationProperties().get(OozieJobConstants.OOZIE_CLIENT_PROP));
             oozieConf = oozieClient.createConfiguration();
@@ -317,7 +319,7 @@ public class MapReduceBean {
                 throw new QueryException(DatawaveErrorCode.OOZIE_JOB_START_ERROR, e);
             }
             // the oozie workflow definitions will add the workflow id to outDir to get the full output path
-            
+
             try {
                 String jobResultstDir = oozieConf.getProperty(OozieJobConstants.OUT_DIR_PROP) + "/" + id;
                 response.setResult(id);
@@ -347,10 +349,10 @@ public class MapReduceBean {
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         return response;
     }
-    
+
     /**
      * Execute a MapReduce job with the given name and runtime parameters
      *
@@ -376,13 +378,13 @@ public class MapReduceBean {
     @GZIP
     public GenericResponse<String> submit(@FormParam("jobName") String jobName, @FormParam("parameters") String parameters) {
         GenericResponse<String> response = new GenericResponse<>();
-        
+
         // Find out who/what called this method
         Principal p = ctx.getCallerPrincipal();
         String sid;
         Set<Collection<String>> cbAuths = new HashSet<>();
         DatawavePrincipal datawavePrincipal = null;
-        
+
         if (p instanceof DatawavePrincipal) {
             datawavePrincipal = (DatawavePrincipal) p;
             sid = datawavePrincipal.getShortName();
@@ -392,7 +394,7 @@ public class MapReduceBean {
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         // Get the MapReduceJobConfiguration from the configuration
         MapReduceJobConfiguration job;
         try {
@@ -402,7 +404,7 @@ public class MapReduceBean {
             response.addException(qe);
             throw new BadRequestException(qe, response);
         }
-        
+
         // Ensure that the user has the required roles and has passed the required auths
         if (null != job.getRequiredRoles() || null != job.getRequiredAuths()) {
             try {
@@ -413,7 +415,7 @@ public class MapReduceBean {
                 throw new UnauthorizedException(qe, response);
             }
         }
-        
+
         // Parse the parameters
         Map<String,String> runtimeParameters = new HashMap<>();
         if (null != parameters) {
@@ -425,7 +427,7 @@ public class MapReduceBean {
                 }
             }
         }
-        
+
         // Check to see if the job configuration class implements specific interfaces.
         if (job instanceof NeedCallerDetails) {
             ((NeedCallerDetails) job).setUserSid(sid);
@@ -435,14 +437,14 @@ public class MapReduceBean {
             ((NeedAccumuloConnectionFactory) job).setAccumuloConnectionFactory(this.connectionFactory);
         }
         if (job instanceof NeedAccumuloDetails) {
-            ((NeedAccumuloDetails) job).setUsername(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getUsername());
-            ((NeedAccumuloDetails) job).setPassword(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getPassword());
-            ((NeedAccumuloDetails) job).setInstanceName(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getInstance());
-            ((NeedAccumuloDetails) job).setZookeepers(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool())
-                            .getZookeepers());
+            ((NeedAccumuloDetails) job)
+                            .setUsername(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getUsername());
+            ((NeedAccumuloDetails) job)
+                            .setPassword(this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getPassword());
+            ((NeedAccumuloDetails) job).setInstanceName(
+                            this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getInstance());
+            ((NeedAccumuloDetails) job).setZookeepers(
+                            this.connectionPoolsConfiguration.getPools().get(this.connectionPoolsConfiguration.getDefaultPool()).getZookeepers());
         }
         if (job instanceof NeedQueryLogicFactory) {
             ((NeedQueryLogicFactory) job).setQueryLogicFactory(this.queryLogicFactory);
@@ -450,22 +452,22 @@ public class MapReduceBean {
         if (job instanceof NeedQueryPersister) {
             ((NeedQueryPersister) job).setPersister(this.queryPersister);
         }
-        
+
         if (job instanceof NeedQueryCache) {
             ((NeedQueryCache) job).setQueryCache(cache);
         }
-        
+
         if (job instanceof NeedSecurityDomain) {
             ((NeedSecurityDomain) job).setSecurityDomain(this.jsseSecurityDomain);
         }
-        
+
         // If this job is being restarted, then the jobId will be the same. The restart method
         // puts the id into the runtime parameters
         String id = runtimeParameters.get(JOB_ID);
         if (null == id)
             id = UUID.randomUUID().toString();
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
-        
+
         StringBuilder name = new StringBuilder().append(jobName).append("_sid_").append(sid).append("_id_").append(id);
         Job j;
         try {
@@ -479,7 +481,7 @@ public class MapReduceBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         // Enforce that certain InputFormat classes are being used here.
         if (this.mapReduceConfiguration.isRestrictInputFormats()) {
             // Make sure that the job input format is in the list
@@ -493,15 +495,15 @@ public class MapReduceBean {
                 throw new DatawaveWebApplicationException(qe, response);
             }
             if (!this.mapReduceConfiguration.getValidInputFormats().contains(ifClass)) {
-                IllegalArgumentException e = new IllegalArgumentException("Invalid input format class specified. Must use one of "
-                                + this.mapReduceConfiguration.getValidInputFormats());
+                IllegalArgumentException e = new IllegalArgumentException(
+                                "Invalid input format class specified. Must use one of " + this.mapReduceConfiguration.getValidInputFormats());
                 QueryException qe = new QueryException(DatawaveErrorCode.INVALID_FORMAT, e);
                 log.error(qe);
                 response.addException(qe.getBottomQueryException());
                 throw new DatawaveWebApplicationException(qe, response);
             }
         }
-        
+
         try {
             j.submit();
         } catch (Exception e) {
@@ -510,10 +512,10 @@ public class MapReduceBean {
             response.addException(qe.getBottomQueryException());
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         JobID mapReduceJobId = j.getJobID();
         log.info("JOB ID: " + mapReduceJobId);
-        
+
         // Create an entry in the state table
         boolean restarted = (runtimeParameters.get(JOB_ID) != null);
         try {
@@ -533,17 +535,17 @@ public class MapReduceBean {
                 response.addException(qe2);
             }
             throw new DatawaveWebApplicationException(qe, response);
-            
+
         }
         response.setResult(id);
         return response;
-        
+
     }
-    
+
     protected Job createJob(Configuration conf, StringBuilder name) throws IOException {
         return Job.getInstance(conf, name.toString());
     }
-    
+
     /**
      * Cancels any MapReduce jobs with the specified jobId and clears out the results directory
      *
@@ -564,7 +566,7 @@ public class MapReduceBean {
     @GZIP
     public GenericResponse<Boolean> cancel(@PathParam("jobId") String jobId) {
         GenericResponse<Boolean> response = new GenericResponse<>();
-        
+
         // Find all potential running jobs
         MapReduceInfoResponseList list = mapReduceState.findById(jobId);
         List<String> jobIdsToKill = new ArrayList<>();
@@ -588,7 +590,7 @@ public class MapReduceBean {
                 if (prevId != null) {
                     if (prevState.equals(MapReduceState.STARTED.toString()) && !ex.getMapReduceJobId().equals(prevId))
                         jobIdsToKill.add(prevId);
-                    
+
                 }
                 prevId = ex.getMapReduceJobId();
                 prevState = ex.getState();
@@ -596,7 +598,7 @@ public class MapReduceBean {
             // Get the last one
             if (MapReduceState.STARTED.toString().equals(prevState))
                 jobIdsToKill.add(prevId);
-            
+
             FileSystem hdfs = null;
             try {
                 hdfs = getFS(thisJob.getHdfs(), response);
@@ -623,8 +625,8 @@ public class MapReduceBean {
                 }
                 // Delete the contents of the results directory
                 if (hdfs.exists(resultsDir) && !hdfs.delete(resultsDir, true)) {
-                    QueryException qe = new QueryException(DatawaveErrorCode.MAPRED_RESULTS_DELETE_ERROR, MessageFormat.format("directory: {0}",
-                                    resultsDir.toString()));
+                    QueryException qe = new QueryException(DatawaveErrorCode.MAPRED_RESULTS_DELETE_ERROR,
+                                    MessageFormat.format("directory: {0}", resultsDir.toString()));
                     log.error(qe);
                     response.addException(qe);
                     throw new DatawaveWebApplicationException(qe, response);
@@ -632,8 +634,8 @@ public class MapReduceBean {
                 response.setResult(true);
                 return response;
             } catch (IOException e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.JOBTRACKER_CONNECTION_ERROR, e, MessageFormat.format("JobTracker: {0}",
-                                thisJob.getJobTracker()));
+                QueryException qe = new QueryException(DatawaveErrorCode.JOBTRACKER_CONNECTION_ERROR, e,
+                                MessageFormat.format("JobTracker: {0}", thisJob.getJobTracker()));
                 log.error(qe);
                 response.addException(qe);
                 throw new DatawaveWebApplicationException(qe, response);
@@ -648,7 +650,7 @@ public class MapReduceBean {
             }
         }
     }
-    
+
     /**
      * Kill any job running associated with the BulkResults id and start a new job.
      *
@@ -668,9 +670,9 @@ public class MapReduceBean {
     @javax.ws.rs.Path("/{jobId}/restart")
     @GZIP
     public GenericResponse<String> restart(@PathParam("jobId") String jobId) {
-        
+
         GenericResponse<String> response = new GenericResponse<>();
-        
+
         // Find all potential running jobs
         MapReduceInfoResponseList list = mapReduceState.findById(jobId);
         // Should contain zero or one job
@@ -691,9 +693,9 @@ public class MapReduceBean {
             // Now call submit
             return submit(jobName, thisJob.getRuntimeParameters() + PARAMETER_SEPARATOR + JOB_ID + PARAMETER_NAME_VALUE_SEPARATOR + jobId);
         }
-        
+
     }
-    
+
     /**
      * Returns status of a job with the given jobId
      *
@@ -729,7 +731,7 @@ public class MapReduceBean {
         }
         return response;
     }
-    
+
     /**
      * Returns the contents of a result file. The list of resulting output files from the MapReduce job is listed in the response object of the status
      * operation.
@@ -757,31 +759,31 @@ public class MapReduceBean {
         String resultsDir = result.getResultsDirectory();
         final FileSystem fs = getFS(hdfs, response);
         final Path resultFile = new Path(resultsDir, fileName);
-        
+
         FSDataInputStream fis;
         try {
             if (!fs.exists(resultFile) || !fs.isFile(resultFile)) {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FILE_NOT_FOUND, MessageFormat.format("{0} at path {1}", fileName,
-                                resultsDir));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.FILE_NOT_FOUND,
+                                MessageFormat.format("{0} at path {1}", fileName, resultsDir));
                 response.addException(qe);
                 throw new NotFoundException(qe, response);
             }
-            
+
             fis = fs.open(resultFile);
         } catch (IOException e1) {
-            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_FILE_ACCESS_ERROR, e1, MessageFormat.format("{0}",
-                            resultFile.toString()));
+            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_FILE_ACCESS_ERROR, e1,
+                            MessageFormat.format("{0}", resultFile.toString()));
             log.error(qe);
             response.addException(qe);
             throw new NotFoundException(qe, response);
         }
-        
+
         // Make a final reference to the fis for referencing inside the inner class
         final FSDataInputStream fiz = fis;
         return new StreamingOutput() {
-            
+
             private Logger log = Logger.getLogger(this.getClass());
-            
+
             @Override
             public void write(java.io.OutputStream output) throws IOException, WebApplicationException {
                 byte[] buf = new byte[BUFFER_SIZE];
@@ -792,7 +794,7 @@ public class MapReduceBean {
                         output.write(buf, 0, read);
                         read = fiz.read(buf);
                     }
-                    
+
                 } catch (Exception e) {
                     log.error("Error writing result file to output", e);
                     throw new WebApplicationException(e);
@@ -811,10 +813,10 @@ public class MapReduceBean {
                     }
                 }
             }
-            
+
         };
     }
-    
+
     /**
      * Returns the a tar file where each tar entry is a result file.
      *
@@ -840,23 +842,24 @@ public class MapReduceBean {
         String hdfs = result.getHdfs();
         String resultsDir = result.getResultsDirectory();
         final FileSystem fs = getFS(hdfs, response);
-        
+
         final Path jobDirectory = new Path(resultsDir);
         final int jobDirectoryPathLength = jobDirectory.toUri().getPath().length();
         try {
             if (!fs.exists(jobDirectory) || !fs.getFileStatus(jobDirectory).isDirectory()) {
-                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JOB_DIRECTORY_NOT_FOUND, MessageFormat.format("{0} at path {1}",
-                                jobId, jobDirectory));
+                NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.JOB_DIRECTORY_NOT_FOUND,
+                                MessageFormat.format("{0} at path {1}", jobId, jobDirectory));
                 response.addException(qe);
                 throw new NotFoundException(qe, response);
             }
         } catch (IOException e1) {
-            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_DIRECTORY_ACCESS_ERROR, e1, MessageFormat.format("{0}", resultsDir));
+            NotFoundQueryException qe = new NotFoundQueryException(DatawaveErrorCode.RESULT_DIRECTORY_ACCESS_ERROR, e1,
+                            MessageFormat.format("{0}", resultsDir));
             log.error(qe);
             response.addException(qe);
             throw new NotFoundException(qe, response);
         }
-        
+
         // Get the children
         List<FileStatus> resultFiles = new ArrayList<>();
         try {
@@ -878,10 +881,10 @@ public class MapReduceBean {
             response.addException(qe);
             throw new DatawaveWebApplicationException(qe, response);
         }
-        
+
         String filename = jobId + "-files.tar";
         httpResponse.addHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
-        
+
         // Make final references for use in anonymous class
         final List<FileStatus> paths = resultFiles;
         return output -> {
@@ -939,9 +942,9 @@ public class MapReduceBean {
                 }
             }
         };
-        
+
     }
-    
+
     /**
      * List the status of all jobs for the current user
      *
@@ -961,10 +964,10 @@ public class MapReduceBean {
     public MapReduceInfoResponseList list() {
         return mapReduceState.find();
     }
-    
+
     /**
      * Removes the MapReduce entry and associated data
-     * 
+     *
      * @param jobId
      *            the job id
      * @return datawave.webservice.result.VoidResponse
@@ -1011,10 +1014,10 @@ public class MapReduceBean {
             response.addException(e.getBottomQueryException());
             throw new DatawaveWebApplicationException(e, response);
         }
-        
+
         return response;
     }
-    
+
     private FileSystem getFS(String hdfs, BaseResponse response) {
         org.apache.hadoop.conf.Configuration conf = new org.apache.hadoop.conf.Configuration();
         conf.set("fs.defaultFS", hdfs);
@@ -1031,7 +1034,7 @@ public class MapReduceBean {
             throw new NotFoundException(qe, response);
         }
     }
-    
+
     protected void canRunJob(Principal principal, MultivaluedMap<String,String> queryParameters, List<String> requiredRoles, List<String> requiredAuths)
                     throws UnauthorizedQueryException {
         if (principal instanceof DatawavePrincipal == false) {
@@ -1041,18 +1044,18 @@ public class MapReduceBean {
         if (requiredRoles != null && !requiredRoles.isEmpty()) {
             Set<String> usersRoles = new HashSet<>(datawavePrincipal.getPrimaryUser().getRoles());
             if (!usersRoles.containsAll(requiredRoles)) {
-                throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format("Requires the following roles: {0}",
-                                requiredRoles));
+                throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED,
+                                MessageFormat.format("Requires the following roles: {0}", requiredRoles));
             }
         }
-        
+
         if (null != queryParameters) {
             if (requiredAuths != null && !requiredAuths.isEmpty()) {
                 String authsString = queryParameters.getFirst("auths");
                 List<String> authorizations = AuthorizationsUtil.splitAuths(authsString);
                 if (!authorizations.containsAll(requiredAuths)) {
-                    throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED, MessageFormat.format(
-                                    "Requires the following auths: {0}", requiredAuths));
+                    throw new UnauthorizedQueryException(DatawaveErrorCode.JOB_EXECUTION_UNAUTHORIZED,
+                                    MessageFormat.format("Requires the following auths: {0}", requiredAuths));
                 }
             }
         }

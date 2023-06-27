@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -17,17 +15,19 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.iterators.filter.AgeOffConfigParams;
+
 /**
  * Data type age off filter. Traverses through indexed tables
- * 
- * 
+ *
+ *
  * and non-indexed tables. Example follows. Note that
- * 
+ *
  * any data type TTL will follow the same units specified in ttl units
- * 
+ *
  * <pre>
  * {@code
- * 
+ *
  * <rules>
  *     <rule>
  *         <filterClass>datawave.iterators.filter.ageoff.DataTypeAgeOffFilter</filterClass>
@@ -40,7 +40,7 @@ import com.google.common.collect.Sets;
  * </pre>
  */
 public class DataTypeAgeOffFilter extends AppliedRule {
-    
+
     /**
      * Null byte
      */
@@ -63,17 +63,17 @@ public class DataTypeAgeOffFilter extends AppliedRule {
      * Fi column bytes.
      */
     private static final byte[] FI_COLUMN_BYTES = FI_COLUMN.getBytes();
-    
+
     /**
      * Minimum shard length
      */
     private static final int SHARD_ID_LENGTH_MIN = 10;
-    
+
     /**
      * Logger
      */
     private static final Logger log = Logger.getLogger(DataTypeAgeOffFilter.class);
-    
+
     /**
      * Determine whether or not the rules are applied
      */
@@ -82,26 +82,26 @@ public class DataTypeAgeOffFilter extends AppliedRule {
      * Is against the index table.
      */
     protected boolean isIndextable;
-    
+
     /**
      * Data type cut off times
      */
     protected Map<ByteSequence,Long> dataTypeTimes = null;
-    
+
     /**
      * When set, will only accept keys at scan-level for matching timestamps
      */
     protected Map<ByteSequence,Long> dataTypeScanTimes = null;
-    
+
     /**
      * Required by the {@code FilterRule} interface. This method returns a {@code boolean} value indicating whether or not to allow the {@code (Key, Value)}
      * pair through the rule. A value of {@code true} indicates that the pair should be passed onward through the {@code Iterator} stack, and {@code false}
      * indicates that the {@code (Key, Value)} pair should not be passed on.
-     * 
+     *
      * <p>
      * If the value provided in the paramter {@code k} does not match the REGEX pattern specified in this filter's configuration options, then a value of
      * {@code true} is returned.
-     * 
+     *
      * @param k
      *            {@code Key} object containing the row, column family, and column qualifier.
      * @param v
@@ -110,18 +110,18 @@ public class DataTypeAgeOffFilter extends AppliedRule {
      */
     @Override
     public boolean accept(AgeOffPeriod period, Key k, Value v) {
-        
+
         ruleApplied = false;
         // get the column qualifier, so that we can use it throughout
         // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
         final byte[] cq = k.getColumnQualifierData().getBackingArray();
-        
+
         int cqLength = cq.length;
-        
+
         int nullIndex = -1;
-        
+
         ByteSequence dataType = null;
-        
+
         /**
          * Supports the shard and index table. There should not be a failure, however if either one is used on the incorrect table
          */
@@ -132,16 +132,16 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                     break;
                 }
             }
-            
+
             if (nullIndex > 0)
                 dataType = new ArrayByteSequence(cq, nullIndex, (cqLength - nullIndex));
-            
+
         } else {
             // shard table
-            
+
             // ASSUMES THAT THE KEY STARTS WITH A CORRECTLY SIZED BYTE ARRAY
             byte[] cf = k.getColumnFamilyData().getBackingArray();
-            
+
             byte[] column = null;
             if (cf.length >= 3 && cf[0] == FI_COLUMN_BYTES[0] && cf[1] == FI_COLUMN_BYTES[1] && cf[2] == NULL) {
                 column = FI_COLUMN_BYTES;
@@ -151,10 +151,10 @@ public class DataTypeAgeOffFilter extends AppliedRule {
             } else if (cf.length == 1 && cf[0] == DOCUMENT_COLUMN_BYTES[0]) {
                 column = DOCUMENT_COLUMN_BYTES;
             }
-            
+
             // if a document or tf column family, then we parse the shard entry differently
             if (column == DOCUMENT_COLUMN_BYTES || column == TF_COLUMN_BYTES) {
-                
+
                 // don't need to check the last byte as we expect more than one null if formatted correctly
                 for (int i = 0; i < cqLength - 1; i++) {
                     if (cq[i] == NULL) {
@@ -162,14 +162,14 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                         break;
                     }
                 }
-                
+
                 // the data type is the first part of this entry.
                 if (nullIndex > 0) {
                     dataType = new ArrayByteSequence(cq, 0, nullIndex);
                 }
-                
+
             } else if (column == FI_COLUMN_BYTES) {
-                
+
                 int uidIndex = -1;
                 for (int i = cqLength - 1; i >= 0; i--) {
                     if (cq[i] == NULL) {
@@ -182,10 +182,10 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                             break;
                     }
                 }
-                
+
                 if (uidIndex > 0 && nullIndex > 0)
                     dataType = new ArrayByteSequence(cq, nullIndex, (uidIndex - nullIndex));
-                
+
             } else {
                 int cfLength = cf.length;
                 for (int i = 0; i < cfLength; i++) {
@@ -198,14 +198,14 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                 if (nullIndex > 0) {
                     dataType = new ArrayByteSequence(cf, 0, nullIndex);
                 }
-                
+
             }
         }
-        
+
         long defaultCutoffTime = (period.getTtl() >= 0) ? period.getCutOffMilliseconds() : -1;
         Long dataTypeCutoff = (dataTypeTimes.containsKey(dataType)) ? dataTypeTimes.get(dataType) : null;
         boolean accept = true;
-        
+
         if (dataTypeCutoff == null) {
             if (defaultCutoffTime >= 0) {
                 ruleApplied = true;
@@ -223,10 +223,10 @@ public class DataTypeAgeOffFilter extends AppliedRule {
         }
         return accept;
     }
-    
+
     /**
      * Required by the {@code FilterRule} interface. Used to initialize the the {@code FilterRule} implementation
-     * 
+     *
      * @param options
      *            {@code Map} object containing the TTL, TTL_UNITS, and MATCHPATTERN for the filter rule.
      * @see datawave.iterators.filter.AgeOffConfigParams
@@ -234,7 +234,7 @@ public class DataTypeAgeOffFilter extends AppliedRule {
     public void init(FilterOptions options) {
         init(options, null);
     }
-    
+
     /**
      * Required by the {@code FilterRule} interface. Used to initialize the the {@code FilterRule} implementation
      *
@@ -248,23 +248,23 @@ public class DataTypeAgeOffFilter extends AppliedRule {
         long scanStart = scanStartStr == null ? System.currentTimeMillis() : Long.parseLong(scanStartStr);
         this.init(options, scanStart, iterEnv);
     }
-    
+
     protected void init(FilterOptions options, final long scanStart, IteratorEnvironment iterEnv) {
         super.init(options, iterEnv);
         if (options == null) {
             throw new IllegalArgumentException("FilterOptions can not be null");
         }
         String ttlUnits = options.getTTLUnits();
-        
+
         Set<ByteSequence> dataTypes = Sets.newHashSet();
-        
+
         String dataTypeOption = options.getOption("datatypes");
         if (null != dataTypeOption) {
             String[] dataTypeArray = dataTypeOption.split(",");
             for (String dt : dataTypeArray)
                 dataTypes.add(new ArrayByteSequence(dt.trim().getBytes()));
         }
-        
+
         isIndextable = false;
         if (options.getOption(AgeOffConfigParams.IS_INDEX_TABLE) == null) {
             if (iterEnv != null && iterEnv.getConfig() != null) {
@@ -273,17 +273,17 @@ public class DataTypeAgeOffFilter extends AppliedRule {
         } else { // legacy
             isIndextable = Boolean.valueOf(options.getOption(AgeOffConfigParams.IS_INDEX_TABLE));
         }
-        
+
         long ttlUnitsFactor = 1L; // default to "days" as the unit.
-        
+
         if (ttlUnits != null) {
             ttlUnitsFactor = AgeOffPeriod.getTtlUnitsFactor(options.getTTLUnits());
-            
+
             dataTypeTimes = new HashMap<>();
             dataTypeScanTimes = new HashMap<>();
-            
+
             long myCutOffDateMillis = 0;
-            
+
             for (ByteSequence dataType : dataTypes) {
                 String optionTTL = options.getOption(dataType + "." + AgeOffConfigParams.TTL);
                 if (null != optionTTL) {
@@ -292,7 +292,7 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                 } else {
                     dataTypeTimes.put(dataType, options.getAgeOffPeriod().getCutOffMilliseconds());
                 }
-                
+
                 final String dataTypeHasScanTime = options.getOption(dataType + ".hasScanTime");
                 if (Boolean.parseBoolean(dataTypeHasScanTime)) {
                     final String scanTime = iterEnv.getConfig().get("table.custom.timestamp.current." + dataType);
@@ -304,13 +304,13 @@ public class DataTypeAgeOffFilter extends AppliedRule {
                     }
                 }
             }
-            
+
         }
     }
-    
+
     @Override
     public boolean isFilterRuleApplied() {
         return ruleApplied;
     }
-    
+
 }

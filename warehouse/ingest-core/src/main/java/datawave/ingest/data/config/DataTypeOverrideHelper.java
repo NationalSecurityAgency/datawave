@@ -6,15 +6,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
+
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
 import datawave.data.hash.UIDConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
-import datawave.util.StringUtils;
 import datawave.ingest.input.reader.event.RecordFilter;
-
-import org.apache.hadoop.conf.Configuration;
+import datawave.util.StringUtils;
 
 /**
  * DataTypeHelper that supports overriding of the parent data type name via additional config properties. Allows assignment of an event's data type to be
@@ -22,37 +22,37 @@ import org.apache.hadoop.conf.Configuration;
  *
  */
 public class DataTypeOverrideHelper extends DataTypeHelperImpl {
-    
+
     public interface Properties {
         String EVENT_DATA_TYPE_FIELD_NAME = ".data.type.field.name";
         String DATA_TYPE_KEYS = ".event.data.type.keys";
         String DATA_TYPE_VALUES = ".event.data.type.values";
         String FILTER_PROP = "RecordReader.filters";
     }
-    
+
     protected List<? extends RecordFilter> filters = null;
-    
+
     protected final Map<String,String> eventDataTypeMap = new HashMap<>();
     protected String eventDataTypeFieldName = null;
-    
+
     public void setup(Configuration config) throws IllegalArgumentException {
         super.setup(config);
-        
+
         eventDataTypeFieldName = config.get(this.getType().typeName() + Properties.EVENT_DATA_TYPE_FIELD_NAME);
-        
+
         if (eventDataTypeFieldName != null) {
             String[] eventDataTypeKeys = config.get(this.getType().typeName() + Properties.DATA_TYPE_KEYS, "").split(",");
             String[] eventDataTypeValues = config.get(this.getType().typeName() + Properties.DATA_TYPE_VALUES, "").split(",");
-            
+
             if (eventDataTypeKeys.length != eventDataTypeValues.length) {
                 throw new IllegalArgumentException("Both " + this.getType().typeName() + Properties.DATA_TYPE_KEYS + " and " + this.getType().typeName()
                                 + Properties.DATA_TYPE_VALUES + " must contain the same number of values.");
             }
-            
+
             for (int i = 0; i < eventDataTypeKeys.length; i++)
                 this.eventDataTypeMap.put(eventDataTypeKeys[i].trim(), eventDataTypeValues[i].trim());
         }
-        
+
         if (config.get(Properties.FILTER_PROP) != null) {
             filters = config.getInstances(Properties.FILTER_PROP, RecordFilter.class);
             for (RecordFilter filter : filters) {
@@ -60,7 +60,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
             }
         }
     }
-    
+
     /**
      * Update the data of the specified event based on parameters provided. We retrieve the value from the parameters related to
      * <code>eventDataTypeFieldName</code>. If present, we look up the corresponding data type using the values and {@link #getType(String)}.
@@ -90,7 +90,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
             }
         }
     }
-    
+
     /**
      * Update the data of the specified event based on the field name and value provided. If the field name does not match <code>eventDataTypeFieldName</code>
      * no action will be performed. Otherwise if this field name matches <code>eventDataTypeFieldName</code>, we will look up the replacement data type using
@@ -110,7 +110,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
             event.setDataType(getType(fieldValue));
         }
     }
-    
+
     /**
      * Obtain the new type from the eventDataType map based on the field value. This new type is a type in 'output name' only and will reference the internal
      * type, helper, reader, default data type handlers filter priority and default data type filters of the original type (as returned by {@link #getType()};)
@@ -126,12 +126,12 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
         if (newType == null) {
             return type;
         }
-        
+
         return new Type(type.typeName(), newType, type.getHelperClass(), type.getReaderClass(), type.getDefaultDataTypeHandlers(), type.getFilterPriority(),
                         type.getDefaultDataTypeFilters());
-        
+
     }
-    
+
     /**
      * Create a UID which contains hashes based on the base id and appended attachment info
      *
@@ -144,7 +144,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
     public static UID getUid(String id, Date time) {
         return getUid(id, time, null);
     }
-    
+
     /**
      * Create a UID which contains hashes based on the base id and appended attachment info
      *
@@ -156,7 +156,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      *            a UID builder, or null to use the default builder (hash-based)
      * @return UID
      */
-    
+
     public static UID getUid(String id, Date time, UIDBuilder<UID> builder) {
         builder = (builder != null) ? builder : UID.builder();
         String[] uidParts = getIdComponents(id);
@@ -171,7 +171,7 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
             return builder.newId(id.getBytes(), time);
         }
     }
-    
+
     /**
      * Create string array by splitting id with '-att-'
      *
@@ -180,13 +180,13 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
      * @return a string array of the split components
      */
     public static String[] getIdComponents(String id) {
-        
+
         return StringUtils.split(id, "-att-");
     }
-    
+
     public boolean filterEvent(RawRecordContainer event) {
         boolean result = true;
-        
+
         if (null != event && filters != null) {
             for (RecordFilter filter : filters) {
                 // run through all the filters and make sure they are accepting the event
@@ -194,14 +194,14 @@ public class DataTypeOverrideHelper extends DataTypeHelperImpl {
                 if (!filter.accept(event)) {
                     result = false;
                     break;
-                    
+
                 }
             }
         }
-        
+
         return result;
     }
-    
+
     public void closeFilters() {
         if (filters != null) {
             for (RecordFilter filter : filters) {

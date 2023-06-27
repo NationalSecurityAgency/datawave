@@ -16,14 +16,6 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.exception.EmptyObjectException;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.util.ProtostuffMessageBodyWriter;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.codec.binary.Base64;
@@ -33,8 +25,16 @@ import org.apache.log4j.Logger;
 import org.jboss.weld.environment.se.Weld;
 import org.springframework.util.Assert;
 
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.util.ProtostuffMessageBodyWriter;
+
 public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<Key,Value,Key,Value> {
-    
+
     private static Logger log = Logger.getLogger(BulkResultsFileOutputMapper.class);
     /**
      * Parameter to store Base64 encoded serialized Query settings
@@ -44,34 +44,34 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
      * Parameter to store the Query impl class name
      */
     public static final String QUERY_IMPL_CLASS = "query.impl.class.name";
-    
+
     /**
      * Parameter to store class name of the Query Logic
      */
     public static final String QUERY_LOGIC_NAME = "query.logic.name";
-    
+
     public static final String APPLICATION_CONTEXT_PATH = "application.context.path";
-    
+
     /**
      * Parameter to store serialization format
      */
     public static final String RESULT_SERIALIZATION_FORMAT = "bulk.results.serial.format";
-    
+
     private QueryLogicTransformer t = null;
     private Map<Key,Value> entries = new HashMap<>();
     private Map<String,Class<? extends BaseQueryResponse>> responseClassMap = new HashMap<>();
     private SerializationFormat format = SerializationFormat.XML;
     private Weld weld;
-    
+
     @Override
     protected void setup(org.apache.hadoop.mapreduce.Mapper<Key,Value,Key,Value>.Context context) throws IOException, InterruptedException {
         if (System.getProperty("ignore.weld.startMain") == null) {
             System.setProperty("com.sun.jersey.server.impl.cdi.lookupExtensionInBeanManager", "true"); // Disable CDI extensions in Jersey libs
-            
+
             weld = new Weld("STATIC_INSTANCE");
             weld.initialize();
         }
-        
+
         super.setup(context);
         Query query;
         try {
@@ -83,27 +83,27 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
             throw new RuntimeException("Error instantiating query impl class " + context.getConfiguration().get(QUERY_IMPL_CLASS), e);
         }
         final Configuration configuration = context.getConfiguration();
-        
+
         this.setApplicationContext(configuration.get(SPRING_CONFIG_LOCATIONS));
-        
+
         String logicName = context.getConfiguration().get(QUERY_LOGIC_NAME);
-        
+
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(logicName);
         t = logic.getEnrichedTransformer(query);
         Assert.notNull(logic.getMarkingFunctions());
         Assert.notNull(logic.getResponseObjectFactory());
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(RESULT_SERIALIZATION_FORMAT));
     }
-    
+
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         super.cleanup(context);
-        
+
         if (weld != null) {
             weld.shutdown();
         }
     }
-    
+
     @Override
     protected void map(Key key, Value value, org.apache.hadoop.mapreduce.Mapper<Key,Value,Key,Value>.Context context) throws IOException, InterruptedException {
         entries.clear();
@@ -118,7 +118,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
                 } catch (ClassNotFoundException e) {
                     throw new RuntimeException("Unable to find response class: " + response.getClass().getName(), e);
                 }
-                
+
                 try {
                     Value val = serializeResponse(responseClass, response, this.format);
                     // Write out the original key and the new value.
@@ -138,7 +138,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
             }
         }
     }
-    
+
     private Class<? extends BaseQueryResponse> getResponseClass(String className) throws ClassNotFoundException {
         if (responseClassMap.containsKey(className))
             return responseClassMap.get(className);
@@ -149,7 +149,7 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
             return clazz;
         }
     }
-    
+
     public static Value serializeResponse(Class<? extends BaseQueryResponse> responseClass, BaseQueryResponse response, SerializationFormat format)
                     throws Exception {
         Value val;
@@ -170,13 +170,13 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
         ProtostuffMessageBodyWriter writer = new ProtostuffMessageBodyWriter();
-        
+
         writer.writeTo(response, responseClass, null, responseClass.getAnnotations(), media, null, baos);
-        
+
         val = new Value(baos.toByteArray());
         return val;
     }
-    
+
     public static String serializeQuery(Query q) throws JAXBException {
         StringWriter writer = new StringWriter();
         JAXBContext ctx = JAXBContext.newInstance(q.getClass());
@@ -185,12 +185,12 @@ public class BulkResultsFileOutputMapper extends ApplicationContextAwareMapper<K
         // Probably need to base64 encode it so that it will not mess up the Hadoop Configuration object
         return new String(Base64.encodeBase64(writer.toString().getBytes()), Charset.forName("UTF-8"));
     }
-    
+
     public static Query deserializeQuery(String base64EncodedQuery, Class<? extends Query> queryImplClass) throws JAXBException {
         String query = new String(Base64.decodeBase64(base64EncodedQuery), Charset.forName("UTF-8"));
         JAXBContext ctx = JAXBContext.newInstance(queryImplClass);
         Unmarshaller u = ctx.createUnmarshaller();
         return (Query) u.unmarshal(new StringReader(query));
     }
-    
+
 }

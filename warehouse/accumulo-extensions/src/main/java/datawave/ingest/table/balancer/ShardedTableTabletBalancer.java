@@ -1,21 +1,21 @@
 package datawave.ingest.table.balancer;
 
-import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.conf.Property;
-import org.apache.accumulo.core.data.TabletId;
-import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment.Configuration;
-import org.apache.accumulo.core.spi.balancer.GroupBalancer;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparator;
-import org.apache.log4j.Logger;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.function.Function;
+
+import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.data.TabletId;
+import org.apache.accumulo.core.spi.balancer.GroupBalancer;
+import org.apache.accumulo.core.spi.balancer.data.TabletServerId;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableComparator;
+import org.apache.log4j.Logger;
 
 /**
  * A custom tablet balancer designed to work with a date-partitioned (sharded) table. This balancer is based on the {@link GroupBalancer}, which spreads tablets
@@ -32,17 +32,17 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
     private static final String SHARDED_PROPERTY_PREFIX = Property.TABLE_ARBITRARY_PROP_PREFIX.getKey() + "sharded.balancer.";
     public static final String SHARDED_MAX_MIGRATIONS = SHARDED_PROPERTY_PREFIX + "max.migrations";
     public static final int MAX_MIGRATIONS_DEFAULT = 10000;
-    
+
     private static final Logger log = Logger.getLogger(ShardedTableTabletBalancer.class);
-    private Map<TabletId, TabletServerId> tabletLocationCache;
+    private Map<TabletId,TabletServerId> tabletLocationCache;
     private Function<TabletId,String> partitioner;
     private TableId tableId;
-    
+
     public ShardedTableTabletBalancer(TableId tableId) {
         super(tableId);
         this.tableId = tableId;
     }
-    
+
     // synchronized to ensure exclusivity between getAssignments and balance calls
     @Override
     public synchronized void getAssignments(AssignmentParameters params) {
@@ -50,35 +50,35 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
         partitioner = new ShardDayPartitioner();
         super.getAssignments(params);
     }
-    
+
     // synchronized to ensure exclusivity between getAssignments and balance calls
     @Override
     public synchronized long balance(BalanceParameters params) {
         // Clear the location cache so we're sure to rebuild for this balancer pass
         tabletLocationCache = null;
-        
+
         // During balancing, we actually want to balance using groups that include multiple days, in order to ensure that
         // data doesn't cluster weeks or months of data on a subset of the cluster.
         final int numTservers = params.currentStatus().size();
         partitioner = new ShardGroupPartitioner(numTservers, getLocationProvider());
-        
+
         return super.balance(params);
     }
-    
+
     @Override
     protected Function<TabletId,String> getPartitioner() {
         return partitioner;
     }
-    
+
     @Override
-    protected Map<TabletId, TabletServerId> getLocationProvider() {
+    protected Map<TabletId,TabletServerId> getLocationProvider() {
         // Cache metadata locations so we only scan the metadata table once per balancer pass
         if (tabletLocationCache == null) {
             tabletLocationCache = Collections.unmodifiableMap(getRawLocationProvider());
         }
         return tabletLocationCache;
     }
-    
+
     @Override
     protected int getMaxMigrations() {
         int maxMigrations = MAX_MIGRATIONS_DEFAULT;
@@ -88,7 +88,8 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
                 try {
                     maxMigrations = Integer.parseInt(maxMigrationsProp);
                 } catch (Exception e) {
-                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to " + maxMigrations);
+                    log.error("Unable to parse " + SHARDED_MAX_MIGRATIONS + " value (" + maxMigrationsProp + ") as an integer.  Defaulting to "
+                                    + maxMigrations);
                 }
             }
         } catch (Exception e) {
@@ -96,21 +97,21 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
         }
         return maxMigrations;
     }
-    
+
     protected Configuration getTableConfiguration() {
         return this.environment.getConfiguration(this.tableId);
     }
-    
+
     /**
      * Gets the raw location provider. By default, this just delegates to the parent class' {@link #getLocationProvider()} which scans the metadata table.
      * However, test cases might override in order to replace the parent metadata location provider whilst still allowing the caching mechanism in use here.
-     * 
+     *
      * @return iterable location provider
      */
-    protected Map<TabletId, TabletServerId> getRawLocationProvider() {
+    protected Map<TabletId,TabletServerId> getRawLocationProvider() {
         return super.getLocationProvider();
     }
-    
+
     /**
      * Partitions extents into groups according to the "day" portion of the end row. That is, the end row is expected to be in the form yyyymmdd_x, and the
      * partitioner returns yyyymmdd.
@@ -131,7 +132,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
             return date;
         }
     }
-    
+
     /**
      * Partitions extents for this table into groups as follows:
      * <ul>
@@ -142,34 +143,34 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
      */
     protected static class ShardGroupPartitioner implements Function<TabletId,String> {
         private TreeMap<TabletId,String> groupIDs = new TreeMap<>();
-        
+
         /**
          * @param numTservers
          *            the number of active tablet servers
          * @param tabletLocations
          *            the sorted list of tablet and current/previous location pairs
          */
-        public ShardGroupPartitioner(int numTservers, Map<TabletId, TabletServerId> tabletLocations) {
+        public ShardGroupPartitioner(int numTservers, Map<TabletId,TabletServerId> tabletLocations) {
             int groupSize = Math.round(numTservers * 0.95f);
             int numInGroup = 0;
             int groupNumber = 1;
-            
+
             String groupID = String.format("g%04d", groupNumber);
             TabletId groupStartExtent = tabletLocations.keySet().iterator().next();
 
             int groupStartNumber = numInGroup;
             byte[] prevDate = retrieveDate(groupStartExtent);
             groupIDs.put(groupStartExtent, groupID);
-            for (Entry<TabletId, TabletServerId> pair : tabletLocations.entrySet()) {
+            for (Entry<TabletId,TabletServerId> pair : tabletLocations.entrySet()) {
                 TabletId extent = pair.getKey();
-                
+
                 // The date changed, so save this extent as a (potential) new group start extent
                 if (!sameDate(extent, prevDate)) {
                     groupStartExtent = extent;
                     groupStartNumber = numInGroup;
                     prevDate = retrieveDate(extent);
                 }
-                
+
                 // If we just exceeded the number of entries in a group, then add a new group and use
                 // the most recent group start extent as the beginning of the new group. This ensures that
                 // all pieces of a given day go into the same group, but we add as many consecutive days as
@@ -182,7 +183,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
                     groupIDs.put(groupStartExtent, groupID);
                 }
             }
-            
+
             // If the final group is small enough that we can merge it into the previous group
             // without the previous group having more members than tservers, then do so.
             int tooSmallGroupSize = numTservers - groupSize;
@@ -190,14 +191,14 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
                 groupIDs.remove(groupIDs.lastKey());
             }
         }
-        
+
         @Override
         public String apply(TabletId input) {
             // Finds the group start that is nearest (less than or equal to) to the supplied extent, and uses that calculated group value.
             Entry<TabletId,String> entry = groupIDs.floorEntry(input);
             return entry == null ? "extra" : entry.getValue();
         }
-        
+
         private byte[] retrieveDate(TabletId extent) {
             Text endRow = extent.getEndRow();
             if (endRow == null)
@@ -214,7 +215,7 @@ public class ShardedTableTabletBalancer extends GroupBalancer {
                 return Arrays.copyOf(endRow.getBytes(), idx);
             }
         }
-        
+
         private boolean sameDate(TabletId extent, byte[] date) {
             Text endRow = extent.getEndRow();
             if (endRow == null)

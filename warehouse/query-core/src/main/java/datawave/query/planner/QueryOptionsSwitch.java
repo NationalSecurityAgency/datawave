@@ -1,21 +1,25 @@
 package datawave.query.planner;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Sets;
+
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
-import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import org.apache.log4j.Logger;
-
-import java.util.Map;
 
 public class QueryOptionsSwitch {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(QueryOptionsSwitch.class);
-    
+
     public static void apply(Map<String,String> optionsMap, ShardQueryConfiguration config) {
         for (Map.Entry<String,String> entry : optionsMap.entrySet()) {
             String key = entry.getKey();
@@ -54,6 +58,16 @@ public class QueryOptionsSwitch {
                 case QueryParameters.EXCERPT_FIELDS:
                     ExcerptFields excerptFields = ExcerptFields.from(value);
                     config.setExcerptFields(excerptFields);
+                    break;
+                case QueryParameters.NO_EXPANSION_FIELDS:
+                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
+                case QueryParameters.LENIENT_FIELDS:
+                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
+                case QueryParameters.STRICT_FIELDS:
+                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
             }
         }
     }

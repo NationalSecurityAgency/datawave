@@ -1,8 +1,10 @@
 package datawave.iterators.filter.ageoff;
 
-import com.google.common.base.Predicate;
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.AgeOffTtlUnits;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -17,98 +19,98 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import com.google.common.base.Predicate;
+
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.AgeOffTtlUnits;
 
 public class FieldAgeOffFilterTest {
     private static final String VISIBILITY_PATTERN = "MY_VIS";
     private static final int ONE_SEC = 1000;
     private static final int ONE_MIN = 60 * ONE_SEC;
-    
+
     private ConfigurableIteratorEnvironment iterEnv = new ConfigurableIteratorEnvironment();
-    
+
     private class ConfigurableIteratorEnvironment implements IteratorEnvironment {
-        
+
         private IteratorUtil.IteratorScope scope;
         private AccumuloConfiguration conf;
-        
+
         public ConfigurableIteratorEnvironment() {
             scope = null;
             conf = null;
         }
-        
+
         public void setConf(AccumuloConfiguration conf) {
             this.conf = conf;
         }
-        
+
         @Override
         public SortedKeyValueIterator<Key,Value> reserveMapFileReader(String s) throws IOException {
             return null;
         }
-        
+
         @Override
         public AccumuloConfiguration getConfig() {
             return conf;
         }
-        
+
         @Override
         public IteratorUtil.IteratorScope getIteratorScope() {
             return scope;
         }
-        
+
         @Override
         public boolean isFullMajorCompaction() {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public void registerSideChannel(SortedKeyValueIterator<Key,Value> sortedKeyValueIterator) {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public Authorizations getAuthorizations() {
             throw new UnsupportedOperationException();
         }
-        
+
         @Override
         public IteratorEnvironment cloneWithSamplingEnabled() {
             throw new SampleNotPresentException();
         }
-        
+
         @Override
         public boolean isSamplingEnabled() {
             return false;
         }
-        
+
         @Override
         public SamplerConfiguration getSamplerConfiguration() {
             return null;
         }
-        
+
     }
-    
+
     public class EditableAccumuloConfiguration extends AccumuloConfiguration {
-        
+
         private Map<String,String> map = new HashMap<>();
-        
+
         public EditableAccumuloConfiguration(AccumuloConfiguration source) {
             for (Map.Entry<String,String> item : source) {
                 map.put(item.getKey(), item.getValue());
             }
         }
-        
+
         public void put(String k, String v) {
             map.put(k, v);
         }
-        
+
         @Override
         public String get(Property property) {
             return map.get(property.getKey());
         }
-        
+
         @Override
         public void getProperties(Map<String,String> props, java.util.function.Predicate<String> filter) {
             map.keySet().forEach(k -> {
@@ -117,7 +119,7 @@ public class FieldAgeOffFilterTest {
                 }
             });
         }
-        
+
         @Override
         public Iterator<Map.Entry<String,String>> iterator() {
             return map.entrySet().iterator();
@@ -129,15 +131,15 @@ public class FieldAgeOffFilterTest {
         }
 
     }
-    
+
     @Test
     public void testIndexTrueUsesDefaultWhenFieldLacksTtl() {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         conf.put("table.custom.isindextable", "true");
         iterEnv.setConf(conf);
-        
+
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -156,17 +158,17 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testIterEnvNotLostOnDeepCopy() {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         conf.put("table.custom.isindextable", "true");
         iterEnv.setConf(conf);
-        
+
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
-        
+
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
         filterOptions.setTTL(5L);
@@ -175,23 +177,23 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("fields", "field_y,field_z\\x00my-uuid");
         filterOptions.setOption("field_z\\x00my-uuid.ttl", "2"); // 2 seconds
         filterOptions.setOption("field_y.ttl", "2"); // 2 seconds
-        
+
         ageOffFilter.init(filterOptions, iterEnv);
         Assert.assertNotNull("IteratorEnvironment should not be null after init!", ageOffFilter.iterEnv);
         // originally this would cause the iterEnv to be lost and test would fail
         ageOffFilter = (FieldAgeOffFilter) ageOffFilter.deepCopy(tenSecondsAgo);
-        
+
         Assert.assertNotNull("IteratorEnvironment should not be null after deep copy!", ageOffFilter.iterEnv);
     }
-    
+
     @Test
     public void testIndexFalseUsesDefaultWhenFieldLacksTtl() {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         conf.put("isindextable", "false");
         iterEnv.setConf(conf);
-        
+
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -210,14 +212,14 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testLegacyIndexTrueUsesDefaultWhenFieldLacksTtl() {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         iterEnv.setConf(conf);
-        
+
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -237,14 +239,14 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testLegacyIndexFalseUsesDefaultWhenFieldLacksTtl() {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         iterEnv.setConf(conf);
-        
+
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -264,14 +266,14 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testIndexTrueDefaultFalseWhenFieldLacksTtl() {
         EditableAccumuloConfiguration conf = new EditableAccumuloConfiguration(DefaultConfiguration.getInstance());
         iterEnv.setConf(conf);
-        
+
         long tenSecondsAgo = System.currentTimeMillis() - (10L * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -290,24 +292,24 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testIgnoresDocument() {
         Key key = new Key("1234", "d", "someother stuff", VISIBILITY_PATTERN);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         ageOffFilter.init(createFilterOptionsWithPattern(), iterEnv);
-        
+
         // age off immediately
         AgeOffPeriod futureAgeOff = new AgeOffPeriod(System.currentTimeMillis());
         Assert.assertTrue(ageOffFilter.accept(futureAgeOff, key, new Value()));
         Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testKeepsMatchBeforeTtl() {
         long oneSecondAgo = System.currentTimeMillis() - (1 * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 minutes
@@ -322,11 +324,11 @@ public class FieldAgeOffFilterTest {
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testUsesDefaultWhenFieldLacksTtl() {
         long tenSecondsAgo = System.currentTimeMillis() - (10 * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -341,11 +343,11 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testPassesThroughWhenFieldDoesNotMatch() {
         long tenSecondsAgo = System.currentTimeMillis() - (10 * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -356,19 +358,19 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("field_y.ttl", "1"); // 1 second
         filterOptions.setOption("field_z.ttl", "2"); // 2 seconds
         ageOffFilter.init(filterOptions, iterEnv);
-        
+
         // field_a is not a match, so it should pass through
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_a\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testKeepsMatchBeforeTtlForRevisedOptionKey() {
         long currentTime = System.currentTimeMillis();
         long oneMinuteAgo = currentTime - (1 * ONE_MIN);
         long tenMinutesAgo = currentTime - (10 * ONE_MIN);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 minutes
@@ -387,12 +389,12 @@ public class FieldAgeOffFilterTest {
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyZ, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testUsesDefaultWhenFieldLacksTtlForRevisedOptionKey() {
         long oneSecondAgo = System.currentTimeMillis() - (1 * ONE_SEC);
         long tenSecondsAgo = System.currentTimeMillis() - (10 * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -411,7 +413,7 @@ public class FieldAgeOffFilterTest {
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), keyZ, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void handlesFieldsStartingWithNumber() {
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
@@ -442,13 +444,13 @@ public class FieldAgeOffFilterTest {
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyNumeric, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testOverrideUnits() {
         long currentTime = System.currentTimeMillis();
         long oneMinuteAgo = currentTime - (1 * ONE_MIN);
         long tenMinutesAgo = currentTime - (10 * ONE_MIN);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 minutes
@@ -468,11 +470,11 @@ public class FieldAgeOffFilterTest {
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(currentTime), keyZ, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testPassesThroughWhenFieldDoesNotMatchForRevisedOptionKey() {
         long tenSecondsAgo = System.currentTimeMillis() - (10 * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -482,17 +484,17 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("field.field_y.ttl", "1"); // 1 second
         filterOptions.setOption("field.field_z.ttl", "2"); // 2 seconds
         ageOffFilter.init(filterOptions, iterEnv);
-        
+
         // field_a is not a match, so it should pass through
         Key key = new Key("1234", "myDataType\\x00my-uuid", "field_a\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key, new Value()));
         Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     @Test
     public void testExcludeEventData() {
         long tenSecondsAgo = System.currentTimeMillis() - (10 * ONE_SEC);
-        
+
         FieldAgeOffFilter ageOffFilter = new FieldAgeOffFilter();
         FilterOptions filterOptions = createFilterOptionsWithPattern();
         // set the default to 5 seconds
@@ -504,23 +506,23 @@ public class FieldAgeOffFilterTest {
         filterOptions.setOption("field.field_y.ttl", "9"); // 9 seconds
         filterOptions.setOption("field.field_z.ttl", "11"); // 11 seconds
         ageOffFilter.init(filterOptions, iterEnv);
-        
+
         // field_y is event data, it should pass through; but rule is not applied
         Key key1 = new Key("1234", "myDataType\\x00my-uuid", "field_y\u0000value", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key1, new Value()));
         Assert.assertFalse(ageOffFilter.isFilterRuleApplied());
-        
+
         // field_y is index data, it should not pass through and rule applied
         Key key2 = new Key("1234", "fi\u0000field_y", "my_value\\x00my-uuid", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertFalse(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key2, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
-        
+
         // field_z is index data and not aged-off, so it should pass through
         Key key3 = new Key("1234", "fi\u0000field_z", "my_value\\x00my-uuid", VISIBILITY_PATTERN, tenSecondsAgo);
         Assert.assertTrue(ageOffFilter.accept(filterOptions.getAgeOffPeriod(System.currentTimeMillis()), key3, new Value()));
         Assert.assertTrue(ageOffFilter.isFilterRuleApplied());
     }
-    
+
     private FilterOptions createFilterOptionsWithPattern() {
         FilterOptions filterOptions = new FilterOptions();
         filterOptions.setOption(AgeOffConfigParams.MATCHPATTERN, VISIBILITY_PATTERN);
