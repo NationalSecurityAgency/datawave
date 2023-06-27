@@ -1,8 +1,8 @@
 package datawave.core.query.predict;
 
-import datawave.microservice.querymetric.BaseQueryMetric;
-
 import java.util.Set;
+
+import datawave.microservice.querymetric.BaseQueryMetric;
 
 public class NoOpQueryPredictor implements QueryPredictor {
 

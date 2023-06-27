@@ -1,10 +1,10 @@
 package datawave.metrics.iterators;
 
-import datawave.metrics.keys.AnalyticEntryKey;
-import datawave.metrics.keys.InvalidKeyException;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+
+import datawave.metrics.keys.AnalyticEntryKey;
+import datawave.metrics.keys.InvalidKeyException;
 
 public class AnalyticDataTypeFilter extends DataTypeFilter {
     private AnalyticEntryKey aek = new AnalyticEntryKey();

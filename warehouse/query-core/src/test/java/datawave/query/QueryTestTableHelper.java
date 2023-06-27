@@ -1,14 +1,9 @@
 package datawave.query;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.ingest.mapreduce.handler.facet.FacetHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.table.config.FacetTableConfigHelper;
-import datawave.ingest.table.config.MetadataTableConfigHelper;
-import datawave.ingest.table.config.ShardTableConfigHelper;
-import datawave.ingest.table.config.TableConfigHelper;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.util.TableName;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -17,7 +12,6 @@ import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.Key;
@@ -28,9 +22,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.util.Iterator;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.ingest.mapreduce.handler.facet.FacetHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.config.FacetTableConfigHelper;
+import datawave.ingest.table.config.MetadataTableConfigHelper;
+import datawave.ingest.table.config.ShardTableConfigHelper;
+import datawave.ingest.table.config.TableConfigHelper;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.util.TableName;
 
 /**
  * Creates and configures tables that are commonly needed for queries

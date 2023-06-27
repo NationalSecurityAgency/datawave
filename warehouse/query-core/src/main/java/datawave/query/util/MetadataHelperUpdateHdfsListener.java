@@ -1,10 +1,8 @@
 package datawave.query.util;
 
-import datawave.core.common.cache.SharedCacheCoordinator;
-import datawave.core.common.cache.SharedTriState;
-import datawave.core.common.cache.SharedTriStateListener;
-import datawave.core.common.cache.SharedTriStateReader;
-import datawave.core.common.util.EnvProvider;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
@@ -13,8 +11,11 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import datawave.core.common.cache.SharedCacheCoordinator;
+import datawave.core.common.cache.SharedTriState;
+import datawave.core.common.cache.SharedTriStateListener;
+import datawave.core.common.cache.SharedTriStateReader;
+import datawave.core.common.util.EnvProvider;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the TypeMetadata map will be

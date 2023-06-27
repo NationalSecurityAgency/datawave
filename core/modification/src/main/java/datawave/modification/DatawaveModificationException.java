@@ -1,10 +1,10 @@
 package datawave.modification;
 
-import datawave.webservice.query.exception.QueryException;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import datawave.webservice.query.exception.QueryException;
 
 public class DatawaveModificationException extends RuntimeException {
 

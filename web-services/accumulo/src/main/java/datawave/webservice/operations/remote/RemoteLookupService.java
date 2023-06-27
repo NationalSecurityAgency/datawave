@@ -1,12 +1,7 @@
 package datawave.webservice.operations.remote;
 
-import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectReader;
-import datawave.configuration.RefreshableScope;
-import datawave.webservice.response.LookupResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.message.BasicNameValuePair;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
@@ -15,8 +10,16 @@ import javax.interceptor.Interceptor;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
-import java.util.List;
+
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.message.BasicNameValuePair;
+
+import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectReader;
+
+import datawave.configuration.RefreshableScope;
+import datawave.webservice.response.LookupResponse;
 
 @RefreshableScope
 @Alternative

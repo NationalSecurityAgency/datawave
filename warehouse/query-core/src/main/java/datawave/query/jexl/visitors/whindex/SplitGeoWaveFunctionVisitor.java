@@ -1,5 +1,13 @@
 package datawave.query.jexl.visitors.whindex;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.JexlNode;
+
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 import datawave.query.jexl.functions.GeoFunctionsDescriptor;
@@ -8,13 +16,6 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl3.parser.ASTFunctionNode;
-import org.apache.commons.jexl3.parser.JexlNode;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 /**
  * This is a visitor which is used to break up geowave functions which have multiple fields into separate geowave functions.

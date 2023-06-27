@@ -3,12 +3,12 @@ package datawave.query.table.parser;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.lang3.StringUtils;
+
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.TermWeight;
 import datawave.marking.MarkingFunctions;

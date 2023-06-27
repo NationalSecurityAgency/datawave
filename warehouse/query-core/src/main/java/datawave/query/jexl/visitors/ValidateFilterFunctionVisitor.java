@@ -1,11 +1,10 @@
 package datawave.query.jexl.visitors;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.QueryFunctions.NO_EXPANSION;
+
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTArrayAccess;
 import org.apache.commons.jexl3.parser.ASTArrayLiteral;
 import org.apache.commons.jexl3.parser.ASTBitwiseAndNode;
@@ -38,10 +37,12 @@ import org.apache.commons.jexl3.parser.ASTWhileStatement;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.Set;
-
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.QueryFunctions.NO_EXPANSION;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Verifies that no filter function is run against an index-only field

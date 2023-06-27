@@ -1,11 +1,13 @@
 package datawave.query.composite;
 
-import com.google.common.collect.Lists;
-import datawave.data.type.DiscreteIndexType;
-import org.apache.commons.jexl3.parser.JexlNode;
-
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.jexl3.parser.JexlNode;
+
+import com.google.common.collect.Lists;
+
+import datawave.data.type.DiscreteIndexType;
 
 public abstract class Composite implements Cloneable {
 

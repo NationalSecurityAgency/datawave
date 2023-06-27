@@ -1,7 +1,10 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Lists;
-import datawave.query.jexl.JexlASTHelper;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAssignment;
 import org.apache.commons.jexl3.parser.ASTGENode;
@@ -15,10 +18,9 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
+import com.google.common.collect.Lists;
+
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * This will flatten ands and ors. If requested this will also remove reference expressions where possible. A reference expression represents a set of

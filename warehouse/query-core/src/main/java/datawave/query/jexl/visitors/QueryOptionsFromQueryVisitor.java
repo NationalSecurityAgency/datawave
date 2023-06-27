@@ -1,11 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
-import datawave.query.QueryParameters;
-import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
-import datawave.query.jexl.functions.QueryFunctions;
+import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTANDNODE;
+import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
@@ -17,15 +21,13 @@ import org.apache.commons.jexl3.parser.ASTStringLiteral;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 
-import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTANDNODE;
-import static org.apache.commons.jexl3.parser.ParserTreeConstants.JJTORNODE;
+import datawave.query.QueryParameters;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.attributes.UniqueGranularity;
+import datawave.query.jexl.functions.QueryFunctions;
 
 /**
  * Visits the query tree and extracts the parameters from any options functions present and adds them to the provided data {@link Map}. Any options function

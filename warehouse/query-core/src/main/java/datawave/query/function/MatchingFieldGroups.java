@@ -1,14 +1,15 @@
 package datawave.query.function;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import com.google.common.base.Joiner;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import datawave.query.attributes.Attribute;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import datawave.query.attributes.Attribute;
 
 public class MatchingFieldGroups {
 

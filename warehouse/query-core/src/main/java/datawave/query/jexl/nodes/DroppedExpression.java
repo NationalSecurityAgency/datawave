@@ -1,12 +1,13 @@
 package datawave.query.jexl.nodes;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import org.apache.commons.jexl3.parser.JexlNode;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.jexl3.parser.JexlNode;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 
 public class DroppedExpression {
 

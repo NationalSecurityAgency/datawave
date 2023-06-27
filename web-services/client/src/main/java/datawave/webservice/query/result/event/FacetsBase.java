@@ -1,6 +1,7 @@
 package datawave.webservice.query.result.event;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
+import java.util.List;
+import java.util.Map;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -8,8 +9,8 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlTransient;
-import java.util.List;
-import java.util.Map;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
 
 /**
  *

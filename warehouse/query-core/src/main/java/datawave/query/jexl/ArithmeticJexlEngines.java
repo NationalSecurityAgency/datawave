@@ -4,12 +4,13 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import datawave.query.jexl.functions.JexlFunctionNamespaceRegistry;
 import org.apache.commons.jexl3.JexlArithmetic;
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.introspection.JexlPermissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.query.jexl.functions.JexlFunctionNamespaceRegistry;
 
 /**
  * A Cache of JexlEngines, key'ed off of the name of the JexlArithmetic class used to create the JexlEngine

@@ -8,10 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import datawave.query.tld.TLD;
-import datawave.query.util.TypeMetadata;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -21,8 +17,13 @@ import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+
 import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.tld.TLD;
+import datawave.query.util.TypeMetadata;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields

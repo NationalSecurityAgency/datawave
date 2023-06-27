@@ -1,5 +1,20 @@
 package datawave.query.map;
 
+import static datawave.query.QueryParameters.QUERY_SYNTAX;
+
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.enterprise.context.ApplicationScoped;
+import javax.inject.Inject;
+
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.map.QueryGeometryHandler;
@@ -12,19 +27,6 @@ import datawave.query.metrics.ShardTableQueryMetricHandler;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.map.QueryGeometry;
 import datawave.webservice.query.map.QueryGeometryResponse;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-
-import javax.enterprise.context.ApplicationScoped;
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-
-import static datawave.query.QueryParameters.QUERY_SYNTAX;
 
 /**
  * This class is used to extract query geometries from the query metrics in an effort to provide those geometries for subsequent display to the user.

@@ -1,19 +1,5 @@
 package datawave.query.jexl;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.Multimap;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.function.Equality;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
-import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl3.parser.JexlNode;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,6 +7,22 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl3.parser.JexlNode;
+
+import com.google.common.base.Objects;
+import com.google.common.collect.Multimap;
+
+import datawave.query.attributes.Document;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.function.Equality;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.SeekableIterator;
+import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 
 /**
  * Responsible for retrieving delayed fields for the specified docRange on demand and merging it with any values already in the delegate. Use the

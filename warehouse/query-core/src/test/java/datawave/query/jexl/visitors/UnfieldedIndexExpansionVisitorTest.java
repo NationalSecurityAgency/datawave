@@ -1,22 +1,18 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.model.QueryModel;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MockMetadataHelper;
-import datawave.util.TableName;
-import datawave.util.time.DateHelper;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.MutationsRejectedException;
@@ -31,15 +27,21 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.model.QueryModel;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MockMetadataHelper;
+import datawave.util.TableName;
+import datawave.util.time.DateHelper;
 
 public class UnfieldedIndexExpansionVisitorTest {
 

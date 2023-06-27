@@ -5,10 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Set;
 
-import datawave.data.ColumnFamilyConstants;
-import datawave.data.type.Type;
-import datawave.query.Constants;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -19,6 +15,10 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
+
+import datawave.data.ColumnFamilyConstants;
+import datawave.data.type.Type;
+import datawave.query.Constants;
 
 /**
  *

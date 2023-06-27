@@ -1,12 +1,13 @@
 package datawave.query.tables.chained.iterators;
 
-import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.Query;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
-import java.util.Iterator;
-import java.util.Set;
+import datawave.core.query.logic.QueryLogic;
+import datawave.webservice.query.Query;
 
 /**
  * Abstract class that encompasses the members necessary to run a ChainedQuery. Any implementation should need two {@link QueryLogic}'s, the original query the

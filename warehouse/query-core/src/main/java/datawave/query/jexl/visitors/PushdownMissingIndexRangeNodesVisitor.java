@@ -1,13 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.config.IndexHole;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.util.MetadataHelper;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+
+import java.text.SimpleDateFormat;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -17,13 +17,14 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
-import java.text.SimpleDateFormat;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
+import datawave.query.config.IndexHole;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.util.MetadataHelper;
 
 /**
  * Visitor meant to 'push down' predicates for expressions that are not executable against the index because of missing data in the global index.

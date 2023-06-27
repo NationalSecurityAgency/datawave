@@ -1,22 +1,21 @@
 package datawave.query.testframework;
 
-import datawave.helpers.PrintUtility;
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.input.reader.event.EventSequenceFileRecordReader;
-import datawave.ingest.mapreduce.EventMapper;
-import datawave.ingest.test.StandaloneStatusReporter;
-import datawave.query.MockAccumuloRecordWriter;
-import datawave.query.QueryTestTableHelper;
-import datawave.query.RebuildingScannerTestHelper;
-import datawave.util.TableName;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RawLocalFileSystem;
@@ -39,14 +38,16 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.rules.ExternalResource;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.input.reader.event.EventSequenceFileRecordReader;
+import datawave.ingest.mapreduce.EventMapper;
+import datawave.ingest.test.StandaloneStatusReporter;
+import datawave.query.MockAccumuloRecordWriter;
+import datawave.query.QueryTestTableHelper;
+import datawave.query.RebuildingScannerTestHelper;
+import datawave.util.TableName;
 
 public class AccumuloSetup extends ExternalResource {
 

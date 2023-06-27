@@ -1,7 +1,23 @@
 package datawave.query.jexl.visitors;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTFalseNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
+import org.locationtech.jts.geom.Geometry;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.data.normalizer.GeometryNormalizer;
 import datawave.data.type.AbstractGeometryType;
@@ -14,20 +30,6 @@ import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
 import datawave.query.util.GeoUtils;
 import datawave.query.util.GeoWaveUtils;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl3.parser.ASTAndNode;
-import org.apache.commons.jexl3.parser.ASTEQNode;
-import org.apache.commons.jexl3.parser.ASTFalseNode;
-import org.apache.commons.jexl3.parser.ASTFunctionNode;
-import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReferenceExpression;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
-import org.locationtech.jts.geom.Geometry;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * This visitor should be run after bounded ranges have been expanded in order to check for expanded GeoWave terms which do not intersect with the original

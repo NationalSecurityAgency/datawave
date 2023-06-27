@@ -1,42 +1,7 @@
 package datawave.query.jexl;
 
-import com.google.common.collect.Maps;
-import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.functions.ContentFunctionsDescriptor;
-import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.nodes.ExceededOr;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl3.JexlContext;
-import org.apache.commons.jexl3.JexlException;
-import org.apache.commons.jexl3.JexlOptions;
-import org.apache.commons.jexl3.internal.Engine;
-import org.apache.commons.jexl3.internal.Frame;
-import org.apache.commons.jexl3.parser.ASTAndNode;
-import org.apache.commons.jexl3.parser.ASTEQNode;
-import org.apache.commons.jexl3.parser.ASTERNode;
-import org.apache.commons.jexl3.parser.ASTFunctionNode;
-import org.apache.commons.jexl3.parser.ASTGENode;
-import org.apache.commons.jexl3.parser.ASTGTNode;
-import org.apache.commons.jexl3.parser.ASTIdentifier;
-import org.apache.commons.jexl3.parser.ASTLENode;
-import org.apache.commons.jexl3.parser.ASTLTNode;
-import org.apache.commons.jexl3.parser.ASTMethodNode;
-import org.apache.commons.jexl3.parser.ASTOrNode;
-import org.apache.commons.jexl3.parser.ASTReferenceExpression;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.internal.Interpreter;
-import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
-import org.apache.lucene.util.fst.FST;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 
 import java.io.IOException;
 import java.net.URI;
@@ -51,8 +16,45 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DROPPED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.JexlContext;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.JexlOptions;
+import org.apache.commons.jexl3.internal.Engine;
+import org.apache.commons.jexl3.internal.Frame;
+import org.apache.commons.jexl3.internal.Interpreter;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTERNode;
+import org.apache.commons.jexl3.parser.ASTFunctionNode;
+import org.apache.commons.jexl3.parser.ASTGENode;
+import org.apache.commons.jexl3.parser.ASTGTNode;
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.ASTLENode;
+import org.apache.commons.jexl3.parser.ASTLTNode;
+import org.apache.commons.jexl3.parser.ASTMethodNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.hadoop.fs.Path;
+import org.apache.log4j.Logger;
+import org.apache.lucene.util.fst.FST;
+
+import com.google.common.collect.Maps;
+
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.nodes.ExceededOr;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * Extended so that calls to a function node, which can return a collection of 'hits' instead of a Boolean, can be evaluated as true/false based on the size of

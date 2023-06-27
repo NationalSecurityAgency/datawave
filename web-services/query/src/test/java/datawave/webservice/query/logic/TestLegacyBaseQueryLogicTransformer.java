@@ -2,24 +2,24 @@ package datawave.webservice.query.logic;
 
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.isA;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import datawave.marking.MarkingFunctions;
-import datawave.core.query.cache.ResultsPage;
-import datawave.core.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.result.BaseQueryResponse;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
+
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.logic.BaseQueryLogicTransformer;
+import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.result.BaseQueryResponse;
 
 @RunWith(PowerMockRunner.class)
 public class TestLegacyBaseQueryLogicTransformer {

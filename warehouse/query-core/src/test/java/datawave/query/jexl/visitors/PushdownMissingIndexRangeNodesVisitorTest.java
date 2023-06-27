@@ -1,7 +1,19 @@
 package datawave.query.jexl.visitors;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
@@ -9,16 +21,6 @@ import datawave.query.config.IndexHole;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.MockMetadataHelper;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 
 public class PushdownMissingIndexRangeNodesVisitorTest {
     private static final Logger log = Logger.getLogger(PushdownMissingIndexRangeNodesVisitorTest.class);

@@ -1,12 +1,13 @@
 package datawave.query.config;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.query.planner.QueryPlanner;
+import java.util.Map.Entry;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
-import java.util.Map.Entry;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.query.planner.QueryPlanner;
 
 /**
  * Purpose: Provides a mechanism to provide a user configurable way to tune a user's query, such that he or she may take advantage of features that could have

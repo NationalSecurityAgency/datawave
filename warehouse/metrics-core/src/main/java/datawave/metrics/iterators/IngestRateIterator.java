@@ -5,15 +5,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.SortedMap;
 
-import datawave.metrics.keys.IngestEntryKey;
-import datawave.metrics.keys.InvalidKeyException;
-
-import org.apache.hadoop.io.Text;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.hadoop.io.Text;
+
+import datawave.metrics.keys.IngestEntryKey;
+import datawave.metrics.keys.InvalidKeyException;
 
 /**
  * Modifies IngestEntryKeys so that a tuple of form [Timestamp][Rate] is returned.

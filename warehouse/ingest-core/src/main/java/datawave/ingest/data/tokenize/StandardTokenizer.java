@@ -16,19 +16,18 @@ package datawave.ingest.data.tokenize;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import datawave.util.ObjectFactory;
-
-import org.apache.lucene.util.AttributeFactory;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
+import org.apache.lucene.util.AttributeFactory;
+
+import datawave.util.ObjectFactory;
 
 /**
  * A grammar-based Tokenizer constructed with JFlex based on Lucene's {@link org.apache.lucene.analysis.standard.StandardTokenizer StandardTokenizer}

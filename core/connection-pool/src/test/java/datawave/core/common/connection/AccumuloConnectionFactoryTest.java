@@ -1,10 +1,15 @@
 package datawave.core.common.connection;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.core.common.cache.AccumuloTableCache;
-import datawave.core.common.result.ConnectionPoolProperties;
-import datawave.core.common.result.ConnectionPoolsProperties;
-import datawave.webservice.common.connection.WrappedAccumuloClient;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.commons.pool2.PooledObject;
 import org.apache.commons.pool2.impl.DefaultPooledObject;
@@ -21,15 +26,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.reflect.Whitebox;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.result.ConnectionPoolProperties;
+import datawave.core.common.result.ConnectionPoolsProperties;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 @RunWith(EasyMockRunner.class)
 public class AccumuloConnectionFactoryTest extends EasyMockSupport {

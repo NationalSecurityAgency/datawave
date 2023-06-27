@@ -1,19 +1,20 @@
 package datawave.query.table.parser;
 
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
-import datawave.util.StringUtils;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.Base64;
+import java.util.zip.GZIPInputStream;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.Base64;
-import java.util.zip.GZIPInputStream;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
+import datawave.util.StringUtils;
 
 public class ContentKeyValueFactory {
 

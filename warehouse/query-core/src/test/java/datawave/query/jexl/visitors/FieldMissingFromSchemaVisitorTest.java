@@ -1,21 +1,23 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MockMetadataHelper;
+import static datawave.query.Constants.ANY_FIELD;
+import static datawave.query.Constants.NO_FIELD;
+import static org.junit.Assert.assertEquals;
+
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Set;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
-import static datawave.query.Constants.ANY_FIELD;
-import static datawave.query.Constants.NO_FIELD;
-import static org.junit.Assert.assertEquals;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MockMetadataHelper;
 
 public class FieldMissingFromSchemaVisitorTest {
 

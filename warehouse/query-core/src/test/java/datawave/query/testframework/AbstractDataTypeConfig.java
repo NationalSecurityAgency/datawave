@@ -1,27 +1,6 @@
 package datawave.query.testframework;
 
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
-import datawave.ingest.csv.mr.input.CSVRecordReader;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.MarkingsHelper;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.ingest.data.config.ingest.VirtualIngest;
-import datawave.ingest.json.config.helper.JsonIngestHelper;
-import datawave.ingest.json.mr.input.JsonRecordReader;
-import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.policy.IngestPolicyEnforcer;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
+import static datawave.query.testframework.FileType.CSV;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +17,29 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static datawave.query.testframework.FileType.CSV;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
+import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
+import datawave.ingest.csv.mr.input.CSVRecordReader;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.MarkingsHelper;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.ingest.data.config.ingest.VirtualIngest;
+import datawave.ingest.json.config.helper.JsonIngestHelper;
+import datawave.ingest.json.mr.input.JsonRecordReader;
+import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.policy.IngestPolicyEnforcer;
 
 /**
  * Abstract base class that contains the configuration settings for test data types.

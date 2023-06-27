@@ -1,9 +1,9 @@
 package datawave.webservice.query.logic.filtered;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.apache.accumulo.core.security.Authorizations;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -12,9 +12,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Set;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 
 public class FilteredQueryLogicTest {
 

@@ -1,23 +1,25 @@
 package datawave.query.planner.pushdown.rules;
 
-import com.google.common.base.Preconditions;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.planner.pushdown.Cost;
-import datawave.query.planner.pushdown.CostEstimator;
-import datawave.query.planner.pushdown.PushDownVisitor;
-import datawave.query.util.Tuple2;
-import org.apache.commons.jexl3.parser.ASTAndNode;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Preconditions;
+
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.planner.pushdown.Cost;
+import datawave.query.planner.pushdown.CostEstimator;
+import datawave.query.planner.pushdown.PushDownVisitor;
+import datawave.query.util.Tuple2;
 
 /**
  * Purpose: Rule that pulls up top level delayed predicates based upon cost

@@ -1,7 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTArrayAccess;
@@ -54,11 +58,8 @@ import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Set;
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Visitor can be used to identify and prune children of a JexlNode that will always be TRUE or FALSE. When present, _NOFIELD_ indicates that a criteria can

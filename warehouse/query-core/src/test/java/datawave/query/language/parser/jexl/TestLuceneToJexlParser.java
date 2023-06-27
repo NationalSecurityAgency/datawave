@@ -1,14 +1,15 @@
 package datawave.query.language.parser.jexl;
 
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.junit.Assert;
+import org.junit.Test;
+
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.language.functions.jexl.EvaluationOnly;
 import datawave.query.language.functions.jexl.JexlQueryFunction;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.tree.QueryNode;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class TestLuceneToJexlParser {
 

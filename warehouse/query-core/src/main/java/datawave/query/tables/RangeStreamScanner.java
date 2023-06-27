@@ -1,34 +1,5 @@
 package datawave.query.tables;
 
-import com.google.common.base.Function;
-import com.google.common.base.Throwables;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Queues;
-import com.google.common.util.concurrent.MoreExecutors;
-import datawave.core.query.configuration.Result;
-import datawave.mr.bulk.RfileScanner;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.index.lookup.IndexInfo;
-import datawave.query.index.lookup.IndexMatch;
-import datawave.query.index.lookup.ShardEquality;
-import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.ScannerBase;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Column;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.util.PeekingIterator;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -48,6 +19,38 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.ScannerBase;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Column;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.util.PeekingIterator;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
+import com.google.common.base.Throwables;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Queues;
+import com.google.common.util.concurrent.MoreExecutors;
+
+import datawave.core.query.configuration.Result;
+import datawave.mr.bulk.RfileScanner;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.index.lookup.IndexInfo;
+import datawave.query.index.lookup.IndexMatch;
+import datawave.query.index.lookup.ShardEquality;
+import datawave.query.tables.stats.ScanSessionStats.TIMERS;
+import datawave.webservice.query.Query;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation

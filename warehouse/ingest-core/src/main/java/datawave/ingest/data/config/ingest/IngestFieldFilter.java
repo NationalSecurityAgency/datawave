@@ -1,21 +1,23 @@
 package datawave.ingest.data.config.ingest;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.GroupedNormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedContentInterface;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.commons.collections4.Unmodifiable;
 import org.apache.commons.collections4.keyvalue.AbstractMapEntry;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.GroupedNormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * The field filter can drop fields based on the presence of other preferred fields. This is configuration driven and expects colon delimited pairs, A:B, where

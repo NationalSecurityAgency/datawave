@@ -1,8 +1,8 @@
 package datawave.webservice.common.connection.config;
 
-import datawave.core.common.result.ConnectionPoolsProperties;
-
 import java.util.List;
+
+import datawave.core.common.result.ConnectionPoolsProperties;
 
 public class ConnectionPoolsConfiguration extends ConnectionPoolsProperties {
     private List<String> poolNames;

@@ -1,11 +1,12 @@
 package datawave.ingest.data.normalizer;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import datawave.ingest.data.config.GroupedNormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
 
 public class SimpleGroupFieldNameParserTest {
 

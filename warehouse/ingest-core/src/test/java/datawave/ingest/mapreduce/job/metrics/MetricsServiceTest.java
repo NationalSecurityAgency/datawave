@@ -1,11 +1,14 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.TestContextWriter;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.test.StandaloneTaskAttemptContext;
-import datawave.util.TableName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -15,14 +18,13 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.collect.Multimap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.TestContextWriter;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.test.StandaloneTaskAttemptContext;
+import datawave.util.TableName;
 
 public class MetricsServiceTest {
 

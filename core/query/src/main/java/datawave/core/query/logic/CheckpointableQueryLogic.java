@@ -1,9 +1,10 @@
 package datawave.core.query.logic;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
+import java.util.List;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 
-import java.util.List;
+import datawave.core.query.configuration.GenericQueryConfiguration;
 
 public interface CheckpointableQueryLogic {
 

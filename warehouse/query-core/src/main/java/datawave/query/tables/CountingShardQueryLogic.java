@@ -1,5 +1,9 @@
 package datawave.query.tables;
 
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Logger;
+
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.query.config.ShardQueryConfiguration;
@@ -8,9 +12,6 @@ import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
 import datawave.query.transformer.ShardQueryCountTableTransformer;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
 
 /**
  * A simple extension of the basic ShardQueryTable which applies a counting iterator on top of the "normal" iterator stack.

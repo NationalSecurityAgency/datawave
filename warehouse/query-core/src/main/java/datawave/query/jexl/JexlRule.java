@@ -4,15 +4,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
-import datawave.query.Constants;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.QueryOptions;
-import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -22,6 +13,15 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
+
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.iterators.filter.ageoff.FilterRule;
+import datawave.query.Constants;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
+import datawave.util.StringUtils;
 
 /**
  * Jexl Masking rule will provide a rule based upon JEXL 'queries'

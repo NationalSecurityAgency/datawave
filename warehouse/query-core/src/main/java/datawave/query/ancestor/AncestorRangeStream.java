@@ -1,13 +1,14 @@
 package datawave.query.ancestor;
 
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTOrNode;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.index.lookup.AncestorIndexStream;
 import datawave.query.index.lookup.IndexStream;
 import datawave.query.index.lookup.RangeStream;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl3.parser.ASTAndNode;
-import org.apache.commons.jexl3.parser.ASTOrNode;
 
 /**
  * Prevent ranges that are from the same document from both being returned, resulting in duplicate rows across the ancestor

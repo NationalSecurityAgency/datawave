@@ -1,15 +1,5 @@
 package datawave.core.common.cache;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.common.result.TableCacheDescription;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.recipes.shared.SharedCountListener;
-import org.apache.curator.framework.recipes.shared.SharedCountReader;
-import org.apache.curator.framework.state.ConnectionState;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,6 +11,18 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.recipes.shared.SharedCountListener;
+import org.apache.curator.framework.recipes.shared.SharedCountReader;
+import org.apache.curator.framework.state.ConnectionState;
+import org.apache.log4j.Logger;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.result.TableCacheDescription;
 
 /**
  * Object that caches data from Accumulo tables.

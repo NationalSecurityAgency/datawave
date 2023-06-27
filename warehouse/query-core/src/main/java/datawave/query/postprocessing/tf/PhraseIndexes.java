@@ -1,16 +1,5 @@
 package datawave.query.postprocessing.tf;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;
-import datawave.ingest.protobuf.TermWeight;
-import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.Constants;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.javatuples.Triplet;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -19,6 +8,19 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.javatuples.Triplet;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.SortedSetMultimap;
+import com.google.common.collect.TreeMultimap;
+
+import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.Constants;
 
 /**
  * This class represents a collection of indexes that have been identified for phrases that have been found as matching hits for queries. The indexes here are

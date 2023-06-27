@@ -1,10 +1,10 @@
 package datawave.webservice.mr.configuration;
 
-import org.apache.hadoop.mapreduce.InputFormat;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.hadoop.mapreduce.InputFormat;
 
 public class MapReduceConfiguration {
 

@@ -1,5 +1,12 @@
 package datawave.query.jexl.visitors;
 
+import static org.apache.commons.jexl3.parser.JexlNodes.negate;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
+import static org.apache.commons.jexl3.parser.JexlNodes.swap;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -10,13 +17,6 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
-import static org.apache.commons.jexl3.parser.JexlNodes.negate;
-import static org.apache.commons.jexl3.parser.JexlNodes.swap;
 
 /**
  * <pre>

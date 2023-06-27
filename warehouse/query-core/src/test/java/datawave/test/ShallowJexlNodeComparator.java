@@ -1,9 +1,9 @@
 package datawave.test;
 
+import java.util.Comparator;
+
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
-
-import java.util.Comparator;
 
 /**
  * Performs a shallow comparison of two nodes. It is meant to be used by the {@link DeepJexlNodeComparator} to quickly identify simplistic differences between

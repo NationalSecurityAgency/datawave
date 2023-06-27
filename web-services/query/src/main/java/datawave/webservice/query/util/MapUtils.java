@@ -1,12 +1,13 @@
 package datawave.webservice.query.util;
 
+import java.util.List;
+import java.util.Map;
+
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import javax.ws.rs.core.MultivaluedMap;
-import java.util.List;
-import java.util.Map;
 
 public class MapUtils {
 

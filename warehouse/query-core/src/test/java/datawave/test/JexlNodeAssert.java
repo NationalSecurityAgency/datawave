@@ -1,16 +1,17 @@
 package datawave.test;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.PrintingVisitor;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import java.util.Objects;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.assertj.core.api.AbstractAssert;
 
-import java.util.Objects;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
 
 /**
  * This class provides the ability to perform a number of assertions specific to {@link JexlNode} instances, and is intended to be used for testing purposes.

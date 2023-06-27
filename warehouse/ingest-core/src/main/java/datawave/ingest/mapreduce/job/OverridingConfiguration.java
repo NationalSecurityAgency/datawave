@@ -1,9 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
-import org.apache.hadoop.conf.Configuration;
-
 import java.util.Map;
 import java.util.TreeMap;
+
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * A Hadoop configuration that "overrides" properties by removing the given prefix from any configurations that start with it.

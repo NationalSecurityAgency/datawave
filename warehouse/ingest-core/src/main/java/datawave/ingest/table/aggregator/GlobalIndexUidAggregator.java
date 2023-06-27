@@ -5,18 +5,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
-import datawave.ingest.protobuf.Uid.List.Builder;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.ingest.protobuf.Uid.List.Builder;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the

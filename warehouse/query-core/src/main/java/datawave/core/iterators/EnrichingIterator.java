@@ -8,10 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import datawave.query.enrich.DataEnricher;
-
-import datawave.query.Constants;
-import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -21,6 +17,10 @@ import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.log4j.Logger;
+
+import datawave.query.Constants;
+import datawave.query.enrich.DataEnricher;
+import datawave.util.StringUtils;
 
 /**
  * <p>

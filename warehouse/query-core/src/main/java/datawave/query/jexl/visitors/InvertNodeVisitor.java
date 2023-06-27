@@ -1,6 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
+import static datawave.query.jexl.JexlASTHelper.isLiteral;
+
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
 import org.apache.commons.jexl3.parser.ASTGENode;
@@ -12,7 +13,7 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
-import static datawave.query.jexl.JexlASTHelper.isLiteral;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Detect and correct cases where an identifier is on the left and the field is on the right.

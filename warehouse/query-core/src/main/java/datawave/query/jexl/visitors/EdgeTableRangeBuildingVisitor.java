@@ -1,15 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Sets;
-import datawave.data.type.Type;
-import datawave.edge.model.EdgeModelFields;
-import datawave.edge.util.EdgeKeyUtil;
-import datawave.query.tables.edge.contexts.EdgeContext;
-import datawave.query.tables.edge.contexts.IdentityContext;
-import datawave.query.tables.edge.contexts.QueryContext;
-import datawave.query.tables.edge.contexts.VisitationContext;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -27,12 +24,17 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.Type;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.util.EdgeKeyUtil;
+import datawave.query.tables.edge.contexts.EdgeContext;
+import datawave.query.tables.edge.contexts.IdentityContext;
+import datawave.query.tables.edge.contexts.QueryContext;
+import datawave.query.tables.edge.contexts.VisitationContext;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build

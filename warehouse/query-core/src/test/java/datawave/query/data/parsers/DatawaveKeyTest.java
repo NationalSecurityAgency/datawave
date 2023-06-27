@@ -1,14 +1,15 @@
 package datawave.query.data.parsers;
 
-import datawave.query.data.parsers.DatawaveKey.KeyType;
-import org.apache.accumulo.core.data.Key;
-import org.apache.hadoop.io.Text;
-import org.junit.Test;
-
 import static datawave.query.data.parsers.DatawaveKey.KeyType.EVENT;
 import static datawave.query.data.parsers.DatawaveKey.KeyType.INDEX_EVENT;
 import static datawave.query.data.parsers.DatawaveKey.KeyType.TERM_OFFSETS;
 import static org.junit.Assert.assertEquals;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.hadoop.io.Text;
+import org.junit.Test;
+
+import datawave.query.data.parsers.DatawaveKey.KeyType;
 
 public class DatawaveKeyTest {
 

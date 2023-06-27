@@ -1,12 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.test.JexlNodeAssert;
+import static datawave.query.Constants.SHARD_DAY_HINT;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
-import static datawave.query.Constants.SHARD_DAY_HINT;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.test.JexlNodeAssert;
 
 public class DateIndexCleanupVisitorTest {
 

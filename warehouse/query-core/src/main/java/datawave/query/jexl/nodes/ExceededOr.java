@@ -1,16 +1,6 @@
 package datawave.query.jexl.nodes;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -24,7 +14,19 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.log4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
 
 public class ExceededOr {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ExceededOr.class);

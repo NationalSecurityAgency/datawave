@@ -1,14 +1,15 @@
 package datawave.query.discovery;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Objects;
+
 import com.google.common.collect.Multimap;
+
 import datawave.core.query.configuration.QueryData;
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.jexl.LiteralRange;
 import datawave.webservice.query.Query;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Objects;
 
 /**
  * Adds the ability to hold on to two multimaps. They map literals and patterns to the fields they were associated with in the query.

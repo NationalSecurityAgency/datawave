@@ -1,15 +1,17 @@
 package datawave.query.tables;
 
+import java.io.Serializable;
+import java.util.Iterator;
+
+import org.apache.accumulo.core.data.ByteSequence;
+
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnel;
 import com.google.common.hash.PrimitiveSink;
+
 import datawave.core.query.configuration.Result;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import org.apache.accumulo.core.data.ByteSequence;
-
-import java.io.Serializable;
-import java.util.Iterator;
 
 class DedupingIterator implements Iterator<Result> {
     static final int BLOOM_EXPECTED_DEFAULT = 500000;

@@ -1,23 +1,5 @@
 package datawave.query.planner;
 
-import com.google.common.collect.Lists;
-import datawave.common.util.MultiComparator;
-import datawave.common.util.concurrent.BoundedBlockingQueue;
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.core.iterators.ColumnQualifierRangeIterator;
-import datawave.core.query.configuration.QueryData;
-import datawave.query.CloseableIterable;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.tld.TLDQueryIterator;
-import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
@@ -28,6 +10,26 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Lists;
+
+import datawave.common.util.MultiComparator;
+import datawave.common.util.concurrent.BoundedBlockingQueue;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.core.iterators.ColumnQualifierRangeIterator;
+import datawave.core.query.configuration.QueryData;
+import datawave.query.CloseableIterable;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.tld.TLDQueryIterator;
+import datawave.webservice.query.Query;
 
 public class ThreadedRangeBundlerIterator implements Iterator<QueryData>, Closeable {
     private static final Logger log = ThreadConfigurableLogger.getLogger(ThreadedRangeBundlerIterator.class);

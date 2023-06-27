@@ -1,15 +1,5 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.base.CharMatcher;
-import com.google.common.collect.Sets;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.JexlPatternCache;
-import datawave.util.OperationEvaluator;
-import org.apache.commons.collections4.SetUtils;
-import org.apache.log4j.Logger;
-
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -28,6 +18,18 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import org.apache.commons.collections4.SetUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.CharMatcher;
+import com.google.common.collect.Sets;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.JexlPatternCache;
+import datawave.util.OperationEvaluator;
 
 /**
  * NOTE: The {@link JexlFunctionArgumentDescriptorFactory} is implemented by {@link EvaluationPhaseFilterFunctionsDescriptor}. This is kept as a separate class

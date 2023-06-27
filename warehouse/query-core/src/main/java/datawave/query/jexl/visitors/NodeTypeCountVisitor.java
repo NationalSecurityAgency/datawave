@@ -1,8 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.NodeTypeCount;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAnnotatedStatement;
@@ -92,6 +89,10 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.Node;
 import org.apache.commons.jexl3.parser.ParserVisitor;
 import org.apache.commons.jexl3.parser.SimpleNode;
+
+import datawave.query.jexl.NodeTypeCount;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 
 /**
  * Counts the total number of nodes for each node type present in a query tree.

@@ -1,7 +1,29 @@
 package datawave.webservice.operations.remote;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.Priority;
+import javax.enterprise.inject.Alternative;
+import javax.interceptor.Interceptor;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.message.BasicNameValuePair;
+
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.google.common.base.Preconditions;
+
 import datawave.configuration.RefreshableScope;
 import datawave.webservice.request.UpdateRequest;
 import datawave.webservice.response.ListTablesResponse;
@@ -11,25 +33,6 @@ import datawave.webservice.response.ListUsersResponse;
 import datawave.webservice.response.UpdateResponse;
 import datawave.webservice.response.ValidateVisibilityResponse;
 import datawave.webservice.result.VoidResponse;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.Priority;
-import javax.enterprise.inject.Alternative;
-import javax.interceptor.Interceptor;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 @RefreshableScope
 @Alternative

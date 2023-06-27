@@ -1,10 +1,11 @@
 package org.apache.commons.jexl3.parser;
 
-import datawave.query.jexl.JexlASTHelper;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+import datawave.query.jexl.JexlASTHelper;
 
 public class JexlNodesTest {
 

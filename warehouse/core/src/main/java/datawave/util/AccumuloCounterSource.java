@@ -4,9 +4,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import datawave.util.CounterDump.CounterSource;
-import datawave.util.cli.PasswordConverter;
-
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -19,6 +16,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 
 import com.google.common.collect.Lists;
+
+import datawave.util.CounterDump.CounterSource;
+import datawave.util.cli.PasswordConverter;
 
 public class AccumuloCounterSource extends CounterSource {
 

@@ -4,15 +4,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.VirtualIngest;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import datawave.ingest.mapreduce.StandaloneStatusReporter;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
-
-import datawave.util.TableName;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
@@ -24,6 +15,15 @@ import org.junit.runners.JUnit4;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.VirtualIngest;
+import datawave.ingest.mapreduce.StandaloneStatusReporter;
+import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
+import datawave.util.TableName;
 
 /**
  *

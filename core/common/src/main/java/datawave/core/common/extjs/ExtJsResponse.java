@@ -1,10 +1,11 @@
 package datawave.core.common.extjs;
 
-import datawave.webservice.result.BaseQueryResponse;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
-import java.util.List;
+
+import datawave.webservice.result.BaseQueryResponse;
 
 /**
  * Response wrapper for returning <code>T</code> objects that are compatible with ExtJS 4.

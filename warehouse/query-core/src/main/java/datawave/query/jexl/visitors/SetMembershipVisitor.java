@@ -3,12 +3,6 @@ package datawave.query.jexl.visitors;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.IndexOnlyJexlContext;
-import datawave.query.jexl.JexlASTHelper;
-
-import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -28,6 +22,12 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.IndexOnlyJexlContext;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.EvaluationPhaseFilterFunctions;
 
 /**
  * This visitor provides methods for determining if a query tree contains any of the provided fields, and retrieving those matching fields if desired.

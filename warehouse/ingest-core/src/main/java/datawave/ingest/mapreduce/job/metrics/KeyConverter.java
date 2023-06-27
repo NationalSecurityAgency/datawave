@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import datawave.util.TextUtil;
 import org.apache.accumulo.core.data.Key;
+
+import datawave.util.TextUtil;
 
 /**
  * For performance, we are using Strings to represent Accumulo Keys until we finally flush to the ContextWriter. This class handles the conversions.

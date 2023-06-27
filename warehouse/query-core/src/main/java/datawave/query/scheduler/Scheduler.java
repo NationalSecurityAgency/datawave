@@ -1,6 +1,14 @@
 package datawave.query.scheduler;
 
+import java.util.Collection;
+import java.util.List;
+
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.TableNotFoundException;
+
 import com.google.common.collect.Lists;
+
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
 import datawave.core.query.logic.QueryCheckpoint;
@@ -9,12 +17,6 @@ import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.stats.ScanSessionStats;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.TableNotFoundException;
-
-import java.util.Collection;
-import java.util.List;
 
 /**
  *

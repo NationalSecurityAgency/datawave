@@ -1,31 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.data.type.DateType;
-import datawave.data.type.IpAddressType;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.LcType;
-import datawave.data.type.NoOpType;
-import datawave.data.type.NumberType;
-import datawave.data.type.StringType;
-import datawave.data.type.TrimLeadingZerosType;
-import datawave.data.type.PointType;
-import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MockMetadataHelper;
-import datawave.test.JexlNodeAssert;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATION_ONLY;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
@@ -33,6 +7,34 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.DateType;
+import datawave.data.type.IpAddressType;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.LcType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
+import datawave.data.type.PointType;
+import datawave.data.type.StringType;
+import datawave.data.type.TrimLeadingZerosType;
+import datawave.data.type.Type;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 
 public class ExpandMultiNormalizedTermsTest {
 

@@ -1,6 +1,12 @@
 package datawave.query.ancestor;
 
-import datawave.query.index.lookup.IndexMatch;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTReference;
@@ -11,12 +17,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import datawave.query.index.lookup.IndexMatch;
 
 public class AncestorUidIntersectorTest {
     private AncestorUidIntersector intersector;

@@ -1,10 +1,10 @@
 package datawave.query.jexl.visitors;
 
-import org.apache.commons.jexl3.JexlArithmetic;
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
+
+import org.apache.commons.jexl3.JexlArithmetic;
 
 public class DelegatingArithmetic extends JexlArithmetic {
     private final JexlArithmetic delegate;

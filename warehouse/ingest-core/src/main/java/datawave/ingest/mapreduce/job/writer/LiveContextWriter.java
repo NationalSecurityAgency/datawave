@@ -3,17 +3,16 @@ package datawave.ingest.mapreduce.job.writer;
 import java.io.IOException;
 import java.util.Map;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 /**
  * A simple context writer that simply passes the key, value as a text, mutation to the context.

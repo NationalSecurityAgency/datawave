@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MetadataHelper;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTOrNode;
@@ -13,8 +13,9 @@ import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.List;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MetadataHelper;
 
 /**
  * Visitor to expand a query when it is not executable due to an Or that is NON_EXECUTABLE or ERROR state. If an AndNode exists which is a parent, that AND can

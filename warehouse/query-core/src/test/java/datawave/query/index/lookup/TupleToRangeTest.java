@@ -1,30 +1,31 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.Sets;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.planner.QueryPlan;
-import datawave.query.util.Tuple2;
-import datawave.util.TableName;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
+import static datawave.common.test.utils.query.RangeFactoryForTests.makeDayRange;
+import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
+import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
+import static datawave.common.test.utils.query.RangeFactoryForTests.makeTldTestRange;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static datawave.common.test.utils.query.RangeFactoryForTests.makeDayRange;
-import static datawave.common.test.utils.query.RangeFactoryForTests.makeShardedRange;
-import static datawave.common.test.utils.query.RangeFactoryForTests.makeTestRange;
-import static datawave.common.test.utils.query.RangeFactoryForTests.makeTldTestRange;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.Before;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import com.google.common.collect.Sets;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.planner.QueryPlan;
+import datawave.query.util.Tuple2;
+import datawave.util.TableName;
 
 public class TupleToRangeTest {
 

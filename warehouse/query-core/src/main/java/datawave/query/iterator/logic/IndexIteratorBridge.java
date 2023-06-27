@@ -1,19 +1,20 @@
 package datawave.query.iterator.logic;
 
-import datawave.query.attributes.Document;
-import datawave.query.iterator.DocumentIterator;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.DocumentIterator;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.SeekableIterator;
 
 /**
  * Wraps an Accumulo iterator with a NestedIterator interface. This bridges the gap between an IndexIterator and a NestedIterator.

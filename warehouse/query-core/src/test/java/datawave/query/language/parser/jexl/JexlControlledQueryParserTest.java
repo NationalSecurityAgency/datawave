@@ -1,13 +1,14 @@
 package datawave.query.language.parser.jexl;
 
-import datawave.query.language.parser.ParseException;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import datawave.query.language.parser.ParseException;
 
 public class JexlControlledQueryParserTest {
 

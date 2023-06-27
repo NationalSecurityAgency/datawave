@@ -1,19 +1,21 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Lists;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
-import datawave.query.jexl.nodes.QueryPropertyMarker.Instance;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAssignment;
 import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.List;
+import com.google.common.collect.Lists;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.nodes.QueryPropertyMarker.Instance;
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 
 /**
  * This class is used to determine whether the specified node is an instance of a query marker. The reason for this functionality is that if the query is

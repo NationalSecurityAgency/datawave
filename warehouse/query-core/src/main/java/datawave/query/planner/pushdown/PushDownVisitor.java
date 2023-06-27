@@ -1,8 +1,15 @@
 package datawave.query.planner.pushdown;
 
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+
 import java.util.Collection;
 
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Preconditions;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.RebuildingVisitor;
@@ -10,11 +17,6 @@ import datawave.query.planner.pushdown.rules.DelayedPredicatePushDown;
 import datawave.query.planner.pushdown.rules.PushDownRule;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
-
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
 /**
  * The PushDownVisitor will decide what nodes are "delayed" in that they do NOT require a global index lookup due to cost or other reasons.

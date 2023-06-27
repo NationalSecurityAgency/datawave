@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import datawave.ingest.table.config.AbstractTableConfigHelper;
+import java.util.Collection;
+
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -8,7 +9,7 @@ import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
-import java.util.Collection;
+import datawave.ingest.table.config.AbstractTableConfigHelper;
 
 /**
  * Table configuration helper for the ingest metrics table.

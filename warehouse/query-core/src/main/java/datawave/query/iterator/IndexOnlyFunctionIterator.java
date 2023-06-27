@@ -1,8 +1,27 @@
 package datawave.query.iterator;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.MapContext;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Function;
 import com.google.common.base.Objects;
 import com.google.common.collect.Iterators;
+
 import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
@@ -17,23 +36,6 @@ import datawave.query.util.TraceIterators;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl3.MapContext;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Inserted into the iterator and JEXL evaluation "stacks" to allow functions to operate on index-only fields, such as HEAD, FOOT, BODY, and META.

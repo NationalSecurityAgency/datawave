@@ -1,17 +1,17 @@
 package datawave.data.hash;
 
-import static datawave.data.hash.UIDConstants.MILLISECONDS_PER_DAY;
 import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.data.hash.UIDConstants.MILLISECONDS_PER_DAY;
 
 import java.io.DataInput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 
-import datawave.util.StringUtils;
-
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import datawave.util.StringUtils;
 
 /**
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UID based on hash values, however, this class uses a 96-bit ID based on a 52-bit

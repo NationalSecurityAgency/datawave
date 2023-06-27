@@ -1,8 +1,8 @@
 package datawave.test;
 
-import org.apache.commons.jexl3.parser.JexlNode;
-
 import java.util.List;
+
+import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  * A utility class for providing a single point of entry to multiple types of assertions on {@link JexlNode} instances.

@@ -1,9 +1,10 @@
 package datawave.query.tables.edge;
 
-import datawave.webservice.query.QueryImpl;
+import java.util.Set;
+
 import org.apache.accumulo.core.security.Authorizations;
 
-import java.util.Set;
+import datawave.webservice.query.QueryImpl;
 
 public class CheckpointableEdgeQueryTest extends EdgeQueryFunctionalTest {
 

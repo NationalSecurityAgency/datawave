@@ -1,8 +1,9 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MetadataHelper;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -15,9 +16,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MetadataHelper;
 
 @RunWith(Parameterized.class)
 public class PushdownUnexecutableNodesVisitorTest extends EasyMockSupport {

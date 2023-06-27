@@ -1,13 +1,13 @@
 package datawave.query.jexl.visitors;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTNumberLiteral;
 import org.apache.commons.jexl3.parser.ASTUnaryMinusNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public class FixNegativeNumbersVisitor extends RebuildingVisitor {
 

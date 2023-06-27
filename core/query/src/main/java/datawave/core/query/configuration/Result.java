@@ -1,17 +1,19 @@
 package datawave.core.query.configuration;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
+import java.util.Iterator;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import javax.annotation.Nullable;
-import java.util.Iterator;
-import java.util.Map;
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
 
 public class Result<T extends ResultContext> implements Map.Entry<Key,Value> {
     private final T context;

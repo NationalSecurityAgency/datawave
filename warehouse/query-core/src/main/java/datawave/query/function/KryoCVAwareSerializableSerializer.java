@@ -1,11 +1,11 @@
 package datawave.query.function;
 
-import datawave.query.attributes.Document;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoSerializable;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.KryoSerializableSerializer;
+
+import datawave.query.attributes.Document;
 
 public class KryoCVAwareSerializableSerializer extends KryoSerializableSerializer {
     private Boolean reducedResponse = true;

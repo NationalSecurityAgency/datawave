@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.util.Tuple2;
-
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ASTOrNode;
@@ -11,6 +9,8 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
+
+import datawave.query.util.Tuple2;
 
 /**
  * Visit a JexlNode tree, optimizing the boolean logic.

@@ -1,6 +1,15 @@
 package datawave.query.discovery;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.io.Writable;
+
 import com.google.common.base.Preconditions;
+
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
@@ -16,13 +25,6 @@ import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.io.Writable;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class DiscoveryTransformer extends BaseQueryLogicTransformer<DiscoveredThing,EventBase> implements CacheableLogic {
     private List<String> variableFieldList = null;

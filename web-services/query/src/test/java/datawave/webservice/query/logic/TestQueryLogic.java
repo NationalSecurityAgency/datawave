@@ -1,15 +1,16 @@
 package datawave.webservice.query.logic;
 
+import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.junit.Ignore;
+
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Ignore;
-
-import java.util.Set;
 
 @Ignore
 public class TestQueryLogic<T> extends BaseQueryLogic<T> {

@@ -1,17 +1,19 @@
 package datawave.query.tables.async;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import datawave.core.query.configuration.ResultContext;
-import datawave.query.tables.SessionOptions;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+
+import datawave.core.query.configuration.ResultContext;
+import datawave.query.tables.SessionOptions;
 
 /**
  *

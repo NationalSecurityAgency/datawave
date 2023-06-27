@@ -1,16 +1,17 @@
 package datawave.query.language.functions.lucene;
 
-import datawave.query.Constants;
-import datawave.query.search.WildcardFieldedFilter;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.List;
+import datawave.query.Constants;
+import datawave.query.search.WildcardFieldedFilter;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 @Deprecated
 public abstract class AbstractEvaluationPhaseFunction extends LuceneQueryFunction {

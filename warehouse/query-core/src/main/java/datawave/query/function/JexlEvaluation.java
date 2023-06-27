@@ -1,29 +1,29 @@
 package datawave.query.function;
 
-import datawave.query.Constants;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.DefaultArithmetic;
-import datawave.query.jexl.DelayedNonEventIndexContext;
-import datawave.query.postprocessing.tf.PhraseIndexes;
-import datawave.query.postprocessing.tf.TermOffsetMap;
-import datawave.query.transformer.ExcerptTransform;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.JexlArithmetic;
+import org.apache.commons.jexl3.internal.DatawaveJexlScript;
 import org.apache.commons.jexl3.internal.Script;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Predicate;
 
-import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.Constants;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.jexl.HitListArithmetic;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.DefaultArithmetic;
+import datawave.query.jexl.DelayedNonEventIndexContext;
+import datawave.query.jexl.HitListArithmetic;
+import datawave.query.postprocessing.tf.PhraseIndexes;
+import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.transformer.ExcerptTransform;
 import datawave.query.util.Tuple3;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {

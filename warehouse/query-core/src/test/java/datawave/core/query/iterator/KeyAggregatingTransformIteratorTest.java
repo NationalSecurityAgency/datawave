@@ -1,22 +1,21 @@
 package datawave.core.query.iterator;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.apache.commons.collections4.functors.NOPTransformer;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
+import org.apache.commons.collections4.functors.NOPTransformer;
+import org.junit.Before;
+import org.junit.Test;
 
 public class KeyAggregatingTransformIteratorTest {
 

@@ -1,17 +1,11 @@
 package datawave.query.jexl.visitors;
 
 import static com.google.common.collect.Lists.newArrayList;
-import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 import static org.apache.commons.jexl3.parser.JexlNodes.newInstanceOfType;
+import static org.apache.commons.jexl3.parser.JexlNodes.setChildren;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
-
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.util.QueryStopwatch;
-import datawave.util.time.TraceStopwatch;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
 
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAmbiguous;
@@ -104,6 +98,12 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
 import com.google.common.base.Function;
+
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.util.QueryStopwatch;
+import datawave.util.time.TraceStopwatch;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * Base Visitor class that returns a new AST. Each visit method should return a copy of the visited node.

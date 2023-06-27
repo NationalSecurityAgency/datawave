@@ -1,14 +1,5 @@
 package datawave.webservice.query;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import datawave.microservice.query.QueryParameters;
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlSeeAlso;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -21,6 +12,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
+import datawave.microservice.query.QueryParameters;
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(QueryImpl.class)

@@ -1,10 +1,5 @@
 package datawave.query.discovery;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.query.jexl.visitors.BaseVisitor;
-
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -17,6 +12,11 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 
 public class FindLiteralsAndPatternsVisitor extends BaseVisitor {
 

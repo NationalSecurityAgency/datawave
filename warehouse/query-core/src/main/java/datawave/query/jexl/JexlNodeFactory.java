@@ -1,15 +1,19 @@
 package datawave.query.jexl;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-import datawave.query.Constants;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.lookups.IndexLookupMap;
-import datawave.query.jexl.lookups.ValueSet;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTArguments;
@@ -47,19 +51,17 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParserTreeConstants;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
-import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
+import datawave.query.Constants;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.lookups.IndexLookupMap;
+import datawave.query.jexl.lookups.ValueSet;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * Factory methods that can create JexlNodes

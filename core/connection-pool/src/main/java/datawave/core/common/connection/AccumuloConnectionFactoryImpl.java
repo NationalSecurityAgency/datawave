@@ -1,20 +1,5 @@
 package datawave.core.common.connection;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.core.common.cache.AccumuloTableCache;
-import datawave.core.common.result.Connection;
-import datawave.core.common.result.ConnectionPool;
-import datawave.core.common.result.ConnectionPoolProperties;
-import datawave.core.common.result.ConnectionPoolsProperties;
-import datawave.webservice.common.connection.WrappedAccumuloClient;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.admin.SecurityOperations;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.log4j.Logger;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,6 +11,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.admin.SecurityOperations;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+import org.apache.accumulo.core.util.Pair;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.log4j.Logger;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.result.Connection;
+import datawave.core.common.result.ConnectionPool;
+import datawave.core.common.result.ConnectionPoolProperties;
+import datawave.core.common.result.ConnectionPoolsProperties;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 /**
  * An accumulo connection factory

@@ -5,8 +5,12 @@
  */
 package datawave.core.common.cache;
 
-import com.google.common.collect.Maps;
-import com.google.common.util.concurrent.MoreExecutors;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.concurrent.Executor;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.listen.Listenable;
 import org.apache.curator.framework.recipes.shared.SharedValue;
@@ -15,11 +19,8 @@ import org.apache.curator.framework.recipes.shared.SharedValueReader;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.concurrent.Executor;
+import com.google.common.collect.Maps;
+import com.google.common.util.concurrent.MoreExecutors;
 
 /**
  *

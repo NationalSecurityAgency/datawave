@@ -2,9 +2,9 @@ package datawave.query.index.lookup;
 
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import datawave.query.util.Tuple2;
-
 import com.google.common.collect.PeekingIterator;
+
+import datawave.query.util.Tuple2;
 
 /**
  * IndexStreams must support the PeekingIterator interface.

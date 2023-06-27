@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.Set;
 
-import datawave.query.jexl.visitors.BaseVisitor;
-
 import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
@@ -15,6 +13,8 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
+
+import datawave.query.jexl.visitors.BaseVisitor;
 
 /**
  * A visitor that finds all functions in an expression/script. Clients may supply an optional namespace filter to limit the number of returned functions.

@@ -1,18 +1,20 @@
 package datawave.query.tracking;
 
-import com.codahale.metrics.SlidingWindowReservoir;
-import com.codahale.metrics.Timer;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.profile.QuerySpan;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.codahale.metrics.SlidingWindowReservoir;
+import com.codahale.metrics.Timer;
+
+import datawave.query.attributes.Document;
+import datawave.query.iterator.profile.QuerySpan;
 
 public class ActiveQuery {
 

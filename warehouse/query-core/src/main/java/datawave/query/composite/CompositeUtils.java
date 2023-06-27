@@ -1,18 +1,20 @@
 package datawave.query.composite;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.data.type.DiscreteIndexType;
-import datawave.data.type.Type;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTGENode;
 import org.apache.commons.jexl3.parser.ASTGTNode;
 import org.apache.commons.jexl3.parser.ASTLENode;
 import org.apache.commons.jexl3.parser.ASTLTNode;
 import org.apache.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.DiscreteIndexType;
+import datawave.data.type.Type;
 
 /**
  * This class contains a collection of methods and constants which are used when dealing with composite terms and ranges.

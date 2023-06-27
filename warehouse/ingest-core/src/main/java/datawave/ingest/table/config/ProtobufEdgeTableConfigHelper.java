@@ -1,9 +1,5 @@
 package datawave.ingest.table.config;
 
-import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -11,6 +7,10 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.handler.edge.ProtobufEdgeDataTypeHandler;
 
 public class ProtobufEdgeTableConfigHelper extends AbstractTableConfigHelper {
     private static final int DEFAULT_VERSIONING_ITERATOR_PRIORITY = 20;

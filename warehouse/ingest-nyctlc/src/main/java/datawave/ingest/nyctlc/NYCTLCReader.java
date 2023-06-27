@@ -1,8 +1,7 @@
 package datawave.ingest.nyctlc;
 
-import datawave.ingest.csv.mr.input.CSVReaderBase;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.input.reader.LfLineReader;
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -13,7 +12,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
+import datawave.ingest.csv.mr.input.CSVReaderBase;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.input.reader.LfLineReader;
 
 /**
  * This is a specialized version of the CSV Reader intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This CSV reader reads the first

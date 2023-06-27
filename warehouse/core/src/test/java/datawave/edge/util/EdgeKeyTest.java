@@ -1,13 +1,9 @@
 package datawave.edge.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-
-import datawave.edge.util.EdgeKey.EDGE_FORMAT;
-import datawave.edge.util.EdgeKey.EdgeKeyBuilder;
-import datawave.edge.util.EdgeKey.STATS_TYPE;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -16,6 +12,10 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import datawave.edge.util.EdgeKey.EDGE_FORMAT;
+import datawave.edge.util.EdgeKey.EdgeKeyBuilder;
+import datawave.edge.util.EdgeKey.STATS_TYPE;
 
 public class EdgeKeyTest {
 

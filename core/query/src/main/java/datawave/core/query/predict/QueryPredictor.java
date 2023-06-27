@@ -1,9 +1,9 @@
 package datawave.core.query.predict;
 
-import datawave.microservice.querymetric.BaseQueryMetric;
-
 import java.io.Serializable;
 import java.util.Set;
+
+import datawave.microservice.querymetric.BaseQueryMetric;
 
 /**
  * Created on 7/6/16.

@@ -1,18 +1,10 @@
 package datawave.query.jexl.visitors;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.data.type.Type;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.lookups.IndexLookup;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.NotFoundQueryException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -28,10 +20,19 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.data.type.Type;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.EmptyUnfieldedTermExpansionException;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.lookups.IndexLookup;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.NotFoundQueryException;
 
 /**
  * Visits a Jexl tree, looks for unfielded terms, and replaces them with fielded terms from the index

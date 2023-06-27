@@ -1,19 +1,20 @@
 package datawave.query.index.lookup;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.util.Tuple2;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.junit.Test;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.util.Tuple2;
 
 public class ScannerStreamTest {
 

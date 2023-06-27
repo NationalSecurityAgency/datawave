@@ -1,13 +1,9 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.common.collect.PeekingIterator;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.util.Tuple2;
-import datawave.query.util.Tuples;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,10 +14,16 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.junit.Test;
+
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.common.collect.PeekingIterator;
+
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.util.Tuple2;
+import datawave.query.util.Tuples;
 
 /**
  * Some basic tests of the {@link Union} class.

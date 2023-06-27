@@ -7,6 +7,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.hadoop.io.Text;
+
 import datawave.marking.ColumnVisibilityCache;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.AttributeFactory;
@@ -16,13 +23,6 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
-
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.io.Text;
 
 /**
  * Aggregates FI keys reducing matching keys. The FIELD/VALUE are not compared. In a real utilization the expectation is that there will be keys with different

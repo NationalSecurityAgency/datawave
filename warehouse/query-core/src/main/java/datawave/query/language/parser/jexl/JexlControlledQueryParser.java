@@ -7,15 +7,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.jexl3.parser.ASTIdentifier;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.lang.StringUtils;
+
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.query.language.tree.ServerHeadNode;
-import datawave.query.jexl.JexlASTHelper;
-
-import org.apache.commons.jexl3.parser.ASTIdentifier;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.lang.StringUtils;
 
 public class JexlControlledQueryParser implements QueryParser, ControlledQueryParser {
 

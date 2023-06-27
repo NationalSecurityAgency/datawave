@@ -1,22 +1,7 @@
 package datawave.query;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
-import datawave.query.exceptions.InvalidQueryException;
-import datawave.query.testframework.AbstractFields;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
-import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.FileType;
-import datawave.query.testframework.FlattenData;
-import datawave.query.testframework.FlattenDataType;
-import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
-import datawave.query.testframework.RawDataManager;
-import datawave.query.testframework.RawMetaData;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -31,8 +16,24 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import datawave.data.normalizer.Normalizer;
+import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
+import datawave.query.exceptions.InvalidQueryException;
+import datawave.query.testframework.AbstractFields;
+import datawave.query.testframework.AbstractFunctionalQuery;
+import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.FlattenData;
+import datawave.query.testframework.FlattenDataType;
+import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
+import datawave.query.testframework.RawDataManager;
+import datawave.query.testframework.RawMetaData;
 
 /**
  * Test cases for flatten mode {@link FlattenMode@SIMPLE}.

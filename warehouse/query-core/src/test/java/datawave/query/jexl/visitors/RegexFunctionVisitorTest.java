@@ -1,11 +1,8 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Sets;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.exceptions.InvalidQueryTreeException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.validate.ASTValidator;
-import datawave.test.JexlNodeAssert;
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.ParseException;
@@ -14,8 +11,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.Collections;
-import java.util.Set;
+import com.google.common.collect.Sets;
+
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.InvalidQueryTreeException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.validate.ASTValidator;
+import datawave.test.JexlNodeAssert;
 
 public class RegexFunctionVisitorTest {
 

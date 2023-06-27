@@ -1,5 +1,10 @@
 package datawave.query.config;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
@@ -8,11 +13,6 @@ import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Created with IntelliJ IDEA. To change this template use File | Settings | File Templates.

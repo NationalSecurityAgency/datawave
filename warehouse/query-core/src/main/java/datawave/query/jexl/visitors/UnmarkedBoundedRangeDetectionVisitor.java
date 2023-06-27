@@ -1,13 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl3.parser.ASTReference;
-import org.apache.commons.jexl3.parser.JexlNode;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
+import org.apache.commons.jexl3.parser.ASTReference;
+import org.apache.commons.jexl3.parser.JexlNode;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 public class UnmarkedBoundedRangeDetectionVisitor extends BaseVisitor {
 

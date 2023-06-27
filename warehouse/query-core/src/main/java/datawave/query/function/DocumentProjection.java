@@ -4,15 +4,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.predicate.Projection;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Document;
+import datawave.query.predicate.Projection;
 
 /**
  * Applies an includes or excludes projection to a Document. Includes projection will preserve Document sub-substructure whereas excludes projection will prune

@@ -97,10 +97,10 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.commons.jexl3.parser.Parser;
 import org.apache.commons.jexl3.parser.ParserVisitor;
 import org.apache.commons.jexl3.parser.SimpleNode;
-
-import com.google.common.collect.Lists;
 import org.apache.commons.jexl3.parser.StringProvider;
 import org.apache.commons.jexl3.parser.TokenMgrException;
+
+import com.google.common.collect.Lists;
 
 /**
  * Does a pretty print out of a depth first traversal.

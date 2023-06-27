@@ -3,10 +3,11 @@ package datawave.query.iterator.profile;
 import java.util.Iterator;
 import java.util.Map;
 
-import datawave.query.function.LogTiming;
-import datawave.query.attributes.Document;
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
+
+import datawave.query.attributes.Document;
+import datawave.query.function.LogTiming;
 
 public class PipelineQuerySpanCollectionIterator implements Iterator<Map.Entry<Key,Document>> {
 

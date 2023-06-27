@@ -1,15 +1,16 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.jexl.visitors.BaseVisitor;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.commons.jexl3.parser.ASTArguments;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTNamespaceIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import datawave.query.jexl.visitors.BaseVisitor;
 
 /**
  * Reusable visitor to getting common function JexlNodes.

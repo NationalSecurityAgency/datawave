@@ -1,5 +1,11 @@
 package datawave.query.dashboard;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.apache.commons.collections4.iterators.TransformIterator;
+
 import datawave.core.common.extjs.ExtJsResponse;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.dashboard.DashboardFields;
@@ -10,11 +16,6 @@ import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
-import org.apache.commons.collections4.iterators.TransformIterator;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Aggregate a range of query metrics into a single DashboardSummary object.

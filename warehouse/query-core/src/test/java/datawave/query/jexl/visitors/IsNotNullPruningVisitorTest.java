@@ -1,14 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.exceptions.InvalidQueryTreeException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.validate.ASTValidator;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import datawave.query.exceptions.InvalidQueryTreeException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.validate.ASTValidator;
 
 public class IsNotNullPruningVisitorTest {
 

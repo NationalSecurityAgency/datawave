@@ -10,8 +10,9 @@ import java.util.SortedSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 import org.apache.log4j.Logger;
+
+import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
 
 /**
  * This is a sorted set that will hold up to a specified number of entries before flushing the data to disk. Files will be created as needed. An additional

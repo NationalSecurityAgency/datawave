@@ -1,6 +1,18 @@
 package datawave.query.scheduler;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Lists;
+
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.configuration.QueryData;
 import datawave.core.query.configuration.Result;
@@ -10,16 +22,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.stats.ScanSessionStats;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *

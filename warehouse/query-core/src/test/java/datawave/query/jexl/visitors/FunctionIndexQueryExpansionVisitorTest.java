@@ -1,6 +1,17 @@
 package datawave.query.jexl.visitors;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.TimeZone;
+
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.Sets;
+
 import datawave.accumulo.inmemory.InMemoryAccumuloClient;
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.query.config.ShardQueryConfiguration;
@@ -15,15 +26,6 @@ import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
 import datawave.util.TableName;
 import datawave.util.time.DateHelper;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collections;
-import java.util.Set;
-import java.util.TimeZone;
 
 public class FunctionIndexQueryExpansionVisitorTest {
 

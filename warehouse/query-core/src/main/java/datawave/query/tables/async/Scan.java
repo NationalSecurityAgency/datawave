@@ -1,22 +1,5 @@
 package datawave.query.tables.async;
 
-import com.google.common.base.Function;
-import com.google.common.eventbus.Subscribe;
-import datawave.core.query.configuration.Result;
-import datawave.query.tables.AccumuloResource;
-import datawave.query.tables.AccumuloResource.ResourceFactory;
-import datawave.query.tables.BatchResource;
-import datawave.query.tables.ResourceQueue;
-import datawave.query.tables.stats.ScanSessionStats;
-import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-
 import java.io.InterruptedIOException;
 import java.util.Iterator;
 import java.util.List;
@@ -26,6 +9,25 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
+import com.google.common.eventbus.Subscribe;
+
+import datawave.core.query.configuration.Result;
+import datawave.query.tables.AccumuloResource;
+import datawave.query.tables.AccumuloResource.ResourceFactory;
+import datawave.query.tables.BatchResource;
+import datawave.query.tables.ResourceQueue;
+import datawave.query.tables.stats.ScanSessionStats;
+import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 
 public class Scan implements Callable<Scan> {
 

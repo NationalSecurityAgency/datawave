@@ -1,12 +1,13 @@
 package datawave.query.ancestor;
 
-import com.google.common.collect.Maps;
-import datawave.query.Constants;
-import datawave.query.function.Equality;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.tld.TLD;
-import datawave.query.util.IteratorToSortedKeyValueIterator;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -17,13 +18,14 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.Maps;
+
+import datawave.query.Constants;
+import datawave.query.function.Equality;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.tld.TLD;
+import datawave.query.util.IteratorToSortedKeyValueIterator;
 
 /**
  * Custom IndexBuildingVisitor that will expand (simulate) fi indexes into the entire branch of the document

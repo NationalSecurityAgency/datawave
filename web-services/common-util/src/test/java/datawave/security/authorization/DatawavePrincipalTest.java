@@ -1,15 +1,16 @@
 package datawave.security.authorization;
 
-import com.google.common.collect.Lists;
-import org.junit.Assert;
-import org.junit.Before;
-
-import datawave.security.authorization.DatawaveUser.UserType;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.stream.Collectors;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
+
+import datawave.security.authorization.DatawaveUser.UserType;
 
 public class DatawavePrincipalTest {
 

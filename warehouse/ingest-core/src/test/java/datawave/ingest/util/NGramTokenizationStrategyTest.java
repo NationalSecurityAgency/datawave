@@ -10,13 +10,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Vector;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.mapreduce.MemberShipTest;
-import datawave.ingest.util.DiskSpaceStarvationStrategy.LowDiskSpaceException;
-import datawave.ingest.util.MemoryStarvationStrategy.LowMemoryException;
-import datawave.ingest.util.TimeoutStrategy.TimeoutException;
-
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,6 +19,13 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.mapreduce.MemberShipTest;
+import datawave.ingest.util.DiskSpaceStarvationStrategy.LowDiskSpaceException;
+import datawave.ingest.util.MemoryStarvationStrategy.LowMemoryException;
+import datawave.ingest.util.TimeoutStrategy.TimeoutException;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({ResourceAvailabilityUtil.class, Logger.class, MemberShipTest.class, BloomFilter.class})

@@ -6,17 +6,17 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.attributes.ValueTuple;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.attributes.ValueTuple;
 
 public class HitListArithmetic extends DatawaveArithmetic implements StatefulArithmetic {
 

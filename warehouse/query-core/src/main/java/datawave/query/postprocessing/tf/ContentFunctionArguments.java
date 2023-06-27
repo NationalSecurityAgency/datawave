@@ -4,13 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
-
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.commons.jexl3.parser.ParseException;
+
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 class ContentFunctionArguments {
     private List<String> terms;

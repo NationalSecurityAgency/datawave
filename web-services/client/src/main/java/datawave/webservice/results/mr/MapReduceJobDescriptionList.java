@@ -1,6 +1,8 @@
 package datawave.webservice.results.mr;
 
-import datawave.webservice.result.BaseResponse;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -9,9 +11,8 @@ import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+
+import datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "MapReduceJobDescriptionList")
 @XmlAccessorType(XmlAccessType.NONE)

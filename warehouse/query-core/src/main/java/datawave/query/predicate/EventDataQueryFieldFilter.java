@@ -1,13 +1,15 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlASTHelper;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 
-import java.util.Set;
+import com.google.common.collect.Sets;
+
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.

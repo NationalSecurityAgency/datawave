@@ -1,8 +1,14 @@
 package datawave.query.jexl.visitors;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.GET_ALL_MATCHES;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTAddNode;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTArrayAccess;
@@ -54,14 +60,9 @@ import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.GET_ALL_MATCHES;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.INCLUDE_REGEX;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 
 /**
  * This visitor prunes unnecessary 'is not null' functions from the query tree.

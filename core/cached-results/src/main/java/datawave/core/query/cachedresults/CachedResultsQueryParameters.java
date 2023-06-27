@@ -1,13 +1,14 @@
 package datawave.core.query.cachedresults;
 
-import com.google.common.base.Preconditions;
-import datawave.microservice.query.QueryParameters;
-import datawave.validation.ParameterValidator;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import com.google.common.base.Preconditions;
+
+import datawave.microservice.query.QueryParameters;
+import datawave.validation.ParameterValidator;
 
 public class CachedResultsQueryParameters implements ParameterValidator {
     public static final String QUERY_ID = "queryId";

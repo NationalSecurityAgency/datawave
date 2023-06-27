@@ -1,5 +1,18 @@
 package datawave.query.jexl.visitors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.log4j.Level;
+import org.junit.Rule;
+import org.junit.Test;
+
 import datawave.common.test.logging.TestLogCollector;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.InvalidQueryTreeException;
@@ -9,18 +22,6 @@ import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.Tuple3;
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.log4j.Level;
-import org.junit.Rule;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class QueryPruningVisitorTest {
 

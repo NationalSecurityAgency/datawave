@@ -1,5 +1,12 @@
 package datawave.query.tld;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import org.apache.commons.jexl3.parser.ParseException;
+import org.junit.Test;
+
 import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
 import datawave.query.function.TLDEquality;
@@ -7,12 +14,6 @@ import datawave.query.function.TLDRangeProvider;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.util.TypeMetadata;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class TLDQueryIteratorTest {
 

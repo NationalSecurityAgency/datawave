@@ -1,14 +1,15 @@
 package datawave.query.language.functions.jexl;
 
-import datawave.query.language.functions.QueryFunction;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import datawave.query.language.functions.QueryFunction;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 public abstract class Geowave extends JexlQueryFunction {
 

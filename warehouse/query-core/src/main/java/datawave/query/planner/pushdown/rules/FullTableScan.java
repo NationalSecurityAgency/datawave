@@ -1,13 +1,8 @@
 package datawave.query.planner.pushdown.rules;
 
-import java.util.List;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.planner.pushdown.Cost;
+import java.util.List;
 
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTERNode;
@@ -18,7 +13,12 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import datawave.query.planner.pushdown.Cost;
 
 /**
  * Purpose: Delays scanning of leading and trailing wild cards when we have a top level and whose other children are indexed.

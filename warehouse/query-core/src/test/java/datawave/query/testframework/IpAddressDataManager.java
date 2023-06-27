@@ -1,11 +1,5 @@
 package datawave.query.testframework;
 
-import au.com.bytecode.opencsv.CSVReader;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
-import datawave.query.testframework.IpAddressDataType.IpAddrField;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -14,6 +8,12 @@ import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import au.com.bytecode.opencsv.CSVReader;
+import datawave.query.testframework.IpAddressDataType.IpAddrField;
 
 /**
  * Data manager for IP address data.

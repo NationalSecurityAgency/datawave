@@ -1,16 +1,5 @@
 package datawave.core.query.cachedresults;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
-import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.util.TypedValue;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -20,6 +9,20 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.Type;
+import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.util.TypedValue;
 
 public class CacheableQueryRowImpl extends CacheableQueryRow implements ObjectSizeOf {
 

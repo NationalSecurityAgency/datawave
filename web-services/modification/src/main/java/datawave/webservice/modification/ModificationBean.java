@@ -1,22 +1,6 @@
 package datawave.webservice.modification;
 
-import datawave.annotation.Required;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.modification.DatawaveModificationException;
-import datawave.modification.ModificationService;
-import datawave.modification.configuration.ModificationConfiguration;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.modification.cache.ModificationCacheBean;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.result.VoidResponse;
-import datawave.webservice.results.modification.ModificationConfigurationResponse;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -36,7 +20,25 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import java.util.List;
+
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.annotation.Required;
+import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.modification.DatawaveModificationException;
+import datawave.modification.ModificationService;
+import datawave.modification.configuration.ModificationConfiguration;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.modification.cache.ModificationCacheBean;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.result.VoidResponse;
+import datawave.webservice.results.modification.ModificationConfigurationResponse;
 
 @Path("/Modification")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

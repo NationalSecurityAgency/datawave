@@ -1,32 +1,5 @@
 package datawave.webservice.results.cached;
 
-import datawave.core.query.cache.ResultsPage;
-import datawave.core.query.cachedresults.CacheableLogic;
-import datawave.core.query.cachedresults.CacheableQueryRowReader;
-import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.QueryLogicFactory;
-import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.core.query.cachedresults.CachedResultsQueryParameters;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.QueryMetricFactory;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.util.MapUtils;
-import org.apache.commons.dbutils.DbUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-
-import javax.sql.DataSource;
-import javax.sql.rowset.CachedRowSet;
-import javax.sql.rowset.RowSetProvider;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -48,6 +21,35 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+
+import javax.sql.DataSource;
+import javax.sql.rowset.CachedRowSet;
+import javax.sql.rowset.RowSetProvider;
+
+import org.apache.commons.dbutils.DbUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.cachedresults.CacheableLogic;
+import datawave.core.query.cachedresults.CacheableQueryRowReader;
+import datawave.core.query.cachedresults.CachedResultsQueryParameters;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.AbstractRunningQuery;
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.util.MapUtils;
 
 @SuppressWarnings("restriction")
 public class CachedRunningQuery extends AbstractRunningQuery {

@@ -1,12 +1,14 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.PeekingIterator;
-import datawave.query.tables.RangeStreamScanner;
-import datawave.query.util.Tuple2;
-import org.apache.commons.jexl3.parser.JexlNode;
-
 import java.util.Collections;
 import java.util.Iterator;
+
+import org.apache.commons.jexl3.parser.JexlNode;
+
+import com.google.common.collect.PeekingIterator;
+
+import datawave.query.tables.RangeStreamScanner;
+import datawave.query.util.Tuple2;
 
 /**
  * Basic implementation of an IndexStream for a single term.

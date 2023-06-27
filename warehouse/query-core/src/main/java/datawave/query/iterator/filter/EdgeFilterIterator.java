@@ -1,8 +1,11 @@
 package datawave.query.iterator.filter;
 
-import com.google.common.collect.HashMultimap;
-import datawave.edge.model.EdgeModelFields.FieldKey;
-import datawave.edge.util.EdgeKeyUtil;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
@@ -15,11 +18,10 @@ import org.apache.commons.jexl3.MapContext;
 import org.apache.commons.jexl3.internal.Engine;
 import org.apache.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.HashMultimap;
+
+import datawave.edge.model.EdgeModelFields.FieldKey;
+import datawave.edge.util.EdgeKeyUtil;
 
 /**
  * This is a simple JEXL query filter iterator used in conjunction with the EdgeQueryLogic to evaluate more complicated expressions against edge keys.

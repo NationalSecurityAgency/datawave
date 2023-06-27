@@ -1,14 +1,15 @@
 package datawave.core.query.runner;
 
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.accumulo.core.util.Pair;
+import org.apache.log4j.Logger;
+
+import datawave.core.common.connection.AccumuloConnectionFactory;
 
 /**
  * For storing a map of queryId to Thread that is requesting an AccumuloConnection

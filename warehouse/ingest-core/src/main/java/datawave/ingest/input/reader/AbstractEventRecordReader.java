@@ -7,20 +7,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeMap;
 
-import datawave.data.hash.UIDBuilder;
-import datawave.data.hash.UID;
-import datawave.data.normalizer.DateNormalizer;
-import datawave.ingest.config.IngestConfiguration;
-import datawave.ingest.config.IngestConfigurationFactory;
-import datawave.ingest.data.RawDataErrorNames;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.DataTypeHelperImpl;
-import datawave.ingest.data.config.MarkingsHelper;
-import datawave.policy.IngestPolicyEnforcer;
-import datawave.policy.Policy;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -35,6 +21,20 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
+
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDBuilder;
+import datawave.data.normalizer.DateNormalizer;
+import datawave.ingest.config.IngestConfiguration;
+import datawave.ingest.config.IngestConfigurationFactory;
+import datawave.ingest.data.RawDataErrorNames;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.DataTypeHelperImpl;
+import datawave.ingest.data.config.MarkingsHelper;
+import datawave.policy.IngestPolicyEnforcer;
+import datawave.policy.Policy;
 
 public abstract class AbstractEventRecordReader<K> extends RecordReader<LongWritable,K> implements EventRecordReader {
 

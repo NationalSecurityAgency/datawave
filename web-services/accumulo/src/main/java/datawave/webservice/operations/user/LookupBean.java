@@ -1,12 +1,5 @@
 package datawave.webservice.operations.user;
 
-import datawave.annotation.Required;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.webservice.operations.remote.RemoteLookupService;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.response.LookupResponse;
-
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -27,6 +20,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.core.UriInfo;
+
+import datawave.annotation.Required;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.webservice.operations.remote.RemoteLookupService;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.response.LookupResponse;
 
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})

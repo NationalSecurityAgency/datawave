@@ -1,9 +1,17 @@
 package datawave.core.common.curator;
 
-import com.google.common.base.Preconditions;
-import datawave.core.common.cache.SharedBoolean;
-import datawave.core.common.cache.SharedBooleanListener;
-import datawave.core.common.cache.SharedCacheCoordinator.ArgumentChecker;
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.annotation.PreDestroy;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -20,16 +28,11 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
 
-import javax.annotation.PreDestroy;
-import java.io.IOException;
-import java.io.Serializable;
-import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
+import com.google.common.base.Preconditions;
+
+import datawave.core.common.cache.SharedBoolean;
+import datawave.core.common.cache.SharedBooleanListener;
+import datawave.core.common.cache.SharedCacheCoordinator.ArgumentChecker;
 
 /**
  * Coordinates operations on a shared cache. That is, this coordinates operations where an in-memory cache may be running on multiple servers and each in-memory

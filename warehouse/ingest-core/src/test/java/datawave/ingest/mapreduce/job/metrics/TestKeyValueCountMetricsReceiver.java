@@ -1,11 +1,12 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * A {@link MetricsReceiver} for handling the key/value count metrics. Used for testing.

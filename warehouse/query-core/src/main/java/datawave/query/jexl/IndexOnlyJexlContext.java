@@ -1,6 +1,8 @@
 package datawave.query.jexl;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static datawave.query.Constants.EMPTY_STRING;
+import static datawave.query.jexl.visitors.SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX;
 
 import java.lang.ref.WeakReference;
 import java.util.Collection;
@@ -10,13 +12,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import datawave.query.iterator.IndexOnlyFunctionIterator;
-import static datawave.query.jexl.visitors.SetMembershipVisitor.INDEX_ONLY_FUNCTION_SUFFIX;
-import static datawave.query.Constants.EMPTY_STRING;
-
 import org.apache.commons.jexl3.MapContext;
 
 import com.google.common.base.Objects;
+
+import datawave.query.iterator.IndexOnlyFunctionIterator;
 
 /**
  * A map context tied into an iterator for fetching and performing functions on index-only fields

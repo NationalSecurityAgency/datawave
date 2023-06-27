@@ -1,12 +1,14 @@
 package datawave.query.predicate;
 
-import com.google.common.base.Predicate;
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.lang3.builder.ToStringBuilder;
-
 import java.util.Collections;
 import java.util.Set;
+
+import org.apache.commons.lang3.builder.ToStringBuilder;
+
+import com.google.common.base.Predicate;
+import com.google.common.collect.Sets;
+
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Predicate that either retains attributes in a specified set of include fields or removes attributes specified in a set of exclude fields.

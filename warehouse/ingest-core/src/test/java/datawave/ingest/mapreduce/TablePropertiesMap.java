@@ -1,11 +1,11 @@
 package datawave.ingest.mapreduce;
 
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-
-import java.util.Map;
-import java.util.TreeMap;
 
 /**
  * The Accumulo table properties represented as a Map.

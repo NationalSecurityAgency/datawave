@@ -1,10 +1,11 @@
 package datawave.query.predicate;
 
-import datawave.query.util.TypeMetadata;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.JexlNode;
 
-import java.util.Set;
+import datawave.query.util.TypeMetadata;
 
 /**
  * A data filter that operates on TermFrequency keys

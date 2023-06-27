@@ -1,21 +1,23 @@
 package datawave.ingest.json.config.helper;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-import datawave.ingest.json.util.JsonObjectFlattener;
-import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+
+import datawave.ingest.json.util.JsonObjectFlattener;
+import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 
 public class JsonIngestFlattenerTest {
 

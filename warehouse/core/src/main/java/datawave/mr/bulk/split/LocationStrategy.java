@@ -1,11 +1,12 @@
 package datawave.mr.bulk.split;
 
-import com.google.common.hash.Funnel;
-import com.google.common.hash.PrimitiveSink;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.hash.Funnel;
+import com.google.common.hash.PrimitiveSink;
 
 public abstract class LocationStrategy implements Funnel<RangeSplit> {
 

@@ -1,13 +1,15 @@
 package datawave.ingest.mapreduce.job.writer;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.statsd.StatsDHelper;
+import java.io.IOException;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import java.io.IOException;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.statsd.StatsDHelper;
 
 public abstract class AbstractChainedContextWriter<OK,OV> extends StatsDHelper implements ChainedContextWriter<OK,OV> {
 

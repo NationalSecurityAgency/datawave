@@ -1,7 +1,8 @@
 package datawave.query.tables.edge.contexts;
 
-import datawave.edge.model.EdgeModelFields;
 import org.apache.commons.lang.StringUtils;
+
+import datawave.edge.model.EdgeModelFields;
 
 public class IdentityContext implements EdgeContext {
     private EdgeModelFields.FieldKey identity;

@@ -1,20 +1,21 @@
 package datawave.query.tables;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.query.QueryParameters;
-import datawave.query.tables.chunk.Chunker;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.Set;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.query.QueryParameters;
+import datawave.query.tables.chunk.Chunker;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl.Parameter;
 
 public class PartitionedQueryLogic extends ShardQueryLogic {
     protected static final Logger log = Logger.getLogger(PartitionedQueryLogic.class);

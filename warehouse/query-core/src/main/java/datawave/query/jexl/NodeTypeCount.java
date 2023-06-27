@@ -1,15 +1,16 @@
 package datawave.query.jexl;
 
-import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
-import org.apache.commons.jexl3.parser.Node;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Stream;
+
+import org.apache.commons.jexl3.parser.Node;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
+import datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType;
 
 public class NodeTypeCount {
 

@@ -1,13 +1,16 @@
 package datawave.ingest.input.reader.event;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.mapreduce.handler.error.ErrorDataTypeHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.util.StringUtils;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Value;
@@ -19,16 +22,15 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import java.io.IOException;
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.mapreduce.handler.error.ErrorDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 
 /**
  * This class holds a summary one event's errors stored in the keyValues table

@@ -1,13 +1,16 @@
 package datawave.webservice.query.remote;
 
-import com.fasterxml.jackson.databind.ObjectReader;
-import datawave.core.query.remote.RemoteQueryService;
-import datawave.security.auth.DatawaveAuthenticationMechanism;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.VoidResponse;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -17,15 +20,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xbill.DNS.TextParseException;
 
-import javax.annotation.PostConstruct;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectReader;
+
+import datawave.core.query.remote.RemoteQueryService;
+import datawave.security.auth.DatawaveAuthenticationMechanism;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 
 public class RemoteQueryServiceImpl extends RemoteHttpService implements RemoteQueryService {
     private static final Logger log = LoggerFactory.getLogger(RemoteQueryServiceImpl.class);

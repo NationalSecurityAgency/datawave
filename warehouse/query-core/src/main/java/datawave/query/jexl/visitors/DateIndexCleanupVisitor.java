@@ -1,7 +1,5 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAssignment;
 import org.apache.commons.jexl3.parser.ASTNotNode;
@@ -9,6 +7,9 @@ import org.apache.commons.jexl3.parser.ASTOrNode;
 import org.apache.commons.jexl3.parser.ASTReference;
 import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
+
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * This will remove the SHARDS_AND_DAYS assignment node. This is used after the range stream has been executed, but before the query is actually built to be

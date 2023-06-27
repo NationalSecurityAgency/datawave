@@ -1,15 +1,17 @@
 package datawave.core.query.logic.composite;
 
+import java.util.List;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Throwables;
+
 import datawave.core.query.cachedresults.CacheableLogic;
 import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.logic.QueryLogicTransformer;
-import com.google.common.base.Throwables;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.BaseQueryResponse;
-import org.apache.log4j.Logger;
-
-import java.util.List;
 
 public class CompositeQueryLogicTransformer<I,O> extends AbstractQueryLogicTransformer<I,O> implements CacheableLogic {
 

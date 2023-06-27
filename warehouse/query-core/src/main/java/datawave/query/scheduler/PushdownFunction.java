@@ -1,18 +1,12 @@
 package datawave.query.scheduler;
 
-import com.google.common.base.Function;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.query.configuration.QueryData;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.planner.QueryPlan;
-import datawave.query.tables.SessionOptions;
-import datawave.query.tables.async.ScannerChunk;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -30,12 +24,20 @@ import org.apache.commons.jexl3.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.base.Function;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.QueryData;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.planner.QueryPlan;
+import datawave.query.tables.SessionOptions;
+import datawave.query.tables.async.ScannerChunk;
 
 public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> {
 

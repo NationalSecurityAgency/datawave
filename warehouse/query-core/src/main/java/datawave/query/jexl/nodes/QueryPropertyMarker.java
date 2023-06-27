@@ -1,13 +1,6 @@
 package datawave.query.jexl.nodes;
 
-import com.google.common.collect.Lists;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
-import org.apache.commons.jexl3.parser.ASTAndNode;
-import org.apache.commons.jexl3.parser.ASTReferenceExpression;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.commons.jexl3.parser.ParserTreeConstants;
+import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -16,7 +9,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static datawave.query.jexl.visitors.RebuildingVisitor.copy;
+import org.apache.commons.jexl3.parser.ASTAndNode;
+import org.apache.commons.jexl3.parser.ASTReferenceExpression;
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.commons.jexl3.parser.ParserTreeConstants;
+
+import com.google.common.collect.Lists;
+
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.QueryPropertyMarkerVisitor;
 
 /**
  * This is a node that can be put in place of a given node to place a property on an underlying query sub-tree (e.g. ExceededValueThreshold)

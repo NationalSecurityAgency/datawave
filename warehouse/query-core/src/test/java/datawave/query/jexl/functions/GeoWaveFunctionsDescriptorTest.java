@@ -1,12 +1,12 @@
 package datawave.query.jexl.functions;
 
-import datawave.data.normalizer.AbstractGeometryNormalizer;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.MockMetadataHelper;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.JexlNode;
@@ -17,12 +17,13 @@ import org.junit.Test;
 import org.locationtech.jts.geom.Envelope;
 import org.powermock.reflect.Whitebox;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.stream.Collectors;
+import datawave.data.normalizer.AbstractGeometryNormalizer;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
 
 public class GeoWaveFunctionsDescriptorTest {
 

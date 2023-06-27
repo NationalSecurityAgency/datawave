@@ -1,5 +1,7 @@
 package datawave.query.ancestor;
 
+import org.apache.commons.jexl3.parser.JexlNode;
+
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveQueryException;
@@ -10,7 +12,6 @@ import datawave.query.planner.QueryPlan;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl3.parser.JexlNode;
 
 /**
  *

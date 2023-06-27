@@ -1,5 +1,23 @@
 package datawave.webservice.query.interceptor;
 
+import java.io.IOException;
+import java.util.List;
+
+import javax.annotation.Priority;
+import javax.inject.Inject;
+import javax.ws.rs.Priorities;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.ext.Provider;
+import javax.ws.rs.ext.WriterInterceptorContext;
+
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
+import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.util.FindAnnotation;
+
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
@@ -14,22 +32,6 @@ import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
-import org.jboss.resteasy.util.FindAnnotation;
-
-import javax.annotation.Priority;
-import javax.inject.Inject;
-import javax.ws.rs.Priorities;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.ext.Provider;
-import javax.ws.rs.ext.WriterInterceptorContext;
-import java.io.IOException;
-import java.util.List;
 
 @Provider
 @Priority(Priorities.USER)

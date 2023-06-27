@@ -1,13 +1,14 @@
 package datawave.query.jexl;
 
-import datawave.data.type.Type;
-import datawave.query.attributes.ValueTuple;
-import org.apache.log4j.Logger;
-
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.apache.log4j.Logger;
+
+import datawave.data.type.Type;
+import datawave.query.attributes.ValueTuple;
 
 public class DefaultArithmetic extends DatawaveArithmetic {
 

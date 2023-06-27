@@ -1,16 +1,16 @@
 package datawave.query.config;
 
-import datawave.core.query.configuration.CheckpointableQueryConfiguration;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.configuration.QueryData;
-import datawave.query.tables.RemoteEventQueryLogic;
-import datawave.webservice.query.Query;
-
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+
+import datawave.core.query.configuration.CheckpointableQueryConfiguration;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.query.tables.RemoteEventQueryLogic;
+import datawave.webservice.query.Query;
 
 /**
  * <p>

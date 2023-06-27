@@ -1,13 +1,5 @@
 package datawave.query.index.lookup;
 
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Ordering;
-import com.google.common.collect.PeekingIterator;
-import com.google.common.collect.TreeMultimap;
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,6 +10,18 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutorService;
 
+import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.jexl3.parser.JexlNodes;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Ordering;
+import com.google.common.collect.PeekingIterator;
+import com.google.common.collect.TreeMultimap;
+
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlNodeFactory;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -27,9 +31,6 @@ import datawave.query.util.Tuples;
 import datawave.util.StringUtils;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.commons.jexl3.parser.JexlNodes;
-import org.apache.log4j.Logger;
 
 /**
  * Intersect global index range streams by the shard key denoting a day range or a shard range.

@@ -1,7 +1,24 @@
 package datawave.query.tld;
 
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl3.parser.ASTEQNode;
+import org.apache.commons.jexl3.parser.ASTNENode;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import datawave.data.type.NoOpType;
 import datawave.query.Constants;
 import datawave.query.iterator.builder.AbstractIteratorBuilder;
@@ -15,21 +32,6 @@ import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
 import datawave.query.predicate.TLDTermFrequencyEventDataQueryFilter;
 import datawave.query.util.IteratorToSortedKeyValueIterator;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl3.parser.ASTEQNode;
-import org.apache.commons.jexl3.parser.ASTNENode;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 
 public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
     private static final Logger log = Logger.getLogger(TLDIndexBuildingVisitor.class);

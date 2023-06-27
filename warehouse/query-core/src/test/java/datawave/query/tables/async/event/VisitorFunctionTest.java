@@ -1,18 +1,15 @@
 package datawave.query.tables.async.event;
 
-import datawave.core.query.configuration.QueryData;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.tables.SessionOptions;
-import datawave.query.tables.async.ScannerChunk;
-import datawave.query.util.MetadataHelper;
-import datawave.util.TableName;
-import datawave.query.util.MockMetadataHelper;
-import datawave.webservice.query.Query;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Range;
@@ -25,15 +22,19 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import datawave.core.query.configuration.QueryData;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.tables.SessionOptions;
+import datawave.query.tables.async.ScannerChunk;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
+import datawave.util.TableName;
+import datawave.webservice.query.Query;
 
 public class VisitorFunctionTest extends EasyMockSupport {
     private VisitorFunction function;

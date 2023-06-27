@@ -1,16 +1,5 @@
 package datawave.query.testframework.cardata;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.data.type.NumberType;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.input.reader.EventRecordReader;
-import datawave.query.testframework.AbstractDataTypeConfig;
-import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.RawDataManager;
-import datawave.query.testframework.RawMetaData;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -21,6 +10,18 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.log4j.Logger;
+
+import datawave.data.normalizer.Normalizer;
+import datawave.data.type.NumberType;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.input.reader.EventRecordReader;
+import datawave.query.testframework.AbstractDataTypeConfig;
+import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.RawDataManager;
+import datawave.query.testframework.RawMetaData;
 
 /**
  * Contains all of the relevant data needed to configure any of the cars data types.

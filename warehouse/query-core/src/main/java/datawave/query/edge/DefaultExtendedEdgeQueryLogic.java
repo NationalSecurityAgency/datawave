@@ -1,5 +1,22 @@
 package datawave.query.edge;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.jexl3.JexlException;
+import org.apache.commons.jexl3.parser.ParseException;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
@@ -16,22 +33,6 @@ import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.jexl3.JexlException;
-import org.apache.commons.jexl3.parser.ParseException;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
 
 public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
 

@@ -1,6 +1,13 @@
 package datawave.query.tables.facets;
 
+import java.text.MessageFormat;
+import java.util.NoSuchElementException;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl3.parser.JexlNode;
+
 import com.google.common.collect.Multimap;
+
 import datawave.query.Constants;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.InvalidFieldIndexQueryFatalQueryException;
@@ -10,11 +17,6 @@ import datawave.query.jexl.visitors.PrintingVisitor;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl3.parser.JexlNode;
-
-import java.text.MessageFormat;
-import java.util.NoSuchElementException;
 
 /**
  * This visitor examines a JEXL tree and verifies that it satisfies all of the following conditions:

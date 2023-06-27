@@ -1,5 +1,10 @@
 package datawave.webservice.query.dashboard;
 
+import java.text.ParseException;
+import java.util.Date;
+
+import org.apache.commons.lang.time.DateUtils;
+
 import datawave.core.common.extjs.ExtJsResponse;
 import datawave.core.query.dashboard.DashboardFields;
 import datawave.core.query.dashboard.DashboardSummary;
@@ -7,10 +12,6 @@ import datawave.microservice.query.DefaultQueryParameters;
 import datawave.microservice.query.QueryPersistence;
 import datawave.webservice.query.runner.QueryExecutor;
 import datawave.webservice.query.util.MapUtils;
-import org.apache.commons.lang.time.DateUtils;
-
-import java.text.ParseException;
-import java.util.Date;
 
 public class DashboardQuery {
 

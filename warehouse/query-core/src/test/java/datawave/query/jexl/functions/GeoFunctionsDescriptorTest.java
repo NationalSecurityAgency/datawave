@@ -1,14 +1,16 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.collect.Sets;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import org.apache.commons.jexl3.parser.ASTFunctionNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.google.common.collect.Sets;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 public class GeoFunctionsDescriptorTest {
 

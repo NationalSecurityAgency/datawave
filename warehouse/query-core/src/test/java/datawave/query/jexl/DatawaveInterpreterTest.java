@@ -1,12 +1,14 @@
 package datawave.query.jexl;
 
-import datawave.data.normalizer.NumberNormalizer;
-import datawave.data.type.DateType;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
+import static org.easymock.EasyMock.mock;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.JexlContext;
 import org.apache.commons.jexl3.JexlException;
@@ -20,14 +22,13 @@ import org.easymock.EasyMock;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-
-import static org.easymock.EasyMock.mock;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.data.normalizer.NumberNormalizer;
+import datawave.data.type.DateType;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
 
 public class DatawaveInterpreterTest {
 

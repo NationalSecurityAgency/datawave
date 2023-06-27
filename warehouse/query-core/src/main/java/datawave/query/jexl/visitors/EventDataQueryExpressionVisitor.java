@@ -1,18 +1,17 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.ImmutableSet;
-import datawave.data.type.NoOpType;
-import datawave.data.type.Type;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.AttributeBag;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.predicate.PeekingPredicate;
+import static datawave.query.Constants.EMPTY_STRING;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -29,17 +28,20 @@ import org.apache.commons.jexl3.parser.ASTNRNode;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.common.collect.ImmutableSet;
 
-import static datawave.query.Constants.EMPTY_STRING;
+import datawave.data.type.NoOpType;
+import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeBag;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.predicate.PeekingPredicate;
 
 /**
  * The EventDataQueryExpressionVisitor traverses the query parse tree and generates a series of ExpressionFilters that will be used to determine if Keys

@@ -1,14 +1,15 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.commons.jexl3.JexlBuilder;
 import org.apache.commons.jexl3.JexlEngine;
 import org.apache.commons.jexl3.JexlScript;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
+import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
 
 /**
  * Creates a cache of compiled Jexl scripts

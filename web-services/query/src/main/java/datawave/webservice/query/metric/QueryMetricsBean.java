@@ -1,27 +1,9 @@
 package datawave.webservice.query.metric;
 
-import datawave.annotation.DateFormat;
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.map.QueryGeometryHandler;
-import datawave.core.query.metric.QueryMetricHandler;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.metrics.remote.RemoteQueryMetricService;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.microservice.querymetric.BaseQueryMetricListResponse;
-import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.map.QueryGeometryResponse;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.security.Principal;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -44,10 +26,30 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import java.security.Principal;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Iterator;
+
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.annotation.DateFormat;
+import datawave.annotation.Required;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
+import datawave.core.query.map.QueryGeometryHandler;
+import datawave.core.query.metric.QueryMetricHandler;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.metrics.remote.RemoteQueryMetricService;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.map.QueryGeometryResponse;
 
 @Path("/Query/Metrics")
 @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})

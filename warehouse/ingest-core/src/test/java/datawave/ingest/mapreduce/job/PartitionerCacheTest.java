@@ -1,6 +1,8 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.partition.DelegatePartitioner;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
@@ -9,8 +11,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.List;
+import datawave.ingest.mapreduce.partition.DelegatePartitioner;
 
 public class PartitionerCacheTest {
 

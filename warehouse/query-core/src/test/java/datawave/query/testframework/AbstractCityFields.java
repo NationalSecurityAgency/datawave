@@ -1,11 +1,11 @@
 package datawave.query.testframework;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 /**
  * Base class implementation for setting field configuration. Classes should extend this class and initialize the settings.

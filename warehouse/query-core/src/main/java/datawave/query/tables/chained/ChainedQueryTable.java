@@ -1,17 +1,18 @@
 package datawave.query.tables.chained;
 
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
 import datawave.query.tables.chained.strategy.ChainStrategy;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-
-import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * <p>

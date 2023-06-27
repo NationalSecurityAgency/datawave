@@ -5,8 +5,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map.Entry;
 
-import datawave.query.jexl.LiteralRange;
-
 import com.google.common.base.Predicates;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Collections2;
@@ -19,6 +17,8 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+
+import datawave.query.jexl.LiteralRange;
 
 public class LiteralRangeMultimapSerializer
                 implements JsonSerializer<Multimap<String,LiteralRange<String>>>, JsonDeserializer<Multimap<String,LiteralRange<String>>> {

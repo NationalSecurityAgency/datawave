@@ -1,9 +1,6 @@
 package datawave.query.language.parser.jexl;
 
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import org.apache.commons.jexl3.parser.JexlNode;
+import static datawave.query.jexl.JexlASTHelper.nodeToKey;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -13,7 +10,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import static datawave.query.jexl.JexlASTHelper.nodeToKey;
+import org.apache.commons.jexl3.parser.JexlNode;
+
+import com.google.common.collect.Sets;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Utility class that implements the {@link Set} interface for use with a collection of Jexl nodes.

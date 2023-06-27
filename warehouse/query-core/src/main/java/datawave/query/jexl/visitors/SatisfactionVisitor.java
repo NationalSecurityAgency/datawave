@@ -1,11 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Lists;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.util.UniversalSet;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.ContentFunctionsDescriptor;
-import datawave.query.jexl.functions.QueryFunctions;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTAndNode;
 import org.apache.commons.jexl3.parser.ASTAssignment;
 import org.apache.commons.jexl3.parser.ASTEQNode;
@@ -26,13 +28,13 @@ import org.apache.commons.jexl3.parser.ASTReferenceExpression;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import com.google.common.collect.Lists;
 
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.DELAYED;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_OR;
-import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.util.UniversalSet;
 
 /**
  * A visitor that checks the query tree to determine if the query can be satisfied by only looking in the field index. The result of this is passed to the

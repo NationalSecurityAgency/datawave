@@ -1,14 +1,14 @@
 package datawave.query.tables.edge;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.QueryLogicFactory;
-import datawave.security.authorization.ProxiedUserDetails;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.exception.UnauthorizedQueryException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.inject.Inject;
+
 import org.apache.accumulo.core.security.Authorizations;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
@@ -21,13 +21,15 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.security.authorization.ProxiedUserDetails;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.UnauthorizedQueryException;
 
 @RunWith(Arquillian.class)
 public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {

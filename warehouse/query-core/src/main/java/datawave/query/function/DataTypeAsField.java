@@ -3,13 +3,13 @@ package datawave.query.function;
 import java.nio.ByteBuffer;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
 
 import com.google.common.base.Function;
+
+import datawave.query.attributes.Content;
+import datawave.query.attributes.Document;
 
 /**
  * A mutating function that extracts the data type from the prefix of the column family and adds it to the associated Document as an attribute.

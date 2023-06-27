@@ -1,16 +1,17 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.util.MockMetadataHelper;
-import datawave.test.JexlNodeAssert;
+import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
+
+import java.util.Collections;
+
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.jexl3.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Collections;
-
-import static datawave.query.jexl.JexlASTHelper.parseJexlQuery;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 
 public class CaseSensitivityVisitorTest {
 

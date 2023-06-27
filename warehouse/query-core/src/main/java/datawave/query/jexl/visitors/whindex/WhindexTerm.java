@@ -1,14 +1,15 @@
 package datawave.query.jexl.visitors.whindex;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.RebuildingVisitor;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.jexl3.parser.ASTIdentifier;
 import org.apache.commons.jexl3.parser.JexlNode;
 import org.apache.commons.jexl3.parser.JexlNodes;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 
 /**
  * This class contains all of the required components necessary to create a whindex term.

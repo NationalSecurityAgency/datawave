@@ -1,5 +1,29 @@
 package datawave.query.jexl.visitors;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.jexl3.parser.ASTJexlScript;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
@@ -13,29 +37,6 @@ import datawave.query.util.MockDateIndexHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.TypeMetadata;
 import datawave.test.JexlNodeAssert;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.junit.Before;
-import org.junit.Ignore;
-import org.junit.Test;
-
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.Collections;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.lang.Boolean.TRUE;
-import static java.lang.Boolean.FALSE;
-
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
 
 public class EventDataQueryExpressionVisitorTest {
 

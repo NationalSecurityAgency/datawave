@@ -1,13 +1,13 @@
 package datawave.query.config;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Objects;
+
 import datawave.core.query.configuration.QueryData;
 import datawave.query.edge.DefaultExtendedEdgeQueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Objects;
 
 public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration implements Serializable {
     public static final String SUMMARIZE = "summarize";

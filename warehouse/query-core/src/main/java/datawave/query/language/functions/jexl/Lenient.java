@@ -1,12 +1,12 @@
 package datawave.query.language.functions.jexl;
 
-import datawave.query.language.functions.QueryFunction;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+
+import datawave.query.language.functions.QueryFunction;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * This function accepts a comma separated list of fields to be marked as lenient. The purpose is to provide users with an easy way to allow queries to when

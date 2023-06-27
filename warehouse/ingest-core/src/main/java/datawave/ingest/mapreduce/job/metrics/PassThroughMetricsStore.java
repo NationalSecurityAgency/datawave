@@ -1,14 +1,15 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import java.io.UnsupportedEncodingException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 
-import java.io.UnsupportedEncodingException;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
 
 /**
  * This implementation is writes directly to the underlying context. Relies on the use of a combiner for efficiency.

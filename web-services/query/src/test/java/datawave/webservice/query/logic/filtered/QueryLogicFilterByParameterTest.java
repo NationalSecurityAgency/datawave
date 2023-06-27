@@ -1,10 +1,11 @@
 package datawave.webservice.query.logic.filtered;
 
-import datawave.webservice.query.QueryImpl;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+import datawave.webservice.query.QueryImpl;
 
 public class QueryLogicFilterByParameterTest {
     @Test

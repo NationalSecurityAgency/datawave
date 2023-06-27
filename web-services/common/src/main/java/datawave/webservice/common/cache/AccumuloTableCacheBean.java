@@ -1,22 +1,6 @@
 package datawave.webservice.common.cache;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.core.common.cache.AccumuloTableCache;
-import datawave.core.common.cache.AccumuloTableCacheImpl;
-import datawave.core.common.cache.AccumuloTableCacheProperties;
-import datawave.core.common.result.TableCacheDescription;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.common.result.AccumuloTableCacheStatus;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.result.VoidResponse;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -40,7 +24,25 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import java.util.List;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.annotation.Required;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.cache.AccumuloTableCacheImpl;
+import datawave.core.common.cache.AccumuloTableCacheProperties;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.result.AccumuloTableCacheStatus;
+import datawave.core.common.result.TableCacheDescription;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * Object that caches data from Accumulo tables.

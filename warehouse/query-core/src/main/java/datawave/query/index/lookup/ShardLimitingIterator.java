@@ -7,8 +7,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Queue;
 
-import datawave.query.exceptions.DatawaveFatalQueryException;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.util.PeekingIterator;
@@ -17,6 +15,8 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Queues;
+
+import datawave.query.exceptions.DatawaveFatalQueryException;
 
 /**
  * Purpose: Limits the number of shards we will evaluate for a given term. Once we hit the preconfigured number will short circuit.

@@ -1,5 +1,20 @@
 package datawave.modification;
 
+import static java.util.Map.Entry;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.cache.ModificationCache;
 import datawave.modification.configuration.ModificationConfiguration;
@@ -14,20 +29,6 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.exception.UnauthorizedQueryException;
 import datawave.webservice.result.VoidResponse;
 import datawave.webservice.results.modification.ModificationConfigurationResponse;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
-import static java.util.Map.Entry;
 
 public class ModificationService {
 

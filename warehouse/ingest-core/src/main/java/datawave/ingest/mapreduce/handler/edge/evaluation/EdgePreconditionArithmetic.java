@@ -1,15 +1,16 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import datawave.attribute.EventField;
-import datawave.attribute.EventFieldValueTuple;
-import org.apache.commons.jexl3.JexlArithmetic;
-
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.jexl3.JexlArithmetic;
+
+import datawave.attribute.EventField;
+import datawave.attribute.EventFieldValueTuple;
 
 public class EdgePreconditionArithmetic extends JexlArithmetic {
 

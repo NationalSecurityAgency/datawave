@@ -1,14 +1,16 @@
 package datawave.mr.bulk;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import datawave.common.util.ArgumentChecker;
-import datawave.microservice.authorization.util.AuthorizationsUtil;
-import datawave.mr.bulk.split.TabletSplitSplit;
-import datawave.query.tables.SessionOptions;
-import datawave.security.iterator.ConfigurableVisibilityFilter;
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -24,16 +26,16 @@ import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.log4j.Logger;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+
+import datawave.common.util.ArgumentChecker;
+import datawave.microservice.authorization.util.AuthorizationsUtil;
+import datawave.mr.bulk.split.TabletSplitSplit;
+import datawave.query.tables.SessionOptions;
+import datawave.security.iterator.ConfigurableVisibilityFilter;
 
 public class RfileScanner extends SessionOptions implements BatchScanner, Closeable {
 
