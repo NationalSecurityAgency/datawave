@@ -1,5 +1,6 @@
 package datawave.ingest.data.config.ingest;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,24 +40,6 @@ import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.XMLFieldConfigHelper;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and
@@ -110,7 +93,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_TYPE = ".data.field.type.class";
 
     /**
-     * Configuration parameter to specify whether to specify whether to use type regex hierarchy.  If true, this will use the datatype associated with the "most precise" regex.  If false, all matching datatypes will be used.
+     * Configuration parameter to specify whether to specify whether to use type regex hierarchy. If true, this will use the datatype associated with the "most
+     * precise" regex. If false, all matching datatypes will be used.
      */
     public static final String USE_MOST_PRECISE_FIELD_TYPE_REGEX = "use.most.precise.field.type.regex";
 
@@ -630,41 +614,41 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
             }
 
             List<Integer> patternLengths = new ArrayList<>();
-            int bestMatch=0;
+            int bestMatch = 0;
             Collection<datawave.data.type.Type<?>> bestMatchTypes = null;
 
             for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
                 Collection<datawave.data.type.Type<?>> patternTypes = typeCompiledPatternMap.get(patternMatcher);
 
-
                 if (patternMatcher.reset(fieldName).matches()) {
 
-                    if(useMostPreciseFieldTypeRegex){
+                    if (useMostPreciseFieldTypeRegex) {
                         int patternLength = patternMatcher.pattern().toString().length();
-                        if(patternLengths.contains(Integer.valueOf(patternLength))){
-                            log.error("Multiple regular expression patterns with the same length exist for matching field "+fieldName+". Please verify your configurations.");
+                        if (patternLengths.contains(Integer.valueOf(patternLength))) {
+                            log.error("Multiple regular expression patterns with the same length exist for matching field " + fieldName
+                                            + ". Please verify your configurations.");
                         }
                         patternLengths.add(patternLength);
 
-                        if(patternLength >= bestMatch){
+                        if (patternLength >= bestMatch) {
                             bestMatch = patternLength;
                             bestMatchTypes = patternTypes;
                         }
 
-                    }else {
+                    } else {
                         types.addAll(patternTypes);
                         typeFieldMap.putAll(fieldName, patternTypes);
                     }
                 }
             }
-            if(null!= bestMatchTypes){
+            if (null != bestMatchTypes) {
                 types.addAll(bestMatchTypes);
                 typeFieldMap.putAll(fieldName, bestMatchTypes);
             }
 
         }
 
-        //if no types were defined or matched via regex, use the default
+        // if no types were defined or matched via regex, use the default
 
         if (types.isEmpty()) {
             types.addAll(typeFieldMap.get(null));

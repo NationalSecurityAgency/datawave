@@ -33,8 +33,7 @@ import datawave.policy.IngestPolicyEnforcer;
 public class XMLFieldConfigHelperTest {
 
     private final BaseIngestHelper ingestHelper = new TestBaseIngestHelper();
-    private  Configuration conf = new Configuration();
-
+    private Configuration conf = new Configuration();
 
     @Before
     public void setUp() {
@@ -182,13 +181,11 @@ public class XMLFieldConfigHelperTest {
 
     @Test
     public void testOverlappingRegex() throws Exception {
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n"
-                + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
+                        + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
 
@@ -201,13 +198,11 @@ public class XMLFieldConfigHelperTest {
         conf.setBoolean(BaseIngestHelper.USE_MOST_PRECISE_FIELD_TYPE_REGEX, true);
         ingestHelper.setup(conf);
 
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n"
-                + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <fieldPattern pattern=\"BANAN*\"  indexType=\"datawave.data.type.DateType\"/>\n"
+                        + "    <fieldPattern pattern=\"BA*\"  indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
 
@@ -221,12 +216,10 @@ public class XMLFieldConfigHelperTest {
         conf.setBoolean(BaseIngestHelper.USE_MOST_PRECISE_FIELD_TYPE_REGEX, true);
         ingestHelper.setup(conf);
 
-        String input = "<?xml version=\"1.0\"?>\n"
-                + "<fieldConfig>\n"
-                + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
-                + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
-                + "    <fieldPattern pattern=\"*A\"  indexType=\"datawave.data.type.HexStringType\"/>\n"
-                + "</fieldConfig>";
+        String input = "<?xml version=\"1.0\"?>\n" + "<fieldConfig>\n"
+                        + "    <default stored=\"true\" indexed=\"false\" reverseIndexed=\"false\" tokenized=\"true\" reverseTokenized=\"true\" indexType=\"datawave.data.type.LcNoDiacriticsType\"/>\n"
+                        + "    <fieldPattern pattern=\"B*\" indexed=\"true\" indexType=\"datawave.data.type.MacAddressType\"/>\n"
+                        + "    <fieldPattern pattern=\"*A\"  indexType=\"datawave.data.type.HexStringType\"/>\n" + "</fieldConfig>";
 
         FieldConfigHelper helper = new XMLFieldConfigHelper(new ByteArrayInputStream(input.getBytes()), ingestHelper);
 
