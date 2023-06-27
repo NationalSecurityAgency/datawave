@@ -21,6 +21,7 @@ import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.DroppedExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.LenientExpression;
+import org.apache.commons.jexl2.parser.StrictExpression;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
@@ -100,6 +101,7 @@ public class QueryPropertyMarkerVisitor extends BaseVisitor {
             registerMarker(ExceededValueThresholdMarkerJexlNode.class);
             registerMarker(BoundedRange.class);
             registerMarker(LenientExpression.class);
+            registerMarker(StrictExpression.class);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Failed to register default marker types for " + QueryPropertyMarkerVisitor.class.getName(), e);
         }
