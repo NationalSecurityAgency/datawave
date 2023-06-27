@@ -170,7 +170,7 @@ public class QueryMetricsBean {
                 dp = (DatawavePrincipal) p;
                 user = dp.getShortName();
             }
-            return queryHandler.subplan(user, id, dp); // needs to be changed to proper parameters based on the subplan method in the query handler
+            return queryHandler.subplan(user, id, dp);
         }
     }
     

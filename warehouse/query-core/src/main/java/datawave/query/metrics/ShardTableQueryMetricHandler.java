@@ -563,22 +563,19 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return response;
     }
     
-    // This method below needs to be changed to only show subplans
     public QueryMetricsSubplanResponse subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsSubplanResponse response = new QueryMetricsSubplanResponse();
         
         try {
             enableLogs(false);
             
-            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            
             QueryImpl query = new QueryImpl();
-            query.setParameters(ImmutableMap.of(QueryParameters.RETURN_FIELDS, "SUBPLAN"));
+            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
+            query.setParameters(ImmutableMap.of(QueryParameters.RETURN_FIELDS, "SUBPLANS"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
             
             response.setResult(queryMetrics);
             
-            response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
         } finally {
             enableLogs(true);
         }
@@ -598,7 +595,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
-            Map<String,String> subplans = new HashMap<>(); // Remove, only for temp holding
+            Map<String,String> subplans = new HashMap<>();
             
             boolean createDateSet = false;
             for (FieldBase f : field) {
@@ -624,7 +621,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     } else if (fieldName.equals("PLAN")) {
                         m.setPlan(fieldValue);
                     } else if (fieldName.equals("SUBPLAN")) {
-                        subplans.put(fieldValue, fieldValue); // Remove, only for temp holding
+                        String[] arr = fieldValue.split(" : ", 1);
+                        subplans.put(arr[0], arr[1]);
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);
                     } else if (fieldName.equals("QUERY_ID")) {
