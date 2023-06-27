@@ -1,9 +1,10 @@
 package datawave.query.iterator.filter;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.core.iterators.ColumnRangeIterator;
-import datawave.edge.util.EdgeValue;
-import datawave.util.time.DateHelper;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -11,10 +12,11 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.codec.binary.Base64;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.Map;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.core.iterators.ColumnRangeIterator;
+import datawave.edge.util.EdgeValue;
+import datawave.util.time.DateHelper;
 
 /**
  *

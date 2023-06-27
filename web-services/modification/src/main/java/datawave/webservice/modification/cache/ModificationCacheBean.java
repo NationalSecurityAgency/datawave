@@ -1,18 +1,10 @@
 package datawave.webservice.modification.cache;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.modification.cache.ModificationCache;
-import datawave.modification.configuration.ModificationConfiguration;
-import datawave.webservice.result.VoidResponse;
-import datawave.webservice.results.modification.MutableFieldListResponse;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.security.DeclareRoles;
@@ -28,11 +20,21 @@ import javax.interceptor.Interceptors;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.modification.cache.ModificationCache;
+import datawave.modification.configuration.ModificationConfiguration;
+import datawave.webservice.result.VoidResponse;
+import datawave.webservice.results.modification.MutableFieldListResponse;
 
 @Path("/Modification")
 @RunAs("InternalUser")

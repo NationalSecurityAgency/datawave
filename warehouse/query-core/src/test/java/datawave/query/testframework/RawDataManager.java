@@ -1,7 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.Date;
@@ -9,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import datawave.data.normalizer.Normalizer;
 
 /**
  * Defines the methods that are required to dynamically resolve and validate query results.

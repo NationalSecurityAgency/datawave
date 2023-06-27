@@ -1,6 +1,5 @@
 package datawave.query.util.sortedset;
 
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,12 +9,14 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.SortedSet;
 
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FsStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
+
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
 public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> implements SortedSet<E> {
     private static final Logger log = Logger.getLogger(HdfsBackedSortedSet.class);

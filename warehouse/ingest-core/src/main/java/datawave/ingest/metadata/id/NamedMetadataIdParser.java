@@ -2,9 +2,9 @@ package datawave.ingest.metadata.id;
 
 import java.util.regex.Matcher;
 
-import datawave.ingest.data.RawRecordContainer;
-
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
 
 public class NamedMetadataIdParser extends MetadataIdParser {
 

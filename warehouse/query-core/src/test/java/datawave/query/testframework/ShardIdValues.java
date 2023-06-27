@@ -1,7 +1,5 @@
 package datawave.query.testframework;
 
-import org.junit.Assert;
-
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -12,6 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+
+import org.junit.Assert;
 
 /**
  * Defines valid dates that are used for shard ids for a specific test. All shard id dates for the test data must be within the range of the earliest and latest

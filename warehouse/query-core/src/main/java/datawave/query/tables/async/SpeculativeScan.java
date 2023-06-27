@@ -1,20 +1,5 @@
 package datawave.query.tables.async;
 
-import com.google.common.collect.Lists;
-import com.google.common.eventbus.Subscribe;
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
-import datawave.core.query.configuration.Result;
-import datawave.query.tables.AccumuloResource;
-import datawave.query.tables.ResourceQueue;
-import datawave.query.tables.stats.ScanSessionStats;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +13,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Lists;
+import com.google.common.eventbus.Subscribe;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
+
+import datawave.core.query.configuration.Result;
+import datawave.query.tables.AccumuloResource;
+import datawave.query.tables.ResourceQueue;
+import datawave.query.tables.stats.ScanSessionStats;
 
 /**
  * Intended for a single lookup

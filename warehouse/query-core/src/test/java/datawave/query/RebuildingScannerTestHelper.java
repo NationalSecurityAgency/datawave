@@ -1,15 +1,16 @@
 package datawave.query;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryBatchScanner;
-import datawave.accumulo.inmemory.InMemoryClientInfo;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.InMemoryScanner;
-import datawave.accumulo.inmemory.InMemoryScannerBase;
-import datawave.accumulo.inmemory.ScannerRebuilder;
-import datawave.query.attributes.Document;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Random;
+import java.util.Spliterator;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -38,23 +39,23 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.hadoop.io.Text;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Random;
-import java.util.Spliterator;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryBatchScanner;
+import datawave.accumulo.inmemory.InMemoryClientInfo;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.InMemoryScanner;
+import datawave.accumulo.inmemory.InMemoryScannerBase;
+import datawave.accumulo.inmemory.ScannerRebuilder;
+import datawave.query.attributes.Document;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 
 /**
  * This helper provides support for testing the teardown of iterators at randomly. Simply use the getConnector methods and all scanners created will contain an

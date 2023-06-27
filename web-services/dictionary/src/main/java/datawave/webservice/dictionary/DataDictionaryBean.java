@@ -1,8 +1,6 @@
 package datawave.webservice.dictionary;
 
-import datawave.webservice.datadictionary.RemoteDataDictionary;
-import org.apache.http.client.utils.URIBuilder;
-import org.xbill.DNS.TextParseException;
+import java.net.URISyntaxException;
 
 import javax.annotation.security.PermitAll;
 import javax.ejb.LocalBean;
@@ -14,7 +12,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.net.URISyntaxException;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.xbill.DNS.TextParseException;
+
+import datawave.webservice.datadictionary.RemoteDataDictionary;
 
 /**
  * A simple proxy that redirects GET requests for the DataDictionary to the external dictionary service that is configured in the {@link RemoteDataDictionary}.

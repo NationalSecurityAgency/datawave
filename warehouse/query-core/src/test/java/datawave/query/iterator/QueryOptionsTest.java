@@ -1,17 +1,5 @@
 package datawave.query.iterator;
 
-import com.google.common.collect.Sets;
-import datawave.query.function.Equality;
-import datawave.query.function.PrefixEquality;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import static datawave.query.iterator.QueryOptions.DOC_AGGREGATION_THRESHOLD_MS;
 import static datawave.query.iterator.QueryOptions.EVENT_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.EVENT_NEXT_SEEK;
@@ -22,6 +10,20 @@ import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_AGGREGATION_TH
 import static datawave.query.iterator.QueryOptions.TF_FIELD_SEEK;
 import static datawave.query.iterator.QueryOptions.TF_NEXT_SEEK;
 import static org.junit.Assert.assertEquals;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.google.common.collect.Sets;
+
+import datawave.query.function.Equality;
+import datawave.query.function.PrefixEquality;
 
 public class QueryOptionsTest {
 

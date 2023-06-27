@@ -1,8 +1,13 @@
 package datawave.query.jexl.visitors.whindex;
 
-import com.google.common.collect.Multimap;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.RebuildingVisitor;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -20,13 +25,10 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.google.common.collect.Multimap;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 
 /**
  * This is a visitor which is used to fully distribute anded nodes into a given node. The visitor will only distribute the anded nodes to those descendant nodes

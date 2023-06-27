@@ -1,13 +1,9 @@
 package datawave.query.iterator.profile;
 
-import com.google.common.collect.Iterators;
-import datawave.query.DocumentSerialization;
-import datawave.query.attributes.Document;
-import datawave.query.function.LogTiming;
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.function.serializer.ToStringDocumentSerializer;
-import datawave.query.function.serializer.WritableDocumentSerializer;
-import datawave.query.iterator.Util;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -18,9 +14,15 @@ import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import com.google.common.collect.Iterators;
+
+import datawave.query.DocumentSerialization;
+import datawave.query.attributes.Document;
+import datawave.query.function.LogTiming;
+import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.query.function.serializer.ToStringDocumentSerializer;
+import datawave.query.function.serializer.WritableDocumentSerializer;
+import datawave.query.iterator.Util;
 
 public class FinalDocumentTrackingIterator implements Iterator<Map.Entry<Key,Value>> {
 

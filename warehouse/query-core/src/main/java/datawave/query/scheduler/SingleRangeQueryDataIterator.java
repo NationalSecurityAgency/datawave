@@ -1,13 +1,14 @@
 package datawave.query.scheduler;
 
-import datawave.core.query.configuration.QueryData;
-import org.apache.accumulo.core.data.Range;
-
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.NoSuchElementException;
 import java.util.Queue;
+
+import org.apache.accumulo.core.data.Range;
+
+import datawave.core.query.configuration.QueryData;
 
 public class SingleRangeQueryDataIterator implements Iterator<QueryData> {
     private final Iterator<QueryData> delegate;

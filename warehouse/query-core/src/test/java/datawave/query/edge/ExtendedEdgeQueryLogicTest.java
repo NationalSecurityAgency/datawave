@@ -1,22 +1,23 @@
 package datawave.query.edge;
 
-import datawave.core.iterators.ColumnRangeIterator;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.QueryLogic;
-import datawave.query.tables.edge.EdgeQueryFunctionalTest;
-import datawave.query.tables.edge.EdgeQueryLogic;
-import datawave.webservice.query.QueryImpl;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
+import datawave.core.iterators.ColumnRangeIterator;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.QueryLogic;
+import datawave.query.tables.edge.EdgeQueryFunctionalTest;
+import datawave.query.tables.edge.EdgeQueryLogic;
+import datawave.webservice.query.QueryImpl;
 
 public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
 

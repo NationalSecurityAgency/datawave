@@ -1,9 +1,12 @@
 package datawave.security.system;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.jboss.security.JSSESecurityDomain;
-import org.jboss.security.PicketBoxMessages;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.util.Properties;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
@@ -14,13 +17,11 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.security.Key;
-import java.security.KeyStore;
-import java.security.cert.Certificate;
-import java.util.Properties;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.jboss.security.JSSESecurityDomain;
+import org.jboss.security.PicketBoxMessages;
 
 @Alternative
 @Priority(Interceptor.Priority.APPLICATION)

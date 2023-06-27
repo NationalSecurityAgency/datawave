@@ -1,31 +1,5 @@
 package datawave.security.authorization.test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.guava.GuavaModule;
-import com.google.common.collect.HashMultimap;
-import datawave.configuration.RefreshableScope;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.CachedDatawaveUserService;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUserInfo;
-import datawave.security.authorization.DatawaveUserService;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Priority;
-import javax.enterprise.context.spi.CreationalContext;
-import javax.enterprise.inject.Alternative;
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +11,35 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.PostConstruct;
+import javax.annotation.PreDestroy;
+import javax.annotation.Priority;
+import javax.enterprise.context.spi.CreationalContext;
+import javax.enterprise.inject.Alternative;
+import javax.enterprise.inject.spi.Bean;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.inject.Inject;
+import javax.interceptor.Interceptor;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.guava.GuavaModule;
+import com.google.common.collect.HashMultimap;
+
+import datawave.configuration.RefreshableScope;
+import datawave.configuration.spring.SpringBean;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.CachedDatawaveUserService;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUserInfo;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 
 /**
  * A {@link CachedDatawaveUserService} for testing purposes. This version will only be active if the syste property {@code dw.security.use.testuserservice} is

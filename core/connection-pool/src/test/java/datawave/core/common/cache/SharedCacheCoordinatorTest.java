@@ -1,6 +1,8 @@
 package datawave.core.common.cache;
 
-import datawave.common.test.integration.IntegrationTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.shared.SharedCount;
@@ -18,8 +20,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.powermock.reflect.Whitebox;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.common.test.integration.IntegrationTest;
 
 /**
  * Tests functionality in the {@link SharedCacheCoordinator}.

@@ -1,9 +1,5 @@
 package datawave.query.jexl.functions;
 
-import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.visitors.BaseVisitor;
-
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTTrueNode;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -11,6 +7,10 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
+
+import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.visitors.BaseVisitor;
 
 /**
  * This interface can be implemented by a class supplying JEXL functions to provide additional information about the arguments. The initial purpose of this is

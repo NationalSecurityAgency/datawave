@@ -1,5 +1,16 @@
 package datawave.query.tables.edge;
 
+import static org.junit.Assert.assertEquals;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.query.QueryParameters;
 import datawave.query.language.parser.QueryParser;
@@ -10,16 +21,6 @@ import datawave.webservice.dictionary.edge.DefaultMetadata;
 import datawave.webservice.dictionary.edge.EventField;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
 
 public class DefaultEdgeEventQueryLogicTest {
 

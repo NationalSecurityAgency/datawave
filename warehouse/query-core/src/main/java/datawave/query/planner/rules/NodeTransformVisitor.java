@@ -1,10 +1,7 @@
 package datawave.query.planner.rules;
 
-import com.google.common.base.Preconditions;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.util.MetadataHelper;
+import java.util.List;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -22,7 +19,12 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.List;
+import com.google.common.base.Preconditions;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.util.MetadataHelper;
 
 public class NodeTransformVisitor extends RebuildingVisitor {
 

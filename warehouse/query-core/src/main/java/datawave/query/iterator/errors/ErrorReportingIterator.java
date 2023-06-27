@@ -4,9 +4,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-import datawave.query.iterator.QueryInformationIterator;
-import datawave.query.Constants;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -15,6 +12,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+
+import datawave.query.Constants;
+import datawave.query.iterator.QueryInformationIterator;
 
 /**
  * An identity iterator which does nothing but defer to its source.

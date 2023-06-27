@@ -3,12 +3,12 @@ package datawave.query.function.deserializer;
 import java.io.InputStream;
 import java.io.Serializable;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.function.KryoCVAwareSerializableSerializer;
-
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
 
 /**
  * Transform Kryo-serialized bytes back into a Document. Ordering of Attributes is <b>not</b> guaranteed across serialization.

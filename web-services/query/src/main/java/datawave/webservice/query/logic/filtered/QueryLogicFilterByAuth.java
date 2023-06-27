@@ -1,11 +1,12 @@
 package datawave.webservice.query.logic.filtered;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.predicate.ProxiedAuthorizationsPredicate;
-import org.apache.accumulo.core.security.Authorizations;
-
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.apache.accumulo.core.security.Authorizations;
+
+import datawave.webservice.query.Query;
+import datawave.webservice.query.predicate.ProxiedAuthorizationsPredicate;
 
 /**
  * This is a filter for the FilteredQueryLogic that will run the delegate query logic if the auths requested match a specified visibility (as defined by

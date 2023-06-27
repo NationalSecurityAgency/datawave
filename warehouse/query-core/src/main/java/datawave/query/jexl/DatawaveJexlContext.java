@@ -5,8 +5,9 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeSet;
 
-import datawave.query.collections.FunctionalSet;
 import org.apache.commons.jexl2.MapContext;
+
+import datawave.query.collections.FunctionalSet;
 
 public class DatawaveJexlContext extends MapContext {
 

@@ -1,11 +1,12 @@
 package datawave.webservice.query.runner;
 
-import datawave.core.query.runner.AccumuloConnectionRequestMap;
-import org.apache.log4j.Logger;
-
 import javax.annotation.Resource;
 import javax.ejb.EJBContext;
 import javax.inject.Singleton;
+
+import org.apache.log4j.Logger;
+
+import datawave.core.query.runner.AccumuloConnectionRequestMap;
 
 /**
  * For storing a map of queryId to Thread that is requesting an AccumuloConnection

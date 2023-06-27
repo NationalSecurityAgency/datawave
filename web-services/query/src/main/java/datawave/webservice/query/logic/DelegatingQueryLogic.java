@@ -1,5 +1,15 @@
 package datawave.webservice.query.logic;
 
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
+
 import datawave.audit.SelectorExtractor;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
@@ -7,20 +17,11 @@ import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
 import datawave.security.authorization.ProxiedUserDetails;
-import datawave.webservice.common.audit.Auditor;
 import datawave.security.authorization.UserOperations;
+import datawave.webservice.common.audit.Auditor;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.iterators.TransformIterator;
-
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * A delegating query logic that simply passes through to a delegate query logic. Intended to simplify extending classes.

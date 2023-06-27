@@ -1,12 +1,12 @@
 package datawave.core.common.cache;
 
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-
 import java.io.Serializable;
 import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
+
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
 
 public interface TableCache extends Callable<Boolean>, Serializable {
 

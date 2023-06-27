@@ -1,13 +1,13 @@
 package datawave.core.query.logic.composite;
 
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Throwables;
-
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Throwables;
 
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
 

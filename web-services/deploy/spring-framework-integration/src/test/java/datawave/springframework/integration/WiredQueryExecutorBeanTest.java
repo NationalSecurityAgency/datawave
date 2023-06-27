@@ -1,5 +1,24 @@
 package datawave.springframework.integration;
 
+import java.io.InputStream;
+import java.util.Properties;
+
+import javax.enterprise.inject.Produces;
+import javax.inject.Inject;
+
+import org.apache.log4j.Logger;
+import org.easymock.EasyMock;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.security.JSSESecurityDomain;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.EmptyAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.context.ApplicationContext;
+
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.composite.CompositeQueryLogic;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
@@ -25,23 +44,6 @@ import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.logic.QueryLogicFactoryImpl;
 import datawave.webservice.results.cached.CachedResultsConfiguration;
-import org.apache.log4j.Logger;
-import org.easymock.EasyMock;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.security.JSSESecurityDomain;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.EmptyAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.context.ApplicationContext;
-
-import javax.enterprise.inject.Produces;
-import javax.inject.Inject;
-import java.io.InputStream;
-import java.util.Properties;
 
 /**
  * this test ensures that our various spring contexts can be deployed successfully to Wildfly

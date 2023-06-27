@@ -1,19 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.data.normalizer.GeometryNormalizer;
-import datawave.data.type.AbstractGeometryType;
-import datawave.data.type.GeoType;
-import datawave.data.type.Type;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.util.GeoUtils;
-import datawave.query.util.GeoWaveUtils;
-import datawave.query.util.MetadataHelper;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTFalseNode;
@@ -26,11 +18,21 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 import org.locationtech.jts.geom.Geometry;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.data.normalizer.GeometryNormalizer;
+import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.GeoType;
+import datawave.data.type.Type;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.GeoWaveFunctionsDescriptor;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.util.GeoUtils;
+import datawave.query.util.GeoWaveUtils;
+import datawave.query.util.MetadataHelper;
 
 /**
  * This visitor should be run after bounded ranges have been expanded in order to check for expanded GeoWave terms which do not intersect with the original

@@ -1,9 +1,9 @@
 package datawave.core.query.logic.composite;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-
 import java.io.Serializable;
 import java.util.Map;
+
+import datawave.core.query.configuration.GenericQueryConfiguration;
 
 public class CompositeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
 

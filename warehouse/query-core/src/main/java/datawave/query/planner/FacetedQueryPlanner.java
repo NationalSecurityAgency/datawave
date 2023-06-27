@@ -1,6 +1,12 @@
 package datawave.query.planner;
 
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Joiner;
+
 import datawave.core.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
 import datawave.query.config.ShardQueryConfiguration;
@@ -22,10 +28,6 @@ import datawave.query.util.Tuple2;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 public class FacetedQueryPlanner extends IndexQueryPlanner {
 

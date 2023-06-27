@@ -1,12 +1,13 @@
 package datawave.ingest.mapreduce.handler.facet;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import com.clearspring.analytics.stream.cardinality.ICardinality;
-import com.clearspring.analytics.stream.frequency.CountMinSketch;
+import static org.junit.Assert.assertEquals;
+
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import com.clearspring.analytics.stream.cardinality.ICardinality;
+import com.clearspring.analytics.stream.frequency.CountMinSketch;
 
 public class ApproximateAlgorithmsTest {
 

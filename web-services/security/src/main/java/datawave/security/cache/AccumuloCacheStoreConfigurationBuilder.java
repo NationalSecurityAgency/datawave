@@ -1,16 +1,16 @@
 package datawave.security.cache;
 
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE_NAME;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.ZOOKEEPERS;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.USERNAME;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.PASSWORD;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.TABLE_NAME;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_PRIORITY;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_TTL;
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.AUTHORIZATIONS;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.WRITE_THREADS;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.INSTANCE_NAME;
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.MAX_LATENCY;
 import static datawave.security.cache.AccumuloCacheStoreConfiguration.MAX_MEMORY;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_TTL;
-import static datawave.security.cache.AccumuloCacheStoreConfiguration.AGEOFF_PRIORITY;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.PASSWORD;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.TABLE_NAME;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.USERNAME;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.WRITE_THREADS;
+import static datawave.security.cache.AccumuloCacheStoreConfiguration.ZOOKEEPERS;
 
 import java.util.List;
 

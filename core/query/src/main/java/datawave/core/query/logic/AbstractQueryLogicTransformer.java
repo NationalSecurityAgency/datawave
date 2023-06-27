@@ -1,9 +1,9 @@
 package datawave.core.query.logic;
 
+import java.util.List;
+
 import datawave.core.query.cache.ResultsPage;
 import datawave.webservice.result.BaseQueryResponse;
-
-import java.util.List;
 
 public abstract class AbstractQueryLogicTransformer<I,O> implements QueryLogicTransformer<I,O> {
 

@@ -1,17 +1,18 @@
 package datawave.webservice.query;
 
-import datawave.microservice.query.QueryParameters;
-import datawave.microservice.query.DefaultQueryParameters;
+import static org.junit.Assert.assertEquals;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.apache.commons.lang.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import static org.junit.Assert.assertEquals;
+import datawave.microservice.query.DefaultQueryParameters;
+import datawave.microservice.query.QueryParameters;
 
 public class TestQueryParameters {
 

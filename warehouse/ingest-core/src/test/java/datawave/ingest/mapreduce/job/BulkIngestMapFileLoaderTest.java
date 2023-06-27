@@ -16,15 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import datawave.common.test.integration.IntegrationTest;
-import datawave.common.test.logging.TestLogCollector;
-import datawave.common.test.utils.ProcessUtils;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.input.reader.EventRecordReader;
-import datawave.ingest.input.reader.LongLineEventRecordReader;
-
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -51,6 +42,15 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.reflect.Whitebox;
 
 import com.google.common.collect.Multimap;
+
+import datawave.common.test.integration.IntegrationTest;
+import datawave.common.test.logging.TestLogCollector;
+import datawave.common.test.utils.ProcessUtils;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.input.reader.EventRecordReader;
+import datawave.ingest.input.reader.LongLineEventRecordReader;
 
 @Category(IntegrationTest.class)
 public class BulkIngestMapFileLoaderTest {

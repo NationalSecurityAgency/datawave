@@ -1,12 +1,12 @@
 package datawave.core.common.logging;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.log4j.Appender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.Priority;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class ThreadConfigurableLogger extends Logger {
 

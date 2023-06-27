@@ -1,5 +1,12 @@
 package datawave.query.transformer;
 
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.marking.MarkingFunctions;
 import datawave.query.tld.TLD;
@@ -7,12 +14,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-
-import java.util.Map.Entry;
 
 public class ParentDocumentTransformer extends DocumentTransformer {
 

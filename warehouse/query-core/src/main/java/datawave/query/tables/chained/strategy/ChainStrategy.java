@@ -1,12 +1,13 @@
 package datawave.query.tables.chained.strategy;
 
-import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.Query;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
-import java.util.Iterator;
-import java.util.Set;
+import datawave.core.query.logic.QueryLogic;
+import datawave.webservice.query.Query;
 
 /**
  * The approach to take when converting query results into another query

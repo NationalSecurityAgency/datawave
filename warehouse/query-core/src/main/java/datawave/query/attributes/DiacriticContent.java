@@ -6,10 +6,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
-import datawave.data.normalizer.LcNormalizer;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.collections.FunctionalSet;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
@@ -17,6 +13,10 @@ import org.apache.hadoop.io.WritableUtils;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+
+import datawave.data.normalizer.LcNormalizer;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawaveJexlContext;
 
 public class DiacriticContent extends Attribute<DiacriticContent> implements Serializable {
     private static final long serialVersionUID = 1L;

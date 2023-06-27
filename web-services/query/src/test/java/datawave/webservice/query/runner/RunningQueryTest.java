@@ -1,29 +1,11 @@
 package datawave.webservice.query.runner;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.composite.CompositeQueryLogic;
-import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.TestQueryLogic;
-import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static org.easymock.EasyMock.anyObject;
+import static org.easymock.EasyMock.createMock;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -39,12 +21,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.easymock.EasyMock.anyObject;
-import static org.easymock.EasyMock.createMock;
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
-import static org.junit.Assert.assertEquals;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.composite.CompositeQueryLogic;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.logic.TestQueryLogic;
+import datawave.webservice.query.logic.composite.CompositeQueryLogicTest;
 
 public class RunningQueryTest {
 

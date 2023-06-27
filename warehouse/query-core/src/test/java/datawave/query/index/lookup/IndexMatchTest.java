@@ -1,9 +1,10 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlNodeFactory;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -18,11 +19,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.junit.Test;
+
+import com.google.common.collect.Sets;
+
+import datawave.query.jexl.JexlNodeFactory;
 
 public class IndexMatchTest {
 

@@ -1,10 +1,10 @@
 package datawave.query.tables;
 
-import datawave.query.index.lookup.AncestorCreateUidsIterator;
 import datawave.query.ancestor.AncestorQueryIterator;
 import datawave.query.ancestor.AncestorQueryPlanner;
 import datawave.query.ancestor.AncestorRangeStream;
 import datawave.query.ancestor.AncestorUidIntersector;
+import datawave.query.index.lookup.AncestorCreateUidsIterator;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
 

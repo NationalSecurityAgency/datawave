@@ -1,11 +1,12 @@
 package datawave.query.tables.edge;
 
+import java.util.Set;
+
+import org.apache.accumulo.core.security.Authorizations;
+
 import datawave.query.edge.DefaultExtendedEdgeQueryLogic;
 import datawave.query.edge.ExtendedEdgeQueryLogicTest;
 import datawave.webservice.query.QueryImpl;
-import org.apache.accumulo.core.security.Authorizations;
-
-import java.util.Set;
 
 public class CheckpointableExtendedEdgeQueryTest extends ExtendedEdgeQueryLogicTest {
 

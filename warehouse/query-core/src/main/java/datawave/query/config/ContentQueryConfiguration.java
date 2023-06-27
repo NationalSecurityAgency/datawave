@@ -1,18 +1,19 @@
 package datawave.query.config;
 
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.query.tables.content.ContentQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import org.apache.accumulo.core.data.Range;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.TreeSet;
+
+import org.apache.accumulo.core.data.Range;
+
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.query.tables.content.ContentQueryLogic;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 
 /**
  * Thin wrapper around GenericQueryConfiguration for use by the {@link ContentQueryLogic}

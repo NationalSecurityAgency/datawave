@@ -1,11 +1,12 @@
 package datawave.core.common.cache;
 
+import java.util.List;
+
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
+
 import datawave.accumulo.inmemory.InMemoryInstance;
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.common.result.TableCacheDescription;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-
-import java.util.List;
 
 /**
  * Object that caches data from Accumulo tables.

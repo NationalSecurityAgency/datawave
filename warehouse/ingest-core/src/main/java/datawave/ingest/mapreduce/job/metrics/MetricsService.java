@@ -1,19 +1,21 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.util.time.DateHelper;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.util.time.DateHelper;
 
 /**
  * Receives ingest metrics and processes them asynchronously. Once the queue fills up, this service will block metrics producers.

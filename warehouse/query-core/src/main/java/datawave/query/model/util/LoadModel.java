@@ -1,18 +1,20 @@
 package datawave.query.model.util;
 
-import datawave.query.model.FieldMapping;
-import datawave.query.model.QueryModel;
-import datawave.webservice.model.Model;
-import org.apache.log4j.Logger;
-import org.xml.sax.InputSource;
+import java.io.InputStream;
+import java.util.Collection;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
-import java.io.InputStream;
-import java.util.Collection;
+
+import org.apache.log4j.Logger;
+import org.xml.sax.InputSource;
+
+import datawave.query.model.FieldMapping;
+import datawave.query.model.QueryModel;
+import datawave.webservice.model.Model;
 
 /**
  * Utility class to load a model

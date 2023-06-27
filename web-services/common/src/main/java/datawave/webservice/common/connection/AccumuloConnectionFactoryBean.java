@@ -1,20 +1,9 @@
 package datawave.webservice.common.connection;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.core.common.cache.AccumuloTableCache;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
-import datawave.core.common.result.ConnectionFactoryResponse;
-import datawave.core.common.result.ConnectionPool;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.security.Principal;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -37,10 +26,23 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import java.security.Principal;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.cache.AccumuloTableCache;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.connection.AccumuloConnectionFactoryImpl;
+import datawave.core.common.result.ConnectionFactoryResponse;
+import datawave.core.common.result.ConnectionPool;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.connection.config.ConnectionPoolsConfiguration;
 
 @Path("/Common/AccumuloConnectionFactory")
 @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "text/html"})

@@ -1,19 +1,21 @@
 package datawave.query.config;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import datawave.core.query.configuration.CheckpointableQueryConfiguration;
-import datawave.core.query.configuration.QueryData;
-import datawave.query.tables.ShardIndexQueryTable;
-import datawave.webservice.query.Query;
-import org.apache.accumulo.core.data.Range;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+
+import org.apache.accumulo.core.data.Range;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+
+import datawave.core.query.configuration.CheckpointableQueryConfiguration;
+import datawave.core.query.configuration.QueryData;
+import datawave.query.tables.ShardIndexQueryTable;
+import datawave.webservice.query.Query;
 
 public class ShardIndexQueryConfiguration extends ShardQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
     private static final long serialVersionUID = 7616552164239289739L;

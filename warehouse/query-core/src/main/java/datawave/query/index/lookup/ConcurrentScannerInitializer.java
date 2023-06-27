@@ -9,9 +9,9 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import datawave.query.index.lookup.IndexStream.StreamContext;
-
 import com.google.common.collect.Lists;
+
+import datawave.query.index.lookup.IndexStream.StreamContext;
 
 /**
  * Callable class that the executor will use to stand up the ScannerSessions

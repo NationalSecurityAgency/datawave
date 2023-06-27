@@ -1,8 +1,9 @@
 package datawave.ingest.util.cache.watch;
 
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
 import datawave.iterators.filter.ageoff.FieldAgeOffFilter;
 import datawave.iterators.filter.ageoff.FilterOptions;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * Class to assist in the testing of FieldAgeOffFilters

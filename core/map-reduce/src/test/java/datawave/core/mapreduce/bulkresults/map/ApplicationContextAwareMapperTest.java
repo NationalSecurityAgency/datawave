@@ -1,11 +1,11 @@
 package datawave.core.mapreduce.bulkresults.map;
 
+import java.io.IOException;
+
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.support.ResourcePropertySource;
-
-import java.io.IOException;
 
 public class ApplicationContextAwareMapperTest {
 

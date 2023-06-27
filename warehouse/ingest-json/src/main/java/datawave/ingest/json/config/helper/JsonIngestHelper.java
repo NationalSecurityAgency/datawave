@@ -1,19 +1,21 @@
 package datawave.ingest.json.config.helper;
 
+import java.util.Map;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
 import datawave.ingest.data.config.NormalizedFieldAndValue;
 import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
 import datawave.ingest.data.normalizer.SimpleGroupFieldNameParser;
 import datawave.ingest.json.util.JsonObjectFlattener;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
-import java.util.Map;
 
 /**
  * Utilized by EventMapper to produce all the key/value pairs from each raw record, i.e, {@link RawRecordContainer}

@@ -1,12 +1,13 @@
 package datawave.core.query.logic.lookup.uid;
 
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.core.query.logic.lookup.LookupQueryLogic;
-import org.springframework.util.MultiValueMap;
-
 import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.util.MultiValueMap;
+
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.lookup.LookupQueryLogic;
 
 public class LookupUIDQueryLogic<T> extends LookupQueryLogic<T> {
     private static final String UID_TERM_SEPARATOR = " ";

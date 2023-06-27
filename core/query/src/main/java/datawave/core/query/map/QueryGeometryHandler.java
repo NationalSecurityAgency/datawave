@@ -1,9 +1,9 @@
 package datawave.core.query.map;
 
+import java.util.List;
+
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.webservice.query.map.QueryGeometryResponse;
-
-import java.util.List;
 
 public interface QueryGeometryHandler {
 

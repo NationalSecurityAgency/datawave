@@ -7,15 +7,14 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-import datawave.metrics.analytic.LongArrayWritable;
-
-import org.apache.hadoop.io.LongWritable;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+import org.apache.hadoop.io.LongWritable;
+
+import datawave.metrics.analytic.LongArrayWritable;
 
 /**
  * Scans over the DatawaveMetrics table and sums up all the fields in the value aside from the first element, which is an event count.

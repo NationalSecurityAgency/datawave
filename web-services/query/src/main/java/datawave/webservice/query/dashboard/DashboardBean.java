@@ -1,23 +1,12 @@
 package datawave.webservice.query.dashboard;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.core.common.connection.AccumuloConnectionFactory;
-import datawave.core.common.extjs.ExtJsResponse;
-import datawave.core.query.dashboard.DashboardSummary;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.WSAuthorizationsUtil;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import java.security.Principal;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -32,13 +21,26 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.security.Principal;
-import java.time.Instant;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.core.common.extjs.ExtJsResponse;
+import datawave.core.query.dashboard.DashboardSummary;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.ScannerHelper;
+import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.query.runner.QueryExecutorBean;
 
 @Path("/Query/Metrics/dashboard")
 @GZIP

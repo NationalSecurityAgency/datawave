@@ -1,13 +1,14 @@
 package datawave.core.common.connection;
 
-import datawave.core.common.result.ConnectionPool;
-import datawave.webservice.common.connection.WrappedAccumuloClient;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.clientImpl.ClientContext;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.clientImpl.ClientContext;
+
+import datawave.core.common.result.ConnectionPool;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public interface AccumuloConnectionFactory extends AutoCloseable {
 

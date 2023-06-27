@@ -3,11 +3,11 @@ package datawave.query.language.parser.lucene;
 import java.util.HashMap;
 import java.util.Map;
 
-import datawave.query.language.parser.ParseException;
-
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import datawave.query.language.parser.ParseException;
 
 public class TestLuceneQueryParser {
 

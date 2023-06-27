@@ -1,14 +1,14 @@
 package datawave.query.discovery;
 
-import datawave.ingest.protobuf.Uid;
-
-import datawave.query.Constants;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.query.Constants;
 
 public class TermInfo {
     protected long count = 0;

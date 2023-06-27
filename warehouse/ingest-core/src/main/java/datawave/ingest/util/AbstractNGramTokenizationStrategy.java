@@ -1,9 +1,11 @@
 package datawave.ingest.util;
 
-import com.google.common.hash.BloomFilter;
-import datawave.ingest.data.config.NormalizedContentInterface;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.ngram.NGramTokenizer;
+
+import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Base class for generating n-grams (a.k.a. "tokens," "terms," or "shingles") from normalized content and applying them to a BloomFilter. Subclasses may

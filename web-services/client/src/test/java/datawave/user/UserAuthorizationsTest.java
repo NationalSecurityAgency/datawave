@@ -1,20 +1,21 @@
 package datawave.user;
 
-import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.TreeSet;
-
-import io.protostuff.LinkedBuffer;
-import io.protostuff.Message;
-import io.protostuff.ProtobufIOUtil;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.powermock.api.support.membermodification.MemberMatcher.field;
 import static org.powermock.api.support.membermodification.MemberMatcher.fields;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.TreeSet;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import io.protostuff.LinkedBuffer;
+import io.protostuff.Message;
+import io.protostuff.ProtobufIOUtil;
 
 public class UserAuthorizationsTest {
     @Test

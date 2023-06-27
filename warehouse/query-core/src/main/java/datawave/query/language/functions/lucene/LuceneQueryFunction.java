@@ -2,11 +2,11 @@ package datawave.query.language.functions.lucene;
 
 import java.util.List;
 
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+
 import datawave.query.language.functions.QueryFunction;
 import datawave.query.search.FieldedTerm;
 import datawave.query.search.WildcardFieldedFilter;
-
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
 
 public abstract class LuceneQueryFunction implements QueryFunction {
 

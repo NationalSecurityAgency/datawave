@@ -1,20 +1,22 @@
 package datawave.core.query.util;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
-import io.protostuff.LinkedBuffer;
-import io.protostuff.ProtobufIOUtil;
-import io.protostuff.Schema;
-import io.protostuff.runtime.RuntimeSchema;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl.Parameter;
+import io.protostuff.LinkedBuffer;
+import io.protostuff.ProtobufIOUtil;
+import io.protostuff.Schema;
+import io.protostuff.runtime.RuntimeSchema;
 
 public class QueryUtil {
     public static final String PARAMETER_SEPARATOR = ";";

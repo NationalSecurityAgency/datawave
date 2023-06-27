@@ -2,6 +2,7 @@ package datawave.query.util.sortedset;
 
 import java.io.IOException;
 import java.io.OutputStream;
+
 import org.apache.accumulo.core.client.rfile.RFile;
 import org.apache.accumulo.core.client.rfile.RFileWriter;
 import org.apache.accumulo.core.data.Key;

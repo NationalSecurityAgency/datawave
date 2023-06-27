@@ -1,12 +1,13 @@
 package datawave.core.common.result;
 
-import com.google.common.base.Objects;
+import java.io.Serializable;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlRootElement;
-import java.io.Serializable;
+
+import com.google.common.base.Objects;
 
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.NONE)

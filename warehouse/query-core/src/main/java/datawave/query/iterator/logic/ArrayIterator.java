@@ -5,8 +5,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 
-import datawave.query.iterator.NestedIterator;
 import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
 
 /**
  * A leaf node in an nested iterator tree. This is supposed to be a sample iterator that returns data from a sorted array.

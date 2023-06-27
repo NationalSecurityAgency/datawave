@@ -1,12 +1,12 @@
 package datawave.query.jexl;
 
-import org.junit.Test;
-
-import java.util.regex.Pattern;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+
+import java.util.regex.Pattern;
+
+import org.junit.Test;
 
 public class JexlPatternCacheTest {
 

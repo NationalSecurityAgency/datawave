@@ -1,7 +1,8 @@
 package datawave.query;
 
-import datawave.query.tables.ShardQueryLogic;
 import org.apache.log4j.Logger;
+
+import datawave.query.tables.ShardQueryLogic;
 
 public class CheckpointableQueryTest extends AnyFieldQueryTest {
 

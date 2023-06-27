@@ -1,11 +1,12 @@
 package datawave.core.query.logic.lookup.uuid;
 
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.core.query.logic.lookup.LookupQueryLogic;
-import org.springframework.util.MultiValueMap;
-
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.util.MultiValueMap;
+
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.lookup.LookupQueryLogic;
 
 public class LookupUUIDQueryLogic<T> extends LookupQueryLogic<T> {
     private static final String UUID_TERM_SEPARATOR = " OR ";

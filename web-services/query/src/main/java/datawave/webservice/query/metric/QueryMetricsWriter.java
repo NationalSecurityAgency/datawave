@@ -1,22 +1,16 @@
 package datawave.webservice.query.metric;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.RefreshEvent;
-import datawave.configuration.spring.SpringBean;
-import datawave.core.query.metric.QueryMetricHandler;
-import datawave.metrics.remote.RemoteQueryMetricService;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
-import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.util.timely.UdpClient;
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.result.VoidResponse;
-import org.apache.commons.collections4.map.LRUMap;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -37,17 +31,25 @@ import javax.jms.JMSContext;
 import javax.jms.Message;
 import javax.jms.ObjectMessage;
 import javax.jms.Queue;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.map.LRUMap;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.RefreshEvent;
+import datawave.configuration.spring.SpringBean;
+import datawave.core.query.metric.QueryMetricHandler;
+import datawave.metrics.remote.RemoteQueryMetricService;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.util.timely.UdpClient;
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.result.VoidResponse;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

@@ -1,16 +1,17 @@
 package datawave.query.jexl.lookups;
 
-import datawave.core.common.logging.ThreadConfigurableLogger;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ScannerFactory;
-import org.apache.log4j.Logger;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+
+import org.apache.log4j.Logger;
+
+import datawave.core.common.logging.ThreadConfigurableLogger;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ScannerFactory;
 
 /**
  * Abstract index lookup which provides a framework for creating and populating the {@link IndexLookupMap} asynchronously in a separate thread. Async index

@@ -1,15 +1,15 @@
 package datawave.webservice.query.cachedresults;
 
-import datawave.marking.MarkingFunctions;
-import datawave.webservice.query.result.event.HasMarkings;
-import datawave.webservice.query.util.TypedValue;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.result.event.HasMarkings;
+import datawave.webservice.query.util.TypedValue;
 
 public abstract class CacheableQueryRow implements HasMarkings {
 

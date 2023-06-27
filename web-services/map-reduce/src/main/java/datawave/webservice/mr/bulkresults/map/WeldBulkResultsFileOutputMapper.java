@@ -1,10 +1,10 @@
 package datawave.webservice.mr.bulkresults.map;
 
+import java.io.IOException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.jboss.weld.environment.se.Weld;
-
-import java.io.IOException;
 
 public class WeldBulkResultsFileOutputMapper extends datawave.core.mapreduce.bulkresults.map.BulkResultsFileOutputMapper {
     private Weld weld;

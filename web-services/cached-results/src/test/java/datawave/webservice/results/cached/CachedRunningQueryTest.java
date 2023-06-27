@@ -1,6 +1,13 @@
 package datawave.webservice.results.cached;
 
-import datawave.core.query.cachedresults.CacheableQueryRowImpl;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -12,13 +19,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import datawave.core.query.cachedresults.CacheableQueryRowImpl;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CachedRunningQuery.class)

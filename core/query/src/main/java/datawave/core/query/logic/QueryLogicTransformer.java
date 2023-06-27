@@ -1,9 +1,10 @@
 package datawave.core.query.logic;
 
+import org.apache.commons.collections4.Transformer;
+
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.webservice.result.BaseQueryResponse;
-import org.apache.commons.collections4.Transformer;
 
 public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
 

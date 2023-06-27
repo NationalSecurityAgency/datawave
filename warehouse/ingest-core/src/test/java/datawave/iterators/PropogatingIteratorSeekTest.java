@@ -1,8 +1,15 @@
 package datawave.iterators;
 
-import datawave.ingest.table.aggregator.PropogatingCombiner;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.data.*;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
@@ -11,13 +18,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import datawave.ingest.table.aggregator.PropogatingCombiner;
 
 public class PropogatingIteratorSeekTest {
     public static final String FIELD_NO_AGGREGATION = "a";

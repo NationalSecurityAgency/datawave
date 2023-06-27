@@ -5,16 +5,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.ingest.table.aggregator.CombinerConfiguration;
-import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
-import datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator;
-import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
-import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
-import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
-import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -27,6 +17,16 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.ingest.table.aggregator.CombinerConfiguration;
+import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
+import datawave.ingest.table.aggregator.KeepCountOnlyNoUidAggregator;
+import datawave.ingest.table.aggregator.KeepCountOnlyUidAggregator;
+import datawave.ingest.table.balancer.ShardedTableTabletBalancer;
+import datawave.ingest.table.bloomfilter.ShardIndexKeyFunctor;
+import datawave.ingest.table.bloomfilter.ShardKeyFunctor;
 
 public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 

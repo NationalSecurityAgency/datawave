@@ -1,7 +1,8 @@
 package datawave.webservice.query.util;
 
-import datawave.webservice.query.Query;
 import org.springframework.util.MultiValueMap;
+
+import datawave.webservice.query.Query;
 
 /**
  * Lookup criteria for paging through content results

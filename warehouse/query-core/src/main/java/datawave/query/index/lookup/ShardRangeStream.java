@@ -5,20 +5,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.index.lookup.IndexStream.StreamContext;
-import datawave.query.CloseableIterable;
-import datawave.query.exceptions.DatawaveQueryException;
-import datawave.query.iterator.FieldIndexOnlyQueryIterator;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.errors.ErrorKey;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.planner.DefaultQueryPlanner;
-import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.util.time.DateHelper;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -31,6 +17,20 @@ import org.apache.commons.jexl2.parser.JexlNode;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
+
+import datawave.query.CloseableIterable;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveQueryException;
+import datawave.query.index.lookup.IndexStream.StreamContext;
+import datawave.query.iterator.FieldIndexOnlyQueryIterator;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.errors.ErrorKey;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.planner.QueryPlan;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MetadataHelper;
+import datawave.util.time.DateHelper;
 
 public class ShardRangeStream extends RangeStream {
 

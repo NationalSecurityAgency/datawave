@@ -1,12 +1,13 @@
 package datawave.core.mapreduce.bulkresults.map;
 
-import datawave.core.query.cache.ResultsPage;
-import datawave.core.query.exception.EmptyObjectException;
-import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
-import datawave.webservice.query.Query;
-import datawave.webservice.result.BaseQueryResponse;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.xml.bind.JAXBException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -15,12 +16,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.springframework.util.Assert;
 
-import javax.xml.bind.JAXBException;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import datawave.core.query.cache.ResultsPage;
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
+import datawave.webservice.query.Query;
+import datawave.webservice.result.BaseQueryResponse;
 
 public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<Key,Value,Text,Mutation> {
 

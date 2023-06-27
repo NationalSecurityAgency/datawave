@@ -1,14 +1,15 @@
 package datawave.core.common.result;
 
-import datawave.core.common.result.ConnectionPool.Priority;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.TreeSet;
+
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import datawave.core.common.result.ConnectionPool.Priority;
 
 /**
  *

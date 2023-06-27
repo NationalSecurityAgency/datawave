@@ -1,12 +1,13 @@
 package datawave.core.query.logic;
 
-import datawave.core.query.configuration.QueryData;
-import org.apache.commons.lang3.builder.EqualsBuilder;
-import org.apache.commons.lang3.builder.HashCodeBuilder;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
+
+import datawave.core.query.configuration.QueryData;
 
 /**
  * A query checkpoint will be very different depending on the query logic. It is expected that whatever the query state is can be encoded in a map of

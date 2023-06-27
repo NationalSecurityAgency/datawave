@@ -1,5 +1,9 @@
 package datawave.query.planner;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.query.CloseableIterable;
@@ -10,9 +14,6 @@ import datawave.query.index.lookup.UidIntersector;
 import datawave.query.planner.pushdown.PushDownPlanner;
 import datawave.query.tables.ScannerFactory;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 public abstract class QueryPlanner implements PushDownPlanner {
 

@@ -1,16 +1,6 @@
 package datawave.webservice.query.cache;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.query.runner.RunningQuery;
-import datawave.webservice.result.VoidResponse;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.resteasy.annotations.GZIP;
+import java.util.Map.Entry;
 
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
@@ -23,7 +13,19 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import java.util.Map.Entry;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.util.Pair;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.query.logic.QueryLogic;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.result.VoidResponse;
 
 @Path("/Query/Cache")
 @RunAs("InternalUser")

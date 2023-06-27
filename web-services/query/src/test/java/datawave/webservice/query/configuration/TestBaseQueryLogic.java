@@ -1,13 +1,18 @@
 package datawave.webservice.query.configuration;
 
-import com.google.common.collect.Sets;
-import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -17,18 +22,15 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.webservice.common.audit.Auditor;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 
 @RunWith(PowerMockRunner.class)
 public class TestBaseQueryLogic {

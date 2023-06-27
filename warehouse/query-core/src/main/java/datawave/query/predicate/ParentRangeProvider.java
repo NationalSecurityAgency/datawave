@@ -1,9 +1,10 @@
 package datawave.query.predicate;
 
-import datawave.query.function.DocumentRangeProvider;
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
+
+import datawave.query.function.DocumentRangeProvider;
+import datawave.query.tld.TLD;
 
 /**
  * For use with the {@link datawave.query.tables.ParentQueryLogic}

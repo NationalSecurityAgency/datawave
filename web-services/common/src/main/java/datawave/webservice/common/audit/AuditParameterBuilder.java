@@ -1,9 +1,10 @@
 package datawave.webservice.common.audit;
 
-import org.springframework.util.MultiValueMap;
+import java.util.Map;
 
 import javax.ws.rs.core.MultivaluedMap;
-import java.util.Map;
+
+import org.springframework.util.MultiValueMap;
 
 /**
  * A utility to extract parameters from a REST call and convert them, as necessary, into parameters that are required by the auditor.

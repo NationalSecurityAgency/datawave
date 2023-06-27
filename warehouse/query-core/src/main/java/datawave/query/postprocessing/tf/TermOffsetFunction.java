@@ -6,7 +6,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Multimap;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -14,10 +19,6 @@ import datawave.query.attributes.DocumentKey;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-import org.apache.accumulo.core.data.PartialKey;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
     private static final Logger log = Logger.getLogger(TermOffsetFunction.class);

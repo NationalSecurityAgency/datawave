@@ -7,9 +7,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
-import datawave.ingest.table.aggregator.CombinerConfiguration;
-import datawave.iterators.PropogatingIterator;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -22,6 +19,9 @@ import org.apache.accumulo.core.iterators.user.VersioningIterator;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.table.aggregator.CombinerConfiguration;
+import datawave.iterators.PropogatingIterator;
 
 public abstract class AbstractTableConfigHelper implements TableConfigHelper {
 

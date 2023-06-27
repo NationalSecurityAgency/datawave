@@ -1,17 +1,5 @@
 package datawave.core.query.configuration;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.google.common.collect.Iterators;
-import datawave.core.common.util.EnvProvider;
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.util.TableName;
-import datawave.webservice.query.Query;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.security.Authorizations;
-
-import javax.xml.bind.annotation.XmlTransient;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
@@ -21,6 +9,21 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.xml.bind.annotation.XmlTransient;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.security.Authorizations;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.google.common.collect.Iterators;
+
+import datawave.core.common.util.EnvProvider;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.util.TableName;
+import datawave.webservice.query.Query;
 
 /**
  * <p>

@@ -1,14 +1,11 @@
 package datawave.core.query.logic;
 
-import datawave.audit.SelectorExtractor;
-import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.core.query.iterator.DatawaveTransformIterator;
-import datawave.marking.MarkingFunctions;
-import datawave.security.authorization.ProxiedUserDetails;
-import datawave.webservice.common.audit.Auditor.AuditType;
-import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -17,12 +14,15 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.springframework.beans.factory.annotation.Required;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import datawave.audit.SelectorExtractor;
+import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.iterator.DatawaveTransformIterator;
+import datawave.marking.MarkingFunctions;
+import datawave.security.authorization.ProxiedUserDetails;
+import datawave.security.authorization.UserOperations;
+import datawave.webservice.common.audit.Auditor.AuditType;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
 

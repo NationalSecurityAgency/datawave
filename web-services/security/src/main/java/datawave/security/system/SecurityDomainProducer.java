@@ -1,16 +1,18 @@
 package datawave.security.system;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.jboss.security.AuthenticationManager;
-import org.jboss.security.CacheableManager;
-import org.jboss.security.JSSESecurityDomain;
+import java.security.Principal;
 
 import javax.annotation.Resource;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Produces;
 import javax.inject.Inject;
-import java.security.Principal;
+
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.jboss.security.AuthenticationManager;
+import org.jboss.security.CacheableManager;
+import org.jboss.security.JSSESecurityDomain;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 
 /**
  * A producer class for generating server-security related artifacts. For one, we produce the server DN of the server that we are running inside of. We allso

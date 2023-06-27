@@ -1,8 +1,8 @@
 package datawave.core.query.logic.composite;
 
-import datawave.core.query.logic.QueryCheckpoint;
-
 import java.io.Serializable;
+
+import datawave.core.query.logic.QueryCheckpoint;
 
 public class CompositeQueryCheckpoint extends QueryCheckpoint implements Serializable {
     protected String delegateQueryLogic;

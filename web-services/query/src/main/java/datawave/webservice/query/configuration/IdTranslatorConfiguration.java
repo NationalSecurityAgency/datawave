@@ -1,13 +1,15 @@
 package datawave.webservice.query.configuration;
 
-import datawave.microservice.query.QueryParameters;
-import datawave.query.data.UUIDType;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.springframework.stereotype.Component;
 
-import javax.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
-import java.util.List;
+import datawave.microservice.query.QueryParameters;
+import datawave.query.data.UUIDType;
 
 @Component("idTranslatorConfiguration")
 public class IdTranslatorConfiguration {

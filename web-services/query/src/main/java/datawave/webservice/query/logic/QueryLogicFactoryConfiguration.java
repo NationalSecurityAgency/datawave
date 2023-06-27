@@ -1,8 +1,8 @@
 package datawave.webservice.query.logic;
 
-import datawave.core.query.logic.QueryLogic;
-
 import java.util.Map;
+
+import datawave.core.query.logic.QueryLogic;
 
 // TODO: JWO: Remove this once we finally move away from the WildFly Webservice
 @Deprecated

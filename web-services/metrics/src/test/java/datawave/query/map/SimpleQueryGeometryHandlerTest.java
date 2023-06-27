@@ -1,20 +1,21 @@
 package datawave.query.map;
 
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.map.QueryGeometry;
-import datawave.webservice.query.map.QueryGeometryResponse;
-import datawave.microservice.querymetric.QueryMetric;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import static datawave.query.QueryParameters.QUERY_SYNTAX;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static datawave.query.QueryParameters.QUERY_SYNTAX;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.query.map.QueryGeometry;
+import datawave.webservice.query.map.QueryGeometryResponse;
 
 public class SimpleQueryGeometryHandlerTest {
 

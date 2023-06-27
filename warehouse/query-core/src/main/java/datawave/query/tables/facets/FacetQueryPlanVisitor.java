@@ -1,17 +1,5 @@
 package datawave.query.tables.facets;
 
-import com.google.common.collect.Multimap;
-import datawave.query.CloseableIterable;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.BaseVisitor;
-import datawave.query.planner.QueryPlan;
-import datawave.query.util.MetadataHelper;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTEQNode;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,6 +7,20 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+
+import com.google.common.collect.Multimap;
+
+import datawave.query.CloseableIterable;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.BaseVisitor;
+import datawave.query.planner.QueryPlan;
+import datawave.query.util.MetadataHelper;
 
 public class FacetQueryPlanVisitor extends BaseVisitor implements CloseableIterable<QueryPlan> {
 

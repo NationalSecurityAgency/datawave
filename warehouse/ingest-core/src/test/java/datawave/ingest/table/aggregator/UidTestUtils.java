@@ -1,10 +1,12 @@
 package datawave.ingest.table.aggregator;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.ingest.protobuf.Uid;
+import static java.util.Arrays.asList;
+
 import org.apache.accumulo.core.data.Value;
 
-import static java.util.Arrays.asList;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
 
 /**
  * Common utilities for testing Uid.List functionality.

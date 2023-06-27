@@ -1,13 +1,12 @@
 package datawave.ingest.data.normalizer;
 
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-
-import datawave.data.normalizer.NormalizationException;
-
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Multimap;
+
+import datawave.data.normalizer.NormalizationException;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 public interface TextNormalizer {
 

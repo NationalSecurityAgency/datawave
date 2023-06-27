@@ -4,10 +4,10 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import datawave.query.iterator.Util;
-import datawave.query.iterator.NestedIterator;
-
 import com.google.common.collect.TreeMultimap;
+
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.Util;
 
 class NegationFilter {
 

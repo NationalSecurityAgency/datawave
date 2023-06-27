@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -16,6 +14,8 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
 
 public class DateIndexTableConfigHelper extends AbstractTableConfigHelper {
 

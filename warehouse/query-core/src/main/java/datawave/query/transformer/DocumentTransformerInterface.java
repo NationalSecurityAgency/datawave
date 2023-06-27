@@ -1,10 +1,10 @@
 package datawave.query.transformer;
 
+import java.util.List;
+
 import datawave.core.query.logic.QueryLogic;
 import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
-
-import java.util.List;
 
 public interface DocumentTransformerInterface<Q> extends EventQueryTransformerInterface<Q> {
 

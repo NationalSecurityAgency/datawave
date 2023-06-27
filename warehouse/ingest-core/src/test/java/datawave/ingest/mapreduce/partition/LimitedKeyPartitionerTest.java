@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
+import java.lang.reflect.InvocationTargetException;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -8,7 +9,7 @@ import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.lang.reflect.InvocationTargetException;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 public class LimitedKeyPartitionerTest {
     private static final int NUM_REDUCERS = 1000;

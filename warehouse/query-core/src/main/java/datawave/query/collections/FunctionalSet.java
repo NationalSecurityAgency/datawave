@@ -1,12 +1,5 @@
 package datawave.query.collections;
 
-import com.google.common.collect.Sets;
-import datawave.data.type.NumberType;
-import datawave.data.type.Type;
-import datawave.query.attributes.ValueTuple;
-import datawave.util.OperationEvaluator;
-import org.apache.log4j.Logger;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,6 +9,15 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Sets;
+
+import datawave.data.type.NumberType;
+import datawave.data.type.Type;
+import datawave.query.attributes.ValueTuple;
+import datawave.util.OperationEvaluator;
 
 public class FunctionalSet<T extends ValueTuple> implements Set<T> {
 

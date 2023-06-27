@@ -1,23 +1,25 @@
 package datawave.query.function;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.Numeric;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.Numeric;
 
 public class DocumentProjectionTest {
 

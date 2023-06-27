@@ -1,8 +1,8 @@
 package datawave.ingest.protobuf;
 
-import org.apache.log4j.Logger;
-
 import java.util.Comparator;
+
+import org.apache.log4j.Logger;
 
 /**
  * This is a utility class for processing a single term weight position. These get aggregated into a TermWeight,

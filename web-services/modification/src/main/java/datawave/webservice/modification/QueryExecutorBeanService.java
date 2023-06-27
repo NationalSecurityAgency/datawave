@@ -1,5 +1,11 @@
 package datawave.webservice.modification;
 
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.util.MultiValueMap;
+
 import datawave.modification.query.ModificationQueryService;
 import datawave.security.authorization.DatawaveUser;
 import datawave.webservice.common.audit.AuditParameterBuilder;
@@ -7,11 +13,6 @@ import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
-import org.springframework.util.MultiValueMap;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
 
 public class QueryExecutorBeanService implements ModificationQueryService {
     private final QueryExecutorBean queryService;

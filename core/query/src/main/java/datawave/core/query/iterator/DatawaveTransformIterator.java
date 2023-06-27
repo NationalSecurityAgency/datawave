@@ -1,12 +1,13 @@
 package datawave.core.query.iterator;
 
-import datawave.core.query.exception.EmptyObjectException;
-import datawave.core.query.logic.Flushable;
+import java.util.Iterator;
+
 import org.apache.commons.collections4.Transformer;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.log4j.Logger;
 
-import java.util.Iterator;
+import datawave.core.query.exception.EmptyObjectException;
+import datawave.core.query.logic.Flushable;
 
 public class DatawaveTransformIterator<I,O> extends TransformIterator<I,O> {
 

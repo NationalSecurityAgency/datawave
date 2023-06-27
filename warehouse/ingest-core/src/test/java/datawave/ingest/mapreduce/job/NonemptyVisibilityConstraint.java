@@ -1,8 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
-import com.google.common.collect.Multimap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
+
+import com.google.common.collect.Multimap;
 
 /**
  * Verifies that a mutation has a non-null, non-empty visibility. For testing.

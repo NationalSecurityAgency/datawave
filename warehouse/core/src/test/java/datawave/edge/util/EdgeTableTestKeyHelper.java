@@ -1,10 +1,10 @@
 package datawave.edge.util;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.hadoop.io.Text;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.hadoop.io.Text;
 
 /**
  * Extracted from datawave.edge.util.EdgeKeyTest for code reuse.

@@ -1,8 +1,8 @@
 package datawave.query.attributes;
 
-import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.Key;
+
+import datawave.query.util.TypeMetadata;
 
 public class PreNormalizedAttributeFactory extends AttributeFactory {
 

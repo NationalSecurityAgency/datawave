@@ -1,12 +1,8 @@
 package datawave.query.tables.edge;
 
-import datawave.edge.model.EdgeModelFields;
-import datawave.edge.model.EdgeModelFields.FieldKey;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
-import datawave.webservice.dictionary.edge.EventField;
-import datawave.webservice.dictionary.edge.MetadataBase;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
@@ -15,8 +11,13 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
-import java.util.Set;
+import datawave.edge.model.EdgeModelFields;
+import datawave.edge.model.EdgeModelFields.FieldKey;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
+import datawave.webservice.dictionary.edge.EventField;
+import datawave.webservice.dictionary.edge.MetadataBase;
 
 public class DefaultEventQueryBuilder {
     private static final Logger log = LoggerFactory.getLogger(DefaultEventQueryBuilder.class);

@@ -2,11 +2,12 @@ package datawave.webservice.mr.input;
 
 import java.io.IOException;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 
 public class SecureEventSequenceFileInputFormat<K> extends EventSequenceFileInputFormat<K> {
 
