@@ -33,7 +33,7 @@ jobs:
         cache: 'maven'
     - name: Format code
       run: |
-        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort -Pautoformat
+        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Pautoformat
         git status
         git diff-index --quiet HEAD || (echo "Error! There are modified files after formatting." && false)
 

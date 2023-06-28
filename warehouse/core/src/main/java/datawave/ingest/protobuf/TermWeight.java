@@ -5,71 +5,71 @@ package datawave.ingest.protobuf;
 
 public final class TermWeight {
     private TermWeight() {}
-    
+
     public static void registerAllExtensions(com.google.protobuf.ExtensionRegistry registry) {}
-    
+
     public interface InfoOrBuilder extends com.google.protobuf.MessageOrBuilder {
-        
+
         // repeated uint32 termOffset = 3;
         /**
          * <code>repeated uint32 termOffset = 3;</code>
          */
         java.util.List<java.lang.Integer> getTermOffsetList();
-        
+
         /**
          * <code>repeated uint32 termOffset = 3;</code>
          */
         int getTermOffsetCount();
-        
+
         /**
          * <code>repeated uint32 termOffset = 3;</code>
          */
         int getTermOffset(int index);
-        
+
         // repeated uint32 prevSkips = 4;
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
          */
         java.util.List<java.lang.Integer> getPrevSkipsList();
-        
+
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
          */
         int getPrevSkipsCount();
-        
+
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
          */
         int getPrevSkips(int index);
-        
+
         // repeated uint32 score = 5;
         /**
          * <code>repeated uint32 score = 5;</code>
          */
         java.util.List<java.lang.Integer> getScoreList();
-        
+
         /**
          * <code>repeated uint32 score = 5;</code>
          */
         int getScoreCount();
-        
+
         /**
          * <code>repeated uint32 score = 5;</code>
          */
         int getScore(int index);
-        
+
         // optional bool zeroOffsetMatch = 6 [default = true];
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
          */
         boolean hasZeroOffsetMatch();
-        
+
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
          */
         boolean getZeroOffsetMatch();
     }
-    
+
     /**
      * Protobuf type {@code datawave.ingest.protobuf.Info}
      */
@@ -79,28 +79,28 @@ public final class TermWeight {
             super(builder);
             this.unknownFields = builder.getUnknownFields();
         }
-        
+
         private Info(boolean noInit) {
             this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance();
         }
-        
+
         private static final Info defaultInstance;
-        
+
         public static Info getDefaultInstance() {
             return defaultInstance;
         }
-        
+
         public Info getDefaultInstanceForType() {
             return defaultInstance;
         }
-        
+
         private final com.google.protobuf.UnknownFieldSet unknownFields;
-        
+
         @java.lang.Override
         public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
             return this.unknownFields;
         }
-        
+
         private Info(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             initFields();
@@ -208,140 +208,140 @@ public final class TermWeight {
                 makeExtensionsImmutable();
             }
         }
-        
+
         public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
             return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
         }
-        
+
         protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
             return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(
                             datawave.ingest.protobuf.TermWeight.Info.class, datawave.ingest.protobuf.TermWeight.Info.Builder.class);
         }
-        
+
         public static com.google.protobuf.Parser<Info> PARSER = new com.google.protobuf.AbstractParser<Info>() {
             public Info parsePartialFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws com.google.protobuf.InvalidProtocolBufferException {
                 return new Info(input, extensionRegistry);
             }
         };
-        
+
         @java.lang.Override
         public com.google.protobuf.Parser<Info> getParserForType() {
             return PARSER;
         }
-        
+
         private int bitField0_;
         // repeated uint32 termOffset = 3;
         public static final int TERMOFFSET_FIELD_NUMBER = 3;
         private java.util.List<java.lang.Integer> termOffset_;
-        
+
         /**
          * <code>repeated uint32 termOffset = 3;</code>
          */
         public java.util.List<java.lang.Integer> getTermOffsetList() {
             return termOffset_;
         }
-        
+
         /**
          * <code>repeated uint32 termOffset = 3;</code>
          */
         public int getTermOffsetCount() {
             return termOffset_.size();
         }
-        
+
         /**
          * <code>repeated uint32 termOffset = 3;</code>
          */
         public int getTermOffset(int index) {
             return termOffset_.get(index);
         }
-        
+
         // repeated uint32 prevSkips = 4;
         public static final int PREVSKIPS_FIELD_NUMBER = 4;
         private java.util.List<java.lang.Integer> prevSkips_;
-        
+
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
          */
         public java.util.List<java.lang.Integer> getPrevSkipsList() {
             return prevSkips_;
         }
-        
+
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
          */
         public int getPrevSkipsCount() {
             return prevSkips_.size();
         }
-        
+
         /**
          * <code>repeated uint32 prevSkips = 4;</code>
          */
         public int getPrevSkips(int index) {
             return prevSkips_.get(index);
         }
-        
+
         // repeated uint32 score = 5;
         public static final int SCORE_FIELD_NUMBER = 5;
         private java.util.List<java.lang.Integer> score_;
-        
+
         /**
          * <code>repeated uint32 score = 5;</code>
          */
         public java.util.List<java.lang.Integer> getScoreList() {
             return score_;
         }
-        
+
         /**
          * <code>repeated uint32 score = 5;</code>
          */
         public int getScoreCount() {
             return score_.size();
         }
-        
+
         /**
          * <code>repeated uint32 score = 5;</code>
          */
         public int getScore(int index) {
             return score_.get(index);
         }
-        
+
         // optional bool zeroOffsetMatch = 6 [default = true];
         public static final int ZEROOFFSETMATCH_FIELD_NUMBER = 6;
         private boolean zeroOffsetMatch_;
-        
+
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
          */
         public boolean hasZeroOffsetMatch() {
             return ((bitField0_ & 0x00000001) == 0x00000001);
         }
-        
+
         /**
          * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
          */
         public boolean getZeroOffsetMatch() {
             return zeroOffsetMatch_;
         }
-        
+
         private void initFields() {
             termOffset_ = java.util.Collections.emptyList();
             prevSkips_ = java.util.Collections.emptyList();
             score_ = java.util.Collections.emptyList();
             zeroOffsetMatch_ = true;
         }
-        
+
         private byte memoizedIsInitialized = -1;
-        
+
         public final boolean isInitialized() {
             byte isInitialized = memoizedIsInitialized;
             if (isInitialized != -1)
                 return isInitialized == 1;
-            
+
             memoizedIsInitialized = 1;
             return true;
         }
-        
+
         public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
             getSerializedSize();
             for (int i = 0; i < termOffset_.size(); i++) {
@@ -358,14 +358,14 @@ public final class TermWeight {
             }
             getUnknownFields().writeTo(output);
         }
-        
+
         private int memoizedSerializedSize = -1;
-        
+
         public int getSerializedSize() {
             int size = memoizedSerializedSize;
             if (size != -1)
                 return size;
-            
+
             size = 0;
             {
                 int dataSize = 0;
@@ -398,113 +398,113 @@ public final class TermWeight {
             memoizedSerializedSize = size;
             return size;
         }
-        
+
         private static final long serialVersionUID = 0L;
-        
+
         @java.lang.Override
         protected java.lang.Object writeReplace() throws java.io.ObjectStreamException {
             return super.writeReplace();
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.ByteString data)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.ByteString data,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(byte[] data) throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws com.google.protobuf.InvalidProtocolBufferException {
             return PARSER.parseFrom(data, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                         throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseDelimitedFrom(java.io.InputStream input) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseDelimitedFrom(java.io.InputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseDelimitedFrom(input, extensionRegistry);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.CodedInputStream input) throws java.io.IOException {
             return PARSER.parseFrom(input);
         }
-        
+
         public static datawave.ingest.protobuf.TermWeight.Info parseFrom(com.google.protobuf.CodedInputStream input,
                         com.google.protobuf.ExtensionRegistryLite extensionRegistry) throws java.io.IOException {
             return PARSER.parseFrom(input, extensionRegistry);
         }
-        
+
         public static Builder newBuilder() {
             return Builder.create();
         }
-        
+
         public Builder newBuilderForType() {
             return newBuilder();
         }
-        
+
         public static Builder newBuilder(datawave.ingest.protobuf.TermWeight.Info prototype) {
             return newBuilder().mergeFrom(prototype);
         }
-        
+
         public Builder toBuilder() {
             return newBuilder(this);
         }
-        
+
         @java.lang.Override
         protected Builder newBuilderForType(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
             return new Builder(parent);
         }
-        
+
         /**
          * Protobuf type {@code datawave.ingest.protobuf.Info}
          */
-        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-                        datawave.ingest.protobuf.TermWeight.InfoOrBuilder {
+        public static final class Builder extends com.google.protobuf.GeneratedMessage.Builder<Builder>
+                        implements datawave.ingest.protobuf.TermWeight.InfoOrBuilder {
             public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
                 return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
             }
-            
+
             protected com.google.protobuf.GeneratedMessage.FieldAccessorTable internalGetFieldAccessorTable() {
                 return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable.ensureFieldAccessorsInitialized(
                                 datawave.ingest.protobuf.TermWeight.Info.class, datawave.ingest.protobuf.TermWeight.Info.Builder.class);
             }
-            
+
             // Construct using datawave.ingest.protobuf.TermWeight.Info.newBuilder()
             private Builder() {
                 maybeForceBuilderInitialization();
             }
-            
+
             private Builder(com.google.protobuf.GeneratedMessage.BuilderParent parent) {
                 super(parent);
                 maybeForceBuilderInitialization();
             }
-            
+
             private void maybeForceBuilderInitialization() {
                 if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {}
             }
-            
+
             private static Builder create() {
                 return new Builder();
             }
-            
+
             public Builder clear() {
                 super.clear();
                 termOffset_ = java.util.Collections.emptyList();
@@ -517,19 +517,19 @@ public final class TermWeight {
                 bitField0_ = (bitField0_ & ~0x00000008);
                 return this;
             }
-            
+
             public Builder clone() {
                 return create().mergeFrom(buildPartial());
             }
-            
+
             public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
                 return datawave.ingest.protobuf.TermWeight.internal_static_datawave_ingest_protobuf_Info_descriptor;
             }
-            
+
             public datawave.ingest.protobuf.TermWeight.Info getDefaultInstanceForType() {
                 return datawave.ingest.protobuf.TermWeight.Info.getDefaultInstance();
             }
-            
+
             public datawave.ingest.protobuf.TermWeight.Info build() {
                 datawave.ingest.protobuf.TermWeight.Info result = buildPartial();
                 if (!result.isInitialized()) {
@@ -537,7 +537,7 @@ public final class TermWeight {
                 }
                 return result;
             }
-            
+
             public datawave.ingest.protobuf.TermWeight.Info buildPartial() {
                 datawave.ingest.protobuf.TermWeight.Info result = new datawave.ingest.protobuf.TermWeight.Info(this);
                 int from_bitField0_ = bitField0_;
@@ -565,7 +565,7 @@ public final class TermWeight {
                 onBuilt();
                 return result;
             }
-            
+
             public Builder mergeFrom(com.google.protobuf.Message other) {
                 if (other instanceof datawave.ingest.protobuf.TermWeight.Info) {
                     return mergeFrom((datawave.ingest.protobuf.TermWeight.Info) other);
@@ -574,7 +574,7 @@ public final class TermWeight {
                     return this;
                 }
             }
-            
+
             public Builder mergeFrom(datawave.ingest.protobuf.TermWeight.Info other) {
                 if (other == datawave.ingest.protobuf.TermWeight.Info.getDefaultInstance())
                     return this;
@@ -614,11 +614,11 @@ public final class TermWeight {
                 this.mergeUnknownFields(other.getUnknownFields());
                 return this;
             }
-            
+
             public final boolean isInitialized() {
                 return true;
             }
-            
+
             public Builder mergeFrom(com.google.protobuf.CodedInputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
                             throws java.io.IOException {
                 datawave.ingest.protobuf.TermWeight.Info parsedMessage = null;
@@ -634,40 +634,40 @@ public final class TermWeight {
                 }
                 return this;
             }
-            
+
             private int bitField0_;
-            
+
             // repeated uint32 termOffset = 3;
             private java.util.List<java.lang.Integer> termOffset_ = java.util.Collections.emptyList();
-            
+
             private void ensureTermOffsetIsMutable() {
                 if (!((bitField0_ & 0x00000001) == 0x00000001)) {
                     termOffset_ = new java.util.ArrayList<>(termOffset_);
                     bitField0_ |= 0x00000001;
                 }
             }
-            
+
             /**
              * <code>repeated uint32 termOffset = 3;</code>
              */
             public java.util.List<java.lang.Integer> getTermOffsetList() {
                 return java.util.Collections.unmodifiableList(termOffset_);
             }
-            
+
             /**
              * <code>repeated uint32 termOffset = 3;</code>
              */
             public int getTermOffsetCount() {
                 return termOffset_.size();
             }
-            
+
             /**
              * <code>repeated uint32 termOffset = 3;</code>
              */
             public int getTermOffset(int index) {
                 return termOffset_.get(index);
             }
-            
+
             /**
              * <code>repeated uint32 termOffset = 3;</code>
              */
@@ -677,7 +677,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 termOffset = 3;</code>
              */
@@ -687,7 +687,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 termOffset = 3;</code>
              */
@@ -697,7 +697,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 termOffset = 3;</code>
              */
@@ -707,38 +707,38 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             // repeated uint32 prevSkips = 4;
             private java.util.List<java.lang.Integer> prevSkips_ = java.util.Collections.emptyList();
-            
+
             private void ensurePrevSkipsIsMutable() {
                 if (!((bitField0_ & 0x00000002) == 0x00000002)) {
                     prevSkips_ = new java.util.ArrayList<>(prevSkips_);
                     bitField0_ |= 0x00000002;
                 }
             }
-            
+
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
              */
             public java.util.List<java.lang.Integer> getPrevSkipsList() {
                 return java.util.Collections.unmodifiableList(prevSkips_);
             }
-            
+
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
              */
             public int getPrevSkipsCount() {
                 return prevSkips_.size();
             }
-            
+
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
              */
             public int getPrevSkips(int index) {
                 return prevSkips_.get(index);
             }
-            
+
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
              */
@@ -748,7 +748,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
              */
@@ -758,7 +758,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
              */
@@ -768,7 +768,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 prevSkips = 4;</code>
              */
@@ -778,38 +778,38 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             // repeated uint32 score = 5;
             private java.util.List<java.lang.Integer> score_ = java.util.Collections.emptyList();
-            
+
             private void ensureScoreIsMutable() {
                 if (!((bitField0_ & 0x00000004) == 0x00000004)) {
                     score_ = new java.util.ArrayList<>(score_);
                     bitField0_ |= 0x00000004;
                 }
             }
-            
+
             /**
              * <code>repeated uint32 score = 5;</code>
              */
             public java.util.List<java.lang.Integer> getScoreList() {
                 return java.util.Collections.unmodifiableList(score_);
             }
-            
+
             /**
              * <code>repeated uint32 score = 5;</code>
              */
             public int getScoreCount() {
                 return score_.size();
             }
-            
+
             /**
              * <code>repeated uint32 score = 5;</code>
              */
             public int getScore(int index) {
                 return score_.get(index);
             }
-            
+
             /**
              * <code>repeated uint32 score = 5;</code>
              */
@@ -819,7 +819,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 score = 5;</code>
              */
@@ -829,7 +829,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 score = 5;</code>
              */
@@ -839,7 +839,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>repeated uint32 score = 5;</code>
              */
@@ -849,24 +849,24 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             // optional bool zeroOffsetMatch = 6 [default = true];
             private boolean zeroOffsetMatch_ = true;
-            
+
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
              */
             public boolean hasZeroOffsetMatch() {
                 return ((bitField0_ & 0x00000008) == 0x00000008);
             }
-            
+
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
              */
             public boolean getZeroOffsetMatch() {
                 return zeroOffsetMatch_;
             }
-            
+
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
              */
@@ -876,7 +876,7 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             /**
              * <code>optional bool zeroOffsetMatch = 6 [default = true];</code>
              */
@@ -886,44 +886,44 @@ public final class TermWeight {
                 onChanged();
                 return this;
             }
-            
+
             // @@protoc_insertion_point(builder_scope:datawave.ingest.protobuf.Info)
         }
-        
+
         static {
             defaultInstance = new Info(true);
             defaultInstance.initFields();
         }
-        
+
         // @@protoc_insertion_point(class_scope:datawave.ingest.protobuf.Info)
     }
-    
+
     private static com.google.protobuf.Descriptors.Descriptor internal_static_datawave_ingest_protobuf_Info_descriptor;
     private static com.google.protobuf.GeneratedMessage.FieldAccessorTable internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable;
-    
+
     public static com.google.protobuf.Descriptors.FileDescriptor getDescriptor() {
         return descriptor;
     }
-    
+
     private static com.google.protobuf.Descriptors.FileDescriptor descriptor;
     static {
-        java.lang.String[] descriptorData = {"\n\020TermWeight.proto\022\030datawave.ingest.prot"
-                        + "obuf\"[\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
-                        + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffset"
-                        + "Match\030\006 \001(\010:\004trueB\034\n\030datawave.ingest.pro" + "tobufH\001"};
+        java.lang.String[] descriptorData = {
+                "\n\020TermWeight.proto\022\030datawave.ingest.prot" + "obuf\"[\n\004Info\022\022\n\ntermOffset\030\003 \003(\r\022\021\n\tprev"
+                                + "Skips\030\004 \003(\r\022\r\n\005score\030\005 \003(\r\022\035\n\017zeroOffset"
+                                + "Match\030\006 \001(\010:\004trueB\034\n\030datawave.ingest.pro" + "tobufH\001"};
         com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner = new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
             public com.google.protobuf.ExtensionRegistry assignDescriptors(com.google.protobuf.Descriptors.FileDescriptor root) {
                 descriptor = root;
                 internal_static_datawave_ingest_protobuf_Info_descriptor = getDescriptor().getMessageTypes().get(0);
                 internal_static_datawave_ingest_protobuf_Info_fieldAccessorTable = new com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-                                internal_static_datawave_ingest_protobuf_Info_descriptor, new java.lang.String[] {"TermOffset", "PrevSkips", "Score",
-                                        "ZeroOffsetMatch",});
+                                internal_static_datawave_ingest_protobuf_Info_descriptor,
+                                new java.lang.String[] {"TermOffset", "PrevSkips", "Score", "ZeroOffsetMatch",});
                 return null;
             }
         };
         com.google.protobuf.Descriptors.FileDescriptor.internalBuildGeneratedFileFrom(descriptorData, new com.google.protobuf.Descriptors.FileDescriptor[] {},
                         assigner);
     }
-    
+
     // @@protoc_insertion_point(outer_class_scope)
 }

@@ -1,8 +1,9 @@
 package datawave.query.data.parsers;
 
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+
+import datawave.query.tld.TLD;
 
 /**
  * A {@link KeyParser} for FieldIndex keys
@@ -15,20 +16,20 @@ import org.apache.accumulo.core.data.Key;
  * </ul>
  */
 public class FieldIndexKey implements KeyParser {
-    
+
     private String field;
     private String value;
     private String datatype;
     private String uid;
     private String rootUid;
-    
+
     private ByteSequence cqBytes;
-    
+
     private int firstNull;
     private int secondNull;
-    
+
     private Key key;
-    
+
     /**
      * Sets the key and resets all supporting objects
      *
@@ -39,7 +40,7 @@ public class FieldIndexKey implements KeyParser {
         clearState();
         this.key = k;
     }
-    
+
     /**
      * Clears existing state
      */
@@ -50,26 +51,26 @@ public class FieldIndexKey implements KeyParser {
         this.datatype = null;
         this.uid = null;
         this.rootUid = null;
-        
+
         this.cqBytes = null;
-        
+
         this.firstNull = -1;
         this.secondNull = -1;
     }
-    
+
     /**
      * Backwards traversal of the column qualifier to find the two null indices
      */
     private void traverseColumnQualifier() {
-        
+
         if (key == null || (firstNull != -1 && secondNull != -1)) {
             return;
         }
-        
+
         if (cqBytes == null) {
             cqBytes = key.getColumnQualifierData();
         }
-        
+
         for (int i = cqBytes.length() - 1; i >= 0; i--) {
             if (cqBytes.byteAt(i) == 0x00) {
                 if (secondNull == -1) {
@@ -81,7 +82,7 @@ public class FieldIndexKey implements KeyParser {
             }
         }
     }
-    
+
     @Override
     public String getField() {
         if (field == null) {
@@ -91,14 +92,14 @@ public class FieldIndexKey implements KeyParser {
                     field = backing.subSequence(3, backing.length()).toString();
                 }
             }
-            
+
             if (field == null) {
                 throw new IllegalArgumentException("Failed to parse FIELD from fi key");
             }
         }
         return field;
     }
-    
+
     @Override
     public String getValue() {
         if (value == null) {
@@ -113,7 +114,7 @@ public class FieldIndexKey implements KeyParser {
         }
         return value;
     }
-    
+
     @Override
     public String getDatatype() {
         if (datatype == null) {
@@ -128,7 +129,7 @@ public class FieldIndexKey implements KeyParser {
         }
         return datatype;
     }
-    
+
     @Override
     public String getUid() {
         if (uid == null) {
@@ -143,23 +144,23 @@ public class FieldIndexKey implements KeyParser {
         }
         return uid;
     }
-    
+
     @Override
     public String getRootUid() {
         if (rootUid == null) {
             if (uid == null) {
                 getUid();
             }
-            
+
             if (uid == null) {
                 throw new IllegalArgumentException("Failed to parse root UID from tf key");
             }
-            
+
             rootUid = TLD.getRootUid(uid);
         }
         return rootUid;
     }
-    
+
     /**
      * Get the key
      *

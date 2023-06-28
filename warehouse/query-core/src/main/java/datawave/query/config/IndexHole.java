@@ -7,17 +7,17 @@ import java.io.Serializable;
  */
 public class IndexHole implements Serializable, Comparable<IndexHole> {
     private static final long serialVersionUID = -6778479621810682281L;
-    
+
     private String startValue;
     private String endValue;
     private String startDate;
     private String endDate;
-    
+
     public IndexHole() {}
-    
+
     /**
      * Create an index with a date range and value range.
-     * 
+     *
      * @param dateRange
      *            range in yyyyMMdd format
      * @param valueRange
@@ -29,10 +29,10 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
         setStartDate(dateRange[0]);
         setEndDate(dateRange[1]);
     }
-    
+
     /**
      * Does the hole overlap the specified value
-     * 
+     *
      * @param start
      *            the start date
      * @param end
@@ -49,10 +49,10 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
         }
         return false;
     }
-    
+
     /**
      * Does the hole overlap the specified range.
-     * 
+     *
      * @param start
      *            the start date
      * @param end
@@ -71,10 +71,10 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
         }
         return false;
     }
-    
+
     /**
      * Is this hole exist before the specified value.
-     * 
+     *
      * @param value
      *            the end value
      * @return the boolean result from the comparison
@@ -82,10 +82,10 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     public boolean before(String value) {
         return endValue.compareTo(value) < 0;
     }
-    
+
     /**
      * Is this hole exist after the specified value.
-     * 
+     *
      * @param value
      *            the start value
      * @return the boolean result from the comparison
@@ -93,7 +93,7 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
     public boolean after(String value) {
         return startValue.compareTo(value) > 0;
     }
-    
+
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append('(');
@@ -103,7 +103,7 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
         builder.append(')');
         return builder.toString();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof IndexHole) {
@@ -112,7 +112,7 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
         }
         return false;
     }
-    
+
     @Override
     public int hashCode() {
         int result = startValue != null ? startValue.hashCode() : 0;
@@ -121,10 +121,10 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
         result = 31 * result + (endDate != null ? endDate.hashCode() : 0);
         return result;
     }
-    
+
     /**
      * Compare two holes. Must be sorted on value ranges first. PushdownMissingIndexRangeNodesVisitor depends on it.
-     * 
+     *
      * @param hole
      *            the index hole
      * @return the comparison
@@ -142,35 +142,35 @@ public class IndexHole implements Serializable, Comparable<IndexHole> {
         }
         return comparison;
     }
-    
+
     public String getStartValue() {
         return startValue;
     }
-    
+
     public void setStartValue(String startValue) {
         this.startValue = startValue;
     }
-    
+
     public String getEndValue() {
         return endValue;
     }
-    
+
     public void setEndValue(String endValue) {
         this.endValue = endValue;
     }
-    
+
     public String getStartDate() {
         return startDate;
     }
-    
+
     public void setStartDate(String startDate) {
         this.startDate = startDate;
     }
-    
+
     public String getEndDate() {
         return endDate;
     }
-    
+
     public void setEndDate(String endDate) {
         this.endDate = endDate;
     }

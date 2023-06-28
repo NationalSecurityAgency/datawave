@@ -1,9 +1,17 @@
 package datawave.webservice.common.curator;
 
-import com.google.common.base.Preconditions;
-import datawave.webservice.common.cache.SharedBoolean;
-import datawave.webservice.common.cache.SharedBooleanListener;
-import datawave.common.util.ArgumentChecker;
+import java.io.IOException;
+import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.annotation.PreDestroy;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -20,16 +28,11 @@ import org.apache.zookeeper.ZKUtil;
 import org.apache.zookeeper.data.Stat;
 import org.jboss.logging.Logger;
 
-import javax.annotation.PreDestroy;
-import java.io.IOException;
-import java.io.Serializable;
-import java.lang.management.ManagementFactory;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
+import com.google.common.base.Preconditions;
+
+import datawave.common.util.ArgumentChecker;
+import datawave.webservice.common.cache.SharedBoolean;
+import datawave.webservice.common.cache.SharedBooleanListener;
 
 /**
  * Coordinates operations on a shared cache. That is, this coordinates operations where an in-memory cache may be running on multiple servers and each in-memory
@@ -43,29 +46,29 @@ public class TestSharedCacheCoordinator implements Serializable {
     public interface EvictionCallback {
         void evict(String dn);
     }
-    
+
     private static final long serialVersionUID = 1L;
     private static final String LIVE_SERVERS = "/liveServers";
     private static final long EVICT_MESSAGE_TIMEOUT = 60 * 1000L;
-    
+
     private Logger log = Logger.getLogger(getClass());
     private transient CuratorFramework curatorClient;
     private String localName;
     private String serverIdentifierPath;
-    
+
     private int evictionReaperIntervalInSeconds;
     private int numLocks;
-    
+
     private final HashMap<Integer,InterProcessLock> locks;
     private final HashMap<String,Integer> localCounters;
     private transient HashMap<String,SharedCount> sharedCounters;
-    
+
     private final HashMap<String,Boolean> localBooleans;
     private transient HashMap<String,SharedBoolean> sharedBooleans;
-    
+
     private transient PathChildrenCache evictionPathCache;
     private transient Timer evictionReaper;
-    
+
     /**
      * Constructs a new {@link TestSharedCacheCoordinator}
      *
@@ -76,7 +79,7 @@ public class TestSharedCacheCoordinator implements Serializable {
      */
     public TestSharedCacheCoordinator(String namespace, String zookeeperConnectionString, int evictionReaperIntervalInSeconds, int numLocks) {
         ArgumentChecker.notNull(namespace, zookeeperConnectionString);
-        
+
         locks = new HashMap<>();
         localCounters = new HashMap<>();
         localBooleans = new HashMap<>();
@@ -84,16 +87,16 @@ public class TestSharedCacheCoordinator implements Serializable {
         sharedBooleans = new HashMap<>();
         this.numLocks = numLocks;
         this.evictionReaperIntervalInSeconds = evictionReaperIntervalInSeconds;
-        
+
         curatorClient = CuratorFrameworkFactory.builder().namespace(namespace).retryPolicy(new ExponentialBackoffRetry(1000, 3))
                         .connectString(zookeeperConnectionString).build();
-        
+
         evictionReaper = new Timer("cache-eviction-reaper", true);
     }
-    
+
     public void start() {
         curatorClient.start();
-        
+
         String rootPath = ZKPaths.makePath("/", "evictions");
         try {
             curatorClient.newNamespaceAwareEnsurePath(rootPath).ensure(curatorClient.getZookeeperClient());
@@ -103,13 +106,13 @@ public class TestSharedCacheCoordinator implements Serializable {
             throw new RuntimeException(e.getMessage(), e);
         }
         evictionPathCache = new PathChildrenCache(curatorClient, "/evictions", true);
-        
+
         try {
             evictionPathCache.start(PathChildrenCache.StartMode.BUILD_INITIAL_CACHE);
         } catch (Exception e) {
             throw new RuntimeException("Unable to start eviction path cache: " + e.getMessage(), e);
         }
-        
+
         // Register ourselves with zookeeper so we know which web servers are available. We use an ephemeral node
         // so that zookeeper will clean up for us when the server goes away.
         // We'll use this list to coordinate DN-based eviction.
@@ -122,7 +125,7 @@ public class TestSharedCacheCoordinator implements Serializable {
         } catch (Exception e) {
             throw new RuntimeException("Couldn't register with zookeeper: " + e.getMessage(), e);
         }
-        
+
         final long delayPeriod = evictionReaperIntervalInSeconds * 1000L;
         TimerTask reaperTask = new TimerTask() {
             @Override
@@ -132,11 +135,11 @@ public class TestSharedCacheCoordinator implements Serializable {
         };
         evictionReaper.schedule(reaperTask, delayPeriod, delayPeriod);
     }
-    
+
     @PreDestroy
     public void stop() {
         evictionReaper.cancel();
-        
+
         try {
             curatorClient.delete().guaranteed().forPath(serverIdentifierPath);
         } catch (Exception e) {
@@ -158,13 +161,13 @@ public class TestSharedCacheCoordinator implements Serializable {
         }
         curatorClient.close();
     }
-    
+
     /**
      * Creates a distributed mutex named {@code path}. This mutex can be used to perform locking across many servers.
      */
     public InterProcessLock getMutex(String path) {
         ArgumentChecker.notNull(path);
-        
+
         InterProcessLock lock;
         int hash = path.hashCode();
         if (hash < 0)
@@ -177,14 +180,14 @@ public class TestSharedCacheCoordinator implements Serializable {
                 locks.put(lockNum, lock);
             }
         }
-        
+
         return lock;
     }
-    
+
     /**
      * Registers a distributed shared counter named {@code counterName}. This counter can be watched on many servers, and can be used to coordinate local
      * in-memory global operations.
-     * 
+     *
      * @param counterName
      *            the name of the counter
      * @param listener
@@ -192,19 +195,19 @@ public class TestSharedCacheCoordinator implements Serializable {
      */
     public void registerCounter(String counterName, SharedCountListener listener) throws Exception {
         ArgumentChecker.notNull(counterName, listener);
-        
+
         SharedCount count = new SharedCount(curatorClient, ZKPaths.makePath("/counters", counterName), 1);
         count.start();
         sharedCounters.put(counterName, count);
         localCounters.put(counterName, count.getCount());
-        
+
         count.addListener(listener);
     }
-    
+
     /**
      * Given the shared counter {@code counterName}, checks wether or not the locally cached value matches the expected shared value of {@code expectedValue}.
      * If the value does not match, the local cached value is updated.
-     * 
+     *
      * @param counterName
      *            the name of the counter whose locally cached value is to be tested
      * @param expectedValue
@@ -214,48 +217,48 @@ public class TestSharedCacheCoordinator implements Serializable {
      */
     public boolean checkCounter(String counterName, int expectedValue) {
         ArgumentChecker.notNull(counterName);
-        
+
         Integer localCount = localCounters.get(counterName);
         Preconditions.checkArgument(localCount != null, "Invalid counter name: " + counterName);
-        
+
         localCounters.put(counterName, expectedValue);
         return expectedValue == localCount;
     }
-    
+
     /**
      * Increments the shared distributed counter named {@code counterName} by one.
      */
     public void incrementCounter(String counterName) throws Exception {
         ArgumentChecker.notNull(counterName);
-        
+
         SharedCount count = sharedCounters.get(counterName);
         Preconditions.checkArgument(count != null, "Invalid counter name: " + counterName);
-        
+
         int newCount = count.getCount() + 1;
         localCounters.put(counterName, newCount);
         while (!count.trySetCount(newCount)) {
             newCount = count.getCount() + 1;
         }
     }
-    
+
     /**
      * Increments the shared distributed counter named {@code counterName} by one.
      */
     public void decrementCounter(String counterName) throws Exception {
         ArgumentChecker.notNull(counterName);
-        
+
         SharedCount count = sharedCounters.get(counterName);
         Preconditions.checkArgument(count != null, "Invalid counter name: " + counterName);
-        
+
         int newCount = count.getCount() - 1;
         localCounters.put(counterName, newCount);
         while (!count.trySetCount(newCount)) {
             newCount = count.getCount() - 1;
         }
     }
-    
+
     // //////////////////////
-    
+
     /**
      * Registers a distributed shared counter named {@code counterName}. This counter can be watched on many servers, and can be used to coordinate local
      * in-memory global operations.
@@ -267,7 +270,7 @@ public class TestSharedCacheCoordinator implements Serializable {
      */
     public void registerBoolean(String booleanName, SharedBooleanListener listener) throws Exception {
         ArgumentChecker.notNull(booleanName, listener);
-        
+
         SharedBoolean sharedBoolean = new SharedBoolean(curatorClient, ZKPaths.makePath("/booleans", booleanName), false);
         sharedBoolean.start();
         sharedBooleans.put(booleanName, sharedBoolean);
@@ -275,7 +278,7 @@ public class TestSharedCacheCoordinator implements Serializable {
         log.debug("registered a boolean that is " + sharedBoolean.getBoolean());
         sharedBoolean.addListener(listener);
     }
-    
+
     /**
      * Given the shared counter {@code counterName}, checks whether or not the locally cached value matches the expected shared value of {@code expectedValue}.
      * If the value does not match, the local cached value is updated.
@@ -289,36 +292,36 @@ public class TestSharedCacheCoordinator implements Serializable {
      */
     public boolean checkBoolean(String booleanName, boolean expectedValue) {
         ArgumentChecker.notNull(booleanName);
-        
+
         Boolean localBoolean = localBooleans.get(booleanName);
         Preconditions.checkArgument(localBoolean != null, "Invalid counter name: " + booleanName);
-        
+
         return expectedValue == localBoolean;
     }
-    
+
     /**
      * Increments the shared distributed counter named {@code counterName} by one.
      */
     public void setBoolean(String booleanName, boolean state) throws Exception {
         System.err.println("someone wants to setBoolean to " + state);
         ArgumentChecker.notNull(booleanName);
-        
+
         SharedBoolean sharedBoolean = sharedBooleans.get(booleanName);
         Preconditions.checkArgument(sharedBoolean != null, "Invalid boolean name: " + booleanName);
-        
+
         boolean newBoolean = state;
         localBooleans.put(booleanName, state);
         while (!sharedBoolean.trySetBoolean(newBoolean)) {
             newBoolean = state;
         }
     }
-    
+
     /**
      * Sends an eviction message for {@code messagePath} to all other shared cache coordinators that are listening.
      */
     public void sendEvictMessage(String messagePath) throws Exception {
         ArgumentChecker.notNull(messagePath);
-        
+
         String rootPath = ZKPaths.makePath("/", "evictions");
         String evictMessagePath = ZKPaths.makePath(rootPath, ZKPaths.makePath(messagePath, localName));
         Stat nodeData = curatorClient.checkExists().forPath(evictMessagePath);
@@ -332,11 +335,11 @@ public class TestSharedCacheCoordinator implements Serializable {
                 shouldCreate = false;
             }
         }
-        
+
         if (shouldCreate)
             curatorClient.create().creatingParentsIfNeeded().forPath(evictMessagePath);
     }
-    
+
     /**
      * Watches the eviction path for new eviction messages. If a message is received, then {@code callback} is invoked, and then zookeeper is updated to
      * indicate this server has responded to the eviction request. Once all running servers have responded, then a cleanup thread running on each server will
@@ -345,23 +348,23 @@ public class TestSharedCacheCoordinator implements Serializable {
      */
     public void watchForEvictions(final EvictionCallback callback) {
         ArgumentChecker.notNull(callback);
-        
+
         evictionPathCache.getListenable().addListener((client, event) -> {
             if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
                 // Call our eviction handler to do local eviction
-                        String path = event.getData().getPath();
-                        String dn = ZKPaths.getNodeFromPath(path);
-                        callback.evict(dn);
-                        
-                        // Now register ourselves under the eviction node that that once
-                        // a child for each running web server appears, the eviction node
-                        // can be cleaned up.
-                        String responsePath = ZKPaths.makePath(path, localName);
-                        curatorClient.newNamespaceAwareEnsurePath(responsePath).ensure(curatorClient.getZookeeperClient());
-                    }
-                });
+                String path = event.getData().getPath();
+                String dn = ZKPaths.getNodeFromPath(path);
+                callback.evict(dn);
+
+                // Now register ourselves under the eviction node that that once
+                // a child for each running web server appears, the eviction node
+                // can be cleaned up.
+                String responsePath = ZKPaths.makePath(path, localName);
+                curatorClient.newNamespaceAwareEnsurePath(responsePath).ensure(curatorClient.getZookeeperClient());
+            }
+        });
     }
-    
+
     /**
      * Internal method to check for eviction messages that need to be cleaned up. Servers that have responded to an eviction request place a child node with
      * their name under the eviction message node. When the set of responding servers is the same as or a superset of the list of live servers, then the
@@ -383,7 +386,7 @@ public class TestSharedCacheCoordinator implements Serializable {
                     log.debug(data.getPath() + " cannot be cleaned up: liveServers=" + liveServers + ", respondingServers=" + responders);
                 }
             }
-            
+
             for (String path : pathsToDelete) {
                 // Try up to 5 times to delete the path and then give up -- we'll try again later, or someone else will.
                 for (int i = 0; i < 5 && curatorClient.checkExists().forPath(path) != null; i++) {

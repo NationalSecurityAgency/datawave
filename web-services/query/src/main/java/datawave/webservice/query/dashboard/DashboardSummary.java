@@ -2,6 +2,7 @@ package datawave.webservice.query.dashboard;
 
 import java.util.Date;
 import java.util.Objects;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 
@@ -10,7 +11,7 @@ import javax.xml.bind.annotation.XmlAccessorType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 public final class DashboardSummary implements Comparable<DashboardSummary> {
-    
+
     private final Date dateTime;
     private int upTo3Sec;
     private int upTo10Sec;
@@ -29,22 +30,22 @@ public final class DashboardSummary implements Comparable<DashboardSummary> {
     private int resultCount;
     private int queryCount;
     private int selectorCount;
-    
+
     public DashboardSummary(Date dateTime) {
         this.dateTime = dateTime;
     }
-    
+
     public void addQuery(long latency, boolean error, int resultCount, int selectorCount) {
         queryCount++;
         this.resultCount += resultCount;
         this.selectorCount += selectorCount;
-        
+
         if (error) {
             errorCount++;
         } else {
-            
+
             int elapsed = new Long(latency).intValue();
-            
+
             if (elapsed < 3_000) {
                 upTo3Sec++;
             } else if (elapsed < 10_000) {
@@ -54,7 +55,7 @@ public final class DashboardSummary implements Comparable<DashboardSummary> {
             } else {
                 moreThan60Sec++;
             }
-            
+
             if (resultCount == 0) {
                 zeroResults++;
             } else if (resultCount < 10_000) {
@@ -65,7 +66,7 @@ public final class DashboardSummary implements Comparable<DashboardSummary> {
                 upToINFResults++;
             }
         }
-        
+
         // there shouldn't be values of 0, but just in-case
         if (selectorCount <= 1) {
             oneTerm++;
@@ -79,79 +80,79 @@ public final class DashboardSummary implements Comparable<DashboardSummary> {
             upToInfTerms++;
         }
     }
-    
+
     public Date getDateTime() {
         return dateTime;
     }
-    
+
     public int getErrorCount() {
         return errorCount;
     }
-    
+
     public int getZeroResults() {
         return zeroResults;
     }
-    
+
     public int getUpTo10KResults() {
         return upTo10KResults;
     }
-    
+
     public int getUpTo1MResults() {
         return upTo1MResults;
     }
-    
+
     public int getUpToINFResults() {
         return upToINFResults;
     }
-    
+
     public int getResultCount() {
         return resultCount;
     }
-    
+
     public int getQueryCount() {
         return queryCount;
     }
-    
+
     public int getUpTo3Sec() {
         return upTo3Sec;
     }
-    
+
     public int getUpTo10Sec() {
         return upTo10Sec;
     }
-    
+
     public int getUpTo60Sec() {
         return upTo60Sec;
     }
-    
+
     public int getMoreThan60Sec() {
         return moreThan60Sec;
     }
-    
+
     public int getSelectorCount() {
         return selectorCount;
     }
-    
+
     public int getOneTerm() {
         return oneTerm;
     }
-    
+
     public int getUpTo16Terms() {
         return upTo16Terms;
     }
-    
+
     public int getUpTo100Terms() {
         return upTo100Terms;
     }
-    
+
     public int getUpTo1000Terms() {
         return upTo1000Terms;
     }
-    
+
     public int getUpToInfTerms() {
         return upToInfTerms;
     }
-    
+
     @Override
     public int hashCode() {
         int hash = 7;
@@ -175,7 +176,7 @@ public final class DashboardSummary implements Comparable<DashboardSummary> {
         hash = 73 * hash + this.selectorCount;
         return hash;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -236,13 +237,13 @@ public final class DashboardSummary implements Comparable<DashboardSummary> {
         if (this.queryCount != other.queryCount) {
             return false;
         }
-        
+
         return this.selectorCount == other.selectorCount;
     }
-    
+
     @Override
     public int compareTo(DashboardSummary o) {
         return dateTime.compareTo(o.dateTime);
     }
-    
+
 }

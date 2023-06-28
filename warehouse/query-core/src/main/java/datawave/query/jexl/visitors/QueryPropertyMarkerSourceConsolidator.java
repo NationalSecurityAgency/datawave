@@ -1,30 +1,31 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * This visitor will ensure that query marker nodes always have a singular, root source node. If multiple source nodes are found, they will be bundled within a
  * new {@link ASTAndNode} which will in turn be set as the new source node.
  */
 public class QueryPropertyMarkerSourceConsolidator extends RebuildingVisitor {
-    
+
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T consolidate(T node) {
         if (node == null) {
             return null;
         }
-        
+
         QueryPropertyMarkerSourceConsolidator visitor = new QueryPropertyMarkerSourceConsolidator();
         return (T) node.jjtAccept(visitor, null);
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarkerVisitor.getInstance(node);
