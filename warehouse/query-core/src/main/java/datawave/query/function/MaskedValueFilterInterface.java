@@ -2,9 +2,9 @@ package datawave.query.function;
 
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
+
+import datawave.query.attributes.Document;
 
 public interface MaskedValueFilterInterface extends DocumentPermutation {
 

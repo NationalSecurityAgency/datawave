@@ -1,11 +1,13 @@
 package datawave.webservice.query.cache;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import org.apache.log4j.Logger;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Singleton;
-import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 /**
  * A cache for storing query ID of auto-closed queries.

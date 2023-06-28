@@ -1,14 +1,15 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Sets;
-import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
-
-import java.util.Set;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.junit.Test;
+
+import com.google.common.collect.Sets;
 
 public class TLDFieldIndexQueryFilterTest {
 

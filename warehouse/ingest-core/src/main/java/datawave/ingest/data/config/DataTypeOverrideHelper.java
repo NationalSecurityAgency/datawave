@@ -6,15 +6,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
+
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDBuilder;
 import datawave.data.hash.UIDConstants;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
-import datawave.util.StringUtils;
 import datawave.ingest.input.reader.event.RecordFilter;
-
-import org.apache.hadoop.conf.Configuration;
+import datawave.util.StringUtils;
 
 /**
  * DataTypeHelper that supports overriding of the parent data type name via additional config properties. Allows assignment of an event's data type to be

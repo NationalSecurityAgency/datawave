@@ -1,8 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
-import com.google.common.collect.Multimap;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
+
+import com.google.common.collect.Multimap;
 
 /**
  * A component which can place additional constraint checking on ingest.

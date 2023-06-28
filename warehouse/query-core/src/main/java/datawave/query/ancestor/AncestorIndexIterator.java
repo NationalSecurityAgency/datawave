@@ -1,12 +1,13 @@
 package datawave.query.ancestor;
 
-import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
+
+import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.tld.TLD;
 
 public class AncestorIndexIterator extends IndexIterator {
 

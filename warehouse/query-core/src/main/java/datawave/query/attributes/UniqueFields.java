@@ -1,21 +1,23 @@
 package datawave.query.attributes;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import com.google.common.collect.SortedSetMultimap;
-import com.google.common.collect.TreeMultimap;
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
-import org.apache.commons.lang.StringUtils;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Set;
+
+import org.apache.commons.lang.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import com.google.common.collect.SortedSetMultimap;
+import com.google.common.collect.TreeMultimap;
+
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Represents a set of fields that have been specified within a {@code #unique()} function, as well any specified granularity levels for each individual field

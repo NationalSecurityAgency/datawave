@@ -1,10 +1,10 @@
 package datawave.ingest.metadata;
 
+import java.util.Iterator;
+
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.Iterator;
 
 public class MetadataCounterGroupTest {
 

@@ -1,8 +1,11 @@
 package datawave.iterators;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-import datawave.ingest.table.aggregator.PropogatingCombiner;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -18,11 +21,10 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iteratorsImpl.conf.ColumnToClassMapping;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+
+import datawave.ingest.table.aggregator.PropogatingCombiner;
 
 /**
  * Purpose: Handle arbitrary propogating aggregations.

@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import java.util.*;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -7,8 +9,6 @@ import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.*;
 
 public class FieldIndexOnlyQueryCompressedOptionsTest {
 

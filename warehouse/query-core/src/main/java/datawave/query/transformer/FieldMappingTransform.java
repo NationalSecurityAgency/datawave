@@ -1,11 +1,13 @@
 package datawave.query.transformer;
 
-import datawave.query.attributes.Document;
-import org.apache.accumulo.core.data.Key;
-
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+
+import datawave.query.attributes.Document;
 
 /**
  * This transform will copy attributes with secondary field names to primary field names if the primary field name does not already exist in the document.

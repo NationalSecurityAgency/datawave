@@ -1,10 +1,10 @@
 package datawave.webservice.query;
 
-import datawave.validation.ParameterValidator;
-
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+
+import datawave.validation.ParameterValidator;
 
 /**
  * QueryParameters passed in from a client, they are validated and passed through to the iterator stack as QueryOptions.

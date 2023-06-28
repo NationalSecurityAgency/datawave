@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
-
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -20,6 +18,8 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
+
+import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest(CachedRunningQuery.class)

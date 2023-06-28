@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.handler.shard.content;
 
-import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
-
 import java.util.List;
+
+import datawave.ingest.mapreduce.handler.shard.content.BoundedOffsetQueue.OffsetList;
 
 public interface OffsetQueue<T> {
 

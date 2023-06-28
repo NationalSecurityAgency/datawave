@@ -1,14 +1,15 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.partition.DelegatePartitioner;
+import java.util.HashMap;
+import java.util.List;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
+import datawave.ingest.mapreduce.partition.DelegatePartitioner;
 
 /**
  * Map containing Text table names as its keys and partitioner offsets at its values. Its a list of table names The offsets are used to

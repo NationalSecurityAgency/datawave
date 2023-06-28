@@ -2,13 +2,13 @@ package datawave.ingest.table.aggregator;
 
 import java.util.TreeSet;
 
-import datawave.ingest.protobuf.TermWeight;
-
-import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.accumulo.core.data.Value;
 import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
 
 /**
  * An Aggregator to merge together a list of term offsets and one normalized term frequency This aggregator does <b>not</b> allow duplicate term offsets and

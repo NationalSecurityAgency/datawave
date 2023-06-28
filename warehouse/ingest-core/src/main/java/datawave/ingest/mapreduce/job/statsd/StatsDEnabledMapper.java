@@ -1,10 +1,10 @@
 package datawave.ingest.mapreduce.job.statsd;
 
+import java.io.IOException;
+
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-
-import java.io.IOException;
 
 /**
  * Created on 4/25/16.

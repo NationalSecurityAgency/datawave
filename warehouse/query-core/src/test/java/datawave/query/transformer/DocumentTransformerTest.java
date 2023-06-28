@@ -1,17 +1,12 @@
 package datawave.query.transformer;
 
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-import datawave.query.DocumentSerialization;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.Numeric;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.result.event.SimpleEvent;
-import datawave.webservice.query.result.event.SimpleField;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.easymock.EasyMock;
@@ -24,12 +19,18 @@ import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.query.DocumentSerialization;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.Numeric;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.result.event.SimpleEvent;
+import datawave.webservice.query.result.event.SimpleField;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({DocumentTransformer.class, DocumentSerialization.class})

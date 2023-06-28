@@ -1,19 +1,12 @@
 package datawave.query.iterator.logic;
 
+import static datawave.query.Constants.NULL;
+import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import datawave.query.attributes.PreNormalizedAttributeFactory;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.data.parsers.TermFrequencyKey;
-import datawave.query.iterator.DocumentIterator;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.TermFrequencyAggregator;
-import datawave.query.predicate.TimeFilter;
-import datawave.query.attributes.Document;
-import datawave.query.util.TypeMetadata;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -30,8 +23,15 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 
-import static datawave.query.Constants.NULL;
-import static datawave.query.Constants.TERM_FREQUENCY_COLUMN_FAMILY;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.data.parsers.TermFrequencyKey;
+import datawave.query.iterator.DocumentIterator;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.functions.TermFrequencyAggregator;
+import datawave.query.predicate.TimeFilter;
+import datawave.query.util.TypeMetadata;
 
 /**
  * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,

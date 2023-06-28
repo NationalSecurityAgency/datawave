@@ -1,8 +1,12 @@
 package datawave.ingest.util;
 
-import datawave.util.StringUtils;
-import datawave.util.cli.PasswordConverter;
-import datawave.util.time.DateHelper;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -16,13 +20,9 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.hadoop.io.Text;
 
-import java.time.format.DateTimeParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
+import datawave.util.StringUtils;
+import datawave.util.cli.PasswordConverter;
+import datawave.util.time.DateHelper;
 
 /**
  * Generates split points for the specified table and optionally adds them to the table This class creates split points of the form: yyyyMMdd_N In addition this

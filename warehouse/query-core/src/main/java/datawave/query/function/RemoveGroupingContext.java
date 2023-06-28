@@ -3,14 +3,14 @@ package datawave.query.function;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Sets;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * This is for when the user has not requested include.grouping.context, but I added it in order to process matchesInGroup. Take out the unwanted grouping

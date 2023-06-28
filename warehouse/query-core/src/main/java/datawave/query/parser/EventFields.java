@@ -5,8 +5,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.parser.EventFields.FieldValue;
-
 import org.apache.accumulo.core.security.ColumnVisibility;
 
 import com.esotericsoftware.kryo.Kryo;
@@ -17,6 +15,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.SetMultimap;
+
+import datawave.query.parser.EventFields.FieldValue;
 
 /**
  * Object used to hold the fields in an event. This is a multimap because fields can be repeated.

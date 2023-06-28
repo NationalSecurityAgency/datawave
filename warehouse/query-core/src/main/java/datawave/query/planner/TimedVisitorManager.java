@@ -1,13 +1,14 @@
 package datawave.query.planner;
 
+import static datawave.query.planner.DefaultQueryPlanner.logQuery;
+
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
-import static datawave.query.planner.DefaultQueryPlanner.logQuery;
 
 /**
  * Handles boilerplate code execution for operations like timing a visit call, logging the query tree, and eventualy validating the resulting query tree.

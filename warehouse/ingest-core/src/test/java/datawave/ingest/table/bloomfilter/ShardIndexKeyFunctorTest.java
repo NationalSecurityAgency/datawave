@@ -1,12 +1,11 @@
 package datawave.ingest.table.bloomfilter;
 
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
 
 public class ShardIndexKeyFunctorTest {
 

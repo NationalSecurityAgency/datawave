@@ -5,9 +5,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.BaseVisitor;
-
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.JexlNode;
@@ -15,6 +12,9 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 import com.google.common.collect.Lists;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.BaseVisitor;
 
 /**
  * Reusable visitor to getting common function JexlNodes.

@@ -13,26 +13,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.data.hash.UID;
-import datawave.data.type.NumberType;
-import datawave.data.type.util.NumericalEncoder;
-import datawave.query.attributes.Attribute;
-import datawave.query.iterator.SourcedOptions;
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
+
+import datawave.data.hash.UID;
+import datawave.data.type.NumberType;
+import datawave.data.type.util.NumericalEncoder;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.iterator.SourcedOptions;
 
 /**
  * This filter validates events in the shard table based on their association with one or more configured data types and number-normalized "version" fields

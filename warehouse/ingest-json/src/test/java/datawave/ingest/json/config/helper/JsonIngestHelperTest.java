@@ -1,13 +1,9 @@
 package datawave.ingest.json.config.helper;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.json.mr.input.JsonRecordReader;
-import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
+import java.io.File;
+import java.net.URL;
+import java.util.Date;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -19,9 +15,15 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.File;
-import java.net.URL;
-import java.util.Date;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.json.mr.input.JsonRecordReader;
+import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 
 public class JsonIngestHelperTest {
 

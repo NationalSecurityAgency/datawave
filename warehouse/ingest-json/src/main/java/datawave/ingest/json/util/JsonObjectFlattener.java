@@ -1,9 +1,9 @@
 package datawave.ingest.json.util;
 
+import java.util.Set;
+
 import com.google.common.collect.Multimap;
 import com.google.gson.JsonObject;
-
-import java.util.Set;
 
 /**
  * <p>

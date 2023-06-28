@@ -2,9 +2,9 @@ package datawave.query.language.functions.jexl;
 
 import java.util.List;
 
-import datawave.query.language.functions.QueryFunction;
-
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+
+import datawave.query.language.functions.QueryFunction;
 
 public abstract class JexlQueryFunction implements QueryFunction {
 

@@ -1,9 +1,9 @@
 package datawave.webservice.common.remote;
 
-import com.codahale.metrics.Counter;
-
 import java.util.Collections;
 import java.util.List;
+
+import com.codahale.metrics.Counter;
 
 public class RemoteHttpServiceConfiguration {
     private boolean useSrvDNS = false;

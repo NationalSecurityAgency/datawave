@@ -14,13 +14,14 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.LoginException;
 
-import datawave.security.auth.DatawaveCredential;
 import org.jboss.logging.Logger;
 import org.jboss.security.PicketBoxLogger;
 import org.jboss.security.PicketBoxMessages;
 import org.jboss.security.SimplePrincipal;
 import org.jboss.security.auth.callback.ObjectCallback;
 import org.jboss.security.auth.spi.CertRolesLoginModule;
+
+import datawave.security.auth.DatawaveCredential;
 
 /**
  * A specialized version of {@link CertRolesLoginModule} that fails the login if there are no roles for a given user. Even if the user has a valid certificate,

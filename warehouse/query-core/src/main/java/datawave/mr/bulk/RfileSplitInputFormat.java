@@ -3,11 +3,6 @@ package datawave.mr.bulk;
 import java.io.IOException;
 import java.util.List;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.job.RFileInputFormat;
-import datawave.mr.bulk.split.FileRangeSplit;
-import datawave.mr.bulk.split.TabletSplitSplit;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -19,6 +14,11 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import com.google.common.collect.Lists;
+
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.job.RFileInputFormat;
+import datawave.mr.bulk.split.FileRangeSplit;
+import datawave.mr.bulk.split.TabletSplitSplit;
 
 public class RfileSplitInputFormat extends MultiRfileInputformat {
 

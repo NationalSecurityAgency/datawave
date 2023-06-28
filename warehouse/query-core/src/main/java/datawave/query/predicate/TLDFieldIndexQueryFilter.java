@@ -1,14 +1,17 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Sets;
-import datawave.core.iterators.key.util.FiKeyUtil;
-import datawave.query.attributes.Document;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 
-import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.Sets;
+
+import datawave.core.iterators.key.util.FiKeyUtil;
+import datawave.query.attributes.Document;
 
 /**
  * An {@link EventDataQueryFilter} that applies TLD logic to Field Index keys

@@ -1,40 +1,5 @@
 package datawave.core.iterators;
 
-import com.google.common.base.Objects;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Multimap;
-import datawave.core.iterators.querylock.QueryLock;
-import datawave.query.Constants;
-import datawave.query.composite.CompositeMetadata;
-import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
-import datawave.query.iterator.CachingIterator;
-import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
-import datawave.query.iterator.ivarator.IvaratorCacheDir;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.iterator.profile.QuerySpanCollector;
-import datawave.query.iterator.profile.SourceTrackingIterator;
-import datawave.query.predicate.TimeFilter;
-import datawave.query.util.TypeMetadata;
-import datawave.query.util.sortedset.FileKeySortedSet;
-import datawave.query.util.sortedset.FileSortedSet;
-import datawave.query.util.sortedset.HdfsBackedSortedSet;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.WrappingIterator;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -49,6 +14,43 @@ import java.util.TreeSet;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.WrappingIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Objects;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Multimap;
+
+import datawave.core.iterators.querylock.QueryLock;
+import datawave.query.Constants;
+import datawave.query.composite.CompositeMetadata;
+import datawave.query.composite.CompositeSeeker.FieldIndexCompositeSeeker;
+import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
+import datawave.query.iterator.CachingIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDir;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
+import datawave.query.iterator.profile.SourceTrackingIterator;
+import datawave.query.predicate.TimeFilter;
+import datawave.query.util.TypeMetadata;
+import datawave.query.util.sortedset.FileKeySortedSet;
+import datawave.query.util.sortedset.FileSortedSet;
+import datawave.query.util.sortedset.HdfsBackedSortedSet;
 
 /**
  * The Ivarator base class

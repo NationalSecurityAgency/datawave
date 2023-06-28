@@ -1,7 +1,8 @@
 package datawave.core.iterators;
 
-import datawave.query.Constants;
-import datawave.query.predicate.Filter;
+import java.io.IOException;
+import java.util.List;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -9,8 +10,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 
-import java.io.IOException;
-import java.util.List;
+import datawave.query.Constants;
+import datawave.query.predicate.Filter;
 
 /**
  *

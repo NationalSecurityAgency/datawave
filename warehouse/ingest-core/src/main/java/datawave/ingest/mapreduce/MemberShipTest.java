@@ -4,11 +4,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-
 import org.apache.accumulo.core.data.Value;
 
 import com.google.common.hash.BloomFilter;
+
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
 
 public class MemberShipTest {
 

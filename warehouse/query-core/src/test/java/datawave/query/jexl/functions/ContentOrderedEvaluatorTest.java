@@ -1,7 +1,10 @@
 package datawave.query.jexl.functions;
 
-import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.postprocessing.tf.TermOffsetMap;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
+
 import org.javatuples.Pair;
 import org.javatuples.Triplet;
 import org.junit.After;
@@ -9,10 +12,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 
 public class ContentOrderedEvaluatorTest {
 

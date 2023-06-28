@@ -1,11 +1,12 @@
 package datawave.webservice.query.result.edge;
 
-import datawave.webservice.query.result.event.HasMarkings;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlSeeAlso;
-import java.util.List;
+
+import datawave.webservice.query.result.event.HasMarkings;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultEdge.class)

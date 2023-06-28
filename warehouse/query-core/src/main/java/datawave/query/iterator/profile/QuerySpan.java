@@ -4,9 +4,11 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.google.common.collect.Lists;
-import datawave.query.statsd.QueryStatsDClient;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.Lists;
+
+import datawave.query.statsd.QueryStatsDClient;
 
 /**
  * Keeps state about the particular session that you are within.

@@ -1,6 +1,16 @@
 package datawave.query.ancestor;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import com.google.common.collect.Sets;
+
 import datawave.data.hash.UIDConstants;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.index.lookup.IndexMatchType;
@@ -8,14 +18,6 @@ import datawave.query.index.lookup.UidIntersector;
 import datawave.query.language.parser.jexl.JexlNodeSet;
 import datawave.query.tld.TLD;
 import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.JexlNode;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * This is a uid intersection class that handles the concept of the ancestor query logic.

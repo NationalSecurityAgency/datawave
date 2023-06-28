@@ -5,9 +5,6 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.core.iterators.ResultCountingIterator;
-import datawave.marking.MarkingFunctions;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -19,6 +16,9 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
+import datawave.core.iterators.ResultCountingIterator;
+import datawave.marking.MarkingFunctions;
 
 /**
  *

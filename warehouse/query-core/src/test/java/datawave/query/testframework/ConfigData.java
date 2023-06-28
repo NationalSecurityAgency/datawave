@@ -1,9 +1,9 @@
 package datawave.query.testframework;
 
-import org.apache.accumulo.core.security.ColumnVisibility;
-
 import java.util.List;
 import java.util.Map;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
 
 /**
  * POJO for data related to test classes execution.

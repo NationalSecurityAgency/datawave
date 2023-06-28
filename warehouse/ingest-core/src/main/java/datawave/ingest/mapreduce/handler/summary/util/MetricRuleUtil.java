@@ -6,9 +6,9 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.commons.lang.StringUtils;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 public final class MetricRuleUtil {
 

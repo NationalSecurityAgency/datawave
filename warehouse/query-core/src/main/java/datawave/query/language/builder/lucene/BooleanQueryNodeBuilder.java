@@ -16,15 +16,9 @@ package datawave.query.language.builder.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import datawave.query.language.tree.HardAndNode;
-import datawave.query.language.tree.NotNode;
-import datawave.query.language.tree.OrNode;
-import datawave.query.language.tree.SoftAndNode;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -39,6 +33,11 @@ import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
+
+import datawave.query.language.tree.HardAndNode;
+import datawave.query.language.tree.NotNode;
+import datawave.query.language.tree.OrNode;
+import datawave.query.language.tree.SoftAndNode;
 
 /**
  * Builds a {@link BooleanQuery} object from a {@link BooleanQueryNode} object. Every children in the {@link BooleanQueryNode} object must be already tagged

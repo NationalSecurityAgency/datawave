@@ -1,5 +1,12 @@
 package datawave.query.testframework;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.EventMapper;
 import datawave.ingest.mapreduce.handler.dateindex.DateIndexDataTypeHandler;
@@ -11,12 +18,6 @@ import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.util.TableName;
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Defines Hadoop configuration data for unit testing.

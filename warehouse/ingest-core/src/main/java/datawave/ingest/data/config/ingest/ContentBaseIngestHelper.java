@@ -1,15 +1,17 @@
 package datawave.ingest.data.config.ingest;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Sets;
-import datawave.ingest.data.config.FieldConfigHelper;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
+
+import datawave.ingest.data.config.FieldConfigHelper;
 
 /**
  * Class for pulling content indexing specific fields from the XML config files and validating that all required parameters are set.

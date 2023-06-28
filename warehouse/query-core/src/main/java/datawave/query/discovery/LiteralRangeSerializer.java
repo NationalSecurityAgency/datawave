@@ -2,8 +2,6 @@ package datawave.query.discovery;
 
 import java.lang.reflect.Type;
 
-import datawave.query.jexl.LiteralRange;
-
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
@@ -12,6 +10,8 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+
+import datawave.query.jexl.LiteralRange;
 
 public class LiteralRangeSerializer implements JsonSerializer<LiteralRange<String>>, JsonDeserializer<LiteralRange<String>> {
 

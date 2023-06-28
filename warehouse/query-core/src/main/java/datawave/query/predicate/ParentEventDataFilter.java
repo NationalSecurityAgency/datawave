@@ -1,10 +1,11 @@
 package datawave.query.predicate;
 
-import datawave.query.util.TypeMetadata;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
-import java.util.Set;
+import datawave.query.util.TypeMetadata;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.

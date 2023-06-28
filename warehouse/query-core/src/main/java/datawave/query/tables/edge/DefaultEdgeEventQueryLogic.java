@@ -1,24 +1,26 @@
 package datawave.query.tables.edge;
 
-import datawave.query.QueryParameters;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.query.model.edge.EdgeQueryModel;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
-import datawave.webservice.results.edgedictionary.MetadataBase;
+import java.util.HashSet;
+import java.util.Set;
+
+import javax.inject.Inject;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.HashSet;
-import java.util.Set;
+import datawave.query.QueryParameters;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.model.edge.EdgeQueryModel;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
+import datawave.webservice.results.edgedictionary.MetadataBase;
 
 /**
  * This Logic highjacks the Query string, and transforms it into a ShardQueryLogic query The query string is of the form:

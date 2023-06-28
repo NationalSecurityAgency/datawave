@@ -1,11 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.GeoNormalizer;
-import datawave.data.normalizer.Normalizer;
-import datawave.data.normalizer.NumberNormalizer;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
 import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
@@ -13,6 +7,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import datawave.data.normalizer.GeoNormalizer;
+import datawave.data.normalizer.Normalizer;
+import datawave.data.normalizer.NumberNormalizer;
 
 /**
  * Base class for all raw data managers. Each manager is responsible for managing the data for one or more sets of datatype entries.

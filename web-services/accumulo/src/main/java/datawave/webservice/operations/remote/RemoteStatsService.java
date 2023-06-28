@@ -1,14 +1,15 @@
 package datawave.webservice.operations.remote;
 
-import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.databind.ObjectReader;
-import datawave.configuration.RefreshableScope;
-import datawave.webservice.response.StatsResponse;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
 import javax.interceptor.Interceptor;
+
+import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.databind.ObjectReader;
+
+import datawave.configuration.RefreshableScope;
+import datawave.webservice.response.StatsResponse;
 
 @RefreshableScope
 @Alternative

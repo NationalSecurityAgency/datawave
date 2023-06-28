@@ -1,5 +1,11 @@
 package datawave.query.iterator.filter;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.util.Map;
+import java.util.Set;
+
 import com.google.common.collect.HashMultimap;
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.model.EdgeModelAware.Fields;
@@ -22,6 +28,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Map;
 import java.util.Set;
+
+import datawave.edge.model.EdgeModelAware;
+import datawave.edge.model.EdgeModelAware.Fields;
+import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
+import datawave.edge.util.EdgeKeyUtil;
 
 /**
  * This is a simple JEXL query filter iterator used in conjunction with the EdgeQueryLogic to evaluate more complicated expressions against edge keys.

@@ -2,10 +2,10 @@ package datawave.ingest.input.reader;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.DataTypeHelper;
-
-import org.apache.hadoop.conf.Configuration;
 
 /**
  * Implementers will create Event objects and validate them.

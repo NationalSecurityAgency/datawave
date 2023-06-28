@@ -1,13 +1,18 @@
 package datawave.mapreduce.shardStats;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
-import datawave.mr.bulk.split.FileRangeSplit;
-import datawave.mr.bulk.split.TabletSplitSplit;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.util.StringUtils;
+import static datawave.mapreduce.shardStats.StatsJob.DEFAULT_LOG_LEVEL;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_OPTION;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_OPTION;
+import static datawave.mapreduce.shardStats.StatsJob.OUTPUT_TABLE_NAME;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -18,18 +23,15 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
-import static datawave.mapreduce.shardStats.StatsJob.DEFAULT_LOG_LEVEL;
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_OPTION;
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_OPTION;
-import static datawave.mapreduce.shardStats.StatsJob.OUTPUT_TABLE_NAME;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
+import datawave.mr.bulk.split.FileRangeSplit;
+import datawave.mr.bulk.split.TabletSplitSplit;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.util.StringUtils;
 
 class StatsHyperLogMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
     private static final Logger log = Logger.getLogger(StatsHyperLogMapper.class);

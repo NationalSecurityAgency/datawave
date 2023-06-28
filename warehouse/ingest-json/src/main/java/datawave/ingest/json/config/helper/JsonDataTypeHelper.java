@@ -1,14 +1,15 @@
 package datawave.ingest.json.config.helper;
 
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.json.util.JsonObjectFlattener;
-import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
-import org.apache.hadoop.conf.Configuration;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.hadoop.conf.Configuration;
+
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.json.util.JsonObjectFlattener;
+import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 
 /**
  * <p>

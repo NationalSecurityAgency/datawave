@@ -1,13 +1,15 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.collect.Lists;
-import datawave.query.iterator.NestedIterator;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
+
+import datawave.query.iterator.NestedIterator;
 
 public class AndOrIteratorTest {
     // X AND (!Y OR !Z)

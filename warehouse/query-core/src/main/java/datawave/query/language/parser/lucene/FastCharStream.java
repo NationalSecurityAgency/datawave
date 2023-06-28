@@ -18,7 +18,6 @@ package datawave.query.language.parser.lucene;
  * limitations under the License.
  *
  */
-
 import java.io.IOException;
 import java.io.Reader;
 

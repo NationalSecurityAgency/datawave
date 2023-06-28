@@ -1,8 +1,9 @@
 package datawave.webservice.util;
 
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class EnvProvider {
 

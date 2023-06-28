@@ -1,10 +1,10 @@
 package datawave.query.tld;
 
+import static org.junit.Assert.assertEquals;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class GetStartKeyForRootTest {
 

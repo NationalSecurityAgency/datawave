@@ -1,8 +1,9 @@
 package datawave.query.function;
 
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+
+import datawave.query.tld.TLD;
 
 /**
  * A key equality implementation that compares to the root pointers of two doc Ids together.

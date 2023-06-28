@@ -2,8 +2,9 @@ package datawave.query.tables.async;
 
 import java.util.Collection;
 
-import datawave.query.iterator.QueryIterator;
 import org.apache.accumulo.core.data.Range;
+
+import datawave.query.iterator.QueryIterator;
 
 public class RangeDefinition {
     public static boolean isDocSpecific(Range range) {

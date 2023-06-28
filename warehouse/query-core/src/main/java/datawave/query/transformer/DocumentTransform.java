@@ -1,13 +1,16 @@
 package datawave.query.transformer;
 
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+
 import com.google.common.base.Function;
+
 import datawave.marking.MarkingFunctions;
 import datawave.query.attributes.Document;
 import datawave.webservice.query.Query;
-import org.apache.accumulo.core.data.Key;
-
-import javax.annotation.Nullable;
-import java.util.Map;
 
 public interface DocumentTransform extends Function<Map.Entry<Key,Document>,Map.Entry<Key,Document>> {
     // called when adding the document transform

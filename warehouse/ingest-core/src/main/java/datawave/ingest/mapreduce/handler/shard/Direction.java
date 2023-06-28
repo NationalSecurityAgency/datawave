@@ -1,7 +1,8 @@
 package datawave.ingest.mapreduce.handler.shard;
 
-import javax.xml.bind.annotation.XmlEnum;
 import java.io.Serializable;
+
+import javax.xml.bind.annotation.XmlEnum;
 
 @XmlEnum(String.class)
 public enum Direction implements Serializable {

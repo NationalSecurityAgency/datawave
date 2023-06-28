@@ -2,13 +2,13 @@ package datawave.webservice.query.util;
 
 import java.io.IOException;
 
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
+
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.QueryMetric;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
-
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
 
 //TODO: Need to replace this class with inject-able factory for instantiating BaseQueryMetric subclasses as needed
 public class QueryMetricUtil {

@@ -1,16 +1,17 @@
 package datawave.test.helpers;
 
-import com.google.common.collect.ForwardingIterator;
-import org.apache.accumulo.core.client.Scanner;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.accumulo.core.client.Scanner;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+
+import com.google.common.collect.ForwardingIterator;
 
 /**
  * This class creates a new instance of an {@link InterruptibleScanner}

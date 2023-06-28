@@ -1,14 +1,16 @@
 package datawave.query.attributes;
 
-import com.google.common.collect.Sets;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NoOpType;
-import datawave.data.type.NumberType;
+import java.util.Collection;
+
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collection;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NoOpType;
+import datawave.data.type.NumberType;
 
 /**
  *

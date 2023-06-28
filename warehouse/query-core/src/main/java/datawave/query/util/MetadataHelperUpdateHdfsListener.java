@@ -1,12 +1,10 @@
 package datawave.query.util;
 
-import datawave.webservice.common.cache.SharedCacheCoordinator;
-import datawave.webservice.common.cache.SharedTriState;
-import datawave.webservice.common.cache.SharedTriStateListener;
-import datawave.webservice.common.cache.SharedTriStateReader;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
-import datawave.webservice.util.EnvProvider;
 import org.apache.accumulo.core.client.ClientConfiguration;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
@@ -16,8 +14,11 @@ import org.apache.curator.framework.recipes.locks.InterProcessMutex;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.log4j.Logger;
 
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import datawave.webservice.common.cache.SharedCacheCoordinator;
+import datawave.webservice.common.cache.SharedTriState;
+import datawave.webservice.common.cache.SharedTriStateListener;
+import datawave.webservice.common.cache.SharedTriStateReader;
+import datawave.webservice.util.EnvProvider;
 
 /**
  * Uses the SharedCacheCoordinator to register listeners so that when an event is fired (for example, when a new model is loaded) the TypeMetadata map will be

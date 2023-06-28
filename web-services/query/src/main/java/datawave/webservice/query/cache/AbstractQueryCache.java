@@ -1,11 +1,12 @@
 package datawave.webservice.query.cache;
 
-import com.google.common.cache.Cache;
-
-import javax.annotation.PostConstruct;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import javax.annotation.PostConstruct;
+
+import com.google.common.cache.Cache;
 
 /**
  * A Guava-based cache for storing objects in the {@link AbstractRunningQuery} hierarchy.

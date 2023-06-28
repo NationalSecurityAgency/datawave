@@ -1,11 +1,13 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
+import java.util.Map;
+
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.hadoop.conf.Configuration;
 
-import java.util.Map;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * When you add a new metric, by default, nothing will happen. There needs to be a configured receiver that processes it.

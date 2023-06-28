@@ -6,13 +6,13 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import datawave.util.CounterDump.CounterSource;
-
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 
 import com.google.common.collect.Maps;
+
+import datawave.util.CounterDump.CounterSource;
 
 public class CounterDump {
 

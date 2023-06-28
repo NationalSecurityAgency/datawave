@@ -5,15 +5,16 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
-import datawave.util.StringUtils;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.infinispan.commons.util.Base64;
+
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.query.table.parser.EventKeyValueFactory.EventKeyValue;
+import datawave.util.StringUtils;
 
 public class ContentKeyValueFactory {
 

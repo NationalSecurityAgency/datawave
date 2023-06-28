@@ -1,11 +1,11 @@
 package datawave.query.planner.pushdown.rules;
 
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.planner.pushdown.Cost;
 import datawave.query.planner.pushdown.PushDownVisitor;
-
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * Purpose: Base class which aids in pushing nodes down when necessary.
