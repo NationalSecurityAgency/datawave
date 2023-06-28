@@ -4,16 +4,16 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Maps;
+
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.ConfigurationHelper;
 import datawave.ingest.data.config.DataTypeHelper;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.Maps;
 
 /**
  * This class can be used to help normalize the event field values akin to how the BaseIngestHelper can normalize the indexed field values. This was not cooked

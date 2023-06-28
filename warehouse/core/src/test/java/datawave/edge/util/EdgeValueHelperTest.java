@@ -1,9 +1,11 @@
 package datawave.edge.util;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.edge.protobuf.EdgeData;
-import datawave.edge.util.EdgeKey.EDGE_FORMAT;
-import datawave.edge.util.EdgeKey.EdgeKeyBuilder;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -14,12 +16,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.google.protobuf.InvalidProtocolBufferException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import datawave.edge.protobuf.EdgeData;
+import datawave.edge.util.EdgeKey.EDGE_FORMAT;
+import datawave.edge.util.EdgeKey.EdgeKeyBuilder;
 
 public class EdgeValueHelperTest {
 

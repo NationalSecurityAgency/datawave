@@ -1,13 +1,8 @@
 package datawave.query.util;
 
-import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
-import datawave.data.type.DateType;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.Type;
-import datawave.ingest.protobuf.Uid;
-import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -17,8 +12,14 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
+import datawave.data.ColumnFamilyConstants;
+import datawave.data.hash.UID;
+import datawave.data.type.DateType;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 
 /**
  * write data in accumulo for testing of the limit.fields function

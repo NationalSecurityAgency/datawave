@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -15,6 +13,8 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.OptionDescriber;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+
+import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
 
 public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilter implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
 

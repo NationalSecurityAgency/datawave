@@ -16,12 +16,6 @@ import java.util.TreeMap;
 
 import javax.ejb.EJBContext;
 
-import datawave.security.authorization.DatawavePrincipal;
-
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -35,6 +29,12 @@ import org.powermock.reflect.Whitebox;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils.NpeUtils;
 
 @RunWith(EasyMockRunner.class)
 public class QueryLogicFactoryBeanTest extends EasyMockSupport {

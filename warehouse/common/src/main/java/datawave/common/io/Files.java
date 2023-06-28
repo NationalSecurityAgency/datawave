@@ -1,9 +1,9 @@
 package datawave.common.io;
 
-import org.apache.commons.io.FileUtils;
-
 import java.io.File;
 import java.io.IOException;
+
+import org.apache.commons.io.FileUtils;
 
 /** Generally useful File utilities. */
 public class Files {

@@ -5,10 +5,6 @@ import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
-import datawave.util.StringUtils;
-import datawave.metrics.config.MetricsConfig;
-
-import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
@@ -23,6 +19,10 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.log4j.Logger;
+
+import datawave.metrics.config.MetricsConfig;
+import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 
 public class ProcessingErrorsReducer extends Reducer<Text,Text,Text,Mutation> {
 

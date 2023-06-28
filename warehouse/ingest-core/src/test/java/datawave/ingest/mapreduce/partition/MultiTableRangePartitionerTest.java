@@ -1,8 +1,9 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
-import datawave.util.TableName;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -16,9 +17,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
+import datawave.util.TableName;
 
 public class MultiTableRangePartitionerTest {
     private static final String TABLE_NAME = "abc";

@@ -1,18 +1,8 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import datawave.data.type.Type;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.KeyToFieldName;
-import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,9 +10,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.KeyToFieldName;
+import datawave.query.util.TypeMetadata;
 
 /**
  * An integration test for {@link KeyToFieldName}, {@link ValueToAttribute}, and {@link KeyProjection}

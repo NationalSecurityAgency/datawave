@@ -3,11 +3,11 @@ package datawave.query.language.parser.lucene;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.query.data.UUIDType;
-import datawave.query.language.parser.ParseException;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import datawave.query.data.UUIDType;
+import datawave.query.language.parser.ParseException;
 
 public class TestLuceneUUIDQueryParser {
     @Test

@@ -1,8 +1,8 @@
 package datawave.query.jexl.nodes;
 
-import org.apache.commons.jexl2.parser.JexlNode;
-
 import java.util.function.Function;
+
+import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * This is a node that can wrap an expression (normally an EQ or RE node) to denote that it references a known hole in the global index.

@@ -1,14 +1,15 @@
 package datawave.query.planner;
 
-import datawave.query.CloseableIterable;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.QueryData;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+
+import datawave.query.CloseableIterable;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.QueryData;
 
 public class ThreadedRangeBundler implements CloseableIterable<QueryData> {
 

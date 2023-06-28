@@ -6,9 +6,9 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import datawave.security.authorization.DatawavePrincipal;
-
 import com.google.common.collect.Sets;
+
+import datawave.security.authorization.DatawavePrincipal;
 
 public class DatawaveRoleManager implements RoleManager {
 

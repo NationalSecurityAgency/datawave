@@ -1,29 +1,6 @@
 package datawave.query.discovery;
 
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.ingest.protobuf.Uid;
-import datawave.marking.MarkingFunctions;
-import datawave.query.MockAccumuloRecordWriter;
-import datawave.query.QueryTestTableHelper;
-import datawave.query.util.MetadataHelperFactory;
-import datawave.util.TableName;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
-import org.javatuples.Pair;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -37,7 +14,32 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchWriter;
+import org.apache.accumulo.core.client.BatchWriterConfig;
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.log4j.Logger;
+import org.javatuples.Pair;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.ingest.protobuf.Uid;
+import datawave.marking.MarkingFunctions;
+import datawave.query.MockAccumuloRecordWriter;
+import datawave.query.QueryTestTableHelper;
+import datawave.query.util.MetadataHelperFactory;
+import datawave.util.TableName;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
 
 public class DiscoveryLogicTest {
     private static Logger log = Logger.getLogger(DiscoveryLogicTest.class);

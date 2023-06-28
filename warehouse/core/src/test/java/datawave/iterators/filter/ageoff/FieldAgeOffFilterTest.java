@@ -1,8 +1,10 @@
 package datawave.iterators.filter.ageoff;
 
-import com.google.common.base.Predicate;
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.AgeOffTtlUnits;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.accumulo.core.client.SampleNotPresentException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -17,10 +19,10 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import com.google.common.base.Predicate;
+
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.AgeOffTtlUnits;
 
 public class FieldAgeOffFilterTest {
     private static final String VISIBILITY_PATTERN = "MY_VIS";

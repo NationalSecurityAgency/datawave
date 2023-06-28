@@ -1,9 +1,5 @@
 package datawave.query.index.lookup;
 
-import datawave.data.hash.UIDConstants;
-import datawave.query.util.Tuple2;
-import org.apache.commons.jexl2.parser.JexlNode;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -11,6 +7,11 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import org.apache.commons.jexl2.parser.JexlNode;
+
+import datawave.data.hash.UIDConstants;
+import datawave.query.util.Tuple2;
 
 /**
  * Specialty AncestorIndexStream implementation. Wraps existing IndexStream delegate to prevent returning overlapping ranges from ancestors during expansions

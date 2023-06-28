@@ -1,20 +1,5 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import datawave.data.type.Type;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.Tuple2;
-import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,6 +9,23 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
+import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.Tuple2;
+import datawave.query.util.TypeMetadata;
 
 public class EventFieldAggregator extends IdentityAggregator {
     // speedy cache loading for types, duplicated from AttributeFactory with caching of types rather than classes

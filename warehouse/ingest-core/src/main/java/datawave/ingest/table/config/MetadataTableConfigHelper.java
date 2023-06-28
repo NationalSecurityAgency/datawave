@@ -1,8 +1,5 @@
 package datawave.ingest.table.config;
 
-import datawave.data.ColumnFamilyConstants;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -12,6 +9,9 @@ import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import datawave.data.ColumnFamilyConstants;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class MetadataTableConfigHelper extends AbstractTableConfigHelper {
 

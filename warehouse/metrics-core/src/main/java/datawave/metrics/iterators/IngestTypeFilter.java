@@ -3,14 +3,14 @@ package datawave.metrics.iterators;
 import java.io.IOException;
 import java.util.Map;
 
-import datawave.metrics.keys.IngestEntryKey;
-import datawave.metrics.util.WritableUtil;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+
+import datawave.metrics.keys.IngestEntryKey;
+import datawave.metrics.util.WritableUtil;
 
 public class IngestTypeFilter extends Filter {
 

@@ -5,9 +5,6 @@ import java.util.Collection;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.ingest.util.cache.Loader;
-import datawave.security.util.ScannerHelper;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -17,6 +14,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.util.cache.Loader;
+import datawave.security.util.ScannerHelper;
 
 /**
  * Description: Accumulo loading mechanism using the guava caches

@@ -1,14 +1,5 @@
 package datawave.ingest.json.util;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -17,6 +8,16 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 

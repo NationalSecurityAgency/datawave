@@ -1,11 +1,16 @@
 package datawave.webservice.operations.remote;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.annotation.Metric;
-import com.fasterxml.jackson.databind.ObjectReader;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.system.CallerPrincipal;
-import datawave.webservice.common.remote.RemoteHttpService;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.ws.rs.core.HttpHeaders;
+import javax.ws.rs.core.MediaType;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.http.HttpEntity;
@@ -14,15 +19,13 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.annotation.Metric;
+import com.fasterxml.jackson.databind.ObjectReader;
+
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.system.CallerPrincipal;
+import datawave.webservice.common.remote.RemoteHttpService;
 
 public abstract class RemoteAccumuloService extends RemoteHttpService {
 

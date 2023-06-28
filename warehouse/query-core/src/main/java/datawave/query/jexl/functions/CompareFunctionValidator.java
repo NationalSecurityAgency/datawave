@@ -1,13 +1,14 @@
 package datawave.query.jexl.functions;
 
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import org.apache.commons.jexl2.parser.JexlNode;
-
 import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import org.apache.commons.jexl2.parser.JexlNode;
+
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * <pre>

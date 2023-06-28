@@ -5,18 +5,18 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
 import datawave.query.QueryParameters;
 import datawave.query.planner.QueryPlanner;
 import datawave.query.tables.chunk.Chunker;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 
 public class PartitionedQueryLogic extends ShardQueryLogic {
     protected static final Logger log = Logger.getLogger(PartitionedQueryLogic.class);

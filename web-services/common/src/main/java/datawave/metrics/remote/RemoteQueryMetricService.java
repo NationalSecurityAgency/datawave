@@ -1,23 +1,9 @@
 package datawave.metrics.remote;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.annotation.Metric;
-import com.codahale.metrics.annotation.Timed;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectReader;
-import datawave.configuration.RefreshableScope;
-import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.system.CallerPrincipal;
-import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetricListResponse;
-import datawave.webservice.query.map.QueryGeometryResponse;
-import datawave.webservice.result.VoidResponse;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.StringEntity;
+import java.text.SimpleDateFormat;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
@@ -26,10 +12,27 @@ import javax.inject.Inject;
 import javax.interceptor.Interceptor;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.http.HttpEntity;
+import org.apache.http.entity.StringEntity;
+
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.annotation.Metric;
+import com.codahale.metrics.annotation.Timed;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectReader;
+
+import datawave.configuration.RefreshableScope;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.system.CallerPrincipal;
+import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.query.map.QueryGeometryResponse;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * Sends query metric updates to a remote microservice.

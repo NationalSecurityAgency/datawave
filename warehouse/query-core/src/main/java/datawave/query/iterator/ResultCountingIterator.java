@@ -1,15 +1,17 @@
 package datawave.query.iterator;
 
-import com.google.common.collect.Maps;
-import datawave.data.type.util.NumericalEncoder;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.io.Text;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicLong;
+import com.google.common.collect.Maps;
+
+import datawave.data.type.util.NumericalEncoder;
 
 /**
  * Created on 9/6/16.

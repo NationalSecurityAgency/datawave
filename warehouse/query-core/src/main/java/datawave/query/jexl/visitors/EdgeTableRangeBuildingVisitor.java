@@ -1,15 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Sets;
-import datawave.data.type.Type;
-import datawave.edge.model.EdgeModelAware;
-import datawave.edge.util.EdgeKeyUtil;
-import datawave.query.tables.edge.contexts.EdgeContext;
-import datawave.query.tables.edge.contexts.IdentityContext;
-import datawave.query.tables.edge.contexts.QueryContext;
-import datawave.query.tables.edge.contexts.VisitationContext;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -24,15 +24,17 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import com.google.common.collect.Sets;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import datawave.data.type.Type;
+import datawave.edge.model.EdgeModelAware;
+import datawave.edge.util.EdgeKeyUtil;
+import datawave.query.tables.edge.contexts.EdgeContext;
+import datawave.query.tables.edge.contexts.IdentityContext;
+import datawave.query.tables.edge.contexts.QueryContext;
+import datawave.query.tables.edge.contexts.VisitationContext;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 /**
  * Once an edge query has been parsed into a jexl tree this class is run to traverse the nodes of the tree gathering up necessary information to use to build

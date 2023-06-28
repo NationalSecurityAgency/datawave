@@ -1,11 +1,12 @@
 package datawave.query.iterator.builder;
 
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.logic.AndIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
-
 import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.commons.jexl2.parser.JexlNode;
+
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.AndIterator;
 
 public class AndIteratorBuilder extends AbstractIteratorBuilder {
 

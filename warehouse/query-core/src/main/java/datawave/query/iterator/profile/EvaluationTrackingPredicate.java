@@ -1,7 +1,8 @@
 package datawave.query.iterator.profile;
 
-import com.google.common.base.Predicate;
 import org.apache.log4j.Logger;
+
+import com.google.common.base.Predicate;
 
 public class EvaluationTrackingPredicate<T> implements Predicate<T> {
 

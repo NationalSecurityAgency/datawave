@@ -5,10 +5,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Preconditions;
+
 import datawave.validation.ParameterValidator;
 import datawave.webservice.query.QueryParameters;
-
-import com.google.common.base.Preconditions;
 
 public class CachedResultsParameters implements ParameterValidator {
 

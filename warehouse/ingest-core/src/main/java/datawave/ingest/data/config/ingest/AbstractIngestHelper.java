@@ -5,12 +5,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.log4j.Logger;
+
 import datawave.data.normalizer.NormalizationException;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.data.config.MaskedFieldHelper;
-
-import org.apache.log4j.Logger;
 
 /**
  * Specialization of the Helper type that validates the configuration for Ingest purposes. These helper classes also have the logic to parse the field names and

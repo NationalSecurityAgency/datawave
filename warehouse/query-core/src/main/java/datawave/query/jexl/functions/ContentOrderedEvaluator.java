@@ -1,14 +1,15 @@
 package datawave.query.jexl.functions;
 
-import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.postprocessing.tf.TermOffsetMap;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
+
+import org.apache.log4j.Logger;
+
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.postprocessing.tf.TermOffsetMap;
 
 /**
  * <p>

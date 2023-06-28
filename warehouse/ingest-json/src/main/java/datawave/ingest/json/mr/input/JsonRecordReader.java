@@ -7,22 +7,6 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.Map;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
-
-import com.google.gson.stream.JsonToken;
-import datawave.data.hash.UID;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.input.reader.AbstractEventRecordReader;
-
-import datawave.ingest.json.config.helper.JsonDataTypeHelper;
-import datawave.ingest.json.config.helper.JsonIngestFlattener;
-import datawave.ingest.json.util.JsonObjectFlattener;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.collections4.IteratorUtils;
 import org.apache.commons.io.input.CountingInputStream;
@@ -32,11 +16,26 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.BytesWritable;
 import org.apache.hadoop.io.LongWritable;
-
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+
+import datawave.data.hash.UID;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.input.reader.AbstractEventRecordReader;
+import datawave.ingest.json.config.helper.JsonDataTypeHelper;
+import datawave.ingest.json.config.helper.JsonIngestFlattener;
+import datawave.ingest.json.util.JsonObjectFlattener;
 
 /**
  * <p>

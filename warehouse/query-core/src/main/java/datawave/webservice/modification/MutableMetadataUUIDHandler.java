@@ -8,6 +8,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.modification.ModificationOperation.OPERATIONMODE;
@@ -17,13 +24,6 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.VoidResponse;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 
 /**
  * Class that handles requests for modification requests (INSERT, UPDATE, DELETE, REPLACE) for metadata. From a DefaultUUIDModificationRequest it performs <br>
@@ -38,7 +38,7 @@ import org.apache.log4j.Logger;
  * INSERT Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -61,7 +61,7 @@ import org.apache.log4j.Logger;
  * DELETE Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -84,7 +84,7 @@ import org.apache.log4j.Logger;
  * UPDATE Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -108,7 +108,7 @@ import org.apache.log4j.Logger;
  * REPLACE Example:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -131,7 +131,7 @@ import org.apache.log4j.Logger;
  * Example of bulk request:
  *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;

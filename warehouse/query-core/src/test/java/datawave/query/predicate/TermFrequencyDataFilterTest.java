@@ -1,18 +1,20 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Sets;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.util.TypeMetadata;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.util.TypeMetadata;
 
 public class TermFrequencyDataFilterTest {
 

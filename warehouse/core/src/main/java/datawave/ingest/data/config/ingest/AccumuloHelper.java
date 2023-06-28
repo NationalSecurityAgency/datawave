@@ -1,6 +1,6 @@
 package datawave.ingest.data.config.ingest;
 
-import datawave.ingest.data.config.ConfigurationHelper;
+import java.util.Properties;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -8,7 +8,7 @@ import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 
-import java.util.Properties;
+import datawave.ingest.data.config.ConfigurationHelper;
 
 /**
  * Helper class to validate configuration of Accumulo required parameters

@@ -7,6 +7,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.jexl2.JexlException;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import datawave.audit.SelectorExtractor;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
@@ -23,14 +31,6 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.configuration.QueryData;
 import datawave.webservice.query.logic.QueryLogicTransformer;
-
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.JexlException;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
 
 public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
 

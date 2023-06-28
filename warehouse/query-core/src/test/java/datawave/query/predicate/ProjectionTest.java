@@ -1,10 +1,11 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Sets;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+import com.google.common.collect.Sets;
 
 public class ProjectionTest {
 

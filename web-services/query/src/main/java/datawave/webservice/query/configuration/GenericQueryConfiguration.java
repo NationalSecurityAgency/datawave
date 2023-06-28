@@ -5,17 +5,17 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Iterators;
+
 import datawave.util.TableName;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.util.EnvProvider;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.security.Authorizations;
-
-import com.google.common.collect.Iterators;
-import org.apache.log4j.Logger;
 
 /**
  * <p>

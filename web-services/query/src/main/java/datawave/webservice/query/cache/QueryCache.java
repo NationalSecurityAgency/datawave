@@ -1,12 +1,14 @@
 package datawave.webservice.query.cache;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import datawave.webservice.query.runner.RunningQuery;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
-import java.util.concurrent.ConcurrentHashMap;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
+import datawave.webservice.query.runner.RunningQuery;
 
 /**
  * A cache for storing {@link RunningQuery} objects.

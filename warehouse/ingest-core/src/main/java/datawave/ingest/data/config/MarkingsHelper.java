@@ -4,11 +4,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.hadoop.conf.Configuration;
+
 import datawave.ingest.data.Type;
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.marking.MarkingFunctions;
-
-import org.apache.hadoop.conf.Configuration;
 
 public interface MarkingsHelper {
 

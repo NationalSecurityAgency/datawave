@@ -16,7 +16,6 @@ package datawave.query.language.processor.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -24,8 +23,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
@@ -49,6 +46,8 @@ import org.apache.lucene.queryparser.flexible.standard.config.StandardQueryConfi
 import org.apache.lucene.queryparser.flexible.standard.nodes.RegexpQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.WildcardQueryNode;
+
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 
 /**
  * Applies tokenization to {@link TextableQueryNode} objects using a configured Lucene {@link Analyzer}.

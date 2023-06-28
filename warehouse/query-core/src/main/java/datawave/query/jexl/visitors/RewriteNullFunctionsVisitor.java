@@ -1,8 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
+import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.IS_NULL;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.commons.jexl2.parser.ASTAdditiveNode;
 import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
 import org.apache.commons.jexl2.parser.ASTAmbiguous;
@@ -59,12 +63,9 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.SimpleNode;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctions.EVAL_PHASE_FUNCTION_NAMESPACE;
-import static datawave.query.jexl.functions.EvaluationPhaseFilterFunctionsDescriptor.IS_NULL;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.functions.FunctionJexlNodeVisitor;
 
 /**
  * This visitor prepares the query tree for the {@link IsNotNullPruningVisitor}. It should be run after QueryModel expansion.

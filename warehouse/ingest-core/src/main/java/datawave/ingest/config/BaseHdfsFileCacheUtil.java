@@ -1,6 +1,9 @@
 package datawave.ingest.config;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
@@ -8,9 +11,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 
 public abstract class BaseHdfsFileCacheUtil {
 

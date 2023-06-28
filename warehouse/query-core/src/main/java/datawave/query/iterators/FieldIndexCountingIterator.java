@@ -12,11 +12,6 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.TreeSet;
 
-import datawave.util.TextUtil;
-import datawave.iterators.IteratorSettingHelper;
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -33,6 +28,11 @@ import org.apache.commons.lang.math.LongRange;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.iterators.IteratorSettingHelper;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.util.TextUtil;
 
 /**
  *

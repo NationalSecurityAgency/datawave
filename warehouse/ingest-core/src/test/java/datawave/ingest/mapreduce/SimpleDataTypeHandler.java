@@ -1,14 +1,10 @@
 package datawave.ingest.mapreduce;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.metadata.RawRecordMetadata;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -16,10 +12,16 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.StatusReporter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.metadata.RawRecordMetadata;
 
 /**
  * A {@link DataTypeHandler} used for unit testing.

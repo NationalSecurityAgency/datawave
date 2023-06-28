@@ -1,11 +1,5 @@
 package datawave.query.tables.facets;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicate;
-import com.google.common.collect.Iterators;
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import org.apache.log4j.Logger;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Iterator;
@@ -14,6 +8,13 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
+import com.google.common.base.Predicate;
+import com.google.common.collect.Iterators;
+import com.google.common.util.concurrent.AbstractExecutionThreadService;
 
 /**
  * Decouples an iterator via a Thread and Queue, optionally merging/transformaing and filtering.

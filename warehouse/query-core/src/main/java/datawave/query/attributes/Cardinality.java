@@ -16,9 +16,9 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 
 import datawave.data.type.LcNoDiacriticsType;
-import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.Constants;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawaveJexlContext;
 
 /**
  *

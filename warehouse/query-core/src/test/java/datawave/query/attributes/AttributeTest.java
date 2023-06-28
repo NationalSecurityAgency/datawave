@@ -1,7 +1,7 @@
 package datawave.query.attributes;
 
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.function.serializer.KryoDocumentSerializer;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -9,8 +9,8 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.function.serializer.KryoDocumentSerializer;
 
 public class AttributeTest {
 

@@ -2,15 +2,14 @@ package datawave.ingest.mapreduce.job.writer;
 
 import java.io.IOException;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
-
+import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
-import org.apache.accumulo.core.data.Value;
-
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
 
 /**
  * This is a caching context writer that will use the BulkIngestDedupeCombiner to do the actual context writing.

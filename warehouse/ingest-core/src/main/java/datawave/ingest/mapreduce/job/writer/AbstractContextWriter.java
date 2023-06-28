@@ -1,21 +1,23 @@
 package datawave.ingest.mapreduce.job.writer;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.config.ingest.BaseIngestHelper;
 import datawave.ingest.mapreduce.job.BulkIngestCounters;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.ConstraintChecker;
 import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import datawave.ingest.mapreduce.job.statsd.StatsDHelper;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * An abstraction of writing to a context object. This class always takes BulkIngestKeys and Values in the write methods. The actual writing to the context

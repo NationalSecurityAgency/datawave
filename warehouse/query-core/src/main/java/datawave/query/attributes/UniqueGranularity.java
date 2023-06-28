@@ -1,13 +1,15 @@
 package datawave.query.attributes;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonValue;
-import datawave.data.normalizer.DateNormalizer;
-import org.apache.log4j.Logger;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Function;
+
+import org.apache.log4j.Logger;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+
+import datawave.data.normalizer.DateNormalizer;
 
 /**
  * Represents different levels of granularity supported by the {@code #unique()} function. This class is also responsible for providing the functionality to

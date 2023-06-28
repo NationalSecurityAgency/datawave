@@ -1,8 +1,17 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.data.normalizer.NumberNormalizer;
-import datawave.query.jexl.JexlASTHelper;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.ExpressionImpl;
 import org.apache.commons.jexl2.JexlContext;
@@ -23,17 +32,9 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import datawave.data.normalizer.Normalizer;
+import datawave.data.normalizer.NumberNormalizer;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Provides for the parsing and execution of a Jexl query string for test execution only. The {@link #evaluate()} method should produce the same results that

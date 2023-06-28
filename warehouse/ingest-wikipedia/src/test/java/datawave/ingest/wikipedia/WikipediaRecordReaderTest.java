@@ -2,11 +2,11 @@ package datawave.ingest.wikipedia;
 
 import java.text.SimpleDateFormat;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.data.hash.UID;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import datawave.data.hash.UID;
+import datawave.ingest.data.RawRecordContainer;
 
 /**
  *

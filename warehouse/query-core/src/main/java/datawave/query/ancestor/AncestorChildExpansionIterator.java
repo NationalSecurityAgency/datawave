@@ -1,8 +1,11 @@
 package datawave.query.ancestor;
 
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.function.Equality;
-import datawave.query.Constants;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -10,11 +13,9 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import datawave.query.Constants;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.function.Equality;
 
 /**
  * <p>

@@ -1,22 +1,24 @@
 package datawave.query.index.lookup;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.common.test.integration.IntegrationTest;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.Type;
-import datawave.ingest.protobuf.Uid;
-import datawave.query.CloseableIterable;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
-import datawave.query.planner.QueryPlan;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MockMetadataHelper;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR_INTERSECT;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR_UNION;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_INTERSECT;
+import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_UNION;
+import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
+import static datawave.util.TableName.SHARD_INDEX;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -32,24 +34,24 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
-import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR;
-import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR_INTERSECT;
-import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.ANCHOR_UNION;
-import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED;
-import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_INTERSECT;
-import static datawave.query.index.lookup.RangeStreamQueryTest.TERM_CONTEXT.DELAYED_UNION;
-import static datawave.query.jexl.visitors.JexlStringBuildingVisitor.buildQuery;
-import static datawave.util.TableName.SHARD_INDEX;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.common.test.integration.IntegrationTest;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.CloseableIterable;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import datawave.query.planner.QueryPlan;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.util.MockMetadataHelper;
 
 /**
  * Integration test for asserting correct query plans coming off the RangeStream

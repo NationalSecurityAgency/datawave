@@ -1,16 +1,16 @@
 package datawave.ingest.util;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache;
-import datawave.ingest.time.Now;
-import datawave.util.cli.PasswordConverter;
+import java.util.Date;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.util.GenericOptionsParser;
 
-import java.util.Date;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache;
+import datawave.ingest.time.Now;
+import datawave.util.cli.PasswordConverter;
 
 public class GenerateEdgeKeyVersionCache {
     private static final Now now = Now.getInstance();

@@ -1,8 +1,5 @@
 package datawave.query.util.sortedset;
 
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-
 import java.util.AbstractSet;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -10,6 +7,9 @@ import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
+
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * This is an sorted set of byte arrays which keeps one large byte array as the backing store and a separate array of indices and sizes in sorted value order.

@@ -10,31 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.query.function.serializer.KryoDocumentSerializer;
-import datawave.query.function.serializer.ToStringDocumentSerializer;
-import datawave.query.iterator.errors.UnindexedException;
-import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.Constants;
-import datawave.query.function.LogTiming;
-import datawave.query.iterator.profile.EvaluationTrackingFunction;
-import datawave.query.iterator.profile.SourceTrackingIterator;
-import datawave.query.jexl.visitors.SatisfactionVisitor;
-import datawave.util.StringUtils;
-import datawave.query.DocumentSerialization.ReturnType;
-import datawave.query.attributes.Document;
-import datawave.query.function.DataTypeAsField;
-import datawave.query.function.GetStartKey;
-import datawave.query.function.serializer.WritableDocumentSerializer;
-import datawave.query.iterator.filter.EventKeyDataTypeFilter;
-import datawave.query.iterator.filter.KeyIdentity;
-import datawave.query.iterator.filter.StringToText;
-import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.predicate.TimeFilter;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -44,13 +19,37 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+import datawave.query.Constants;
+import datawave.query.DocumentSerialization.ReturnType;
+import datawave.query.attributes.Document;
+import datawave.query.function.DataTypeAsField;
+import datawave.query.function.GetStartKey;
+import datawave.query.function.LogTiming;
+import datawave.query.function.serializer.KryoDocumentSerializer;
+import datawave.query.function.serializer.ToStringDocumentSerializer;
+import datawave.query.function.serializer.WritableDocumentSerializer;
+import datawave.query.iterator.errors.UnindexedException;
+import datawave.query.iterator.filter.EventKeyDataTypeFilter;
+import datawave.query.iterator.filter.FieldIndexKeyDataTypeFilter;
+import datawave.query.iterator.filter.KeyIdentity;
+import datawave.query.iterator.filter.StringToText;
+import datawave.query.iterator.profile.EvaluationTrackingFunction;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.SourceTrackingIterator;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.jexl.visitors.SatisfactionVisitor;
+import datawave.query.predicate.TimeFilter;
+import datawave.util.StringUtils;
 
 /**
  *

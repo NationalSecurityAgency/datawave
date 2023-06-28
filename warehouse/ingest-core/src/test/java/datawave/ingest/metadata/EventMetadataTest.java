@@ -9,17 +9,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.IdentityDataType;
-import datawave.TestBaseIngestHelper;
-import datawave.TestAbstractContentIngestHelper;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Value;
@@ -29,6 +18,19 @@ import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.IdentityDataType;
+import datawave.TestAbstractContentIngestHelper;
+import datawave.TestBaseIngestHelper;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 // currently this only tests LoadDate counts
 public class EventMetadataTest {

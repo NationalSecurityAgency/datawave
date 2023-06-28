@@ -1,12 +1,12 @@
 package datawave.webservice.common.remote;
 
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.VoidResponse;
-
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * A remote query service is one that can pass calls off to another query service

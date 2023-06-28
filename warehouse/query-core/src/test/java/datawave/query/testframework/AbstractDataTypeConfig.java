@@ -1,5 +1,26 @@
 package datawave.query.testframework;
 
+import static datawave.query.testframework.FileType.CSV;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.csv.config.helper.ExtendedCSVIngestHelper;
@@ -16,26 +37,6 @@ import datawave.ingest.json.mr.input.JsonRecordReader;
 import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.policy.IngestPolicyEnforcer;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import static datawave.query.testframework.FileType.CSV;
 
 /**
  * Abstract base class that contains the configuration settings for test data types.

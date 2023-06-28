@@ -1,6 +1,20 @@
 package datawave.query.function;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.accumulo.core.data.Key;
+import org.junit.Test;
+
 import com.google.common.collect.Maps;
+
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
@@ -13,18 +27,6 @@ import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.TermFrequencyList;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.query.util.Tuple3;
-import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class JexlEvaluationTest {
 

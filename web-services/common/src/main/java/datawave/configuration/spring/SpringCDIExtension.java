@@ -28,14 +28,16 @@ import javax.enterprise.inject.spi.PassivationCapable;
 import javax.enterprise.inject.spi.ProcessInjectionTarget;
 import javax.enterprise.util.AnnotationLiteral;
 
-import com.google.common.collect.Sets;
-import datawave.configuration.ConfigurationEvent;
-import datawave.configuration.RefreshableScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import com.google.common.collect.Sets;
+
+import datawave.configuration.ConfigurationEvent;
+import datawave.configuration.RefreshableScope;
 
 /**
  * A portable CDI extension that exposes Spring Beans as CDI beans. This extension expects to find a beanRefContext.xml file on the classpath. This file should

@@ -1,11 +1,5 @@
 package datawave.webservice.query.result.edge;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -21,7 +15,13 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import datawave.webservice.query.util.OptionallyEncodedStringAdapter;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class DefaultEdge implements EdgeBase, Serializable, Message<DefaultEdge> {

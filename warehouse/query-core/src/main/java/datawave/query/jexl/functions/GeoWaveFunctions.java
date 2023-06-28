@@ -1,5 +1,10 @@
 package datawave.query.jexl.functions;
 
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryCollection;
+import org.locationtech.jts.geom.GeometryFactory;
+
 import datawave.data.normalizer.AbstractGeometryNormalizer;
 import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.type.AbstractGeometryType;
@@ -7,10 +12,6 @@ import datawave.data.type.GeoType;
 import datawave.data.type.util.AbstractGeometry;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryCollection;
-import org.locationtech.jts.geom.GeometryFactory;
 
 /**
  * Provides functions for doing spatial queries, such as bounding boxes and circles of interest, as well as spatial relationships.

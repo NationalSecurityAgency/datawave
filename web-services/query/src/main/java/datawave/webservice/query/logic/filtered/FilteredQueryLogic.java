@@ -1,15 +1,16 @@
 package datawave.webservice.query.logic.filtered;
 
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.DelegatingQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Set;
 
 /**
  * A filtered query logic will only actually execute the delegate query logic if the filter passes. Otherwise this will do nothing and return no results.

@@ -1,10 +1,11 @@
 package datawave.resteasy.interceptor;
 
-import org.jboss.resteasy.plugins.interceptors.CorsFilter;
+import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.container.PreMatching;
 import javax.ws.rs.ext.Provider;
-import java.util.concurrent.TimeUnit;
+
+import org.jboss.resteasy.plugins.interceptors.CorsFilter;
 
 /**
  * This class adds the appropriate headers to allow CORS. There are no configurations, all methods are allowed. OPTIONS methods are not mapped JAX-RS methods

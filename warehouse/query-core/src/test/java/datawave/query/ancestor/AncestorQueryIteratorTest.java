@@ -1,12 +1,13 @@
 package datawave.query.ancestor;
 
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
+
 import datawave.query.function.AncestorEquality;
 import datawave.query.function.AncestorRangeProvider;
 import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class AncestorQueryIteratorTest {
 

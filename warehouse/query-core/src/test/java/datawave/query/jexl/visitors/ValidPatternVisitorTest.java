@@ -1,11 +1,12 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
+import java.util.regex.PatternSyntaxException;
+
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
-import java.util.regex.PatternSyntaxException;
+import datawave.query.jexl.JexlASTHelper;
 
 public class ValidPatternVisitorTest {
 

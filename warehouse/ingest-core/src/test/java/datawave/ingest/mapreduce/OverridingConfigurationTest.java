@@ -1,11 +1,12 @@
 package datawave.ingest.mapreduce;
 
-import datawave.ingest.mapreduce.job.OverridingConfiguration;
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import datawave.ingest.mapreduce.job.OverridingConfiguration;
 
 public class OverridingConfigurationTest {
 

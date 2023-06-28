@@ -2,13 +2,13 @@ package datawave.query.tables;
 
 import java.util.Collection;
 
-import datawave.query.config.ShardQueryConfiguration;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.clientImpl.ScannerOptions;
 import org.apache.accumulo.core.dataImpl.thrift.IterInfo;
 
 import com.google.common.collect.Lists;
+
+import datawave.query.config.ShardQueryConfiguration;
 
 /**
  * Extension to allow an open constructor

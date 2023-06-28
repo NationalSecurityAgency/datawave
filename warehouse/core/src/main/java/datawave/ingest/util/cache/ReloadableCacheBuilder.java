@@ -1,14 +1,14 @@
 package datawave.ingest.util.cache;
 
+import java.util.Collection;
 import java.util.concurrent.Executors;
 
-import datawave.ingest.util.cache.watch.Reloadable;
-
-import java.util.Collection;
 import org.apache.log4j.Logger;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
+
+import datawave.ingest.util.cache.watch.Reloadable;
 
 /**
  * Purpose: Enables reloadable caches.

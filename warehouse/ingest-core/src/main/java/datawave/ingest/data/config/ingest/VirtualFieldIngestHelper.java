@@ -2,12 +2,12 @@ package datawave.ingest.data.config.ingest;
 
 import java.util.Map;
 
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import org.apache.hadoop.conf.Configuration;
 
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * This class will add the VirtualFieldNormalizer to the list of normalizers. Note that this can be done directly via the configuration.

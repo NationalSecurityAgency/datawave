@@ -2,9 +2,9 @@ package datawave.query.iterator.filter;
 
 import java.util.Map.Entry;
 
-import datawave.query.iterator.aggregation.DocumentData;
-
 import com.google.common.base.Predicate;
+
+import datawave.query.iterator.aggregation.DocumentData;
 
 public class EventEntryKeyDataTypeFilter implements Predicate<Entry<DocumentData,?>> {
 

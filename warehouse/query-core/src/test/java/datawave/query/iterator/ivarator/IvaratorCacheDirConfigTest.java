@@ -1,11 +1,11 @@
 package datawave.query.iterator.ivarator;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.junit.Assert;
+import org.junit.Test;
 
 public class IvaratorCacheDirConfigTest {
 

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+
 import datawave.webservice.result.BaseResponse;
 import datawave.webservice.websocket.messages.QueryResponseMessage;
 

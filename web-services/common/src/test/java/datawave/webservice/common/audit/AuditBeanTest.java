@@ -1,11 +1,7 @@
 package datawave.webservice.common.audit;
 
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-import org.junit.Before;
-import org.junit.Test;
-import org.powermock.reflect.Whitebox;
+import static org.junit.Assert.assertEquals;
 
-import javax.ws.rs.core.MultivaluedMap;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -14,7 +10,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.junit.Before;
+import org.junit.Test;
+import org.powermock.reflect.Whitebox;
 
 public class AuditBeanTest {
 
