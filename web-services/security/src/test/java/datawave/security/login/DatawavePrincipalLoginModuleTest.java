@@ -1,34 +1,13 @@
 package datawave.security.login;
 
-import com.google.common.collect.Lists;
-import datawave.security.auth.DatawaveCredential;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.DatawaveUserService;
-import datawave.security.authorization.JWTTokenHandler;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils;
-import datawave.security.util.DnUtils.NpeUtils;
-import datawave.security.util.MockCallbackHandler;
-import datawave.security.util.MockDatawaveCertVerifier;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.easymock.TestSubject;
-import org.jboss.security.JSSESecurityDomain;
-import org.jboss.security.SimpleGroup;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.reflect.Whitebox;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.MockType.STRICT;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.X509KeyManager;
-import javax.security.auth.Subject;
-import javax.security.auth.login.AccountLockedException;
-import javax.security.auth.login.FailedLoginException;
 import java.net.Socket;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -46,13 +25,37 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.MockType.STRICT;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.X509KeyManager;
+import javax.security.auth.Subject;
+import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.FailedLoginException;
+
+import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.easymock.TestSubject;
+import org.jboss.security.JSSESecurityDomain;
+import org.jboss.security.SimpleGroup;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.reflect.Whitebox;
+
+import com.google.common.collect.Lists;
+
+import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.DatawaveUserService;
+import datawave.security.authorization.JWTTokenHandler;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils;
+import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.MockCallbackHandler;
+import datawave.security.util.MockDatawaveCertVerifier;
 
 @RunWith(EasyMockRunner.class)
 public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {

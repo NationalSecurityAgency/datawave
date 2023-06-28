@@ -6,11 +6,6 @@ import java.io.ObjectInputStream;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.collect.HashMultimap;
-import datawave.edge.model.EdgeModelAware;
-import datawave.edge.model.EdgeModelAware.Fields;
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
-import datawave.edge.util.EdgeKeyUtil;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
@@ -23,11 +18,7 @@ import org.apache.commons.jexl2.JexlEngine;
 import org.apache.commons.jexl2.MapContext;
 import org.apache.log4j.Logger;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.HashMultimap;
 
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.model.EdgeModelAware.Fields;

@@ -1,11 +1,7 @@
 package datawave.ingest.csv.mr.input;
 
-import datawave.data.hash.UID;
-import datawave.ingest.data.RawDataErrorNames;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.input.reader.EventRecordReader;
-import datawave.ingest.input.reader.LongLineEventRecordReader;
+import java.io.IOException;
+
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.text.StrTokenizer;
@@ -17,7 +13,12 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import datawave.data.hash.UID;
+import datawave.ingest.data.RawDataErrorNames;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.input.reader.EventRecordReader;
+import datawave.ingest.input.reader.LongLineEventRecordReader;
 
 /**
  * RecordReader that reads events from "Comma"-Separated-Value formats. Here the "Comma" can be any separator.

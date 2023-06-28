@@ -1,12 +1,13 @@
 package datawave.webservice.query;
 
-import datawave.webservice.query.QueryImpl.Parameter;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashSet;
-import java.util.Set;
+import datawave.webservice.query.QueryImpl.Parameter;
 
 public class TestQueryImpl {
 

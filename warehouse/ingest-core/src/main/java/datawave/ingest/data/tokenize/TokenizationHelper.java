@@ -1,13 +1,14 @@
 package datawave.ingest.data.tokenize;
 
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.util.ObjectFactory;
+import java.io.IOException;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.CharArraySet;
 
-import java.io.IOException;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.util.ObjectFactory;
 
 public class TokenizationHelper {
 
