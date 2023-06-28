@@ -1684,13 +1684,19 @@
                                     <rules>
                                         <RestrictImports>
                                             <!-- Define an explanatory reason why these imports are prohibited -->
-                                            <reason>Remove JUnit Framework</reason>
-                                            <!-- Specify a single pattern to be banned -->
-                                            <bannedImport>junit.framework.*</bannedImport>
-                                            <bannedImport>org.junit.*</bannedImport>
+                                            <reason>Remove JUnit 3 starred patterns before attempting build.</reason>
+                                            <bannedImport>junit.framework.'*'</bannedImport>
+                                        </RestrictImports>
+                                        <RestrictImports>
+                                            <!-- Define an explanatory reason why these imports are prohibited -->
+                                            <reason>Remove JUnit 4 starred patterns before attempting build.</reason>
+                                            <bannedImport>org.junit.'*'</bannedImport>
+                                        </RestrictImports>
+                                        <RestrictImports>
+                                            <!-- Define an explanatory reason why these imports are prohibited -->
+                                            <reason>Please remove starred (datawave.* etc) patterns before attempting build.</reason>
                                             <bannedImport>**.'*'</bannedImport>
                                         </RestrictImports>
-                                        <!-- You could have another rule instance here for restricting further imports -->
                                     </rules>
                                 </configuration>
                             </execution>
