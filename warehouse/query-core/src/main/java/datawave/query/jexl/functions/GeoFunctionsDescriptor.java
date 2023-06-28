@@ -319,8 +319,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         }
 
         @Override
-        public Set<Set<String>> field
-        (MetadataHelper helper, Set<String> datatypeFilter) {
+        public Set<Set<String>> field(MetadataHelper helper, Set<String> datatypeFilter) {
             try {
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
                 Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());

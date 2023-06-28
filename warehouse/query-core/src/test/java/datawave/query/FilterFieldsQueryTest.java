@@ -39,7 +39,6 @@ import datawave.query.testframework.QueryJexl;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ResponseFieldChecker;
 
-
 /**
  * Performs query test where specific returned fields are specified setting the {@link QueryParameters#RETURN_FIELDS} and
  * {@link QueryParameters#BLACKLISTED_FIELDS} parameter.
