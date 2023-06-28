@@ -1683,17 +1683,7 @@
                                 <configuration>
                                     <rules>
                                         <RestrictImports>
-                                            <!-- Define an explanatory reason why these imports are prohibited -->
-                                            <reason>Remove JUnit 3 starred patterns before attempting build.</reason>
-                                            <bannedImport>junit.framework.'*'</bannedImport>
-                                        </RestrictImports>
-                                        <RestrictImports>
-                                            <!-- Define an explanatory reason why these imports are prohibited -->
-                                            <reason>Remove JUnit 4 starred patterns before attempting build.</reason>
-                                            <bannedImport>org.junit.'*'</bannedImport>
-                                        </RestrictImports>
-                                        <RestrictImports>
-                                            <!-- Define an explanatory reason why these imports are prohibited -->
+                                            <!-- This should be able to catch ALL starred imports, regardless of package or junit version. -->
                                             <reason>Please remove starred (datawave.* etc) patterns before attempting build.</reason>
                                             <bannedImport>**.'*'</bannedImport>
                                         </RestrictImports>
