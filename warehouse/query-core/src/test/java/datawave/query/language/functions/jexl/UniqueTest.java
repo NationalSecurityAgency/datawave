@@ -1,10 +1,11 @@
 package datawave.query.language.functions.jexl;
 
-import com.google.common.collect.Lists;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+
+import org.junit.Test;
+
+import com.google.common.collect.Lists;
 
 public class UniqueTest {
 

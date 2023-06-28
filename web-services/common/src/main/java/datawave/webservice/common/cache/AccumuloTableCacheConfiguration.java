@@ -1,13 +1,14 @@
 package datawave.webservice.common.cache;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
 
 public class AccumuloTableCacheConfiguration {
 

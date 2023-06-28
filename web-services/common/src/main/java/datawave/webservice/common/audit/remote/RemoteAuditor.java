@@ -1,13 +1,21 @@
 package datawave.webservice.common.audit.remote;
 
-import com.codahale.metrics.Counter;
-import com.codahale.metrics.annotation.Metric;
-import com.codahale.metrics.annotation.Timed;
-import datawave.configuration.RefreshableScope;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.audit.AuditService;
-import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import javax.annotation.Priority;
+import javax.annotation.Resource;
+import javax.ejb.Asynchronous;
+import javax.ejb.EJBContext;
+import javax.enterprise.inject.Alternative;
+import javax.inject.Inject;
+import javax.interceptor.Interceptor;
+
 import org.apache.deltaspike.core.api.config.ConfigProperty;
 import org.apache.deltaspike.core.api.exclude.Exclude;
 import org.apache.http.Consts;
@@ -18,20 +26,15 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
-import javax.annotation.Priority;
-import javax.annotation.Resource;
-import javax.ejb.Asynchronous;
-import javax.ejb.EJBContext;
-import javax.enterprise.inject.Alternative;
-import javax.inject.Inject;
-import javax.interceptor.Interceptor;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.security.Principal;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.annotation.Metric;
+import com.codahale.metrics.annotation.Timed;
+
+import datawave.configuration.RefreshableScope;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.audit.AuditService;
+import datawave.webservice.common.remote.RemoteHttpService;
+import datawave.webservice.util.NotEqualPropertyExpressionInterpreter;
 
 /**
  * This default auditor sends audits to a remote audit microservice.

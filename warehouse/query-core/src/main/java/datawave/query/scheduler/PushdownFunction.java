@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.planner.QueryPlan;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -19,8 +16,8 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
-import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.dataImpl.KeyExtent;
 import org.apache.accumulo.core.manager.state.tables.TableState;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -34,9 +31,12 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.planner.QueryPlan;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.configuration.QueryData;
 
 public class PushdownFunction implements Function<QueryData,List<ScannerChunk>> {

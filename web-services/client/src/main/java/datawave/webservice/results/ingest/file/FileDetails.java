@@ -1,17 +1,18 @@
 package datawave.webservice.results.ingest.file;
 
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.Date;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlTransient;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Date;
+
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 @XmlAccessorType(XmlAccessType.NONE)
 public class FileDetails implements Serializable, Message<FileDetails> {

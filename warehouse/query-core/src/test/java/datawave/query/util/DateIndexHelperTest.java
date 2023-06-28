@@ -1,11 +1,14 @@
 package datawave.query.util;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
-import datawave.query.MockAccumuloRecordWriter;
-import datawave.util.TableName;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.BitSet;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -32,14 +35,13 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
+import com.github.benmanes.caffeine.cache.Cache;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.ingest.mapreduce.handler.dateindex.DateIndexUtil;
+import datawave.query.MockAccumuloRecordWriter;
+import datawave.util.TableName;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/MetadataHelperContext.xml", "classpath:/CacheContext.xml"})

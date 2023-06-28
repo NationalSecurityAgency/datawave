@@ -1,11 +1,13 @@
 package datawave.webservice.query.cache;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import datawave.webservice.results.cached.CachedRunningQuery;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Singleton;
-import java.util.concurrent.TimeUnit;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
+import datawave.webservice.results.cached.CachedRunningQuery;
 
 /**
  * A cache for storing {@link CachedRunningQuery} objects. The size of the cache is limited to 20,000 objects and each one expires 24 hours after its last

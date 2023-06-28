@@ -1,12 +1,11 @@
 package datawave.ingest.nyctlc;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.CSVIngestHelper;
+import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
+import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
+import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
+
+import java.util.Collection;
+
 import org.apache.hadoop.conf.Configuration;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -14,11 +13,14 @@ import org.locationtech.jts.util.GeometricShapeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
-import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
-import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
-import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.CSVIngestHelper;
 
 /**
  * This is a specialized version of the CSV Ingest Helper intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This class is responsible

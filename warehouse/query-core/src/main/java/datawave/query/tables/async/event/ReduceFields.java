@@ -1,17 +1,19 @@
 package datawave.query.tables.async.event;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Sets;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.VariableNameVisitor;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.VariableNameVisitor;
 
 /**
  * Utility that reduces the set of fields prior to serialization

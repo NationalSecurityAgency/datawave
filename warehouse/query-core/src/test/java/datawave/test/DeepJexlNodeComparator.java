@@ -1,10 +1,11 @@
 package datawave.test;
 
-import datawave.query.jexl.visitors.PrintingVisitor;
-import datawave.query.jexl.visitors.TreeEqualityVisitor;
+import java.util.Comparator;
+
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Comparator;
+import datawave.query.jexl.visitors.PrintingVisitor;
+import datawave.query.jexl.visitors.TreeEqualityVisitor;
 
 /**
  * Performs a full comparison of two nodes. This comparator is intended to be used by classes such as {@link JexlNodeIterableAssert} and

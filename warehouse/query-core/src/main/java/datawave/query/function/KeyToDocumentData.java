@@ -1,18 +1,19 @@
 package datawave.query.function;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDConstants;
-import datawave.query.attributes.Document;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.iterator.aggregation.DocumentData;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.Tuple3;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import static datawave.query.Constants.EMPTY_VALUE;
+
+import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -27,19 +28,20 @@ import org.apache.commons.lang.mutable.MutableInt;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-import static datawave.query.Constants.EMPTY_VALUE;
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDConstants;
+import datawave.query.attributes.Document;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.iterator.aggregation.DocumentData;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.Tuple3;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * This class aggregates all event data for a given 'document key'.

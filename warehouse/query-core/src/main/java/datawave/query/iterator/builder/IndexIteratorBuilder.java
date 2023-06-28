@@ -1,19 +1,21 @@
 package datawave.query.iterator.builder;
 
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.hadoop.io.Text;
+
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.io.Text;
-
-import java.util.Set;
 
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when

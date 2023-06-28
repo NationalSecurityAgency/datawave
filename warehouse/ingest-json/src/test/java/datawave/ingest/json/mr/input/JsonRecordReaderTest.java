@@ -3,21 +3,19 @@ package datawave.ingest.json.mr.input;
 import java.io.File;
 import java.net.URL;
 
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.TypeRegistry;
-
-import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-
 import org.junit.Assert;
 import org.junit.Test;
+
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 
 public class JsonRecordReaderTest {
 

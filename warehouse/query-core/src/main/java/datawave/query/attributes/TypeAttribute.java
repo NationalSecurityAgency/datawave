@@ -8,13 +8,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.Set;
 
-import datawave.data.type.NoOpType;
-import datawave.data.type.OneToManyNormalizerType;
-import datawave.data.type.Type;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.collections.FunctionalSet;
-
-import datawave.webservice.query.data.ObjectSizeOf;
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.hadoop.io.WritableUtils;
@@ -23,6 +16,13 @@ import org.apache.log4j.Logger;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+
+import datawave.data.type.NoOpType;
+import datawave.data.type.OneToManyNormalizerType;
+import datawave.data.type.Type;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.webservice.query.data.ObjectSizeOf;
 
 public class TypeAttribute<T extends Comparable<T>> extends Attribute<TypeAttribute<T>> implements Serializable {
 

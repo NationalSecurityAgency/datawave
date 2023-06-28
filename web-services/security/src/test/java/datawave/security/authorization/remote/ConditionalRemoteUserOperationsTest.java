@@ -1,13 +1,21 @@
 package datawave.security.authorization.remote;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.Test;
+import org.wildfly.common.Assert;
+
 import com.google.common.collect.HashMultimap;
+
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
-import datawave.security.authorization.UserOperations;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
@@ -25,12 +33,6 @@ import datawave.webservice.result.GenericResponse;
 import datawave.webservice.results.datadictionary.DataDictionaryBase;
 import datawave.webservice.results.datadictionary.DescriptionBase;
 import datawave.webservice.results.datadictionary.FieldsBase;
-import org.junit.Test;
-import org.wildfly.common.Assert;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 public class ConditionalRemoteUserOperationsTest {
 

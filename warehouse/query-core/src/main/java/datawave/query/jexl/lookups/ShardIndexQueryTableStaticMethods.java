@@ -1,28 +1,14 @@
 package datawave.query.jexl.lookups;
 
-import com.google.common.collect.Sets;
-import datawave.core.iterators.ColumnQualifierRangeIterator;
-import datawave.core.iterators.GlobalIndexTermMatchingIterator;
-import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
-import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
-import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
-import datawave.data.type.Type;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
-import datawave.query.exceptions.IllegalRangeArgumentException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.tables.AnyFieldScanner;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.ScannerSession;
-import datawave.query.tables.SessionOptions;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.PreConditionFailedQueryException;
-import datawave.webservice.query.exception.QueryException;
+import java.io.IOException;
+import java.text.MessageFormat;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -45,14 +31,30 @@ import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.text.MessageFormat;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import com.google.common.collect.Sets;
+
+import datawave.core.iterators.ColumnQualifierRangeIterator;
+import datawave.core.iterators.GlobalIndexTermMatchingIterator;
+import datawave.core.iterators.filter.GlobalIndexDataTypeFilter;
+import datawave.core.iterators.filter.GlobalIndexDateRangeFilter;
+import datawave.core.iterators.filter.GlobalIndexTermMatchingFilter;
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.exceptions.DoNotPerformOptimizedQueryException;
+import datawave.query.exceptions.IllegalRangeArgumentException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.tables.AnyFieldScanner;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ScannerSession;
+import datawave.query.tables.SessionOptions;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.PreConditionFailedQueryException;
+import datawave.webservice.query.exception.QueryException;
 
 /**
  * Temporary location for static methods in ShardIndexQueryTable

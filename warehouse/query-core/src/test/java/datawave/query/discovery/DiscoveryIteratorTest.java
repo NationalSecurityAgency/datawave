@@ -1,10 +1,18 @@
 package datawave.query.discovery;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.ingest.protobuf.Uid;
-import datawave.query.iterator.SourceManagerTest;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.Connector;
@@ -25,18 +33,12 @@ import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.iterator.SourceManagerTest;
 
 public class DiscoveryIteratorTest {
     static final Logger log = Logger.getLogger(DiscoveryIteratorTest.class);

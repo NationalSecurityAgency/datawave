@@ -1,9 +1,10 @@
 package datawave.helpers;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.edge.util.EdgeValue;
-import datawave.edge.util.ExtendedHyperLogLogPlus;
-import datawave.ingest.protobuf.Uid;
+import java.io.PrintStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Map.Entry;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -14,10 +15,11 @@ import org.apache.commons.lang.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang.builder.ToStringStyle;
 import org.apache.log4j.Logger;
 
-import java.io.PrintStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Map.Entry;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.edge.util.EdgeValue;
+import datawave.edge.util.ExtendedHyperLogLogPlus;
+import datawave.ingest.protobuf.Uid;
 
 /**
  * A set of static methods for printing tables in mock Accumulo instance.

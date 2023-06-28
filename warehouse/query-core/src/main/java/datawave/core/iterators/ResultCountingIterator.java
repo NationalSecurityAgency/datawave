@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import datawave.marking.MarkingFunctions;
-
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -31,6 +29,8 @@ import com.google.common.base.Ticker;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Sets;
+
+import datawave.marking.MarkingFunctions;
 
 /**
  * <p>

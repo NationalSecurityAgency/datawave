@@ -1,9 +1,9 @@
 package datawave.ingest.data.config;
 
-import datawave.ingest.data.Type;
-
-import datawave.policy.IngestPolicyEnforcer;
 import org.apache.hadoop.conf.Configuration;
+
+import datawave.ingest.data.Type;
+import datawave.policy.IngestPolicyEnforcer;
 
 public interface DataTypeHelper {
 

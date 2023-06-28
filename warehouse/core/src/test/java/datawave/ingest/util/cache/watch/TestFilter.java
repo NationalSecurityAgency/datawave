@@ -1,13 +1,14 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 public class TestFilter extends AppliedRule {
     // public so that the tests can inspect the options

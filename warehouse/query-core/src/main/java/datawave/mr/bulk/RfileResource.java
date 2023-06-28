@@ -4,12 +4,6 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.Set;
 
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.query.tables.AccumuloResource;
-import datawave.query.tables.BatchResource;
-import datawave.query.tables.SessionOptions;
-
-import datawave.webservice.common.connection.WrappedAccumuloClient;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.conf.ClientProperty;
@@ -23,6 +17,12 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.query.tables.AccumuloResource;
+import datawave.query.tables.BatchResource;
+import datawave.query.tables.SessionOptions;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
 
 public class RfileResource extends BatchResource {
 

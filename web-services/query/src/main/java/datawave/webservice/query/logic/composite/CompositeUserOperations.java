@@ -1,18 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import com.google.common.collect.Sets;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.user.AuthorizationsListBase;
-import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.result.GenericResponse;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,6 +7,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.common.collect.Sets;
+
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.authorization.UserOperations;
+import datawave.security.util.AuthorizationsUtil;
+import datawave.user.AuthorizationsListBase;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.GenericResponse;
 
 /**
  * This is a user operations implementation that can handle merging the authorizations for the composite query logics. This is initialized with any other user

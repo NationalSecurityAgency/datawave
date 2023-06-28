@@ -5,9 +5,10 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Date;
 
-import com.google.common.base.Objects;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
+
+import com.google.common.base.Objects;
 
 public class Phase implements WritableComparable<Phase> {
     private String name;

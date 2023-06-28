@@ -1,12 +1,10 @@
 package datawave.iterators.filter.ageoff;
 
-import com.google.common.collect.Sets;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.ColumnVisibilityOrFilter;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -14,6 +12,11 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import com.google.common.collect.Sets;
+
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.ColumnVisibilityOrFilter;
 
 /**
  * Data type age off filter. Traverses through indexed tables

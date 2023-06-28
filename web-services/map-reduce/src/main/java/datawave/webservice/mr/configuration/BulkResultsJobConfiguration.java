@@ -1,25 +1,22 @@
 package datawave.webservice.mr.configuration;
 
-import datawave.mr.bulk.BulkInputFormat;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.UserOperations;
-import datawave.security.iterator.ConfigurableVisibilityFilter;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.exception.NoResultsException;
-import datawave.webservice.mr.bulkresults.map.BulkResultsFileOutputMapper;
-import datawave.webservice.mr.bulkresults.map.BulkResultsTableOutputMapper;
-import datawave.webservice.mr.bulkresults.map.SerializationFormat;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.QueryCache;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.configuration.QueryData;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.factory.Persister;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicFactory;
-import datawave.webservice.query.runner.RunningQuery;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -45,21 +42,26 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.log4j.Logger;
 import org.jboss.security.JSSESecurityDomain;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
-import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import datawave.mr.bulk.BulkInputFormat;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.security.iterator.ConfigurableVisibilityFilter;
+import datawave.security.util.AuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.NoResultsException;
+import datawave.webservice.mr.bulkresults.map.BulkResultsFileOutputMapper;
+import datawave.webservice.mr.bulkresults.map.BulkResultsTableOutputMapper;
+import datawave.webservice.mr.bulkresults.map.SerializationFormat;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.QueryCache;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.configuration.QueryData;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.factory.Persister;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicFactory;
+import datawave.webservice.query.runner.RunningQuery;
 
 public class BulkResultsJobConfiguration extends MapReduceJobConfiguration implements NeedCallerDetails, NeedAccumuloConnectionFactory, NeedAccumuloDetails,
                 NeedQueryLogicFactory, NeedQueryPersister, NeedQueryCache, NeedSecurityDomain {

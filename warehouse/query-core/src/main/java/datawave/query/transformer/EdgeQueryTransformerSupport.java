@@ -1,7 +1,20 @@
 package datawave.query.transformer;
 
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
+
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.util.EdgeValue;
 import datawave.marking.MarkingFunctions;
@@ -14,17 +27,6 @@ import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic, EdgeModelAware {
     protected Authorizations auths;

@@ -3,13 +3,13 @@ package datawave.util.flag;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import datawave.util.flag.InputFile.TrackedDir;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.Cache;
+
+import datawave.util.flag.InputFile.TrackedDir;
 
 /**
  * Moves an entry to it's next targeted location. Updates current location and move status upon completion.

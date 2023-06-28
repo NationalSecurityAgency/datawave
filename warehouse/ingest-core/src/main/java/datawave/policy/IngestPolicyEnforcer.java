@@ -1,9 +1,9 @@
 package datawave.policy;
 
-import datawave.ingest.data.RawRecordContainer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.ingest.data.RawRecordContainer;
 
 /**
  * Abstract class to be used by RecordReaders for event validation.

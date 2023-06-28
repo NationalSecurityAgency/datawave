@@ -1,17 +1,30 @@
 package datawave.query.jexl.visitors;
 
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
+import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.LenientExpression;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+
 import datawave.data.type.DateType;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.LcType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.NumberType;
+import datawave.data.type.PointType;
 import datawave.data.type.StringType;
 import datawave.data.type.TrimLeadingZerosType;
-import datawave.data.type.PointType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.jexl.JexlASTHelper;
@@ -21,17 +34,6 @@ import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
 import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
 import datawave.query.util.MockMetadataHelper;
 import datawave.test.JexlNodeAssert;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.LenientExpression;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
 
 public class ExpandMultiNormalizedTermsTest {
 

@@ -1,10 +1,11 @@
 package datawave.query.testframework;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import java.io.IOException;
 import java.util.Collection;
+
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 public interface DataLoader {
 

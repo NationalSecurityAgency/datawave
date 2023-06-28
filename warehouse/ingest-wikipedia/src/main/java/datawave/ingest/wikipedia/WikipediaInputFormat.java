@@ -16,14 +16,15 @@
  */
 package datawave.ingest.wikipedia;
 
-import datawave.ingest.data.RawRecordContainer;
+import java.io.IOException;
+
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 
-import java.io.IOException;
+import datawave.ingest.data.RawRecordContainer;
 
 public class WikipediaInputFormat extends SequenceFileInputFormat<LongWritable,RawRecordContainer> {
 

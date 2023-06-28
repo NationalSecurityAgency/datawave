@@ -1,5 +1,15 @@
 package datawave.query.testframework;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.log4j.Logger;
+
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
 import datawave.ingest.data.TypeRegistry;
@@ -8,15 +18,6 @@ import datawave.ingest.input.reader.EventRecordReader;
 import datawave.ingest.json.config.helper.JsonDataTypeHelper;
 import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
-import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Handles JSON flatten datatypes. Fields for this datatype are defined based upon the {@link FlattenMode} and are defined with the appropriate test class.

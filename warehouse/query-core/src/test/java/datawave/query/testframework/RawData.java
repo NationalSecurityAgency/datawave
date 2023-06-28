@@ -1,10 +1,10 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import datawave.data.normalizer.Normalizer;
 
 /**
  * Defines the actions for retrieval and processing of raw data.

@@ -1,17 +1,6 @@
 package datawave.query.rewrite.jexl.visitors;
 
-import com.google.common.collect.Sets;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import org.apache.commons.io.FileUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +10,20 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
+import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.Sets;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.jexl.visitors.PushdownLargeFieldedListsVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 
 public class PushdownLargeFieldedListsVisitorTest {
     protected ShardQueryConfiguration conf = null;

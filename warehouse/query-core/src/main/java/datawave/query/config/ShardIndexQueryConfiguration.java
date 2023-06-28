@@ -3,14 +3,14 @@ package datawave.query.config;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import datawave.query.tables.ShardIndexQueryTable;
-import datawave.webservice.query.Query;
-
 import org.apache.accumulo.core.data.Range;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+
+import datawave.query.tables.ShardIndexQueryTable;
+import datawave.webservice.query.Query;
 
 public class ShardIndexQueryConfiguration extends ShardQueryConfiguration {
     private static final long serialVersionUID = 7616552164239289739L;

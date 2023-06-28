@@ -1,14 +1,14 @@
 package datawave.ingest.data;
 
-import datawave.data.hash.UID;
-
-import org.apache.accumulo.core.security.ColumnVisibility;
-
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
+
+import datawave.data.hash.UID;
 
 /**
  * Generic container used to hold raw source data. It is used in various parts of the ingest framework and is typically persisted as an "event" within DW's

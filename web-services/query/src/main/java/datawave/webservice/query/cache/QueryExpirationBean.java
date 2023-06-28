@@ -1,18 +1,5 @@
 package datawave.webservice.query.cache;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.SpringBean;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.microservice.querymetric.QueryMetric;
-import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.runner.RunningQuery;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-
-import org.apache.log4j.Logger;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
@@ -25,6 +12,19 @@ import javax.ejb.Schedule;
 import javax.ejb.Singleton;
 import javax.ejb.Startup;
 import javax.inject.Inject;
+
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

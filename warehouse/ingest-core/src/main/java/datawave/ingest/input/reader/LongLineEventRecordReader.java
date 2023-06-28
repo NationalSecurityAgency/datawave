@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
-import datawave.ingest.util.io.GzipDetectionUtil;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -17,6 +15,8 @@ import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+
+import datawave.ingest.util.io.GzipDetectionUtil;
 
 /**
  * A copy of {@link org.apache.hadoop.mapred.LineRecordReader} which does not discard lines longer than "mapred.linerecordreader.maxlength". Instead, it returns

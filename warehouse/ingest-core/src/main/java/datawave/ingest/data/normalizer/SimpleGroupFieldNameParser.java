@@ -3,15 +3,15 @@ package datawave.ingest.data.normalizer;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import datawave.ingest.data.config.GroupedNormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.GroupedNormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 /**
  * Consolidated logic from SimpleGroupNameNormalizer and others.

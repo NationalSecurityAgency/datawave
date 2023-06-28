@@ -1,13 +1,13 @@
 package datawave.webservice.query.logic.composite;
 
-import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
+
+import org.apache.commons.collections.keyvalue.UnmodifiableMapEntry;
 
 public class CompositeQueryLogicResults implements Iterable<Object>, Thread.UncaughtExceptionHandler {
 

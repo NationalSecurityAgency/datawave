@@ -1,12 +1,13 @@
 package datawave.ingest.mapreduce;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
 
 /**
  * A mechanism for injecting a DataTypeHandler into unit tests. Here's how it works.

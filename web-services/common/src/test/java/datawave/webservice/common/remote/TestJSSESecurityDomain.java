@@ -1,10 +1,5 @@
 package datawave.webservice.common.remote;
 
-import org.jboss.security.JSSESecurityDomain;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509KeyManager;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.net.Socket;
@@ -15,6 +10,12 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Properties;
+
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509KeyManager;
+
+import org.jboss.security.JSSESecurityDomain;
 
 public class TestJSSESecurityDomain implements JSSESecurityDomain {
     private final PrivateKey privKey;

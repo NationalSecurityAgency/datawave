@@ -1,13 +1,14 @@
 package datawave.query.jexl.functions;
 
-import com.google.common.base.Function;
-import com.google.common.collect.Maps;
+import java.util.Iterator;
+import java.util.Map.Entry;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.iterators.YieldCallback;
 import org.apache.hadoop.io.Text;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
+import com.google.common.base.Function;
+import com.google.common.collect.Maps;
 
 /**
  * Key adjudicator, will take an accumulo key based entry whose value is specified by T.

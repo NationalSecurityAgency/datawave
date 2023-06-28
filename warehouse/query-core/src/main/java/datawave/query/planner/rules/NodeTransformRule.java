@@ -1,8 +1,9 @@
 package datawave.query.planner.rules;
 
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.util.MetadataHelper;
-import org.apache.commons.jexl2.parser.JexlNode;
 
 public interface NodeTransformRule {
     /**

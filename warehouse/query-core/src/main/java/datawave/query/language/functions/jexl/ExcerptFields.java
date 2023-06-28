@@ -1,12 +1,12 @@
 package datawave.query.language.functions.jexl;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
-
-import java.text.MessageFormat;
-import java.util.ArrayList;
 
 /**
  * Function to specify when excerpts should be included for results for any phrases that were identified as matching hits. This function accepts a list of

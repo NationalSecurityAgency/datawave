@@ -3,13 +3,13 @@ package datawave.query.tables.chained.strategy;
 import java.util.Iterator;
 import java.util.Set;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogic;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
+
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.logic.QueryLogic;
 
 /**
  * Defines the logic to collect all of the results from the former query logic and issue one query against the latter query logic

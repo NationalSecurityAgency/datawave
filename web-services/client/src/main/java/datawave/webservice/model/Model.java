@@ -13,15 +13,15 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
 import datawave.query.model.Direction;
 import datawave.query.model.FieldMapping;
 import datawave.query.model.QueryModel;
 import datawave.webservice.HtmlProvider;
 import datawave.webservice.result.BaseResponse;
-
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.commons.lang.builder.ToStringBuilder;
 
 @XmlRootElement(name = "Model")
 @XmlAccessorType(XmlAccessType.NONE)

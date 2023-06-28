@@ -1,11 +1,12 @@
 package datawave.webservice.query.logic.filtered;
 
+import java.util.Set;
+
+import org.apache.accumulo.core.security.Authorizations;
+
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.predicate.QueryParameterPredicate;
-import org.apache.accumulo.core.security.Authorizations;
-
-import java.util.Set;
 
 /**
  * This is a filter for the FilteredQueryLogic that will run the delegate query logic if a specified query parameter matches a specified value. If no value is

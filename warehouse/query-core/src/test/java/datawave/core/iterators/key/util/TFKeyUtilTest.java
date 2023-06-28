@@ -1,10 +1,10 @@
 package datawave.core.iterators.key.util;
 
-import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
+import org.apache.accumulo.core.data.Key;
+import org.junit.Test;
 
 public class TFKeyUtilTest {
 

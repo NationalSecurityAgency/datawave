@@ -1,12 +1,12 @@
 package datawave.ingest.data.config.ingest;
 
+import org.apache.hadoop.conf.Configuration;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
-
-import org.apache.hadoop.conf.Configuration;
 
 /**
  *

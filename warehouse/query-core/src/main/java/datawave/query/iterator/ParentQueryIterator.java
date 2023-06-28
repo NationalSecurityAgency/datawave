@@ -1,7 +1,21 @@
 package datawave.query.iterator;
 
+import java.io.IOException;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
@@ -13,17 +27,6 @@ import datawave.query.predicate.ParentEventDataFilter;
 import datawave.query.predicate.ParentRangeProvider;
 import datawave.query.util.Tuple2;
 import datawave.query.util.TupleToEntry;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class ParentQueryIterator extends QueryIterator {
     private static final Logger log = Logger.getLogger(ParentQueryIterator.class);

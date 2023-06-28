@@ -1,18 +1,19 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import org.apache.accumulo.core.data.Key;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.data.Key;
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 public class KeyProjectionTest {
 

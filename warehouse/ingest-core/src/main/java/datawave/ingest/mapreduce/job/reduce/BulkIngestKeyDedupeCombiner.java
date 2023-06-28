@@ -6,13 +6,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
-import datawave.ingest.metric.IngestOutput;
-import datawave.ingest.table.aggregator.PropogatingCombiner;
-
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
@@ -21,6 +14,13 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 
 import com.google.common.collect.Iterators;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
+import datawave.ingest.metric.IngestOutput;
+import datawave.ingest.table.aggregator.PropogatingCombiner;
 
 public class BulkIngestKeyDedupeCombiner<K2,V2> extends AggregatingReducer<BulkIngestKey,Value,K2,V2> {
 

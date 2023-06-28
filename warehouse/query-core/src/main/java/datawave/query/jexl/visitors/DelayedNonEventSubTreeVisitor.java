@@ -1,10 +1,7 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.logic.IndexIteratorBridge;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
@@ -14,7 +11,12 @@ import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Set;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.IndexIteratorBridge;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 
 /**
  * Visitor builds a map from all nonEvent fields contained within delayed subtrees to their respective processing nodes. This map then can be used with the

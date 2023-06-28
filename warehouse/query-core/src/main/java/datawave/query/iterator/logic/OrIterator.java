@@ -1,10 +1,5 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.collect.TreeMultimap;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.Util;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -17,6 +12,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import com.google.common.collect.TreeMultimap;
+
+import datawave.query.attributes.Document;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.Util;
 
 /**
  * Performs a deduping merge of iterators.

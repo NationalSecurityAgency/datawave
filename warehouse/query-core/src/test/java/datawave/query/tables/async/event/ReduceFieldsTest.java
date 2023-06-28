@@ -1,17 +1,19 @@
 package datawave.query.tables.async.event;
 
-import com.google.common.collect.Sets;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.jexl.JexlASTHelper;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import java.util.Set;
+
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.jexl.JexlASTHelper;
 
 public class ReduceFieldsTest {
 

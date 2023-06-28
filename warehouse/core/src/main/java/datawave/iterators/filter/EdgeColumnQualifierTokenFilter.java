@@ -1,8 +1,9 @@
 package datawave.iterators.filter;
 
-import datawave.iterators.filter.ageoff.FilterOptions;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+
+import datawave.iterators.filter.ageoff.FilterOptions;
 
 public class EdgeColumnQualifierTokenFilter extends TokenizingFilterBase {
 

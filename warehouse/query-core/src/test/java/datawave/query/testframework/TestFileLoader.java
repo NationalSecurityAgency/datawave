@@ -1,8 +1,8 @@
 package datawave.query.testframework;
 
-import org.apache.hadoop.io.SequenceFile;
-
 import java.io.IOException;
+
+import org.apache.hadoop.io.SequenceFile;
 
 /**
  * Loads data from an external source.

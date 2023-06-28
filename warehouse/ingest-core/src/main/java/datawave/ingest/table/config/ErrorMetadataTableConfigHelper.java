@@ -1,8 +1,5 @@
 package datawave.ingest.table.config;
 
-import datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -11,6 +8,9 @@ import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.handler.error.ErrorShardedDataTypeHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 /**
  * Class to create the Metadata table for the sharded error tables. Extends the MetadataTableConfigHelper since all we want to do differently is change the name

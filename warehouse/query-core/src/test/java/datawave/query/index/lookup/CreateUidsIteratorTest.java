@@ -1,13 +1,8 @@
 package datawave.query.index.lookup;
 
-import datawave.ingest.protobuf.Uid;
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -23,9 +18,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.junit.Test;
+
+import datawave.ingest.protobuf.Uid;
 
 public class CreateUidsIteratorTest {
 

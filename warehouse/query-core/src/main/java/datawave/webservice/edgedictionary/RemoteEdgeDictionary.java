@@ -1,26 +1,29 @@
 package datawave.webservice.edgedictionary;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URIBuilder;
+
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectReader;
+
 import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
 import datawave.webservice.results.edgedictionary.MetadataBase;
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.

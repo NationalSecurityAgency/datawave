@@ -1,7 +1,33 @@
 package datawave.query.jexl.functions;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.ParserTreeConstants;
+import org.apache.log4j.Logger;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.CoordinateXY;
+import org.locationtech.jts.geom.Envelope;
+import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.util.GeometricShapeFactory;
+
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
 import datawave.data.normalizer.GeoNormalizer;
 import datawave.data.normalizer.GeoNormalizer.GeoPoint;
 import datawave.data.normalizer.GeoNormalizer.OutOfRangeException;
@@ -26,30 +52,6 @@ import datawave.query.util.GeoUtils;
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.jexl2.parser.ASTFunctionNode;
-import org.apache.commons.jexl2.parser.ASTGENode;
-import org.apache.commons.jexl2.parser.ASTLENode;
-import org.apache.commons.jexl2.parser.ASTNumberLiteral;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
-import org.locationtech.jts.geom.Coordinate;
-import org.locationtech.jts.geom.CoordinateXY;
-import org.locationtech.jts.geom.Envelope;
-import org.locationtech.jts.geom.Geometry;
-import org.locationtech.jts.geom.GeometryFactory;
-import org.locationtech.jts.geom.Polygon;
-import org.locationtech.jts.util.GeometricShapeFactory;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * This is the descriptor class for performing geo functions. It supports basic spatial relationships against points.
@@ -317,7 +319,8 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
         }
 
         @Override
-        public Set<Set<String>> fieldSets(MetadataHelper helper, Set<String> datatypeFilter) {
+        public Set<Set<String>> field
+        (MetadataHelper helper, Set<String> datatypeFilter) {
             try {
                 Set<String> allFields = helper.getAllFields(datatypeFilter);
                 Set<Set<String>> filteredSets = Sets.newHashSet(Sets.newHashSet());

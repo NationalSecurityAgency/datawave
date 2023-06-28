@@ -1,18 +1,20 @@
 package datawave.query.planner;
 
-import com.google.common.collect.Sets;
-import datawave.query.Constants;
-import datawave.query.QueryParameters;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.attributes.UniqueFields;
-import datawave.util.StringUtils;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import org.apache.log4j.Logger;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Sets;
+
+import datawave.query.Constants;
+import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.UniqueFields;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.util.StringUtils;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 public class QueryOptionsSwitch {
 

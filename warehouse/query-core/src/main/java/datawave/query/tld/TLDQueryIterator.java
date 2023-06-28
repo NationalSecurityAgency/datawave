@@ -1,8 +1,26 @@
 package datawave.query.tld;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+
 import datawave.query.attributes.Document;
 import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
@@ -25,22 +43,6 @@ import datawave.query.predicate.TLDFieldIndexQueryFilter;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This is a TLD (Top Level Document) QueryIterator implementation.

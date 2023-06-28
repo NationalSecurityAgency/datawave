@@ -5,15 +5,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import datawave.edge.model.EdgeModelAware;
-import datawave.edge.util.EdgeKeyUtil;
-import datawave.query.parser.JavaRegexAnalyzer;
-
 import org.apache.accumulo.core.data.Range;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.HashMultimap;
+
+import datawave.edge.model.EdgeModelAware;
+import datawave.edge.util.EdgeKeyUtil;
+import datawave.query.parser.JavaRegexAnalyzer;
 
 /**
  * This class is used to store and build 3 things for an edge query. 1) The normalized edge relationship query 2) The normalized stats edge query 3) The

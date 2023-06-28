@@ -1,12 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Sets;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MockDateIndexHelper;
-import datawave.query.util.MockMetadataHelper;
-import datawave.test.JexlNodeAssert;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -17,11 +16,14 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MockDateIndexHelper;
+import datawave.query.util.MockMetadataHelper;
+import datawave.test.JexlNodeAssert;
 
 public class SetMembershipVisitorTest {
 

@@ -1,8 +1,11 @@
 package datawave.query.composite;
 
-import com.google.common.collect.Sets;
-import datawave.data.type.DiscreteIndexType;
-import datawave.query.jexl.JexlASTHelper;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -13,11 +16,10 @@ import org.apache.commons.jexl2.parser.ASTLTNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import com.google.common.collect.Sets;
+
+import datawave.data.type.DiscreteIndexType;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * A composite is used to combine multiple terms into a single term.

@@ -1,9 +1,9 @@
 package datawave.query.index.lookup;
 
-import org.apache.commons.jexl2.parser.JexlNode;
-
 import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * Classes that implement this interface can be used to map uids when intersecting two lists of uids.

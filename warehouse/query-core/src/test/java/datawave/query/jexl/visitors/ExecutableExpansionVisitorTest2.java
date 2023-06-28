@@ -1,20 +1,22 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.Sets;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.MockMetadataHelper;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MockMetadataHelper;
 
 /**
  * Test just the visitor with input/output query plans
