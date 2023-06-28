@@ -1687,6 +1687,11 @@
                                             <reason>Please remove starred (datawave.* etc) patterns before attempting build.</reason>
                                             <bannedImport>**.'*'</bannedImport>
                                         </RestrictImports>
+                                        <RestrictImports>
+                                            <!-- This should be able to catch ALL starred imports, regardless of package or junit version. -->
+                                            <reason>Please remove junit.framework imports before attempting to build.</reason>
+                                            <bannedImport>junit.framework.**</bannedImport>
+                                        </RestrictImports>
                                     </rules>
                                 </configuration>
                             </execution>
