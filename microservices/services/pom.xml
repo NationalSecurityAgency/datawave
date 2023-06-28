@@ -9,31 +9,83 @@
     <artifactId>datawave-microservice-service-build-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <modules>
-        <module>accumulo/api</module>
-        <module>audit/api</module>
-        <module>authorization/api</module>
-        <module>dictionary/api</module>
-        <module>hazelcast/client</module>
-        <module>hazelcast/common</module>
-        <module>query-metric/api</module>
-    </modules>
+    <modules />
     <profiles>
         <profile>
-            <id>services</id>
+            <id>accumulo-submodule</id>
             <activation>
-                <property>
-                    <name>!skipServices</name>
-                </property>
+                <file>
+                    <exists>accumulo/pom.xml</exists>
+                </file>
             </activation>
             <modules>
-                <module>accumulo/service</module>
-                <module>audit/service</module>
-                <module>authorization/service</module>
+                <module>accumulo</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>audit-submodule</id>
+            <activation>
+                <file>
+                    <exists>audit/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>audit</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>authorization-submodule</id>
+            <activation>
+                <file>
+                    <exists>authorization/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>authorization</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>config-submodule</id>
+            <activation>
+                <file>
+                    <exists>config/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
                 <module>config</module>
-                <module>dictionary/service</module>
-                <module>hazelcast/service</module>
-                <module>query-metric/service</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>dictionary-submodule</id>
+            <activation>
+                <file>
+                    <exists>dictionary/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>dictionary</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>hazelcast-submodule</id>
+            <activation>
+                <file>
+                    <exists>hazelcast/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>hazelcast</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>query-metric-submodule</id>
+            <activation>
+                <file>
+                    <exists>query-metric/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>query-metric</module>
             </modules>
         </profile>
     </profiles>

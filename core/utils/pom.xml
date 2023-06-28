@@ -10,10 +10,51 @@
     <artifactId>datawave-utils-parent</artifactId>
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
-    <modules>
-        <module>accumulo-utils</module>
-        <module>common-utils</module>
-        <module>metadata-utils</module>
-        <module>type-utils</module>
-    </modules>
+    <modules />
+    <profiles>
+        <profile>
+            <id>accumulo-utils-submodule</id>
+            <activation>
+                <file>
+                    <exists>accumulo-utils/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>accumulo-utils</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>common-utils-submodule</id>
+            <activation>
+                <file>
+                    <exists>common-utils/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>common-utils</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>metadata-utils-submodule</id>
+            <activation>
+                <file>
+                    <exists>metadata-utils/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>metadata-utils</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>type-utils-submodule</id>
+            <activation>
+                <file>
+                    <exists>type-utils/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>type-utils</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

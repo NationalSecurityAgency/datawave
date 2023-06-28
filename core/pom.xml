@@ -11,9 +11,6 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
-        <module>base-rest-responses</module>
-        <module>in-memory-accumulo</module>
-        <module>metrics-reporter</module>
         <module>utils</module>
     </modules>
     <scm>
@@ -96,4 +93,39 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>base-rest-responses-submodule</id>
+            <activation>
+                <file>
+                    <exists>base-rest-responses/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>base-rest-responses</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>in-memory-accumulo-submodule</id>
+            <activation>
+                <file>
+                    <exists>in-memory-accumulo/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>in-memory-accumulo</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>metrics-reporter-submodule</id>
+            <activation>
+                <file>
+                    <exists>metrics-reporter/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>metrics-reporter</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>
