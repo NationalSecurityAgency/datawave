@@ -11,9 +11,31 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
-        <module>microservice-parent</module>
-        <module>microservice-service-parent</module>
         <module>services</module>
         <module>starters</module>
     </modules>
+    <profiles>
+        <profile>
+            <id>microservice-parent-submodule</id>
+            <activation>
+                <file>
+                    <exists>microservice-parent/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>microservice-parent</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>microservice-service-parent-submodule</id>
+            <activation>
+                <file>
+                    <exists>microservice-service-parent/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>microservice-service-parent</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

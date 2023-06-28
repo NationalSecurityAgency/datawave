@@ -11,17 +11,14 @@
     <packaging>pom</packaging>
     <name>${project.artifactId}</name>
     <modules>
-        <module>base-rest-responses</module>
         <module>cached-results</module>
         <module>common</module>
         <module>common-util</module>
         <module>connection-pool</module>
-        <module>in-memory-accumulo</module>
         <module>map-reduce</module>
-        <module>metrics-reporter</module>
+        <module>modification</module>
         <module>query</module>
         <module>utils</module>
-        <module>modification</module>
     </modules>
     <scm>
         <connection>scm:git:https://fixme/git/core/</connection>
@@ -103,4 +100,39 @@
             </plugins>
         </pluginManagement>
     </build>
+    <profiles>
+        <profile>
+            <id>base-rest-responses-submodule</id>
+            <activation>
+                <file>
+                    <exists>base-rest-responses/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>base-rest-responses</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>in-memory-accumulo-submodule</id>
+            <activation>
+                <file>
+                    <exists>in-memory-accumulo/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>in-memory-accumulo</module>
+            </modules>
+        </profile>
+        <profile>
+            <id>metrics-reporter-submodule</id>
+            <activation>
+                <file>
+                    <exists>metrics-reporter/pom.xml</exists>
+                </file>
+            </activation>
+            <modules>
+                <module>metrics-reporter</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

@@ -57,7 +57,7 @@ jobs:
         cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
-        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -DskipServices -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -DskipServices -Ddeploy -Ddist -T1C -pl '!:config-service' clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
@@ -85,7 +85,7 @@ jobs:
             ${{ runner.os }}-maven-
       - name: Build Project
         run: |
-          BUILD="mvn -V -B -e -Pdev,examples,assemble,spotbugs -DskipServices -Ddeploy -Ddist -T1C clean install -DskipTests"
+          BUILD="mvn -V -B -e -Pdev,examples,assemble,spotbugs -DskipServices -Ddeploy -Ddist -T1C -pl '!:config-service' clean install -DskipTests"
           $BUILD
       - name: Run Microservice Unit Tests
         run: |
@@ -121,7 +121,7 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -DskipServices -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -DskipServices -Ddeploy -Dtar -DskipTests -pl '!:config-service' clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
       run: |
         TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
