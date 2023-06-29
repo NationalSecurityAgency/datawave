@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -588,7 +589,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     private void compilePatterns() {
-        Multimap<Matcher,datawave.data.type.Type<?>> patterns = HashMultimap.create();
+        Multimap<Matcher,datawave.data.type.Type<?>> patterns = LinkedListMultimap.create();
         if (typePatternMap != null) {
             for (String pattern : typePatternMap.keySet()) {
                 patterns.putAll(compileFieldNamePattern(pattern), typePatternMap.get(pattern));
