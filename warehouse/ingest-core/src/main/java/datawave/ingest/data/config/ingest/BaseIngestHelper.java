@@ -94,7 +94,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     public static final String FIELD_TYPE = ".data.field.type.class";
 
     /**
-     * Configuration parameter to specify whether to specify whether to use type regex hierarchy. If true, this will use the datatype associated with the "most
+     * Configuration parameter to specify whether to use type regex hierarchy. If true, this will use the datatype associated with the "most
      * precise" regex. If false, all matching datatypes will be used.
      */
     public static final String USE_MOST_PRECISE_FIELD_TYPE_REGEX = "use.most.precise.field.type.regex";
