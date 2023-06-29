@@ -625,7 +625,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
                     if (useMostPreciseFieldTypeRegex) {
                         int patternLength = patternMatcher.pattern().toString().length();
-                        if (patternLengths.contains(Integer.valueOf(patternLength))) {
+                        if (patternLengths.contains(patternLength)) {
                             log.error("Multiple regular expression patterns with the same length exist for matching field " + fieldName
                                             + ". Please verify your configurations.");
                         }
