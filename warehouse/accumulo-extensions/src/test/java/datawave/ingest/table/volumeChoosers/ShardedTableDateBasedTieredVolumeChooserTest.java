@@ -1,8 +1,7 @@
 package datawave.ingest.table.volumeChoosers;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -11,10 +10,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.data.TabletId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
 import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
-import org.apache.accumulo.server.fs.VolumeChooser;
 import org.apache.hadoop.io.Text;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
