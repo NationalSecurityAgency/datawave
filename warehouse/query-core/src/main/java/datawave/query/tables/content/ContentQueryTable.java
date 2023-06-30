@@ -187,7 +187,7 @@ public class ContentQueryTable extends BaseQueryLogic<Entry<Key,Value>> {
                     valueIdentifier = term;
                 }
                 
-                // Remove the identifier if present - we won't it here, but will extract them from the query
+                // Remove the identifier if present - we won't use it here, but will extract them from the query
                 // later in the ContentQueryTransformer
                 int idSeparation = valueIdentifier.indexOf("!");
                 final String value = idSeparation > 0 ? valueIdentifier.substring(0, idSeparation) : valueIdentifier;
