@@ -168,6 +168,12 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${version.caffeine}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.google.code.findbugs</groupId>
@@ -184,6 +190,16 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.google-guava}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -581,6 +597,12 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-configuration2</artifactId>
                 <version>${version.commons-configuration2}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.apache.commons</groupId>
+                        <artifactId>commons-lang3</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -1416,6 +1438,17 @@
                                     </bannedDependencies>
                                 </rules>
                                 <fail>true</fail>
+                            </configuration>
+                        </execution>
+                        <execution>
+                            <id>enforce-versions</id>
+                            <goals>
+                                <goal>enforce</goal>
+                            </goals>
+                            <configuration>
+                                <rules>
+                                    <dependencyConvergence />
+                                </rules>
                             </configuration>
                         </execution>
                     </executions>
