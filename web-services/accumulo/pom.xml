@@ -13,6 +13,16 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-jaxb-annotations</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.xml.bind</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>
@@ -30,6 +40,12 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>

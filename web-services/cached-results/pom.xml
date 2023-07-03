@@ -29,6 +29,12 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>query-metric-api</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>javax.enterprise</groupId>
