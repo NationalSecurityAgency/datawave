@@ -1,7 +1,26 @@
 package datawave.query.iterator;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -11,23 +30,6 @@ import datawave.query.function.deserializer.DocumentDeserializer;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.predicate.ParentRangeProvider;
 import datawave.query.predicate.TimeFilter;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.SortedMapIterator;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class ParentQueryIteratorTest {
 
@@ -42,9 +44,9 @@ public class ParentQueryIteratorTest {
     @Test
     public void test() throws Throwable {
         ParentQueryIterator qitr = new ParentQueryIterator();
-        Map<String, String> options = Maps.newHashMap();
+        Map<String,String> options = Maps.newHashMap();
 
-        SortedMap<Key, Value> data = QueryIteratorTest.createTestData(ID_PREFIX + "idpart3");
+        SortedMap<Key,Value> data = QueryIteratorTest.createTestData(ID_PREFIX + "idpart3");
 
         createChildren(data);
 
@@ -70,14 +72,14 @@ public class ParentQueryIteratorTest {
 
         qitr.init(new SortedMapIterator(data), options, new SourceManagerTest.MockIteratorEnvironment());
         qitr.seek(new Range(new Key("20121126_0", "foobar\u0000idpart1.idpart2.idpart31"), true, new Key("2121126_0", "foobar\u0000idpart1.idpart2" + "\0"),
-                false), Collections.<ByteSequence>emptySet(), false);
+                        false), Collections.<ByteSequence> emptySet(), false);
 
         assertTrue(qitr.hasTop());
         Key topKey = qitr.getTopKey();
         Key expectedKey = new Key("20121126_0", "foobar\0" + ID_PREFIX + "idpart31.1", QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp());
         assertEquals(expectedKey, topKey);
 
-        Entry<Key, Document> doc = deserializer.apply(Maps.immutableEntry(topKey, qitr.getTopValue()));
+        Entry<Key,Document> doc = deserializer.apply(Maps.immutableEntry(topKey, qitr.getTopValue()));
 
         Attribute<?> recordId = doc.getValue().get(Document.DOCKEY_FIELD_NAME);
         if (recordId instanceof Attributes) {
@@ -127,7 +129,7 @@ public class ParentQueryIteratorTest {
         assertEquals(ParentRangeProvider.class.getSimpleName(), provider.getClass().getSimpleName());
     }
 
-    private void createChildren(SortedMap<Key, Value> map) {
+    private void createChildren(SortedMap<Key,Value> map) {
         long ts = QueryIteratorTest.getTimeStamp();
 
         long ts2 = ts + 10000;
@@ -165,9 +167,9 @@ public class ParentQueryIteratorTest {
     @Test
     public void testParentFiOnlyDocsAllowed() throws Throwable {
         ParentQueryIterator qitr = new ParentQueryIterator();
-        Map<String, String> options = Maps.newHashMap();
+        Map<String,String> options = Maps.newHashMap();
 
-        SortedMap<Key, Value> data = QueryIteratorTest.createTestData(ID_PREFIX + "idpart3");
+        SortedMap<Key,Value> data = QueryIteratorTest.createTestData(ID_PREFIX + "idpart3");
 
         createOrphanedChildren(data);
 
@@ -193,14 +195,14 @@ public class ParentQueryIteratorTest {
 
         qitr.init(new SortedMapIterator(data), options, new SourceManagerTest.MockIteratorEnvironment());
         qitr.seek(new Range(new Key("20121126_2", "foobar\u0000idpart1.idpart2.idpart34"), true, new Key("2121126_3", "foobar\u0000idpart1.idpart2.idpart35"),
-                false), Collections.<ByteSequence>emptySet(), false);
+                        false), Collections.<ByteSequence> emptySet(), false);
 
         assertTrue(qitr.hasTop());
         Key topKey = qitr.getTopKey();
         Key expectedKey = new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart36.1", QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp());
         assertEquals(expectedKey, topKey);
 
-        Entry<Key, Document> doc = deserializer.apply(Maps.immutableEntry(topKey, qitr.getTopValue()));
+        Entry<Key,Document> doc = deserializer.apply(Maps.immutableEntry(topKey, qitr.getTopValue()));
 
         Attribute<?> recordId = doc.getValue().get(Document.DOCKEY_FIELD_NAME);
         if (recordId instanceof Attributes) {
@@ -230,9 +232,9 @@ public class ParentQueryIteratorTest {
     @Test
     public void testParentNoFiOnlyDocs() throws Throwable {
         ParentQueryIterator qitr = new ParentQueryIterator();
-        Map<String, String> options = Maps.newHashMap();
+        Map<String,String> options = Maps.newHashMap();
 
-        SortedMap<Key, Value> data = QueryIteratorTest.createTestData(ID_PREFIX + "idpart3");
+        SortedMap<Key,Value> data = QueryIteratorTest.createTestData(ID_PREFIX + "idpart3");
 
         createOrphanedChildren(data);
 
@@ -259,14 +261,14 @@ public class ParentQueryIteratorTest {
 
         qitr.init(new SortedMapIterator(data), options, new SourceManagerTest.MockIteratorEnvironment());
         qitr.seek(new Range(new Key("20121126_2", "foobar\u0000idpart1.idpart2.idpart34"), true, new Key("2121126_3", "foobar\u0000idpart1.idpart2.idpart35"),
-                false), Collections.<ByteSequence>emptySet(), false);
+                        false), Collections.<ByteSequence> emptySet(), false);
 
         assertTrue(qitr.hasTop());
         Key topKey = qitr.getTopKey();
         Key expectedKey = new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart36.1", QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp());
         assertEquals(expectedKey, topKey);
 
-        Entry<Key, Document> doc = deserializer.apply(Maps.immutableEntry(topKey, qitr.getTopValue()));
+        Entry<Key,Document> doc = deserializer.apply(Maps.immutableEntry(topKey, qitr.getTopValue()));
 
         Attribute<?> recordId = doc.getValue().get(Document.DOCKEY_FIELD_NAME);
         if (recordId instanceof Attributes) {
@@ -293,7 +295,7 @@ public class ParentQueryIteratorTest {
         assertFalse(qitr.hasTop());
     }
 
-    private void createOrphanedChildren(SortedMap<Key, Value> map) {
+    private void createOrphanedChildren(SortedMap<Key,Value> map) {
         long ts = QueryIteratorTest.getTimeStamp();
 
         long ts3 = ts + 200123;
@@ -320,15 +322,15 @@ public class ParentQueryIteratorTest {
     public void testTearDown() throws Exception {
         SortedMapIterator iter = new SortedMapIterator(QueryIteratorTest.createTestData(ID_PREFIX + "idpart3"));
         Set<Key> expectation = Sets.newHashSet(
-                new Key("20121126_0", "foobar\0" + ID_PREFIX + "idpart3" + 1, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
-                new Key("20121126_0", "foobar\0" + ID_PREFIX + "idpart3" + 2, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
-                new Key("20121126_0", "foobar\0" + ID_PREFIX + "idpart3" + 3, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
-                new Key("20121126_1", "foobar\0" + ID_PREFIX + "idpart3" + 5, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
-                new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart3" + 7, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
-                new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart3" + 8, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
-                new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart39", QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()));
+                        new Key("20121126_0", "foobar\0" + ID_PREFIX + "idpart3" + 1, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
+                        new Key("20121126_0", "foobar\0" + ID_PREFIX + "idpart3" + 2, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
+                        new Key("20121126_0", "foobar\0" + ID_PREFIX + "idpart3" + 3, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
+                        new Key("20121126_1", "foobar\0" + ID_PREFIX + "idpart3" + 5, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
+                        new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart3" + 7, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
+                        new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart3" + 8, QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()),
+                        new Key("20121126_2", "foobar\0" + ID_PREFIX + "idpart39", QueryIteratorTest.DEFAULT_CQ, "", QueryIteratorTest.getTimeStamp()));
 
-        Map<String, String> options = Maps.newHashMap();
+        Map<String,String> options = Maps.newHashMap();
 
         options.put(QueryOptions.DISABLE_EVALUATION, "false");
         options.put(QueryOptions.QUERY, "FOO == 'bar' && BAR == 'foo'");
@@ -350,8 +352,7 @@ public class ParentQueryIteratorTest {
 
         qi.init(iter, options, new SourceManagerTest.MockIteratorEnvironment());
 
-        qi.seek(new Range(new Key("20121126"), false, new Key("20121127"), false),
-                Collections.<ByteSequence>emptyList(), false);
+        qi.seek(new Range(new Key("20121126"), false, new Key("20121127"), false), Collections.<ByteSequence> emptyList(), false);
 
         while (qi.hasTop()) {
             System.out.println("begin loop1: " + expectation);
@@ -375,7 +376,7 @@ public class ParentQueryIteratorTest {
         qi.init(iter, options, new SourceManagerTest.MockIteratorEnvironment());
 
         qi.seek(new Range(new Key("20121126_1", "foobar\0" + ID_PREFIX + "idpart35"), false, new Key("20121127"), false),
-                Collections.<ByteSequence>emptyList(), false);
+                        Collections.<ByteSequence> emptyList(), false);
 
         while (qi.hasTop()) {
             Key tk = qi.getTopKey();

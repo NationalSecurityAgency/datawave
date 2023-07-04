@@ -4,17 +4,18 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import com.google.common.base.Objects;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.WritableComparable;
 
+import com.google.common.base.Objects;
+
 public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
     private String term, field, type, date, columnVisibility;
     private final VLongWritable count;
     private final MapWritable countsByColumnVisibility;
-    
+
     public DiscoveredThing(String term, String field, String type, String date, String columnVisibility, long count, MapWritable countsByColumnVisibility) {
         this.term = term;
         this.field = field;
@@ -24,40 +25,40 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
         this.count = new VLongWritable(count);
         this.countsByColumnVisibility = countsByColumnVisibility;
     }
-    
+
     public DiscoveredThing() {
         count = new VLongWritable();
         countsByColumnVisibility = new MapWritable();
     }
-    
+
     public String getTerm() {
         return term;
     }
-    
+
     public String getField() {
         return field;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public String getDate() {
         return date;
     }
-    
+
     public String getColumnVisibility() {
         return columnVisibility;
     }
-    
+
     public long getCount() {
         return count.get();
     }
-    
+
     public MapWritable getCountsByColumnVisibility() {
         return countsByColumnVisibility;
     }
-    
+
     @Override
     public void write(DataOutput out) throws IOException {
         out.writeUTF(term);
@@ -68,7 +69,7 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
         count.write(out);
         countsByColumnVisibility.write(out);
     }
-    
+
     @Override
     public void readFields(DataInput in) throws IOException {
         term = in.readUTF();
@@ -79,7 +80,7 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
         count.readFields(in);
         countsByColumnVisibility.readFields(in);
     }
-    
+
     @Override
     public int compareTo(DiscoveredThing o) {
         CompareToBuilder cmp = new CompareToBuilder();
@@ -95,7 +96,7 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
             return cmp.toComparison();
         }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof DiscoveredThing))
@@ -105,12 +106,12 @@ public class DiscoveredThing implements WritableComparable<DiscoveredThing> {
                         && Objects.equal(getDate(), other.getDate()) && Objects.equal(getColumnVisibility(), other.getColumnVisibility())
                         && Objects.equal(getCount(), other.getCount());
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hashCode(getTerm(), getField(), getType(), getDate(), getColumnVisibility(), getCount());
     }
-    
+
     @Override
     public String toString() {
         return "DiscoveredThing [term=" + term + ", field=" + field + ", type=" + type + ", date=" + date + ", columnVisibility=" + columnVisibility

@@ -80,16 +80,16 @@ public abstract class GroupingTest {
     
     @RunWith(Arquillian.class)
     public static class ShardRange extends GroupingTest {
-        
+
         @Override
         protected String getRange() {
             return "SHARD";
         }
     }
-    
+
     @RunWith(Arquillian.class)
     public static class DocumentRange extends GroupingTest {
-        
+
         @Override
         protected String getRange() {
             return "DOCUMENT";
@@ -249,7 +249,7 @@ public abstract class GroupingTest {
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
     protected KryoDocumentDeserializer deserializer;
-    
+
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
     private final Map<String,String> queryParameters = new HashMap<>();
     private final Map<SortedSet<String>,Group> expectedGroups = new HashMap<>();
@@ -433,7 +433,7 @@ public abstract class GroupingTest {
         settings.setQuery(this.query);
         settings.setParameters(this.queryParameters);
         settings.setId(UUID.randomUUID());
-        
+
         log.debug("query: " + settings.getQuery());
         log.debug("queryLogicName: " + settings.getQueryLogicName());
         
@@ -459,7 +459,7 @@ public abstract class GroupingTest {
         PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         return client;
     }
-    
+
     @Test
     public void testGroupByAgeAndGenderWithBatchSizeOfSix() throws Exception {
         givenNonModelData();

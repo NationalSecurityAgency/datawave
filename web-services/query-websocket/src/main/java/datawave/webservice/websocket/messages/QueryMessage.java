@@ -7,6 +7,6 @@ public interface QueryMessage {
     enum Type {
         CREATE, CANCEL
     }
-    
+
     Type getType();
 }

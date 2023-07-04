@@ -1,13 +1,8 @@
 package datawave.query.util;
 
-import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
-import datawave.data.type.Type;
-import datawave.ingest.protobuf.Uid;
-import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import java.util.Date;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -17,18 +12,24 @@ import org.apache.accumulo.core.iterators.user.SummingCombiner;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
+import datawave.data.ColumnFamilyConstants;
+import datawave.data.hash.UID;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
+import datawave.data.type.Type;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 
 public class VisibilityWiseGuysIngest {
-    
+
     public enum WhatKindaRange {
         SHARD, DOCUMENT;
     }
-    
+
     private static final Type<?> lcNoDiacriticsType = new LcNoDiacriticsType();
     private static final Type<?> numberType = new NumberType();
-    
+
     protected static final String datatype = "test";
     protected static final String date = "20130101";
     protected static final String shard = date + "_0";
@@ -37,7 +38,7 @@ public class VisibilityWiseGuysIngest {
     protected static final ColumnVisibility columnVisibilityItalian = new ColumnVisibility("ALL&I");
     protected static final Value emptyValue = new Value(new byte[0]);
     protected static final long timeStamp = 1356998400000l;
-    
+
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
@@ -47,11 +48,11 @@ public class VisibilityWiseGuysIngest {
     }
     
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
-        
+
         BatchWriter bw = null;
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
         Mutation mutation = null;
-        
+
         try {
             // write the shard table :
             bw = client.createBatchWriter(TableName.SHARD, bwConfig);
@@ -113,15 +114,15 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "RECORD" + "\u0000" + "3", columnVisibilityItalian, timeStamp, emptyValue);
-            
+
             bw.addMutation(mutation);
-            
+
         } finally {
             if (null != bw) {
                 bw.close();
             }
         }
-        
+
         try {
             // write shard index table:
             bw = client.createBatchWriter(TableName.SHARD_INDEX, bwConfig);
@@ -131,7 +132,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
             bw.addMutation(mutation);
-            
+
             // sopranos
             // uuid
             mutation = new Mutation(lcNoDiacriticsType.normalize("SOPRANO"));
@@ -144,7 +145,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put("UUID".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
             bw.addMutation(mutation);
-            
+
             // corleone names
             mutation = new Mutation(lcNoDiacriticsType.normalize("SANTINO"));
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
@@ -170,7 +171,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID));
             bw.addMutation(mutation);
-            
+
             // soprano names
             mutation = new Mutation(lcNoDiacriticsType.normalize("ANTHONY"));
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
@@ -180,7 +181,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
             bw.addMutation(mutation);
-            
+
             // capone names
             mutation = new Mutation(lcNoDiacriticsType.normalize("ALPHONSE"));
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
@@ -194,7 +195,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put("NAME".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
             bw.addMutation(mutation);
-            
+
             // genders
             mutation = new Mutation(lcNoDiacriticsType.normalize("MALE"));
             mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
@@ -204,7 +205,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put("GENDER".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID, corleoneUID));
             bw.addMutation(mutation);
-            
+
             // ages
             mutation = new Mutation(numberType.normalize("24"));
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
@@ -228,12 +229,12 @@ public class VisibilityWiseGuysIngest {
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityItalian, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(corleoneUID, caponeUID));
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation(numberType.normalize("16"));
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(sopranoUID));
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation(numberType.normalize("30"));
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
@@ -246,19 +247,19 @@ public class VisibilityWiseGuysIngest {
             mutation.put("AGE".toUpperCase(), shard + "\u0000" + datatype, columnVisibilityEnglish, timeStamp,
                             range == WhatKindaRange.SHARD ? getValueForNuthinAndYourHitsForFree() : getValueForBuilderFor(caponeUID));
             bw.addMutation(mutation);
-            
+
         } finally {
             if (null != bw) {
                 bw.close();
             }
         }
-        
+
         try {
-            
+
             // write the field index table:
-            
+
             bw = client.createBatchWriter(TableName.SHARD, bwConfig);
-            
+
             mutation = new Mutation(shard);
             // corleones
             // uuid
@@ -293,7 +294,7 @@ public class VisibilityWiseGuysIngest {
                             emptyValue);
             mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + corleoneUID, columnVisibilityItalian, timeStamp,
                             emptyValue);
-            
+
             // sopranos
             // uuid
             mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("SOPRANO") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibilityEnglish,
@@ -313,7 +314,7 @@ public class VisibilityWiseGuysIngest {
                             emptyValue);
             mutation.put("fi\u0000" + "AGE", numberType.normalize("18") + "\u0000" + datatype + "\u0000" + sopranoUID, columnVisibilityEnglish, timeStamp,
                             emptyValue);
-            
+
             // capones
             // uuid
             mutation.put("fi\u0000" + "UUID", lcNoDiacriticsType.normalize("CAPONE") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibilityEnglish,
@@ -345,19 +346,19 @@ public class VisibilityWiseGuysIngest {
                             emptyValue);
             mutation.put("fi\u0000" + "AGE", numberType.normalize("40") + "\u0000" + datatype + "\u0000" + caponeUID, columnVisibilityEnglish, timeStamp,
                             emptyValue);
-            
+
             bw.addMutation(mutation);
-            
+
         } finally {
             if (null != bw) {
                 bw.close();
             }
         }
-        
+
         try {
             // write metadata table:
             bw = client.createBatchWriter(QueryTestTableHelper.MODEL_TABLE_NAME, bwConfig);
-            
+
             mutation = new Mutation("NAME");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(10L)));
@@ -365,7 +366,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("GENDER");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(11L)));
@@ -373,7 +374,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("AGE");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
@@ -381,7 +382,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + numberType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("UUID");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(3L)));
@@ -389,7 +390,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + lcNoDiacriticsType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("BIRTHDAY");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(12L)));
@@ -397,7 +398,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(ColumnFamilyConstants.COLF_RI, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_T, new Text(datatype + "\u0000" + numberType.getClass().getName()), emptyValue);
             bw.addMutation(mutation);
-            
+
             mutation = new Mutation("RECORD");
             mutation.put(ColumnFamilyConstants.COLF_E, new Text(datatype), emptyValue);
             mutation.put(ColumnFamilyConstants.COLF_F, new Text(datatype + "\u0000" + date), new Value(SummingCombiner.VAR_LEN_ENCODER.encode(7L)));
@@ -408,9 +409,9 @@ public class VisibilityWiseGuysIngest {
                 bw.close();
             }
         }
-        
+
     }
-    
+
     private static Value getValueForBuilderFor(String... in) {
         Uid.List.Builder builder = Uid.List.newBuilder();
         for (String s : in) {

@@ -6,43 +6,43 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.attributes.ValueTuple;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
 import datawave.data.type.Type;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.attributes.ValueTuple;
 
 public class HitListArithmetic extends DatawaveArithmetic implements StatefulArithmetic {
-    
+
     private static final Logger log = Logger.getLogger(HitListArithmetic.class);
-    
+
     private static final String LESS_THAN = "<", GREATER_THAN = ">", LESS_THAN_OR_EQUAL = "<=", GREATER_THAN_OR_EQUAL = ">=";
-    
+
     private Set<ValueTuple> hitSet = new HashSet<>();
-    
+
     // if exhaustiveHits is true, then all matches are added to a hit set when iterating over a set of values instead of
     // only the first one that matches/equals/etc... This would be more expensive of course but is required for some
     // query logics such as the ancestor query logic.
     private boolean exhaustiveHits = false;
-    
+
     /**
      * Default to being lenient so we don't have to add "null" for every field in the query that doesn't exist in the document
      */
     public HitListArithmetic() {
         super(false);
     }
-    
+
     public HitListArithmetic(boolean exhaustiveHits) {
         this();
         setExhaustiveHits(exhaustiveHits);
     }
-    
+
     /**
      * We need to clone this arithmetic, but we do NOT want to include the stateful elements such as hitSet. This is implemented for the StatefulArithmetic
      * interface.
@@ -51,15 +51,15 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
     public HitListArithmetic clone() {
         return new HitListArithmetic(this.exhaustiveHits);
     }
-    
+
     public void setExhaustiveHits(boolean value) {
         this.exhaustiveHits = value;
     }
-    
+
     public boolean isExhaustiveHits() {
         return this.exhaustiveHits;
     }
-    
+
     /**
      * This method differs from the parent in that we are not calling String.matches() because it does not match on a newline. Instead we are handling this
      * case.
@@ -81,16 +81,16 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             // we know both aren't null, therefore L != R
             return false;
         }
-        
+
         Set<Object> elements;
-        
+
         // for every element in left, check if one matches the right pattern
         if (left instanceof Set) {
             elements = (Set<Object>) left;
         } else {
             elements = Collections.singleton(left);
         }
-        
+
         Set<Pattern> patterns;
         if (right instanceof Pattern) {
             patterns = Collections.singleton((Pattern) right);
@@ -106,13 +106,13 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         } else {
             patterns = Collections.singleton(JexlPatternCache.getPattern(right.toString()));
         }
-        
+
         boolean matches = false;
         for (final Object o : elements) {
             // normalize the element
             Object normalizedO = ValueTuple.getNormalizedValue(o);
             Object unnormalizedO = ValueTuple.getValue(o);
-            
+
             for (Pattern p : patterns) {
                 if (p.matcher(normalizedO.toString()).matches() || p.matcher(unnormalizedO.toString()).matches()) {
                     this.hitSet.add(ValueTuple.toValueTuple(o));
@@ -124,10 +124,10 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                 }
             }
         }
-        
+
         return matches;
     }
-    
+
     /**
      * This method differs from the parent class in that we are going to try and do a better job of coercing the types. As a last resort we will do a string
      * comparison and try not to throw a NumberFormatException. The JexlArithmetic class performs coercion to a particular type if either the left or the right
@@ -142,7 +142,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             Set<Object> set = (Set<Object>) left;
             Object normalizedRight = ValueTuple.getNormalizedValue(right);
             boolean matches = false;
-            
+
             for (final Object o : set) {
                 // take advantage of numeric conversions
                 // normalize the right side value
@@ -161,11 +161,11 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                 }
             }
             return matches;
-            
+
         } else if (!(left instanceof Set) && right instanceof Set) {
             // if multiple possible right hand values, then true if any intersection
             Set<Object> set = (Set<Object>) right;
-            
+
             boolean matches = false;
             Object normalizedLeft = ValueTuple.getNormalizedValue(left);
             for (final Object o : set) {
@@ -180,7 +180,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                 }
             }
             return matches;
-            
+
         } else if (left instanceof Set && right instanceof Set) {
             // both are sets
             Set<Object> rightSet = (Set<Object>) right;
@@ -199,7 +199,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                 }
             }
             return false;
-            
+
         }
         Object normalizedLeft = ValueTuple.getNormalizedValue(left);
         Object normalizedRight = ValueTuple.getNormalizedValue(right);
@@ -209,7 +209,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return superStatus;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public boolean lessThan(final Object left, final Object right) {
@@ -230,18 +230,18 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     }
                 }
             }
-            
+
             return matches;
         } else if (right instanceof Set) {
             Set<Object> set = (Set<Object>) right;
-            
+
             boolean matches = false;
             for (final Object o : set) {
                 Object normalizedLeft = ValueTuple.getNormalizedValue(left);
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
                 if (lessThan(normalizedLeft, normalizedO)) {
                     this.addTheCorrectHitSetValue(hitSet, left, o);
-                    
+
                     if (!exhaustiveHits) {
                         return true;
                     } else {
@@ -251,7 +251,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
             }
             return matches;
         }
-        
+
         Object normalizedLeft = ValueTuple.getNormalizedValue(left);
         Object normalizedRight = ValueTuple.getNormalizedValue(right);
         boolean superStatus = super.lessThan(normalizedLeft, normalizedRight);
@@ -260,7 +260,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return superStatus;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public boolean lessThanOrEqual(final Object left, final Object right) {
@@ -268,7 +268,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         // When one variable is a Set, check for existence for one value that satisfies the lessThan operator
         if (left instanceof Set && !(right instanceof Set)) {
             Set<Object> set = (Set<Object>) left;
-            
+
             boolean matches = false;
             for (final Object o : set) {
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
@@ -286,14 +286,14 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     }
                 }
             }
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("lessThanOrEqual 1 returning " + Boolean.toString(matches).toUpperCase());
             }
             return matches;
         } else if (right instanceof Set) {
             Set<Object> set = (Set<Object>) right;
-            
+
             boolean matches = false;
             for (final Object o : set) {
                 Object normalizedLeft = ValueTuple.getNormalizedValue(left);
@@ -311,13 +311,13 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     }
                 }
             }
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("lessThanOrEqual 2 returning " + Boolean.toString(matches).toUpperCase());
             }
             return matches;
         }
-        
+
         Object normalizedLeft = ValueTuple.getNormalizedValue(left);
         Object normalizedRight = ValueTuple.getNormalizedValue(right);
         boolean superStatus = super.lessThanOrEqual(normalizedLeft, normalizedRight);
@@ -329,7 +329,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return superStatus;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public boolean greaterThan(final Object left, final Object right) {
@@ -337,7 +337,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         // When one variable is a Set, check for existence for one value that satisfies the greaterThan operator
         if (left instanceof Set && !(right instanceof Set)) {
             Set<Object> set = (Set<Object>) left;
-            
+
             boolean matches = false;
             for (final Object o : set) {
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
@@ -355,14 +355,14 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     }
                 }
             }
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("greaterThan 1 returning " + Boolean.toString(matches).toUpperCase());
             }
             return matches;
         } else if (right instanceof Set) {
             Set<Object> set = (Set<Object>) right;
-            
+
             boolean matches = false;
             for (final Object o : set) {
                 Object normalizedLeft = ValueTuple.getNormalizedValue(left);
@@ -380,13 +380,13 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     }
                 }
             }
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("greaterThan 2 returning " + Boolean.toString(matches).toUpperCase());
             }
             return matches;
         }
-        
+
         Object normalizedLeft = ValueTuple.getNormalizedValue(left);
         Object normalizedRight = ValueTuple.getNormalizedValue(right);
         boolean superStatus = super.greaterThan(normalizedLeft, normalizedRight);
@@ -398,7 +398,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return superStatus;
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public boolean greaterThanOrEqual(final Object left, final Object right) {
@@ -406,7 +406,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         // When one variable is a Set, check for existence for one value that satisfies the greaterThan operator
         if (left instanceof Set && !(right instanceof Set)) {
             Set<Object> set = (Set<Object>) left;
-            
+
             boolean matches = false;
             for (final Object o : set) {
                 Object normalizedO = ValueTuple.getNormalizedValue(o);
@@ -424,14 +424,14 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     }
                 }
             }
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("greaterThanOrEqual 1 returning " + Boolean.toString(matches).toUpperCase());
             }
             return matches;
         } else if (right instanceof Set) {
             Set<Object> set = (Set<Object>) right;
-            
+
             boolean matches = false;
             for (final Object o : set) {
                 Object normalizedLeft = ValueTuple.getNormalizedValue(left);
@@ -449,13 +449,13 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                     }
                 }
             }
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("greaterThanOrEqual 2 returning " + Boolean.toString(matches).toUpperCase());
             }
             return matches;
         }
-        
+
         Object normalizedLeft = ValueTuple.getNormalizedValue(left);
         Object normalizedRight = ValueTuple.getNormalizedValue(right);
         boolean superStatus = super.greaterThanOrEqual(normalizedLeft, normalizedRight);
@@ -467,7 +467,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return superStatus;
     }
-    
+
     @Override
     public long toLong(Object val) {
         if (val == null) {
@@ -499,13 +499,13 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         } else if (val instanceof Character) {
             return (Character) val;
         }
-        
+
         throw new ArithmeticException("Long coercion: " + val.getClass().getName() + ":(" + val + ")");
     }
-    
+
     /**
      * Convert the left hand object if required to the same numberic class as the right hand side.
-     * 
+     *
      * @param left
      *            the left
      * @param right
@@ -513,35 +513,35 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
      * @return the fixed left hand object
      */
     protected Object fixLeft(Object left, Object right) {
-        
+
         if (null == left || null == right) {
             return left;
         }
-        
+
         Class<? extends Number> rightNumberClass = getNumberClass(right, false);
         boolean rightIsNumber = (rightNumberClass != null);
-        
+
         // if the right is a Number (sans converting String objects)
         if (rightIsNumber) {
             // then convert the left to a number as well
             left = convertToNumber(left, rightNumberClass);
         }
-        
+
         return left;
     }
-    
+
     public Set<ValueTuple> getHitTuples() {
         return hitSet;
     }
-    
+
     public void clear() {
         hitSet.clear();
     }
-    
+
     public void add(ValueTuple hit) {
         hitSet.add(hit);
     }
-    
+
     public Set<String> getHitSet() {
         Set<String> hits = new HashSet<>();
         for (ValueTuple value : hitSet) {
@@ -549,7 +549,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return hits;
     }
-    
+
     private void addTheCorrectHitSetValue(Set<ValueTuple> hitSet, Object left, Object right) {
         // the hitSet should get the value from the one that is a ValueTuple, not the one that is the String
         if (left instanceof ValueTuple) {
@@ -561,7 +561,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
                             + (right != null ? right.getClass() : null));
         }
     }
-    
+
     public static ColumnVisibility getColumnVisibilityForHit(Document document, String hitTerm) {
         Attribute attr = getAttributeForHit(document, hitTerm);
         if (attr != null) {
@@ -569,7 +569,7 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return null;
     }
-    
+
     public static Attribute getAttributeForHit(Document document, String hitTerm) {
         // get the attribute for the record with this hit
         // split the term:
@@ -613,5 +613,5 @@ public class HitListArithmetic extends DatawaveArithmetic implements StatefulAri
         }
         return null; // hitTerm not in Document
     }
-    
+
 }

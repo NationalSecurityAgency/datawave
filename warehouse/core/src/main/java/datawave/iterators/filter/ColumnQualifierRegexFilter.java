@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package datawave.iterators.filter;
 
@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Value;
 public class ColumnQualifierRegexFilter extends RegexFilterBase {
     /**
      * This method returns a {@code String} object containing the column qualifier for {@code Key} object {@code k}
-     * 
+     *
      * @param k
      *            {@code Key} object containing the row, column family, and column qualifier.
      * @param v
@@ -23,5 +23,5 @@ public class ColumnQualifierRegexFilter extends RegexFilterBase {
     protected String getKeyField(Key k, Value v) {
         return k.getColumnQualifier().toString();
     }
-    
+
 }

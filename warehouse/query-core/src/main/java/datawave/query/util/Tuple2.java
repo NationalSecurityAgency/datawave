@@ -4,16 +4,16 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 
 public class Tuple2<A,B> extends Tuple1<A> {
     private B second;
-    
+
     public Tuple2(A first, B second) {
         super(first);
         this.second = second;
     }
-    
+
     public B second() {
         return second;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof Tuple2) {
@@ -23,7 +23,7 @@ public class Tuple2<A,B> extends Tuple1<A> {
             return false;
         }
     }
-    
+
     @Override
     public int hashCode() {
         HashCodeBuilder hc = new HashCodeBuilder();
@@ -31,7 +31,7 @@ public class Tuple2<A,B> extends Tuple1<A> {
         hc.append(second());
         return hc.toHashCode();
     }
-    
+
     @Override
     public String toString() {
         return "[" + first() + "," + second + "]";

@@ -7,7 +7,7 @@ import org.apache.hadoop.io.WritableComparable;
 /**
  * This interface is for objects that can provide copies of a source. The main purpose for this is to allow the appropriate synchronization for creating source
  * copies when used across threads. QueryIterator is an instance of this which is used in the IteratorBuildingVisitor and the SourcePool used for the ivarators.
- * 
+ *
  * @param <K>
  *            type of key
  * @param <V>

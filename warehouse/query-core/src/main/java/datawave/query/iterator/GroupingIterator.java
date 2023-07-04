@@ -31,9 +31,9 @@ import static org.slf4j.LoggerFactory.getLogger;
  * next call on the t-server will flatten the aggregated data into a single Entry&gt;Key,Document&lt; to return to the web server.
  */
 public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
-    
+
     private static final Logger log = getLogger(GroupingIterator.class);
-    
+
     /**
      * The fields to group and aggregate by.
      */
@@ -48,13 +48,13 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
      */
     private final List<Key> keys = new ArrayList<>();
-    
+
     private final MarkingFunctions markingFunctions;
-    
+
     private final int groupFieldsBatchSize;
-    
+
     private final YieldCallback<Key> yieldCallback;
-    
+
     private final Iterator<Map.Entry<Key,Document>> previousIterators;
     
     Map.Entry<Key,Document> next;
@@ -68,7 +68,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
         this.yieldCallback = yieldCallback;
         this.groups = new Groups();
     }
-    
+
     @Override
     public boolean hasNext() {
         for (int i = 0; i < groupFieldsBatchSize; i++) {
@@ -102,7 +102,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
             }
             document = flatten(documents);
         }
-        
+
         if (document != null) {
             Key key;
             if (keys.size() > 0) {
@@ -116,15 +116,15 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
             groups.clear();
             return true;
         }
-        
+
         return false;
     }
-    
+
     @Override
     public Map.Entry<Key,Document> next() {
         return new AbstractMap.SimpleEntry<>(next.getKey(), next.getValue());
     }
-    
+
     /**
      * <pre>
      * flush used the countingMap:
@@ -139,7 +139,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      * [30, MALE],
      * [FEMALE, 18],
      * [34, MALE]]
-     * 
+     *
      * to create documents list: [
      * {AGE=16, COUNT=1, GENDER=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
      * {COUNT=1, ETA=20, GENERE=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
@@ -152,9 +152,9 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      * {AGE=30, COUNT=1, GENDER=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
      * {COUNT=1, ETA=18, GENERE=FEMALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false,
      * {AGE=34, COUNT=1, GENDER=MALE}:20130101_0 test%00;-d5uxna.msizfm.-oxy0iu: [ALL] 1356998400000 false]
-     * 
+     *
      * which is then flattened to just one document with the fields and counts correlated with a grouping context suffix:
-     * 
+     *
      * {
      * AGE.0=16, GENDER.0=MALE, COUNT.0=1,
      * ETA.1=20, GENERE.1=MALE, COUNT.1=1,

@@ -29,9 +29,9 @@ import static org.slf4j.LoggerFactory.getLogger;
  * computed.
  */
 public class GroupingTransform extends DocumentTransform.DefaultDocumentTransform {
-    
+
     private static final Logger log = getLogger(GroupingTransform.class);
-    
+
     /**
      * the fields (user provided) to group by
      */
@@ -43,23 +43,23 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * list of documents to return, created from the countingMap
      */
     private final LinkedList<Document> documents = new LinkedList<>();
-    
+
     /**
      * mapping used to combine field names that map to different model names
      */
     private Map<String,String> reverseModelMapping = null;
-    
+
     /**
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
      */
     private final List<Key> keys = new ArrayList<>();
-    
+
     /**
      * Length of time in milliseconds that a client will wait while results are collected. If a full page is not collected before the timeout, a blank page will
      * be returned to signal the request is still in progress.
      */
     private final long queryExecutionForPageTimeout;
-    
+
     /**
      * Constructor
      *
@@ -88,34 +88,34 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             reverseModelMapping = model.getReverseQueryMapping();
         }
     }
-    
+
     @Nullable
     @Override
     public Entry<Key,Document> apply(@Nullable Entry<Key,Document> keyDocumentEntry) {
         log.trace("apply to {}", keyDocumentEntry);
-        
+
         if (keyDocumentEntry != null) {
-            
+
             // If this is a final document, bail without adding to the keys, countingMap or fieldVisibilities.
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(keyDocumentEntry.getKey())) {
                 return keyDocumentEntry;
             }
-            
+
             keys.add(keyDocumentEntry.getKey());
             log.trace("{} get list key counts for: {}", "web-server", keyDocumentEntry);
             DocumentGrouper.group(keyDocumentEntry, groupFields, groups);
         }
-        
+
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
             Document intermediateResult = new Document();
             intermediateResult.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), intermediateResult);
         }
-        
+
         return null;
     }
-    
+
     @Override
     public Entry<Key,Document> flush() {
         Document document = null;
@@ -124,12 +124,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
                 documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.AVERAGE));
             }
         }
-        
+
         if (!documents.isEmpty()) {
             log.trace("{} will flush first of {} documents: {}", this.hashCode(), documents.size(), documents);
             document = documents.pop();
         }
-        
+
         if (document != null) {
             Key key = document.getMetadata();
             Entry<Key,Document> entry = Maps.immutableEntry(key, document);
@@ -137,7 +137,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             groups.clear();
             return entry;
         }
-        
+
         return null;
     }
 }

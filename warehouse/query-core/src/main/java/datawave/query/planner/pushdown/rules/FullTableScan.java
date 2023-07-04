@@ -2,12 +2,6 @@ package datawave.query.planner.pushdown.rules;
 
 import java.util.List;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.parser.JavaRegexAnalyzer;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.planner.pushdown.Cost;
-
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTERNode;
@@ -18,34 +12,40 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.parser.JavaRegexAnalyzer;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import datawave.query.planner.pushdown.Cost;
+
 /**
  * Purpose: Delays scanning of leading and trailing wild cards when we have a top level and whose other children are indexed.
- * 
+ *
  * Assumptions: Same as parent
  */
 public class FullTableScan extends PushDownRule {
-    
+
     private static final Logger log = Logger.getLogger(FullTableScan.class);
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        
+
         JexlNode returnNode = null;
-        
+
         List<JexlNode> rewrittenNodes = Lists.newArrayList();
         for (int i = 0; i < node.jjtGetNumChildren(); i++) {
             JexlNode child = node.jjtGetChild(i);
             JexlNode rewrittenNode = (JexlNode) child.jjtAccept(this, data);
             rewrittenNodes.add(rewrittenNode);
-            
+
         }
-        
+
         returnNode = JexlNodeFactory.createAndNode(rewrittenNodes);
-        
+
         return returnNode;
-        
+
     }
-    
+
     protected JexlNode reverseDepth(JexlNode parentNode, List<JexlNode> delayedPredicates) {
         JexlNode returnNode = ASTDelayedPredicate.create(parentNode);
         JexlNode newAnd = new ASTAndNode(ParserTreeConstants.JJTANDNODE);
@@ -55,36 +55,36 @@ public class FullTableScan extends PushDownRule {
             i++;
         }
         newAnd.jjtSetParent(returnNode);
-        
+
         returnNode.jjtAddChild(newAnd, 0);
-        
+
         return returnNode;
     }
-    
+
     @Override
     public Object visit(ASTERNode node, Object data) {
-        
+
         /**
          * Only perform this action is we have an AND as a parent and the cost of our node is INFINITE. our getCost method will only return INFINITE if we have
          * a trailing and leading wildcard
          */
         if (isParent(node, ASTAndNode.class) && getCost(node) == Cost.INFINITE) {
-            
+
             return ASTDelayedPredicate.create(node);
-            
+
         }
-        
+
         return super.visit(node, data);
     }
-    
+
     @Override
     public Object visit(ASTJexlScript node, Object data) {
         return (ASTJexlScript) super.visit(node, data);
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.query.planner.pushdown.PushDown#getCost(org.apache.commons.jexl2.parser.JexlNode)
      */
     @Override
@@ -99,6 +99,6 @@ public class FullTableScan extends PushDownRule {
             log.warn("Couldn't parse regex from ERNode: " + pattern);
         }
         return Cost.UNEVALUATED;
-        
+
     }
 }
