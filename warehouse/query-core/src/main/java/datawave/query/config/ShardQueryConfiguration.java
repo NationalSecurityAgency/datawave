@@ -1634,7 +1634,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setFailOutsideValidDateRange(boolean failOutsideValidDateRange) {
         this.failOutsideValidDateRange = failOutsideValidDateRange;
     }
-    
+
     public int getGroupFieldsBatchSize() {
         return groupFieldsBatchSize;
     }
@@ -2440,11 +2440,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
     }
-    
+
     public GroupFields getGroupFields() {
         return groupFields;
     }
-    
+
     public void setGroupFields(GroupFields groupFields) {
         this.groupFields = groupFields;
         // Make sure the fields are deconstructed by this point.

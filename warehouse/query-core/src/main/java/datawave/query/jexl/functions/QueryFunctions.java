@@ -38,7 +38,7 @@ public class QueryFunctions {
     public static final String MIN = "min";
     public static final String COUNT = "count";
     public static final String AVERAGE = "average";
-    
+
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
 
     protected static String getHitTermString(Object valueTuple) {

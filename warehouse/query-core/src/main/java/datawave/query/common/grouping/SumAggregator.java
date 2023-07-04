@@ -1,41 +1,42 @@
 package datawave.query.common.grouping;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Numeric;
-import datawave.query.attributes.TypeAttribute;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Numeric;
+import datawave.query.attributes.TypeAttribute;
+
 /**
  * Calculates the sum of aggregated field values. This is limited to fields for which their values can be parsed as {@link BigDecimal} instances.
  */
 public class SumAggregator extends AbstractAggregator<BigDecimal> {
-    
+
     /**
      * The current sum.
      */
     private BigDecimal sum;
-    
+
     /**
      * The column visibilities of all attributes aggregated.
      */
     private final Set<ColumnVisibility> columnVisibilities;
-    
+
     public static SumAggregator of(String field, TypeAttribute<BigDecimal> attribute) {
         BigDecimal sum = attribute.getType().getDelegate();
         return new SumAggregator(field, sum, attribute.getColumnVisibility());
     }
-    
+
     public SumAggregator(String field) {
         super(field);
         this.columnVisibilities = new HashSet<>();
     }
-    
+
     private SumAggregator(String field, BigDecimal sum, ColumnVisibility visibility) {
         this(field);
         this.sum = sum;
@@ -43,7 +44,7 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
             this.columnVisibilities.add(visibility);
         }
     }
-    
+
     /**
      * Returns {@link AggregateOperation#SUM}.
      *
@@ -53,12 +54,12 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
     public AggregateOperation getOperation() {
         return AggregateOperation.SUM;
     }
-    
+
     @Override
     public Set<ColumnVisibility> getColumnVisibilities() {
         return Collections.unmodifiableSet(columnVisibilities);
     }
-    
+
     /**
      * Return the sum of all values seen for the field.
      *
@@ -68,12 +69,12 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
     public BigDecimal getAggregation() {
         return sum;
     }
-    
+
     @Override
     public boolean hasAggregation() {
         return sum != null;
     }
-    
+
     /**
      * Adds the value into the current sum.
      *
@@ -97,7 +98,7 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
         }
         columnVisibilities.add(value.getColumnVisibility());
     }
-    
+
     @Override
     public void merge(Aggregator<?> other) {
         if (other instanceof SumAggregator) {
@@ -108,7 +109,7 @@ public class SumAggregator extends AbstractAggregator<BigDecimal> {
             throw new IllegalArgumentException("Cannot merge instance of " + other.getAggregation());
         }
     }
-    
+
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("field", field).append("sum", sum).append("columnVisibilities", columnVisibilities).toString();

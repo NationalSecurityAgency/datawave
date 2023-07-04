@@ -54,10 +54,6 @@ import com.google.common.collect.Sets;
 
 import datawave.core.iterators.DatawaveFieldIndexCachingIteratorJexl.HdfsBackedControl;
 import datawave.core.iterators.filesystem.FileSystemCache;
-import datawave.query.attributes.ExcerptFields;
-import datawave.query.common.grouping.GroupFields;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.core.iterators.querylock.QueryLock;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -66,6 +62,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
@@ -291,7 +288,7 @@ public class QueryOptions implements OptionDescriber {
     protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
-    
+
     protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
@@ -1014,11 +1011,11 @@ public class QueryOptions implements OptionDescriber {
     public void setLimitFieldsField(String limitFieldsField) {
         this.limitFieldsField = limitFieldsField;
     }
-    
+
     public GroupFields getGroupFields() {
         return groupFields;
     }
-    
+
     public void setGroupFields(GroupFields groupFields) {
         this.groupFields = groupFields;
     }

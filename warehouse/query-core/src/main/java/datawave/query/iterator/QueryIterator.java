@@ -1574,8 +1574,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (groupingIterator == null && getGroupFields() != null && getGroupFields().hasGroupByFields()) {
             synchronized (getGroupFields()) {
                 if (groupingIterator == null) {
-                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(),
-                                    this.groupFieldsBatchSize, this.yield);
+                    groupingIterator = new GroupingIterator(in, MarkingFunctionsFactory.createMarkingFunctions(), getGroupFields(), this.groupFieldsBatchSize,
+                                    this.yield);
                 }
             }
         }

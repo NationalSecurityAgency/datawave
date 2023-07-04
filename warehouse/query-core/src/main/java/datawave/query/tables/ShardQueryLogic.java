@@ -631,15 +631,15 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
                 }
             }
-    
+
             GroupFields groupFields = getGroupByFields();
             if (groupFields != null && groupFields.hasGroupByFields()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
                 if (alreadyExists != null) {
                     ((GroupingTransform) alreadyExists).updateConfig(groupFields, getQueryModel());
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(new GroupingTransform(getQueryModel(), groupFields,
-                                    this.markingFunctions, this.getQueryExecutionForPageTimeout()));
+                    ((DocumentTransformer) this.transformerInstance).addTransform(
+                                    new GroupingTransform(getQueryModel(), groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
         }
@@ -794,42 +794,42 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         String groupFieldsParam = settings.findParameter(QueryParameters.GROUP_FIELDS).getParameterValue().trim();
         if (StringUtils.isNotBlank(groupFieldsParam)) {
             String[] groupFields = StringUtils.split(groupFieldsParam, Constants.PARAM_VALUE_SEP);
-            
+
             // Only set the group fields if we were actually given some.
             if (groupFields.length > 0) {
                 GroupFields groupByFields = config.getGroupFields();
                 groupByFields.setGroupByFields(Sets.newHashSet(groupFields));
-    
+
                 // Update the sum fields if given.
                 String sumFieldsParam = settings.findParameter(QueryParameters.SUM_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(sumFieldsParam)) {
                     groupByFields.setSumFields(Sets.newHashSet(StringUtils.split(sumFieldsParam, Constants.PARAM_VALUE_SEP)));
                 }
-    
+
                 // Update the count fields if given.
                 String countFieldsParam = settings.findParameter(QueryParameters.COUNT_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(countFieldsParam)) {
                     groupByFields.setCountFields(Sets.newHashSet(StringUtils.split(countFieldsParam, Constants.PARAM_VALUE_SEP)));
                 }
-    
+
                 // Update the average fields if given.
                 String averageFieldsParam = settings.findParameter(QueryParameters.AVERAGE_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(averageFieldsParam)) {
                     groupByFields.setAverageFields(Sets.newHashSet(StringUtils.split(averageFieldsParam, Constants.PARAM_VALUE_SEP)));
                 }
-    
+
                 // Update the min fields if given.
                 String minFieldsParam = settings.findParameter(QueryParameters.MIN_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(averageFieldsParam)) {
                     groupByFields.setMinFields(Sets.newHashSet(StringUtils.split(minFieldsParam, Constants.PARAM_VALUE_SEP)));
                 }
-    
+
                 // Update the max fields if given.
                 String maxFieldsParam = settings.findParameter(QueryParameters.MAX_FIELDS).getParameterValue().trim();
                 if (StringUtils.isNotBlank(averageFieldsParam)) {
                     groupByFields.setMaxFields(Sets.newHashSet(StringUtils.split(maxFieldsParam, Constants.PARAM_VALUE_SEP)));
                 }
-                
+
                 // Update the config and the projection fields.
                 this.setGroupByFields(groupByFields);
                 config.setGroupFields(groupByFields);
@@ -1341,11 +1341,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setLimitFieldsField(String limitFieldsField) {
         getConfig().setLimitFieldsField(limitFieldsField);
     }
-    
+
     public GroupFields getGroupByFields() {
         return getConfig().getGroupFields();
     }
-    
+
     public void setGroupByFields(GroupFields groupFields) {
         getConfig().setGroupFields(groupFields);
     }

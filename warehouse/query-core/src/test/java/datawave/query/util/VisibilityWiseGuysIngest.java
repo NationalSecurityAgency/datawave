@@ -42,11 +42,11 @@ public class VisibilityWiseGuysIngest {
     public static final String corleoneUID = UID.builder().newId("Corleone".getBytes(), (Date) null).toString();
     public static final String sopranoUID = UID.builder().newId("Soprano".getBytes(), (Date) null).toString();
     public static final String caponeUID = UID.builder().newId("Capone".getBytes(), (Date) null).toString();
-    
+
     public static void writeItAll(AccumuloClient client, String range) throws Exception {
         writeItAll(client, WhatKindaRange.valueOf(range));
     }
-    
+
     public static void writeItAll(AccumuloClient client, WhatKindaRange range) throws Exception {
 
         BatchWriter bw = null;
@@ -57,7 +57,7 @@ public class VisibilityWiseGuysIngest {
             // write the shard table :
             bw = client.createBatchWriter(TableName.SHARD, bwConfig);
             mutation = new Mutation(shard);
-            
+
             mutation.put(datatype + "\u0000" + corleoneUID, "NAME.FOO.0" + "\u0000" + "SANTINO", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NAME.FOO.1" + "\u0000" + "FREDO", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "NAME.FOO.2" + "\u0000" + "MICHAEL", columnVisibilityItalian, timeStamp, emptyValue);
@@ -85,7 +85,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + corleoneUID, "UUID.FOO.0" + "\u0000" + "CORLEONE", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + corleoneUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
-            
+
             mutation.put(datatype + "\u0000" + sopranoUID, "NAME.FOO.0" + "\u0000" + "ANTHONY", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "NAME.FOO.1" + "\u0000" + "MEADOW", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "GENDER.FOO.0" + "\u0000" + "MALE", columnVisibilityEnglish, timeStamp, emptyValue);
@@ -97,7 +97,7 @@ public class VisibilityWiseGuysIngest {
             mutation.put(datatype + "\u0000" + sopranoUID, "UUID.FOO.0" + "\u0000" + "SOPRANO", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "RECORD" + "\u0000" + "1", columnVisibilityItalian, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + sopranoUID, "RECORD" + "\u0000" + "2", columnVisibilityItalian, timeStamp, emptyValue);
-            
+
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.FOO.0" + "\u0000" + "ALPHONSE", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.FOO.1" + "\u0000" + "FRANK", columnVisibilityEnglish, timeStamp, emptyValue);
             mutation.put(datatype + "\u0000" + caponeUID, "NAME.FOO.2" + "\u0000" + "RALPH", columnVisibilityEnglish, timeStamp, emptyValue);

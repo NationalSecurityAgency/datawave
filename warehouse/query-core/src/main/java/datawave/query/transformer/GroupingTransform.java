@@ -1,26 +1,29 @@
 package datawave.query.transformer;
 
-import com.google.common.collect.Maps;
-import datawave.marking.MarkingFunctions;
-import datawave.query.attributes.Document;
-import datawave.query.common.grouping.DocumentGrouper;
-import datawave.query.common.grouping.GroupFields;
-import datawave.query.common.grouping.GroupingUtils;
-import datawave.query.common.grouping.Groups;
-import datawave.query.common.grouping.Group;
-import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
-import datawave.query.model.QueryModel;
-import org.apache.accumulo.core.data.Key;
-import org.slf4j.Logger;
+import static org.slf4j.LoggerFactory.getLogger;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import static org.slf4j.LoggerFactory.getLogger;
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.slf4j.Logger;
+
+import com.google.common.collect.Maps;
+
+import datawave.marking.MarkingFunctions;
+import datawave.query.attributes.Document;
+import datawave.query.common.grouping.DocumentGrouper;
+import datawave.query.common.grouping.Group;
+import datawave.query.common.grouping.GroupFields;
+import datawave.query.common.grouping.GroupingUtils;
+import datawave.query.common.grouping.Groups;
+import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
+import datawave.query.model.QueryModel;
 
 /**
  * GroupingTransform mimics GROUP BY with a COUNT in SQL. For the given fields, this transform will group into unique combinations of values and assign a count
@@ -36,9 +39,9 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * the fields (user provided) to group by
      */
     private GroupFields groupFields;
-    
+
     private final Groups groups;
-    
+
     /**
      * list of documents to return, created from the countingMap
      */
@@ -81,7 +84,7 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
             this.reverseModelMapping = model.getReverseQueryMapping();
         }
     }
-    
+
     public void updateConfig(GroupFields groupFields, QueryModel model) {
         this.groupFields = groupFields;
         if (model != null) {

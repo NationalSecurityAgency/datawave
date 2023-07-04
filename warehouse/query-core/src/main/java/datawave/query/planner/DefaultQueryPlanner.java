@@ -1692,10 +1692,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // reverse mapping
         // can be one to many
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
-    
+
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
         Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields();
-        
+
         if (projectFields != null && !projectFields.isEmpty()) {
             projectFields = queryModel.remapParameter(projectFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
@@ -1703,7 +1703,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
             config.setProjectFields(Sets.newHashSet(projectFields));
         }
-    
+
         GroupFields groupFields = config.getGroupFields();
         if (groupFields != null && groupFields.hasGroupByFields()) {
             groupFields.remapFields(inverseReverseModel);
@@ -1711,7 +1711,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 log.trace("Updating group-by fields using query model to " + groupFields);
             }
             config.setGroupFields(groupFields);
-            
+
             // If grouping is set, we must make the projection fields match all the group-by fields and aggregation fields.
             config.setProjectFields(groupFields.getProjectionFields());
         }

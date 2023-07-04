@@ -1,19 +1,6 @@
 package datawave.query.iterator;
 
-import com.google.common.collect.Maps;
-import datawave.marking.MarkingFunctions;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.common.grouping.DocumentGrouper;
-import datawave.query.common.grouping.Group;
-import datawave.query.common.grouping.GroupFields;
-import datawave.query.common.grouping.GroupingUtils;
-import datawave.query.common.grouping.Groups;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.slf4j.Logger;
+import static org.slf4j.LoggerFactory.getLogger;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -24,7 +11,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.slf4j.LoggerFactory.getLogger;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.slf4j.Logger;
+
+import com.google.common.collect.Maps;
+
+import datawave.marking.MarkingFunctions;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.common.grouping.DocumentGrouper;
+import datawave.query.common.grouping.Group;
+import datawave.query.common.grouping.GroupFields;
+import datawave.query.common.grouping.GroupingUtils;
+import datawave.query.common.grouping.Groups;
 
 /**
  * Because the t-server may tear down and start a new iterator at any time after a next() call, there can be no saved state in this class. For that reason, each
@@ -38,12 +40,12 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      * The fields to group and aggregate by.
      */
     private final GroupFields groupFields;
-    
+
     /**
      * The groups. This is updated each time
      */
     private final Groups groups;
-    
+
     /**
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
      */
@@ -56,9 +58,9 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
     private final YieldCallback<Key> yieldCallback;
 
     private final Iterator<Map.Entry<Key,Document>> previousIterators;
-    
+
     Map.Entry<Key,Document> next;
-    
+
     public GroupingIterator(Iterator<Map.Entry<Key,Document>> previousIterators, MarkingFunctions markingFunctions, GroupFields groupFields,
                     int groupFieldsBatchSize, YieldCallback<Key> yieldCallback) {
         this.previousIterators = previousIterators;
@@ -91,11 +93,11 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
                 break;
             }
         }
-        
+
         LinkedList<Document> documents = new LinkedList<>();
         Document document = null;
         next = null;
-        
+
         if (!groups.isEmpty()) {
             for (Group group : groups.getGroups()) {
                 documents.add(GroupingUtils.createDocument(group, keys, markingFunctions, GroupingUtils.AverageAggregatorWriteFormat.NUMERATOR_AND_DIVISOR));
@@ -178,9 +180,9 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
      */
     private Document flatten(List<Document> documents) {
         log.trace("Flattening {}", documents);
-        
+
         Document flattened = new Document(documents.get(documents.size() - 1).getMetadata(), true);
-        
+
         int context = 0;
         Set<ColumnVisibility> visibilities = new HashSet<>();
         for (Document document : documents) {
@@ -197,7 +199,7 @@ public class GroupingIterator implements Iterator<Map.Entry<Key,Document>> {
             // Increment the context by one.
             context++;
         }
-        
+
         // Set the flattened document's visibility to the combined visibilities of each document.
         flattened.setColumnVisibility(GroupingUtils.combineVisibilities(visibilities, markingFunctions, false));
         log.trace("flattened document: {}", flattened);

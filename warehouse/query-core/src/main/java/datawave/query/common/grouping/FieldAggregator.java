@@ -1,8 +1,5 @@
 package datawave.query.common.grouping;
 
-import datawave.query.attributes.Attribute;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -12,17 +9,21 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+
+import datawave.query.attributes.Attribute;
+
 /**
  * This class provides functionality to aggregate values for specified target fields using specified aggregation operations.
  */
 public class FieldAggregator {
-    
+
     private final Map<String,Map<AggregateOperation,Aggregator<?>>> aggregatorMap;
-    
+
     public FieldAggregator() {
         aggregatorMap = new HashMap<>();
     }
-    
+
     public FieldAggregator(Set<String> sumFields, Set<String> maxFields, Set<String> minFields, Set<String> countFields, Set<String> averageFields) {
         this();
         populateAggregators(sumFields, SumAggregator::new);
@@ -31,10 +32,10 @@ public class FieldAggregator {
         populateAggregators(countFields, CountAggregator::new);
         populateAggregators(averageFields, AverageAggregator::new);
     }
-    
+
     /**
      * Add an aggregator supplied by the given constructor for each of the given fields to the aggregator map.
-     * 
+     *
      * @param fields
      *            the fields
      * @param constructor
@@ -53,7 +54,7 @@ public class FieldAggregator {
             }
         }
     }
-    
+
     public void aggregate(Field field) {
         if (aggregatorMap.containsKey(field.getBase())) {
             Collection<Aggregator<?>> aggregators = this.aggregatorMap.get(field.getBase()).values();
@@ -62,11 +63,11 @@ public class FieldAggregator {
             }
         }
     }
-    
+
     public void aggregateAll(Collection<Field> fields) {
         fields.forEach(this::aggregate);
     }
-    
+
     /**
      * Return the map of fields to their aggregators.
      *
@@ -75,7 +76,7 @@ public class FieldAggregator {
     public Map<String,Map<AggregateOperation,Aggregator<?>>> getAggregatorMap() {
         return aggregatorMap;
     }
-    
+
     public Aggregator<?> getAggregator(String field, AggregateOperation operation) {
         Map<AggregateOperation,Aggregator<?>> map = aggregatorMap.get(field);
         if (map != null) {
@@ -83,19 +84,19 @@ public class FieldAggregator {
         }
         return null;
     }
-    
+
     /**
      * Return the set of all fields being aggregated.
-     * 
+     *
      * @return the fields
      */
     public Collection<String> getFieldsToAggregate() {
         return aggregatorMap.keySet();
     }
-    
+
     /**
      * Merge the given aggregator into this aggregated fields.
-     * 
+     *
      * @param aggregator
      *            the aggregator to merge.
      */
@@ -113,12 +114,12 @@ public class FieldAggregator {
                 map.put(aggregator.getOperation(), aggregator);
             }
         }
-        
+
     }
-    
+
     /**
      * Merge the given aggregated fields into this aggregated fields.
-     * 
+     *
      * @param other
      *            the aggregated fields to merge in
      */
@@ -147,24 +148,24 @@ public class FieldAggregator {
             }
         }
     }
-    
+
     @Override
     public String toString() {
         return aggregatorMap.toString();
     }
-    
+
     /**
      * A factory that will generate new {@link FieldAggregator} with the designated sum, max, min, count, and average aggregation field targets.
      */
     public static class Factory {
-        
+
         private final Set<String> sumFields;
         private final Set<String> maxFields;
         private final Set<String> minFields;
         private final Set<String> countFields;
         private final Set<String> averageFields;
         private final Set<String> allFields;
-        
+
         public Factory() {
             this.sumFields = new HashSet<>();
             this.maxFields = new HashSet<>();
@@ -173,10 +174,10 @@ public class FieldAggregator {
             this.averageFields = new HashSet<>();
             this.allFields = new HashSet<>();
         }
-        
+
         /**
          * Set the fields for which to find the aggregated sum.
-         * 
+         *
          * @param fields
          *            the fields
          * @return this factory
@@ -185,7 +186,7 @@ public class FieldAggregator {
             addFields(this.sumFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated sum.
          *
@@ -197,10 +198,10 @@ public class FieldAggregator {
             addFields(this.sumFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated max.
-         * 
+         *
          * @param fields
          *            the fields
          * @return this factory
@@ -209,7 +210,7 @@ public class FieldAggregator {
             addFields(this.maxFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated max.
          *
@@ -221,10 +222,10 @@ public class FieldAggregator {
             addFields(this.maxFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated min.
-         * 
+         *
          * @param fields
          *            the fields
          * @return this factory
@@ -233,7 +234,7 @@ public class FieldAggregator {
             addFields(this.minFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated min.
          *
@@ -245,10 +246,10 @@ public class FieldAggregator {
             addFields(this.minFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the total number of times seen.
-         * 
+         *
          * @param fields
          *            the fields
          * @return this factory
@@ -257,7 +258,7 @@ public class FieldAggregator {
             addFields(this.countFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated count.
          *
@@ -269,10 +270,10 @@ public class FieldAggregator {
             addFields(this.countFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated average.
-         * 
+         *
          * @param fields
          *            the fields
          * @return this factory
@@ -281,7 +282,7 @@ public class FieldAggregator {
             addFields(this.averageFields, fields);
             return this;
         }
-        
+
         /**
          * Set the fields for which to find the aggregated average.
          *
@@ -293,7 +294,7 @@ public class FieldAggregator {
             addFields(this.averageFields, fields);
             return this;
         }
-        
+
         /**
          * Add the given fields into the given set.
          *
@@ -308,32 +309,32 @@ public class FieldAggregator {
                 allFields.addAll(fields);
             }
         }
-        
+
         private void addFields(Set<String> set, String... fields) {
             addFields(set, Arrays.asList(fields));
         }
-        
+
         /**
          * Return a new {@link FieldAggregator} with the configured target aggregation fields.
-         * 
+         *
          * @return a new {@link FieldAggregator} instance
          */
         public FieldAggregator newInstance() {
             return hasFieldsToAggregate() ? new FieldAggregator(sumFields, maxFields, minFields, countFields, averageFields) : new FieldAggregator();
         }
-        
+
         /**
          * Return whether this factory has any target aggregation fields set.
-         * 
+         *
          * @return true if this factory has any target aggregation fields, or false otherwise
          */
         public boolean hasFieldsToAggregate() {
             return !allFields.isEmpty();
         }
-        
+
         /**
          * Return whether the given field matches a target aggregation field in this factory.
-         * 
+         *
          * @param field
          *            the field
          * @return true if the given field is a target for aggregation, or false otherwise
@@ -341,13 +342,13 @@ public class FieldAggregator {
         public boolean isFieldToAggregate(String field) {
             return allFields.contains(field);
         }
-        
+
         @Override
         public String toString() {
             return new ToStringBuilder(this).append("sumFields", sumFields).append("maxFields", maxFields).append("minFields", minFields)
                             .append("countFields", countFields).append("averageFields", averageFields).append("allFields", allFields).toString();
         }
-    
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -358,10 +359,10 @@ public class FieldAggregator {
             }
             Factory factory = (Factory) o;
             return Objects.equals(sumFields, factory.sumFields) && Objects.equals(maxFields, factory.maxFields) && Objects.equals(minFields, factory.minFields)
-                            && Objects.equals(countFields, factory.countFields) && Objects.equals(averageFields, factory.averageFields) && Objects.equals(
-                            allFields, factory.allFields);
+                            && Objects.equals(countFields, factory.countFields) && Objects.equals(averageFields, factory.averageFields)
+                            && Objects.equals(allFields, factory.allFields);
         }
-    
+
         @Override
         public int hashCode() {
             return Objects.hash(sumFields, maxFields, minFields, countFields, averageFields, allFields);

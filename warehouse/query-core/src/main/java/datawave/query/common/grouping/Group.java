@@ -1,56 +1,57 @@
 package datawave.query.common.grouping;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.builder.ToStringBuilder;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.builder.ToStringBuilder;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
 /**
  * Represents a grouping of values for fields specified via the #GROUP_BY functionality, with information about the total number of times the grouping was seen,
  * values for target aggregation fields that were matched to this group, and the different column visibilities seen.
  */
 public class Group {
-    
+
     /**
      * The distinct set of values that represent this grouping.
      */
     private final Set<GroupingAttribute<?>> attributes;
-    
+
     /**
      * The different column visibilities seen for each attribute that makes up the grouping.
      */
     private final Multimap<GroupingAttribute<?>,ColumnVisibility> attributeVisibilities = HashMultimap.create();
-    
+
     /**
      * The column visibilities for each document that contributed entries to this grouping.
      */
     private final Set<ColumnVisibility> documentVisibilities = new HashSet<>();
-    
+
     /**
      * The total number of times the distinct grouping was seen.
      */
     private int count;
-    
+
     /**
      * The aggregated values for any specified fields to aggregate.
      */
     private FieldAggregator fieldAggregator = new FieldAggregator();
-    
+
     public Group(Collection<GroupingAttribute<?>> attributes) {
         this(attributes, 0);
     }
-    
+
     public Group(Collection<GroupingAttribute<?>> attributes, int count) {
         this.attributes = Sets.newHashSet(attributes);
         addAttributeVisibilities(this.attributes);
         this.count = count;
     }
-    
+
     /**
      * Returns the distinct set of values that represent this grouping.
      *
@@ -59,7 +60,7 @@ public class Group {
     public Set<GroupingAttribute<?>> getAttributes() {
         return attributes;
     }
-    
+
     /**
      * Add the column visibilities from each of the given attributes to the set of attribute visibilities for this group.
      *
@@ -71,7 +72,7 @@ public class Group {
             attributeVisibilities.put(attribute, attribute.getColumnVisibility());
         }
     }
-    
+
     /**
      * Return the set of column visibilities seen for the given attribute.
      *
@@ -82,7 +83,7 @@ public class Group {
     public Collection<ColumnVisibility> getVisibilitiesForAttribute(GroupingAttribute<?> attribute) {
         return attributeVisibilities.get(attribute);
     }
-    
+
     /**
      * Add the column visibility to the set of visibilities of documents for which we have seen the grouping of this group in.
      *
@@ -92,7 +93,7 @@ public class Group {
     public void addDocumentVisibility(ColumnVisibility columnVisibility) {
         this.documentVisibilities.add(columnVisibility);
     }
-    
+
     /**
      * Return the set of all distinct column visibilities from documents that we have seen this group in.
      *
@@ -101,14 +102,14 @@ public class Group {
     public Set<ColumnVisibility> getDocumentVisibilities() {
         return documentVisibilities;
     }
-    
+
     /**
      * Increment the number of times we have seen this grouping by one.
      */
     public void incrementCount() {
         this.count++;
     }
-    
+
     /**
      * Returns the number of times we have seen this grouping.
      *
@@ -117,7 +118,7 @@ public class Group {
     public int getCount() {
         return count;
     }
-    
+
     /**
      * Returns the aggregated fields for this group.
      *
@@ -126,7 +127,7 @@ public class Group {
     public FieldAggregator getFieldAggregator() {
         return fieldAggregator;
     }
-    
+
     /**
      * Set the aggregated fields for this group.
      *
@@ -136,11 +137,11 @@ public class Group {
     public void setFieldAggregator(FieldAggregator fieldAggregator) {
         this.fieldAggregator = fieldAggregator;
     }
-    
+
     public void aggregateAll(Collection<Field> fields) {
         fieldAggregator.aggregateAll(fields);
     }
-    
+
     /**
      * Merge the given group into this group. The attribute visibilities and document visibilities from the other group will be added into this group. The count
      * for this group will be incremented by the count of the other group. The aggregated fields of the other group will be merged into the aggregated fields of
@@ -155,7 +156,7 @@ public class Group {
         this.count += other.count;
         this.fieldAggregator.merge(other.fieldAggregator);
     }
-    
+
     @Override
     public String toString() {
         return new ToStringBuilder(this).append("attributes", attributes).append("attributeVisibilities", attributeVisibilities)

@@ -1,19 +1,19 @@
 package datawave.query.language.functions.jexl;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+
 import datawave.query.jexl.functions.QueryFunctions;
 import datawave.query.language.functions.QueryFunction;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-
 public class Sum extends JexlQueryFunction {
-    
+
     public Sum() {
         super(QueryFunctions.SUM, new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.isEmpty()) {
@@ -21,16 +21,16 @@ public class Sum extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Sum();
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append(QueryFunctions.QUERY_FUNCTION_NAMESPACE).append(':').append(QueryFunctions.SUM);
         if (parameterList.isEmpty()) {
             sb.append("()");
@@ -42,7 +42,7 @@ public class Sum extends JexlQueryFunction {
             }
             sb.append(')');
         }
-        
+
         return sb.toString();
     }
 }
