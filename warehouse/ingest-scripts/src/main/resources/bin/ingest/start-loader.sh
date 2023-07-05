@@ -1,9 +1,9 @@
 #!/bin/bash
 
-if [[ $(uname) == "Darwin" ]]; then
-  THIS_SCRIPT=$(python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0)
+if [[ `uname` == "Darwin" ]]; then
+	THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
 else
-  THIS_SCRIPT=$(readlink -f $0)
+	THIS_SCRIPT=`readlink -f $0`
 fi
 
 THIS_DIR="${THIS_SCRIPT%/*}"
@@ -18,17 +18,18 @@ fi
 
 # If the paused file exists, then prevent startup unless forcing
 if [[ "$@" =~ ".*-force.*" || "$@" =~ "-force" ]]; then
-  rm -f ${LOCK_FILE_DIR}/LOADER_STARTUP.LCK
-  $0 ${@/-force/}
-  exit $?
+    rm -f ${LOCK_FILE_DIR}/LOADER_STARTUP.LCK
+    $0 ${@/-force/}
+    exit $?
 fi
 if [ -e ${LOCK_FILE_DIR}/LOADER_STARTUP.LCK ]; then
-  echo "Startup has been locked out.  Use -force to unlock."
-  exit -1
+    echo "Startup has been locked out.  Use -force to unlock."
+    exit -1
 fi
 
+
 MAPFILE_LOADER_CMD=$THIS_DIR/map-file-bulk-loader.sh
-PIDS=$($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
+PIDS=`$MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"`
 COUNT=0
 IFS=';' read -a values <<<$MAP_LOADER_HDFS_NAME_NODES_CONFIG
 warehouse_values=()
@@ -129,5 +130,5 @@ if [[${TOTAL} >0 ]]; then
     done
   fi
 else
-  echo "$COUNT map file loaders already running"
+        echo "$COUNT map file loaders already running"
 fi
