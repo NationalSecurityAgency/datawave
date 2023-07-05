@@ -11,13 +11,6 @@ import javax.net.ssl.SSLContext;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
-import datawave.webservice.query.result.EdgeQueryResponseBase;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.VoidResponse;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -31,6 +24,15 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+
+import datawave.webservice.query.result.EdgeQueryResponseBase;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * An example showing a simple query to the DATAWAVE web service, using the client classes to simplify parsing the query response.
