@@ -55,7 +55,6 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
         accumuloSetup.setData(FileType.CSV, dataType);
         client = accumuloSetup.loadTables(log);
-        Logger.getLogger(DefaultQueryPlanner.class).setLevel(Level.DEBUG);
     }
 
     public AnyFieldQueryTest() {
