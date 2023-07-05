@@ -14,12 +14,12 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.login.LoginContext;
 
+import org.jboss.security.JSSESecurityDomain;
+import org.jboss.security.auth.callback.ObjectCallback;
+
 import datawave.security.user.UserOperationsBean;
 import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
-
-import org.jboss.security.JSSESecurityDomain;
-import org.jboss.security.auth.callback.ObjectCallback;
 
 /**
  * An example timer bean that shows how one would call a secured EJB from an unsecured context, such as a message-driven bean callback.
