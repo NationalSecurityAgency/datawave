@@ -1,14 +1,32 @@
 package datawave.webservice.query.runner;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.codahale.metrics.annotation.Timed;
+import datawave.annotation.GenerateQuerySessionId;
+import datawave.annotation.Required;
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.core.query.logic.BaseQueryLogic;
+import datawave.core.query.logic.QueryLogic;
+import datawave.core.query.logic.QueryLogicFactory;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.security.util.WSAuthorizationsUtil;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.query.result.logic.QueryLogicDescription;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.QueryWizardResultResponse;
+import datawave.webservice.result.QueryWizardStep1Response;
+import datawave.webservice.result.QueryWizardStep2Response;
+import datawave.webservice.result.QueryWizardStep3Response;
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -33,36 +51,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MultivaluedMap;
-
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-
-import com.codahale.metrics.annotation.Timed;
-
-import datawave.annotation.GenerateQuerySessionId;
-import datawave.annotation.Required;
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.core.query.logic.BaseQueryLogic;
-import datawave.core.query.logic.QueryLogic;
-import datawave.core.query.logic.QueryLogicFactory;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.UserOperations;
-import datawave.security.util.WSAuthorizationsUtil;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.result.logic.QueryLogicDescription;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.QueryWizardResultResponse;
-import datawave.webservice.result.QueryWizardStep1Response;
-import datawave.webservice.result.QueryWizardStep2Response;
-import datawave.webservice.result.QueryWizardStep3Response;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Path("/BasicQuery")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser"})
