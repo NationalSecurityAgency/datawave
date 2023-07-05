@@ -109,7 +109,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
 
     @Override
     public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
-        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), getCallerObject());
+        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), currentUser);
         return planResponse.getResult();
     }
 
