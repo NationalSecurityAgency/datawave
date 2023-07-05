@@ -3,11 +3,13 @@ package datawave.webservice.examples;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.http.message.BasicNameValuePair;
+
 import com.beust.jcommander.IStringConverter;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+
 import datawave.webservice.result.DefaultEventQueryResponse;
-import org.apache.http.message.BasicNameValuePair;
 
 class Options {
     @Parameter(names = {"-b", "--baseURI"}, required = true, description = "The base URI for running queries.")
