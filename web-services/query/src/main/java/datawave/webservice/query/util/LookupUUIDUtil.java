@@ -271,9 +271,11 @@ public class LookupUUIDUtil {
                 
                 String identifier = null;
                 List<FieldBase> fields = (List<FieldBase>) event.getFields();
-                for (FieldBase fb : fields) {
-                    if (fb.getName().equals("HIT_TERM")) {
-                        identifier = fb.getValueString();
+                if (fields != null) {
+                    for (FieldBase fb : fields) {
+                        if (fb.getName().equals("HIT_TERM")) {
+                            identifier = fb.getValueString();
+                        }
                     }
                 }
                 
@@ -799,7 +801,7 @@ public class LookupUUIDUtil {
         if (null != events) {
             guttedEvents = events;
             for (final EventBase event : events) {
-                if (null != event) {
+                if (null != event && null != event.getFields()) {
                     final Iterator<FieldBase> it = (Iterator<FieldBase>) event.getFields().iterator();
                     while (it.hasNext()) {
                         final FieldBase fb = it.next();
