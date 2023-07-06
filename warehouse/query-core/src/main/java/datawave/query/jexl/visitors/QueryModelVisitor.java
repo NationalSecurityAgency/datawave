@@ -29,6 +29,7 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.StrictExpression;
@@ -43,9 +44,9 @@ import datawave.query.Constants;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.JexlNodeFactory.ContainerType;
 import datawave.query.jexl.LiteralRange;
 import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.model.QueryModel;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -330,13 +331,18 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 product = product.stream().map(list -> list.stream().map(RebuildingVisitor::copy).collect(Collectors.toList())).collect(Collectors.toSet());
 
                 JexlNode expanded;
-                if (requiresAnd) {
-                    expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.AND_NODE, node, product);
+                List<JexlNode> nodes = createNodeTreeFromPairs(node, product);
+                if (nodes.size() == 1) {
+                    expanded = nodes.get(0);
                 } else {
-                    expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.OR_NODE, node, product);
-                }
-                if (strict) {
-                    expanded = StrictExpression.create(expanded);
+                    if (requiresAnd) {
+                        expanded = JexlNodeFactory.createAndNode(nodes);
+                    } else {
+                        expanded = JexlNodeFactory.createOrNode(nodes);
+                    }
+                    if (strict) {
+                        expanded = StrictExpression.create(expanded);
+                    }
                 }
                 if (log.isTraceEnabled())
                     log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
@@ -357,6 +363,63 @@ public class QueryModelVisitor extends RebuildingVisitor {
             log.trace("Not sure how we got here, but just returning the original:" + PrintingVisitor.formattedQueryString(node));
 
         return node;
+    }
+
+    /**
+     * This method is currently only used from the QueryModelVisitor to expand a binary node into multiple pairs. If one side contains the strict marker, then
+     * that will be extended around the binary node.
+     *
+     * @param node
+     * @param pairs
+     * @return A list of jexl nodes created from each pair
+     */
+    public List<JexlNode> createNodeTreeFromPairs(JexlNode node, Set<List<JexlNode>> pairs) {
+        if (1 == pairs.size()) {
+            List<JexlNode> pair = pairs.iterator().next();
+
+            if (2 != pair.size()) {
+                throw new UnsupportedOperationException("Cannot construct a node from a non-binary pair: " + pair);
+            }
+
+            return Collections.singletonList(JexlNodeFactory.buildUntypedBinaryNode(node, pair.get(0), pair.get(1)));
+        }
+
+        List<JexlNode> children = new ArrayList<>();
+        for (List<JexlNode> pair : pairs) {
+            if (2 != pair.size()) {
+                throw new UnsupportedOperationException("Cannot construct a node from a non-binary pair: " + pair);
+            }
+
+            JexlNode leftNode = pair.get(0);
+            JexlNode rightNode = pair.get(1);
+            QueryPropertyMarker.Instance leftType = QueryPropertyMarker.findInstance(leftNode);
+            QueryPropertyMarker.Instance rightType = QueryPropertyMarker.findInstance(rightNode);
+            boolean strict = false;
+            boolean lenient = false;
+            if (leftType.isType(StrictExpression.class)) {
+                strict = true;
+                leftNode = leftType.getSource();
+            } else if (leftType.isType(LenientExpression.class)) {
+                lenient = true;
+                leftNode = leftType.getSource();
+            }
+            if (rightType.isType(StrictExpression.class)) {
+                strict = true;
+                rightNode = rightType.getSource();
+            } else if (rightType.isType(LenientExpression.class)) {
+                lenient = true;
+                rightNode = rightType.getSource();
+            }
+            JexlNode child = JexlNodeFactory.buildUntypedBinaryNode(node, leftNode, rightNode);
+            if (strict) {
+                child = StrictExpression.create(child);
+            } else if (lenient) {
+                child = LenientExpression.create(child);
+            }
+            children.add(child);
+        }
+
+        return children;
     }
 
     protected SetMultimap<String,JexlNode> expandNodeFromModel(JexlNode seed) {
