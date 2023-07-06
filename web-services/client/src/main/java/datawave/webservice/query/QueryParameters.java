@@ -26,6 +26,7 @@ public interface QueryParameters extends ParameterValidator {
     String QUERY_PARAMS = "params";
     String QUERY_VISIBILITY = "columnVisibility";
     String QUERY_LOGIC_NAME = "logicName";
+    String QUERY_SYSTEM_FROM = "systemFrom";
     
     String getQuery();
     
@@ -80,6 +81,10 @@ public interface QueryParameters extends ParameterValidator {
     String getLogicName();
     
     void setLogicName(String logicName);
+    
+    String getSystemFrom();
+    
+    void setSystemFrom(String systemFrom);
     
     Map<String,List<String>> getRequestHeaders();
     
