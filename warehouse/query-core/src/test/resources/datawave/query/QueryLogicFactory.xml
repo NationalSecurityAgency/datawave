@@ -240,8 +240,18 @@
         <property name="tfFieldSeek" value="-1" />
         <property name="tfNextSeek" value="-1" />
 
+        <!-- set to collect timing details -->
+        <property name="collectTimingDetails" value="false" />
+        <property name="collectQueryMetrics" value="false" />
+
+        <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
+
+        <!--    control when to log warnings for long aggregations    -->
+        <property name="docAggregationThresholdMs" value="-1" />
+        <property name="tfAggregationThresholdMs" value="-1" />
+
         <!-- uncomment to test partial document evaluation -->
-        <property name="usePartialInterpreter" value="true" />
+        <property name="usePartialInterpreter" value="false" />
         <property name="incompleteFields">
             <set value-type="java.lang.String">
                 <value>CONTENT</value>
@@ -250,12 +260,6 @@
                 <value>CITY</value>
             </set>
         </property>
-
-        <!-- set to collect timing details -->
-        <property name="collectTimingDetails" value="false" />
-        <property name="collectQueryMetrics" value="false" />
-
-        <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">

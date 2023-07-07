@@ -1,8 +1,5 @@
 package datawave.query.postprocessing.tf;
 
-import datawave.query.jexl.functions.TermFrequencyList;
-import org.javatuples.Triplet;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -11,33 +8,37 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import org.javatuples.Triplet;
+
+import datawave.query.jexl.functions.TermFrequencyList;
+
 /**
  * This encapsulates term frequencies information that is used when evaluating content:phrase and content:within functions in a JEXL query. It is also used to
  * store phrase indexes that have been found for matching hits so that we can retrieve excerpts when requested.
  */
 public class TermOffsetMap implements Serializable {
-    
+
     // should we gather phrase offsets
     boolean gatherPhraseOffsets = false;
-    
+
     /**
      * The term frequencies, with their corresponding fields.
      */
     private final Map<String,TermFrequencyList> termFrequencies = new HashMap<>();
-    
+
     /**
      * The phrase indexes found for hits.
      */
     private PhraseIndexes phraseIndexes = null;
-    
+
     public TermOffsetMap() {}
-    
+
     public TermOffsetMap(Map<String,TermFrequencyList> termFrequencies) {
         if (termFrequencies != null) {
             this.termFrequencies.putAll(termFrequencies);
         }
     }
-    
+
     /**
      * Merges the contents of another {@link TermOffsetMap} with this one
      *
@@ -57,10 +58,10 @@ public class TermOffsetMap implements Serializable {
             }
         }
     }
-    
+
     /**
      * Put the {@link TermFrequencyList} for the specified field
-     * 
+     *
      * @param field
      *            the field
      * @param termFrequencyList
@@ -69,10 +70,10 @@ public class TermOffsetMap implements Serializable {
     public void putTermFrequencyList(String field, TermFrequencyList termFrequencyList) {
         termFrequencies.put(field, termFrequencyList);
     }
-    
+
     /**
      * Return the term frequency list for the specified field.
-     * 
+     *
      * @param field
      *            the field
      * @return the term frequency list
@@ -80,7 +81,7 @@ public class TermOffsetMap implements Serializable {
     public TermFrequencyList getTermFrequencyList(String field) {
         return termFrequencies.get(field);
     }
-    
+
     /**
      * Get the set of fields that make up the {@link #termFrequencies}
      *
@@ -89,10 +90,10 @@ public class TermOffsetMap implements Serializable {
     public Set<String> getTermFrequencyKeySet() {
         return termFrequencies.keySet();
     }
-    
+
     /**
      * Add a new phrase index pair found for a hit for the specified field
-     * 
+     *
      * @param field
      *            the field
      * @param eventId
@@ -107,10 +108,10 @@ public class TermOffsetMap implements Serializable {
             phraseIndexes.addIndexTriplet(field, eventId, start, end);
         }
     }
-    
+
     /**
      * Return all phrase indexes found for hits for the specified field.
-     * 
+     *
      * @param field
      *            the field
      * @return the phrase indexes
@@ -121,20 +122,20 @@ public class TermOffsetMap implements Serializable {
         }
         return null;
     }
-    
+
     /**
      * Return the underlying {@link PhraseIndexes} object
-     * 
+     *
      * @return a phraseindexes object
      */
     public PhraseIndexes getPhraseIndexes() {
         return phraseIndexes;
     }
-    
+
     public boolean isGatherPhraseOffsets() {
         return gatherPhraseOffsets;
     }
-    
+
     public void setGatherPhraseOffsets(boolean gatherPhraseOffsets) {
         this.gatherPhraseOffsets = gatherPhraseOffsets;
         if (gatherPhraseOffsets) {
@@ -145,7 +146,7 @@ public class TermOffsetMap implements Serializable {
             this.phraseIndexes = null;
         }
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -157,16 +158,16 @@ public class TermOffsetMap implements Serializable {
         TermOffsetMap that = (TermOffsetMap) o;
         return Objects.equals(termFrequencies, that.termFrequencies) && Objects.equals(phraseIndexes, that.phraseIndexes);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(termFrequencies, phraseIndexes);
     }
-    
+
     @Override
     public String toString() {
         return new StringJoiner(", ", TermOffsetMap.class.getSimpleName() + "[", "]").add("termFrequencies=" + termFrequencies)
                         .add("phraseIndexes=" + phraseIndexes).toString();
     }
-    
+
 }

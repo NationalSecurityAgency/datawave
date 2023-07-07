@@ -4,19 +4,19 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 public class TimingMetadataTest extends AttributeTest {
-    
+
     @Ignore
     @Test
     public void testSerializationOfToKeepFlag() {
         TimingMetadata metadata = createTimingMetadata();
         metadata.setToKeep(false);
         testToKeep(metadata, false);
-        
+
         metadata = createTimingMetadata();
         metadata.setToKeep(true);
         testToKeep(metadata, true);
     }
-    
+
     private TimingMetadata createTimingMetadata() {
         TimingMetadata metadata = new TimingMetadata();
         metadata.setNextCount(0L);
@@ -26,5 +26,5 @@ public class TimingMetadataTest extends AttributeTest {
         metadata.setHost("localhost");
         return metadata;
     }
-    
+
 }

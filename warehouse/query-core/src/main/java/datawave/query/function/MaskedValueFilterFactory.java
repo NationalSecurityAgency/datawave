@@ -1,5 +1,6 @@
 package datawave.query.function;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 
 import org.apache.commons.vfs2.impl.VFSClassLoader;
@@ -8,18 +9,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 public class MaskedValueFilterFactory {
-    
+
     public static final Logger log = LoggerFactory.getLogger(MaskedValueFilterFactory.class);
     public static final String MASKED_VALUE_FILTER_CLASSNAME = "masked.value.filter.classname";
-    
+
     private static MaskedValueFilterInterface[] maskedValueFilters;
-    
+
     static {
         initializeCache();
     }
-    
+
     private static MaskedValueFilterInterface createInstance() {
-        
+
         ClassLoader thisClassLoader = MaskedValueFilterFactory.class.getClassLoader();
         if (log.isDebugEnabled()) {
             if (thisClassLoader instanceof VFSClassLoader) {
@@ -50,8 +51,8 @@ public class MaskedValueFilterFactory {
             if (className != null) {
                 log.warn("Attempting to instantiate masked value filter from -D{}={}", MASKED_VALUE_FILTER_CLASSNAME, className);
                 try {
-                    instance = (MaskedValueFilterInterface) Class.forName(className).newInstance();
-                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                    instance = (MaskedValueFilterInterface) Class.forName(className).getDeclaredConstructor().newInstance();
+                } catch (InstantiationException | IllegalAccessException | ClassNotFoundException | NoSuchMethodException | InvocationTargetException e) {
                     log.warn("Failed to create MaskedValueFilterInterface from {}", e);
                     throw new RuntimeException("Could not create MaskedValueFilterInterface object");
                 }
@@ -68,7 +69,7 @@ public class MaskedValueFilterFactory {
         }
         return instance;
     }
-    
+
     public static MaskedValueFilterInterface get(boolean includeGroupingContext, boolean reducedResponse) {
         int index = 2 * (includeGroupingContext ? 1 : 0) + (reducedResponse ? 1 : 0);
         if (null == maskedValueFilters) {
@@ -76,7 +77,7 @@ public class MaskedValueFilterFactory {
         }
         return maskedValueFilters[index];
     }
-    
+
     private static void initializeCache() {
         //  @formatter:off
         maskedValueFilters = new MaskedValueFilterInterface[] {
@@ -86,7 +87,7 @@ public class MaskedValueFilterFactory {
                 createInstance(true, true)};
         //  @formatter:on
     }
-    
+
     private static MaskedValueFilterInterface createInstance(boolean includeGroupingContext, boolean reducedResponse) {
         MaskedValueFilterInterface result = createInstance();
         result.setIncludeGroupingContext(includeGroupingContext);

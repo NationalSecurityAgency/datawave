@@ -1,20 +1,12 @@
 package datawave.query.index.lookup;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableSortedSet;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Sets;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.RebuildingVisitor;
-import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import datawave.query.language.parser.jexl.JexlNodeSet;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
@@ -25,12 +17,22 @@ import org.apache.hadoop.io.VLongWritable;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import com.google.common.base.Objects;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableSortedSet;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.RebuildingVisitor;
+import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
+import datawave.query.language.parser.jexl.JexlNodeSet;
 
 /**
  * This class represents information about hits in the index.
@@ -40,9 +42,9 @@ import java.util.Set;
  * The IndexInfo object supports union and intersection operations with other IndexInfo objects.
  */
 public class IndexInfo implements Writable, UidIntersector {
-    
+
     private static final Logger log = Logger.getLogger(IndexInfo.class);
-    
+
     protected JexlNode myNode = null;
     // a count of -1 indicates a shard range that datawave created
     // a positive count indicates the number of uids added for this term
@@ -50,17 +52,17 @@ public class IndexInfo implements Writable, UidIntersector {
     // a set of document uids. In some cases this list is pruned when a threshold is exceeded
     // In the pruned case, the count will exceed the size of the uid set
     protected ImmutableSortedSet<IndexMatch> uids;
-    
+
     public IndexInfo() {
         this.count = 0;
         this.uids = ImmutableSortedSet.of();
     }
-    
+
     public IndexInfo(long count) {
         this.count = count;
         this.uids = ImmutableSortedSet.of();
     }
-    
+
     public IndexInfo(Iterable<?> ids) {
         Set<IndexMatch> matches = Sets.newTreeSet();
         for (Object id : ids) {
@@ -72,19 +74,19 @@ public class IndexInfo implements Writable, UidIntersector {
         this.uids = ImmutableSortedSet.copyOf(matches);
         this.count = this.uids.size();
     }
-    
+
     public boolean onlyEvents() {
         return count > 0 && count == uids.size();
     }
-    
+
     public long count() {
         return count;
     }
-    
+
     public ImmutableSortedSet<IndexMatch> uids() {
         return uids;
     }
-    
+
     @Override
     public void write(DataOutput out) throws IOException {
         new VLongWritable(count).write(out);
@@ -92,7 +94,7 @@ public class IndexInfo implements Writable, UidIntersector {
         for (IndexMatch uid : uids)
             uid.write(out);
     }
-    
+
     public void applyNode(JexlNode node) {
         JexlNode copy = RebuildingVisitor.copy(node);
         copy.jjtSetParent(null);
@@ -101,23 +103,23 @@ public class IndexInfo implements Writable, UidIntersector {
             match.add(node);
         }
     }
-    
+
     public JexlNode getNode() {
         return myNode;
     }
-    
+
     @Override
     public void readFields(DataInput in) throws IOException {
         VLongWritable count = new VLongWritable();
         count.readFields(in);
         this.count = count.get();
-        
+
         VIntWritable nUidsReader = new VIntWritable();
         nUidsReader.readFields(in);
         final int nUids = nUidsReader.get();
-        
+
         ImmutableSortedSet.Builder<IndexMatch> setBuilder = ImmutableSortedSet.naturalOrder();
-        
+
         for (int i = 0; i < nUids; ++i) {
             IndexMatch index = new IndexMatch();
             index.readFields(in);
@@ -125,15 +127,15 @@ public class IndexInfo implements Writable, UidIntersector {
         }
         this.uids = setBuilder.build();
     }
-    
+
     public IndexInfo union(IndexInfo o) {
         return union(o, new ArrayList<>());
     }
-    
+
     /**
      * Let's be clear about what we are doing. In this case we are dealing with a union of many nodes, or in some cases a single OrNode. If the latter, we
      * simply use that node as our node. Otherwise, we will need to create an or node manually.
-     * 
+     *
      * @param first
      *            an IndexInfo
      * @param o
@@ -145,12 +147,12 @@ public class IndexInfo implements Writable, UidIntersector {
     public IndexInfo union(IndexInfo first, IndexInfo o, List<JexlNode> delayedNodes) {
         IndexInfo merged = new IndexInfo();
         JexlNodeSet nodeSet = new JexlNodeSet();
-        
+
         if (null != first.myNode && first.myNode != o.myNode) {
-            
+
             JexlNode sourceNode = getSourceNode(first.myNode);
             JexlNode topLevelOr = getOrNode(sourceNode);
-            
+
             if (null == topLevelOr) {
                 nodeSet.add(sourceNode);
             } else {
@@ -159,11 +161,11 @@ public class IndexInfo implements Writable, UidIntersector {
                 }
             }
         }
-        
+
         if (null != o.myNode) {
             JexlNode sourceNode = getSourceNode(o.myNode);
             JexlNode topLevelOr = getOrNode(sourceNode);
-            
+
             if (null == topLevelOr) {
                 nodeSet.add(o.myNode);
             } else {
@@ -172,10 +174,10 @@ public class IndexInfo implements Writable, UidIntersector {
                 }
             }
         }
-        
+
         // Add delayed nodes.
         nodeSet.addAll(delayedNodes);
-        
+
         merged.count = -1;
         merged.uids = ImmutableSortedSet.of();
         if (nodeSet.isEmpty()) {
@@ -183,10 +185,10 @@ public class IndexInfo implements Writable, UidIntersector {
         } else {
             merged.myNode = JexlNodeFactory.createUnwrappedOrNode(nodeSet.getNodes());
         }
-        
+
         return merged;
     }
-    
+
     private JexlNode getOrNode(JexlNode node) {
         if (node instanceof ASTOrNode) {
             return node;
@@ -197,7 +199,7 @@ public class IndexInfo implements Writable, UidIntersector {
         }
         return null;
     }
-    
+
     public static JexlNode getSourceNode(JexlNode delayedNode) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(delayedNode);
         if (instance.isAnyTypeOf(ASTDelayedPredicate.class, ExceededOrThresholdMarkerJexlNode.class, ExceededValueThresholdMarkerJexlNode.class,
@@ -207,7 +209,7 @@ public class IndexInfo implements Writable, UidIntersector {
             return delayedNode;
         }
     }
-    
+
     /**
      * Return the union of an IndexInfo object and a list of delayed nodes.
      *
@@ -218,19 +220,19 @@ public class IndexInfo implements Writable, UidIntersector {
      * @return the resulting union
      */
     public IndexInfo union(IndexInfo o, List<JexlNode> delayedNodes) {
-        
+
         if (isInfinite()) {
             return union(this, o, delayedNodes);
         } else if (o.isInfinite()) {
             return union(o, this, delayedNodes);
         }
-        
+
         IndexInfo merged = new IndexInfo();
         JexlNodeSet nodeSet = new JexlNodeSet();
-        
+
         if (null != myNode && myNode != o.myNode && !isInfinite()) {
             JexlNode sourceNode = getSourceNode(myNode);
-            
+
             JexlNode topLevelOr = getOrNode(sourceNode);
             if (null == topLevelOr) {
                 nodeSet.add(myNode);
@@ -240,9 +242,9 @@ public class IndexInfo implements Writable, UidIntersector {
                 }
             }
         }
-        
+
         if (null != o.myNode && !o.isInfinite()) {
-            
+
             JexlNode sourceNode = getSourceNode(o.myNode);
             JexlNode topLevelOr = getOrNode(sourceNode);
             if (null == topLevelOr) {
@@ -253,10 +255,10 @@ public class IndexInfo implements Writable, UidIntersector {
                 }
             }
         }
-        
+
         // Add delayed nodes.
         nodeSet.addAll(delayedNodes);
-        
+
         if (!onlyEvents() || !o.onlyEvents()) {
             /*
              * We are dealing with high cardinality terms. Sum the counts and return a parent node.
@@ -265,31 +267,31 @@ public class IndexInfo implements Writable, UidIntersector {
             merged.uids = ImmutableSortedSet.of();
         } else {
             HashMultimap<String,JexlNode> ids = HashMultimap.create();
-            
+
             /*
              * Concatenate all UIDs and merge the individual nodes
              */
             for (IndexMatch match : Iterables.concat(uids, o.uids)) {
-                
+
                 JexlNode newNode = match.getNode();
                 if (null != newNode)
                     ids.put(match.uid, newNode);
             }
-            
+
             Set<IndexMatch> matches = Sets.newHashSet();
-            
+
             for (String uid : ids.keySet()) {
                 Set<JexlNode> nodes = Sets.newHashSet(ids.get(uid));
                 if (!nodes.isEmpty()) {
                     nodes.addAll(delayedNodes);
                     matches.add(new IndexMatch(nodes, uid, IndexMatchType.OR));
                 }
-                
+
             }
             merged.uids = ImmutableSortedSet.copyOf(matches);
             merged.count = merged.uids.size();
         }
-        
+
         /*
          * If there are multiple levels within a union we could have an ASTOrNode. We cannot prune OrNodes as we would with an intersection, so propagate the
          * OrNode.
@@ -306,16 +308,16 @@ public class IndexInfo implements Writable, UidIntersector {
         }
         return merged;
     }
-    
+
     /**
      * Find the intersection of a list of delayed nodes.
-     * 
+     *
      * @param delayedNodes
      *            a list of delayed nodes.
      * @return true if any child nodes were added to this IndexInfo object.
      */
     public boolean intersect(List<JexlNode> delayedNodes) {
-        
+
         if (!onlyEvents() || isInfinite()) {
             return false;
         }
@@ -323,33 +325,33 @@ public class IndexInfo implements Writable, UidIntersector {
             JexlNode newNode = match.getNode();
             if (null == newNode)
                 continue;
-            
+
             Set<JexlNode> nodeSet = Sets.newHashSet(delayedNodes);
             nodeSet.add(match.getNode());
-            
+
             match.set(TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodeSet)));
             // TODO this may need to be of type AND for nested logic to be correct
         }
-        
+
         if (null != myNode || null != delayedNodes) {
             Set<JexlNode> internalNodeList = Sets.newHashSet();
             if (null != myNode)
                 internalNodeList.add(myNode);
             if (null != delayedNodes)
                 internalNodeList.addAll(delayedNodes);
-            
+
             if (!internalNodeList.isEmpty()) {
                 myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(internalNodeList));
             }
         }
-        
+
         return true;
     }
-    
+
     public IndexInfo intersect(IndexInfo o) {
         return intersect(o, new ArrayList<>(), this);
     }
-    
+
     /**
      * The intersection logic is relatively straightforward as we only have three types of nodes
      * <ol>
@@ -374,31 +376,31 @@ public class IndexInfo implements Writable, UidIntersector {
      * @return the result of an intersection operation on this IndexInfo and the other IndexInfo
      */
     public IndexInfo intersect(IndexInfo o, List<JexlNode> delayedNodes, UidIntersector uidIntersector) {
-        
+
         // infinite = (count == -1)
         // onlyEvents = (count == uids.size())
-        
+
         IndexInfo merged = new IndexInfo();
-        
+
         if (onlyEvents() && o.onlyEvents()) {
-            
+
             // if both sides are uid-only perform an intersection on the uids, propagating delayed nodes
             merged.uids = ImmutableSortedSet.copyOf(uidIntersector.intersect(uids, o.uids, delayedNodes));
             merged.count = merged.uids.size();
-            
+
         } else if (isInfinite() && o.isInfinite()) {
-            
+
             // if both sides are infinite ranges generated by us (-1 count), persist the -1 count
             merged.count = -1;
             merged.uids = ImmutableSortedSet.of();
-            
+
         } else {
-            
+
             // else we are left countably infinite shard ranges. Take the minimum count.
             merged.count = Math.min(count, o.count);
             merged.uids = ImmutableSortedSet.of();
         }
-        
+
         // now handle updating the top level node
         JexlNodeSet nodes = new JexlNodeSet();
         if (this.getNode() != null) {
@@ -409,10 +411,10 @@ public class IndexInfo implements Writable, UidIntersector {
         }
         nodes.addAll(delayedNodes);
         merged.myNode = TreeFlatteningRebuildingVisitor.flatten(JexlNodeFactory.createAndNode(nodes.getNodes()));
-        
+
         return merged;
     }
-    
+
     @Override
     public Set<IndexMatch> intersect(Set<IndexMatch> uids1, Set<IndexMatch> uids2, List<JexlNode> delayedNodes) {
         HashMultimap<String,JexlNode> ids = HashMultimap.create();
@@ -421,29 +423,29 @@ public class IndexInfo implements Writable, UidIntersector {
             if (null != newNode)
                 ids.put(match.uid, newNode);
         }
-        
+
         // Do the actual merge of ids here; only ids with more than one JexlNode will make it through this method.
         return buildNodeList(ids, IndexMatchType.AND, false, delayedNodes);
     }
-    
+
     protected Set<IndexMatch> buildNodeList(HashMultimap<String,JexlNode> ids, IndexMatchType type, boolean allowsDelayed, List<JexlNode> delayedNodes) {
         Set<IndexMatch> matches = Sets.newHashSet();
         for (String uid : ids.keySet()) {
-            
+
             Set<JexlNode> nodes = ids.get(uid);
             // make sure that we have nodes, otherwise we are pruned to nothing
             if (nodes.size() > 1 || (allowsDelayed && (nodes.size() + delayedNodes.size()) > 1)) {
                 JexlNodeSet nodeSet = new JexlNodeSet();
                 nodeSet.addAll(nodes);
                 nodeSet.addAll(delayedNodes);
-                
+
                 IndexMatch currentMatch = new IndexMatch(Sets.newHashSet(nodeSet.getNodes()), uid, type);
                 matches.add(currentMatch);
             }
         }
         return matches;
     }
-    
+
     public boolean equals(Object o) {
         if (o == this) {
             return true;
@@ -454,16 +456,16 @@ public class IndexInfo implements Writable, UidIntersector {
             return false;
         }
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hashCode(count(), uids());
     }
-    
+
     public String toString() {
         return "{ \"count\": " + count() + " - " + uids.size() + " }";
     }
-    
+
     /**
      * An infinite range is one that datawave created. This can happen several ways
      * <ol>
@@ -479,10 +481,10 @@ public class IndexInfo implements Writable, UidIntersector {
     private boolean isInfinite() {
         return count == -1L;
     }
-    
+
     public void setNode(JexlNode currNode) {
         myNode = currNode;
-        
+
         // need to update the nodes for the underlying index matches in order
         // to persist delayed terms. In the case of a document specific range
         // the query plan is pulled from indexMatch.getNode()

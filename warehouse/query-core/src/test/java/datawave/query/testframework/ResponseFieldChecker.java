@@ -1,20 +1,21 @@
 package datawave.query.testframework;
 
+import java.util.Set;
+
+import org.junit.Assert;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
-import org.junit.Assert;
-
-import java.util.Set;
 
 /**
  * Logic checker for the return fields in a {@link Document}.
  */
 public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentChecker {
-    
+
     private final Set<String> fields;
     private final Set<String> missing;
-    
+
     /**
      * @param respFields
      *            list of fields that should be in the response document
@@ -25,7 +26,7 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
         this.fields = respFields;
         this.missing = missingFields;
     }
-    
+
     /**
      * Verifies the query response document contains all of the return fields.
      *
@@ -46,7 +47,7 @@ public class ResponseFieldChecker implements QueryLogicTestHarness.DocumentCheck
                 Assert.assertNotNull("missing metadata for field(" + field + ") from " + doc, val.getMetadata());
             }
         }
-        
+
         for (final String field : this.missing) {
             final Attribute val = doc.get(field);
             Assert.assertNull("blacklisted return field(" + field + ") from " + doc, val);

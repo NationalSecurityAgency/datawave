@@ -1,6 +1,17 @@
 package datawave.query.function.ws;
 
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
+
 import com.google.common.base.Function;
+
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
 import datawave.query.config.ShardQueryConfiguration;
@@ -10,14 +21,6 @@ import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.Tuple3;
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
-
-import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * A function that performs document evaluation in the webservice.
@@ -25,15 +28,15 @@ import java.util.Set;
  * This function is initialized lazily in order to have the final query at the end of query planning.
  */
 public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.Entry<Key,Document>> {
-    
+
     protected ShardQueryConfiguration config;
     protected Set<String> queryFields;
     protected Set<String> incompleteFields;
     protected JexlEvaluation evaluation;
-    
+
     // for lazy init
     private boolean useHitListArithmetic = false;
-    
+
     /**
      * Use the config to access the JexlScript, query fields, and configured incompleteFields
      *
@@ -44,11 +47,11 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
         this.config = config;
         this.incompleteFields = config.getIncompleteFields();
         this.useHitListArithmetic = config.isHitList();
-        
+
         // this solves the problem of not having a full query tree when the evaluating transform is setup first
         config.setEvaluationFunction(this);
     }
-    
+
     /**
      *
      *
@@ -65,11 +68,11 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
             evaluation = new JexlEvaluation(query, new DefaultArithmetic());
         }
     }
-    
+
     public String getUpdatedQueryString() {
         return config.getQueryString();
     }
-    
+
     /**
      * Evaluates the document
      *
@@ -81,10 +84,10 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
     @Override
     public Map.Entry<Key,Document> apply(@Nullable Map.Entry<Key,Document> input) {
         if (input.getValue().containsKey(JexlEvaluation.EVAL_STATE_FIELD)) {
-            
+
             // remove the marker
             input.getValue().remove(JexlEvaluation.EVAL_STATE_FIELD);
-            
+
             Tuple3<Key,Document,DatawaveJexlContext> transformed = transformInput(input);
             if (!evaluation.apply(transformed)) {
                 input = null; // null out document that fails evaluation
@@ -92,7 +95,7 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
         }
         return input;
     }
-    
+
     /**
      * Transforms a Key,Document entry into a tuple of 'Key,Document,Context'
      *
@@ -104,7 +107,7 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
         DatawaveJexlContext context = buildContextFromInput(input);
         return new Tuple3<>(input.getKey(), input.getValue(), context);
     }
-    
+
     /**
      * Build a JexlContext from the document, limiting the input to the fields found in the query
      *
@@ -121,7 +124,7 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
         }
         return context;
     }
-    
+
     /**
      * Extract all fields into a set.
      *
@@ -132,7 +135,7 @@ public class EvaluationFunction implements Function<Map.Entry<Key,Document>,Map.
     protected Set<String> populateQueryFields(String query) {
         try {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
-            
+
             // it might be worth filtering out any constants that slip through...
             return JexlASTHelper.getIdentifierNames(script);
         } catch (ParseException e) {
