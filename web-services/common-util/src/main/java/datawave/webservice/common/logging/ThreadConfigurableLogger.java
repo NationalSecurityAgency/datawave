@@ -12,16 +12,16 @@ public class ThreadConfigurableLogger extends Logger {
     
     private final Logger log;
     private static ThreadLocal<Map<String,Level>> logToLevelMap = ThreadLocal.withInitial(HashMap::new);
-    
-    public static ThreadConfigurableLogger getLogger(Class clazz) {
+
+    public static Logger getLogger(final Class<?> clazz) {
         return new ThreadConfigurableLogger(Logger.getLogger(clazz));
     }
-    
-    public static ThreadConfigurableLogger getLogger(String name) {
+
+    public static Logger getLogger(final String name) {
         return new ThreadConfigurableLogger(Logger.getLogger(name));
     }
-    
-    public static ThreadConfigurableLogger getRootLogger() {
+
+    public static Logger getRootLogger() {
         return new ThreadConfigurableLogger(Logger.getRootLogger());
     }
     
