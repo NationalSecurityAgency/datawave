@@ -12,20 +12,20 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * <pre>
  * Function to test whether key/value pairs match within the part of a tree (left side) formed by the field name structure that is
  * dot-delimited: NAME.FOO.BAR.BAZ
- * 
+ *
  * position args are as follows:
  * for this field name:   NAME.grandparent_0.parent_0.child_0
- * 
+ *
  * '0' means take everything to the left of the last '.' (in other words 'NAME.grandparent_0.parent_0')
  * '1' means take everything to the left of the next-to-last '.' (i.e. 'NAME.grandparent_0'
- * 
+ *
  *  If there is no position arg supplied, '0' is assumed.
- * 
+ *
  *         "NAME.grandparent_0.parent_0.child_1,FREDO,fredo"    ==  "fredo",
  *         "NAME.grandparent_0.parent_0.child_0,SANTINO,santino" ==  "santino");
  *         (implied 0 for the position arg) means that fredo and santino have the same
  *         field name left-side: 'NAME.grandparent_0.parent_0'  (they have the same parents so they are siblings)
- * 
+ *
  *         "NAME.grandparent_0.parent_0.child_1,FREDO,fredo" == "fredo",
  *         "NAME.grandparent_0.parent_1.child_0,SANTINO,santino" == "santino", 1);
  *         with '1' for the position ard, function is true fredo and santino have the same
@@ -34,11 +34,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * </pre>
  */
 public class MatchesInGroupLeft extends JexlQueryFunction {
-    
+
     public MatchesInGroupLeft() {
         super("matches_in_group_left", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 2) {
@@ -50,13 +50,13 @@ public class MatchesInGroupLeft extends JexlQueryFunction {
             try {
                 Integer.parseInt(shouldBeANumber);
             } catch (Exception ex) {
-                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS, MessageFormat.format("{0}", ex,
-                                this.name));
+                BadRequestQueryException qe = new BadRequestQueryException(DatawaveErrorCode.INVALID_FUNCTION_ARGUMENTS,
+                                MessageFormat.format("{0}", ex, this.name));
                 throw new IllegalArgumentException(qe);
             }
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -74,10 +74,10 @@ public class MatchesInGroupLeft extends JexlQueryFunction {
         sb.append(")");
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new MatchesInGroupLeft();
     }
-    
+
 }

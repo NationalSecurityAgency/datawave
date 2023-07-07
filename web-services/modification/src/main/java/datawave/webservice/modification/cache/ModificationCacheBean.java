@@ -1,23 +1,15 @@
 package datawave.webservice.modification.cache;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.security.util.ScannerHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.modification.configuration.ModificationConfiguration;
-import datawave.webservice.result.VoidResponse;
-import datawave.webservice.results.modification.MutableFieldListResponse;
-import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
+import static datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.security.DeclareRoles;
@@ -34,16 +26,26 @@ import javax.interceptor.Interceptors;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
-import static datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.BatchScanner;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.security.util.ScannerHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.modification.configuration.ModificationConfiguration;
+import datawave.webservice.result.VoidResponse;
+import datawave.webservice.results.modification.MutableFieldListResponse;
 
 @Path("/Modification")
 @RunAs("InternalUser")
@@ -58,20 +60,20 @@ import static datawave.webservice.common.connection.AccumuloConnectionFactory.Pr
 // by default all methods are non-blocking
 @MBean
 public class ModificationCacheBean {
-    
+
     private static final Text MODIFICATION_COLUMN = new Text("m");
-    
+
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     private Map<String,Set<String>> cache = new HashMap<>();
-    
+
     @Inject
     private AccumuloConnectionFactory connectionFactory;
-    
+
     @Inject
     @SpringBean(refreshable = true)
     private ModificationConfiguration modificationConfiguration;
-    
+
     @PostConstruct
     public void init() {
         if (modificationConfiguration != null) {
@@ -80,7 +82,7 @@ public class ModificationCacheBean {
             log.error("modificationConfiguration was null");
         }
     }
-    
+
     /**
      * @return datawave.webservice.result.VoidResponse
      * @RequestHeader X-ProxiedEntitiesChain use when proxying request for user
@@ -103,16 +105,16 @@ public class ModificationCacheBean {
         this.clearCache();
         log.trace("cleared cache");
         final VoidResponse resp = new VoidResponse();
-        Connector con = null;
+        AccumuloClient client = null;
         BatchScanner s = null;
         try {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             log.trace("getting mutable list from table " + this.modificationConfiguration.getTableName());
             log.trace("modificationConfiguration.getPoolName() = " + modificationConfiguration.getPoolName());
-            con = connectionFactory.getConnection(modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
+            client = connectionFactory.getClient(modificationConfiguration.getPoolName(), Priority.ADMIN, trackingMap);
             log.trace("got connection");
-            s = ScannerHelper.createBatchScanner(con, this.modificationConfiguration.getTableName(),
-                            Collections.singleton(con.securityOperations().getUserAuthorizations(con.whoami())), 8);
+            s = ScannerHelper.createBatchScanner(client, this.modificationConfiguration.getTableName(),
+                            Collections.singleton(client.securityOperations().getUserAuthorizations(client.whoami())), 8);
             s.setRanges(Collections.singleton(new Range()));
             s.fetchColumnFamily(MODIFICATION_COLUMN);
             for (Entry<Key,Value> e : s) {
@@ -136,19 +138,19 @@ public class ModificationCacheBean {
             if (null != s)
                 s.close();
             try {
-                connectionFactory.returnConnection(con);
+                connectionFactory.returnClient(client);
             } catch (Exception e) {
                 log.error("Error returning connection to pool", e);
             }
         }
         return resp;
     }
-    
+
     @JmxManaged
     public String listMutableFields() {
         return cache.toString();
     }
-    
+
     /**
      * Check to see if field for specified datatype is mutable
      *
@@ -162,7 +164,7 @@ public class ModificationCacheBean {
         log.trace("datatype = " + datatype + ", field = " + field);
         return cache.get(datatype).contains(field);
     }
-    
+
     @GET
     @Produces({"application/xml", "text/xml", "application/json", "text/yaml", "text/x-yaml", "application/x-yaml", "application/x-protobuf",
             "application/x-protostuff"})
@@ -179,19 +181,19 @@ public class ModificationCacheBean {
         }
         return lists;
     }
-    
+
     public Map<String,Set<String>> getCachedMutableFieldList() {
         log.trace("cache = " + cache);
         return Collections.unmodifiableMap(cache);
     }
-    
+
     public ModificationConfiguration getModificationConfiguration() {
         return modificationConfiguration;
     }
-    
+
     protected void clearCache() {
         log.trace("cleared the cache");
         this.cache.clear();
     }
-    
+
 }

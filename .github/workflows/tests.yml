@@ -12,9 +12,9 @@ on:
   workflow_dispatch:
   
 env:
-  JAVA_VERSION: '8'
+  JAVA_VERSION: '11'
   JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
-  MAVEN_OPTS: "-Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
@@ -33,7 +33,7 @@ jobs:
         cache: 'maven'
     - name: Format code
       run: |
-        mvn -V -B -e clean formatter:format sortpom:sort -Pautoformat
+        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Pautoformat
         git status
         git diff-index --quiet HEAD || (echo "Error! There are modified files after formatting." && false)
 
@@ -51,7 +51,7 @@ jobs:
         cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
-        RUN_TESTS="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
@@ -80,7 +80,7 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
       run: |
         TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)

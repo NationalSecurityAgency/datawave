@@ -36,6 +36,11 @@ info "Configuring Wildfly for DataWave..."
 
 ( cd "${DW_CLOUD_HOME}/${DW_DATAWAVE_WEB_SYMLINK}" && ./setup-wildfly.sh )
 
+# Set JVM properties on Wildfly as needed
+cat << EOF >> ${TARBALL_BASE_DIR}/bin/standalone.conf
+JAVA_OPTS="\$JAVA_OPTS -Daccumulo.properties=file://${ACCUMULO_HOME}/conf/accumulo.properties"
+EOF
+
 echo
 info "DataWave Web initialized and ready to start..."
 echo

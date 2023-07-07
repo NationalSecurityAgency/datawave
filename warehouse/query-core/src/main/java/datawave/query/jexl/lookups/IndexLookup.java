@@ -1,9 +1,9 @@
 package datawave.query.jexl.lookups;
 
+import java.util.Set;
+
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
-
-import java.util.Set;
 
 /**
  * Abstract class which provides a framework for index lookups
@@ -11,11 +11,11 @@ import java.util.Set;
 public abstract class IndexLookup {
     protected ShardQueryConfiguration config;
     protected ScannerFactory scannerFactory;
-    
+
     protected Set<String> fields;
-    
+
     protected IndexLookupMap indexLookupMap;
-    
+
     /**
      *
      * @param config
@@ -27,6 +27,6 @@ public abstract class IndexLookup {
         this.config = config;
         this.scannerFactory = scannerFactory;
     }
-    
+
     public abstract IndexLookupMap lookup();
 }

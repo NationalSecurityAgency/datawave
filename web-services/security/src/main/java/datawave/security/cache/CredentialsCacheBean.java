@@ -27,6 +27,15 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.jboss.security.CacheableManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import datawave.configuration.ConfigurationEvent;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.RefreshLifecycle;
@@ -39,14 +48,6 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.exception.DatawaveWebApplicationException;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.result.GenericResponse;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.security.CacheableManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A service for managing cached {@link DatawaveUser} objects. It should be noted that there are potentially two caches in use. The first is a general Wildfly
@@ -68,21 +69,21 @@ import org.slf4j.LoggerFactory;
 // transactions not supported directly by this bean
 public class CredentialsCacheBean {
     protected Logger log = LoggerFactory.getLogger(getClass());
-    
+
     @Inject
     @AuthorizationCache
     private CacheableManager<?,Principal> authManager;
-    
+
     @Inject
     private Instance<CachedDatawaveUserService> cachedDatawaveUserServiceInstance;
-    
+
     @Inject
     private AccumuloConnectionFactory accumuloConnectionFactory;
-    
+
     private Set<String> accumuloUserAuths = new HashSet<>();
-    
+
     private Exception flushAllException;
-    
+
     @PostConstruct
     protected void postConstruct() {
         try {
@@ -91,7 +92,7 @@ public class CredentialsCacheBean {
             throw new RuntimeException(e);
         }
     }
-    
+
     /**
      * Removes all cached {@link DatawaveUser}s. There are potentially two caches in use. First, Wildfly uses a security cache that stores {@link Principal}s
      * under the incoming credential key. This is normally a very short-lived cache (5-30 minutes). Second, a {@link CachedDatawaveUserService} may be in use,
@@ -116,7 +117,7 @@ public class CredentialsCacheBean {
             throw new DatawaveWebApplicationException(e, response);
         }
     }
-    
+
     /**
      * Evicts {@code dn} from authorization caches. There are potentially two caches in use. First, Wildfly uses a security cache that stores {@link Principal}s
      * under the incoming credential key. This is normally a very short-lived cache (5-30 minutes). Second, a {@link CachedDatawaveUserService} may be in use,
@@ -132,7 +133,7 @@ public class CredentialsCacheBean {
     @Produces({"text/plain"})
     @JmxManaged
     public String evict(@PathParam("dn") String dn) {
-        
+
         String result = "Evicted " + dn + " from the credentials cache.";
         if (!cachedDatawaveUserServiceInstance.isUnsatisfied()) {
             result = cachedDatawaveUserServiceInstance.get().evictMatching(dn);
@@ -149,7 +150,7 @@ public class CredentialsCacheBean {
         // @formatter:on
         return result;
     }
-    
+
     /**
      * List DNs for all DatawaveUser objects stored in the cache.
      *
@@ -179,7 +180,7 @@ public class CredentialsCacheBean {
         }
         return result;
     }
-    
+
     /**
      * Lists all DNs contained in the cache containing the substring {@code substr}.
      *
@@ -209,7 +210,7 @@ public class CredentialsCacheBean {
         }
         return result;
     }
-    
+
     /**
      * Retrieves the {@link DatawaveUser} for {@code dn} from the users cache.
      *
@@ -238,7 +239,7 @@ public class CredentialsCacheBean {
         }
         return user;
     }
-    
+
     @SuppressWarnings("unused")
     @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
     // transactions not supported directly by this bean
@@ -246,12 +247,12 @@ public class CredentialsCacheBean {
         log.debug("Received a configuration update event. Re-querying Accumulo user authorizations and invalidating users cache.");
         try {
             HashSet<String> oldAccumuloAuths = new HashSet<>(accumuloUserAuths);
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("Received refresh event on 0x{}. Retrieving new Accumulo authorizations.", Integer.toHexString(System.identityHashCode(this)));
             }
             retrieveAccumuloAuthorizations();
-            
+
             if (!accumuloUserAuths.equals(oldAccumuloAuths)) {
                 // Flush the principals cache (and attempt to tell other web servers to do the same)
                 // If there's a problem, however, do not fail the entire refresh event. Do that at the end.
@@ -265,7 +266,7 @@ public class CredentialsCacheBean {
             throw new RuntimeException(e);
         }
     }
-    
+
     @SuppressWarnings("unused")
     @TransactionAttribute(TransactionAttributeType.NOT_SUPPORTED)
     public void onRefreshComplete(@Observes RefreshLifecycle refreshLifecycle) {
@@ -283,7 +284,7 @@ public class CredentialsCacheBean {
                 break;
         }
     }
-    
+
     @GET
     @Path("/listAccumuloAuths")
     @Produces({"text/plain", "application/json"})
@@ -291,7 +292,7 @@ public class CredentialsCacheBean {
     public Set<String> getAccumuloUserAuths() {
         return accumuloUserAuths;
     }
-    
+
     @GET
     @Path("/reloadAccumuloAuths")
     @Produces({"application/xml", "text/xml", "application/json"})
@@ -306,10 +307,10 @@ public class CredentialsCacheBean {
             throw new DatawaveWebApplicationException(e, response);
         }
     }
-    
+
     private void retrieveAccumuloAuthorizations() throws Exception {
         Map<String,String> trackingMap = accumuloConnectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-        Connector c = accumuloConnectionFactory.getConnection(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
+        AccumuloClient c = accumuloConnectionFactory.getClient(AccumuloConnectionFactory.Priority.ADMIN, trackingMap);
         try {
             Authorizations auths = c.securityOperations().getUserAuthorizations(c.whoami());
             HashSet<String> authSet = new HashSet<>();
@@ -319,7 +320,7 @@ public class CredentialsCacheBean {
             accumuloUserAuths = Collections.unmodifiableSet(authSet);
             log.debug("Accumulo User Authorizations: {}", accumuloUserAuths);
         } finally {
-            accumuloConnectionFactory.returnConnection(c);
+            accumuloConnectionFactory.returnClient(c);
         }
     }
 }

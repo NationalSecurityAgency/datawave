@@ -13,43 +13,44 @@ import java.util.Set;
  * <p>
  * Known Errors: Composite fields that are designated as multivalue and contain multiple values will only work correctly for the first value of the sorted
  * entries. Fields that are designated as multivalue but only contain a single entry will work correctly.
- * </p>>
+ * </p>
+ * >
  */
 public interface FieldConfig {
-    
+
     Set<String> getIndexFields();
-    
+
     void addIndexField(String field);
-    
+
     void removeIndexField(String field);
-    
+
     Set<String> getIndexOnlyFields();
-    
+
     void addIndexOnlyField(String field);
-    
+
     void removeIndexOnlyField(String field);
-    
+
     Set<String> getReverseIndexFields();
-    
+
     void addReverseIndexField(String field);
-    
+
     void removeReverseIndexField(String field);
-    
+
     Collection<Set<String>> getCompositeFields();
-    
+
     void addCompositeField(Set<String> fields);
-    
+
     void removeCompositeField(Set<String> field);
-    
+
     Collection<Set<String>> getVirtualFields();
-    
+
     void addVirtualField(Set<String> fields);
-    
+
     void removeVirtualField(Set<String> field);
-    
+
     Set<String> getMultiValueFields();
-    
+
     void addMultiValueField(String field);
-    
+
     void removeMultiValueField(String field);
 }

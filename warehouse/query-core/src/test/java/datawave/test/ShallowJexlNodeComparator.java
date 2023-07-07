@@ -1,9 +1,9 @@
 package datawave.test;
 
-import org.apache.commons.jexl2.parser.JexlNode;
-
 import java.util.Comparator;
 import java.util.Objects;
+
+import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * Performs a shallow comparison of two nodes. It is meant to be used by the {@link DeepJexlNodeComparator} to quickly identify simplistic differences between
@@ -11,10 +11,10 @@ import java.util.Objects;
  * assertions.
  */
 public class ShallowJexlNodeComparator implements Comparator<JexlNode> {
-    
+
     /**
      * Returns whether the two nodes are either the same, or have equal types, number of children, images, and values.
-     * 
+     *
      * @param first
      *            the first node to compare
      * @param second

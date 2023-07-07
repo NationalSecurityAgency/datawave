@@ -3,10 +3,10 @@ package datawave.webservice.query.hud;
 import datawave.webservice.query.Query;
 
 /**
- * 
+ *
  */
 public class HudQuerySummaryBuilder {
-    
+
     public HudQuerySummary build(Query query) {
         HudQuerySummary summary = new HudQuerySummary();
         summary.setQueryLogicName(query.getQueryLogicName());
@@ -18,5 +18,5 @@ public class HudQuerySummaryBuilder {
         summary.setExpirationDate(query.getExpirationDate().getTime());
         return summary;
     }
-    
+
 }
