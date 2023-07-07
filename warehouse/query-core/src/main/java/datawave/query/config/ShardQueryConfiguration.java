@@ -41,6 +41,7 @@ import datawave.query.QueryParameters;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.function.DocumentPermutation;
+import datawave.query.function.ws.EvaluationFunction;
 import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
@@ -293,6 +294,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      */
     private boolean speculativeScanning = false;
     private boolean disableEvaluation = false;
+
+    // a partial interpreter will evaluate 'incomplete fields' as true when more work is required for a full evaluation
+    private boolean usePartialInterpreter = false;
+    private Set<String> incompleteFields = Collections.emptySet();
+    private transient EvaluationFunction evaluationFunction = null;
+
     private boolean containsIndexOnlyTerms = false;
     private boolean containsCompositeTerms = false;
     /**
@@ -556,6 +563,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setAllowShortcutEvaluation(other.getAllowShortcutEvaluation());
         this.setSpeculativeScanning(other.getSpeculativeScanning());
         this.setDisableEvaluation(other.isDisableEvaluation());
+        this.setUsePartialInterpreter(other.getUsePartialInterpreter());
+        this.setIncompleteFields(other.getIncompleteFields());
+        this.setEvaluationFunction(other.getEvaluationFunction());
         this.setContainsIndexOnlyTerms(other.isContainsIndexOnlyTerms());
         this.setContainsCompositeTerms(other.isContainsCompositeTerms());
         this.setAllowFieldIndexEvaluation(other.isAllowFieldIndexEvaluation());
@@ -2352,6 +2362,30 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
             excerptFields.deconstructFields();
         }
         this.excerptFields = excerptFields;
+    }
+
+    public boolean getUsePartialInterpreter() {
+        return usePartialInterpreter;
+    }
+
+    public void setUsePartialInterpreter(boolean usePartialInterpreter) {
+        this.usePartialInterpreter = usePartialInterpreter;
+    }
+
+    public Set<String> getIncompleteFields() {
+        return incompleteFields;
+    }
+
+    public void setIncompleteFields(Set<String> incompleteFields) {
+        this.incompleteFields = incompleteFields;
+    }
+
+    public EvaluationFunction getEvaluationFunction() {
+        return evaluationFunction;
+    }
+
+    public void setEvaluationFunction(EvaluationFunction evaluationFunction) {
+        this.evaluationFunction = evaluationFunction;
     }
 
     public Class<? extends SortedKeyValueIterator<Key,Value>> getExcerptIterator() {

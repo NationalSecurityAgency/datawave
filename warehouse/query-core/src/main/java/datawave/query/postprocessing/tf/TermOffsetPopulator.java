@@ -207,9 +207,10 @@ public class TermOffsetPopulator {
             }
         }
 
-        // Load the actual map into map that will be put into the JexlContext
+        // Load the termOffsetMap into an intermediate map that will be put into the JexlContext
         Map<String,Object> map = new HashMap<>();
         map.put(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, new TermOffsetMap(termOffsetMap));
+        document.setOffsetMap(new TermOffsetMap(termOffsetMap));
         return map;
     }
 

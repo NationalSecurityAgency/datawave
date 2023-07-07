@@ -252,7 +252,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         try {
             this.script = JexlASTHelper.parseAndFlattenJexlQuery(this.getQuery());
             this.myEvaluationFunction = getJexlEvaluation(this.getQuery(), arithmetic);
-
         } catch (Exception e) {
             throw new IOException("Could not parse the JEXL query: '" + this.getQuery() + "'", e);
         }
@@ -468,7 +467,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
             // apply the grouping iterator if requested and if the batch size is greater than zero
             // if the batch size is 0, then grouping is computed only on the web server
-            if (this.groupFieldsBatchSize > 0) {
+            if (this.groupFieldsBatchSize > 0 && !getUsePartialInterpreter()) {
                 GroupingIterator groupify = getGroupingIteratorInstance(pipelineDocuments);
                 if (groupify != null) {
                     pipelineDocuments = groupify;
@@ -847,7 +846,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // Filter out masked values if requested
-        if (this.filterMaskedValues) {
+        if (this.filterMaskedValues && !getUsePartialInterpreter()) {
             MaskedValueFilterInterface mvfi = MaskedValueFilterFactory.get(this.isIncludeGroupingContext(), this.isReducedResponse());
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.MaskedValueFilter, trackingSpan, mvfi));
@@ -857,15 +856,16 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // now filter the attributes to those with the keep flag set true
-        if (gatherTimingDetails()) {
-            documents = Iterators.transform(documents,
-                            new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan, new AttributeKeepFilter<>()));
-        } else {
-            documents = Iterators.transform(documents, new AttributeKeepFilter<>());
+        if (!getUsePartialInterpreter()) {
+            if (gatherTimingDetails()) {
+                documents = Iterators.transform(documents,
+                                new EvaluationTrackingFunction<>(QuerySpan.Stage.AttributeKeepFilter, trackingSpan, new AttributeKeepFilter<>()));
+            } else {
+                documents = Iterators.transform(documents, new AttributeKeepFilter<>());
+            }
         }
 
-        // Project fields using a whitelist or a blacklist before serialization
-        if (this.projectResults) {
+        if (this.projectResults && !getUsePartialInterpreter()) {
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentProjection, trackingSpan, getProjection()));
             } else {
@@ -874,21 +874,25 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // remove the composite entries
-        documents = Iterators.transform(documents, this.getCompositeProjection());
+        if (!getUsePartialInterpreter()) {
+            documents = Iterators.transform(documents, this.getCompositeProjection());
+        }
 
         // Filter out any Documents which are empty (e.g. due to attribute
         // projection or visibility filtering)
-        if (gatherTimingDetails()) {
-            documents = statelessFilter(documents,
-                            new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()));
-            documents = Iterators.transform(documents,
-                            new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
-        } else {
-            documents = statelessFilter(documents, new EmptyDocumentFilter());
-            documents = Iterators.transform(documents, new DocumentMetadata());
+        if (!getUsePartialInterpreter()) {
+            if (gatherTimingDetails()) {
+                documents = statelessFilter(documents,
+                                new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()));
+                documents = Iterators.transform(documents,
+                                new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
+            } else {
+                documents = statelessFilter(documents, new EmptyDocumentFilter());
+                documents = Iterators.transform(documents, new DocumentMetadata());
+            }
         }
 
-        if (!this.limitFieldsMap.isEmpty()) {
+        if (!this.limitFieldsMap.isEmpty() && !getUsePartialInterpreter()) {
             // note that we have already reduced the document to those attributes to keep. This will reduce the attributes further
             // base on those fields we are limiting.
             if (gatherTimingDetails()) {
@@ -899,7 +903,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // do I need to remove the grouping context I added above?
-        if (groupingContextAddedByMe) {
+        if (groupingContextAddedByMe && !getUsePartialInterpreter()) {
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents,
                                 new EvaluationTrackingFunction<>(QuerySpan.Stage.RemoveGroupingContext, trackingSpan, new RemoveGroupingContext()));
@@ -1037,22 +1041,21 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected JexlEvaluation getJexlEvaluation(String query, NestedQueryIterator<Key> documentSource, JexlArithmetic arithmetic) {
-        JexlEvaluation jexlEvaluationFunction = null;
-
         if (arithmetic == null) {
             arithmetic = getArithmetic();
         }
 
+        JexlEvaluation jexlEvaluationFunction;
         if (null == documentSource) {
-            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+            jexlEvaluationFunction = new JexlEvaluation(query, arithmetic, getUsePartialInterpreter(), getIncompleteFields());
         } else {
             NestedQuery<Key> nestedQuery = documentSource.getNestedQuery();
             if (null == nestedQuery) {
-                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                jexlEvaluationFunction = new JexlEvaluation(query, arithmetic, getUsePartialInterpreter(), getIncompleteFields());
             } else {
                 jexlEvaluationFunction = nestedQuery.getEvaluation();
                 if (null == jexlEvaluationFunction) {
-                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic);
+                    jexlEvaluationFunction = new JexlEvaluation(query, arithmetic, getUsePartialInterpreter(), getIncompleteFields());
                 }
             }
         }

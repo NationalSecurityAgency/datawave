@@ -34,6 +34,7 @@ import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.DocumentProjection;
+import datawave.query.function.ws.EvaluationFunction;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
@@ -150,6 +151,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getBypassAccumulo());
         Assert.assertFalse(config.getSpeculativeScanning());
         Assert.assertFalse(config.isDisableEvaluation());
+        Assert.assertFalse(config.getUsePartialInterpreter());
+        Assert.assertEquals(Collections.emptySet(), config.getIncompleteFields());
+        Assert.assertNull(config.getEvaluationFunction());
         Assert.assertFalse(config.isContainsIndexOnlyTerms());
         Assert.assertFalse(config.isContainsCompositeTerms());
         Assert.assertTrue(config.isAllowFieldIndexEvaluation());
@@ -271,6 +275,9 @@ public class ShardQueryConfigurationTest {
         List<String> contentFieldNames = Lists.newArrayList("fieldA");
         Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
         Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
+        boolean usePartialInterpreter = true;
+        Set<String> incompleteFields = Sets.newHashSet("INCOMPLETE_FIELD_A", "INCOMPLETE_FIELD_B");
+        EvaluationFunction evaluationFunction = null;
         long visitorFunctionMaxWeight = 200L;
 
         // Set collections on 'other' ShardQueryConfiguration
@@ -305,6 +312,9 @@ public class ShardQueryConfigurationTest {
         other.setContentFieldNames(contentFieldNames);
         other.setNoExpansionFields(noExpansionFields);
         other.setDisallowedRegexPatterns(disallowedRegexPatterns);
+        other.setUsePartialInterpreter(usePartialInterpreter);
+        other.setIncompleteFields(incompleteFields);
+        other.setEvaluationFunction(evaluationFunction);
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         other.setAccumuloPassword("ChangeIt");
         other.setReduceQueryFields(true);
@@ -400,6 +410,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
         Assert.assertEquals(expectedQueryModel.getLenientForwardMappings(), config.getQueryModel().getLenientForwardMappings());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
+        Assert.assertEquals(usePartialInterpreter, config.getUsePartialInterpreter());
+        Assert.assertEquals(incompleteFields, config.getIncompleteFields());
+        Assert.assertEquals(evaluationFunction, config.getEvaluationFunction());
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
         Assert.assertTrue(config.getReduceQueryFields());
@@ -507,14 +520,17 @@ public class ShardQueryConfigurationTest {
     }
 
     /**
-     * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
+     * This test is a canary to make sure any new additions to the ShardQueryLogic are also added to the
+     * {@link ShardQueryConfiguration#ShardQueryConfiguration(ShardQueryConfiguration)} method.
+     * <p>
+     * As annoying as this test is, it's more annoying to have properties that do not get cloned all the way through
      *
      * @throws IOException
      *             if something went wrong
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 203;
+        int expectedObjectCount = 206;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 import datawave.data.type.NumberType;
 import datawave.data.type.Type;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 import datawave.util.OperationEvaluator;
 
 public class FunctionalSet<T extends ValueTuple> implements Set<T> {
@@ -260,6 +261,15 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     public Collection<T> getValuesForGroups(Object in) {
 
         Collection<T> values = new FunctionalSet<>();
+
+        if (in instanceof State) {
+            State state = (State) in;
+            if (state.isIncomplete()) {
+                throw new IllegalStateException("should not have gotten here");
+            }
+            in = ((State) in).getValue();
+        }
+
         if (in instanceof String) {
 
             Object value = this.getValueForGroup((String) in);

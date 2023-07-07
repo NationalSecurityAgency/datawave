@@ -1,5 +1,6 @@
 package datawave.query.postprocessing.tf;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,7 +27,8 @@ import datawave.query.Constants;
  * This class represents a collection of indexes that have been identified for phrases that have been found as matching hits for queries. The indexes here are
  * required to retrieve excerpts when requested.
  */
-public class PhraseIndexes {
+public class PhraseIndexes implements Serializable {
+
     private static final Logger log = Logger.getLogger(PhraseIndexes.class);
 
     /**

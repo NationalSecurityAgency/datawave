@@ -550,9 +550,7 @@ public class CompositeIndexTest {
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
 
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-
         logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
-
         logic.setupQuery(config);
 
         return logic.getTransformIterator(query);

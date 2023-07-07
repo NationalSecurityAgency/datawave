@@ -2,6 +2,7 @@ package datawave.query.jexl.functions;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -21,12 +22,12 @@ import datawave.ingest.protobuf.TermWeightPosition;
  * Represents a List of offsets represented as TermWeightPositions, corresponding to word positions, in a given field, for a term. This is intended to be used
  * in the scope of a Map from term to {@link TermFrequencyList}
  */
-public class TermFrequencyList {
+public class TermFrequencyList implements Serializable {
 
     /**
      * A zone is actually a combination of the zone and the event id (uid or record id)
      */
-    public static class Zone implements Comparable<Zone> {
+    public static class Zone implements Comparable<Zone>, Serializable {
         private final String eventId;
         private final String zone;
         // is this field a content expansion field meaning it is used for unfielded content functions

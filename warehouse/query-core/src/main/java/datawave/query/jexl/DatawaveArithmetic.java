@@ -20,9 +20,9 @@ import datawave.data.type.DateType;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
 import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 
 public abstract class DatawaveArithmetic extends JexlArithmetic {
-    private static final String LESS_THAN = "<", GREATER_THAN = ">", LESS_THAN_OR_EQUAL = "<=", GREATER_THAN_OR_EQUAL = ">=";
 
     private static final Logger log = Logger.getLogger(DatawaveArithmetic.class);
 
@@ -189,7 +189,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         if (isFloatingPointNumber(left) || isFloatingPointNumber(right)) {
             double l = toDouble(left);
             double r = toDouble(right);
-            return new Double(l - r);
+            return l - r;
         }
 
         // if either are bigdecimal use that type
@@ -338,6 +338,15 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
     }
 
     private Object possibleValueTupleToDelegate(Object val) {
+
+        // attempt to narrow a State to a ValueTuple
+        if (val instanceof State) {
+            State state = (State) val;
+            if (state.getValue() instanceof ValueTuple) {
+                val = state.getValue();
+            }
+        }
+
         // if the incoming val is a ValueTuple, swap in the delegate value
         if (val instanceof ValueTuple) {
             val = ((ValueTuple) val).second();
@@ -346,6 +355,32 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
             }
         }
         return val;
+    }
+
+    /**
+     * Check for a {@link State} as an incoming argument. These state args need to be narrowed to a functional set or numeric in order to find the correct
+     * method.
+     *
+     * @param args
+     *            function args
+     * @return true if the narrowed arguments could find a method
+     */
+    @Override
+    protected boolean narrowArguments(Object[] args) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof State) {
+                State state = (State) args[i];
+                if (state.isNumber()) {
+                    args[i] = state.getNumber();
+                } else if (state.isFunctionalSet()) {
+                    args[i] = state.getFunctionalSet();
+                } else {
+                    args[i] = state.getValue();
+                }
+            }
+        }
+
+        return super.narrowArguments(args);
     }
 
     public int toInteger(Object val) {

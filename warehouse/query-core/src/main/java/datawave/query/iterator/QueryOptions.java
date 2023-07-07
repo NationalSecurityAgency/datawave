@@ -155,6 +155,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String STATSD_MAX_QUEUE_SIZE = "statsd.max.queue.size";
     public static final String DATATYPE_FIELDNAME = "include.datatype.fieldname";
     public static final String TRACK_SIZES = "track.sizes";
+    public static final String USE_PARTIAL_INTERPRETER = "use.partial.interpreter";
+    public static final String INCOMPLETE_FIELDS = "incomplete.fields";
 
     // pass through to Evaluating iterator to ensure consistency between query
     // logics
@@ -287,7 +289,8 @@ public class QueryOptions implements OptionDescriber {
     protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
-
+    protected boolean usePartialInterpreter = false;
+    protected Set<String> incompleteFields = new HashSet<>();
     protected Set<String> groupFields = Sets.newHashSet();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
@@ -1011,6 +1014,22 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsField = limitFieldsField;
     }
 
+    public boolean getUsePartialInterpreter() {
+        return this.usePartialInterpreter;
+    }
+
+    public void setUsePartialInterpreter(boolean usePartialInterpreter) {
+        this.usePartialInterpreter = usePartialInterpreter;
+    }
+
+    public Set<String> getIncompleteFields() {
+        return this.incompleteFields;
+    }
+
+    public void setIncompleteFields(Set<String> incompleteFields) {
+        this.incompleteFields = incompleteFields;
+    }
+
     public Set<String> getGroupFields() {
         return groupFields;
     }
@@ -1135,6 +1154,9 @@ public class QueryOptions implements OptionDescriber {
         options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
         options.put(UNIQUE_FIELDS, "unique fields");
         options.put(HIT_LIST, "hit list");
+        options.put(USE_PARTIAL_INTERPRETER,
+                        "If set, this query will perform a partial document evaluation on the tablet server and a full evaluation in the webserver.");
+        options.put(INCOMPLETE_FIELDS, "A set of fields which require additional context to be fully evaluated.");
         options.put(NON_INDEXED_DATATYPES, "Normalizers to apply only at aggregation time");
         options.put(CONTAINS_INDEX_ONLY_TERMS, "Does the query being evaluated contain any terms which are index-only");
         options.put(ALLOW_FIELD_INDEX_EVALUATION,
@@ -1476,6 +1498,14 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(LIMIT_FIELDS_FIELD)) {
             this.setLimitFieldsField(options.get(LIMIT_FIELDS_FIELD));
+        }
+
+        if (options.containsKey(USE_PARTIAL_INTERPRETER)) {
+            this.setUsePartialInterpreter(Boolean.parseBoolean(options.get(USE_PARTIAL_INTERPRETER)));
+        }
+
+        if (options.containsKey(INCOMPLETE_FIELDS)) {
+            this.setIncompleteFields(Sets.newHashSet(StringUtils.split(options.get(INCOMPLETE_FIELDS), ",")));
         }
 
         if (options.containsKey(GROUP_FIELDS)) {

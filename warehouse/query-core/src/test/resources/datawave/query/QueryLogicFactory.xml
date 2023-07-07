@@ -231,6 +231,7 @@
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
+
         <!--   variables that control when a seek is issued     -->
         <property name="fiFieldSeek" value="-1" />
         <property name="fiNextSeek" value="-1" />
@@ -238,9 +239,27 @@
         <property name="eventNextSeek" value="-1" />
         <property name="tfFieldSeek" value="-1" />
         <property name="tfNextSeek" value="-1" />
+
+        <!-- set to collect timing details -->
+        <property name="collectTimingDetails" value="false" />
+        <property name="collectQueryMetrics" value="false" />
+
+        <property name="eventQueryDataDecoratorTransformer" ref="EventQueryDataDecoratorTransformer" />
+
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
+
+        <!-- uncomment to test partial document evaluation -->
+        <property name="usePartialInterpreter" value="false" />
+        <property name="incompleteFields">
+            <set value-type="java.lang.String">
+                <value>CONTENT</value>
+                <value>BODY</value>
+                <value>AGE</value>
+                <value>CITY</value>
+            </set>
+        </property>
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
@@ -333,6 +352,10 @@
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
+
+    <bean id="EventQueryDataDecoratorTransformer" scope="prototype" class="datawave.query.transformer.EventQueryDataDecoratorTransformer">
+
+    </bean>
     
     <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
    </util:list>

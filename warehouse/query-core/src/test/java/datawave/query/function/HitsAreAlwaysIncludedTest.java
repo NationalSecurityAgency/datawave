@@ -182,6 +182,11 @@ public abstract class HitsAreAlwaysIncludedTest {
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
 
+            if (d.containsKey(LogTiming.TIMING_METADATA) && d.getAttributes().size() == 1) {
+                // skip any timing metadata keys produced as a result of testing with timing enabled
+                continue;
+            }
+
             log.trace(entry.getKey() + " => " + d);
             docs.add(d);
 

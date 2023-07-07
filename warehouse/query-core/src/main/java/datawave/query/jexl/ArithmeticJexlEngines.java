@@ -2,6 +2,7 @@ package datawave.query.jexl;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.jexl2.JexlArithmetic;
@@ -29,9 +30,33 @@ public class ArithmeticJexlEngines {
      * @return true if we matched, false otherwise.
      */
     public static boolean isMatched(Object scriptExecuteResult) {
-        return DatawaveInterpreter.isMatched(scriptExecuteResult);
+        return isMatched(scriptExecuteResult, false);
     }
 
+    /**
+     * Convenience method used to interpret the result of a script.execute() call. Supports partial evaluations.
+     *
+     * @param scriptExecuteResult
+     *            the result of an evaluation
+     * @param usePartialEvaluation
+     *            flag that determines which interpreter to use
+     * @return
+     */
+    public static boolean isMatched(Object scriptExecuteResult, boolean usePartialEvaluation) {
+        if (usePartialEvaluation) {
+            return DatawavePartialInterpreter.isMatched(scriptExecuteResult);
+        } else {
+            return DatawaveInterpreter.isMatched(scriptExecuteResult);
+        }
+    }
+
+    /**
+     * Get a {@link DatawaveJexlEngine} that supports full document evaluation
+     *
+     * @param arithmetic
+     *            an arithmetic
+     * @return a JexlEngine
+     */
     public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic) {
         if (null == arithmetic) {
             return null;
@@ -42,7 +67,7 @@ public class ArithmeticJexlEngines {
         if (!engineCache.containsKey(arithmeticClass)) {
             DatawaveJexlEngine engine = createEngine(arithmetic);
 
-            if (arithmetic instanceof StatefulArithmetic == false) {
+            if (!(arithmetic instanceof StatefulArithmetic)) {
                 // do not cache an Arithmetic that has state
                 engineCache.put(arithmeticClass, engine);
             }
@@ -51,6 +76,26 @@ public class ArithmeticJexlEngines {
         }
 
         return engineCache.get(arithmeticClass);
+    }
+
+    /**
+     * Get a {@link DatawaveJexlEngine} that supports partial document evaluation via a set of incomplete fields. This engine is not cached.
+     *
+     * @param arithmetic
+     *            an arithmetic
+     * @param incompleteFields
+     *            a set of fields which cannot be fully evaluated
+     * @return a JexlEngine
+     */
+    public static DatawaveJexlEngine getEngine(JexlArithmetic arithmetic, Set<String> incompleteFields) {
+        if (arithmetic == null) {
+            return null;
+        }
+
+        DatawaveJexlEngine engine = createEngine(arithmetic);
+        engine.setUsePartialInterpreter(true);
+        engine.setIncompleteFields(incompleteFields);
+        return engine;
     }
 
     private static DatawaveJexlEngine createEngine(JexlArithmetic arithmetic) {

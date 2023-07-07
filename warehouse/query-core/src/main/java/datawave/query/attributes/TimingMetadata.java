@@ -26,7 +26,6 @@ public class TimingMetadata extends Metadata {
 
     public void setNextCount(long nextCount) {
         put(NEXT_COUNT, new Numeric(nextCount, this.getMetadata(), this.isToKeep()));
-
     }
 
     public long getSourceCount() {

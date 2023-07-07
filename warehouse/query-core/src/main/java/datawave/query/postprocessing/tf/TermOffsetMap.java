@@ -1,9 +1,11 @@
 package datawave.query.postprocessing.tf;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
 
 import org.javatuples.Triplet;
@@ -14,7 +16,7 @@ import datawave.query.jexl.functions.TermFrequencyList;
  * This encapsulates term frequencies information that is used when evaluating content:phrase and content:within functions in a JEXL query. It is also used to
  * store phrase indexes that have been found for matching hits so that we can retrieve excerpts when requested.
  */
-public class TermOffsetMap {
+public class TermOffsetMap implements Serializable {
 
     // should we gather phrase offsets
     boolean gatherPhraseOffsets = false;
@@ -34,6 +36,26 @@ public class TermOffsetMap {
     public TermOffsetMap(Map<String,TermFrequencyList> termFrequencies) {
         if (termFrequencies != null) {
             this.termFrequencies.putAll(termFrequencies);
+        }
+    }
+
+    /**
+     * Merges the contents of another {@link TermOffsetMap} with this one
+     *
+     * @param other
+     *            another TermOffsetMap
+     */
+    public void merge(TermOffsetMap other) {
+        if (other != null) {
+            for (Map.Entry<String,TermFrequencyList> entry : other.termFrequencies.entrySet()) {
+                TermFrequencyList ourList = this.termFrequencies.get(entry.getKey());
+                if (ourList == null) {
+                    this.termFrequencies.put(entry.getKey(), entry.getValue());
+                } else {
+                    TermFrequencyList merged = TermFrequencyList.merge(ourList, entry.getValue());
+                    this.termFrequencies.put(entry.getKey(), merged);
+                }
+            }
         }
     }
 
@@ -58,6 +80,15 @@ public class TermOffsetMap {
      */
     public TermFrequencyList getTermFrequencyList(String field) {
         return termFrequencies.get(field);
+    }
+
+    /**
+     * Get the set of fields that make up the {@link #termFrequencies}
+     *
+     * @return the term frequency fields
+     */
+    public Set<String> getTermFrequencyKeySet() {
+        return termFrequencies.keySet();
     }
 
     /**

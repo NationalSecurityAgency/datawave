@@ -45,6 +45,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
@@ -186,6 +187,11 @@ public abstract class IvaratorInterruptTest {
             Attribute<?> attr = d.get("UUID");
             if (attr == null)
                 attr = d.get("UUID.0");
+
+            if (d.containsKey(LogTiming.TIMING_METADATA) && d.getAttributes().size() == 1) {
+                // skip any timing metadata keys produced as a result of testing with timing enabled
+                continue;
+            }
 
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
             Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),

@@ -17,6 +17,7 @@ import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
@@ -32,9 +33,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
+import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -45,18 +50,32 @@ import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.cardinality.CardinalityConfiguration;
+import datawave.query.composite.CompositeMetadata;
 import datawave.query.config.IndexHole;
 import datawave.query.config.Profile;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.enrich.DataEnricher;
 import datawave.query.enrich.EnrichingMaster;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.function.ws.AttributeKeepFunction;
+import datawave.query.function.ws.CompositeProjectionFunction;
+import datawave.query.function.ws.DocumentEvaluation;
+import datawave.query.function.ws.DocumentMetadataFunction;
+import datawave.query.function.ws.EmptyDocumentFunction;
+import datawave.query.function.ws.EvaluationFunction;
+import datawave.query.function.ws.LimitFieldsTransform;
+import datawave.query.function.ws.MaskedValueFilterFunction;
+import datawave.query.function.ws.ProjectionFunction;
+import datawave.query.function.ws.RemoveGroupingContextFunction;
 import datawave.query.index.lookup.CreateUidsIterator;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
+import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.QueryOptions;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.language.parser.ParseException;
@@ -70,6 +89,7 @@ import datawave.query.planner.QueryPlanner;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.scheduler.SequentialScheduler;
+import datawave.query.tables.facets.FacetedQueryLogic;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
@@ -81,6 +101,7 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
+import datawave.util.UniversalSet;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -189,6 +210,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     private QueryLogicTransformer transformerInstance = null;
 
     private CardinalityConfiguration cardinalityConfiguration = null;
+    private EvaluationFunction evaluationFunction = null;
 
     /**
      * Basic constructor
@@ -233,7 +255,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.setConfiguredProfiles(other.getConfiguredProfiles());
         this.setSelectedProfile(other.getSelectedProfile());
         this.setPrimaryToSecondaryFieldMap(other.getPrimaryToSecondaryFieldMap());
-
+        this.setUsePartialInterpreter(other.getUsePartialInterpreter());
         if (other.eventQueryDataDecoratorTransformer != null) {
             this.setEventQueryDataDecoratorTransformer(new EventQueryDataDecoratorTransformer(other.getEventQueryDataDecoratorTransformer()));
         }
@@ -426,6 +448,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         validateConfiguration(config);
 
+        if (getUsePartialInterpreter()) {
+            config.setEvaluationFunction(new EvaluationFunction(config));
+        }
+
         if (getCardinalityConfiguration() != null && (!config.getBlacklistedFields().isEmpty() || !config.getProjectFields().isEmpty())) {
             // Ensure that fields used for resultCardinalities are returned. They will be removed in the DocumentTransformer.
             // Modify the projectFields and blacklistFields only for this stage, then return to the original values.
@@ -449,6 +475,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         } else {
             this.queries = getQueryPlanner().process(config, jexlQueryString, settings, this.getScannerFactory());
         }
+
+        this.evaluationFunction = config.getEvaluationFunction();
 
         TraceStopwatch stopwatch = config.getTimers().newStartedStopwatch("ShardQueryLogic - Get iterator of queries");
 
@@ -563,6 +591,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
         this.scanner = null;
         this.iterator = this.scheduler.iterator();
+
+        if (evaluationFunction != null && !(this instanceof FacetedQueryLogic)) {
+            this.iterator = Iterators.transform(iterator, buildDocumentEvaluation());
+            this.iterator = QueryIterator.statelessFilter(iterator, input -> (input != null && input.getValue() != null && input.getValue().getSize() > 0));
+        }
 
         if (!config.isSortedUIDs()) {
             this.iterator = new DedupingIterator(this.iterator);
@@ -1033,6 +1066,144 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         }
 
         stopwatch.stop();
+    }
+
+    /**
+     * Constructs a replica of the document evaluation pipeline outside the tablet server
+     *
+     * @return a DocumentEvaluation function
+     */
+    protected DocumentEvaluation buildDocumentEvaluation() {
+        DocumentEvaluation documentEvaluation = new DocumentEvaluation();
+        documentEvaluation.setSerDe(config.getReturnType());
+        documentEvaluation.addFunction(evaluationFunction);
+
+        boolean includeGroupingContext = config.getIncludeGroupingContext() || (config.getGroupFields() != null && !config.getGroupFields().isEmpty());
+
+        documentEvaluation.addFunction(new MaskedValueFilterFunction(includeGroupingContext, isReducedResponse()));
+        documentEvaluation.addFunction(new AttributeKeepFunction());
+
+        Set<Set<String>> matchingFieldSets = getMatchingFieldSetsForEvaluation();
+        Set<String> matchingFields = matchingFieldSets.stream().flatMap(Collection::stream).collect(Collectors.toSet());
+
+        // sort out include/whitelist/projection fields, if applicable
+        if (!getConfig().getProjectFields().isEmpty() || !getConfig().getBlacklistedFields().isEmpty()) {
+            Set<String> includeFields = getIncludeFieldsForEvaluation(matchingFields);
+
+            Set<String> excludeFields = getExcludeFieldsForEvaluation(matchingFields);
+
+            if (!includeFields.isEmpty()) {
+                documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), includeFields, Collections.emptySet()));
+            } else {
+                documentEvaluation.addFunction(new ProjectionFunction(includeGroupingContext, isReducedResponse(), Collections.emptySet(), excludeFields));
+            }
+        }
+
+        try {
+            if (getConfig().getClient() != null) {
+                MetadataHelper metadataHelper = prepareMetadataHelper(getConfig().getClient(), getConfig().getMetadataTableName(),
+                                getConfig().getAuthorizations());
+                CompositeMetadata compositeMetadata = metadataHelper.getCompositeMetadata().filter(config.getQueryFieldsDatatypes().keySet());
+                Collection<Multimap<String,String>> compositeMaps = compositeMetadata.getCompositeFieldMapByType().values();
+                if (!compositeMaps.isEmpty()) {
+                    documentEvaluation.addFunction(new CompositeProjectionFunction(includeGroupingContext, isReducedResponse(), compositeMaps, matchingFields));
+                }
+            }
+        } catch (TableNotFoundException e) {
+            throw new IllegalStateException("Could not add CompositeProjectionTransform, error was: ", e);
+        }
+
+        documentEvaluation.addFunction(new EmptyDocumentFunction());
+        documentEvaluation.addFunction(new DocumentMetadataFunction());
+
+        // configure limit fields, if applicable
+        Map<String,Integer> limitFieldsMap = getLimitFieldsMapForEvaluation();
+        if (!limitFieldsMap.isEmpty()) {
+            documentEvaluation.addFunction(new LimitFieldsTransform(limitFieldsMap, matchingFieldSets));
+        }
+
+        // remove grouping context, if it was added by QueryIterator
+        // we only drop into this block if the evaluating transform was provided with an updated query tree.
+        String query = evaluationFunction.getUpdatedQueryString();
+        if (!includeGroupingContext && query != null && (query.contains("grouping:") || query.contains("matchesInGroup") || query.contains("MatchesInGroup")
+                        || query.contains("atomValuesMatch"))) {
+            documentEvaluation.addFunction(new RemoveGroupingContextFunction());
+        }
+
+        return documentEvaluation;
+    }
+
+    private Set<Set<String>> getMatchingFieldSetsForEvaluation() {
+        Set<Set<String>> matchingFieldSets = new HashSet<>();
+        Set<String> fieldSets = getMatchingFieldSets();
+        for (String fieldSet : fieldSets) {
+            String[] fields = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(fieldSet), String.class);
+            if (fields.length != 0) {
+                matchingFieldSets.add(new HashSet<>(Arrays.asList(fields)));
+            }
+        }
+        return matchingFieldSets;
+    }
+
+    /**
+     * The addition of the matching field sets requires additional work for the webservice evaluation
+     *
+     * @param matchingFields
+     *            the set of matching fields
+     * @return the include fields
+     */
+    private Set<String> getIncludeFieldsForEvaluation(Set<String> matchingFields) {
+        Set<String> includeFields;
+        if (getConfig().getProjectFieldsAsString().equals(QueryOptions.EVERYTHING)) {
+            includeFields = UniversalSet.instance();
+        } else {
+            includeFields = getConfig().getProjectFields();
+        }
+
+        // must include matching fields if present
+        if (!matchingFields.isEmpty()) {
+            includeFields.addAll(matchingFields);
+        }
+
+        // this is convoluted. If we have projection fields, make sure HIT_TERM is present.
+        // otherwise, if no fields are configured leave the empty set as it is.
+        if (!includeFields.isEmpty() && config.isHitList()) {
+            includeFields.add(JexlEvaluation.HIT_TERM_FIELD);
+        }
+
+        // must also preserve the record id
+        if (!includeFields.isEmpty() && config.getIncludeRecordId()) {
+            includeFields.add(Document.DOCKEY_FIELD_NAME);
+        }
+
+        return includeFields;
+    }
+
+    /**
+     * The addition of matching field sets requires additional work for the webservice evaluation
+     *
+     * @param matchingFields
+     *            the set of matching fields
+     * @return the exclude fields
+     */
+    private Set<String> getExcludeFieldsForEvaluation(Set<String> matchingFields) {
+        Set<String> excludeFields = getBlacklistedFields();
+        excludeFields.removeAll(matchingFields);
+        return excludeFields;
+    }
+
+    private Map<String,Integer> getLimitFieldsMapForEvaluation() {
+        Map<String,Integer> limitFieldsMap = new HashMap<>();
+        String limitFieldsString = getConfig().getLimitFieldsAsString();
+        if (org.apache.commons.lang3.StringUtils.isNotBlank(limitFieldsString)) {
+            for (String paramGroup : Splitter.on(',').omitEmptyStrings().trimResults().split(limitFieldsString)) {
+                String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
+                if (keyAndValue.length > 1) {
+                    limitFieldsMap.put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
+                }
+            }
+        }
+        return limitFieldsMap;
     }
 
     void configureDocumentAggregation(Query settings) {
@@ -2549,6 +2720,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
 
     public void setWhindexFieldMappings(Map<String,Map<String,String>> whindexFieldMappings) {
         getConfig().setWhindexFieldMappings(whindexFieldMappings);
+    }
+
+    public boolean getUsePartialInterpreter() {
+        return getConfig().getUsePartialInterpreter();
+    }
+
+    public void setUsePartialInterpreter(boolean usePartialInterpreter) {
+        getConfig().setUsePartialInterpreter(usePartialInterpreter);
+    }
+
+    public Set<String> getIncompleteFields() {
+        return getConfig().getIncompleteFields();
+    }
+
+    public void setIncompleteFields(Set<String> incompleteFields) {
+        getConfig().setIncompleteFields(incompleteFields);
     }
 
     public boolean isLazySetMechanismEnabled() {

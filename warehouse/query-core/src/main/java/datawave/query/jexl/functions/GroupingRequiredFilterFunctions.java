@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.apache.log4j.Logger;
 
 import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 
 /**
  * NOTE: The JexlFunctionArgumentDescriptorFactory is implemented by GroupingRequiredFilterFunctionsDescriptor. This is kept as a separate class to reduce
@@ -53,6 +54,15 @@ public class GroupingRequiredFilterFunctions {
         Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
+
+        // narrow args for State
+        if (fieldValue1 instanceof State) {
+            State state = (State) fieldValue1;
+            if (state.isFunctionalSet()) {
+                fieldValue1 = state.getFunctionalSet();
+            }
+        }
+
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
@@ -69,6 +79,16 @@ public class GroupingRequiredFilterFunctions {
                 groups.add(context);
             }
             for (int i = 2; i < args.length; i++) {
+
+                // narrow args
+                if (args[i] instanceof State) {
+                    State state = (State) args[i];
+                    if (state.isFunctionalSet()) {
+                        args[i] = state.getFunctionalSet();
+                    } else {
+                        args[i] = state.getValue();
+                    }
+                }
 
                 if (args[i] instanceof Iterable) {
                     boolean contextHasMatch = false;
@@ -170,6 +190,15 @@ public class GroupingRequiredFilterFunctions {
         Collection<ValueTuple> allMatches = new HashSet<>();
         Object fieldValue1 = args[0];
         String regex = args[1].toString();
+
+        // narrow args for state if needed
+        if (fieldValue1 instanceof State) {
+            State state = (State) fieldValue1;
+            if (state.isFunctionalSet()) {
+                fieldValue1 = state.getFunctionalSet();
+            }
+        }
+
         if (fieldValue1 instanceof Iterable) {
             // cast as Iterable in order to call the right getAllMatches method
             leftSideMatches = EvaluationPhaseFilterFunctions.getAllMatchesStream((Iterable) fieldValue1, regex);
@@ -184,6 +213,16 @@ public class GroupingRequiredFilterFunctions {
             String context = EvaluationPhaseFilterFunctions.getMatchToRightOfPeriod(matchFieldName, positionFromRight);
 
             for (int i = 2; i < args.length; i += 2) {
+
+                // narrow arg
+                if (args[i] instanceof State) {
+                    State state = (State) args[i];
+                    if (state.isFunctionalSet()) {
+                        args[i] = state.getFunctionalSet();
+                    } else {
+                        args[i] = state.getValue();
+                    }
+                }
 
                 if (args[i] instanceof Iterable) {
                     for (Object fv : (Iterable) args[i]) {

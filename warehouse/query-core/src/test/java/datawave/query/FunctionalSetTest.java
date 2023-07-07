@@ -40,6 +40,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
@@ -173,6 +174,11 @@ public abstract class FunctionalSetTest {
 
             Attribute<?> attr = d.get("UUID.0");
 
+            if (d.containsKey(LogTiming.TIMING_METADATA) && d.getAttributes().size() == 1) {
+                // skip any timing metadata keys produced as a result of testing with timing enabled
+                continue;
+            }
+
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
             Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
                             attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
@@ -239,7 +245,7 @@ public abstract class FunctionalSetTest {
         }
         // @formatter:off
         String[] queryStrings = {
-                "AG.min() > 10", // model expands to AGE.min() > 10 || ETA.min() > 10
+                "AG.min() > 10", // model expands to (AGE || ETA).min() > 10
                 "AG.max() == 40",
                 "AG.max() >= 40",
                 "AG.min() < 10",
@@ -252,7 +258,7 @@ public abstract class FunctionalSetTest {
                 "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24*5 + 1000*60*60*24*7", // 5 plus 7 days for the calculator-deprived
                 "DEATH_DATE.min() < '20160301120000'",
 
-                "AG.size() > 0", // model expands to AGE.size() > 0 || ETA.size() > 0
+                "AG.size() > 0", // model expands to (AGE || ETA).size() > 0 || ETA.size() > 0
                 "ETA.size() > 0",
                 "AGE.size() > 0"
         };
@@ -328,7 +334,6 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18"
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18",
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "18 >= AG && 10 <= AG",

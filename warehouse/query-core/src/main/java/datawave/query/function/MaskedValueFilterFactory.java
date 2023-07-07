@@ -79,8 +79,13 @@ public class MaskedValueFilterFactory {
     }
 
     private static void initializeCache() {
-        maskedValueFilters = new MaskedValueFilterInterface[] {createInstance(false, false), createInstance(false, true), createInstance(true, false),
+        //  @formatter:off
+        maskedValueFilters = new MaskedValueFilterInterface[] {
+                createInstance(false, false),
+                createInstance(false, true),
+                createInstance(true, false),
                 createInstance(true, true)};
+        //  @formatter:on
     }
 
     private static MaskedValueFilterInterface createInstance(boolean includeGroupingContext, boolean reducedResponse) {

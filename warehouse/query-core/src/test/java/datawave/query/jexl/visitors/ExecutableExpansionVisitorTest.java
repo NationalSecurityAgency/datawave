@@ -57,6 +57,7 @@ import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
@@ -204,6 +205,11 @@ public abstract class ExecutableExpansionVisitorTest {
             Attribute<?> attr = d.get("UUID");
             if (attr == null)
                 attr = d.get("UUID.0");
+
+            if (d.containsKey(LogTiming.TIMING_METADATA) && d.getAttributes().size() == 1) {
+                // skip any timing metadata keys produced as a result of testing with timing enabled
+                continue;
+            }
 
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
             Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),

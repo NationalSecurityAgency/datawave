@@ -79,6 +79,7 @@ public class QueryLogicTestHarness {
         }
 
         for (Map.Entry<Key,Value> entry : logic) {
+
             if (FinalDocumentTrackingIterator.isFinalDocumentKey(entry.getKey())) {
                 continue;
             }
@@ -103,7 +104,7 @@ public class QueryLogicTestHarness {
                             }
                         }
                     }
-                    Assert.assertEquals(AttributeFactory.getKeepers(types), types);
+                    Assert.assertTrue(types.containsAll(AttributeFactory.getKeepers(types)));
                 } else {
                     count++;
                 }

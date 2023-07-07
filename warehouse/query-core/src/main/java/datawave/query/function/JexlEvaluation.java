@@ -1,5 +1,8 @@
 package datawave.query.function;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.DatawaveJexlScript;
@@ -27,9 +30,15 @@ import datawave.query.transformer.ExcerptTransform;
 import datawave.query.util.Tuple3;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
+
     private static final Logger log = Logger.getLogger(JexlEvaluation.class);
 
     public static final String HIT_TERM_FIELD = "HIT_TERM";
+    public static final String EVAL_STATE_FIELD = "EVAL_STATE";
+
+    public enum EVAL_STATE {
+        FULL, PARTIAL
+    }
 
     private String query;
     private JexlArithmetic arithmetic;
@@ -48,11 +57,19 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     }
 
     public JexlEvaluation(String query, JexlArithmetic arithmetic) {
+        this(query, arithmetic, false, Collections.emptySet());
+    }
+
+    public JexlEvaluation(String query, JexlArithmetic arithmetic, boolean usePartialInterpreter, Set<String> incompleteFields) {
         this.query = query;
         this.arithmetic = arithmetic;
 
         // Get a JexlEngine initialized with the correct JexlArithmetic for this Document
-        this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
+        if (usePartialInterpreter) {
+            this.engine = ArithmeticJexlEngines.getEngine(arithmetic, incompleteFields);
+        } else {
+            this.engine = ArithmeticJexlEngines.getEngine(arithmetic);
+        }
 
         // Evaluate the JexlContext against the Script
         this.script = DatawaveJexlScript.create((ExpressionImpl) this.engine.createScript(this.query));
@@ -71,7 +88,11 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     }
 
     public boolean isMatched(Object o) {
-        return ArithmeticJexlEngines.isMatched(o);
+        return isMatched(o, engine.getUsePartialInterpreter());
+    }
+
+    public boolean isMatched(Object o, boolean usePartialInterpreter) {
+        return ArithmeticJexlEngines.isMatched(o, usePartialInterpreter);
     }
 
     @Override
@@ -94,6 +115,14 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         // Add delayed info to document
         if (matched && input.third() instanceof DelayedNonEventIndexContext) {
             ((DelayedNonEventIndexContext) input.third()).populateDocument(input.second());
+        }
+
+        // pass a hint back to the webservice about the evaluation state
+        if (matched && engine.wasCallbackUsed()) {
+            Document document = input.second();
+            Content attr = new Content(String.valueOf(EVAL_STATE.PARTIAL), document.getMetadata(), document.isToKeep());
+            document.put(EVAL_STATE_FIELD, attr);
+            engine.resetCallback();
         }
 
         if (arithmetic instanceof HitListArithmetic) {

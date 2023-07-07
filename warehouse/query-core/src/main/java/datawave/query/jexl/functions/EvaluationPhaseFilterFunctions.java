@@ -28,6 +28,7 @@ import com.google.common.collect.Sets;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawavePartialInterpreter.State;
 import datawave.query.jexl.JexlPatternCache;
 import datawave.util.OperationEvaluator;
 
@@ -128,6 +129,24 @@ public class EvaluationPhaseFilterFunctions {
     }
 
     /**
+     * An instance of the <code>isNotNull</code> function that handles a State object
+     *
+     * @param state
+     *            a State object
+     * @return a functional set of hit terms
+     */
+    public static FunctionalSet<ValueTuple> isNotNull(State state) {
+        if (state != null) {
+            if (state.isFunctionalSet()) {
+                return isNotNull(state.getFunctionalSet());
+            } else if (state.isValueTuple()) {
+                return isNotNull(state.getValueTuple());
+            }
+        }
+        return FunctionalSet.emptySet();
+    }
+
+    /**
      * Returns a {@link FunctionalSet} of hit terms found for {@code fieldValue}. If {@code fieldValue} is a singular value tuple, a singleton
      * {@link FunctionalSet} with the hit term from it will be returned. If {@code fieldValue} is a non-empty collection of value tuples, a
      * {@link FunctionalSet} containing the hit terms from each value in the collection will be returned. Otherwise, an empty {@link FunctionalSet} will be
@@ -144,7 +163,6 @@ public class EvaluationPhaseFilterFunctions {
                 if (!values.isEmpty()) {
                     return values.stream().map(EvaluationPhaseFilterFunctions::getHitTerm).collect(Collectors.toCollection(FunctionalSet::new));
                 }
-
             } else {
                 return FunctionalSet.singleton(getHitTerm(fieldValue));
             }
@@ -160,7 +178,13 @@ public class EvaluationPhaseFilterFunctions {
      * @return true if {@code fieldValue} is a null {@link Object} or an empty {@link Collection}, or false otherwise
      */
     public static boolean isNull(Object fieldValue) {
-        return fieldValue instanceof Collection ? ((Collection<?>) fieldValue).isEmpty() : fieldValue == null;
+        if (fieldValue instanceof Collection) {
+            return ((Collection<?>) fieldValue).isEmpty();
+        } else if (fieldValue instanceof State) {
+            return ((State) fieldValue).getFunctionalSet().isEmpty();
+        } else {
+            return fieldValue == null;
+        }
     }
 
     /**
@@ -201,7 +225,7 @@ public class EvaluationPhaseFilterFunctions {
      * minimum parsed from the given minimum number of required matches. If the minimum was not met, then an empty {@link FunctionalSet} will be returned.
      *
      * <p>
-     *
+     * <p>
      * Note: the {@code args} array must have the following elements in the indicated indices:
      * <ul>
      * <li>{@code args[0]}: the minimum number of matches that are required to return a non-empty {@link FunctionalSet}</li>
@@ -212,7 +236,6 @@ public class EvaluationPhaseFilterFunctions {
      *
      * @param args
      *            the arguments array
-     *
      * @return the {@link FunctionalSet} of matches.
      */
     public static FunctionalSet<ValueTuple> matchesAtLeastCountOf(Object[] args) {
@@ -225,6 +248,14 @@ public class EvaluationPhaseFilterFunctions {
         // Find all matches.
         for (Object regexObject : regexes) {
             String regex = regexObject.toString();
+
+            if (fieldValue instanceof State) {
+                State state = (State) fieldValue;
+                if (state.isFunctionalSet()) {
+                    fieldValue = state.getFunctionalSet();
+                }
+                // else we don't match boolean or number
+            }
             if (fieldValue instanceof Iterable) {
                 // Cast as Iterable in order to call the right includeRegex method
                 matches.addAll(includeRegex((Iterable<?>) fieldValue, regex));
@@ -257,6 +288,21 @@ public class EvaluationPhaseFilterFunctions {
      */
     public static FunctionalSet<ValueTuple> includeRegex(Object fieldValue, String regex) {
         if (fieldValue != null) {
+
+            if (fieldValue instanceof State) {
+                State state = (State) fieldValue;
+                if (state.isFunctionalSet()) {
+                    int size = state.getFunctionalSet().size();
+                    if (size == 0) {
+                        return FunctionalSet.emptySet();
+                    } else if (size == 1) {
+                        fieldValue = state.getFunctionalSet().iterator().next();
+                    } else {
+                        return includeRegex(state.getFunctionalSet(), regex);
+                    }
+                }
+            }
+
             Pattern pattern = JexlPatternCache.getPattern(regex);
             boolean caseInsensitive = regex.matches(CASE_INSENSITIVE);
             if (isMatchForPattern(pattern, caseInsensitive, fieldValue)) {
@@ -348,7 +394,16 @@ public class EvaluationPhaseFilterFunctions {
      * @see EvaluationPhaseFilterFunctions#includeRegex(Object, String) additional documentation on expected result
      */
     public static FunctionalSet<ValueTuple> getAllMatches(Object fieldValue, String regex) {
-        return includeRegex(fieldValue, regex);
+        if (fieldValue instanceof State) {
+            State state = (State) fieldValue;
+            if (state.isFunctionalSet()) {
+                return includeRegex(state.getFunctionalSet(), regex);
+            } else {
+                return FunctionalSet.emptySet();
+            }
+        } else {
+            return includeRegex(fieldValue, regex);
+        }
     }
 
     // Returns whether the pattern matches against either the non-normalized value or, if caseInsensitive is false, the normalized value.
@@ -714,6 +769,26 @@ public class EvaluationPhaseFilterFunctions {
     }
 
     /**
+     * An instance of the <code>afterDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>afterDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param start
+     *            the start date
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> afterDate(State state, String start) {
+        if (state.isFunctionalSet()) {
+            return afterDate(state.getFunctionalSet(), start);
+        } else if (state.isValueTuple()) {
+            return afterDate(state.getValueTuple(), start);
+        }
+        return FunctionalSet.emptySet();
+    }
+
+    /**
      * Searches for a date between start and end (inclusively)
      *
      * @param fieldValue
@@ -761,6 +836,28 @@ public class EvaluationPhaseFilterFunctions {
             }
         }
         return matches;
+    }
+
+    /**
+     * An instance of the <code>afterDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>afterDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param start
+     *            the start date
+     * @param rangePattern
+     *            a date format
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> afterDate(State state, String start, String rangePattern) {
+        if (state.isFunctionalSet()) {
+            return afterDate(state.getFunctionalSet(), start, rangePattern);
+        } else if (state.isValueTuple()) {
+            return afterDate(state.getValueTuple(), start, rangePattern);
+        }
+        return FunctionalSet.emptySet();
     }
 
     /**
@@ -893,6 +990,26 @@ public class EvaluationPhaseFilterFunctions {
     }
 
     /**
+     * An instance of the <code>beforeDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>beforeDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param end
+     *            the end date
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> beforeDate(State state, String end) {
+        if (state.isFunctionalSet()) {
+            return beforeDate(state.getFunctionalSet(), end);
+        } else if (state.isValueTuple()) {
+            return beforeDate(state.getValueTuple(), end);
+        }
+        return FunctionalSet.emptySet();
+    }
+
+    /**
      * Searches for a date before end (exclusively)
      *
      * @param fieldValue
@@ -941,6 +1058,26 @@ public class EvaluationPhaseFilterFunctions {
             }
         }
         return matches;
+    }
+
+    /**
+     * An instance of the <code>beforeDate</code> function that operates on a {@link State} object.
+     * <p>
+     * This method delegates to the correct <code>beforeDate</code> function.
+     *
+     * @param state
+     *            a State object
+     * @param end
+     *            the end date
+     * @return a FunctionalSet of matches
+     */
+    public static FunctionalSet<ValueTuple> beforeDate(State state, String end, String rangePattern) {
+        if (state.isFunctionalSet()) {
+            return beforeDate(state.getFunctionalSet(), end, rangePattern);
+        } else if (state.isValueTuple()) {
+            return beforeDate(state.getValueTuple(), end, rangePattern);
+        }
+        return FunctionalSet.emptySet();
     }
 
     /**

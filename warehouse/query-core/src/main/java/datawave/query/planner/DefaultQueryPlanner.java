@@ -449,6 +449,10 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             throw new DatawaveFatalQueryException(qe);
         }
 
+        if (config.getEvaluationFunction() != null) {
+            config.getEvaluationFunction().lazyInitialize(config.getQueryString());
+        }
+
         stopwatch.stop();
         stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Construct IteratorSettings");
 
@@ -2118,8 +2122,15 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 addOption(cfg, QueryOptions.LIMIT_FIELDS_FIELD, config.getLimitFieldsField(), false);
             }
 
+            if (config.getUsePartialInterpreter()) {
+                addOption(cfg, QueryOptions.USE_PARTIAL_INTERPRETER, Boolean.toString(config.getUsePartialInterpreter()), false);
+                // incomplete fields only required when using a partial interpreter
+                addOption(cfg, QueryOptions.INCOMPLETE_FIELDS, Joiner.on(',').join(config.getIncompleteFields()), false);
+            }
+
             return cfg;
         });
+
     }
 
     /**

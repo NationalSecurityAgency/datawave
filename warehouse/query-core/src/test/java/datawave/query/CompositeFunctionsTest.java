@@ -45,6 +45,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.PreNormalizedAttribute;
 import datawave.query.attributes.TypeAttribute;
 import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.function.LogTiming;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.tables.ShardQueryLogic;
@@ -223,6 +224,11 @@ public abstract class CompositeFunctionsTest {
                 attr = d.get("UUID.0");
             }
 
+            if (d.containsKey(LogTiming.TIMING_METADATA) && d.getAttributes().size() == 1) {
+                // skip any timing metadata keys produced as a result of testing with timing enabled
+                continue;
+            }
+
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
             Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
                             attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
@@ -322,9 +328,17 @@ public abstract class CompositeFunctionsTest {
                 "(UUID:C* OR UUID:S*) AND #TIME_FUNCTION(DEATH_DATE,BIRTH_DATE,'-','>','2522880000000L')"
         };
         // timeFunction(Object time1, Object time2, String operatorString, String equalityString, long goal)
+
+        //  @formatter:off
         @SuppressWarnings("unchecked")
-        List<String>[] expectedLists = new List[] {Collections.singletonList("CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
-                Collections.singletonList("CAPONE"), Collections.singletonList("CAPONE"),};
+        List<String>[] expectedLists = new List[] {
+                        Collections.singletonList("CAPONE"),
+                        Arrays.asList("CORLEONE", "CAPONE"),
+                        Collections.singletonList("CAPONE"),
+                        Collections.singletonList("CAPONE"),
+        };
+        //  @formatter:on
+
         for (int i = 0; i < queryStrings.length; i++) {
             if (i == 3) {
                 eventQueryLogic.setParser(new LuceneToJexlQueryParser());
@@ -465,7 +479,6 @@ public abstract class CompositeFunctionsTest {
         //  @formatter:on
 
         for (int i = 0; i < queryStrings.length; i++) {
-            System.out.println("query: " + i);
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
@@ -569,9 +582,15 @@ public abstract class CompositeFunctionsTest {
         List<String>[] expectedLists = new List[] {
                 Collections.singletonList("SOPRANO"), // family name starts with C or S
                 Collections.singletonList("SOPRANO"), // family name starts with C or S
-                Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"), Arrays.asList("CORLEONE", "CAPONE"),
-                Collections.singletonList("CORLEONE"), Arrays.asList("CORLEONE", "CAPONE"), Collections.singletonList("SOPRANO"),
-                Collections.singletonList("SOPRANO"), Collections.singletonList("CORLEONE")};
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("CORLEONE"),
+                Arrays.asList("CORLEONE", "CAPONE"),
+                Collections.singletonList("SOPRANO"),
+                Collections.singletonList("SOPRANO"),
+                Collections.singletonList("CORLEONE")
+                };
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
@@ -621,7 +640,7 @@ public abstract class CompositeFunctionsTest {
                 Arrays.asList("CORLEONE", "CAPONE"), // family has child MICHAEL
                 Collections.singletonList("CORLEONE"), Collections.singletonList("CORLEONE")};
         for (int i = 0; i < queryStrings.length; i++) {
-            runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
+             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
 

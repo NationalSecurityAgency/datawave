@@ -42,14 +42,7 @@ public class JexlContextCreator implements Function<Tuple3<Key,Document,Map<Stri
         // we need to have fielded values to place them into the Map.
         from.second().visit(variables, context);
 
-        // absorb the supplied map into the context
-        for (Entry<String,Object> entry : from.third().entrySet()) {
-            if (context.has(entry.getKey())) {
-                throw new IllegalStateException("Conflict when merging Jexl contexts!");
-            } else {
-                context.set(entry.getKey(), entry.getValue());
-            }
-        }
+        // the termOffsetMap is now loaded into the context via the visit method above
 
         // add any additional entries
         for (Entry<String,Object> entry : additionalEntries.entrySet()) {

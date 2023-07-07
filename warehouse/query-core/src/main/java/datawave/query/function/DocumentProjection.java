@@ -93,10 +93,16 @@ public class DocumentProjection implements DocumentPermutation {
         }
         Map<String,Attribute<? extends Comparable<?>>> dict = d.getDictionary();
         Document newDoc = new Document();
+        newDoc.setOffsetMap(d.getOffsetMap());
 
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : dict.entrySet()) {
             String fieldName = entry.getKey();
             Attribute<?> attr = entry.getValue();
+
+            if (fieldName.equals(LogTiming.TIMING_METADATA)) {
+                newDoc.put(fieldName, attr);
+                continue;
+            }
 
             if (projection.apply(fieldName)) {
 

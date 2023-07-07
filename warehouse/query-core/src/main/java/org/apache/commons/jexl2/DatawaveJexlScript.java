@@ -6,6 +6,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
+import datawave.query.jexl.DatawaveJexlEngine;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 
 /**
@@ -167,6 +168,18 @@ public class DatawaveJexlScript implements Expression, Script {
             }
 
         };
+    }
+
+    /**
+     * Used for tests
+     *
+     * @return true if the resulting evaluation was a partial evaluation
+     */
+    public boolean getCallback() {
+        if (jexl instanceof DatawaveJexlEngine) {
+            return ((DatawaveJexlEngine) jexl).wasCallbackUsed();
+        }
+        return false;
     }
 
 }

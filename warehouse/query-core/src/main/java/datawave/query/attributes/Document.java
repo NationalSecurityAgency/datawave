@@ -1,8 +1,12 @@
 package datawave.query.attributes;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.time.format.DateTimeParseException;
@@ -34,6 +38,9 @@ import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.KeyToFieldName;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.TermFrequencyList;
+import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ValueToAttributes;
 import datawave.query.util.TypeMetadata;
@@ -50,6 +57,9 @@ public class Document extends AttributeBag<Document> implements Serializable {
     long _bytes = 0;
     TreeMap<String,Attribute<? extends Comparable<?>>> dict;
 
+    // optional store for term weight positions
+    private TermOffsetMap offsetMap;
+
     /**
      * should sizes of the documents be tracked
      */
@@ -59,8 +69,6 @@ public class Document extends AttributeBag<Document> implements Serializable {
      * Whether or not this document represents an intermediate result. If true, then the document fields should also be empty.
      */
     private boolean intermediateResult;
-
-    private static final long ONE_DAY_MS = 1000l * 60 * 60 * 24;
 
     public MarkingFunctions getMarkingFunctions() {
         return MarkingFunctions.Factory.createMarkingFunctions();
@@ -84,7 +92,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     public Document(Key key, boolean toKeep, boolean trackSizes) {
         super(key, toKeep);
-        dict = new TreeMap<>();
+        this.dict = new TreeMap<>();
         this.trackSizes = trackSizes;
     }
 
@@ -426,6 +434,14 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
 
         putAll(other.dict.entrySet().iterator(), includeGroupingContext);
+
+        if (offsetMap != null && other.offsetMap != null) {
+            offsetMap.merge(other.offsetMap);
+        } else if (offsetMap == null && other.offsetMap != null) {
+            offsetMap = other.offsetMap;
+        }
+        // other null, no merge required
+        // both null, no merge required
     }
 
     /**
@@ -584,6 +600,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
             entry.getValue().write(out);
         }
 
+        if (offsetMap != null && !offsetMap.getTermFrequencyKeySet().isEmpty()) {
+            byte[] data = getOffsetMapToBytes();
+            if (data != null) {
+                WritableUtils.writeVInt(out, 1);
+                WritableUtils.writeCompressedByteArray(out, getOffsetMapToBytes());
+            }
+        } else {
+            WritableUtils.writeVInt(out, 0);
+        }
+
         WritableUtils.writeVLong(out, shardTimestamp);
     }
 
@@ -630,6 +656,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
             // Add the attribute back to the Map
             this.dict.put(fieldName, attr);
+        }
+
+        int offsetFlag = WritableUtils.readVInt(in);
+        if (offsetFlag == 1) {
+            byte[] data = WritableUtils.readCompressedByteArray(in);
+            this.offsetMap = getOffsetMapFromBytes(data);
         }
 
         this.shardTimestamp = WritableUtils.readVLong(in);
@@ -723,6 +755,15 @@ public class Document extends AttributeBag<Document> implements Serializable {
         return hcb.toHashCode();
     }
 
+    /**
+     * Populate a JexlContext from this document. Optionally provide a set of fields that define what goes into the context.
+     *
+     * @param queryFieldNames
+     *            only add these fields to the context. If empty or an '_ANYFIELD_' exists, do not perform filtering
+     * @param context
+     *            the {@link DatawaveJexlContext}
+     * @return a DatawaveJexlContext populated from the Document
+     */
     @SuppressWarnings("unchecked")
     @Override
     public Collection<ValueTuple> visit(Collection<String> queryFieldNames, DatawaveJexlContext context) {
@@ -736,7 +777,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
         }
         for (Entry<String,Attribute<? extends Comparable<?>>> entry : this.dict.entrySet()) {
             // For evaluation purposes, all field names have the grouping context
-            // ripped off, regardless of whether or not it's beign return to the client.
+            // ripped off, regardless of whether it's being return to the client.
             // Until grouping-context aware query evaluation is implemented, we always
             // want to remove the grouping-context
             String identifier = JexlASTHelper.rebuildIdentifier(entry.getKey(), false);
@@ -791,6 +832,11 @@ public class Document extends AttributeBag<Document> implements Serializable {
             context.set(Constants.ANY_FIELD, anySet);
         }
 
+        // Note: this will overwrite an existing termOffsetMap
+        if (offsetMap != null && !offsetMap.getTermFrequencyKeySet().isEmpty()) {
+            context.set(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME, offsetMap);
+        }
+
         // this probably will not be used by anybody as the side-effect of loading the JEXL context is the real result
         return children;
     }
@@ -817,6 +863,16 @@ public class Document extends AttributeBag<Document> implements Serializable {
             Attribute<?> attribute = entry.getValue();
             output.writeString(attribute.getClass().getName());
             attribute.write(kryo, output, reducedResponse);
+        }
+
+        if (offsetMap != null && !offsetMap.getTermFrequencyKeySet().isEmpty()) {
+            byte[] data = getOffsetMapToBytes();
+            if (data != null) {
+                output.writeInt(data.length);
+                output.writeBytes(data);
+            }
+        } else {
+            output.writeInt(0);
         }
 
         output.writeLong(this.shardTimestamp);
@@ -866,6 +922,12 @@ public class Document extends AttributeBag<Document> implements Serializable {
             this.dict.put(fieldName, attr);
         }
 
+        int offsetFlag = input.readInt();
+        if (offsetFlag > 0) {
+            byte[] data = input.readBytes(offsetFlag);
+            this.offsetMap = getOffsetMapFromBytes(data);
+        }
+
         this.shardTimestamp = input.readLong();
 
         this.invalidateMetadata();
@@ -881,6 +943,7 @@ public class Document extends AttributeBag<Document> implements Serializable {
             d.put(entry.getKey(), (Attribute<?>) entry.getValue().copy());
         }
 
+        d.offsetMap = this.offsetMap;
         d.shardTimestamp = this.shardTimestamp;
 
         return d;
@@ -892,6 +955,36 @@ public class Document extends AttributeBag<Document> implements Serializable {
 
     public boolean isIntermediateResult() {
         return intermediateResult;
+    }
+
+    private byte[] getOffsetMapToBytes() {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
+                oos.writeObject(offsetMap);
+                oos.flush();
+                return baos.toByteArray();
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("failed to serialize TermOffsetMap to byte array");
+        }
+    }
+
+    private TermOffsetMap getOffsetMapFromBytes(byte[] data) {
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(data)) {
+            try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+                return (TermOffsetMap) ois.readObject();
+            }
+        } catch (Exception e) {
+            throw new IllegalStateException("failed to deserialize TermOffsetMap to byte array");
+        }
+    }
+
+    public TermOffsetMap getOffsetMap() {
+        return this.offsetMap;
+    }
+
+    public void setOffsetMap(TermOffsetMap offsetMap) {
+        this.offsetMap = offsetMap;
     }
 
 }
