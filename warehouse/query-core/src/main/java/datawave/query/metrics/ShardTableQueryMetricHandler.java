@@ -589,7 +589,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setOwner(datawavePrincipal.getShortName());
             query.setId(UUID.randomUUID());
             query.addParameter(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
-            query.addParameter(QueryParameters.RETURN_FIELDS, "SUBPLAN");
+            query.addParameter(QueryParameters.BLACKLISTED_FIELDS, "PAGE_METRICS");
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
 
             response.setResult(queryMetrics);
