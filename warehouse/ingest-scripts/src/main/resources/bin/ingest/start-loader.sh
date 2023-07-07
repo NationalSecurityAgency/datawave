@@ -85,13 +85,15 @@ if [[${TOTAL} >0 ]]; then
     COUNT=${NUM_MAP_LOADERS_COPY[$LOADER]}
     echo "starting $COUNT map file loaders for ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} ..."
     SHUTDOWN_PORT=24100
-    portInUse=$(sudo netstat -tupln | grep $SHUTDOWN_PORT)
+    portInUse=`sudo netstat -tupln | grep $SHUTDOWN_PORT`
     while [[ ! -z $portInUse ]]; do
       SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
-      portInUse=$(sudo netstat -tupln | grep $SHUTDOWN_PORT)
+      portInUse=`sudo netstat -tupln | grep $SHUTDOWN_PORT`
     done
     for ((x = 0; x < $COUNT; x = $((x + 1)))); do
       $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader.$LOADER$COUNT.log 2>&1 &
+      SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
+      portInUse=`sudo netstat -tupln | grep $SHUTDOWN_PORT`
     done
 
   done
