@@ -1,22 +1,23 @@
 package datawave.ingest.util;
 
-import datawave.ingest.mapreduce.job.TableSplitsCache;
-import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 
+import datawave.ingest.mapreduce.job.TableSplitsCache;
+
 /**
- * 
+ *
  * This utility will update splits cache file
  */
 public class GenerateSplitsFile {
-    
+
     private static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(GenerateSplitsFile.class);
-    
+
     @SuppressWarnings("static-access")
     public static void main(String[] args) {
         AccumuloCliOptions accumuloOptions = new AccumuloCliOptions();
@@ -48,7 +49,7 @@ public class GenerateSplitsFile {
                 configSuffix = "config.xml";
             }
             log.info("Set configSuffix to " + configSuffix);
-            
+
             ConfigurationFileHelper.setConfigurationFromFiles(conf, configDirectory, configSuffix);
             TableSplitsCache splitsFile = new TableSplitsCache(conf);
             splitsFile.update();

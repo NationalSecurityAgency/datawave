@@ -1,20 +1,21 @@
 package datawave.query;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.WiseGuysIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import javax.inject.Inject;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -32,117 +33,115 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.inject.Inject;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
+import datawave.configuration.spring.SpringBean;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.WiseGuysIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
- * 
+ *
  */
 public abstract class FunctionalSetTest {
-    
+
     @RunWith(Arquillian.class)
     public static class ShardRange extends FunctionalSetTest {
         protected static AccumuloClient client = null;
-        
+
         @BeforeClass
         public static void setUp() throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(FunctionalSetTest.ShardRange.class.toString(), log);
             client = qtth.client;
-            
+
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.SHARD);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
-        
+
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
-    
+
     @RunWith(Arquillian.class)
     public static class DocumentRange extends FunctionalSetTest {
         protected static AccumuloClient client = null;
-        
+
         @BeforeClass
         public static void setUp() throws Exception {
             QueryTestTableHelper qtth = new QueryTestTableHelper(FunctionalSetTest.DocumentRange.class.toString(), log);
             client = qtth.client;
-            
+
             WiseGuysIngest.writeItAll(client, WiseGuysIngest.WhatKindaRange.DOCUMENT);
             Authorizations auths = new Authorizations("ALL");
             PrintUtility.printTable(client, auths, TableName.SHARD);
             PrintUtility.printTable(client, auths, TableName.SHARD_INDEX);
             PrintUtility.printTable(client, auths, QueryTestTableHelper.MODEL_TABLE_NAME);
         }
-        
+
         @Override
         protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception {
             super.runTestQuery(expected, querystr, startDate, endDate, extraParms, client);
         }
     }
-    
+
     private static final Logger log = Logger.getLogger(FunctionalSetTest.class);
-    
+
     protected Authorizations auths = new Authorizations("ALL");
-    
+
     protected Set<Authorizations> authSet = Collections.singleton(auths);
-    
+
     @Inject
     @SpringBean(name = "EventQuery")
     protected ShardQueryLogic logic;
-    
+
     protected KryoDocumentDeserializer deserializer;
-    
+
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
-    
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "org.jboss.logging",
                                         "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
-        
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
+
     }
-    
+
     @AfterClass
     public static void teardown() {
         TypeRegistry.reset();
     }
-    
+
     @Before
     public void setup() {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
-        
+
         logic.setFullTableScanEnabled(true);
-        
+
         deserializer = new KryoDocumentDeserializer();
     }
-    
+
     protected abstract void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms) throws Exception;
-    
+
     protected void runTestQuery(List<String> expected, String querystr, Date startDate, Date endDate, Map<String,String> extraParms, AccumuloClient client)
                     throws Exception {
         log.debug("runTestQuery");
@@ -155,12 +154,12 @@ public abstract class FunctionalSetTest {
         settings.setQuery(querystr);
         settings.setParameters(extraParms);
         settings.setId(UUID.randomUUID());
-        
+
         log.debug("query: " + settings.getQuery());
         log.debug("logic: " + settings.getQueryLogicName());
         logic.setMaxEvaluationPipelines(1);
         logic.setMaxDepthThreshold(6);
-        
+
         GenericQueryConfiguration config = logic.initialize(client, settings, authSet);
         logic.setupQuery(config);
         HashSet<String> expectedSet = new HashSet<>(expected);
@@ -169,46 +168,46 @@ public abstract class FunctionalSetTest {
         Set<Document> docs = new HashSet<>();
         for (Entry<Key,Value> entry : logic) {
             Document d = deserializer.apply(entry).getValue();
-            
+
             log.debug(entry.getKey() + " => " + d);
-            
+
             Attribute<?> attr = d.get("UUID.0");
-            
+
             Assert.assertNotNull("Result Document did not contain a 'UUID'", attr);
-            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(), attr instanceof TypeAttribute
-                            || attr instanceof PreNormalizedAttribute);
-            
+            Assert.assertTrue("Expected result to be an instance of DatwawaveTypeAttribute, was: " + attr.getClass().getName(),
+                            attr instanceof TypeAttribute || attr instanceof PreNormalizedAttribute);
+
             TypeAttribute<?> UUIDAttr = (TypeAttribute<?>) attr;
-            
+
             String UUID = UUIDAttr.getType().getDelegate().toString();
             Assert.assertTrue("Received unexpected UUID for query:" + querystr + "  " + UUID, expected.contains(UUID));
-            
+
             resultSet.add(UUID);
             docs.add(d);
         }
-        
+
         if (expected.size() > resultSet.size()) {
             expectedSet.addAll(expected);
             expectedSet.removeAll(resultSet);
-            
+
             for (String s : expectedSet) {
                 log.warn("Missing: " + s);
             }
         }
-        
+
         if (!expected.containsAll(resultSet)) {
             log.error("Expected results " + expected + " differ form actual results " + resultSet);
         }
         Assert.assertTrue("Expected results " + expected + " differ form actual results " + resultSet, expected.containsAll(resultSet));
         Assert.assertEquals("Unexpected number of records for query:" + querystr, expected.size(), resultSet.size());
     }
-    
+
     @Test
     public void testMethodAsArgumentToMethod() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        
+
         if (log.isDebugEnabled()) {
             log.debug("testMethodAsArgumentToMethod");
         }
@@ -223,18 +222,18 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO")
         };
         // @formatter:on
-        
+
         for (int i = 0; i < queryStrings.length; i++) {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
-    
+
     @Test
     public void testMinMax() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
-        
+
         if (log.isDebugEnabled()) {
             log.debug("testMinMax");
         }
@@ -244,15 +243,15 @@ public abstract class FunctionalSetTest {
                 "AG.max() == 40",
                 "AG.max() >= 40",
                 "AG.min() < 10",
-                
+
                 "AG.greaterThan(39).size() >= 1",
                 "AG.compareWith(40,'==').size() == 1",
-                
+
                 "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'",
                 "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24", // one day
                 "DEATH_DATE.max() - BIRTH_DATE.min() > 1000*60*60*24*5 + 1000*60*60*24*7", // 5 plus 7 days for the calculator-deprived
                 "DEATH_DATE.min() < '20160301120000'",
-                
+
                 "AG.size() > 0", // model expands to AGE.size() > 0 || ETA.size() > 0
                 "ETA.size() > 0",
                 "AGE.size() > 0"
@@ -263,15 +262,15 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList(),
-                
+
                 Arrays.asList("CORLEONE", "CAPONE"),
                 Arrays.asList("CORLEONE", "CAPONE"),
-                
+
                 Arrays.asList("CAPONE"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
-                
+
                 Arrays.asList("SOPRANO", "CORLEONE", "CAPONE", "ANDOLINI"),
                 Arrays.asList("CORLEONE", "ANDOLINI"),
                 Arrays.asList("SOPRANO", "CAPONE"),};
@@ -280,7 +279,7 @@ public abstract class FunctionalSetTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
-    
+
     @Test
     public void testFunctionsAsArguments() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
@@ -291,7 +290,7 @@ public abstract class FunctionalSetTest {
         }
         // @formatter:off
         String[] queryStrings = {
-                
+
                 "10 <= AG && AG <= 18",
                 "AG <= 18 && AG >= 10",
                 "18 >= AG && 10 <= AG",
@@ -318,7 +317,7 @@ public abstract class FunctionalSetTest {
                 // want to query with an operator other than '=='
                 "AG > 10 && AG < 100 && AG.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE')) == 30",
                 "AG > 10 && AG < 100 && grouping:matchesInGroup(NAM, 'ALPHONSE', GEN, 'MALE', AG, 30)",
-                
+
                 "AG > 10 && AG < 100 && filter:occurrence(AG, '==', filter:getAllMatches(AG, '16').size() + filter:getAllMatches(AG, '18').size())", // will
                                                                                                                                                      // match
                                                                                                                                                      // only the
@@ -329,7 +328,7 @@ public abstract class FunctionalSetTest {
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {
-        
+
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18"
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "10 <= AG && AG <= 18",
                 Arrays.asList("SOPRANO", "CORLEONE", "ANDOLINI"), // "18 >= AG && 10 <= AG",
@@ -344,7 +343,7 @@ public abstract class FunctionalSetTest {
                 Arrays.asList("SOPRANO"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'MEADOW', GENDER, 'FEMALE')) < 19"
                 Arrays.asList("CAPONE"), // "AGE.getValuesForGroups(grouping:getGroupsForMatchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE')) == 30"
                 Arrays.asList("CAPONE"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
-                
+
                 Arrays.asList("SOPRANO"), // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
                 Arrays.asList() // "grouping:matchesInGroup(NAME, 'ALPHONSE', GENDER, 'MALE', AGE, 30)"
         };
@@ -353,12 +352,12 @@ public abstract class FunctionalSetTest {
             runTestQuery(expectedLists[i], queryStrings[i], format.parse("20091231"), format.parse("20150101"), extraParameters);
         }
     }
-    
+
     @Test
     public void testConcatMethods() throws Exception {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
-        
+
         if (log.isDebugEnabled()) {
             log.debug("testConcatMethods");
         }

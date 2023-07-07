@@ -1,13 +1,13 @@
 package datawave.webservice.query.logic.filtered;
 
-import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
 import java.util.LinkedHashSet;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.security.Authorizations;
+import org.junit.Test;
 
 public class QueryLogicFilterByAuthTest {
     @Test
@@ -24,7 +24,7 @@ public class QueryLogicFilterByAuthTest {
         set.add(new Authorizations("FOOBAR"));
         assertFalse(filter.canRunQuery(null, set));
     }
-    
+
     @Test
     public void testFirstMatch() {
         QueryLogicFilterByAuth filter = new QueryLogicFilterByAuth();
@@ -40,7 +40,7 @@ public class QueryLogicFilterByAuthTest {
         set.add(new Authorizations("FOOBAR"));
         assertTrue(filter.canRunQuery(null, set));
     }
-    
+
     @Test
     public void testNegated() {
         QueryLogicFilterByAuth filter = new QueryLogicFilterByAuth();

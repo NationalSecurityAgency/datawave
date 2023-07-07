@@ -8,6 +8,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -15,6 +20,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
+
 import datawave.marking.MarkingFunctions;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
@@ -26,36 +32,31 @@ import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
-
 public class GroupingDocumentTransformer extends DocumentTransformer {
-    
+
     private static final Logger log = Logger.getLogger(GroupingDocumentTransformer.class);
-    
+
     private List<String> groupFieldsList;
     private Map<String,FieldBase<?>> fieldMap = Maps.newHashMap();
-    
+
     public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Collection<String> groupFieldsSet) {
         super(logic, settings, markingFunctions, responseObjectFactory);
         createGroupFieldsList(groupFieldsSet);
     }
-    
+
     public GroupingDocumentTransformer(BaseQueryLogic<Entry<Key,Value>> logic, Query settings, MarkingFunctions markingFunctions,
                     ResponseObjectFactory responseObjectFactory, Collection<String> groupFieldsSet, Boolean reducedResponse) {
         super(logic, settings, markingFunctions, responseObjectFactory, reducedResponse);
         createGroupFieldsList(groupFieldsSet);
     }
-    
+
     public GroupingDocumentTransformer(String tableName, Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory,
                     Collection<String> groupFieldsSet, Boolean reducedResponse) {
         super(tableName, settings, markingFunctions, responseObjectFactory, reducedResponse);
         createGroupFieldsList(groupFieldsSet);
     }
-    
+
     public void createGroupFieldsList(Collection<String> groupFieldsSet) {
         this.groupFieldsList = Lists.newArrayList(groupFieldsSet);
         QueryModel model = ((ShardQueryLogic) logic).getQueryModel();
@@ -66,13 +67,13 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
             }
         }
     }
-    
+
     @Override
     /**
      * count the desired fields and create a new response with one event.
      */
     public BaseQueryResponse createResponse(List<Object> resultList) {
-        
+
         Multiset<Collection<FieldBase<?>>> multiset = HashMultiset.create();
         if (log.isTraceEnabled())
             log.trace("groupFieldsList:" + groupFieldsList);
@@ -83,7 +84,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
         }
         return createGroupedResponse(multiset);
     }
-    
+
     protected BaseQueryResponse createGroupedResponse(Multiset<Collection<FieldBase<?>>> multiset) {
         Map<String,String> markings = Maps.newHashMap();
         EventQueryResponseBase response = this.responseObjectFactory.getEventQueryResponse();
@@ -106,7 +107,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
         response.setReturnedEvents((long) events.size());
         return response;
     }
-    
+
     private Multimap<String,String> getFieldToFieldWithGroupingContextMap(Collection<FieldBase<?>> fields, Set<String> expandedGroupFieldsList) {
         Multimap<String,String> fieldToFieldWithContextMap = TreeMultimap.create();
         for (FieldBase<?> field : fields) {
@@ -153,7 +154,7 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
         }
         return fieldToFieldWithContextMap;
     }
-    
+
     private int longestValueList(Multimap<String,String> in) {
         int max = 0;
         for (Collection<String> valueCollection : in.asMap().values()) {
@@ -161,9 +162,9 @@ public class GroupingDocumentTransformer extends DocumentTransformer {
         }
         return max;
     }
-    
+
     private void getListKeyCounts(EventBase e, Multiset<Collection<FieldBase<?>>> multiset) {
-        
+
         Set<String> expandedGroupFieldsList = new LinkedHashSet<>();
         List<FieldBase<?>> fields = e.getFields();
         Multimap<String,String> fieldToFieldWithContextMap = this.getFieldToFieldWithGroupingContextMap(fields, expandedGroupFieldsList);

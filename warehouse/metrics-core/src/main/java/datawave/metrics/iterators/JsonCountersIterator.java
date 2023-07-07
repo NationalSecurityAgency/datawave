@@ -1,12 +1,10 @@
 package datawave.metrics.iterators;
 
-import com.google.common.io.ByteStreams;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -18,10 +16,13 @@ import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Type;
-import java.util.Map;
+import com.google.common.io.ByteStreams;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
 /**
  * Iterator that assumes the returned value is a {@link Counters} object and returns that value as a Json string.
@@ -31,7 +32,7 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
     private static Logger log = Logger.getLogger(JsonCountersIterator.class);
     private boolean prettyPrint = false;
     private Gson gson;
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
@@ -40,7 +41,7 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
         }
         gson = initializeGson();
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         JsonCountersIterator copy;
@@ -50,13 +51,13 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
             // Shouldn't happen so just throw as a runtime exception
             throw new RuntimeException(e);
         }
-        
+
         copy.setSource(getSource().deepCopy(env));
         copy.prettyPrint = prettyPrint;
         copy.gson = copy.initializeGson();
         return copy;
     }
-    
+
     private Gson initializeGson() {
         GsonBuilder builder = new GsonBuilder().registerTypeAdapter(Counters.class, new CountersJson()).registerTypeAdapter(CounterGroup.class,
                         new CounterGroupJson());
@@ -64,7 +65,7 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
             builder.setPrettyPrinting();
         return builder.create();
     }
-    
+
     @Override
     public Value getTopValue() {
         Value topValue = super.getTopValue();
@@ -82,15 +83,15 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
             }
         }
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
-        IteratorOptions opts = new IteratorOptions("jsonCounters", getClass().getSimpleName()
-                        + " returns values that are Hadoop Counters objects serialized in Json form", null, null);
+        IteratorOptions opts = new IteratorOptions("jsonCounters",
+                        getClass().getSimpleName() + " returns values that are Hadoop Counters objects serialized in Json form", null, null);
         opts.addNamedOption(PRETTY_PRINT_OPT, "Indicates whether or not the json output should be formatted for human readability (default is false)");
         return opts;
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
         boolean valid = (options == null || options.isEmpty());
@@ -104,7 +105,7 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
         }
         return valid;
     }
-    
+
     /**
      * Serializes a Hadoop {@link Counters} object to Json using Gson. Each {@link CounterGroup} is placed in the Json object using the group name (see
      * {@link CounterGroup#getName}) as the property name.
@@ -119,7 +120,7 @@ public class JsonCountersIterator extends WrappingIterator implements OptionDesc
             return obj;
         }
     }
-    
+
     /**
      * Serializes a Hadoop {@link CounterGroup} using to Json using Gson. The group includes a displayName property if the display name differs from the name.
      * Then each {@link Counter} object is serialized as a child using the name (see {@link Counter#getName()}) as the key. If any of the display names of the

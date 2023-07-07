@@ -1,19 +1,21 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.util.time.DateHelper;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.util.time.DateHelper;
 
 /**
  * Receives ingest metrics and processes them asynchronously. Once the queue fills up, this service will block metrics producers.
@@ -25,10 +27,10 @@ import java.util.Set;
  * 3) Value : The magnitude of this metric (usually count). <br>
  * <p>
  * An example metric looks like:
- * 
+ *
  * <pre>
  * {@code
- * 
+ *
  *     name = "KeyValueCounts"
  *     labels = { "table": "shard", "dataType": "flow1" }
  *     fields = { "dataType": "flow1", "fileExtension" : "gz" }
@@ -37,57 +39,57 @@ import java.util.Set;
  * </pre>
  */
 public class MetricsService<OK,OV> implements AutoCloseable {
-    
+
     private static final Logger logger = Logger.getLogger(MetricsService.class);
-    
+
     public static final String WILDCARD = "*";
-    
+
     private final Map<Metric,MetricsReceiver> receivers;
     private final String date;
-    
+
     private final Multimap<String,String> enabledLabels;
     private final Set<String> enabledKeys;
     private final Set<String> wildcardedLabels;
-    
+
     private final Set<String> fieldNames;
     private final MetricsStore<OK,OV> store;
-    
+
     public MetricsService(ContextWriter<OK,OV> contextWriter, TaskInputOutputContext<?,?,OK,OV> context) {
         Configuration conf = context.getConfiguration();
-        
+
         this.date = DateHelper.format(new Date());
-        
+
         this.fieldNames = MetricsConfiguration.getFieldNames(conf);
         this.enabledLabels = MetricsConfiguration.getLabels(conf);
         this.enabledKeys = enabledLabels.keySet();
-        
+
         this.wildcardedLabels = new HashSet<>();
         for (Map.Entry<String,String> entry : enabledLabels.entries()) {
             if (WILDCARD.equals(entry.getValue())) {
                 wildcardedLabels.add(entry.getKey());
             }
         }
-        
+
         this.receivers = new HashMap<>();
         for (MetricsReceiver receiver : MetricsConfiguration.getReceivers(conf)) {
             this.receivers.put(receiver.getMetric(), receiver);
             receiver.configure(conf, date);
         }
-        
+
         this.store = new AggregatingMetricsStore<>(contextWriter, context);
-        
+
         if (logger.isInfoEnabled()) {
             logger.info("Metrics Service Initialized");
             logger.info("enabledLabels = " + enabledLabels);
             logger.info("receivers = " + receivers);
             logger.info("fieldNames = " + fieldNames);
         }
-        
+
         Preconditions.checkNotNull(fieldNames);
         Preconditions.checkArgument(!enabledLabels.isEmpty());
         Preconditions.checkArgument(!receivers.isEmpty());
     }
-    
+
     /**
      * Collects a metric with the given fields. NOTE: keysAndValues are a vararg that accepts "key1, value1, key2, value2... An exception will be thrown if the
      * keysAndValues are not an even number.
@@ -107,15 +109,15 @@ public class MetricsService<OK,OV> implements AutoCloseable {
         if (logger.isTraceEnabled()) {
             logger.trace("Received metric " + metric + " with labels " + labels);
         }
-        
+
         if (shouldCollect(labels)) {
-            
+
             if (logger.isTraceEnabled()) {
                 logger.trace("Metric " + metric + " collected.");
             }
-            
+
             MetricsReceiver receiver = receivers.get(metric);
-            
+
             if (receiver != null) {
                 try {
                     receiver.process(store, metric, labels, fields, value);
@@ -125,23 +127,23 @@ public class MetricsService<OK,OV> implements AutoCloseable {
             }
         }
     }
-    
+
     private boolean shouldCollect(Map<String,String> metricLabels) {
         for (String key : enabledKeys) {
             String metricsValue = metricLabels.get(key);
-            
+
             if (!(metricsValue == null || isWildcard(key) || enabledLabels.containsEntry(key, metricsValue))) {
                 return false;
             }
         }
-        
+
         return !enabledKeys.isEmpty();
     }
-    
+
     private boolean isWildcard(String labelKey) {
         return wildcardedLabels.contains(labelKey);
     }
-    
+
     @Override
     public void close() {
         try {

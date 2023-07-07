@@ -1,8 +1,19 @@
 package datawave.ingest.util.cache.watch;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-import datawave.iterators.filter.ageoff.FilterOptions;
-import datawave.iterators.filter.ageoff.FilterRule;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -15,28 +26,19 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import datawave.iterators.filter.AgeOffConfigParams;
+import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.iterators.filter.ageoff.FilterRule;
 
 /**
- * 
+ *
  */
 public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
-    
+
     private static final Logger log = Logger.getLogger(FileRuleWatcher.class);
-    
+
     private final IteratorEnvironment iterEnv;
-    
+
     /**
      * @param fs
      * @param filePath
@@ -46,7 +48,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     public FileRuleWatcher(FileSystem fs, Path filePath, long configuredDiff) throws IOException {
         this(fs, filePath, configuredDiff, null);
     }
-    
+
     /**
      * @param fs
      * @param filePath
@@ -58,7 +60,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         super(fs, filePath, configuredDiff);
         this.iterEnv = iterEnv;
     }
-    
+
     /**
      * @param filePath
      * @param configuredDiff
@@ -67,7 +69,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
     public FileRuleWatcher(Path filePath, long configuredDiff) throws IOException {
         this(filePath, configuredDiff, null);
     }
-    
+
     /**
      * @param filePath
      * @param configuredDiff
@@ -78,15 +80,15 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         super(filePath.getFileSystem(new Configuration()), filePath, configuredDiff);
         this.iterEnv = iterEnv;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.ingest.util.cache.watch.FileSystemWatcher#loadContents(java.io.InputStream)
      */
     @Override
     protected Collection<FilterRule> loadContents(InputStream in) throws IOException {
-        
+
         try {
             List<RuleConfig> mergedRuleConfigs = loadRuleConfigs(in);
             List<FilterRule> filterRules = new ArrayList<>();
@@ -94,12 +96,12 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
              * This has been changed to support extended options.
              */
             for (RuleConfig ruleConfig : mergedRuleConfigs) {
-                
+
                 try {
                     FilterRule filter = (FilterRule) Class.forName(ruleConfig.filterClassName).getDeclaredConstructor().newInstance();
-                    
+
                     FilterOptions option = new FilterOptions();
-                    
+
                     if (ruleConfig.ttlValue != null) {
                         option.setTTL(Long.parseLong(ruleConfig.ttlValue));
                     }
@@ -107,22 +109,22 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                         option.setTTLUnits(ruleConfig.ttlUnits);
                     }
                     option.setOption(AgeOffConfigParams.MATCHPATTERN, ruleConfig.matchPattern);
-                    
+
                     StringBuilder extOptions = new StringBuilder();
-                    
+
                     for (Entry<String,String> myOption : ruleConfig.extendedOptions.entrySet()) {
                         option.setOption(myOption.getKey(), myOption.getValue());
                         extOptions.append(myOption.getKey()).append(",");
                     }
-                    
+
                     int extOptionLen = extOptions.length();
-                    
+
                     option.setOption(AgeOffConfigParams.EXTENDED_OPTIONS, extOptions.toString().substring(0, extOptionLen - 1));
-                    
+
                     filter.init(option, iterEnv);
-                    
+
                     filterRules.add(filter);
-                    
+
                 } catch (InstantiationException | ClassNotFoundException | IllegalAccessException e) {
                     log.error(e);
                     throw new IOException(e);
@@ -135,15 +137,15 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         } finally {
             IOUtils.closeStream(in);
         }
-        
+
     }
-    
+
     protected List<RuleConfig> loadRuleConfigs(InputStream in) throws IOException {
-        
+
         List<RuleConfig> ruleConfigs = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder;
-        
+
         Document doc;
         try {
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
@@ -154,7 +156,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             factory.setExpandEntityReferences(false);
             docBuilder = factory.newDocumentBuilder();
             doc = docBuilder.parse(in);
-            
+
             Element docElement = doc.getDocumentElement();
             NodeList parents = docElement.getElementsByTagName("parent");
             if (null != parents && parents.getLength() > 0) {
@@ -202,7 +204,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         }
         return ruleConfigs;
     }
-    
+
     boolean mergeIfPossible(RuleConfig child, List<RuleConfig> parents) {
         // @formatter:off
         // find parent with matching label
@@ -217,7 +219,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         return !candidates.isEmpty();
         // @formatter:on
     }
-    
+
     /**
      * combinedRule is expected to be a copy of the parent rule, which will be modified with overrides from additionalRule. The matchPatterns in combinedRule
      * will also be appended with the matchPatterns from additionalRule. additionalRule is expected to be the child rule.
@@ -243,7 +245,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             combinedRule.filterClassName = additionalRule.filterClassName;
         }
     }
-    
+
     private RuleConfig getRuleConfigForNode(NodeList rules, int index) {
         Map<String,String> extendedOptions = new HashMap<>();
         String ttlValue = null;
@@ -251,17 +253,17 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         String matchPattern = null;
         String filterClassName = null;
         extendedOptions.clear();
-        
+
         Element ruleElem = (Element) rules.item(index);
         boolean isMerge = isMergeRule(ruleElem);
         String label = getLabelIfAny(ruleElem);
-        
+
         NodeList ruleElementList = ruleElem.getChildNodes();
         for (int j = 0; j < ruleElementList.getLength(); j++) {
             Node nodeItem = ruleElementList.item(j);
-            
+
             String nodeName = nodeItem.getNodeName();
-            
+
             log.debug("getting " + nodeName);
             if ("filterClass".equals(nodeName)) {
                 filterClassName = nodeItem.getTextContent().trim();
@@ -277,10 +279,10 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             } else {
                 /*
                  * gives us the ability to add arbitrary configuration items along with adding XML attributes as sub tags.
-                 * 
+                 *
                  * The sub tags are sent as name . attributename
                  */
-                
+
                 extendedOptions.put(nodeName, nodeItem.getTextContent().trim());
                 if (nodeItem.hasAttributes()) {
                     NamedNodeMap attributeMap = nodeItem.getAttributes();
@@ -297,10 +299,10 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
                     }
                 }
             }
-            
+
         }
         extendedOptions.put(AgeOffConfigParams.IS_MERGE, Boolean.toString(isMerge));
-        
+
         // @formatter:off
         return new RuleConfig(filterClassName, index)
             .ttlValue(ttlValue)
@@ -311,12 +313,12 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             .extendedOptions(extendedOptions);
         // @formatter:on
     }
-    
+
     // Return the RuleConfigs found within the configuration file referenced in the provided Node's text
     private Collection<? extends RuleConfig> loadParentRuleConfigs(Node parent) throws IOException {
         Collection<RuleConfig> rules = new ArrayList<>();
         String parentPathStr = parent.getTextContent();
-        
+
         if (null == parentPathStr || parentPathStr.isEmpty()) {
             throw new IllegalArgumentException("Invalid parent config path, none specified!");
         }
@@ -328,11 +330,11 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         rules.addAll(loadRuleConfigs(fs.open(parentPath)));
         return rules;
     }
-    
+
     /**
      * Xml tag names cannot start with a number, so it was not previously possible to include extended options for items that begin with a number. The new
      * prefix, provided by this method, provides a mechanism for doing this. Check if attribute "name" exists, e.g. &lt;field name='abc'&gt;value&lt;/field&gt;
-     * 
+     *
      * @param nodeName
      *            xml tag name, e.g. field using the above example
      * @param attributeMap
@@ -347,7 +349,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         }
         return newPrefix;
     }
-    
+
     private String getLabelIfAny(Element nodeItem) {
         if (null != nodeItem.getAttributes()) {
             Node namedItem = nodeItem.getAttributes().getNamedItem("label");
@@ -359,10 +361,10 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             return "";
         }
     }
-    
+
     /**
      * does the rule specify mode="merge"
-     * 
+     *
      * @param nodeItem
      *            to inspect
      * @return if mode attribute is set to merge
@@ -378,7 +380,7 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
             return false;
         }
     }
-    
+
     /**
      * Temporary holding class for rule configs to allow merges of rules;
      */
@@ -391,41 +393,41 @@ public class FileRuleWatcher extends FileSystemWatcher<Collection<FilterRule>> {
         boolean isMerge = false;
         Map<String,String> extendedOptions = new HashMap<>();
         int priority = -1;
-        
+
         public RuleConfig(String filterClassName, int priority) {
             this.filterClassName = filterClassName;
             this.priority = priority;
         }
-        
+
         public RuleConfig ttlValue(String ttlValue) {
             this.ttlValue = ttlValue;
             return this;
         }
-        
+
         public RuleConfig ttlUnits(String ttlUnits) {
             this.ttlUnits = ttlUnits;
             return this;
         }
-        
+
         public RuleConfig matchPattern(String matchPattern) {
             this.matchPattern = matchPattern;
             return this;
         }
-        
+
         public RuleConfig label(String label) {
             this.label = label;
             return this;
         }
-        
+
         public String getLabel() {
             return label;
         }
-        
+
         public RuleConfig setIsMerge(boolean isMerge) {
             this.isMerge = isMerge;
             return this;
         }
-        
+
         public RuleConfig extendedOptions(Map<String,String> extendedOptions) {
             this.extendedOptions = extendedOptions;
             return this;

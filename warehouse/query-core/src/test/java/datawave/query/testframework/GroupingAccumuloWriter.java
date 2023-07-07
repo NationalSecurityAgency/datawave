@@ -1,17 +1,15 @@
 package datawave.query.testframework;
 
-import com.google.common.collect.Multimap;
-import datawave.data.ColumnFamilyConstants;
-import datawave.data.hash.UID;
-import datawave.data.normalizer.LcNoDiacriticsNormalizer;
-import datawave.data.normalizer.Normalizer;
-import datawave.data.normalizer.NumberNormalizer;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.protobuf.Uid;
-import datawave.query.QueryTestTableHelper;
-import datawave.util.TableName;
+import static datawave.query.testframework.AbstractDataTypeConfig.YMD_DateFormat;
+
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -24,33 +22,37 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.Multimap;
 
-import static datawave.query.testframework.AbstractDataTypeConfig.YMD_DateFormat;
+import datawave.data.ColumnFamilyConstants;
+import datawave.data.hash.UID;
+import datawave.data.normalizer.LcNoDiacriticsNormalizer;
+import datawave.data.normalizer.Normalizer;
+import datawave.data.normalizer.NumberNormalizer;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.protobuf.Uid;
+import datawave.query.QueryTestTableHelper;
+import datawave.util.TableName;
 
 /**
  * Populates Accumulo with data utilizes the Grouping format.
  */
 class GroupingAccumuloWriter {
-    
+
     private static final Logger log = Logger.getLogger(GroupingAccumuloWriter.class);
-    
+
     private static final String NULL_SEP = "\u0000";
     private static final String FIELD_INDEX = "fi" + NULL_SEP;
     private static final Value EMPTY_VALUE = new Value(new byte[0]);
-    
+
     private final String shardField;
     private final String dataType;
     private final AccumuloClient client;
     private final ConfigData cfgData;
     private final FieldConfig fieldConfig;
-    
+
     /**
      *
      * @param type
@@ -71,10 +73,10 @@ class GroupingAccumuloWriter {
         this.cfgData = data;
         this.shardField = field;
     }
-    
+
     /**
      * Adds the raw data to accumulo.
-     * 
+     *
      * @param data
      *            raw data (NOTE: the key values in the multimap are expected to be uppercase)
      * @throws MutationsRejectedException
@@ -84,27 +86,27 @@ class GroupingAccumuloWriter {
      */
     void addData(final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException, TableNotFoundException {
         final BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxMemory(1000L).setMaxLatency(1, TimeUnit.SECONDS).setMaxWriteThreads(1);
-        
+
         writeMetaData(bwConfig, data);
         writeShardKeys(bwConfig, data);
         writeShardIndexKeys(bwConfig, data, TableName.SHARD_INDEX, false);
         writeShardIndexKeys(bwConfig, data, TableName.SHARD_RINDEX, true);
-        
+
         PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), QueryTestTableHelper.METADATA_TABLE_NAME);
         PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_INDEX);
         PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD);
         PrintUtility.printTable(this.client, AbstractDataTypeConfig.getTestAuths(), TableName.SHARD_RINDEX);
     }
-    
-    private void writeMetaData(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException,
-                    TableNotFoundException {
+
+    private void writeMetaData(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data)
+                    throws MutationsRejectedException, TableNotFoundException {
         Text dtText = new Text(this.dataType);
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
         try (BatchWriter bw = this.client.createBatchWriter(QueryTestTableHelper.METADATA_TABLE_NAME, bwConfig)) {
             for (Map.Entry<Multimap<String,String>,UID> entry : data) {
                 Multimap<String,String> rawData = entry.getKey();
                 String shardDate = extractShard(rawData);
-                
+
                 for (String column : rawData.keySet()) {
                     if (meta.containsKey(column.toLowerCase())) {
                         Mutation mut = new Mutation(column);
@@ -120,7 +122,7 @@ class GroupingAccumuloWriter {
                         Normalizer<?> norm = meta.get(column.toLowerCase()).normalizer;
                         String type = getNormalizerTypeName(norm);
                         mut.put(ColumnFamilyConstants.COLF_T, new Text(this.dataType + NULL_SEP + type), EMPTY_VALUE);
-                        
+
                         bw.addMutation(mut);
                     } else {
                         log.debug("skipping col entry(" + column + ")");
@@ -129,9 +131,9 @@ class GroupingAccumuloWriter {
             }
         }
     }
-    
-    private void writeShardKeys(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data) throws MutationsRejectedException,
-                    TableNotFoundException {
+
+    private void writeShardKeys(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data)
+                    throws MutationsRejectedException, TableNotFoundException {
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
         try (BatchWriter bw = this.client.createBatchWriter(TableName.SHARD, bwConfig)) {
             for (Map.Entry<Multimap<String,String>,UID> entry : data) {
@@ -140,12 +142,12 @@ class GroupingAccumuloWriter {
                 String shardId = extractShard(rawData);
                 long timestamp = shardDateToMillis(shardId);
                 shardId = shardId + "_0";
-                
+
                 for (String column : rawData.keySet()) {
                     if (meta.containsKey(column.toLowerCase())) {
                         Mutation mut = new Mutation(shardId);
                         int count = 0;
-                        
+
                         int cardinality = rawData.get(column).size();
                         for (String val : rawData.get(column)) {
                             if (this.fieldConfig.getIndexFields().contains(column)) {
@@ -165,7 +167,7 @@ class GroupingAccumuloWriter {
             }
         }
     }
-    
+
     private void writeShardIndexKeys(BatchWriterConfig bwConfig, final List<Map.Entry<Multimap<String,String>,UID>> data, String table, boolean reverse)
                     throws MutationsRejectedException, TableNotFoundException {
         Map<String,RawMetaData> meta = this.cfgData.getMetadata();
@@ -182,7 +184,7 @@ class GroupingAccumuloWriter {
                 String shardId = extractShard(rawData);
                 long timestamp = shardDateToMillis(shardId);
                 shardId = shardId + "_0";
-                
+
                 for (Map.Entry<String,String> entry : rawData.entries()) {
                     if (fields.contains(entry.getKey())) {
                         Normalizer<?> norm = meta.get(entry.getKey().toLowerCase()).normalizer;
@@ -195,22 +197,22 @@ class GroupingAccumuloWriter {
                         builder.addUID(uid.toString());
                         builder.setCOUNT(1);
                         builder.setIGNORE(false);
-                        mut.put(entry.getKey().toUpperCase(), shardId + NULL_SEP + this.dataType, this.cfgData.getDefaultVisibility(), timestamp, new Value(
-                                        builder.build().toByteArray()));
+                        mut.put(entry.getKey().toUpperCase(), shardId + NULL_SEP + this.dataType, this.cfgData.getDefaultVisibility(), timestamp,
+                                        new Value(builder.build().toByteArray()));
                         bw.addMutation(mut);
                     }
                 }
             }
         }
     }
-    
+
     private String extractShard(Multimap<String,String> data) {
         Collection<String> shard = data.get(this.shardField);
         Assert.assertNotNull("shard date field not found in raw data", shard);
         Assert.assertEquals("shard date is invalid", 1, shard.size());
         return shard.iterator().next();
     }
-    
+
     private long shardDateToMillis(String date) {
         try {
             Calendar cal = Calendar.getInstance();
@@ -221,10 +223,10 @@ class GroupingAccumuloWriter {
             throw new AssertionError(e);
         }
     }
-    
+
     /**
      * Converts the normalizer to the class name of the type.
-     * 
+     *
      * @param norm
      *            normalizer object
      * @return class name of the type
@@ -236,7 +238,7 @@ class GroupingAccumuloWriter {
         } else if (norm instanceof NumberNormalizer) {
             clName = NumberType.class.getName();
         }
-        
+
         // add others as needed
         Assert.assertNotNull(clName);
         return clName;

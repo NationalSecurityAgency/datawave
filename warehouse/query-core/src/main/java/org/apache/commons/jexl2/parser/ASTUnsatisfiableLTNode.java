@@ -9,17 +9,17 @@ public class ASTUnsatisfiableLTNode extends ASTLTNode {
     public ASTUnsatisfiableLTNode(int id) {
         super(id);
     }
-    
+
     public ASTUnsatisfiableLTNode(Parser p, int id) {
         super(p, id);
     }
-    
+
     /** Accept the visitor. **/
     @Override
     public Object jjtAccept(ParserVisitor visitor, Object data) {
         return visitor.visit(this, data);
     }
-    
+
     public static ASTUnsatisfiableLTNode create() {
         return new ASTUnsatisfiableLTNode(ParserTreeConstants.JJTLTNODE);
     }

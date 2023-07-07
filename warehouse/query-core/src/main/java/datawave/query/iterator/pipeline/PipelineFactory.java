@@ -1,9 +1,7 @@
 package datawave.query.iterator.pipeline;
 
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.iterator.profile.QuerySpanCollector;
+import java.util.Collection;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -11,13 +9,16 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
 
-import java.util.Collection;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.profile.QuerySpan;
+import datawave.query.iterator.profile.QuerySpanCollector;
 
 public class PipelineFactory {
-    
+
     /**
      * Create a pipeline iterator.
-     * 
+     *
      * @param documents
      *            Document Iterator.
      * @param maxPipelines
@@ -51,13 +52,13 @@ public class PipelineFactory {
                     SortedKeyValueIterator<Key,Value> sourceForDeepCopy, IteratorEnvironment env, YieldCallback<Key> yield, long yieldThresholdMs,
                     Collection<ByteSequence> columnFamilies, boolean inclusive) {
         if (maxPipelines > 1 && !requestSerialPipeline) {
-            return new PipelineIterator(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env,
-                            yield, yieldThresholdMs, columnFamilies, inclusive);
+            return new PipelineIterator(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env, yield,
+                            yieldThresholdMs, columnFamilies, inclusive);
         } else {
             return new SerialIterator(documents, maxPipelines, maxCachedResults, querySpanCollector, querySpan, sourceIterator, sourceForDeepCopy, env, yield,
                             yieldThresholdMs, columnFamilies, inclusive);
         }
-        
+
     }
-    
+
 }

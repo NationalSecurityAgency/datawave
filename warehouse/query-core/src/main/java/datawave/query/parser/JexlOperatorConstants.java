@@ -18,12 +18,12 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 
 public class JexlOperatorConstants implements ParserTreeConstants {
-    
+
     private static Map<Class<? extends JexlNode>,String> operatorMap = new ConcurrentHashMap<>();
     private static Map<String,Class<? extends JexlNode>> classMap = new ConcurrentHashMap<>();
     private static Map<Integer,String> jjtOperatorMap = new ConcurrentHashMap<>();
     private static Map<String,Integer> jjtTypeMap = new ConcurrentHashMap<>();
-    
+
     static {
         operatorMap.put(ASTEQNode.class, "==");
         operatorMap.put(ASTNENode.class, "!=");
@@ -36,7 +36,7 @@ public class JexlOperatorConstants implements ParserTreeConstants {
         operatorMap.put(ASTFunctionNode.class, "f");
         operatorMap.put(ASTAndNode.class, "and");
         operatorMap.put(ASTOrNode.class, "or");
-        
+
         classMap.put("==", ASTEQNode.class);
         classMap.put("!=", ASTNENode.class);
         classMap.put("<", ASTLTNode.class);
@@ -46,7 +46,7 @@ public class JexlOperatorConstants implements ParserTreeConstants {
         classMap.put("=~", ASTERNode.class);
         classMap.put("!~", ASTNRNode.class);
         classMap.put("f", ASTFunctionNode.class);
-        
+
         jjtOperatorMap.put(JJTEQNODE, "==");
         jjtOperatorMap.put(JJTNENODE, "!=");
         jjtOperatorMap.put(JJTLTNODE, "<");
@@ -58,7 +58,7 @@ public class JexlOperatorConstants implements ParserTreeConstants {
         jjtOperatorMap.put(JJTFUNCTIONNODE, "f");
         jjtOperatorMap.put(JJTANDNODE, "and");
         jjtOperatorMap.put(JJTORNODE, "or");
-        
+
         jjtTypeMap.put("==", JJTEQNODE);
         jjtTypeMap.put("!=", JJTNENODE);
         jjtTypeMap.put("<", JJTLTNODE);
@@ -68,21 +68,21 @@ public class JexlOperatorConstants implements ParserTreeConstants {
         jjtTypeMap.put("=~", JJTERNODE);
         jjtTypeMap.put("!~", JJTNRNODE);
         jjtTypeMap.put("f", JJTFUNCTIONNODE);
-        
+
     }
-    
+
     public static String getOperator(Class<? extends JexlNode> nodeType) {
         return operatorMap.get(nodeType);
     }
-    
+
     public static String getOperator(Integer jjtNode) {
         return jjtOperatorMap.get(jjtNode);
     }
-    
+
     public static Class<? extends JexlNode> getClass(String operator) {
         return classMap.get(operator);
     }
-    
+
     public static int getJJTNodeType(String operator) {
         if (operator != null && jjtTypeMap.containsKey(operator)) {
             return jjtTypeMap.get(operator);
