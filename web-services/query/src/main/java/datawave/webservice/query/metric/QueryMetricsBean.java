@@ -89,11 +89,11 @@ public class QueryMetricsBean {
      */
     @PermitAll
     public void updateMetric(BaseQueryMetric metric) throws Exception {
+        DatawavePrincipal dp = getPrincipal();
+
         try {
-            DatawavePrincipal dp = getPrincipal();
-
+            metric.setLastUpdated(new Date());
             sendQueryMetric(dp, metric);
-
             // PageMetrics now know their own page numbers
             // this should keep large queries from blowing up the queue
             // Leave the last page on the list so that interceptors can update it.
