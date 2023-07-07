@@ -588,8 +588,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setUserDN(datawavePrincipal.getShortName());
             query.setOwner(datawavePrincipal.getShortName());
             query.setId(UUID.randomUUID());
-            query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
-            query.setParameters(ImmutableMap.of(QueryParameters.BLACKLISTED_FIELDS, "SUBPLAN"));
+            query.addParameter(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
+            query.addParameter(QueryParameters.RETURN_FIELDS, "SUBPLAN");
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
 
             response.setResult(queryMetrics);
