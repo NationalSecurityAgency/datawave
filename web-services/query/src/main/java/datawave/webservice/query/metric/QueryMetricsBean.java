@@ -89,24 +89,21 @@ public class QueryMetricsBean {
      */
     @PermitAll
     public void updateMetric(BaseQueryMetric metric) throws Exception {
-        DatawavePrincipal dp = getPrincipal();
+        try {
+            DatawavePrincipal dp = getPrincipal();
 
-        if (metric.getLastWrittenHash() != metric.hashCode()) {
-            metric.setLastWrittenHash(metric.hashCode());
-            try {
-                metric.setLastUpdated(new Date());
-                sendQueryMetric(dp, metric);
-                // PageMetrics now know their own page numbers
-                // this should keep large queries from blowing up the queue
-                // Leave the last page on the list so that interceptors can update it.
-                Iterator<PageMetric> itr = metric.getPageTimes().iterator();
-                while (metric.getPageTimes().size() > 1) {
-                    itr.next();
-                    itr.remove();
-                }
-            } catch (Exception e) {
-                log.error(e.getMessage(), e);
+            sendQueryMetric(dp, metric);
+
+            // PageMetrics now know their own page numbers
+            // this should keep large queries from blowing up the queue
+            // Leave the last page on the list so that interceptors can update it.
+            Iterator<PageMetric> itr = metric.getPageTimes().iterator();
+            while (metric.getPageTimes().size() > 1) {
+                itr.next();
+                itr.remove();
             }
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
         }
     }
 
