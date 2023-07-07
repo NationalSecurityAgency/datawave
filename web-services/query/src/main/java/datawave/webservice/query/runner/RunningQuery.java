@@ -117,6 +117,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         super(metricFactory);
         if (logic != null && logic.getCollectQueryMetrics()) {
             this.queryMetrics = queryMetrics;
+            this.logic.setQueryMetric(getMetric());
         }
         this.getMetric().setLifecycle(QueryMetric.Lifecycle.DEFINED);
         this.logic = logic;
