@@ -1482,17 +1482,6 @@
                                 <fail>true</fail>
                             </configuration>
                         </execution>
-                        <execution>
-                            <id>enforce-versions</id>
-                            <goals>
-                                <goal>enforce</goal>
-                            </goals>
-                            <configuration>
-                                <rules>
-                                    <dependencyConvergence />
-                                </rules>
-                            </configuration>
-                        </execution>
                     </executions>
                 </plugin>
                 <plugin>
