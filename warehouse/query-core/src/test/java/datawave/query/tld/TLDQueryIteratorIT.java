@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -19,6 +20,7 @@ import org.junit.Test;
 
 import datawave.query.Constants;
 import datawave.query.iterator.QueryIteratorIT;
+import datawave.query.iterator.QueryOptions;
 
 /**
  * Anything QueryIterator does TLDQueryIterator should do too... plus stuff
@@ -30,9 +32,15 @@ public class TLDQueryIteratorIT extends QueryIteratorIT {
         super.setup();
         iterator = new TLDQueryIterator();
 
-        // update indexed/unindexed fields
+        // update indexed
         options.put(INDEXED_FIELDS, options.get(INDEXED_FIELDS) + ",TF_FIELD3");
-        options.put(NON_INDEXED_DATATYPES, options.get(NON_INDEXED_DATATYPES) + ",EVENT_FIELD7");
+
+        // update unindexed fields
+        String nonIndexedDataTypes = options.get(NON_INDEXED_DATATYPES);
+        Map<String,Set<String>> nonIndexedQueryFieldsDatatypes = QueryOptions.buildFieldDataTypeMap(nonIndexedDataTypes);
+        nonIndexedQueryFieldsDatatypes.put("EVENT_FIELD7", Collections.singleton("datawave.data.type.LcNoDiacriticsType"));
+        nonIndexedDataTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
+        options.put(NON_INDEXED_DATATYPES, nonIndexedDataTypes);
 
         // update type metadata
         typeMetadata.put("EVENT_FIELD7", "dataType1", "datawave.data.type.LcNoDiacriticsType");
