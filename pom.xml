@@ -184,6 +184,16 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${version.google-guava}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.google.errorprone</groupId>
+                        <artifactId>error_prone_annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -840,6 +850,12 @@
                 <groupId>org.geotools</groupId>
                 <artifactId>gt-epsg-wkt</artifactId>
                 <version>${version.geotools}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.geotools</groupId>
+                        <artifactId>gt-referencing</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.geotools</groupId>
@@ -850,6 +866,12 @@
                 <groupId>org.geotools</groupId>
                 <artifactId>gt-main</artifactId>
                 <version>${version.geotools}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.geotools</groupId>
+                        <artifactId>gt-referencing</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.geotools</groupId>
@@ -2070,7 +2092,12 @@
                                 </goals>
                                 <configuration>
                                     <rules>
-                                        <dependencyConvergence />
+                                        <dependencyConvergence>
+                                            <excludes>
+                                                <exclude>tech.units:indriya</exclude>
+                                                <exclude>org.apache.commons:*</exclude>
+                                            </excludes>
+                                        </dependencyConvergence>
                                     </rules>
                                 </configuration>
                             </execution>
