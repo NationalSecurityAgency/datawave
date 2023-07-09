@@ -2149,6 +2149,7 @@
                                                 <exclude>io.dropwizard.metrics:metrics-core</exclude>
                                                 <exclude>com.google.inject:*</exclude>
                                                 <exclude>com.google.inject.extensions:*</exclude>
+                                                <exclude>com.google.code.gson:gson</exclude>
                                             </excludes>
                                         </dependencyConvergence>
                                     </rules>
