@@ -578,6 +578,10 @@
                         <artifactId>guava</artifactId>
                     </exclusion>
                     <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper-jute</artifactId>
+                    </exclusion>
+                    <exclusion>
                         <groupId>org.apache.hadoop</groupId>
                         <artifactId>hadoop-client</artifactId>
                     </exclusion>
@@ -2141,8 +2145,10 @@
                                                 <exclude>tech.units:indriya</exclude>
                                                 <exclude>org.apache.commons:*</exclude>
                                                 <exclude>si.uom:si-quantity</exclude>
-                                                <exclude>com.google.inject:guice</exclude>
                                                 <exclude>commons-net:commons-net</exclude>
+                                                <exclude>io.dropwizard.metrics:metrics-core</exclude>
+                                                <exclude>com.google.inject:*</exclude>
+                                                <exclude>com.google.inject.extensions:*</exclude>
                                             </excludes>
                                         </dependencyConvergence>
                                     </rules>
