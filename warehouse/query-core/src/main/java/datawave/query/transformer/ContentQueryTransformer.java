@@ -152,6 +152,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
             fields.add(idField);
         }
         
+        e.setSizeInBytes(fields.size() * 6);
         e.setFields(fields);
         
         return e;
