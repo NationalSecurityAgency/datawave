@@ -122,7 +122,7 @@ public class TestBaseQueryLogic {
         expect(query.getDnList()).andReturn(dns);
         expect(query.getDnList()).andReturn(null);
         expect(query.getDnList()).andReturn(Collections.emptyList());
-        expect(query.getSystemFrom()).andReturn(null).anyTimes();
+        expect(query.findParameter("systemFrom")).andReturn(null).anyTimes();
         PowerMock.replayAll();
         for (long limit : limits) {
             assertEquals(limit, logic.getResultLimit(query));
@@ -140,9 +140,9 @@ public class TestBaseQueryLogic {
      */
     public void assertGetResultsLimitsSystemFrom(BaseQueryLogic<Object> logic, long... limits) {
         PowerMock.resetAll();
-        expect(query.getSystemFrom()).andReturn("hoplark");
-        expect(query.getSystemFrom()).andReturn(null);
-        expect(query.getSystemFrom()).andReturn("");
+        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", "hoplark"));
+        expect(query.findParameter("systemFrom")).andReturn(null);
+        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", ""));
         expect(query.getDnList()).andReturn(null).anyTimes();
         PowerMock.replayAll();
         for (long limit : limits) {
@@ -165,15 +165,15 @@ public class TestBaseQueryLogic {
         
         // first call, populated dn list and populated system from
         expect(query.getDnList()).andReturn(dns);
-        expect(query.getSystemFrom()).andReturn("hoplark");
+        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", "hoplark"));
         
         // second call, populated dn list and empty system from
         expect(query.getDnList()).andReturn(dns);
-        expect(query.getSystemFrom()).andReturn(null);
+        expect(query.findParameter("systemFrom")).andReturn(null);
         
         // third call, null dn list and populated system from
         expect(query.getDnList()).andReturn(null);
-        expect(query.getSystemFrom()).andReturn("hoplark");
+        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", "hoplark"));
         
         PowerMock.replayAll();
         for (long limit : limits) {

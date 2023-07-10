@@ -1016,7 +1016,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         try {
             MultivaluedMap<String,String> paramsMap = new MultivaluedMapImpl<>();
             paramsMap.putAll(QueryParametersImpl.paramsToMap(logicName, query.toString(), "Query to find matching records for metadata modification",
-                            columnVisibility, new Date(0), new Date(), StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, null,
+                            columnVisibility, new Date(0), new Date(), StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT,
                             queryOptions.toString(), false));
             GenericResponse<String> createResponse = queryService.createQuery(logicName, paramsMap);
             
