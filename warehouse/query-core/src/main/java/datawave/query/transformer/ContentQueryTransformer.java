@@ -119,7 +119,7 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         } catch (Exception e1) {
             throw new IllegalArgumentException("Unable to parse visibility", e1);
         }
-        
+
         EventBase e = responseObjectFactory.getEvent();
         FieldBase field = responseObjectFactory.getField();
         
@@ -131,13 +131,13 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
         m.setDataType(ckv.getDatatype());
         m.setInternalId(ckv.getUid());
         e.setMetadata(m);
-        
+
         // store the content in a field based on it's view name.
         field.setMarkings(ckv.getMarkings());
         field.setName(ckv.getViewName());
         field.setTimestamp(entry.getKey().getTimestamp());
         field.setValue(ckv.getContents());
-        
+
         List<FieldBase> fields = new ArrayList<>();
         fields.add(field);
         
@@ -151,7 +151,8 @@ public class ContentQueryTransformer extends BaseQueryLogicTransformer<Entry<Key
             idField.setValue(identifier);
             fields.add(idField);
         }
-        
+
+        e.setSizeInBytes(fields.size() * 6);
         e.setFields(fields);
         
         return e;
