@@ -1,10 +1,5 @@
 package datawave.webservice.query.cachedresults;
 
-import datawave.marking.MarkingFunctions;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.log4j.Logger;
-
-import javax.sql.rowset.CachedRowSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -13,18 +8,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.sql.rowset.CachedRowSet;
+
+import org.apache.log4j.Logger;
+
+import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+
 public class CacheableQueryRowReader {
-    
+
     private static Logger log = Logger.getLogger(CacheableQueryRowReader.class);
-    
+
     public static CacheableQueryRow createRow(CachedRowSet cachedRowSet, Set<String> fixedFieldsInEvent, ResponseObjectFactory responseObjectFactory) {
-        
+
         CacheableQueryRow cqfc = responseObjectFactory.getCacheableQueryRow();
-        
+
         ResultSetMetaData metadata;
         try {
             metadata = cachedRowSet.getMetaData();
-            
+
             int numColumns = metadata.getColumnCount();
             Map<String,Integer> columnToIndexMap = new HashMap<>();
             Map<String,Set<String>> columnValues = new HashMap<>();
@@ -51,13 +53,13 @@ public class CacheableQueryRowReader {
                     }
                 }
             }
-            
+
             // set the the size of the values in characters...internally converted to approximate bytes
             cqfc.setSizeInStoredCharacters(characters);
-            
+
             cqfc.setVariableColumnNames(variableColumnNames);
             cqfc.setColumnValues(columnValues);
-            
+
             if (columnToIndexMap.get("_user_") != null) {
                 cqfc.setUser(cachedRowSet.getString(columnToIndexMap.get("_user_")));
             }
@@ -107,23 +109,23 @@ public class CacheableQueryRowReader {
                 String columnTimestamps = cachedRowSet.getString(columnToIndexMap.get("_column_timestamps_"));
                 cqfc.setColumnTimestampMap(parseColumnTimestamps(columnTimestamps, columnToIndexMap));
             }
-            
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
         }
-        
+
         return cqfc;
     }
-    
+
     private static Map<String,String> parseColumnMarkings(String s, Map<String,Integer> columnToIndexMap) {
-        
+
         Map<Integer,String> indexToColumnMap = new HashMap<>();
         for (Map.Entry<String,Integer> entry : columnToIndexMap.entrySet()) {
             indexToColumnMap.put(entry.getValue(), entry.getKey());
         }
-        
+
         Map<String,String> colToMarkingMap = new HashMap<>();
-        
+
         String[] split1 = s.split("\0\0");
         for (String currSplit : split1) {
             String[] split2 = currSplit.split("\0");
@@ -141,16 +143,16 @@ public class CacheableQueryRowReader {
         }
         return colToMarkingMap;
     }
-    
+
     private static Map<String,Long> parseColumnTimestamps(String s, Map<String,Integer> columnToIndexMap) {
-        
+
         Map<Integer,String> indexToColumnMap = new HashMap<>();
         for (Map.Entry<String,Integer> entry : columnToIndexMap.entrySet()) {
             indexToColumnMap.put(entry.getValue(), entry.getKey());
         }
-        
+
         Map<String,Long> colToTimestampMap = new HashMap<>();
-        
+
         String[] split1 = s.split("\0\0");
         for (String currSplit : split1) {
             String[] split2 = currSplit.split("\0");
@@ -168,5 +170,5 @@ public class CacheableQueryRowReader {
         }
         return colToTimestampMap;
     }
-    
+
 }

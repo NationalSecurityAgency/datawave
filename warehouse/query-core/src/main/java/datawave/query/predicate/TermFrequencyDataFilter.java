@@ -1,16 +1,17 @@
 package datawave.query.predicate;
 
-import datawave.query.util.TypeMetadata;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Set;
+import datawave.query.util.TypeMetadata;
 
 /**
  * A data filter that operates on TermFrequency keys
  */
 public class TermFrequencyDataFilter extends EventDataQueryExpressionFilter {
-    
+
     /**
      * Constructor matching {@link EventDataQueryExpressionFilter}
      *
@@ -24,7 +25,7 @@ public class TermFrequencyDataFilter extends EventDataQueryExpressionFilter {
     public TermFrequencyDataFilter(JexlNode node, TypeMetadata typeMetadata, Set<String> nonEventFields) {
         super(node, typeMetadata, nonEventFields);
     }
-    
+
     /**
      * TermFrequency ranges necessitate a full value match
      *

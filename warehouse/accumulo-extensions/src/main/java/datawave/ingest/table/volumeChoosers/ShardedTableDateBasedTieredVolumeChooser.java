@@ -1,5 +1,15 @@
 package datawave.ingest.table.volumeChoosers;
 
+import static java.time.temporal.ChronoUnit.DAYS;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.TableId;
 import org.apache.accumulo.core.spi.common.ServiceEnvironment;
@@ -10,16 +20,7 @@ import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static java.time.temporal.ChronoUnit.DAYS;
-
+//@formatter:off
 /**
  * This class is used to configure a date based volume chooser for sharded tables. To configure, this relies on a few
  * accumulo properties being set on the table. Those properties are:
@@ -43,6 +44,7 @@ import static java.time.temporal.ChronoUnit.DAYS;
  *  Data that is 125 days or older will be written to oldData
  *
  */
+//@formatter:on
 public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChooser {
     private static final Logger log = LoggerFactory.getLogger(ShardedTableDateBasedTieredVolumeChooser.class);
     private static final String TIER_NAMES_SUFFIX = "volume.tier.names";
@@ -53,7 +55,7 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
     private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
 
     private static Pattern SHARD_PATTERN = Pattern.compile("\\d{8}_\\d+");
-    
+
     @Override
     public String choose(VolumeChooserEnvironment env, Set<String> options) {
 
@@ -65,17 +67,16 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
             // Get variables
             log.trace("Determining tier names using property {} for Table id: {}", Property.TABLE_ARBITRARY_PROP_PREFIX + TIER_NAMES_SUFFIX, tableId);
             String configuredTiers = tableConfig.getTableCustom(TIER_NAMES_SUFFIX);
-            TreeMap<Long, Set<String>> daysToVolumes = getTiers(tableId, tableConfig, options, configuredTiers);
+            TreeMap<Long,Set<String>> daysToVolumes = getTiers(tableId, tableConfig, options, configuredTiers);
 
             Text endRow = env.getEndRow();
 
-            Long floorKey= daysToVolumes.ceilingKey(0L);
-            if(endRow == null)
-            {
-                //this is the default tablet. No shard means this is new data
+            Long floorKey = daysToVolumes.ceilingKey(0L);
+            if (endRow == null) {
+                // this is the default tablet. No shard means this is new data
                 options = floorKey == null ? options : daysToVolumes.get(floorKey);
 
-            }else {
+            } else {
                 String endRowString = endRow.toString();
                 if (SHARD_PATTERN.matcher(endRowString).matches()) {
                     String date = endRowString.substring(0, 8);
@@ -91,17 +92,16 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
             return super.choose(env, options);
         }
     }
-    
+
     private TreeMap<Long,Set<String>> getTiers(TableId tableId, ServiceEnvironment.Configuration tableConfig, Set<String> options, String configuredTiers) {
         TreeMap<Long,Set<String>> daysToVolumes = new TreeMap<>();
         daysToVolumes.put(Long.MAX_VALUE, options);
         for (String tier : StringUtils.split(configuredTiers, ',')) {
-            log.debug("Determining volumes for tier {} using property {} for Table id: {}", tier, Property.TABLE_ARBITRARY_PROP_PREFIX + PROPERTY_PREFIX + tier
-                            + VOLUME_SUFFIX, tableId);
-            Set<String> volumesForCurrentTier = Arrays.stream(StringUtils.split(
-                    tableConfig.getTableCustom(PROPERTY_PREFIX + tier + VOLUME_SUFFIX), ',')).collect(Collectors.toSet());
-            long daysBackForCurrentTier = Long.parseLong(tableConfig
-                            .getTableCustom(PROPERTY_PREFIX + tier + DAYS_BACK_SUFFIX));
+            log.debug("Determining volumes for tier {} using property {} for Table id: {}", tier,
+                            Property.TABLE_ARBITRARY_PROP_PREFIX + PROPERTY_PREFIX + tier + VOLUME_SUFFIX, tableId);
+            Set<String> volumesForCurrentTier = Arrays.stream(StringUtils.split(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + VOLUME_SUFFIX), ','))
+                            .collect(Collectors.toSet());
+            long daysBackForCurrentTier = Long.parseLong(tableConfig.getTableCustom(PROPERTY_PREFIX + tier + DAYS_BACK_SUFFIX));
             if (daysBackForCurrentTier >= 0) {
                 if (volumesForCurrentTier.size() < 1) {
                     throw new IllegalStateException("Volumes list empty for tier " + tier + ". Ensure property " + Property.TABLE_ARBITRARY_PROP_PREFIX
@@ -113,5 +113,5 @@ public class ShardedTableDateBasedTieredVolumeChooser extends RandomVolumeChoose
         }
         return daysToVolumes;
     }
-    
+
 }

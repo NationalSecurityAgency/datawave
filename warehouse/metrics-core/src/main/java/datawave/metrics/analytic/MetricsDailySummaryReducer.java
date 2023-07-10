@@ -1,8 +1,11 @@
 package datawave.metrics.analytic;
 
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
-import com.google.common.primitives.Longs;
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -15,11 +18,9 @@ import org.apache.hadoop.mapred.lib.aggregate.LongValueSum;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
+import com.google.common.primitives.Longs;
 
 /**
  * Writes daily/hourly summary metrics information out to Accumulo. All incoming keys having the same date, metric name, metric value have their counts added
@@ -36,12 +37,12 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
     private static final Text AVERAGE_TEXT = new Text("AVERAGE");
     private static final Text PERCENTILE_TEXT = new Text("95TH_PERCENTILE");
     private static final int MAX_MEDIAN_COUNT = 4000000;
-    
+
     private Text holder = new Text();
     private ArrayList<Long> longs = new ArrayList<>(MAX_MEDIAN_COUNT);
     private ArrayList<WeightedPair> pairs = new ArrayList<>(MAX_MEDIAN_COUNT);
     private Text empty = new Text();
-    
+
     @Override
     protected void reduce(Key key, Iterable<Value> values, Context context) throws IOException, InterruptedException {
         key.getColumnQualifier(holder);
@@ -54,10 +55,10 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
             m = sumMutation(key, values);
         context.write(empty, m);
     }
-    
+
     /**
      * Computes a simple summation metric value. The key is written out as is and the values, assumed to be string longs, are aggregated and written out.
-     * 
+     *
      * @param key
      *            a key
      * @param values
@@ -68,18 +69,18 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         LongValueSum sum = new LongValueSum();
         for (Value v : values)
             sum.addNextValue(v);
-        
+
         ColumnVisibility columnVisibility = new ColumnVisibility(key.getColumnVisibility());
         Mutation m = new Mutation(key.getRow());
         m.put(key.getColumnFamily(), key.getColumnQualifier(), columnVisibility, new Value(sum.getReport().getBytes()));
         return m;
     }
-    
+
     /**
      * Computes a "stats" metric value. Each incoming value in {@code values} is assumed to be a unique value. We calculate min, max, median, and average values
      * and include those in the output mutation. Note that median will only be calculated if there are not more than {@code MAX_MEDIAN_COUNT} values. This
      * restriction prevents us from using too much memory in the task tracker.
-     * 
+     *
      * @param key
      *            a key
      * @param values
@@ -98,14 +99,14 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
             min = Math.min(aLong, min);
             max = Math.max(aLong, max);
             sum.addNextValue(aLong);
-            
+
             if (numLongs <= MAX_MEDIAN_COUNT)
                 longs.add(aLong);
         }
         numLongs = Math.max(1, numLongs);
-        
+
         String average = String.format("%1.4f", sum.getSum() / (double) numLongs);
-        
+
         ColumnVisibility columnVisibility = new ColumnVisibility(key.getColumnVisibility());
         Text columnFamily = key.getColumnFamily();
         Mutation m = new Mutation(key.getRow());
@@ -119,7 +120,7 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         }
         return m;
     }
-    
+
     /**
      * Computes a "percentile stats" metric value. Each incoming value in {@code values} is assumed to be a unique value. We calculate min, max, median, and
      * average values and include those in the output mutation. Note that median will only be calculated if there are not more than {@code MAX_MEDIAN_COUNT}
@@ -127,7 +128,7 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
      * {@link WeightedPair} object. If the median can be calculated, then the 95% percentile weighted value is also emitted as a statistic. The weights are
      * summed, and the value at the 95th percentile of the weights is returned. (e.g., for event latencies, each pair's value is the latency and the weight is
      * the number of events at that latency, so we return the latency (value) from the list that represents 95% of the events (weights).
-     * 
+     *
      * @param key
      *            a key
      * @param values
@@ -148,14 +149,14 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
             max = Math.max(pair.getValue(), max);
             valueSum.addNextValue(pair.getValue());
             weightSum.addNextValue(pair.getWeight());
-            
+
             if (numPairs <= MAX_MEDIAN_COUNT)
                 pairs.add(pair);
         }
         numPairs = Math.max(1, numPairs);
-        
+
         String average = String.format("%1.4f", valueSum.getSum() / (double) numPairs);
-        
+
         ColumnVisibility columnVisibility = new ColumnVisibility(key.getColumnVisibility());
         Text columnFamily = key.getColumnFamily();
         Mutation m = new Mutation(key.getRow());
@@ -166,7 +167,7 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
             Collections.sort(pairs);
             String median = "" + pairs.get(pairs.size() / 2).getValue();
             m.put(columnFamily, MEDIAN_TEXT, columnVisibility, new Value(median.getBytes()));
-            
+
             // Figure out the position in the list where the sum of the weights up to that point is
             // at the 95% percentile. We'll then take the value at that position. Go through the
             // list backwards in hope that the weights are mostly even and therefore the 95% weight
@@ -185,7 +186,7 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
         }
         return m;
     }
-    
+
     public static void configureJob(Job job, int numDays, String instance, String zookeepers, String userName, String password, String outputTable) {
         job.setNumReduceTasks(Math.min(numDays, 100)); // Cap the number of reducers at 100, just in case we have a large day range (shouldn't really happen
                                                        // though)
@@ -199,26 +200,26 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
                 .store(job);
         // @formatter:on
     }
-    
+
     public static class WeightedPair implements Writable, Comparable<WeightedPair> {
         private long value;
         private long weight;
-        
+
         public WeightedPair() {}
-        
+
         public WeightedPair(long value, long weight) {
             this.value = value;
             this.weight = weight;
         }
-        
+
         public long getValue() {
             return value;
         }
-        
+
         public long getWeight() {
             return weight;
         }
-        
+
         public Value toValue() {
             ByteArrayDataOutput out = ByteStreams.newDataOutput();
             try {
@@ -228,24 +229,24 @@ public class MetricsDailySummaryReducer extends Reducer<Key,Value,Text,Mutation>
             }
             return new Value(out.toByteArray());
         }
-        
+
         @Override
         public int compareTo(WeightedPair o) {
             return Longs.compare(value, o.value);
         }
-        
+
         @Override
         public void write(DataOutput out) throws IOException {
             out.writeLong(value);
             out.writeLong(weight);
         }
-        
+
         @Override
         public void readFields(DataInput in) throws IOException {
             value = in.readLong();
             weight = in.readLong();
         }
-        
+
         public static WeightedPair parseValue(Value value) {
             WeightedPair p = new WeightedPair();
             try {

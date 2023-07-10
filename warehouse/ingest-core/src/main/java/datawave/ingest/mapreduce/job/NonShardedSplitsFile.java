@@ -1,16 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import org.apache.accumulo.core.client.TableExistsException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -26,6 +15,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+
 /**
  * Extracted from IngestJob Creates a splits file with all the requested tables, omitting the sharded ones Adds it to the specified work dir and sets the confi
  */
@@ -33,7 +34,7 @@ public class NonShardedSplitsFile {
     protected static final Logger log = Logger.getLogger(NonShardedSplitsFile.class);
     public static final String SPLITS_FILE_NAME_PROPERTY_KEY = "datawave.ingest.bulk.NonShardedSplitsFile.cutFile";
     private static final String SPLITS_FILE_NAME_PROPERTY_VALUE = "splits.txt";
-    
+
     public static class Writer {
         private URI uri;
         private final int reduceTasks;
@@ -43,10 +44,10 @@ public class NonShardedSplitsFile {
         private final boolean isTrimmed;
         private final Configuration conf;
         private final FileSystem fs;
-        
+
         /**
          * Writes out the split points for the tables to splits.txt in the work directory.
-         * 
+         *
          * @param conf
          *            hadoop job configuration
          * @param reduceTasks
@@ -66,11 +67,11 @@ public class NonShardedSplitsFile {
          * @throws URISyntaxException
          *             if there is an issue with the URI syntax
          */
-        public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem outputFs, String[] tableNames) throws TableNotFoundException,
-                        IOException, TableExistsException, URISyntaxException {
+        public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem outputFs, String[] tableNames)
+                        throws TableNotFoundException, IOException, TableExistsException, URISyntaxException {
             this(conf, reduceTasks, workDirPath, outputFs, tableNames, true);
         }
-        
+
         public Writer(Configuration conf, int reduceTasks, Path workDirPath, FileSystem fs, String[] tableNames, boolean isTrimmed)
                         throws TableNotFoundException, IOException, TableExistsException, URISyntaxException {
             this.conf = conf;
@@ -81,7 +82,7 @@ public class NonShardedSplitsFile {
             this.isTrimmed = isTrimmed;
             this.shardedTableNames = Arrays.asList(ConfigurationHelper.isNull(conf, ShardedDataTypeHandler.SHARDED_TNAMES, String[].class));
         }
-        
+
         public void createFile(boolean isTrimmed) {
             try {
                 TableSplitsCache splits = new TableSplitsCache(conf);
@@ -99,13 +100,13 @@ public class NonShardedSplitsFile {
                 throw new RuntimeException("Could not create splits file for the job. See documentation for using generateSplitsFile.sh", e);
             }
         }
-        
+
         private void writeSplitsToFile(TableSplitsCache splits) throws IOException {
             PrintStream out = new PrintStream(new BufferedOutputStream(fs.create(new Path(workDirPath, createFileName(isTrimmed)))));
             outputSplitsForNonShardTables(splits, out);
             out.close();
         }
-        
+
         private void outputSplitsForNonShardTables(TableSplitsCache splits, PrintStream out) throws IOException {
             for (String table : tableNames) {
                 if (null != shardedTableNames && shardedTableNames.contains(table)) {
@@ -114,7 +115,7 @@ public class NonShardedSplitsFile {
                 outputSplitsForTable(splits, out, table);
             }
         }
-        
+
         private void outputSplitsForTable(TableSplitsCache splits, PrintStream out, String table) throws IOException {
             Collection<Text> tableSplits;
             if (isTrimmed) {
@@ -129,16 +130,16 @@ public class NonShardedSplitsFile {
                 }
             }
         }
-        
+
         public URI getUri() {
             return uri;
         }
     }
-    
+
     private static String createFileName(boolean isTrimmed) {
         return (isTrimmed ? "trimmed_" : "full_") + SPLITS_FILE_NAME_PROPERTY_VALUE;
     }
-    
+
     public static Path findSplitsFile(Configuration conf, Path[] filesToCheck, boolean isTrimmed) {
         String fileName = createFileName(isTrimmed);
         if (filesToCheck != null) {
@@ -150,20 +151,20 @@ public class NonShardedSplitsFile {
         }
         return null;
     }
-    
+
     private static boolean matchesFileName(String cutFileName, Path cacheFile) {
         return cacheFile.getName().endsWith(cutFileName);
     }
-    
+
     public static class Reader {
         private Map<String,Text[]> splits;
-        
+
         public Reader(Configuration conf, Path[] filesToCheck, boolean isTrimmed) throws IOException {
             Path cacheFile = findSplitsFile(conf, filesToCheck, isTrimmed);
             if (null == cacheFile) {
                 throw new RuntimeException("Could not find cut point file");
             }
-            
+
             splits = new HashMap<>();
             ArrayList<Text> cutPoints = new ArrayList<>();
             String previousTableName = null;
@@ -197,7 +198,7 @@ public class NonShardedSplitsFile {
                 }
             }
         }
-        
+
         public Map<String,Text[]> getSplitsByTable() {
             return splits;
         }

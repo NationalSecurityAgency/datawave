@@ -1,11 +1,10 @@
 package datawave.webservice.results.ingest.file;
 
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.result.BaseResponse;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -16,76 +15,78 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.result.BaseResponse;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 @XmlRootElement(name = "FileResponseList")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class FileResponseList extends BaseResponse implements Serializable, Message<FileResponseList> {
     private static final long serialVersionUID = 1L;
-    
+
     @XmlAttribute(name = "truncated", required = false)
     protected Boolean resultsTruncated;
-    
+
     @XmlElementWrapper(name = "FileResponseList")
     @XmlElement(name = "File")
     protected List<FileDetails> results = new ArrayList<FileDetails>();
-    
+
     public List<FileDetails> getFiles() {
         return results;
     }
-    
+
     public void setFiles(List<FileDetails> results) {
         this.results = results;
     }
-    
+
     public void setResultsTruncated(Boolean resultsTruncated) {
         this.resultsTruncated = resultsTruncated;
     }
-    
+
     public Boolean getResulsTruncated() {
         return resultsTruncated;
     }
-    
+
     @Override
     public Schema<FileResponseList> cachedSchema() {
         return SCHEMA;
     }
-    
+
     public static Schema<FileResponseList> getSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<FileResponseList> SCHEMA = new Schema<FileResponseList>() {
         // schema methods
-        
+
         public FileResponseList newMessage() {
             return new FileResponseList();
         }
-        
+
         public Class<FileResponseList> typeClass() {
             return FileResponseList.class;
         }
-        
+
         public String messageName() {
             return FileResponseList.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return FileResponseList.class.getName();
         }
-        
+
         public boolean isInitialized(FileResponseList message) {
             return true;
         }
-        
+
         public void writeTo(Output output, FileResponseList message) throws IOException {
-            
+
             if (message.getFiles() != null) {
                 for (FileDetails file : message.getFiles()) {
                     if (null != file) {
@@ -93,9 +94,9 @@ public class FileResponseList extends BaseResponse implements Serializable, Mess
                     }
                 }
             }
-            
+
             output.writeUInt64(2, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -103,7 +104,7 @@ public class FileResponseList extends BaseResponse implements Serializable, Mess
                         output.writeString(3, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -111,9 +112,9 @@ public class FileResponseList extends BaseResponse implements Serializable, Mess
                         output.writeObject(4, exception, QueryExceptionType.getSchema(), true);
                 }
             }
-            
+
         }
-        
+
         public void mergeFrom(Input input, FileResponseList message) throws IOException {
             List<FileDetails> files = null;
             LinkedList<QueryExceptionType> exceptions = null;
@@ -146,7 +147,7 @@ public class FileResponseList extends BaseResponse implements Serializable, Mess
             if (files != null)
                 message.setFiles(files);
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -161,12 +162,12 @@ public class FileResponseList extends BaseResponse implements Serializable, Mess
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("files", 1);

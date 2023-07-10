@@ -1,5 +1,24 @@
 package datawave.security.auth;
 
+import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
+import static datawave.webservice.metrics.Constants.REQUEST_START_TIME_HEADER;
+
+import java.io.IOException;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.SSLPeerUnverifiedException;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.SslClientAuthMode;
+
 import datawave.security.util.ProxiedEntityUtils;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMechanismFactory;
@@ -14,23 +33,6 @@ import io.undertow.server.handlers.form.FormParserFactory;
 import io.undertow.util.HeaderMap;
 import io.undertow.util.HeaderValues;
 import io.undertow.util.HttpString;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.SslClientAuthMode;
-
-import javax.net.ssl.SSLPeerUnverifiedException;
-import java.io.IOException;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
-import static datawave.webservice.metrics.Constants.REQUEST_START_TIME_HEADER;
 
 /**
  * The custom DATAWAVE servlet authentication mechanism. This auth mechanism acts just like CLIENT-CERT if there is an SSL session found, and otherwise uses
@@ -44,9 +46,9 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     private static final HttpString HEADER_LOGIN_TIME = new HttpString(REQUEST_LOGIN_TIME_HEADER);
     protected static final HttpString HEADER_PROXIED_ENTITIES = new HttpString(PROXIED_ENTITIES_HEADER);
     protected static final HttpString HEADER_PROXIED_ENTITIES_ACCEPTED = new HttpString("X-ProxiedEntitiesAccepted");
-    
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    
+
     private final String name;
     /**
      * If we should force a renegotiation if client certs were not supplied. <code>true</code> by default
@@ -58,22 +60,22 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
     private final boolean trustedHeaderAuthentication;
     private final boolean jwtHeaderAuthentication;
     private final Set<String> dnsToPrune;
-    
+
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism() {
         this(MECHANISM_NAME, true, null);
     }
-    
+
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism(String mechanismName) {
         this(mechanismName, true, null);
     }
-    
+
     @SuppressWarnings("UnusedDeclaration")
     public DatawaveAuthenticationMechanism(boolean forceRenegotiation) {
         this(MECHANISM_NAME, forceRenegotiation, null);
     }
-    
+
     public DatawaveAuthenticationMechanism(String mechanismName, boolean forceRenegotiation, IdentityManager identityManager) {
         this.name = mechanismName;
         this.forceRenegotiation = forceRenegotiation;
@@ -89,7 +91,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         SUBJECT_DN_HEADER = System.getProperty("dw.trusted.header.subjectDn", "X-SSL-ClientCert-Subject".toLowerCase());
         ISSUER_DN_HEADER = System.getProperty("dw.trusted.header.issuerDn", "X-SSL-ClientCert-Issuer".toLowerCase());
     }
-    
+
     @Override
     public AuthenticationMechanismOutcome authenticate(HttpServerExchange exchange, SecurityContext securityContext) {
         // Pull proxied entity info from the headers. If proxied entities are there, but proxied issuers are missing, then fail authentication immediately.
@@ -100,13 +102,13 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
             proxiedIssuers = getSingleHeader(exchange.getRequestHeaders(), PROXIED_ISSUERS_HEADER);
             logger.trace("Authenticating with proxiedEntities={} and proxiedIssuers={}", proxiedEntities, proxiedIssuers);
             if (proxiedEntities != null && proxiedIssuers == null) {
-                return notAuthenticated(exchange, securityContext, PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER
-                                + " is missing!");
+                return notAuthenticated(exchange, securityContext,
+                                PROXIED_ENTITIES_HEADER + " supplied, but missing " + PROXIED_ISSUERS_HEADER + " is missing!");
             }
         } catch (MultipleHeaderException e) {
             return notAuthenticated(exchange, securityContext, e.getMessage());
         }
-        
+
         // Pull subject/issuer DN from the SSL client certificate if it's there.
         DatawaveCredential credential = null;
         SSLSessionInfo sslSession = exchange.getConnection().getSslSessionInfo();
@@ -144,15 +146,15 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
                 }
                 // If one of subject or issuer is missing, then report authentication failure.
                 if (subjectDN == null || issuerDN == null) {
-                    return notAuthenticated(exchange, securityContext, "Missing trusted subject DN (" + subjectDN + ") or issuer DN (" + issuerDN
-                                    + ") for trusted header authentication.");
+                    return notAuthenticated(exchange, securityContext,
+                                    "Missing trusted subject DN (" + subjectDN + ") or issuer DN (" + issuerDN + ") for trusted header authentication.");
                 }
                 credential = new DatawaveCredential(subjectDN, issuerDN, proxiedEntities, proxiedIssuers);
             } catch (MultipleHeaderException e) {
                 return notAuthenticated(exchange, securityContext, e.getMessage());
             }
         }
-        
+
         logger.trace("Computed credential = {}", credential);
         if (credential != null) {
             if (dnsToPrune != null) {
@@ -160,38 +162,38 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
                 logger.trace("Computed credential after pruning = {}", credential);
             }
             String username = credential.getUserName();
-            
+
             IdentityManager idm = getIdentityManager(securityContext);
             Account account = idm.verify(username, credential);
             if (account != null) {
                 return authenticated(exchange, securityContext, account);
             }
         }
-        
+
         return notAttempted(exchange);
     }
-    
+
     private AuthenticationMechanismOutcome notAttempted(HttpServerExchange exchange) {
         addTimingRequestHeaders(exchange);
         return AuthenticationMechanismOutcome.NOT_ATTEMPTED;
     }
-    
+
     private AuthenticationMechanismOutcome notAuthenticated(HttpServerExchange exchange, SecurityContext securityContext, String reason) {
         securityContext.authenticationFailed(reason, name);
         addTimingRequestHeaders(exchange);
         return AuthenticationMechanismOutcome.NOT_AUTHENTICATED;
     }
-    
+
     private AuthenticationMechanismOutcome authenticated(HttpServerExchange exchange, SecurityContext securityContext, Account account) {
         if (exchange.getRequestHeaders().contains(HEADER_PROXIED_ENTITIES)) {
             exchange.getResponseHeaders().add(HEADER_PROXIED_ENTITIES_ACCEPTED, "true");
         }
-        
+
         securityContext.authenticationComplete(account, name, false);
         addTimingRequestHeaders(exchange);
         return AuthenticationMechanismOutcome.AUTHENTICATED;
     }
-    
+
     private void addTimingRequestHeaders(HttpServerExchange exchange) {
         long requestStartTime = exchange.getRequestStartTime();
         long loginTime = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - requestStartTime);
@@ -199,7 +201,7 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         headers.add(HEADER_START_TIME, requestStartTime);
         headers.add(HEADER_LOGIN_TIME, loginTime);
     }
-    
+
     // impl copied from io.undertow.security.impl.ClientCertAuthenticationMechanism
     private Certificate[] getPeerCertificates(HttpServerExchange exchange, SSLSessionInfo sslSession, SecurityContext securityContext)
                     throws SSLPeerUnverifiedException {
@@ -218,12 +220,12 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         }
         throw new SSLPeerUnverifiedException("");
     }
-    
+
     @Override
     public ChallengeResult sendChallenge(HttpServerExchange httpServerExchange, SecurityContext securityContext) {
         return new ChallengeResult(false);
     }
-    
+
     private String getSingleHeader(HeaderMap headers, String headerName) throws MultipleHeaderException {
         String value = null;
         HeaderValues values = (headers == null) ? null : headers.get(headerName);
@@ -234,32 +236,32 @@ public class DatawaveAuthenticationMechanism implements AuthenticationMechanism 
         }
         return value;
     }
-    
+
     @SuppressWarnings("deprecation")
     private IdentityManager getIdentityManager(SecurityContext securityContext) {
         return identityManager != null ? identityManager : securityContext.getIdentityManager();
     }
-    
+
     private static final class MultipleHeaderException extends Exception {
         public MultipleHeaderException(String message) {
             super(message);
         }
     }
-    
+
     protected static final class Factory implements AuthenticationMechanismFactory {
-        
+
         private final IdentityManager identityManager;
-        
+
         public Factory(IdentityManager identityManager) {
             this.identityManager = identityManager;
         }
-        
+
         @Override
         @Deprecated
         public AuthenticationMechanism create(String mechanismName, FormParserFactory formParserFactory, Map<String,String> properties) {
             return create(mechanismName, identityManager, formParserFactory, properties);
         }
-        
+
         @Override
         public AuthenticationMechanism create(String mechanismName, IdentityManager identityManager, FormParserFactory formParserFactory,
                         Map<String,String> properties) {
