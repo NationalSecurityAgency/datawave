@@ -1,7 +1,7 @@
-FROM azul/zulu-openjdk-centos:8u252
+FROM azul/zulu-openjdk-centos:11.0.18-11.62.17
 
 RUN yum -y install deltarpm centos-release-sc && \
-    chmod -R 777 /usr/lib/jvm/zulu-8/bin/* && \
+    chmod -R 777 /usr/lib/jvm/zulu11/bin/* && \
     groupadd -r jboss -g 1000 && \
     useradd -u 1000 -r -g jboss -m -d /opt/jboss -s /sbin/nologin -c "JBoss User" jboss && \
     groupadd -r hadoop && \
@@ -9,11 +9,10 @@ RUN yum -y install deltarpm centos-release-sc && \
     chown -R datawave:hadoop /opt/datawave /opt/jboss && \
     chmod -R ug+rX,o-rx /opt/datawave /opt/jboss
 
-ENV JAVA_VERSION=8 \
-    JAVA_UPDATE=252 \
-    JAVA_BUILD=1.8.0_252-b14 \
-    JAVA_HOME=/usr/lib/jvm/zulu8
-LABEL version="1.8.0_252"
+ENV JAVA_VERSION=11 \
+    JAVA_BUILD=11.0.18 \
+    JAVA_HOME=/usr/lib/jvm/zulu11
+LABEL version="11"
 
 RUN yum update -y && \
     yum install -y which less bind-utils net-tools lsof nethogs dstat strace htop iperf iperf3 socat iftop xmlstarlet saxon augeas bsdtar unzip && \

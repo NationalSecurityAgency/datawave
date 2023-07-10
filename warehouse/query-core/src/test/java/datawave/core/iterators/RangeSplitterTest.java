@@ -10,18 +10,18 @@ import org.junit.Before;
 import org.junit.Test;
 
 /**
- * 
+ *
  */
 public class RangeSplitterTest {
-    
+
     Logger log = Logger.getLogger(RangeSplitterTest.class);
-    
+
     @Before
     public void setUp() throws Exception {}
-    
+
     @After
     public void tearDown() throws Exception {}
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -47,7 +47,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -75,7 +75,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -103,7 +103,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -131,7 +131,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -159,7 +159,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -187,7 +187,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -215,7 +215,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -243,7 +243,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(1, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -271,7 +271,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(1, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -299,7 +299,7 @@ public class RangeSplitterTest {
         Assert.assertNull(lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -327,7 +327,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -355,7 +355,7 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
     /**
      * Test method for {@link datawave.core.iterators.RangeSplitter#RangeSplitter(org.apache.accumulo.core.data.Range, int)}.
      */
@@ -383,5 +383,5 @@ public class RangeSplitterTest {
         Assert.assertEquals(end, lastRange.getEndKey());
         Assert.assertEquals(10, count);
     }
-    
+
 }
