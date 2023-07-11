@@ -92,6 +92,7 @@
         <version.microservice.query-metric-api>1.5.7</version.microservice.query-metric-api>
         <version.microservice.type-utils>1.14</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
+        <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.16</version.mysql-connector>
         <version.netty>4.1.42.Final</version.netty>
         <version.objenesis>2.1</version.objenesis>
@@ -1108,6 +1109,12 @@
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-api</artifactId>
                 <version>${version.junit.jupiter}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${version.mockito}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
