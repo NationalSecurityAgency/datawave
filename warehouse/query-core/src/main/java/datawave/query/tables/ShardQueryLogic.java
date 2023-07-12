@@ -2199,6 +2199,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         this.getConfig().setReduceQueryFields(reduceQueryFields);
     }
 
+    public boolean getReduceFieldSets() {
+        return getConfig().getReduceFieldSets();
+    }
+
+    public void setReduceFieldSets(boolean reduceFieldSets) {
+        getConfig().setReduceFieldSets(reduceFieldSets);
+    }
+
+    public boolean getReduceFieldSetsPerShard() {
+        return getConfig().getReduceFieldSetsPerShard();
+    }
+
+    public void setReduceFieldSetsPerShard(boolean reduceFieldSetsPerShard) {
+        getConfig().setReduceFieldSetsPerShard(reduceFieldSetsPerShard);
+    }
+
+    public boolean getCompressFieldSets() {
+        return getConfig().getCompressFieldSets();
+    }
+
+    public void setCompressFieldSets(boolean compressFieldSets) {
+        getConfig().setCompressFieldSets(compressFieldSets);
+    }
+
     public boolean getReduceTypeMetadata() {
         return getConfig().getReduceTypeMetadata();
     }

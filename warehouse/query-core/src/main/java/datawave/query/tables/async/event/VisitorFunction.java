@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.google.common.base.Function;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
 import datawave.query.config.ShardQueryConfiguration;
@@ -304,7 +305,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
                     pruneEmptyOptions(newIteratorSetting);
 
-                    if (config.getReduceQueryFields()) {
+                    if (config.getReduceFieldSetsPerShard() || config.getReduceQueryFields()) {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
@@ -427,12 +428,44 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected void reduceQueryFields(ASTJexlScript script, IteratorSetting settings) {
         Set<String> queryFields = ReduceFields.getQueryFields(script);
 
-        ReduceFields.reduceFieldsForOption(QueryOptions.CONTENT_EXPANSION_FIELDS, queryFields, settings);
-        ReduceFields.reduceFieldsForOption(QueryOptions.INDEXED_FIELDS, queryFields, settings);
-        ReduceFields.reduceFieldsForOption(QueryOptions.INDEX_ONLY_FIELDS, queryFields, settings);
-        ReduceFields.reduceFieldsForOption(QueryOptions.TERM_FREQUENCY_FIELDS, queryFields, settings);
+        Set<String> compositeFields = FieldSets.deserializeFieldSet(settings.removeOption(QueryOptions.COMPOSITE_FIELDS));
+        Set<String> contentExpansionFields = FieldSets.deserializeFieldSet(settings.removeOption(QueryOptions.CONTENT_EXPANSION_FIELDS));
+        Set<String> indexedFields = FieldSets.deserializeFieldSet(settings.removeOption(QueryOptions.INDEXED_FIELDS));
+        Set<String> indexOnlyFields = FieldSets.deserializeFieldSet(settings.removeOption(QueryOptions.INDEX_ONLY_FIELDS));
+        Set<String> termFrequencyFields = FieldSets.deserializeFieldSet(settings.removeOption(QueryOptions.TERM_FREQUENCY_FIELDS));
 
-        // might also look at COMPOSITE_FIELDS, EXCERPT_FIELDS, and GROUP_FIELDS
+        compositeFields = Sets.intersection(compositeFields, queryFields);
+        contentExpansionFields = Sets.intersection(contentExpansionFields, queryFields);
+        indexedFields = Sets.intersection(indexedFields, queryFields);
+        indexOnlyFields = Sets.intersection(indexOnlyFields, queryFields);
+        termFrequencyFields = Sets.intersection(termFrequencyFields, queryFields);
+
+        String serializedCompositeFields = FieldSets.serializeFieldSet(compositeFields);
+        String serializedContentExpansionFields = FieldSets.serializeFieldSet(contentExpansionFields);
+        String serializedIndexedFields = FieldSets.serializeFieldSet(indexedFields);
+        String serializedIndexOnlyFields = FieldSets.serializeFieldSet(indexOnlyFields);
+        String serializedTermFrequencyFields = FieldSets.serializeFieldSet(termFrequencyFields);
+
+        // field set compression is limited to indexed fields, index only fields, and composite fields
+        if (config.getCompressFieldSets()) {
+            try {
+                // this list of field sets could be expanded
+                settings.addOption(QueryOptions.COMPRESS_FIELD_SETS, Boolean.TRUE.toString());
+                serializedCompositeFields = FieldSets.compressFieldSet(serializedCompositeFields);
+                serializedIndexedFields = FieldSets.compressFieldSet(serializedIndexedFields);
+                serializedIndexOnlyFields = FieldSets.compressFieldSet(serializedIndexOnlyFields);
+            } catch (IOException e) {
+                throw new DatawaveFatalQueryException("VisitorFunction could not compress field sets");
+            }
+        }
+
+        settings.addOption(QueryOptions.COMPOSITE_FIELDS, serializedCompositeFields);
+        settings.addOption(QueryOptions.CONTENT_EXPANSION_FIELDS, serializedContentExpansionFields);
+        settings.addOption(QueryOptions.INDEXED_FIELDS, serializedIndexedFields);
+        settings.addOption(QueryOptions.INDEX_ONLY_FIELDS, serializedIndexOnlyFields);
+        settings.addOption(QueryOptions.TERM_FREQUENCY_FIELDS, serializedTermFrequencyFields);
+
+        // might also look at EXCERPT_FIELDS and GROUP_FIELDS
     }
 
     /**

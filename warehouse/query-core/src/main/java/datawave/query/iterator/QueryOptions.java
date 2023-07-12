@@ -63,6 +63,7 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.composite.CompositeMetadata;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
 import datawave.query.function.Equality;
@@ -85,6 +86,7 @@ import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tables.async.Scan;
+import datawave.query.tables.async.event.FieldSets;
 import datawave.query.tracking.ActiveQueryLog;
 import datawave.query.util.TypeMetadata;
 import datawave.query.util.sortedset.FileSortedSet;
@@ -140,6 +142,7 @@ public class QueryOptions implements OptionDescriber {
     public static final String GROUP_FIELDS = "group.fields";
     public static final String GROUP_FIELDS_BATCH_SIZE = "group.fields.batch.size";
     public static final String UNIQUE_FIELDS = "unique.fields";
+    public static final String COMPRESS_FIELD_SETS = "compress.field.sets";
     public static final String HITS_ONLY = "hits.only";
     public static final String HIT_LIST = "hit.list";
     public static final String START_TIME = "start.time";
@@ -278,6 +281,7 @@ public class QueryOptions implements OptionDescriber {
     protected boolean fullTableScanOnly = false;
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
 
+    private boolean compressFieldSets = false;
     protected boolean projectResults = false;
     protected boolean useWhiteListedFields = false;
     protected Set<String> whiteListedFields = new HashSet<>();
@@ -1035,6 +1039,14 @@ public class QueryOptions implements OptionDescriber {
         this.uniqueFields = uniqueFields;
     }
 
+    public boolean isCompressFieldSets() {
+        return compressFieldSets;
+    }
+
+    public void setCompressFieldSets(boolean compressFieldSets) {
+        this.compressFieldSets = compressFieldSets;
+    }
+
     public Set<String> getHitsOnlySet() {
         return hitsOnlySet;
     }
@@ -1134,6 +1146,7 @@ public class QueryOptions implements OptionDescriber {
         options.put(GROUP_FIELDS, "group fields");
         options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
         options.put(UNIQUE_FIELDS, "unique fields");
+        options.put(COMPRESS_FIELD_SETS, "A flag indicating that field sets are compressed");
         options.put(HIT_LIST, "hit list");
         options.put(NON_INDEXED_DATATYPES, "Normalizers to apply only at aggregation time");
         options.put(CONTAINS_INDEX_ONLY_TERMS, "Does the query being evaluated contain any terms which are index-only");
@@ -1282,6 +1295,10 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
             setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
+        }
+
+        if (options.containsKey(COMPRESS_FIELD_SETS)) {
+            setCompressFieldSets(true); // presence of key is enough
         }
 
         if (options.containsKey(PROJECTION_FIELDS)) {
@@ -1885,14 +1902,22 @@ public class QueryOptions implements OptionDescriber {
         return sb.toString();
     }
 
-    public static Set<String> buildFieldSetFromString(String fieldStr) {
-        Set<String> fields = new HashSet<>();
-        for (String field : StringUtils.split(fieldStr, ',')) {
-            if (!org.apache.commons.lang.StringUtils.isBlank(field)) {
-                fields.add(field);
+    /**
+     * Builds a field set from the provided option string
+     *
+     * @param option
+     *            the serialized option
+     * @return a field set
+     */
+    public Set<String> buildFieldSetFromString(String option) {
+        if (isCompressFieldSets()) {
+            try {
+                option = FieldSets.decompressFieldSet(option);
+            } catch (IOException e) {
+                throw new DatawaveFatalQueryException("QueryIterator could not decompress field set");
             }
         }
-        return fields;
+        return FieldSets.deserializeFieldSet(option);
     }
 
     public static String buildIgnoredColumnFamiliesString(Collection<String> colFams) {

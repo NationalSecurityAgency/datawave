@@ -66,6 +66,9 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getCollapseUids());
         Assert.assertFalse(config.getParseTldUids());
         Assert.assertFalse(config.getReduceQueryFields());
+        Assert.assertFalse(config.getReduceFieldSets());
+        Assert.assertFalse(config.getReduceFieldSetsPerShard());
+        Assert.assertFalse(config.getCompressFieldSets());
         Assert.assertFalse(config.getReduceTypeMetadata());
         Assert.assertFalse(config.getReduceTypeMetadataPerShard());
         Assert.assertFalse(config.getSequentialScheduler());
@@ -311,6 +314,9 @@ public class ShardQueryConfigurationTest {
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         other.setAccumuloPassword("ChangeIt");
         other.setReduceQueryFields(true);
+        other.setReduceFieldSets(true);
+        other.setReduceFieldSetsPerShard(true);
+        other.setCompressFieldSets(true);
         other.setReduceTypeMetadata(true);
         other.setReduceTypeMetadataPerShard(true);
         other.setDocAggregationThresholdMs(15000);
@@ -409,9 +415,11 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
         Assert.assertTrue(config.getReduceQueryFields());
+        Assert.assertTrue(config.getReduceFieldSets());
+        Assert.assertTrue(config.getReduceFieldSetsPerShard());
+        Assert.assertTrue(config.getCompressFieldSets());
         Assert.assertTrue(config.getReduceTypeMetadata());
         Assert.assertTrue(config.getReduceTypeMetadataPerShard());
-
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
         expectedQuery.setId(config.getQuery().getId());
@@ -543,7 +551,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 206;
+        int expectedObjectCount = 209;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

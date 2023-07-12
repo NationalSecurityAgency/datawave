@@ -243,7 +243,12 @@
         <property name="tfAggregationThresholdMs" value="-1" />
         <!--   enable per-tablet pruning of certain query options     -->
         <property name="pruneQueryOptions" value="false" />
+        <!--   properties that control field set reduction and optionally compression    -->
         <property name="reduceQueryFields" value="false" />
+        <property name="reduceFieldSets" value="false" />
+        <property name="reduceFieldSetsPerShard" value="false" />
+        <property name="compressFieldSets" value="false" />
+        <!--   should type metadata be reduced to just the fields in the query     -->
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
     </bean>

@@ -49,6 +49,7 @@ import datawave.query.jexl.functions.IdentityAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.jexl.visitors.SatisfactionVisitor;
 import datawave.query.predicate.TimeFilter;
+import datawave.query.tables.async.event.FieldSets;
 import datawave.util.StringUtils;
 
 /**
@@ -114,6 +115,10 @@ public class FieldIndexOnlyQueryIterator extends QueryIterator {
 
         if (options.containsKey(QUERY_MAPPING_COMPRESS)) {
             compressedMappings = Boolean.valueOf(options.get(QUERY_MAPPING_COMPRESS));
+        }
+
+        if (options.containsKey(COMPRESS_FIELD_SETS)) {
+            setCompressFieldSets(true); // presence of key is enough
         }
 
         this.validateTypeMetadata(options);

@@ -151,6 +151,7 @@ import datawave.query.planner.rules.NodeTransformVisitor;
 import datawave.query.postprocessing.tf.Function;
 import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.async.event.FieldSets;
 import datawave.query.tables.async.event.ReduceFields;
 import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
@@ -2141,7 +2142,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     }
 
     /**
-     * Load indexed, index only, and composite fields into the query iterator
+     * Load indexed, index only, and composite fields into the query iterator. Optionally compress field sets.
      *
      * @param cfg
      *            iterator setting
@@ -2158,17 +2159,33 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             Set<String> indexedFields = metadataHelper.getIndexedFields(config.getDatatypeFilter());
             Set<String> indexOnlyFields = metadataHelper.getIndexOnlyFields(config.getDatatypeFilter());
 
-            // only reduce the query fields if planning has occurred
-            if (!isPreload && config.getReduceQueryFields()) {
+            // only intersect field sets with query fields if planning has occurred
+            if (!isPreload && (config.getReduceFieldSets() || config.getReduceQueryFields())) {
                 Set<String> queryFields = ReduceFields.getQueryFields(config.getQueryTree());
+                compositeFields = ReduceFields.intersectFields(queryFields, compositeFields);
                 indexedFields = ReduceFields.intersectFields(queryFields, indexedFields);
                 indexOnlyFields = ReduceFields.intersectFields(queryFields, indexOnlyFields);
-                compositeFields = ReduceFields.intersectFields(queryFields, compositeFields);
             }
 
-            addOption(cfg, QueryOptions.COMPOSITE_FIELDS, QueryOptions.buildFieldStringFromSet(compositeFields), true);
-            addOption(cfg, QueryOptions.INDEXED_FIELDS, QueryOptions.buildFieldStringFromSet(indexedFields), true);
-            addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS, QueryOptions.buildFieldStringFromSet(indexOnlyFields), true);
+            String serializedCompositeFields = FieldSets.serializeFieldSet(compositeFields);
+            String serializedIndexedFields = FieldSets.serializeFieldSet(indexedFields);
+            String serializedIndexOnlyFields = FieldSets.serializeFieldSet(indexOnlyFields);
+
+            // only compress the serialized fieldset if we are not doing a per-shard reduction later
+            if (config.getCompressFieldSets() && !config.getReduceFieldSetsPerShard()) {
+                try {
+                    addOption(cfg, QueryOptions.COMPRESS_FIELD_SETS, Boolean.TRUE.toString(), false);
+                    serializedCompositeFields = FieldSets.compressFieldSet(serializedCompositeFields);
+                    serializedIndexedFields = FieldSets.compressFieldSet(serializedIndexedFields);
+                    serializedIndexOnlyFields = FieldSets.compressFieldSet(serializedIndexOnlyFields);
+                } catch (IOException e) {
+                    throw new DatawaveFatalQueryException("Could not compress field sets while planning query");
+                }
+            }
+
+            addOption(cfg, QueryOptions.COMPOSITE_FIELDS, serializedCompositeFields, true);
+            addOption(cfg, QueryOptions.INDEXED_FIELDS, serializedIndexedFields, true);
+            addOption(cfg, QueryOptions.INDEX_ONLY_FIELDS, serializedIndexOnlyFields, true);
 
         } catch (TableNotFoundException e) {
             QueryException qe = new QueryException(DatawaveErrorCode.INDEX_ONLY_FIELDS_RETRIEVAL_ERROR, e);
