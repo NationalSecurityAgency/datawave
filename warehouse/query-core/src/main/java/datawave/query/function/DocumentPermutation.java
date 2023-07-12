@@ -1,11 +1,13 @@
 package datawave.query.function;
 
-import datawave.query.attributes.Document;
-import org.apache.accumulo.core.data.Key;
-
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Map.Entry;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+
+import datawave.query.attributes.Document;
 
 /**
  * A document permutation is used to permute the fields in a document.

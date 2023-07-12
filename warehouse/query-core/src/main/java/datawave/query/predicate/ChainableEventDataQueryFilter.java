@@ -1,14 +1,16 @@
 package datawave.query.predicate;
 
-import datawave.query.attributes.Document;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+
+import datawave.query.attributes.Document;
 
 /**
  * Wrap multiple EventDataQueryFilter objects and in order process them

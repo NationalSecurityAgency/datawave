@@ -1,13 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.input.reader.EventRecordReader;
-import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -17,6 +9,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.log4j.Logger;
+
+import datawave.data.normalizer.Normalizer;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.input.reader.EventRecordReader;
+import datawave.ingest.json.mr.handler.ContentJsonColumnBasedHandler;
 
 /**
  * Configures a datatype for grouping data.

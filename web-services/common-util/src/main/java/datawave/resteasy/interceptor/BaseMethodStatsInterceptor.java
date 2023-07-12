@@ -3,12 +3,11 @@ package datawave.resteasy.interceptor;
 import static datawave.webservice.metrics.Constants.REQUEST_LOGIN_TIME_HEADER;
 import static datawave.webservice.metrics.Constants.REQUEST_START_TIME_HEADER;
 
-import com.google.common.io.CountingOutputStream;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
-import org.jboss.resteasy.specimpl.MultivaluedTreeMap;
-import org.jboss.resteasy.spi.Failure;
-import org.jboss.resteasy.util.CaseInsensitiveMap;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeUnit;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.container.ContainerRequestContext;
@@ -21,11 +20,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.WriterInterceptor;
 import javax.ws.rs.ext.WriterInterceptorContext;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.specimpl.MultivaluedTreeMap;
+import org.jboss.resteasy.spi.Failure;
+import org.jboss.resteasy.util.CaseInsensitiveMap;
+
+import com.google.common.io.CountingOutputStream;
 
 public abstract class BaseMethodStatsInterceptor implements ContainerRequestFilter, ContainerResponseFilter, WriterInterceptor {
     protected static final Logger log = Logger.getLogger(BaseMethodStatsInterceptor.class);

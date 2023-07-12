@@ -1,8 +1,8 @@
 package datawave.metrics.config;
 
-import datawave.util.TableName;
-
 import java.util.concurrent.TimeUnit;
+
+import datawave.util.TableName;
 
 public class MetricsConfig {
     public static final String MTX = "metrics.";

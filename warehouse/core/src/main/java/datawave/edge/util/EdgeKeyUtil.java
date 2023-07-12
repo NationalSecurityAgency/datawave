@@ -1,21 +1,21 @@
 package datawave.edge.util;
 
-import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
-
-import datawave.data.type.Type;
-import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.hadoop.io.Text;
-
 import java.nio.charset.CharacterCodingException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.hadoop.io.Text;
+
+import datawave.data.type.Type;
+import datawave.edge.model.EdgeModelAware.Fields.FieldKey;
+import datawave.util.StringUtils;
 
 /**
  * Utility class for generating regular expressions to scan various formats of the edge table.

@@ -16,15 +16,8 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.List;
-
-import datawave.query.language.parser.jexl.JexlNode;
-import datawave.query.language.parser.jexl.JexlPhraseNode;
-import datawave.query.language.parser.jexl.JexlSelectorNode;
-import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
-import datawave.query.search.WildcardFieldedTerm;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -37,6 +30,12 @@ import org.apache.lucene.queryparser.flexible.core.util.UnescapedCharSequence;
 import org.apache.lucene.search.TermQuery;
 
 import com.google.common.collect.Sets;
+
+import datawave.query.language.parser.jexl.JexlNode;
+import datawave.query.language.parser.jexl.JexlPhraseNode;
+import datawave.query.language.parser.jexl.JexlSelectorNode;
+import datawave.query.language.parser.lucene.EscapeQuerySyntaxImpl;
+import datawave.query.search.WildcardFieldedTerm;
 
 /**
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.

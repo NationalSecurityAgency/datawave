@@ -1,14 +1,15 @@
 package datawave.ingest.mapreduce.job.statsd;
 
-import com.timgroup.statsd.StatsDClient;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Counters;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.timgroup.statsd.StatsDClient;
 
 /**
  * Created on 4/27/16.

@@ -1,29 +1,5 @@
 package datawave.query;
 
-import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
-import datawave.query.exceptions.FullTableScansDisallowedException;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
-import datawave.query.testframework.CitiesDataType;
-import datawave.query.testframework.DataTypeHadoopConfig;
-import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.FileType;
-import datawave.query.testframework.MaxExpandCityFields;
-
-import java.io.File;
-import java.net.URI;
-import java.util.List;
-
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static datawave.query.testframework.CitiesDataType.CityField;
 import static datawave.query.testframework.RawDataManager.AND_OP;
 import static datawave.query.testframework.RawDataManager.EQ_OP;
@@ -34,6 +10,29 @@ import static datawave.query.testframework.RawDataManager.RN_OP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import datawave.query.exceptions.DatawaveIvaratorMaxResultsException;
+import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.testframework.AbstractFunctionalQuery;
+import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.DataTypeHadoopConfig;
+import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.MaxExpandCityFields;
 
 /**
  * These tests are highly dependent upon the test data due to the fact that thresholds are tested. Because the test data contains multivalue fields with

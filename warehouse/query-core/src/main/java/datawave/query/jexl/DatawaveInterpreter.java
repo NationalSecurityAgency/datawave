@@ -1,18 +1,18 @@
 package datawave.query.jexl;
 
-import com.google.common.collect.Maps;
-import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
-import datawave.marking.MarkingFunctions;
-import datawave.marking.MarkingFunctionsFactory;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.collections.FunctionalSet;
-import datawave.query.jexl.functions.ContentFunctionsDescriptor;
-import datawave.query.jexl.functions.QueryFunctions;
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.Interpreter;
@@ -40,18 +40,20 @@ import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 import org.apache.lucene.util.fst.FST;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.ArrayDeque;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
+import com.google.common.collect.Maps;
+
+import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
+import datawave.marking.MarkingFunctions;
+import datawave.marking.MarkingFunctionsFactory;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.functions.ContentFunctionsDescriptor;
+import datawave.query.jexl.functions.QueryFunctions;
+import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * Extended so that calls to a function node, which can return a collection of 'hits' instead of a Boolean, can be evaluated as true/false based on the size of

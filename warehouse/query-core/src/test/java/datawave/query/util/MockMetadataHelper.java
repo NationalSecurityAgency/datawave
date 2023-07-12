@@ -1,31 +1,5 @@
 package datawave.query.util;
 
-import com.google.common.base.Function;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.data.MetadataCardinalityCounts;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.Type;
-import datawave.marking.MarkingFunctions;
-import datawave.query.composite.CompositeMetadataHelper;
-import datawave.query.model.QueryModel;
-import datawave.util.TableName;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
-
-import javax.annotation.Nullable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -38,6 +12,35 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutionException;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.data.MetadataCardinalityCounts;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.marking.MarkingFunctions;
+import datawave.query.composite.CompositeMetadataHelper;
+import datawave.query.model.QueryModel;
+import datawave.util.TableName;
 
 public class MockMetadataHelper extends MetadataHelper {
     protected final Metadata metadata = new Metadata();

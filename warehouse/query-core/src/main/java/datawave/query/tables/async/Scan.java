@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.google.common.base.Throwables;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.clientImpl.ThriftScanner.ScanTimedOutException;
 import org.apache.accumulo.core.data.Key;
@@ -22,6 +21,7 @@ import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
+import com.google.common.base.Throwables;
 import com.google.common.eventbus.Subscribe;
 
 import datawave.query.tables.AccumuloResource;

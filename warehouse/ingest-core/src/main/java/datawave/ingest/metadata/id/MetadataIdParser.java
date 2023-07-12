@@ -7,11 +7,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.ingest.data.RawRecordContainer;
-
 import org.apache.hadoop.util.StringUtils;
 
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
 
 /**
  * A metadata key parser implementation will parse metadata out of a key.

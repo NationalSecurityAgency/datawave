@@ -1,5 +1,7 @@
 package datawave.mr.bulk;
 
+import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -25,8 +27,6 @@ import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.sample.SamplerConfiguration;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
 import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
-import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.conf.SiteConfiguration;
 import org.apache.accumulo.core.crypto.CryptoFactoryLoader;
@@ -43,6 +43,8 @@ import org.apache.accumulo.core.file.rfile.RFileOperations;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.IteratorBuilder;
+import org.apache.accumulo.core.iteratorsImpl.IteratorConfigUtil;
 import org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.MultiIterator;
 import org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter;
@@ -67,8 +69,6 @@ import datawave.mr.bulk.BulkInputFormat.AccumuloIteratorOption;
 import datawave.mr.bulk.split.FileRangeSplit;
 import datawave.mr.bulk.split.RangeSplit;
 import datawave.mr.bulk.split.TabletSplitSplit;
-
-import static org.apache.accumulo.core.conf.Property.TABLE_CRYPTO_PREFIX;
 
 public class RecordIterator extends RangeSplit implements SortedKeyValueIterator<Key,Value>, Closeable {
 

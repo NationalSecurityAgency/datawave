@@ -1,11 +1,12 @@
 package datawave.query.predicate;
 
-import datawave.query.function.RangeProvider;
+import static org.junit.Assert.assertEquals;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import datawave.query.function.RangeProvider;
 
 public class ParentRangeProviderTest {
 

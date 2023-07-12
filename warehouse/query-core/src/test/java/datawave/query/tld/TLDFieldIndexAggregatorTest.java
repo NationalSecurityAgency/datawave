@@ -1,15 +1,17 @@
 package datawave.query.tld;
 
-import com.google.common.collect.Maps;
-import datawave.data.type.NoOpType;
-import datawave.query.Constants;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.TypeMetadata;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -22,18 +24,16 @@ import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import com.google.common.collect.Maps;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
+import datawave.data.type.NoOpType;
+import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.TypeMetadata;
 
 public class TLDFieldIndexAggregatorTest {
     private TLDFieldIndexAggregator aggregator;

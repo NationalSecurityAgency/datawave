@@ -1,8 +1,9 @@
 package datawave.ingest;
 
-import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.job.TableConfigurationUtil;
 
 public class TableCreator {
 

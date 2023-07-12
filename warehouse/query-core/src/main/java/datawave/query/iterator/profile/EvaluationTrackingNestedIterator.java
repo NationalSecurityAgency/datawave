@@ -1,14 +1,15 @@
 package datawave.query.iterator.profile;
 
-import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableNestedIterator;
+import java.io.IOException;
+import java.util.Collection;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Collection;
+import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.SeekableNestedIterator;
 
 public class EvaluationTrackingNestedIterator<T> extends SeekableNestedIterator<T> {
 

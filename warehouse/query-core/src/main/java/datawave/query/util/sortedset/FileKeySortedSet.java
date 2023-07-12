@@ -3,6 +3,7 @@ package datawave.query.util.sortedset;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.SortedSet;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.log4j.Logger;
 

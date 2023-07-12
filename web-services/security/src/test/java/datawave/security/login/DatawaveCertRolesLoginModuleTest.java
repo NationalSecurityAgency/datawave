@@ -1,8 +1,8 @@
 package datawave.security.login;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.powermock.api.easymock.PowerMock.field;
 
 import java.security.KeyStore;
@@ -11,13 +11,13 @@ import java.util.HashMap;
 
 import javax.security.auth.Subject;
 
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.MockCallbackHandler;
-import datawave.security.util.MockDatawaveCertVerifier;
-
 import org.jboss.security.SimplePrincipal;
 import org.junit.Before;
 import org.junit.Test;
+
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.util.MockCallbackHandler;
+import datawave.security.util.MockDatawaveCertVerifier;
 
 public class DatawaveCertRolesLoginModuleTest {
     private DatawaveCertRolesLoginModule loginModule;

@@ -1,19 +1,5 @@
 package datawave.ingest.data.config.ingest;
 
-import com.google.common.base.Objects;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.LinkedListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.GroupedNormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.marking.MarkingFunctions;
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.log4j.Logger;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +13,22 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang.NotImplementedException;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Objects;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.GroupedNormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.marking.MarkingFunctions;
 
 /**
  * Similar to VirtualIngest virtual fields, but composite fields are not written in the event section of the shard table (only in the field index section)

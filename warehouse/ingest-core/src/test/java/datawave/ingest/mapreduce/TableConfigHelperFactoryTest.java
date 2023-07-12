@@ -1,9 +1,11 @@
 package datawave.ingest.mapreduce;
 
-import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
-import datawave.ingest.table.config.ShardTableConfigHelper;
-import datawave.ingest.table.config.TableConfigHelper;
-import datawave.util.TableName;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsNull.nullValue;
+import static org.junit.Assert.assertThat;
+
+import java.io.File;
+
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.minicluster.MiniAccumuloCluster;
 import org.apache.accumulo.minicluster.MiniAccumuloConfig;
@@ -15,11 +17,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.hamcrest.core.Is.is;
-import static org.hamcrest.core.IsNull.nullValue;
-import static org.junit.Assert.assertThat;
-
-import java.io.File;
+import datawave.ingest.mapreduce.job.TableConfigHelperFactory;
+import datawave.ingest.table.config.ShardTableConfigHelper;
+import datawave.ingest.table.config.TableConfigHelper;
+import datawave.util.TableName;
 
 /**
  * Test uses mini accumulo cluster. Files are stored in warehouse/ingest-core/target/mac/datawave.ingest.mapreduce.TableConfigHelperFactoryTest

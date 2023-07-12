@@ -1,6 +1,7 @@
 package datawave.data.hash;
 
 import java.math.BigInteger;
+
 import org.apache.accumulo.core.iterators.LongCombiner;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;

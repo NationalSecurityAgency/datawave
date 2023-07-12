@@ -1,5 +1,18 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.GTE_OP;
+import static datawave.query.testframework.RawDataManager.LTE_OP;
+import static datawave.query.testframework.RawDataManager.NE_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.DataTypeHadoopConfig;
@@ -9,18 +22,6 @@ import datawave.query.testframework.IpAddrFields;
 import datawave.query.testframework.IpAddressDataType;
 import datawave.query.testframework.IpAddressDataType.IpAddrEntry;
 import datawave.query.testframework.IpAddressDataType.IpAddrField;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.GTE_OP;
-import static datawave.query.testframework.RawDataManager.LTE_OP;
-import static datawave.query.testframework.RawDataManager.NE_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 public class IpAddressQueryTest extends AbstractFunctionalQuery {
 

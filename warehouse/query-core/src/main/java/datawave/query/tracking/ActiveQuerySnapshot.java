@@ -1,11 +1,11 @@
 package datawave.query.tracking;
 
-import com.codahale.metrics.Snapshot;
-import com.codahale.metrics.Timer;
-
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+
+import com.codahale.metrics.Snapshot;
+import com.codahale.metrics.Timer;
 
 public class ActiveQuerySnapshot {
 

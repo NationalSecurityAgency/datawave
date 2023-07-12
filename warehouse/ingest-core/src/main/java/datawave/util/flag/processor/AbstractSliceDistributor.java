@@ -13,10 +13,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import com.google.common.collect.Ordering;
+
 import datawave.util.flag.InputFile;
 import datawave.util.flag.config.FlagDataTypeConfig;
-
-import com.google.common.collect.Ordering;
 
 /**
  * Normally distributes data based on a generic slice object.

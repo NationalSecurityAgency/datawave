@@ -2,18 +2,18 @@ package datawave.ingest.data;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
-
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.ingest.IngestHelperInterface;
-
 import java.util.HashMap;
 import java.util.Map;
+
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.RecordReader;
+
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.ingest.IngestHelperInterface;
 
 public class Type implements Comparable<Type> {
     // This is the name of the type which is used to match types, pull appropriate configuration, determine data handlers

@@ -8,18 +8,18 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.junit.Assert;
+import org.junit.Test;
+
 import datawave.configuration.spring.SpringBean;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
 

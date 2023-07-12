@@ -1,11 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
-import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
-import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
+import static datawave.ingest.mapreduce.job.ConstraintChecker.INITIALIZERS;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -15,7 +11,13 @@ import org.apache.hadoop.io.Text;
 import org.junit.Before;
 import org.junit.Test;
 
-import static datawave.ingest.mapreduce.job.ConstraintChecker.INITIALIZERS;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+
+import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
+import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
+import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
+import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 
 /**
  * Tests verifying that Constraints are used properly within both BulkContextWriter and LiveContextWriter.

@@ -1,11 +1,11 @@
 package datawave.query.data.parsers;
 
-import org.apache.accumulo.core.data.Key;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+
+import org.apache.accumulo.core.data.Key;
+import org.junit.Test;
 
 public class EventKeyTest {
 

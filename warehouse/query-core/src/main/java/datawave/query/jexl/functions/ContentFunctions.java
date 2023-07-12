@@ -6,10 +6,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import datawave.query.attributes.ValueTuple;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 import datawave.util.StringUtils;
-import org.apache.log4j.Logger;
 
 /**
  * <p>

@@ -1,12 +1,13 @@
 package datawave.query.tld;
 
-import datawave.query.iterator.logic.IndexIterator;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
+
+import datawave.query.iterator.logic.IndexIterator;
 
 public class TLDIndexIterator extends IndexIterator {
 

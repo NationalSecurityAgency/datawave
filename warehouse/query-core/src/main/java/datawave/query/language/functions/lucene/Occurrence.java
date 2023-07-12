@@ -4,13 +4,13 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.query.language.functions.QueryFunction;
-import datawave.query.search.WildcardFieldedFilter;
-
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
 import org.apache.lucene.queryparser.flexible.core.nodes.AndQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+
+import datawave.query.language.functions.QueryFunction;
+import datawave.query.search.WildcardFieldedFilter;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
 
 @Deprecated
 public class Occurrence extends LuceneQueryFunction {

@@ -1,6 +1,28 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import com.google.common.collect.ImmutableMap;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
@@ -17,25 +39,6 @@ import datawave.query.testframework.DataTypeHadoopConfig;
 import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.RawDataManager;
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 /**
  * Tests for grouping data. The {@link BooksDataManager} will create the valid grouping entries.

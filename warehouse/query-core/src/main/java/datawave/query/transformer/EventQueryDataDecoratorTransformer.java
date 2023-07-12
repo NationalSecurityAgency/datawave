@@ -5,13 +5,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-
 import org.apache.commons.collections4.Transformer;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 
 public class EventQueryDataDecoratorTransformer implements Transformer {
 

@@ -5,10 +5,10 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import datawave.metrics.mapreduce.util.EmptyValue;
-
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+
+import datawave.metrics.mapreduce.util.EmptyValue;
 
 /**
  * A utility class that provides static methods that make dealing with Writables, and primarily Text, easier when dealing with parsing into primitive types.

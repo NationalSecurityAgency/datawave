@@ -1,20 +1,8 @@
 package datawave.security.user;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.configuration.spring.SpringBean;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.UserOperations;
-import datawave.security.cache.CredentialsCacheBean;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.user.AuthorizationsListBase;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.result.GenericResponse;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.List;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -30,9 +18,23 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import java.security.Principal;
-import java.util.HashSet;
-import java.util.List;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.configuration.spring.SpringBean;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.UserOperations;
+import datawave.security.cache.CredentialsCacheBean;
+import datawave.security.util.AuthorizationsUtil;
+import datawave.user.AuthorizationsListBase;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.GenericResponse;
 
 @Path("/Security/User")
 @LocalBean

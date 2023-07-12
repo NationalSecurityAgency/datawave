@@ -5,14 +5,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-import datawave.iterators.filter.ageoff.AgeOffPeriod;
-import datawave.iterators.filter.ageoff.AppliedRule;
-import datawave.iterators.filter.ageoff.FilterOptions;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.log4j.Logger;
+
+import datawave.iterators.filter.ageoff.AgeOffPeriod;
+import datawave.iterators.filter.ageoff.AppliedRule;
+import datawave.iterators.filter.ageoff.FilterOptions;
 
 /**
  * This class provides an abstract base class to be extended to filter based on matching a REGEX to the {@code String} object that represents some portion of a

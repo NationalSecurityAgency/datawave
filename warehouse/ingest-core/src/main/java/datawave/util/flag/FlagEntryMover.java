@@ -5,13 +5,13 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-import datawave.util.flag.InputFile.TrackedDir;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.log4j.Logger;
 
 import com.google.common.cache.Cache;
+
+import datawave.util.flag.InputFile.TrackedDir;
 
 /**
  * Handles stage 1 of the job creation flow. Checks for destination directories, creates as needed, and returns information on whether it was successful.

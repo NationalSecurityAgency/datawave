@@ -2,16 +2,15 @@ package datawave.webservice.mr.input;
 
 import java.io.IOException;
 
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.input.reader.event.EventSequenceFileRecordReader;
-
-import org.apache.hadoop.mapreduce.InputSplit;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.accumulo.core.security.VisibilityEvaluator;
 import org.apache.accumulo.core.security.VisibilityParseException;
+import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.input.reader.event.EventSequenceFileRecordReader;
 
 /**
  * RecordReader that returns only Events that the caller can see using the Accumulo VisibilityFilter. This class expects that

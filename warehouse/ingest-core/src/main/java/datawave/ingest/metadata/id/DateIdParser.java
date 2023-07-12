@@ -4,9 +4,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.regex.Matcher;
 
-import datawave.ingest.data.RawRecordContainer;
-
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.RawRecordContainer;
 
 public class DateIdParser extends MetadataIdParser {
 

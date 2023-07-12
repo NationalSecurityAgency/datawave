@@ -1,17 +1,19 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlASTHelper;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Collections;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.query.jexl.JexlASTHelper;
 
 public class TLDTermFrequencyEventDataQueryFilterTest {
 

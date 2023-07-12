@@ -1,13 +1,15 @@
 package datawave.query.transformer;
 
+import java.util.List;
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.Key;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import org.apache.accumulo.core.data.Key;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Map;
 
 /**
  * This transform will replace the content field name values from "true" to the document UID

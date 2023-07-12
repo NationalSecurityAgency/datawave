@@ -1,5 +1,7 @@
 package datawave.webservice.query.cache;
 
+import java.util.Map;
+
 import javax.annotation.PreDestroy;
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
@@ -15,12 +17,11 @@ import javax.ejb.TransactionManagement;
 import javax.ejb.TransactionManagementType;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import datawave.configuration.spring.SpringBean;
 import datawave.webservice.results.cached.CachedResultsBean;
 import datawave.webservice.results.cached.CachedRunningQuery;
-import org.apache.log4j.Logger;
-
-import java.util.Map;
 
 @RunAs("InternalUser")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

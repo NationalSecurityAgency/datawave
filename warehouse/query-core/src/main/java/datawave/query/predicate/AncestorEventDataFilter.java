@@ -3,11 +3,12 @@ package datawave.query.predicate;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+
 import datawave.query.Constants;
 import datawave.query.tld.TLD;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the base document in which case all fields

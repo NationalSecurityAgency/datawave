@@ -1,9 +1,9 @@
 package datawave.query.language.functions.jexl;
 
+import java.util.Arrays;
+
 import datawave.query.jexl.functions.CompareFunctionValidator;
 import datawave.query.language.functions.QueryFunction;
-
-import java.util.Arrays;
 
 /**
  * The #COMPARE function is used to compare the values of two fields.

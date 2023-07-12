@@ -1,5 +1,10 @@
 package datawave.query.iterator;
 
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -7,11 +12,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.log4j.Logger;
-
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SourceThreadTrackingIterator<K extends WritableComparable<?>,V extends Writable> implements SortedKeyValueIterator<K,V> {
     private static final Logger log = Logger.getLogger(SourceThreadTrackingIterator.class);

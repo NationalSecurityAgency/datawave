@@ -1,18 +1,5 @@
 package datawave.query.jexl.lookups;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import datawave.query.Constants;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.tables.ScannerSession;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,6 +10,21 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+
+import datawave.query.Constants;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ScannerSession;
 
 /**
  * An asynchronous index lookup which Looks up field names from the index which match the provided set of terms, and optionally limits them to the specified

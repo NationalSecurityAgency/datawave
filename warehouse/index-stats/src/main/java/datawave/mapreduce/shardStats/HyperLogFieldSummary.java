@@ -1,11 +1,12 @@
 package datawave.mapreduce.shardStats;
 
-import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import org.apache.accumulo.core.data.Value;
-
 import java.io.IOException;
 import java.util.Objects;
+
+import org.apache.accumulo.core.data.Value;
+
+import com.clearspring.analytics.stream.cardinality.CardinalityMergeException;
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 /**
  * POJO for summary data for each field name/datatype pair processed by the reducer.

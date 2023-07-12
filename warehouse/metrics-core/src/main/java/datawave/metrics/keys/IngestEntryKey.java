@@ -1,8 +1,9 @@
 package datawave.metrics.keys;
 
-import datawave.util.StringUtils;
-import datawave.metrics.util.WritableUtil;
 import org.apache.accumulo.core.data.Key;
+
+import datawave.metrics.util.WritableUtil;
+import datawave.util.StringUtils;
 
 public class IngestEntryKey implements XKey {
     protected long timestamp;

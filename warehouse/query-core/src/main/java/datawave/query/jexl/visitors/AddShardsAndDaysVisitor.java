@@ -1,20 +1,22 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import datawave.query.Constants;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.util.StringUtils;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.commons.jexl2.parser.ASTAssignment;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+
+import datawave.query.Constants;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.util.StringUtils;
 
 /**
  * When SHARDS_AND_DAYS hints are supplied via the OPTIONS function, they should be added back into the query tree either by updating an existing

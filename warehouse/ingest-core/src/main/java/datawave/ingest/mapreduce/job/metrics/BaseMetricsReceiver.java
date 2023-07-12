@@ -1,9 +1,11 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.util.TextUtil;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.iterators.IteratorUtil;
@@ -12,11 +14,11 @@ import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.util.TextUtil;
 
 /**
  * The basic functionality shared by all current MetricsReceivers.

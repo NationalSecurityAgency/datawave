@@ -1,9 +1,10 @@
 package datawave.query.planner;
 
-import datawave.query.model.QueryModel;
+import java.util.Map;
+
 import org.apache.commons.lang.StringUtils;
 
-import java.util.Map;
+import datawave.query.model.QueryModel;
 
 /**
  * Intended to be dependency-injected

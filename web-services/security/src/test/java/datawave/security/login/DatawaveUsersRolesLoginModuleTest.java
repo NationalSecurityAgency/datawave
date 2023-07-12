@@ -1,8 +1,8 @@
 package datawave.security.login;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertEquals;
 import static org.powermock.api.easymock.PowerMock.field;
 
 import java.security.KeyStore;
@@ -12,14 +12,15 @@ import java.util.HashMap;
 import javax.security.auth.Subject;
 import javax.security.auth.login.FailedLoginException;
 
-import datawave.security.auth.DatawaveCredential;
-import datawave.security.authorization.DatawavePrincipal;
 import org.jboss.security.SimplePrincipal;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.picketbox.plugins.PicketBoxCallbackHandler;
+
+import datawave.security.auth.DatawaveCredential;
+import datawave.security.authorization.DatawavePrincipal;
 
 public class DatawaveUsersRolesLoginModuleTest {
     private static final String NORMALIZED_SUBJECT_DN = "cn=testuser, ou=my department, o=my company, st=some-state, c=us";

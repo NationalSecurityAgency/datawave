@@ -1,19 +1,7 @@
 package datawave.ingest.table.volumeChoosers;
 
-import org.apache.accumulo.core.data.TableId;
-import org.apache.accumulo.core.data.TabletId;
-import org.apache.accumulo.core.spi.common.ServiceEnvironment;
-import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
-import org.apache.accumulo.server.fs.VolumeChooser;
-import org.apache.hadoop.io.Text;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockRunner;
-import org.easymock.EasyMockSupport;
-import org.easymock.Mock;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -21,7 +9,16 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import org.apache.accumulo.core.data.TableId;
+import org.apache.accumulo.core.spi.common.ServiceEnvironment;
+import org.apache.accumulo.core.spi.fs.VolumeChooserEnvironment;
+import org.apache.hadoop.io.Text;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockRunner;
+import org.easymock.EasyMockSupport;
+import org.easymock.Mock;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 @RunWith(EasyMockRunner.class)
 public class ShardedTableDateBasedTieredVolumeChooserTest extends EasyMockSupport {

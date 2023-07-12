@@ -1,5 +1,25 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.helpers.PrintUtility;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.function.Aggregation;
@@ -18,25 +38,6 @@ import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.QueryJexl;
 import datawave.query.testframework.QueryLogicTestHarness;
 import datawave.query.testframework.ResponseFieldChecker;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
 
 /**
  * Performs query test where specific returned fields are specified setting the {@link QueryParameters#RETURN_FIELDS} and

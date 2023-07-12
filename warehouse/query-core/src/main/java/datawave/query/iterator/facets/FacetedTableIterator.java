@@ -6,10 +6,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Document;
-import datawave.query.tables.facets.FacetTableFunction;
-import datawave.query.util.SortedKeyValueIteratorToIterator;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -19,6 +15,10 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Iterators;
+
+import datawave.query.attributes.Document;
+import datawave.query.tables.facets.FacetTableFunction;
+import datawave.query.util.SortedKeyValueIteratorToIterator;
 
 public class FacetedTableIterator extends DynamicFacetIterator {
 

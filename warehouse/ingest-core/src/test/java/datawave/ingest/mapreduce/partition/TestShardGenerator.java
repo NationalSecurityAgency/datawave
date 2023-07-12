@@ -1,12 +1,5 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
-import datawave.util.time.DateHelper;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,6 +8,14 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
+
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import datawave.util.time.DateHelper;
 
 /**
  * Creates a splits file for the shard table that's relatively balanced

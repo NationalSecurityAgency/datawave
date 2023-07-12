@@ -1,16 +1,17 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.partition.LimitedKeyPartitioner;
-import datawave.ingest.mapreduce.partition.PartitionLimiter;
-import datawave.ingest.mapreduce.partition.RowHashingPartitioner;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.List;
+import datawave.ingest.mapreduce.partition.LimitedKeyPartitioner;
+import datawave.ingest.mapreduce.partition.PartitionLimiter;
+import datawave.ingest.mapreduce.partition.RowHashingPartitioner;
 
 public class TablePartitionerOffsetsTest {
     private static final Integer NUM_REDUCERS = 54;

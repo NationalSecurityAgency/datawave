@@ -6,8 +6,6 @@ import java.lang.management.OperatingSystemMXBean;
 import java.util.Collection;
 import java.util.Map;
 
-import datawave.query.exceptions.LoadAverageWatchException;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -16,6 +14,8 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+
+import datawave.query.exceptions.LoadAverageWatchException;
 
 public class LoadAverageWatchIterator extends WrappingIterator {
 

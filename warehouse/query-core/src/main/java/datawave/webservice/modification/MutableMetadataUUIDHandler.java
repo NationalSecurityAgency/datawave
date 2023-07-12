@@ -8,6 +8,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.modification.ModificationOperation.OPERATIONMODE;
@@ -17,13 +24,6 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.VoidResponse;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 
 /**
  * Class that handles requests for modification requests (INSERT, UPDATE, DELETE, REPLACE) for metadata. From a DefaultUUIDModificationRequest it performs <br>

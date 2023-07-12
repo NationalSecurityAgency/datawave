@@ -18,26 +18,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import datawave.data.type.Type;
-import datawave.query.QueryParameters;
-import datawave.query.exceptions.IllegalRangeArgumentException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.visitors.CaseSensitivityVisitor;
-import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
-import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.tables.ShardIndexQueryTable;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -66,6 +46,26 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.QueryParameters;
+import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
+import datawave.query.exceptions.IllegalRangeArgumentException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.visitors.CaseSensitivityVisitor;
+import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ShardIndexQueryTable;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {
 

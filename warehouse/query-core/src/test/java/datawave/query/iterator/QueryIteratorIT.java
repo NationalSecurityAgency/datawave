@@ -1,29 +1,26 @@
 package datawave.query.iterator;
 
-import datawave.ingest.protobuf.TermWeight;
-import datawave.ingest.protobuf.TermWeightPosition;
-import datawave.query.Constants;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Document;
-import datawave.query.function.JexlEvaluation;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.conf.DefaultConfiguration;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.easymock.EasyMock;
-import org.easymock.EasyMockSupport;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static datawave.query.iterator.QueryOptions.ALLOW_FIELD_INDEX_EVALUATION;
+import static datawave.query.iterator.QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP;
+import static datawave.query.iterator.QueryOptions.CONTAINS_INDEX_ONLY_TERMS;
+import static datawave.query.iterator.QueryOptions.END_TIME;
+import static datawave.query.iterator.QueryOptions.HDFS_SITE_CONFIG_URLS;
+import static datawave.query.iterator.QueryOptions.HIT_LIST;
+import static datawave.query.iterator.QueryOptions.INDEXED_FIELDS;
+import static datawave.query.iterator.QueryOptions.INDEX_ONLY_FIELDS;
+import static datawave.query.iterator.QueryOptions.IVARATOR_CACHE_DIR_CONFIG;
+import static datawave.query.iterator.QueryOptions.NON_INDEXED_DATATYPES;
+import static datawave.query.iterator.QueryOptions.QUERY;
+import static datawave.query.iterator.QueryOptions.QUERY_ID;
+import static datawave.query.iterator.QueryOptions.SCAN_ID;
+import static datawave.query.iterator.QueryOptions.SERIAL_EVALUATION_PIPELINE;
+import static datawave.query.iterator.QueryOptions.START_TIME;
+import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
+import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.net.URL;
@@ -39,28 +36,36 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static datawave.query.iterator.QueryOptions.ALLOW_FIELD_INDEX_EVALUATION;
-import static datawave.query.iterator.QueryOptions.ALLOW_TERM_FREQUENCY_LOOKUP;
-import static datawave.query.iterator.QueryOptions.CONTAINS_INDEX_ONLY_TERMS;
-import static datawave.query.iterator.QueryOptions.END_TIME;
-import static datawave.query.iterator.QueryOptions.FULL_TABLE_SCAN_ONLY;
-import static datawave.query.iterator.QueryOptions.HDFS_SITE_CONFIG_URLS;
-import static datawave.query.iterator.QueryOptions.HIT_LIST;
-import static datawave.query.iterator.QueryOptions.INDEXED_FIELDS;
-import static datawave.query.iterator.QueryOptions.INDEX_ONLY_FIELDS;
-import static datawave.query.iterator.QueryOptions.IVARATOR_CACHE_DIR_CONFIG;
-import static datawave.query.iterator.QueryOptions.NON_INDEXED_DATATYPES;
-import static datawave.query.iterator.QueryOptions.QUERY;
-import static datawave.query.iterator.QueryOptions.QUERY_ID;
-import static datawave.query.iterator.QueryOptions.SERIAL_EVALUATION_PIPELINE;
-import static datawave.query.iterator.QueryOptions.START_TIME;
-import static datawave.query.iterator.QueryOptions.TERM_FREQUENCIES_REQUIRED;
-import static datawave.query.iterator.QueryOptions.TERM_FREQUENCY_FIELDS;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.accumulo.core.conf.DefaultConfiguration;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.easymock.EasyMock;
+import org.easymock.EasyMockSupport;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.Type;
+import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
+import datawave.query.Constants;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Document;
+import datawave.query.function.JexlEvaluation;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.TypeMetadata;
 
 /**
  * Integration tests for the QueryIterator
@@ -104,10 +109,18 @@ public class QueryIteratorIT extends EasyMockSupport {
                         "EVENT_FIELD1,EVENT_FIELD4,EVENT_FIELD6,TF_FIELD0,TF_FIELD1,TF_FIELD2,INDEX_ONLY_FIELD1,INDEX_ONLY_FIELD2,INDEX_ONLY_FIELD3");
 
         // set the unindexed fields list
-        options.put(NON_INDEXED_DATATYPES, DEFAULT_DATATYPE + ":EVENT_FIELD2,EVENT_FIELD3,EVENT_FIELD5");
+        Multimap<String,Type<?>> nonIndexedQueryFieldsDatatypes = HashMultimap.create();
+        nonIndexedQueryFieldsDatatypes.put("EVENT_FIELD2", new LcNoDiacriticsType());
+        nonIndexedQueryFieldsDatatypes.put("EVENT_FIELD3", new LcNoDiacriticsType());
+        nonIndexedQueryFieldsDatatypes.put("EVENT_FIELD5", new LcNoDiacriticsType());
+        String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
+        options.put(NON_INDEXED_DATATYPES, nonIndexedTypes);
 
         // set a query id
         options.put(QUERY_ID, "000001");
+
+        // set a scanId
+        options.put(SCAN_ID, "000002");
 
         // setup ivarator settings
         IvaratorCacheDirConfig config = new IvaratorCacheDirConfig("file://" + tempPath.toAbsolutePath().toString());
@@ -1042,8 +1055,6 @@ public class QueryIteratorIT extends EasyMockSupport {
         options.put(QUERY, query);
         // none
         options.put(INDEX_ONLY_FIELDS, "");
-        // set full table scan
-        options.put(FULL_TABLE_SCAN_ONLY, "true");
 
         replayAll();
 

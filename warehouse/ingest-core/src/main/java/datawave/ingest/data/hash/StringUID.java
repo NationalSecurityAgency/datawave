@@ -1,12 +1,12 @@
 package datawave.ingest.data.hash;
 
+import com.google.common.base.Objects;
+
 import datawave.data.hash.HashUID;
 import datawave.data.hash.SnowflakeUID;
 import datawave.data.hash.UID;
 import datawave.data.hash.UIDConstants;
 import datawave.util.StringUtils;
-
-import com.google.common.base.Objects;
 
 /**
  * Extension of UID to accept only the shard ID from a previous event

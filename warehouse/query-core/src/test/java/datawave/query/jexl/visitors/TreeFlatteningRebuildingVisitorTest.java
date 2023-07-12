@@ -1,10 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.visitors.validate.ASTValidator;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.test.JexlNodeAssert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.StringReader;
+import java.util.Collections;
+
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -16,13 +19,11 @@ import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Test;
 
-import java.io.StringReader;
-import java.util.Collections;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.visitors.validate.ASTValidator;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.test.JexlNodeAssert;
 
 public class TreeFlatteningRebuildingVisitorTest {
 

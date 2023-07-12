@@ -1,5 +1,17 @@
 package datawave.query.tables;
 
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
 import datawave.marking.MarkingFunctions;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.tables.remote.RemoteQueryLogic;
@@ -18,17 +30,6 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
 
 /**
  * <h1>Overview</h1> This is a query logic implementation that can handle delegating to a remote event query logic (i.e. one that returns an extension of
@@ -103,7 +104,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
 
     @Override
     public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
-        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap());
+        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), getCallerObject());
         return planResponse.getResult();
     }
 

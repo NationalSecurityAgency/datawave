@@ -1,9 +1,10 @@
 package datawave.webservice.common.connection.config;
 
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import datawave.webservice.util.EnvProvider;
 import org.apache.deltaspike.core.api.config.ConfigResolver;
 import org.apache.log4j.Logger;
+
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import datawave.webservice.util.EnvProvider;
 
 public class ConnectionPoolConfiguration {
 

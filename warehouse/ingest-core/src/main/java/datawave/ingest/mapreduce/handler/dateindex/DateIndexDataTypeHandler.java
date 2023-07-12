@@ -11,6 +11,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.KeyValue;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.StatusReporter;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
 import datawave.data.normalizer.DateNormalizer;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
@@ -25,20 +39,6 @@ import datawave.ingest.table.aggregator.DateIndexDateAggregator;
 import datawave.marking.MarkingFunctions;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.KeyValue;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.StatusReporter;
-import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.log4j.Logger;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 
 /**
  * <p>

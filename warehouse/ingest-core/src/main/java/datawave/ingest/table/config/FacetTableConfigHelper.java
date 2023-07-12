@@ -1,7 +1,5 @@
 package datawave.ingest.table.config;
 
-import datawave.ingest.mapreduce.handler.facet.FacetHandler;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
@@ -10,6 +8,9 @@ import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
+
+import datawave.ingest.mapreduce.handler.facet.FacetHandler;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 
 public class FacetTableConfigHelper extends AbstractTableConfigHelper {
 

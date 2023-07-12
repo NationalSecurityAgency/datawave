@@ -1,30 +1,16 @@
 package datawave.webservice.modification;
 
-import datawave.annotation.Required;
-import datawave.configuration.spring.SpringBean;
-import datawave.interceptor.RequiredInterceptor;
-import datawave.interceptor.ResponseInterceptor;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.webservice.common.audit.AuditParameterBuilder;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.exception.BadRequestException;
-import datawave.webservice.common.exception.DatawaveWebApplicationException;
-import datawave.webservice.common.exception.UnauthorizedException;
-import datawave.webservice.modification.cache.ModificationCacheBean;
-import datawave.webservice.modification.configuration.ModificationConfiguration;
-import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
-import datawave.webservice.query.exception.BadRequestQueryException;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.exception.UnauthorizedQueryException;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.result.VoidResponse;
-import datawave.webservice.results.modification.ModificationConfigurationResponse;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.annotations.GZIP;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import static java.util.Map.Entry;
+
+import java.security.Principal;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import javax.annotation.Resource;
 import javax.annotation.security.DeclareRoles;
@@ -45,17 +31,33 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MultivaluedMap;
-import java.security.Principal;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import static java.util.Map.Entry;
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.annotations.GZIP;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
+import datawave.annotation.Required;
+import datawave.configuration.spring.SpringBean;
+import datawave.interceptor.RequiredInterceptor;
+import datawave.interceptor.ResponseInterceptor;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.webservice.common.audit.AuditParameterBuilder;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.exception.BadRequestException;
+import datawave.webservice.common.exception.DatawaveWebApplicationException;
+import datawave.webservice.common.exception.UnauthorizedException;
+import datawave.webservice.modification.cache.ModificationCacheBean;
+import datawave.webservice.modification.configuration.ModificationConfiguration;
+import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
+import datawave.webservice.query.exception.BadRequestQueryException;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.exception.UnauthorizedQueryException;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.result.VoidResponse;
+import datawave.webservice.results.modification.ModificationConfigurationResponse;
 
 @Path("/Modification")
 @RolesAllowed({"AuthorizedUser", "AuthorizedQueryServer", "InternalUser", "Administrator"})

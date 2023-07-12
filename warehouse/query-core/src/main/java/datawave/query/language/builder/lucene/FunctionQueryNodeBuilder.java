@@ -16,13 +16,19 @@ package datawave.query.language.builder.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.search.TermQuery;
 
 import datawave.query.language.functions.lucene.EvaluationOnly;
 import datawave.query.language.functions.lucene.Exclude;
@@ -33,15 +39,8 @@ import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.language.functions.lucene.Occurrence;
 import datawave.query.language.functions.lucene.Text;
 import datawave.query.language.tree.FunctionNode;
-
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.NotFoundQueryException;
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.FieldQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.FunctionQueryNode;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.search.TermQuery;
 
 /**
  * Builds a {@link TermQuery} object from a {@link FieldQueryNode} object.

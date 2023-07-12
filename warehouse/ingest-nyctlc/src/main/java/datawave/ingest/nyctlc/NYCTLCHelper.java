@@ -1,14 +1,15 @@
 package datawave.ingest.nyctlc;
 
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ConfigurationHelper;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ConfigurationHelper;
 
 /**
  * This is a specialized version of the CSV Helper intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This class sets up some

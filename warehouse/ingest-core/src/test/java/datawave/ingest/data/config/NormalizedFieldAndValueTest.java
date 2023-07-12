@@ -2,9 +2,10 @@ package datawave.ingest.data.config;
 
 import java.util.Map;
 
-import datawave.data.type.Type;
 import org.junit.Assert;
 import org.junit.Test;
+
+import datawave.data.type.Type;
 
 public class NormalizedFieldAndValueTest {
 

@@ -1,10 +1,11 @@
 package datawave.query.iterator;
 
-import datawave.query.attributes.Document;
-import org.apache.accumulo.core.data.Key;
-
 import java.util.Collection;
 import java.util.Collections;
+
+import org.apache.accumulo.core.data.Key;
+
+import datawave.query.attributes.Document;
 
 /**
  *

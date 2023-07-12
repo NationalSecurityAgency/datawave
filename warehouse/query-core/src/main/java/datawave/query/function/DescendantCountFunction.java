@@ -12,25 +12,25 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDConstants;
-import datawave.query.Constants;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.util.Tuple3;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.log4j.Logger;
+
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDConstants;
+import datawave.query.Constants;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.util.Tuple3;
 
 /**
  * Count and output the number of descendant events, immediate child events, or both based on the specified tuple elements, including:

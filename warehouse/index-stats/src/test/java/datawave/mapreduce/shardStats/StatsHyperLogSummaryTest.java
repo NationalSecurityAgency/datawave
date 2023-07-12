@@ -1,6 +1,12 @@
 package datawave.mapreduce.shardStats;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Level;
@@ -8,12 +14,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 
 public class StatsHyperLogSummaryTest {
     private static final Logger log = Logger.getLogger(StatsHyperLogSummaryTest.class);

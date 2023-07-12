@@ -4,8 +4,6 @@ import java.lang.reflect.Method;
 
 import javax.interceptor.InvocationContext;
 
-import datawave.annotation.Required;
-
 import org.easymock.EasyMock;
 import org.easymock.EasyMockRunner;
 import org.easymock.EasyMockSupport;
@@ -13,6 +11,8 @@ import org.easymock.Mock;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import datawave.annotation.Required;
 
 @RunWith(EasyMockRunner.class)
 public class RequiredInterceptorTest extends EasyMockSupport {

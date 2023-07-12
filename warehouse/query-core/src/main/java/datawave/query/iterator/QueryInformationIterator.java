@@ -4,13 +4,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 
-import datawave.query.iterator.errors.UnindexedException;
-import datawave.query.Constants;
-import datawave.query.exceptions.LoadAverageWatchException;
-import datawave.query.iterator.errors.ErrorKey;
-import datawave.query.iterator.errors.ErrorType;
-import datawave.query.util.QueryInformation;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -20,6 +13,13 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
 import org.apache.log4j.Logger;
+
+import datawave.query.Constants;
+import datawave.query.exceptions.LoadAverageWatchException;
+import datawave.query.iterator.errors.ErrorKey;
+import datawave.query.iterator.errors.ErrorType;
+import datawave.query.iterator.errors.UnindexedException;
+import datawave.query.util.QueryInformation;
 
 /**
  * An identity iterator which does nothing but defer to its source.

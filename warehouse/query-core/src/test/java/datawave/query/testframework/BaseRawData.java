@@ -1,12 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.data.normalizer.NumberNormalizer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import org.apache.log4j.Logger;
-import org.bouncycastle.util.Strings;
-import org.junit.Assert;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -15,6 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import org.apache.log4j.Logger;
+import org.bouncycastle.util.Strings;
+import org.junit.Assert;
+
+import datawave.data.normalizer.Normalizer;
+import datawave.data.normalizer.NumberNormalizer;
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Represents a single event of raw data read from an ingest file. This is a generic POJO that can be used for any data event. This class is immutable.

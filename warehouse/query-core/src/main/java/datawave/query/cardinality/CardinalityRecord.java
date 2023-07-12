@@ -1,8 +1,5 @@
 package datawave.query.cardinality;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -22,6 +19,10 @@ import java.util.concurrent.Executors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Sets;
 
 public class CardinalityRecord implements Serializable {
     private static final long serialVersionUID = 1L;

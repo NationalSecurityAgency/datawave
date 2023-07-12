@@ -1,11 +1,7 @@
 package datawave.mapreduce.shardStats;
 
-import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
+import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,8 +11,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_NORMAL_DEFAULT_VALUE;
-import static datawave.mapreduce.shardStats.StatsJob.HYPERLOG_SPARSE_DEFAULT_VALUE;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
 
 /**
  * Manager for test data for the {@link StatsHyperLogMapperTest} and {@link StatsHyperLogReducerTest}.

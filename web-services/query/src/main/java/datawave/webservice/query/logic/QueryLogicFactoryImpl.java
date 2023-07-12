@@ -9,11 +9,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
+
 import datawave.configuration.spring.SpringBean;
 import datawave.webservice.common.exception.UnauthorizedException;
 import datawave.webservice.result.VoidResponse;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.context.ApplicationContext;
 
 public class QueryLogicFactoryImpl implements QueryLogicFactory {
 

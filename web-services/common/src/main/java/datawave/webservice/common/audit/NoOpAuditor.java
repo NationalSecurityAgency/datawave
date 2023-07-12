@@ -1,12 +1,13 @@
 package datawave.webservice.common.audit;
 
-import datawave.configuration.RefreshableScope;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.annotation.Priority;
 import javax.enterprise.inject.Alternative;
 import javax.interceptor.Interceptor;
-import java.util.Map;
-import java.util.UUID;
+
+import datawave.configuration.RefreshableScope;
 
 /**
  * This auditor is injected when remote auditing is disabled.

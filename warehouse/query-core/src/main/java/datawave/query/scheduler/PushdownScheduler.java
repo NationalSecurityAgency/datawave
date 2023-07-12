@@ -7,18 +7,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.mr.bulk.RfileResource;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
 import org.apache.accumulo.core.data.Key;
@@ -33,13 +27,19 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import datawave.mr.bulk.RfileResource;
+import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.BatchScannerSession;
 import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.event.VisitorFunction;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.configuration.QueryData;
 

@@ -8,13 +8,14 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.ingest.protobuf.TermWeightPosition;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.TreeMultimap;
+
+import datawave.ingest.protobuf.TermWeightPosition;
 
 /**
  * Represents a List of offsets represented as TermWeightPositions, corresponding to word positions, in a given field, for a term. This is intended to be used

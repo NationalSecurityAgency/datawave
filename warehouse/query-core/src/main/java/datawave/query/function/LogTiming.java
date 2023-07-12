@@ -4,15 +4,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Numeric;
-import datawave.query.iterator.profile.QuerySpan;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.TimingMetadata;
-
 import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
-import org.apache.log4j.Logger;
+
+import datawave.query.attributes.Document;
+import datawave.query.attributes.Numeric;
+import datawave.query.attributes.TimingMetadata;
+import datawave.query.iterator.profile.QuerySpan;
 
 /**
  * Updates the timing information per document
