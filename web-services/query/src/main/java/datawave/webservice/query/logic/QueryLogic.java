@@ -377,14 +377,14 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            the map of system from values to query result limits
      */
     void setSystemFromResultLimits(Map<String,Long> systemFromResultLimits);
-    
+
     /**
      * Return a map of System From values to results limits.
      *
      * @return the map of system from values to query result limits.
      */
     Map<String,Long> getSystemFromResultLimits();
-    
+
     /**
      * Return the maximum number of results to include for the query based on criteria including the DN or systemFrom stored in the query setting object that is
      * provided. If limits are found for multiple criteria in the collection, the smallest value will be returned. If no limits are found for any criteria, the
@@ -398,21 +398,21 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      */
     default long getResultLimit(Query settings) {
         long maxResults = getMaxResults();
-        
+
         Map<String,Long> systemFromLimits = getSystemFromResultLimits();
-        QueryImpl.Parameter systemFromParam = settings.findParameter("systemFrom");
+        String systemFromParam = settings.getSystemFrom();
         if (systemFromLimits != null && systemFromParam != null) {
             // this findParameter implementation never returns null, it will return a parameter with an empty string
             // as the value if the parameter is not present.
-            maxResults = systemFromLimits.getOrDefault(systemFromParam.getParameterValue(), maxResults);
+            maxResults = systemFromLimits.getOrDefault(systemFromParam, maxResults);
         }
-        
+
         Map<String,Long> dnResultLimits = getDnResultLimits();
         Collection<String> dns = settings.getDnList();
         if (dnResultLimits != null && dns != null) {
             maxResults = dns.stream().filter(dnResultLimits::containsKey).map(dnResultLimits::get).min(Long::compareTo).orElse(maxResults);
         }
-        
+
         return maxResults;
     }
     
