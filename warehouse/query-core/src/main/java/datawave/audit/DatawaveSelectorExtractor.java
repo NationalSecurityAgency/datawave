@@ -3,6 +3,7 @@ package datawave.audit;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
@@ -41,6 +42,8 @@ public class DatawaveSelectorExtractor implements SelectorExtractor {
                     }
                 }
             }
+        } catch (JexlException e) {
+            log.error("Failure to extract selectors, failure parsing query");
         } catch (Exception e) {
             log.error(e.getMessage());
         }
