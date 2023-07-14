@@ -252,6 +252,8 @@ public class ProtobufEdgeDeleteModeTest {
                 return edgesCreated;
             } // early short circuit return
             
+            Map<String,EdgeDefinitionConfigurationHelper> edges = edgeConfig.getEdges();
+            
             // get edge definitions for this event type
             Type dataType = event.getDataType();
             String typeName = dataType.typeName();

@@ -67,6 +67,8 @@ public class EdgeDataBundle {
     private long activityDate;
     private boolean validActivityDate;
     
+    private EdgeKey.DATE_TYPE dateType;
+    
     public EdgeDataBundle(RawRecordContainer event, String typeName, String id, IngestHelperInterface helper) {
         this.mf = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
@@ -94,6 +96,16 @@ public class EdgeDataBundle {
         // prevents future bug
         this.initFieldMasking(helper, event);
         this.initMarkings(getSource().getMarkings(), getSink().getMarkings());
+    }
+    
+    public EdgeDataBundle(RawRecordContainer event) {
+        this.event = event;
+        
+    }
+    
+    public void clearNonEventFields() {
+        this.source = null;
+        this.sink = null;
     }
     
     private int getHour(long time) {
@@ -538,4 +550,7 @@ public class EdgeDataBundle {
         }
     }
     
+    public void setDateType(EdgeKey.DATE_TYPE dateType) {
+        this.dateType = dateType;
+    }
 } /* end EdgeValue */

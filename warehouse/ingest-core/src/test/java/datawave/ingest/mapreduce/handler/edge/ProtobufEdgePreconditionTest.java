@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.locationtech.jts.geomgraph.Edge;
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
@@ -50,8 +51,8 @@ public class ProtobufEdgePreconditionTest {
         conf.addResource(ClassLoader.getSystemResource("config/all-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/edge-ingest-config.xml"));
         conf.addResource(ClassLoader.getSystemResource("config/metadata-config.xml"));
-        conf.setBoolean(ProtobufEdgeDataTypeHandler.EVALUATE_PRECONDITIONS, true);
-        conf.set(ProtobufEdgeDataTypeHandler.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigPrecon.xml");
+        conf.setBoolean(EdgeConfiguration.EVALUATE_PRECONDITIONS, true);
+        conf.set(EdgeConfiguration.EDGE_SPRING_CONFIG, "config/EdgeSpringConfigPrecon.xml");
         conf.set(KEY_VERSION_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
         conf.set(KEY_VERSION_DIST_CACHE_DIR, ClassLoader.getSystemResource("config").getPath());
         
