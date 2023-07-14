@@ -808,6 +808,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.baseResponse.setLogicName(queryLogicName);
         this.baseResponse.setQueryId(queryId.toString());
         expect(this.runningQuery.getMetric()).andReturn(this.queryMetric);
+        this.queryLogic1.setQueryMetric(isA(QueryMetric.class));
         this.runningQuery.setActiveCall(false);
         expectLastCall();
         this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
@@ -955,6 +956,8 @@ public class ExtendedQueryExecutorBeanTest {
         cache.put(eq(queryId.toString()), isA(RunningQuery.class));
         expect(this.genericConfiguration.getQueryString()).andReturn(queryName).once();
         expect(this.qlCache.poll(queryId.toString())).andReturn(null);
+        expect(this.runningQuery.getMetric()).andReturn(this.queryMetric);
+        this.queryLogic1.setQueryMetric(isA(QueryMetric.class));
 
         // Set expectations of the next logic
         expect(this.principal.getName()).andReturn(userName);
@@ -1451,6 +1454,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
+        this.queryLogic1.setQueryMetric(isA(QueryMetric.class));
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
@@ -1476,6 +1480,7 @@ public class ExtendedQueryExecutorBeanTest {
         this.connectionRequestBean.requestBegin(queryId.toString());
         expect(this.runningQuery.getClient()).andReturn(this.client);
         this.connectionRequestBean.requestEnd(queryId.toString());
+        expect(this.runningQuery.getMetric()).andReturn(this.queryMetric);
 
         this.runningQuery.setActiveCall(true);
         expectLastCall();
@@ -1493,7 +1498,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.queryLogic1.getLogicName()).andReturn(queryLogicName);
         this.baseResponse.setLogicName(queryLogicName);
         this.baseResponse.setQueryId(queryId.toString());
-        expect(this.runningQuery.getMetric()).andReturn(this.queryMetric);
+
         this.runningQuery.setActiveCall(false);
         expectLastCall();
         this.queryMetric.setProxyServers(eq(new ArrayList<>(0)));
@@ -1747,6 +1752,7 @@ public class ExtendedQueryExecutorBeanTest {
         expect(this.query.getUncaughtExceptionHandler()).andReturn(new QueryUncaughtExceptionHandler()).anyTimes();
         this.metrics.updateMetric(isA(QueryMetric.class));
         PowerMock.expectLastCall().times(2);
+        this.queryLogic1.setQueryMetric(isA(QueryMetric.class));
         expect(this.query.getUserDN()).andReturn(userDN).anyTimes();
         expect(this.query.getDnList()).andReturn(dnList).anyTimes();
         expect(this.queryLogic1.isLongRunningQuery()).andReturn(false);
