@@ -100,7 +100,6 @@ public class EdgeDataBundle {
     
     public EdgeDataBundle(RawRecordContainer event) {
         this.event = event;
-        
     }
     
     public void clearNonEventFields() {
@@ -151,7 +150,7 @@ public class EdgeDataBundle {
     }
     
     @SuppressWarnings("unchecked")
-    private void initMarkings(Map<String,String> m1, Map<String,String> m2) {
+    public void initMarkings(Map<String,String> m1, Map<String,String> m2) {
         if (m1 != null) {
             if (m2 != null) {
                 try {
@@ -552,5 +551,20 @@ public class EdgeDataBundle {
     
     public void setDateType(EdgeKey.DATE_TYPE dateType) {
         this.dateType = dateType;
+    }
+    
+    public void setEdgeDefinition(EdgeDefinition edgeDef) {
+        this.edgeDefinition = edgeDef;
+        this.edgeDirection = edgeDef.getDirection();
+        this.edgeType = edgeDef.getEdgeType().toString();
+    }
+    
+    public void setUUID(String uuid) {
+        this.uuid = uuid;
+        
+    }
+    
+    public EdgeKey.DATE_TYPE getDateType() {
+        return this.dateType;
     }
 } /* end EdgeValue */
