@@ -1,8 +1,22 @@
 package datawave.ingest.mapreduce.handler.edge;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -12,50 +26,38 @@ import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
 import datawave.ingest.test.StandaloneStatusReporter;
 import datawave.ingest.test.StandaloneTaskAttemptContext;
 import datawave.util.TableName;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeSet;
 
 public class EdgeHandlerTestUtil {
-    
+
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
-    
+
     public static Set<String> edgeKeyResults = new HashSet<>();
-    
+
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
-    
+
     public static boolean isDocumentKey(Key k) {
         return isShardKey(k) && k.getColumnFamily().toString().equals(ExtendedDataTypeHandler.FULL_CONTENT_COLUMN_FAMILY);
     }
-    
+
     public static boolean isShardKey(Key k) {
         return k.getRow().toString().matches("\\d{8}_\\d+");
     }
-    
+
     public static void processEvent(Multimap<String,NormalizedContentInterface> eventFields, ExtendedDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler,
                     RawRecordContainer event, int expectedEdgeKeys, boolean printKeysOnlyOnFail, boolean edgeDeleteMode) {
-        
+
         Assert.assertNotNull("Event was null.", event);
         Set<Key> edgeKeys = new HashSet<>();
         Map<Text,Integer> countMap = Maps.newHashMap();
-        
+
         // Process edges
         countMap.put(edgeTableName, 0);
         if (null != edgeHandler) {
             EdgeHandlerTestUtil.MyCachingContextWriter contextWriter = new EdgeHandlerTestUtil.MyCachingContextWriter();
             StandaloneTaskAttemptContext<Text,RawRecordContainerImpl,BulkIngestKey,Value> ctx = new StandaloneTaskAttemptContext<>(
                             ((RawRecordContainerImpl) event).getConf(), new StandaloneStatusReporter());
-            
+
             try {
                 contextWriter.setup(ctx.getConfiguration(), false);
                 edgeHandler.process(null, event, eventFields, ctx, contextWriter);
@@ -77,17 +79,17 @@ public class EdgeHandlerTestUtil {
                 throw new RuntimeException(t);
             }
         }
-        
+
         Set<String> keyPrint = new TreeSet<>();
-        
+
         // check edge keys
         for (Key k : edgeKeys) {
             edgeKeyResults.add(k.getRow().toString().replaceAll(NB, "%00;"));
-            keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;")
-                            + " ::: " + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: "
-                            + k.getTimestamp() + " ::: " + k.isDeleted() + "\n");
+            keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
+                            + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp()
+                            + " ::: " + k.isDeleted() + "\n");
         }
-        
+
         try {
             if (!printKeysOnlyOnFail) {
                 for (String keyString : keyPrint) {
@@ -105,18 +107,18 @@ public class EdgeHandlerTestUtil {
             Assert.fail(String.format("Expected: %s edge keys.\nFound: %s", expectedEdgeKeys, countMap.get(shardTableName), countMap.get(edgeTableName)));
         }
     }
-    
+
     private static class MyCachingContextWriter extends AbstractContextWriter<BulkIngestKey,Value> {
         private Multimap<BulkIngestKey,Value> cache = HashMultimap.create();
-        
+
         @Override
-        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context) throws IOException,
-                        InterruptedException {
+        protected void flush(Multimap<BulkIngestKey,Value> entries, TaskInputOutputContext<?,?,BulkIngestKey,Value> context)
+                        throws IOException, InterruptedException {
             for (Map.Entry<BulkIngestKey,Value> entry : entries.entries()) {
                 cache.put(entry.getKey(), entry.getValue());
             }
         }
-        
+
         public Multimap<BulkIngestKey,Value> getCache() {
             return cache;
         }

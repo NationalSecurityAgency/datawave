@@ -1,7 +1,11 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.ShardedTableMapFile;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
@@ -12,39 +16,36 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 
 public class TabletLocationNamePartitionerTest {
     Configuration conf = new Configuration();
     TabletLocationNamePartitioner partitioner = null;
-    
+
     @Before
     public void setUp() {
         conf = new Configuration();
         partitioner = new TabletLocationNamePartitioner();
         partitioner.setConf(conf);
     }
-    
+
     @After
     public void tearDown() {
         conf.clear();
         conf = null;
         partitioner = null;
     }
-    
+
     @Test
     public void testSequentialLocationScheme() throws Exception {
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         // setup the location partition sheme
         URL file = getClass().getResource("/datawave/ingest/mapreduce/partition/_shards.lst");
         shardedTableMapFiles.put("shard", new Path(file.toURI().toString()));
-        
+
         ShardedTableMapFile.addToConf(conf, shardedTableMapFiles);
-        
+
         // now read in a list of shards and display the distribution
         file = getClass().getResource("/datawave/ingest/mapreduce/partition/shards.list");
         BufferedReader reader = new BufferedReader(new InputStreamReader(file.openStream()));
@@ -75,6 +76,6 @@ public class TabletLocationNamePartitionerTest {
         if (errored) {
             Assert.fail("Failed to get expected distribution.  See console for unexpected entries");
         }
-        
+
     }
 }

@@ -1,12 +1,13 @@
 package datawave.query.jexl.functions.arguments;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.util.DateIndexHelper;
-import datawave.query.util.MetadataHelper;
+import java.util.Set;
+
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import java.util.Set;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.util.DateIndexHelper;
+import datawave.query.util.MetadataHelper;
 
 /**
  * JexlArgumentDescriptors should implement this interface if they need to conditionally rebuild or reconfigure their source ASTFunctionNode. The reasons for
@@ -14,7 +15,7 @@ import java.util.Set;
  * JexlArgumentDescriptor, and reprocess the new node and it's children.
  */
 public interface RebuildingJexlArgumentDescriptor extends JexlArgumentDescriptor {
-    
+
     /**
      * Conditionally rebuilds the ASTFunctionNode that this JexlArgumentDescriptor was created from. If no changes to the original ASTFunctionNode are required,
      * the original node should be returned.

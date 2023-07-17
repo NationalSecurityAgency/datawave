@@ -2,13 +2,14 @@ package datawave.iterators.filter;
 
 import java.util.Objects;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+
 import datawave.iterators.filter.TokenTtlTrie.Builder.MERGE_MODE;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * TokenizingAgeoffFilter cuts a field into tokens (splitting at a specified set of delimiters), and makes ageoff decisions based on whether or not any of the
@@ -21,15 +22,15 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
  *
  * <pre>
  * {@code
- * 
+ *
  * <rule>
  *   <filterClass>datawave.iterators.filter.ColumnQualifierTokenFilter</filterClass>
  *   <!-- Any tokens without specified TTLs will ageoff after 3000ms --<
  *   <ttl units="ms">3000</ttl>
- * 
+ *
  *   <!-- Field is comma separated -->
  *   <delimiters>,</delimiters>
- * 
+ *
  *   <matchPattern>
  *     "foo": 5d,
  *     "bar": 300ms,
@@ -53,9 +54,9 @@ public abstract class TokenizingFilterBase extends AppliedRule {
     private String matchPattern = null;
     private TokenTtlTrie scanTrie = null;
     private boolean ruleApplied;
-    
+
     public abstract byte[] getKeyField(Key k, Value V);
-    
+
     /**
      * Return a list of delimiters for scans. While the default is to pull this information out of the {@code &lt;delimiters&gt;} tag in the configuration,
      * subclasses may wish to override this to provide fixed delimiter sets.
@@ -67,12 +68,12 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         }
         return delimiters.getBytes();
     }
-    
+
     @Override
     public void init(FilterOptions options) {
         init(options, null);
     }
-    
+
     @Override
     public void init(FilterOptions options, IteratorEnvironment iterEnv) {
         super.init(options, iterEnv);
@@ -84,7 +85,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             this.matchPattern = confPattern;
         }
     }
-    
+
     @Override
     public void deepCopyInit(FilterOptions newOptions, AppliedRule parentCopy) {
         TokenizingFilterBase parent = (TokenizingFilterBase) parentCopy;
@@ -92,7 +93,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         this.scanTrie = parent.scanTrie;
         super.deepCopyInit(newOptions, parentCopy);
     }
-    
+
     @Override
     public boolean accept(AgeOffPeriod period, Key k, Value V) {
         Long calculatedTTL = scanTrie.scan(getKeyField(k, V));
@@ -103,24 +104,24 @@ public abstract class TokenizingFilterBase extends AppliedRule {
         }
         // cutoffTimestamp includes the default TTL
         long cutoffTimestamp = period.getCutOffMilliseconds();
-        
+
         // If there is a TTL for this key:
         if (calculatedTTL > 0) {
             // cutoffTimestamp is currently offset by the default TTL. Start by undoing that default offset
             cutoffTimestamp += period.getTtl() * period.getTtlUnitsFactor();
-            
+
             // Subtract the key's TTL from the cut-off timestamp
             cutoffTimestamp -= calculatedTTL;
         }
         ruleApplied = true;
         return k.getTimestamp() > cutoffTimestamp;
     }
-    
+
     @Override
     public boolean isFilterRuleApplied() {
         return ruleApplied;
     }
-    
+
     private MERGE_MODE getMergeMode(FilterOptions options) {
         String isMergeStr = options.getOption(AgeOffConfigParams.IS_MERGE);
         if (null == isMergeStr) {
@@ -130,7 +131,7 @@ public abstract class TokenizingFilterBase extends AppliedRule {
             return isMerge ? MERGE_MODE.ON : MERGE_MODE.OFF;
         }
     }
-    
+
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "[size=" + (scanTrie == null ? null : scanTrie.size()) + "]";

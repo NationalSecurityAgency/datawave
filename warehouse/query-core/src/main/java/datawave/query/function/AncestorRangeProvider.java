@@ -1,8 +1,9 @@
 package datawave.query.function;
 
-import datawave.query.tld.TLD;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
+
+import datawave.query.tld.TLD;
 
 /**
  * For use in the {@link datawave.query.ancestor.AncestorQueryIterator}
@@ -10,7 +11,7 @@ import org.apache.hadoop.io.Text;
  *
  */
 public class AncestorRangeProvider extends DocumentRangeProvider {
-    
+
     /**
      * The start key is remapped to the beginning of the TLD to get all necessary fields
      *

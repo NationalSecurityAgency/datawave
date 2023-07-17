@@ -16,19 +16,18 @@ package datawave.ingest.data.tokenize;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import datawave.util.ObjectFactory;
-
-import org.apache.lucene.util.AttributeFactory;
 import org.apache.lucene.analysis.Tokenizer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
+import org.apache.lucene.util.AttributeFactory;
+
+import datawave.util.ObjectFactory;
 
 /**
  * A grammar-based Tokenizer constructed with JFlex based on Lucene's {@link org.apache.lucene.analysis.standard.StandardTokenizer StandardTokenizer}
@@ -51,30 +50,30 @@ public class StandardTokenizer extends Tokenizer {
     /** A private instance of the JFlex-constructed scanner */
     private Lexer scanner;
     private Class<? extends Lexer> scannerClazz = StandardLexer.class;
-    
+
     /** Absolute maximum sized token */
     private static final int MAX_TOKEN_LENGTH_LIMIT = 8 * 1024;
-    
+
     private int maxTokenLength = StandardAnalyzer.DEFAULT_MAX_TOKEN_LENGTH;
-    
+
     private int defaultTokenTruncateLength = StandardAnalyzer.DEFAULT_TRUNCATE_TOKEN_LENGTH;
-    
+
     private static final String META_BREAK = "METABREAK";
     private static final char[] META_BREAK_CHARS = META_BREAK.toCharArray();
-    
+
     private static final int DEFAULT_META_BREAK_INCREMENT = 10;
     private int metaBreakIncrement = DEFAULT_META_BREAK_INCREMENT;
-    
+
     private static final Map<String,Integer> DEFAULT_TYPED_TOKEN_LENGTHS = new HashMap<>();
     {
         DEFAULT_TYPED_TOKEN_LENGTHS.put("<FILE>", 1024);
         DEFAULT_TYPED_TOKEN_LENGTHS.put("<URL>", 1024);
         DEFAULT_TYPED_TOKEN_LENGTHS.put("<HTTP_REQUEST>", 1024);
     }
-    
+
     /** Token typed truncation rules. */
     private final Map<String,Integer> typedTokenTruncateLength = new HashMap<>(DEFAULT_TYPED_TOKEN_LENGTHS);
-    
+
     // this tokenizer generates three attributes:
     // offset, positionIncrement and type
     private final CharTermAttribute termAtt = addAttribute(CharTermAttribute.class);
@@ -82,34 +81,34 @@ public class StandardTokenizer extends Tokenizer {
     private final PositionIncrementAttribute posIncrAtt = addAttribute(PositionIncrementAttribute.class);
     private final TypeAttribute typeAtt = addAttribute(TypeAttribute.class);
     private final TruncateAttribute truncAtt = addAttribute(TruncateAttribute.class);
-    
+
     private int skippedPositions;
-    
+
     private boolean metaBreakEnabled = false;
-    
+
     public StandardTokenizer() {
         init();
     }
-    
+
     public StandardTokenizer(Class<? extends Lexer> implClass) {
         init(implClass);
     }
-    
+
     public StandardTokenizer(AttributeFactory factory) {
         super(factory);
         init();
     }
-    
+
     public StandardTokenizer(AttributeFactory factory, Class<? extends Lexer> implClass) {
         super(factory);
         init(implClass);
     }
-    
+
     private void init(Class<? extends Lexer> implClass) {
         this.scannerClazz = implClass;
         init();
     }
-    
+
     private void init() {
         final Object[] args = {input};
         this.scanner = (Lexer) ObjectFactory.create(scannerClazz.getName(), args);
@@ -118,10 +117,10 @@ public class StandardTokenizer extends Tokenizer {
             i.setBufferSize(StandardAnalyzer.DEFAULT_MAX_TOKEN_LENGTH);
         }
     }
-    
+
     /**
      * Set the max allowed token length. Any token longer than this is skipped.
-     * 
+     *
      * @param length
      *            length of token
      */
@@ -131,45 +130,45 @@ public class StandardTokenizer extends Tokenizer {
         }
         this.maxTokenLength = length;
     }
-    
+
     public void setScannerBufferSize(int length) {
-        
+
     }
-    
+
     /**
      * @see #setMaxTokenLength
      * @return max token length
-     * */
+     */
     public int getMaxTokenLength() {
         return maxTokenLength;
     }
-    
+
     /**
      * Set the token truncation length. Any token longer than this is truncated.
-     * 
+     *
      * @param length
      *            length of token truncation
      */
     public void setTokenTruncateLength(int length) {
         this.defaultTokenTruncateLength = length;
     }
-    
+
     /**
      * @see #setMaxTokenLength
      * @return token truncate length
-     * */
+     */
     public int getTokenTruncateLength() {
         return defaultTokenTruncateLength;
     }
-    
+
     /** Clear the map of token type to truncationg length. */
     public void clearTokenTruncateLengths() {
         typedTokenTruncateLength.clear();
     }
-    
+
     /**
      * Set the token truncation length for a given token type
-     * 
+     *
      * @param type
      *            set the truncation length for this token type
      * @param length
@@ -181,10 +180,10 @@ public class StandardTokenizer extends Tokenizer {
         }
         typedTokenTruncateLength.put(type, Integer.valueOf(length));
     }
-    
+
     /**
      * Return the type-specifc truncation length, or -1 if no truncation length has been set for the specified type.
-     * 
+     *
      * @param type
      *            get the truncation length for this token type
      * @return integer value of truncation for the specified type or -1 if there is none
@@ -197,14 +196,14 @@ public class StandardTokenizer extends Tokenizer {
             return val.intValue();
         }
     }
-    
+
     /**
      * @return true if metatata breaking is enabled
      */
     public boolean isMetaBreakEnabled() {
         return metaBreakEnabled;
     }
-    
+
     /**
      * @param metaBreakEnabled
      *            enable / disable metadata breaking
@@ -212,14 +211,14 @@ public class StandardTokenizer extends Tokenizer {
     public void setMetaBreakEnabled(boolean metaBreakEnabled) {
         this.metaBreakEnabled = metaBreakEnabled;
     }
-    
+
     /**
      * @return the position increment to use when inserting a metadata break
      */
     public int getMetaBreakIncrement() {
         return this.metaBreakIncrement;
     }
-    
+
     /**
      * @param increment
      *            the position increment to use when inserting a metadata break
@@ -227,15 +226,15 @@ public class StandardTokenizer extends Tokenizer {
     public void setMetaBreakIncrement(int increment) {
         this.metaBreakIncrement = increment;
     }
-    
+
     @Override
     public final boolean incrementToken() throws IOException {
         clearAttributes();
         skippedPositions = 0;
-        
+
         while (true) {
             int tokenType = scanner.getNextToken();
-            
+
             if (tokenType == StandardLexer.YYEOF) {
                 return false;
             } else if (metaBreakEnabled && isMetaBreak(scanner)) {
@@ -259,7 +258,7 @@ public class StandardTokenizer extends Tokenizer {
             }
         }
     }
-    
+
     /**
      * @param scanner
      *            The scanner to check
@@ -269,16 +268,16 @@ public class StandardTokenizer extends Tokenizer {
         if (scanner.yylength() != META_BREAK_CHARS.length) {
             return false;
         }
-        
+
         for (int i = 0; i < META_BREAK_CHARS.length; i++) {
             if (META_BREAK_CHARS[i] != scanner.yycharat(i)) {
                 return false;
             }
         }
-        
+
         return true;
     }
-    
+
     @Override
     public final void end() throws IOException {
         super.end();
@@ -288,13 +287,13 @@ public class StandardTokenizer extends Tokenizer {
         // adjust any skipped tokens
         posIncrAtt.setPositionIncrement(posIncrAtt.getPositionIncrement() + skippedPositions);
     }
-    
+
     @Override
     public void close() throws IOException {
         super.close();
         scanner.yyreset(input);
     }
-    
+
     @Override
     public void reset() throws IOException {
         super.reset();

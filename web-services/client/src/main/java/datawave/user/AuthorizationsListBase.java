@@ -23,78 +23,78 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
+import datawave.webservice.HtmlProvider;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-import datawave.webservice.HtmlProvider;
 
 /**
- * 
+ *
  */
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(DefaultAuthorizationsList.class)
 public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvider {
     protected static final String TITLE = "Effective Authorizations", EMPTY = "";
-    
+
     @XmlElementWrapper(name = "allAuths")
     @XmlElement(name = "auth")
     protected TreeSet<String> userAuths = new TreeSet<String>();
-    
+
     protected String userDn;
     protected String issuerDn;
     protected List<String> messages = new ArrayList<>();
-    
+
     protected LinkedHashMap<SubjectIssuerDNPair,Set<String>> auths = new LinkedHashMap<SubjectIssuerDNPair,Set<String>>();
-    
+
     protected Map<String,Collection<String>> authMapping = new HashMap<>();
-    
+
     public abstract String getMainContent();
-    
+
     @XmlElement(name = "entityAuths")
     @XmlJavaTypeAdapter(AuthListAdapter.class)
     public LinkedHashMap<SubjectIssuerDNPair,Set<String>> getAuths() {
-        
+
         LinkedHashMap<SubjectIssuerDNPair,Set<String>> authMap = new LinkedHashMap<SubjectIssuerDNPair,Set<String>>();
         for (Map.Entry<SubjectIssuerDNPair,Set<String>> e : auths.entrySet()) {
             authMap.put(new SubjectIssuerDNPair(e.getKey().subjectDN, e.getKey().issuerDN), Collections.unmodifiableSet(e.getValue()));
         }
         return authMap;
     }
-    
+
     public void addAuths(String dn, String issuerDN, Collection<String> dnAuths) {
         auths.put(new SubjectIssuerDNPair(dn, issuerDN), new TreeSet<String>(dnAuths));
     }
-    
+
     public void setMessages(List<String> messages) {
         this.messages.clear();
         if (messages != null) {
             this.messages.addAll(messages);
         }
     }
-    
+
     public void addMessage(String message) {
         this.messages.add(message);
     }
-    
+
     public void setUserAuths(String userDn, String issuerDn, Collection<String> userAuths) {
         this.userDn = userDn;
         this.issuerDn = issuerDn;
         this.userAuths.addAll(userAuths);
     }
-    
+
     public TreeSet<String> getUserAuths() {
         return new TreeSet<String>(userAuths);
     }
-    
+
     public TreeSet<String> getAllAuths() {
         return new TreeSet<String>(userAuths);
     }
-    
+
     public void setAuthMapping(Map<String,Collection<String>> authMapping) {
         this.authMapping = new TreeMap<String,Collection<String>>(authMapping);
     }
-    
+
     public String getUserDn() {
         // if the userDn is empty but we have auths, then use the first auth entry as the user
         // this handles the case where the userDn and subjectDn are not being serialized separately.
@@ -103,7 +103,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         }
         return userDn;
     }
-    
+
     public String getIssuerDn() {
         // if the issuerDn is empty but we have auths, then use the first auth entry as the user
         // this handles the case where the userDn and subjectDn are not being serialized separately.
@@ -112,42 +112,42 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
         }
         return issuerDn;
     }
-    
+
     public List<String> getMessages() {
         return messages;
     }
-    
+
     public Map<String,Collection<String>> getAuthMapping() {
         return authMapping;
     }
-    
+
     public String getTitle() {
         return TITLE;
     }
-    
+
     public String getHeadContent() {
         return EMPTY;
     }
-    
+
     public String getPageHeader() {
         return TITLE;
     }
-    
+
     public static class SubjectIssuerDNPair {
         @XmlElement(name = "subjectDN")
         public String subjectDN;
         @XmlElement(name = "issuerDN")
         public String issuerDN;
-        
+
         // Empty constructor needed for mapping frameworks
         @SuppressWarnings("unused")
         public SubjectIssuerDNPair() {}
-        
+
         public SubjectIssuerDNPair(String subjectDN, String issuerDN) {
             this.subjectDN = subjectDN;
             this.issuerDN = issuerDN;
         }
-        
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder(subjectDN);
@@ -156,7 +156,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
             }
             return sb.toString();
         }
-        
+
         @Override
         public int hashCode() {
             final int prime = 31;
@@ -165,7 +165,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
             result = prime * result + ((subjectDN == null) ? 0 : subjectDN.hashCode());
             return result;
         }
-        
+
         @Override
         public boolean equals(Object obj) {
             if (this == obj)
@@ -188,29 +188,29 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
             return true;
         }
     }
-    
+
     public static class AuthList {
         @XmlElement(name = "entity")
         public List<AuthListEntry> entries = new ArrayList<AuthListEntry>();
     }
-    
+
     @XmlType(propOrder = {"dn", "auths"})
     public static class AuthListEntry {
         @XmlElement(name = "entityID")
         public SubjectIssuerDNPair dn;
         @XmlElement(name = "auth")
         private TreeSet<String> auths;
-        
+
         // Empty constructor needed for mapping frameworks
         @SuppressWarnings("unused")
         public AuthListEntry() {}
-        
+
         public AuthListEntry(SubjectIssuerDNPair dn, Set<String> auths) {
             this.dn = dn;
             this.auths = new TreeSet<String>(auths);
         }
     }
-    
+
     public static class AuthListAdapter extends XmlAdapter<AuthList,Map<SubjectIssuerDNPair,Set<String>>> {
         @Override
         public AuthList marshal(Map<SubjectIssuerDNPair,Set<String>> v) throws Exception {
@@ -219,7 +219,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                 list.entries.add(new AuthListEntry(e.getKey(), e.getValue()));
             return list;
         }
-        
+
         @Override
         public Map<SubjectIssuerDNPair,Set<String>> unmarshal(AuthList v) throws Exception {
             Map<SubjectIssuerDNPair,Set<String>> result = new LinkedHashMap<SubjectIssuerDNPair,Set<String>>();
@@ -228,14 +228,14 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
             return result;
         }
     }
-    
+
     protected abstract static class AuthListSchema<T extends AuthorizationsListBase<?>> implements Schema<T> {
-        
+
         @Override
         public boolean isInitialized(T message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, T message) throws IOException {
             if (message.auths != null) {
@@ -266,7 +266,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                 }
             }
         }
-        
+
         @Override
         public void mergeFrom(Input input, T message) throws IOException {
             int number;
@@ -305,7 +305,7 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -323,13 +323,13 @@ public abstract class AuthorizationsListBase<T> implements Message<T>, HtmlProvi
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number;
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("auths", 1);

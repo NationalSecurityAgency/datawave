@@ -1,6 +1,7 @@
 package datawave.ingest.data.tokenize;
 
 import java.io.IOException;
+
 import org.apache.lucene.analysis.TokenFilter;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -10,17 +11,17 @@ import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
  */
 public class AccentFilter extends TokenFilter {
     private CharTermAttribute termAtt;
-    
+
     public AccentFilter(TokenStream input) {
         super(input);
         termAtt = addAttribute(CharTermAttribute.class);
     }
-    
+
     public boolean incrementToken() throws IOException {
         if (input.incrementToken()) {
             final char[] buffer = termAtt.buffer();
             final int length = termAtt.length();
-            
+
             // If no characters actually require rewriting then we
             // just return token as-is:
             for (int i = 0; i < length; i++) {
@@ -34,16 +35,16 @@ public class AccentFilter extends TokenFilter {
                     }
                 }
             }
-            
+
             return true;
         } else {
             return false;
         }
     }
-    
+
     /**
      * Return the token with accents/diactirics/vowelization stripped off
-     * 
+     *
      * @param token
      *            the token to strip
      * @return the token with accents removed
@@ -57,22 +58,22 @@ public class AccentFilter extends TokenFilter {
         }
         return token;
     }
-    
+
     public static int removeAccents(char[] input, char[] output, int length) {
-        
+
         int pos = 0;
         int outputPos = 0;
         boolean mod = false;
-        
+
         for (int i = 0; i < length; i++, pos++) {
             final char c = input[pos];
-            
+
             // Quick test: if it's not in range then just keep
             // current character
             if (c < '\u00c0') {
                 output[outputPos++] = c;
             } else {
-                
+
                 switch (c) {
                     case '\u00C0': // À [LATIN CAPITAL LETTER A WITH GRAVE]
                     case '\u00C1': // Á [LATIN CAPITAL LETTER A WITH ACUTE]
@@ -2210,7 +2211,7 @@ public class AccentFilter extends TokenFilter {
                         output[outputPos++] = '~';
                         mod = true;
                         break;
-                    
+
                     // Arabic vowels
                     case '\u0610':
                     case '\u0611':
@@ -2223,7 +2224,7 @@ public class AccentFilter extends TokenFilter {
                     case '\u0618':
                     case '\u0619':
                     case '\u061a':
-                        
+
                     case '\u064b':
                     case '\u064c':
                     case '\u064d':
@@ -2244,9 +2245,9 @@ public class AccentFilter extends TokenFilter {
                     case '\u065c':
                     case '\u065d':
                     case '\u065e':
-                        
+
                     case '\u0670':
-                        
+
                     case '\u06d6':
                     case '\u06d7':
                     case '\u06d8':
@@ -2255,7 +2256,7 @@ public class AccentFilter extends TokenFilter {
                     case '\u06db':
                     case '\u06dc':
                     case '\u06dd':
-                        
+
                     case '\u06df':
                     case '\u06e0':
                     case '\u06e1':
@@ -2266,18 +2267,18 @@ public class AccentFilter extends TokenFilter {
                     case '\u06e6':
                     case '\u06e7':
                     case '\u06e8':
-                        
+
                     case '\u06ea':
                     case '\u06eb':
                     case '\u06ec':
                     case '\u06ed':
-                        
+
                     case '\ufd3e':
                     case '\ufd3f':
                         mod = true;
                         // emit nothing
                         break;
-                    
+
                     default:
                         output[outputPos++] = c;
                         break;
@@ -2286,5 +2287,5 @@ public class AccentFilter extends TokenFilter {
         }
         return mod ? outputPos : 0;
     }
-    
+
 }

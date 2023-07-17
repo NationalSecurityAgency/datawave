@@ -1,19 +1,20 @@
 package datawave.query.jexl.nodes;
 
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import java.util.function.Function;
+
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
-import java.util.function.Function;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 
 /**
  * This is a node that can wrap an expression to mark that the source expression is a bounded range. A bounded range is a range that can be applied to only one
  * value out of a multi-valued field.
  */
 public class BoundedRange extends QueryPropertyMarker {
-    
+
     private static final String LABEL = "_Bounded_";
-    
+
     /**
      * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
      *
@@ -22,7 +23,7 @@ public class BoundedRange extends QueryPropertyMarker {
     public static String label() {
         return LABEL;
     }
-    
+
     /**
      * Create and return a new {@link BoundedRange} with the given source.
      *
@@ -34,15 +35,15 @@ public class BoundedRange extends QueryPropertyMarker {
     public static BoundedRange create(JexlNode node) {
         return create(node, BoundedRange::new);
     }
-    
+
     public BoundedRange() {
         super();
     }
-    
+
     public BoundedRange(int id) {
         super(id);
     }
-    
+
     /**
      * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
      *
@@ -53,7 +54,7 @@ public class BoundedRange extends QueryPropertyMarker {
     public BoundedRange(JexlNode node) {
         super(node);
     }
-    
+
     /**
      * Returns {@value #LABEL}.
      *
@@ -63,7 +64,7 @@ public class BoundedRange extends QueryPropertyMarker {
     public String getLabel() {
         return LABEL;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (obj == this) {
@@ -74,7 +75,7 @@ public class BoundedRange extends QueryPropertyMarker {
         }
         return JexlStringBuildingVisitor.buildQueryWithoutParse(this).equals(JexlStringBuildingVisitor.buildQueryWithoutParse((BoundedRange) obj));
     }
-    
+
     @Override
     public int hashCode() {
         return new HashCodeBuilder().append(JexlStringBuildingVisitor.buildQueryWithoutParse(this)).toHashCode();

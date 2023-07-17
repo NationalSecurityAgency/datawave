@@ -1,24 +1,25 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.mapreduce.partition.DelegatePartitioner;
+import java.util.HashMap;
+import java.util.List;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Partitioner;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
+import datawave.ingest.mapreduce.partition.DelegatePartitioner;
 
 /**
  * Map containing Text table names as its keys and partitioner offsets at its values. Its a list of table names The offsets are used to
  */
 public class TablePartitionerOffsets extends HashMap<Text,Integer> {
-    
+
     private final Configuration conf;
     private final PartitionerCache partitionerCache;
     private final int reduceTasks;
-    
+
     public TablePartitionerOffsets(Configuration conf, List<Text> tableNames, PartitionerCache partitionerCache) throws ClassNotFoundException {
         super();
         this.conf = conf;
@@ -27,7 +28,7 @@ public class TablePartitionerOffsets extends HashMap<Text,Integer> {
         TreeMap<Text,Integer> maxPartitionsByTable = getMaxNumPartitionsPerTable(tableNames);
         registerOffsets(tableNames, maxPartitionsByTable);
     }
-    
+
     private TreeMap<Text,Integer> getMaxNumPartitionsPerTable(List<Text> tableNames) throws ClassNotFoundException {
         TreeMap<Text,Integer> maxPartitionsByTable = new TreeMap();
         for (Text tableName : tableNames) {
@@ -40,7 +41,7 @@ public class TablePartitionerOffsets extends HashMap<Text,Integer> {
         }
         return maxPartitionsByTable;
     }
-    
+
     private void registerOffsets(List<Text> tableNames, TreeMap<Text,Integer> maxPartitionsByTable) {
         HashMap<Text,Integer> offsetsByCategoryName = new HashMap<>();
         // start the offsets from the back
@@ -49,7 +50,7 @@ public class TablePartitionerOffsets extends HashMap<Text,Integer> {
             previousOffsetStart = registerOffsetForTable(maxPartitionsByTable, offsetsByCategoryName, previousOffsetStart, tableName);
         }
     }
-    
+
     private int registerOffsetForTable(TreeMap<Text,Integer> maxPartitionsByTable, HashMap<Text,Integer> offsetsByCategoryName, int previousOffsetStart,
                     Text tableName) {
         int numPartitionsNeededForTable = maxPartitionsByTable.get(tableName);
@@ -59,7 +60,7 @@ public class TablePartitionerOffsets extends HashMap<Text,Integer> {
         this.put(tableName, offsetForThisTable);
         return previousOffsetStart - additionalPartitionSlotsNeeded;
     }
-    
+
     // dont use slots if the partitioner uses the entire reducer space or the category offset was already determined
     private int determineHowManySlotsToAdd(HashMap<Text,Integer> offsetsByCategoryName, Text categoryName, int partitionsForTableName) {
         int additionalPartitionSlotsNeeded = partitionsForTableName;
@@ -68,7 +69,7 @@ public class TablePartitionerOffsets extends HashMap<Text,Integer> {
         }
         return additionalPartitionSlotsNeeded;
     }
-    
+
     private int getOffsetForTable(HashMap<Text,Integer> offsetsByCategoryName, Text categoryName, Integer numPartitionsNeededForTable, int offset) {
         if (numPartitionsNeededForTable == Integer.MAX_VALUE) {
             return 0;

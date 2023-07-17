@@ -1,16 +1,6 @@
 package datawave.webservice.query.cache;
 
-import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.query.runner.RunningQuery;
-import datawave.webservice.result.VoidResponse;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.util.Pair;
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.deltaspike.core.api.jmx.JmxManaged;
-import org.apache.deltaspike.core.api.jmx.MBean;
-import org.jboss.resteasy.annotations.GZIP;
+import java.util.Map.Entry;
 
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
@@ -23,7 +13,19 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import java.util.Map.Entry;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.util.Pair;
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.deltaspike.core.api.jmx.JmxManaged;
+import org.apache.deltaspike.core.api.jmx.MBean;
+import org.jboss.resteasy.annotations.GZIP;
+
+import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.query.runner.RunningQuery;
+import datawave.webservice.result.VoidResponse;
 
 @Path("/Query/Cache")
 @RunAs("InternalUser")
@@ -38,16 +40,16 @@ import java.util.Map.Entry;
 @MBean
 @Exclude(ifProjectStage = DatawaveEmbeddedProjectStageHolder.DatawaveEmbedded.class)
 public class QueryCacheBean {
-    
+
     @Inject
     private QueryCache cache;
-    
+
     @Inject
     private QueryExecutorBean query;
-    
+
     @Inject
     private CreatedQueryLogicCacheBean qlCache;
-    
+
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @JmxManaged
     public String listRunningQueries() {
@@ -58,7 +60,7 @@ public class QueryCacheBean {
         }
         return buf.toString();
     }
-    
+
     /**
      * <strong>Administrator credentials required.</strong>
      *
@@ -70,9 +72,9 @@ public class QueryCacheBean {
     @GZIP
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     public RunningQueries getRunningQueries() {
-        
+
         RunningQueries result = new RunningQueries();
-        
+
         // Iterate over the cache contents
         for (RunningQuery value : cache) {
             result.getQueries().add(value.toString());
@@ -83,7 +85,7 @@ public class QueryCacheBean {
         }
         return result;
     }
-    
+
     @RolesAllowed({"Administrator", "JBossAdministrator"})
     @JmxManaged
     public String cancelUserQuery(String id) throws Exception {
@@ -100,5 +102,5 @@ public class QueryCacheBean {
             return "No such query: " + id;
         }
     }
-    
+
 }

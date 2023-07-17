@@ -9,27 +9,28 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.webservice.common.exception.UnauthorizedException;
-import datawave.webservice.result.VoidResponse;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 
+import datawave.configuration.spring.SpringBean;
+import datawave.webservice.common.exception.UnauthorizedException;
+import datawave.webservice.result.VoidResponse;
+
 public class QueryLogicFactoryImpl implements QueryLogicFactory {
-    
+
     /**
      * Configuration for parameters that are for all query logic types
      */
     @Inject
     @SpringBean(refreshable = true)
     private QueryLogicFactoryConfiguration queryLogicFactoryConfiguration;
-    
+
     @Inject
     private ApplicationContext applicationContext;
-    
+
     @Override
     public QueryLogic<?> getQueryLogic(String queryLogic, Principal principal) throws IllegalArgumentException, CloneNotSupportedException {
-        
+
         String beanName = queryLogic;
         if (queryLogicFactoryConfiguration.hasLogicMap()) {
             beanName = queryLogicFactoryConfiguration.getLogicMap().get(queryLogic);
@@ -37,7 +38,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         if (beanName == null) {
             throw new IllegalArgumentException("Logic name '" + queryLogic + "' is not configured for this system");
         }
-        
+
         QueryLogic<?> logic;
         try {
             logic = (QueryLogic<?>) applicationContext.getBean(beanName);
@@ -49,12 +50,12 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
                 throw new IllegalArgumentException("Logic name '" + queryLogic + "' which maps to '" + beanName + "' does not exist in the configuration");
             }
         }
-        
+
         if (!logic.canRunQuery(principal)) {
             throw new UnauthorizedException(new IllegalAccessException("User does not have required role(s): " + logic.getRoleManager().getRequiredRoles()),
                             new VoidResponse());
         }
-        
+
         logic.setLogicName(queryLogic);
         if (logic.getMaxPageSize() == 0) {
             logic.setMaxPageSize(queryLogicFactoryConfiguration.getMaxPageSize());
@@ -64,7 +65,7 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
         }
         return logic;
     }
-    
+
     @Override
     public List<QueryLogic<?>> getQueryLogicList() {
         Map<String,QueryLogic> logicMap = applicationContext.getBeansOfType(QueryLogic.class);
@@ -77,15 +78,15 @@ public class QueryLogicFactoryImpl implements QueryLogicFactory {
             }
             logicMap = renamedLogicMap;
         }
-        
+
         List<QueryLogic<?>> logicList = new ArrayList<>();
-        
+
         for (Map.Entry<String,QueryLogic> entry : logicMap.entrySet()) {
             QueryLogic<?> logic = entry.getValue();
             logic.setLogicName(entry.getKey());
             logicList.add(logic);
         }
         return logicList;
-        
+
     }
 }
