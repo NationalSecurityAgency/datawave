@@ -42,8 +42,7 @@ public class CBMutationOutputFormatter extends AccumuloOutputFormat {
     }
 
     public static OutputFormatBuilder.OutputOptions<Job> configure(Configuration conf) {
-        OutputFormatBuilder.ClientParams<Job> clientParams = new OutputFormatBuilderImpl<>(AccumuloOutputFormat.class);
-        return clientParams.clientProperties(getClientProperties(conf));
+        return AccumuloOutputFormat.configure().clientProperties(getClientProperties(conf));
     }
 
     public static class CBRecordWriter extends RecordWriter<Text,Mutation> {
