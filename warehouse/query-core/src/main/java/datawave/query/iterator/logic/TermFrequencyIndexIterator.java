@@ -19,7 +19,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 
 import datawave.query.attributes.Document;
