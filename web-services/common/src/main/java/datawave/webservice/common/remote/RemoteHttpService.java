@@ -119,7 +119,9 @@ public abstract class RemoteHttpService {
     }
 
     protected <T> T execute(HttpRequestBase request, IOFunction<T> resultConverter, Supplier<String> errorSupplier) throws IOException {
-        log.info("Executing " + request.getClass().getSimpleName() + " against " + request.getURI());
+        if (log.isTraceEnabled()) {
+            log.trace("Executing " + request.getClass().getSimpleName() + " against " + request.getURI());
+        }
         try {
             activeExecutions.incrementAndGet();
             return client.execute(request, r -> {

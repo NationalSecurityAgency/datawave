@@ -209,6 +209,7 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
         Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
         Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
+        Assert.assertFalse(config.getPruneQueryOptions());
 
         // seeks
         Assert.assertEquals(-1, config.getFiFieldSeek());
@@ -319,6 +320,7 @@ public class ShardQueryConfigurationTest {
         other.setEventNextSeek(15);
         other.setTfFieldSeek(16);
         other.setTfNextSeek(17);
+        other.setPruneQueryOptions(true);
 
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
@@ -422,12 +424,14 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(10000, config.getTfAggregationThresholdMs());
 
         // assert seeks
-        Assert.assertEquals(12, other.getFiFieldSeek());
-        Assert.assertEquals(13, other.getFiNextSeek());
-        Assert.assertEquals(14, other.getEventFieldSeek());
-        Assert.assertEquals(15, other.getEventNextSeek());
-        Assert.assertEquals(16, other.getTfFieldSeek());
-        Assert.assertEquals(17, other.getTfNextSeek());
+        Assert.assertEquals(12, config.getFiFieldSeek());
+        Assert.assertEquals(13, config.getFiNextSeek());
+        Assert.assertEquals(14, config.getEventFieldSeek());
+        Assert.assertEquals(15, config.getEventNextSeek());
+        Assert.assertEquals(16, config.getTfFieldSeek());
+        Assert.assertEquals(17, config.getTfNextSeek());
+
+        Assert.assertTrue(config.getPruneQueryOptions());
     }
 
     @Test
@@ -512,13 +516,32 @@ public class ShardQueryConfigurationTest {
 
     /**
      * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
+     * <p>
+     * If a configuration option was added do the following as appropriate
+     * <ol>
+     * <li>Add getter/setters to the ShardQueryLogic that delegate to the ShardQueryConfiguration</li>
+     * <li>Expand the copy constructor test in this class to verify values are not lost on a copy/clone</li>
+     * <li>Add an illustrative default value to a test QueryLogicFactory. NOTE: doing so should not break any unit tests.</li>
+     * <li>If a value in the config is destined for query iterator, ensure that the value is serialized by the DefaultQueryPlanner and parsed correctly by
+     * either the QueryIterator or the QueryOptions class</li>
+     * </ol>
+     * <p>
+     * If a configuration option was removed before deprecating it, DEPRECATE IT FIRST to allow for clean integration.
+     * <p>
+     * Once a deprecated option has at least one tag associated with it, do the following
+     * <ol>
+     * <li>Remove usages of deprecated methods from unit tests</li>
+     * <li>Remove usages of deprecated values from configuration files such as the test QueryLogicFactory</li>
+     * <li>Remove deprecated getters/setters from the ShardQueryLogic</li>
+     * <li>Lastly, remove the deprecated methods and values from the ShardQueryConfiguration</li>
+     * </ol>
      *
      * @throws IOException
      *             if something went wrong
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 202;
+        int expectedObjectCount = 203;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
