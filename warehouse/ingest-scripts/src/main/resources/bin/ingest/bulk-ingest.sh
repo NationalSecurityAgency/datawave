@@ -58,8 +58,11 @@ TIMEOUT=600000
 INPUT_FILES=$1
 REDUCERS=$2
 EXTRA_OPTS=${@:3}
-# Don't change this option unless you know what you're doing. There's a specific format to the field. See AccumuloOutputFormat for details.
-BATCHWRITER_OPTS="-AccumuloOutputFormat.WriteOpts.BatchWriterConfig=    11#maxMemory=100000000,maxWriteThreads=4"
+# Customize accumulo client properties for AccumuloOutputFormat (newline-separated, one property per line)
+BATCHWRITER_OPTS="-AccumuloOutputFormat.ClientOpts.ClientProps=
+batch.writer.memory.max=100000000B
+batch.writer.threads.max=4
+"
 MAPRED_OPTS="-mapreduce.map.memory.mb=$MAP_MEMORY_MB -mapreduce.reduce.memory.mb=$REDUCE_MEMORY_MB -mapreduce.job.reduces=$REDUCERS -mapreduce.task.io.sort.mb=${BULK_CHILD_IO_SORT_MB} -mapreduce.task.io.sort.factor=100 -bulk.ingest.mapper.threads=0 -bulk.ingest.mapper.workqueue.size=10000 -io.file.buffer.size=1048576 -dfs.bytes-per-checksum=4096 -io.sort.record.percent=.10 -mapreduce.map.output.compress=${BULK_MAP_OUTPUT_COMPRESS} -mapreduce.map.output.compress.codec=${BULK_MAP_OUTPUT_COMPRESSION_CODEC} -mapreduce.output.fileoutputformat.compress.type=${BULK_MAP_OUTPUT_COMPRESSION_TYPE} $PART_ARG -mapreduce.task.timeout=$TIMEOUT -markerFileReducePercentage 0.33 -context.writer.max.cache.size=2500 -mapreduce.job.queuename=bulkIngestQueue $MAPRED_INGEST_OPTS"
 #-mapreduce.map.sort.spill.percent=.50
 
