@@ -31,18 +31,10 @@ import datawave.util.StringUtils;
 import datawave.util.cli.PasswordConverter;
 
 import org.apache.accumulo.core.Constants;
-import org.apache.accumulo.core.client.Accumulo;
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -1027,9 +1019,7 @@ public class IngestJob implements Tool {
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.configure()
-                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
-                            .createTables(true).store(job);
+            CBMutationOutputFormatter.configure(job.getConfiguration()).createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));
