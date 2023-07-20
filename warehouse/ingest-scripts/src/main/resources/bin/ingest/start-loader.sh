@@ -49,7 +49,7 @@ done
 
 for PID in $PIDS; do
   COUNT=$((COUNT + 1))
-  warehouse_current=$(ps aux | grep " $PID " | awk -F "-srcHdfs '{print $3}' | cut -d ' ' -f2")
+  warehouse_current=$(ps -p $PID -o command --no-headers | awk -F "-srcHdfs '{print $3}' | cut -d ' ' -f2")
   if [[ "$EXTRA_MAP_LOADER" == "${warehouse_current}" && EXTRA_MAP != 0 ]]; then
     EXTRA_MAP=0
   fi
