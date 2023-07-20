@@ -29,7 +29,7 @@ fi
 
 
 MAPFILE_LOADER_CMD=$THIS_DIR/map-file-bulk-loader.sh
-PIDS=`$MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader"`
+PIDS=$($MAPFILE_LOADER_COMMAND_PREFIX pgrep -f "\-Dapp=bulkIngestMapFileLoader")
 COUNT=0
 IFS=';' read -a values <<<$MAP_LOADER_HDFS_NAME_NODES_CONFIG
 warehouse_values=()
@@ -51,7 +51,6 @@ done
 for PID in $PIDS; do
   COUNT=$((COUNT + 1))
   warehouse_current=$(ps aux | grep " $PID " | awk -F "-srcHdfs '{print $3}' | cut -d ' ' -f2")
-  warehouse_current="${warehouse_current//[[:space:]]/}"
   if [[ "$EXTRA_MAP_LOADER" == "${warehouse_current}" && EXTRA_MAP != 0 ]]; then
     EXTRA_MAP=0
   fi
