@@ -1,15 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import static org.apache.commons.jexl2.parser.JexlNodes.children;
+import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -21,15 +21,17 @@ import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
 
-import static org.apache.commons.jexl2.parser.JexlNodes.children;
-import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
+import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.common.logging.ThreadConfigurableLogger;
 
 /**
  * Visits an JexlNode tree, pushing functions into exceeded value ranges. This is to enable use of the filtering ivarator instead of simply the range ivarator.
@@ -39,38 +41,45 @@ import static org.apache.commons.jexl2.parser.JexlNodes.newInstanceOfType;
  */
 public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
     private static final Logger log = ThreadConfigurableLogger.getLogger(PushFunctionsIntoExceededValueRanges.class);
-    
+
     private MetadataHelper helper;
     private Set<String> datatypeFilter;
-    
+
     public PushFunctionsIntoExceededValueRanges(MetadataHelper helper, Set<String> datatypeFilter) {
         this.helper = helper;
         this.datatypeFilter = datatypeFilter;
     }
-    
+
     /**
      * push functions into exceeded value threshold ranges.
      *
      * @param script
+     *            a script
+     * @param helper
+     *            the metadata helper
+     * @param datatypeFilter
+     *            the datatype filter
+     * @param <T>
+     *            type of the script
      * @return the modified node tree
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T pushFunctions(T script, MetadataHelper helper, Set<String> datatypeFilter) {
         PushFunctionsIntoExceededValueRanges visitor = new PushFunctionsIntoExceededValueRanges(helper, datatypeFilter);
-        
+
         return (T) (script.jjtAccept(visitor, null));
     }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
         // first recurse and create the copy
         node = (ASTAndNode) (super.visit(node, data));
-        
+
         // if this and node itself is the exceeded value threshold, then abort
         if (QueryPropertyMarker.findInstance(node).isType(ExceededValueThresholdMarkerJexlNode.class)) {
             return node;
         }
-        
+
         // find all of the single field function nodes, and all of the exceeded value threshold range nodes and map by field name
         // place all other nodes into the children list
         Set<JexlNode> functionNodes = new HashSet<>();
@@ -90,7 +99,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
                 children.add(child);
             }
         }
-        
+
         // determine if we have any functions that can be combined with the execeeded value threshold ranges
         Set<String> fields = Sets.intersection(functionNodesByField.keySet(), exceededValueRangeNodes.keySet());
         if (fields.isEmpty()) {
@@ -102,17 +111,14 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
             for (String field : fields) {
                 boolean copyFunction = exceededValueRangeNodes.get(field).size() > 1;
                 for (JexlNode range : exceededValueRangeNodes.removeAll(field)) {
-                    
+
                     // filter out functions which disallow ivarator filtering
-                    Collection<JexlNode> filterableFunctions = functionNodesByField
-                                    .get(field)
-                                    .stream()
-                                    .filter(functionNode -> {
-                                        JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
-                                                        .getArgumentDescriptor((ASTFunctionNode) JexlASTHelper.dereference(functionNode));
-                                        return argDesc != null && argDesc.allowIvaratorFiltering();
-                                    }).collect(Collectors.toList());
-                    
+                    Collection<JexlNode> filterableFunctions = functionNodesByField.get(field).stream().filter(functionNode -> {
+                        JexlArgumentDescriptor argDesc = JexlFunctionArgumentDescriptorFactory.F
+                                        .getArgumentDescriptor((ASTFunctionNode) JexlASTHelper.dereference(functionNode));
+                        return argDesc != null && argDesc.allowIvaratorFiltering();
+                    }).collect(Collectors.toList());
+
                     functionNodes.removeAll(filterableFunctions);
                     if (copyFunction) {
                         filterableFunctions = new HashSet<>();
@@ -124,16 +130,16 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
                     functionNodes.removeAll(filterableFunctions);
                 }
             }
-            
+
             // now add in the children that remain
             children.addAll(functionNodes);
             children.addAll(exceededValueRangeNodes.values());
-            
+
             // and return the new and node with the new children
             return children(newNode, children.toArray(new JexlNode[children.size()]));
         }
     }
-    
+
     private boolean isSingleFieldFunctionNode(JexlNode child) {
         child = JexlASTHelper.dereference(child);
         if (child instanceof ASTFunctionNode) {
@@ -150,7 +156,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         }
         return false;
     }
-    
+
     private Set<String> getFunctionFields(JexlNode child) {
         child = JexlASTHelper.dereference(child);
         if (child instanceof ASTFunctionNode) {
@@ -158,7 +164,7 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         }
         return null;
     }
-    
+
     private boolean isExceededValueRangeNode(JexlNode child) {
         QueryPropertyMarker.Instance instance = QueryPropertyMarker.findInstance(child);
         if (instance.isType(ExceededValueThresholdMarkerJexlNode.class)) {
@@ -178,14 +184,14 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         }
         return false;
     }
-    
+
     private String getRangeField(JexlNode child) {
         JexlNode source = QueryPropertyMarker.findInstance(child).getSource();
         source = JexlASTHelper.dereference(source);
         List<ASTIdentifier> fields = JexlASTHelper.getIdentifiers(source);
         return fields.get(0).image;
     }
-    
+
     private JexlNode pushFunctionIntoExceededValueRange(Collection<JexlNode> functions, JexlNode range) {
         JexlNode source = QueryPropertyMarker.findInstance(range).getSource();
         source = JexlASTHelper.dereference(source);
@@ -201,5 +207,5 @@ public class PushFunctionsIntoExceededValueRanges extends RebuildingVisitor {
         children(parent, andNode);
         return range;
     }
-    
+
 }

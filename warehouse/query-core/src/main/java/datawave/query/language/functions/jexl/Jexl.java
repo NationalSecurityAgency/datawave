@@ -13,11 +13,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * the lucene parser.
  */
 public class Jexl extends JexlQueryFunction {
-    
+
     public Jexl() {
         super("jexl", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() != 1) {
@@ -25,7 +25,7 @@ public class Jexl extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -35,10 +35,10 @@ public class Jexl extends JexlQueryFunction {
         }
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new Jexl();
     }
-    
+
 }

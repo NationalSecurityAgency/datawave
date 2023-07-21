@@ -1,21 +1,22 @@
 package datawave.iterators;
 
-import datawave.data.MetadataCardinalityCounts;
+import java.util.Iterator;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Combiner;
 import org.apache.log4j.Logger;
 
-import java.util.Iterator;
+import datawave.data.MetadataCardinalityCounts;
 
 /**
  * Combines count metadata with different values.
  *
  */
 public class CountMetadataCombiner extends Combiner {
-    
+
     private static final Logger log = Logger.getLogger(CountMetadataCombiner.class);
-    
+
     /**
      * Reduces a list of Values into a single Value.
      *
@@ -29,10 +30,10 @@ public class CountMetadataCombiner extends Combiner {
      */
     @Override
     public Value reduce(Key key, Iterator<Value> iter) {
-        
+
         MetadataCardinalityCounts counts = null;
         Value singletonValue = null;
-        
+
         while (iter.hasNext()) {
             Value value = iter.next();
             try {
@@ -54,7 +55,7 @@ public class CountMetadataCombiner extends Combiner {
                 log.error("Unable to decode counts from " + key + " / " + value);
             }
         }
-        
+
         if (singletonValue != null) {
             return singletonValue;
         } else if (counts != null) {
@@ -63,5 +64,5 @@ public class CountMetadataCombiner extends Combiner {
             return new Value();
         }
     }
-    
+
 }

@@ -15,10 +15,10 @@ import datawave.util.flag.config.FlagDataTypeConfig;
  *
  */
 public class DateFlagDistributor extends AbstractSliceDistributor<Long> {
-    
+
     private String grouping;
     private DateUtils util = new DateUtils();
-    
+
     @Override
     public void setup(FlagDataTypeConfig fmc) {
         super.setup(fmc);
@@ -30,7 +30,7 @@ public class DateFlagDistributor extends AbstractSliceDistributor<Long> {
             throw new IllegalArgumentException("Invalid number of flags for this datatype provided (" + fc.getMaxFlags() + ")");
         buckets.clear();
     }
-    
+
     @Override
     public boolean addInputFile(InputFile inputFile) throws UnusableFileException {
         long bucket = util.getBucket(grouping, inputFile.getDirectory());
@@ -41,5 +41,5 @@ public class DateFlagDistributor extends AbstractSliceDistributor<Long> {
         }
         return bucketList.add(inputFile);
     }
-    
+
 }

@@ -1,20 +1,17 @@
 package datawave.webservice.query.logic.composite;
 
-import datawave.webservice.query.logic.QueryLogic;
-
-import java.util.List;
 import java.util.Map;
 
 public class CompositeLogicException extends RuntimeException {
-    public CompositeLogicException(String message, List<Map.Entry<QueryLogic<?>,Exception>> exceptions) {
+    public CompositeLogicException(String message, Map<String,Exception> exceptions) {
         super(getMessage(message, exceptions));
-        exceptions.stream().forEach(e -> addSuppressed(e.getValue()));
+        exceptions.values().stream().forEach(e -> addSuppressed(e));
     }
-    
-    private static String getMessage(String message, List<Map.Entry<QueryLogic<?>,Exception>> exceptions) {
+
+    private static String getMessage(String message, Map<String,Exception> exceptions) {
         StringBuilder builder = new StringBuilder();
         builder.append(message).append(":");
-        exceptions.stream().forEach(e -> builder.append('\n').append(e.getKey().getLogicName()).append(": ").append(e.getValue().getMessage()));
+        exceptions.entrySet().stream().forEach(e -> builder.append('\n').append(e.getKey()).append(": ").append(e.getValue().getMessage()));
         return builder.toString();
     }
 }

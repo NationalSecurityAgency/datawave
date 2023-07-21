@@ -2,9 +2,9 @@ package datawave.query.index.lookup;
 
 import org.apache.commons.jexl2.parser.JexlNode;
 
-import datawave.query.util.Tuple2;
-
 import com.google.common.collect.PeekingIterator;
+
+import datawave.query.util.Tuple2;
 
 /**
  * IndexStreams must support the PeekingIterator interface.
@@ -60,16 +60,18 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
          */
         IGNORED
     }
-    
+
     StreamContext context();
-    
+
     /**
      * This method is used to get an explanation of how we arrived at the provided context().
+     *
+     * @return the context string
      */
     String getContextDebug();
-    
+
     JexlNode currentNode();
-    
+
     /**
      * Advance the underlying iterator to the first element that is greater than or equal to the <code>seekShard</code>.
      *
@@ -80,7 +82,7 @@ public interface IndexStream extends PeekingIterator<Tuple2<String,IndexInfo>> {
      * @return the top shard after seeking, or null if no more values exist
      */
     String seek(String seekShard);
-    
+
     /**
      * Additional context is required for nested unions that have a VARIABLE stream context.
      * <p>

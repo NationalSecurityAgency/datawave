@@ -1,20 +1,5 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.base.Joiner;
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.ingest.protobuf.TermWeight;
-import datawave.query.Constants;
-import org.apache.accumulo.core.data.ArrayByteSequence;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.OptionDescriber;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
@@ -27,6 +12,23 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import org.apache.accumulo.core.data.ArrayByteSequence;
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.OptionDescriber;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Joiner;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.TermWeight;
+import datawave.query.Constants;
+
 /**
  * This iterator is intended to scan the term frequencies for a specified document, field, and offset range. The result will be excerpts for the field specified
  * for each document scanned.
@@ -34,37 +36,37 @@ import java.util.stream.Collectors;
 public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     private static final Logger log = Logger.getLogger(TermFrequencyExcerptIterator.class);
     private static final Joiner joiner = Joiner.on(" ").skipNulls();
-    
+
     // The field name option
     public static final String FIELD_NAME = "field.name";
     // The start offset option
     public static final String START_OFFSET = "start.offset";
     // The end offset option
     public static final String END_OFFSET = "end.offset";
-    
+
     // the underlying source
     protected SortedKeyValueIterator<Key,Value> source;
-    
+
     // the field name
     protected String fieldName;
     // the start offset (inclusive)
     protected int startOffset;
     // the end offset (exclusive)
     protected int endOffset;
-    
+
     // The specified dt/uid column families
     protected SortedSet<String> columnFamilies;
     // inclusive or exclusive dt/uid column families
     protected boolean inclusive;
-    
+
     // the underlying TF scan range
     protected Range scanRange;
-    
+
     // the top key
     protected Key tk;
     // the top value
     protected Value tv;
-    
+
     @Override
     public IteratorOptions describeOptions() {
         IteratorOptions options = new IteratorOptions(TermFrequencyExcerptIterator.class.getSimpleName(),
@@ -74,7 +76,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         options.addNamedOption(END_OFFSET, "The end offset for the excerpt (exclusive) (required)");
         return options;
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> map) {
         if (map.containsKey(FIELD_NAME)) {
@@ -84,7 +86,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         } else {
             throw new IllegalArgumentException("Missing field name property: " + FIELD_NAME);
         }
-        
+
         int startOffset;
         if (map.containsKey(START_OFFSET)) {
             try {
@@ -95,7 +97,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         } else {
             throw new IllegalArgumentException("Missing start offset property: " + START_OFFSET);
         }
-        
+
         int endOffset;
         if (map.containsKey(END_OFFSET)) {
             try {
@@ -109,15 +111,15 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         } else {
             throw new IllegalArgumentException("Missing end offset property: " + END_OFFSET);
         }
-        
+
         return true;
     }
-    
+
     @Override
     public boolean hasTop() {
         return tk != null;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         TermFrequencyExcerptIterator it = new TermFrequencyExcerptIterator();
@@ -127,7 +129,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         it.source = source.deepCopy(env);
         return it;
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         this.source = source;
@@ -135,23 +137,23 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         this.endOffset = Integer.parseInt(options.get(END_OFFSET));
         this.fieldName = options.get(FIELD_NAME);
     }
-    
+
     @Override
     public Key getTopKey() {
         return tk;
     }
-    
+
     @Override
     public Value getTopValue() {
         return tv;
     }
-    
+
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug(this + " seek'ing with requested range " + range);
         }
-        
+
         // capture the column families and the inclusiveness
         if (columnFamilies != null) {
             this.columnFamilies = getSortedCFs(columnFamilies);
@@ -159,7 +161,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             this.columnFamilies = Collections.emptySortedSet();
         }
         this.inclusive = inclusive;
-        
+
         // Determine the start key in the term frequencies
         Key startKey = null;
         if (range.getStartKey() != null) {
@@ -173,8 +175,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY);
                 } else {
                     // otherwise start at the first document specified
-                    startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(this.columnFamilies.first()
-                                    + Constants.NULL));
+                    startKey = new Key(range.getStartKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY,
+                                    new Text(this.columnFamilies.first() + Constants.NULL));
                 }
             } else {
                 // we had a start document specified in the start key, so start there
@@ -184,7 +186,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (log.isDebugEnabled()) {
             log.debug(this + " seek'ing to start key: " + startKey);
         }
-        
+
         // Determine the end key in the term frequencies
         Key endKey = null;
         if (range.getEndKey() != null) {
@@ -198,8 +200,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(Constants.MAX_UNICODE_STRING));
                 } else {
                     // othersize end at the last document specified
-                    endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(this.columnFamilies.last() + Constants.NULL
-                                    + Constants.MAX_UNICODE_STRING));
+                    endKey = new Key(range.getEndKey().getRow(), Constants.TERM_FREQUENCY_COLUMN_FAMILY,
+                                    new Text(this.columnFamilies.last() + Constants.NULL + Constants.MAX_UNICODE_STRING));
                 }
             } else {
                 // we had an end document specified in the end key, so end there
@@ -209,7 +211,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (log.isDebugEnabled()) {
             log.debug(this + " seek'ing to end key: " + endKey);
         }
-        
+
         // if we have actually exhausted our range, then return with no next key
         if (endKey != null && startKey != null && endKey.compareTo(startKey) <= 0) {
             this.scanRange = null;
@@ -217,30 +219,30 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             this.tv = null;
             return;
         }
-        
+
         // set our term frequency scan range
         this.scanRange = new Range(startKey, false, endKey, false);
-        
+
         if (log.isDebugEnabled()) {
             log.debug(this + " seek'ing to: " + this.scanRange + " from requested range " + range);
         }
-        
+
         // seek the underlying source
         source.seek(this.scanRange, Collections.singleton(new ArrayByteSequence(Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes())), true);
-        
+
         // get the next key
         next();
     }
-    
+
     @Override
     public void next() throws IOException {
         tk = null;
         tv = null;
-        
+
         if (log.isTraceEnabled()) {
             log.trace(source.hasTop() + " nexting on " + scanRange);
         }
-        
+
         // find a valid dt/uid (depends on initial column families set in seek call)
         String dtUid = null;
         while (source.hasTop() && dtUid == null) {
@@ -252,32 +254,32 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                 seekToNextUid(top.getRow(), thisDtUid);
             }
         }
-        
+
         // if no more term frequencies, then we are done.
         if (!source.hasTop()) {
             return;
         }
-        
+
         // get the pieces from the top key that will be returned
         Key top = source.getTopKey();
         Text cv = top.getColumnVisibility();
         long ts = top.getTimestamp();
         Text row = top.getRow();
         List<String>[] terms = new List[endOffset - startOffset];
-        
+
         // while we have term frequencies for the same document
         while (source.hasTop() && dtUid.equals(getDtUidFromTfKey(source.getTopKey()))) {
             top = source.getTopKey();
-            
+
             // get the field and value
             String[] fieldAndValue = getFieldAndValue(top);
-            
+
             // if this is for the field we are summarizing
             if (fieldName.equals(fieldAndValue[0])) {
                 try {
                     // parse the offsets from the value
                     TermWeight.Info info = TermWeight.Info.parseFrom(source.getTopValue().get());
-                    
+
                     // for each offset, gather all of the terms in our range
                     for (int i = 0; i < info.getTermOffsetCount(); i++) {
                         int offset = info.getTermOffset(i);
@@ -297,16 +299,16 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
                     log.error("Value found in tf column was not of type TermWeight.Info, skipping", e);
                 }
             }
-            
+
             // get the next term frequency
             source.next();
         }
-        
+
         // generate the return key and value
         tk = new Key(row, new Text(dtUid), new Text(fieldName + Constants.NULL + generatePhrase(terms)), cv, ts);
         tv = new Value();
     }
-    
+
     /**
      * Generate a phrase from the given list of terms
      *
@@ -321,11 +323,12 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         }
         return joiner.join(largestTerms);
     }
-    
+
     /**
      * Get the longest term from a list of terms;
-     * 
+     *
      * @param terms
+     *            the terms to create a phrase
      * @return the longest term (null if empty or null list)
      */
     protected String getLongestTerm(List<String> terms) {
@@ -340,23 +343,27 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             }).get();
         }
     }
-    
+
     /**
      * Determine if this dt and uid are in the accepted column families
      *
      * @param dtAndUid
+     *            the dt and uid string
      * @return true if we can use it, false if not
      */
     private boolean isUsableDocument(String dtAndUid) {
         return columnFamilies.contains(dtAndUid) == inclusive;
     }
-    
+
     /**
      * Seek to the dt/uid following the one passed in
      *
      * @param row
+     *            a row
      * @param dtAndUid
+     *            the dt and uid string
      * @throws IOException
+     *             for issues with read/write
      */
     private void seekToNextUid(Text row, String dtAndUid) throws IOException {
         Key startKey = new Key(row, Constants.TERM_FREQUENCY_COLUMN_FAMILY, new Text(dtAndUid + '.'));
@@ -364,14 +371,15 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (log.isDebugEnabled()) {
             log.debug(this + " seek'ing to next document: " + this.scanRange);
         }
-        
+
         source.seek(this.scanRange, Collections.singleton(new ArrayByteSequence(Constants.TERM_FREQUENCY_COLUMN_FAMILY.getBytes())), true);
     }
-    
+
     /**
      * Turn a set of column families into a sorted string set
      *
      * @param columnFamilies
+     *            the column families
      * @return a sorted set of column families as Strings
      */
     private SortedSet<String> getSortedCFs(Collection<ByteSequence> columnFamilies) {
@@ -383,11 +391,12 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             }
         }).collect(Collectors.toCollection(TreeSet::new));
     }
-    
+
     /**
      * Get the field and value from the end of the column qualifier of the tf key
      *
      * @param tfKey
+     *            the term freq key
      * @return the field name
      */
     private String[] getFieldAndValue(Key tfKey) {
@@ -398,23 +407,27 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         String fieldvalue = cq.substring(index2 + 1, index);
         return new String[] {fieldname, fieldvalue};
     }
-    
+
     /**
      * get the dt and uid from a tf key
      *
      * @param tfKey
+     *            the term freq key
      * @return the dt\x00uid
      */
     private String getDtUidFromTfKey(Key tfKey) {
         return getDtUid(tfKey.getColumnQualifier().toString());
     }
-    
+
     /**
      * Get the dt and uid start or end given an event key
      *
      * @param eventKey
+     *            an event key
      * @param startKey
+     *            a start key
      * @param inclusive
+     *            inclusive boolean flag
      * @return the start or end document (cq) for our tf scan range. Null if dt,uid does not exist in the event key
      */
     private String getDtUidFromEventKey(Key eventKey, boolean startKey, boolean inclusive) {
@@ -422,11 +435,11 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         if (eventKey == null || eventKey.getColumnFamily() == null || eventKey.getColumnFamily().getLength() == 0) {
             return null;
         }
-        
+
         // get the dt/uid from the cf
         String cf = eventKey.getColumnFamily().toString();
         String dtAndUid = getDtUid(cf);
-        
+
         // if calculating a start cq
         if (startKey) {
             // if the start dt/uid is inclusive and the cf is only the dt and uid, then include this document
@@ -451,7 +464,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             }
         }
     }
-    
+
     // get the dt/uid from the beginning of a given string
     private String getDtUid(String str) {
         int index = str.indexOf(Constants.NULL);
@@ -462,7 +475,7 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
             return str.substring(0, index);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -472,8 +485,8 @@ public class TermFrequencyExcerptIterator implements SortedKeyValueIterator<Key,
         sb.append(this.startOffset);
         sb.append(", ");
         sb.append(this.endOffset);
-        
+
         return sb.toString();
     }
-    
+
 }

@@ -122,6 +122,23 @@
 
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Event query" />
+        <property name="configuredProfiles" >
+            <map>
+                <entry key="copyFieldEventQuery" value-ref="CopyFieldEventQuery" />
+            </map>
+        </property>
+    </bean>
+
+    <bean id="CopyFieldEventQuery" scope="prototype"  class="datawave.query.config.LookupUUIDTune">
+        <property name="primaryToSecondaryFieldMap">
+            <map>
+                <entry key="MAGIC_COPY">
+                    <list>
+                        <value>MAGIC</value>
+                    </list>
+                </entry>
+            </map>
+        </property>
     </bean>
     
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
@@ -214,6 +231,18 @@
         <property name="rangeBufferTimeoutMillis" value="15000" />
         <property name="rangeBufferPollMillis" value="100" />
         <property name="evaluationOnlyFields" value="_ANYFIELD_" />
+        <!--   variables that control when a seek is issued     -->
+        <property name="fiFieldSeek" value="-1" />
+        <property name="fiNextSeek" value="-1" />
+        <property name="eventFieldSeek" value="-1" />
+        <property name="eventNextSeek" value="-1" />
+        <property name="tfFieldSeek" value="-1" />
+        <property name="tfNextSeek" value="-1" />
+        <!--    control when to log warnings for long aggregations    -->
+        <property name="docAggregationThresholdMs" value="-1" />
+        <property name="tfAggregationThresholdMs" value="-1" />
+        <!--   enable per-tablet pruning of certain query options     -->
+        <property name="pruneQueryOptions" value="false" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
@@ -307,4 +336,7 @@
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />
     
+    <util:list id="RemoteUserServices" value-type="datawave.security.authorization.UserOperations">
+   </util:list>
+
 </beans>

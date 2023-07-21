@@ -2,14 +2,14 @@ package datawave.ingest.data.tokenize;
 
 import java.io.Reader;
 
+import org.apache.lucene.analysis.CharArraySet;
+import org.apache.lucene.analysis.StopwordAnalyzerBase;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.core.LowerCaseFilter;
 import org.apache.lucene.analysis.core.StopAnalyzer;
 import org.apache.lucene.analysis.core.StopFilter;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.standard.ClassicFilter;
-import org.apache.lucene.analysis.CharArraySet;
-import org.apache.lucene.analysis.StopwordAnalyzerBase;
 
 /**
  * Filters {@link StandardTokenizer} with {@link LowerCaseFilter} {@link ClassicFilter} and {@link StopFilter}, using a list of English stop words (unless
@@ -18,19 +18,19 @@ import org.apache.lucene.analysis.StopwordAnalyzerBase;
  * This analyzer does NOT provide the ability to apply BASIS RLP processing
  */
 public class StandardAnalyzer extends StopwordAnalyzerBase {
-    
+
     /** Default maximum allowed token length */
     public static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
-    
+
     /** Default token truncation length */
     public static final int DEFAULT_TRUNCATE_TOKEN_LENGTH = 64;
-    
+
     private int maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
     private int tokenTruncateLength = DEFAULT_MAX_TOKEN_LENGTH;
-    
+
     protected boolean applyAccentFilter = false;
     protected TokenSearch searchUtil;
-    
+
     /**
      * Build an analyzer with the default stop words: ({@link EnglishAnalyzer#ENGLISH_STOP_WORDS_SET}).
      * <p>
@@ -40,25 +40,25 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     public StandardAnalyzer() {
         this(EnglishAnalyzer.ENGLISH_STOP_WORDS_SET);
     }
-    
+
     /**
      * Build an analyzer with the given specified words.
      * <p>
      * This hides the matchVersion parameter we don't always want consumers to have to be concerned with it. Generally matchVersion will be set to the current
      * Lucene version.
-     * 
+     *
      * @param stopWords
      *            words to create analyzer with
      */
     public StandardAnalyzer(CharArraySet stopWords) {
         super(stopWords);
     }
-    
+
     public StandardAnalyzer(TokenSearch searchUtil) {
         super(searchUtil.getInstanceStopwords());
         this.searchUtil = searchUtil;
     }
-    
+
     /**
      * @see #setMaxTokenLength
      * @return max token length
@@ -66,18 +66,18 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     public int getMaxTokenLength() {
         return maxTokenLength;
     }
-    
+
     /**
      * Set maximum allowed token length. If a token is seen that exceeds this length then it is discarded. This setting only takes effect the next time
      * tokenStream or tokenStream is called.
-     * 
+     *
      * @param length
      *            length of the token
      */
     public void setMaxTokenLength(int length) {
         maxTokenLength = length;
     }
-    
+
     /**
      * Set the length beyond which tokens will be truncated. Tokens longer than this length will be truncated to this length.
      *
@@ -87,7 +87,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
     public void setTokenTruncateLength(int length) {
         tokenTruncateLength = length;
     }
-    
+
     @Override
     protected TokenStreamComponents createComponents(final String fieldName) {
         final StandardTokenizer src = new StandardTokenizer();
@@ -97,7 +97,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
         if (tokenTruncateLength > 0) {
             src.setTokenTruncateLength(tokenTruncateLength);
         }
-        
+
         TokenStream tok = new ClassicFilter(src);
         if (stopwords != null) {
             // stopwords are not case-sensitive, so we need to lower case tokens
@@ -116,7 +116,7 @@ public class StandardAnalyzer extends StopwordAnalyzerBase {
         }
         return new TokenStreamComponents(src, tok);
     }
-    
+
     @Override
     protected TokenStream normalize(String fieldName, TokenStream in) {
         /*

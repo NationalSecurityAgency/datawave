@@ -1,7 +1,19 @@
 package datawave.ingest.mapreduce.handler.edge;
 
+import java.text.ParseException;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import org.apache.hadoop.conf.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.data.normalizer.DateNormalizer;
 import datawave.edge.util.EdgeKey;
 import datawave.ingest.data.RawRecordContainer;
@@ -14,35 +26,25 @@ import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
 import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
 import datawave.ingest.time.Now;
 import datawave.util.time.DateHelper;
-import org.apache.hadoop.conf.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.text.ParseException;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 public class EdgeEventFieldUtil {
-    
+
     private static final Now now = Now.getInstance();
-    
+
     private static final Logger log = LoggerFactory.getLogger(EdgeEventFieldUtil.class);
-    
+
     protected Multimap<String,NormalizedContentInterface> normalizedFields;
     protected Map<String,Multimap<String,NormalizedContentInterface>> depthFirstList;
-    
+
     SimpleGroupFieldNameParser fieldParser = new SimpleGroupFieldNameParser();
-    public static final String TRIM_FIELD_GROUP = ".trim.field.group";
     protected boolean trimFieldGroup = false;
-    
-    public EdgeEventFieldUtil() {
+
+    public EdgeEventFieldUtil(boolean trimFieldGroup) {
+        this.trimFieldGroup = trimFieldGroup;
         normalizedFields = HashMultimap.create();
         depthFirstList = new HashMap<>();
     }
-    
+
     public void normalizeAndGroupFields(Multimap<String,NormalizedContentInterface> fields) {
         Multimap<String,NormalizedContentInterface> tmp = null;
         for (Map.Entry<String,NormalizedContentInterface> e : fields.entries()) {
@@ -58,19 +60,19 @@ public class EdgeEventFieldUtil {
             }
             tmp.put(subGroup, value);
             depthFirstList.put(fieldName, tmp);
-            
+
             normalizedFields.put(fieldName, value);
         }
     }
-    
+
     public Multimap<String,NormalizedContentInterface> getNormalizedFields() {
         return this.normalizedFields;
     }
-    
+
     public Map<String,Multimap<String,NormalizedContentInterface>> getDepthFirstList() {
         return this.depthFirstList;
     }
-    
+
     protected String getGroupedFieldName(NormalizedContentInterface value) {
         String fieldName = value.getIndexedFieldName();
         if (value instanceof GroupedNormalizedContentInterface) {
@@ -84,13 +86,13 @@ public class EdgeEventFieldUtil {
                         group = grouped.getGroup();
                     }
                     fieldName = fieldName + '.' + group;
-                    
+
                 }
             }
         }
         return fieldName;
     }
-    
+
     private long getActivityDate(Multimap<String,NormalizedContentInterface> normalizedFields, EdgeDefinitionConfigurationHelper edgeDefConfigs) {
         if (normalizedFields.containsKey(edgeDefConfigs.getActivityDateField())) {
             String actDate = normalizedFields.get(edgeDefConfigs.getActivityDateField()).iterator().next().getEventFieldValue();
@@ -102,13 +104,13 @@ public class EdgeEventFieldUtil {
         }
         return -1L;
     }
-    
+
     /*
      * validates the activity date using the past and future delta configured variables both past and future deltas are expected to be positive numbers (in
      * milliseconds)
      */
     protected boolean validateActivityDate(long activityTime, long eventTime, long pastDelta, long futureDelta) {
-        
+
         if (eventTime - activityTime > pastDelta) {
             // if activity > event then number is negative and will be checked in the next else if statement
             return false;
@@ -119,7 +121,7 @@ public class EdgeEventFieldUtil {
             return true;
         }
     }
-    
+
     /*
      * Compares activity and event time. Returns true if they are both on the same day. Eg. both result in the same yyyyMMdd string
      */
@@ -131,7 +133,7 @@ public class EdgeEventFieldUtil {
             return false;
         }
     }
-    
+
     private String getLoadDateString(Multimap<String,NormalizedContentInterface> fields) {
         String loadDateStr;
         Collection<NormalizedContentInterface> loadDates = fields.get(EventMapper.LOAD_DATE_FIELDNAME);
@@ -145,7 +147,7 @@ public class EdgeEventFieldUtil {
         }
         return loadDateStr;
     }
-    
+
     private String getEdgeAttr3(EdgeDefinitionConfigurationHelper edgeDefConfigs) {
         // get the edgeAttribute3 from the event fields map
         if (normalizedFields.containsKey(edgeDefConfigs.getEdgeAttribute3())) {
@@ -153,7 +155,7 @@ public class EdgeEventFieldUtil {
         }
         return null;
     }
-    
+
     private String getEdgeAttr2(EdgeDefinitionConfigurationHelper edgeDefConfigs) {
         // get the edgeAttribute2 from the event fields map
         if (normalizedFields.containsKey(edgeDefConfigs.getEdgeAttribute2())) {
@@ -161,7 +163,7 @@ public class EdgeEventFieldUtil {
         }
         return null;
     }
-    
+
     // this just avoids ugly copy pasta
     private NormalizedContentInterface getNullKeyedNCI(String fieldValue, Multimap<String,NormalizedContentInterface> fields) {
         Iterator<NormalizedContentInterface> nciIter = fields.get(fieldValue).iterator();
@@ -170,7 +172,7 @@ public class EdgeEventFieldUtil {
         }
         return null;
     }
-    
+
     public void setEdgeDuration(EdgeDefinition edgeDef, EdgeDataBundle edgeDataBundle) {
         if (edgeDef.getUDDuration()) {
             NormalizedContentInterface upnci = getNullKeyedNCI(edgeDef.getUpTime(), normalizedFields);
@@ -185,7 +187,7 @@ public class EdgeEventFieldUtil {
             }
         }
     }
-    
+
     protected void setEdgeKeyDateType(EdgeDataBundle bundle, boolean validActivtyDate, boolean sameActivityDate, long eventDate, long newFormatStartDate) {
         EdgeKey.DATE_TYPE dateType = null;
         if (eventDate < newFormatStartDate) {
@@ -202,31 +204,29 @@ public class EdgeEventFieldUtil {
         }
         bundle.setDateType(dateType);
     }
-    
+
     public EdgeDataBundle setEdgeInfoFromEventFields(EdgeDataBundle bundle, EdgeDefinitionConfigurationHelper edgeDefConfigs, RawRecordContainer event,
                     EdgeIngestConfiguration edgeConfig, long newFormatStartDate, Configuration conf, String typeName) {
-        
-        trimFieldGroup = conf.getBoolean(typeName + TRIM_FIELD_GROUP, false);
-        
+
         // Get the load date of the event from the fields map
         String loadDateStr = getLoadDateString(normalizedFields);
         long activityDate = getActivityDate(normalizedFields, edgeDefConfigs);
-        
+
         // get the activity date from the event fields map
         boolean validActivityDate = validateActivityDate(activityDate, event.getDate(), edgeConfig.getFutureDelta(), edgeConfig.getPastDelta());
         boolean activityEqualsEvent = false;
-        
+
         // If the activity date is valid check to see if it is on the same day as the event date
         if (validActivityDate) {
             activityEqualsEvent = compareActivityAndEvent(activityDate, event.getDate());
         }
-        
+
         if (event.getAltIds() != null && !event.getAltIds().isEmpty()) {
             bundle.setUUID(event.getAltIds().iterator().next());
         }
-        
+
         setEdgeKeyDateType(bundle, validActivityDate, activityEqualsEvent, event.getDate(), newFormatStartDate);
-        
+
         bundle.setLoadDate(loadDateStr);
         bundle.setActivityDate(activityDate);
         bundle.setValidActivityDate(validActivityDate);
@@ -234,7 +234,7 @@ public class EdgeEventFieldUtil {
         bundle.setEdgeAttribute3(getEdgeAttr3(edgeDefConfigs));
         bundle.setRequiresMasking(event.isRequiresMasking());
         bundle.setHelper(event.getDataType().getIngestHelper(conf));
-        
+
         return bundle;
     }
 }

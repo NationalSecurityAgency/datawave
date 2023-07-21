@@ -16,7 +16,6 @@ package datawave.query.language.parser.lucene;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -29,29 +28,29 @@ import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
 /**
  */
 public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
-    
+
     private static final char[] wildcardChars = {'*', '?'};
-    
+
     private static final String[] escapableTermExtraFirstChars = {"+", "-", "@"};
-    
+
     private static final String[] escapableTermChars = {"\"", "<", ">", "=", "!", "(", ")", "^", "[", "{", ":", "]", "}", "~", "/"};
-    
+
     // TODO: check what to do with these "*", "?", "\\"
     private static final String[] escapableQuotedChars = {"\""};
     private static final String[] escapableWhiteChars = {" ", "\t", "\n", "\r", "\f", "\b", "\u3000"};
     private static final String[] escapableWordTokens = {"AND", "OR", "NOT", "TO", "WITHIN", "SENTENCE", "PARAGRAPH", "INORDER"};
-    
+
     private static final CharSequence escapeChar(CharSequence str, Locale locale) {
         if (str == null || str.length() == 0)
             return str;
-        
+
         CharSequence buffer = str;
-        
+
         // regular escapable Char for terms
         for (int i = 0; i < escapableTermChars.length; i++) {
             buffer = replaceIgnoreCase(buffer, escapableTermChars[i].toLowerCase(locale), "\\", locale);
         }
-        
+
         // First Character of a term as more escaping chars
         for (int i = 0; i < escapableTermExtraFirstChars.length; i++) {
             if (buffer.charAt(0) == escapableTermExtraFirstChars[i].charAt(0)) {
@@ -59,29 +58,29 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
                 break;
             }
         }
-        
+
         return buffer;
     }
-    
+
     private final CharSequence escapeQuoted(CharSequence str, Locale locale) {
         if (str == null || str.length() == 0)
             return str;
-        
+
         CharSequence buffer = str;
-        
+
         for (int i = 0; i < escapableQuotedChars.length; i++) {
             buffer = replaceIgnoreCase(buffer, escapableTermChars[i].toLowerCase(locale), "\\", locale);
         }
         return buffer;
     }
-    
+
     private static final CharSequence escapeTerm(CharSequence term, Locale locale) {
         if (term == null)
             return term;
-        
+
         // Escape single Chars
         term = escapeChar(term, locale);
-        
+
         // Escape Parser Words
         for (int i = 0; i < escapableWordTokens.length; i++) {
             if (escapableWordTokens[i].equalsIgnoreCase(term.toString()))
@@ -89,22 +88,24 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
         }
         return term;
     }
-    
+
     /**
      * replace with ignore case
-     * 
+     *
      * @param string
      *            string to get replaced
      * @param sequence1
      *            the old character sequence in lowercase
      * @param escapeChar
      *            the new character to prefix sequence1 in return string.
+     * @param locale
+     *            the locale
      * @return the new String
      */
     private static CharSequence replaceIgnoreCase(CharSequence string, CharSequence sequence1, CharSequence escapeChar, Locale locale) {
         if (escapeChar == null || sequence1 == null || string == null)
             throw new NullPointerException();
-        
+
         // empty string case
         int count = string.length();
         int sequence1Length = sequence1.length();
@@ -117,7 +118,7 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
             }
             return result.toString();
         }
-        
+
         // normal case
         StringBuilder result = new StringBuilder();
         char first = sequence1.charAt(0);
@@ -150,10 +151,10 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
         result.append(string.toString().substring(copyStart));
         return result.toString();
     }
-    
+
     /**
      * escape all tokens that are part of the parser syntax on a given string
-     * 
+     *
      * @param str
      *            string to get replaced
      * @param locale
@@ -163,19 +164,19 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
     private static final CharSequence escapeWhiteChar(CharSequence str, Locale locale) {
         if (str == null || str.length() == 0)
             return str;
-        
+
         CharSequence buffer = str;
-        
+
         for (int i = 0; i < escapableWhiteChars.length; i++) {
             buffer = replaceIgnoreCase(buffer, escapableWhiteChars[i].toLowerCase(locale), "\\", locale);
         }
         return buffer;
     }
-    
+
     public CharSequence escape(CharSequence text, Locale locale, Type type) {
         if (text == null || text.length() == 0)
             return text;
-        
+
         // escape wildcards and the escape char (this has to be perform before
         // anything else)
         // since we need to preserve the UnescapedCharSequence and escape the
@@ -185,47 +186,56 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
         } else {
             text = new UnescapedCharSequence(text).toStringEscaped(wildcardChars);
         }
-        
+
         if (type == Type.STRING) {
             return escapeQuoted(text, locale);
         } else {
             return escapeTerm(text, locale);
         }
     }
-    
+
     /**
      * Returns a String where the escape char has been removed, or kept only once if there was a double escape.
-     * 
+     *
      * Supports escaped unicode characters, e. g. translates <code>A</code> to <code>A</code>.
-     * 
+     *
+     * @param input
+     *            the input
+     * @param allowUnicodeEscape
+     *            flag for unicode escape
+     * @param escapedCharacters
+     *            escaped characters array
+     * @return the string with the escape character removed
+     * @throws ParseException
+     *             for issues with parsing
      */
     public static UnescapedCharSequence discardEscapeChar(CharSequence input, char[] escapedCharacters, boolean allowUnicodeEscape) throws ParseException {
         Set<Character> escapedCharSet = new HashSet<>();
         for (char c : escapedCharacters) {
             escapedCharSet.add(c);
         }
-        
+
         // Create char array to hold unescaped char sequence
         char[] output = new char[input.length()];
         boolean[] wasEscaped = new boolean[input.length()];
-        
+
         // The length of the output can be less than the input
         // due to discarded escape chars. This variable holds
         // the actual length of the output
         int length = 0;
-        
+
         // We remember whether the last processed character was
         // an escape character
         boolean lastCharWasEscapeChar = false;
-        
+
         // The multiplier the current unicode digit must be multiplied with.
         // E. g. the first digit must be multiplied with 16^3, the second with
         // 16^2...
         int codePointMultiplier = 0;
-        
+
         // Used to calculate the codepoint of the escaped unicode character
         int codePoint = 0;
-        
+
         for (int i = 0; i < input.length(); i++) {
             char curChar = input.charAt(i);
             if (codePointMultiplier > 0) {
@@ -265,46 +275,51 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
                 }
             }
         }
-        
+
         if (codePointMultiplier > 0) {
             throw new ParseException(new MessageImpl(QueryParserMessages.INVALID_SYNTAX_ESCAPE_UNICODE_TRUNCATION));
         }
-        
+
         if (lastCharWasEscapeChar) {
             throw new ParseException(new MessageImpl(QueryParserMessages.INVALID_SYNTAX_ESCAPE_CHARACTER));
         }
-        
+
         return new UnescapedCharSequence(output, wasEscaped, 0, length);
     }
-    
+
     /**
      * Returns a String where the escape char has been removed, or kept only once if there was a double escape.
-     * 
+     *
      * Supports escaped unicode characters, e. g. translates <code>A</code> to <code>A</code>.
-     * 
+     *
+     * @param input
+     *            the string input
+     * @return the string with the escape character removed
+     * @throws ParseException
+     *             for issues with parsing
      */
     public static UnescapedCharSequence discardEscapeChar(CharSequence input) throws ParseException {
         // Create char array to hold unescaped char sequence
         char[] output = new char[input.length()];
         boolean[] wasEscaped = new boolean[input.length()];
-        
+
         // The length of the output can be less than the input
         // due to discarded escape chars. This variable holds
         // the actual length of the output
         int length = 0;
-        
+
         // We remember whether the last processed character was
         // an escape character
         boolean lastCharWasEscapeChar = false;
-        
+
         // The multiplier the current unicode digit must be multiplied with.
         // E. g. the first digit must be multiplied with 16^3, the second with
         // 16^2...
         int codePointMultiplier = 0;
-        
+
         // Used to calculate the codepoint of the escaped unicode character
         int codePoint = 0;
-        
+
         for (int i = 0; i < input.length(); i++) {
             char curChar = input.charAt(i);
             if (codePointMultiplier > 0) {
@@ -334,19 +349,27 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
                 }
             }
         }
-        
+
         if (codePointMultiplier > 0) {
             throw new ParseException(new MessageImpl(QueryParserMessages.INVALID_SYNTAX_ESCAPE_UNICODE_TRUNCATION));
         }
-        
+
         if (lastCharWasEscapeChar) {
             throw new ParseException(new MessageImpl(QueryParserMessages.INVALID_SYNTAX_ESCAPE_CHARACTER));
         }
-        
+
         return new UnescapedCharSequence(output, wasEscaped, 0, length);
     }
-    
-    /** Returns the numeric value of the hexadecimal character */
+
+    /**
+     * Returns the numeric value of the hexadecimal character
+     *
+     * @param c
+     *            a char
+     * @throws ParseException
+     *             for issues parsing
+     * @return numeric value of the hexadecimal character
+     */
     private static final int hexToInt(char c) throws ParseException {
         if ('0' <= c && c <= '9') {
             return c - '0';
@@ -358,5 +381,5 @@ public class EscapeQuerySyntaxImpl implements EscapeQuerySyntax {
             throw new ParseException(new MessageImpl(QueryParserMessages.INVALID_SYNTAX_ESCAPE_NONE_HEX_UNICODE, c));
         }
     }
-    
+
 }

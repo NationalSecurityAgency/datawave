@@ -1,21 +1,22 @@
 package datawave.query.tld;
 
-import datawave.query.jexl.functions.TermFrequencyAggregator;
-import datawave.query.predicate.EventDataQueryFilter;
-import org.apache.accumulo.core.data.ByteSequence;
-
 import java.util.ArrayList;
 import java.util.Set;
+
+import org.apache.accumulo.core.data.ByteSequence;
+
+import datawave.query.jexl.functions.TermFrequencyAggregator;
+import datawave.query.predicate.EventDataQueryFilter;
 
 /**
  * TermFrequencyAggregator which will treat all TF uid's as the TLD uid for the purposes of aggregation
  */
 public class TLDTermFrequencyAggregator extends TermFrequencyAggregator {
-    
+
     public TLDTermFrequencyAggregator(Set<String> fieldsToKeep, EventDataQueryFilter attrFilter, int maxNextCount) {
         super(fieldsToKeep, attrFilter, maxNextCount);
     }
-    
+
     @Override
     protected ByteSequence parsePointer(ByteSequence qualifier) {
         ArrayList<Integer> deezNulls = TLD.instancesOf(0, qualifier, -1);

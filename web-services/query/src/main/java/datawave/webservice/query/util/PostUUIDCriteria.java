@@ -7,12 +7,12 @@ import javax.ws.rs.core.MultivaluedMap;
  */
 public class PostUUIDCriteria extends AbstractUUIDLookupCriteria {
     private final String uuidPairs;
-    
+
     public PostUUIDCriteria(final String uuidPairs, MultivaluedMap<String,String> queryParameters) {
         super(queryParameters);
         this.uuidPairs = uuidPairs;
     }
-    
+
     @Override
     public String getRawQueryString() {
         return this.uuidPairs;

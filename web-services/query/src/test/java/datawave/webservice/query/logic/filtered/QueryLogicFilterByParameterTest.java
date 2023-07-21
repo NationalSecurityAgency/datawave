@@ -1,10 +1,11 @@
 package datawave.webservice.query.logic.filtered;
 
-import datawave.webservice.query.QueryImpl;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+import datawave.webservice.query.QueryImpl;
 
 public class QueryLogicFilterByParameterTest {
     @Test
@@ -20,7 +21,7 @@ public class QueryLogicFilterByParameterTest {
         query.addParameter("foo", "true");
         assertTrue(filter.canRunQuery(query, null));
     }
-    
+
     @Test
     public void testValue() {
         QueryLogicFilterByParameter filter = new QueryLogicFilterByParameter();
@@ -37,7 +38,7 @@ public class QueryLogicFilterByParameterTest {
         query.addParameter("foo", "bar");
         assertTrue(filter.canRunQuery(query, null));
     }
-    
+
     @Test
     public void testNegates() {
         QueryLogicFilterByParameter filter = new QueryLogicFilterByParameter();
@@ -55,5 +56,5 @@ public class QueryLogicFilterByParameterTest {
         query.addParameter("foo", "bar");
         assertFalse(filter.canRunQuery(query, null));
     }
-    
+
 }
