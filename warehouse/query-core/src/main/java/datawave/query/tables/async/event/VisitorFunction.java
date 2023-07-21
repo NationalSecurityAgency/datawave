@@ -55,6 +55,7 @@ import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.Query;
@@ -306,6 +307,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
+                    if (config.getReduceTypeMetadataPerShard()) {
+                        reduceTypeMetadata(script, newIteratorSetting);
+                    }
+
                     if (config.getPruneQueryOptions()) {
                         pruneQueryOptions(script, newIteratorSetting);
                     }
@@ -427,6 +432,38 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         ReduceFields.reduceFieldsForOption(QueryOptions.TERM_FREQUENCY_FIELDS, queryFields, settings);
 
         // might also look at COMPOSITE_FIELDS, EXCERPT_FIELDS, and GROUP_FIELDS
+    }
+
+    /**
+     * Reduce the TypeMetadata object that is serialized
+     *
+     * @param script
+     *            the query
+     * @param newIteratorSetting
+     *            the iterator settings
+     */
+    private void reduceTypeMetadata(ASTJexlScript script, IteratorSetting newIteratorSetting) {
+
+        String serializedTypeMetadata = newIteratorSetting.removeOption(QueryOptions.TYPE_METADATA);
+        TypeMetadata typeMetadata = new TypeMetadata(serializedTypeMetadata);
+
+        Set<String> fieldsToRetain = ReduceFields.getQueryFields(script);
+        typeMetadata = typeMetadata.reduce(fieldsToRetain);
+
+        serializedTypeMetadata = typeMetadata.toString();
+
+        if (newIteratorSetting.getOptions().containsKey(QueryOptions.QUERY_MAPPING_COMPRESS)) {
+            boolean compress = Boolean.parseBoolean(newIteratorSetting.getOptions().get(QueryOptions.QUERY_MAPPING_COMPRESS));
+            if (compress) {
+                try {
+                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                } catch (IOException e) {
+                    throw new DatawaveFatalQueryException("Failed to compress type metadata in the VisitorFunction", e);
+                }
+            }
+        }
+
+        newIteratorSetting.addOption(QueryOptions.TYPE_METADATA, serializedTypeMetadata);
     }
 
     /**
