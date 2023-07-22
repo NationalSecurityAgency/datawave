@@ -630,23 +630,6 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
         }
     }
 
-    protected EdgeKey.DATE_TYPE getEdgeKeyDateType(boolean validActivtyDate, boolean sameActivityDate, long eventDate) {
-        EdgeKey.DATE_TYPE dateType = null;
-        if (eventDate < newFormatStartDate) {
-            dateType = EdgeKey.DATE_TYPE.OLD_EVENT;
-        } else if (validActivtyDate) {
-            if (sameActivityDate) {
-                dateType = EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT;
-            } else {
-                dateType = EdgeKey.DATE_TYPE.ACTIVITY_ONLY;
-                // also need to write EVENT_ONLY for some reason
-            }
-        } else {
-            dateType = EdgeKey.DATE_TYPE.EVENT_ONLY;
-        }
-        return dateType;
-    }
-
     /*
      * This part makes the determination as to what type of edge key to build
      */

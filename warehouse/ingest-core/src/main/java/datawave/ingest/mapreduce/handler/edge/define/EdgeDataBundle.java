@@ -102,6 +102,7 @@ public class EdgeDataBundle {
     public EdgeDataBundle(RawRecordContainer event) {
         this.mf = MarkingFunctions.Factory.createMarkingFunctions();
         this.event = event;
+
     }
 
     public void clearNonEventFields() {

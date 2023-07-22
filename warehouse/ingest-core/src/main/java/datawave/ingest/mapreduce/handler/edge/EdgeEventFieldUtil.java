@@ -229,6 +229,7 @@ public class EdgeEventFieldUtil {
 
         bundle.setLoadDate(loadDateStr);
         bundle.setActivityDate(activityDate);
+        bundle.setEventDate(event.getDate());
         bundle.setValidActivityDate(validActivityDate);
         bundle.setEdgeAttribute2(getEdgeAttr2(edgeDefConfigs));
         bundle.setEdgeAttribute3(getEdgeAttr3(edgeDefConfigs));
