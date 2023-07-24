@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.handler.edge;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -13,7 +14,9 @@ import org.apache.hadoop.mapreduce.TaskInputOutputContext;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
@@ -32,7 +35,7 @@ public class EdgeHandlerTestUtil {
     public static final Text edgeTableName = new Text(TableName.EDGE);
     public static final String NB = "\u0000";
 
-    public static Set<String> edgeKeyResults = new HashSet<>();
+    public static ListMultimap<String,String[]> edgeKeyResults = ArrayListMultimap.create();
 
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
 
@@ -84,7 +87,10 @@ public class EdgeHandlerTestUtil {
 
         // check edge keys
         for (Key k : edgeKeys) {
-            edgeKeyResults.add(k.getRow().toString().replaceAll(NB, "%00;"));
+            String[] tempArr = {k.getColumnFamily().toString().replaceAll(NB, "%00;"), k.getColumnQualifier().toString().replaceAll(NB, "%00;"),
+                    k.getColumnVisibility().toString(), String.valueOf(k.getTimestamp())};
+            edgeKeyResults.put(k.getRow().toString().replaceAll(NB, "%00;"), tempArr);
+
             keyPrint.add("edge key: " + k.getRow().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnFamily().toString().replaceAll(NB, "%00;") + " ::: "
                             + k.getColumnQualifier().toString().replaceAll(NB, "%00;") + " ::: " + k.getColumnVisibility() + " ::: " + k.getTimestamp()
                             + " ::: " + k.isDeleted() + "\n");

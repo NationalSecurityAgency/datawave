@@ -5,6 +5,7 @@ import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
@@ -70,6 +71,7 @@ public class ProtobufEdgePreconditionTest {
         myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
+        myEvent.setAltIds(Collections.singleton("UUID"));
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:31:53Z"));
@@ -105,9 +107,20 @@ public class ProtobufEdgePreconditionTest {
         expectedKeys.add("tabby%00;salmon");
 
         RawRecordContainer myEvent = getEvent(conf);
+        myEvent.setDate(1666737913000L);
 
-        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        // the count is doubled since activity < event date in this test. In this case, we add 2 edges each.
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 16, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+
+        // the dates
+        Assert.assertEquals("20221025/MY_CSV_DATA-MY_CSV_DATA///A", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+        Assert.assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///C", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(1)[1]);
+
+        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        Assert.assertEquals("1666737913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
 
     }
 
@@ -147,7 +160,12 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+        Assert.assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///B", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        Assert.assertEquals("1666747913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
 
     }
 
@@ -175,7 +193,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -206,7 +224,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 7, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -237,7 +255,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -260,7 +278,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 0, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -299,7 +317,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -334,7 +352,7 @@ public class ProtobufEdgePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 4, true, false);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 }

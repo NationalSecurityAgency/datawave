@@ -5,6 +5,7 @@ import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_
 
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -65,6 +66,8 @@ public class ProtobufEdgeDeletePreconditionTest {
         myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
+        myEvent.setAltIds(Collections.singleton("0016dd72-0000-827d-dd4d-001b2163ba09"));
+
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:31:53Z"));
@@ -102,7 +105,7 @@ public class ProtobufEdgeDeletePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, true);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -143,7 +146,7 @@ public class ProtobufEdgeDeletePreconditionTest {
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, true);
 
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -188,7 +191,7 @@ public class ProtobufEdgeDeletePreconditionTest {
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, true);
 
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 

@@ -638,7 +638,9 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
 
         long edgesCreated = 0;
         EdgeKey.DATE_TYPE dateType = value.getDateType();
+        // write edges for this specific date type
         edgesCreated += writeEdges(value, context, contextWriter, dateType);
+        // activity only also historically generated event only edges, so maintain that here
         if (dateType.equals(EdgeKey.DATE_TYPE.ACTIVITY_ONLY)) {
             edgesCreated += writeEdges(value, context, contextWriter, EdgeKey.DATE_TYPE.EVENT_ONLY);
         }
