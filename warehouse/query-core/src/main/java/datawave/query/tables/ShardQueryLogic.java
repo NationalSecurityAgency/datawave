@@ -2582,4 +2582,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
     }
+
+    public boolean getPruneQueryOptions() {
+        return getConfig().getPruneQueryOptions();
+    }
+
+    public void setPruneQueryOptions(boolean pruneQueryOptions) {
+        getConfig().setPruneQueryOptions(pruneQueryOptions);
+    }
 }

@@ -126,6 +126,16 @@ public class TLDIndexBuildingVisitor extends IteratorBuildingVisitor {
 
     @Override
     public Object visit(ASTEQNode node, Object data) {
+        /**
+         * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
+         */
+        if (isUnindexed(node)) {
+            if (isQueryFullySatisfied == true) {
+                log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
+            }
+            return null;
+        }
+
         TLDIndexIteratorBuilder builder = new TLDIndexIteratorBuilder();
         boolean isNegation = false;
         if (data instanceof AbstractIteratorBuilder) {
