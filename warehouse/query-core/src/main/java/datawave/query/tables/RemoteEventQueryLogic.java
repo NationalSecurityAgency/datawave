@@ -103,7 +103,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
     
     @Override
     public String getPlan(Connector connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
-        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), getCallerObject());
+        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap(), getCallerObject());
         return planResponse.getResult();
     }
     
