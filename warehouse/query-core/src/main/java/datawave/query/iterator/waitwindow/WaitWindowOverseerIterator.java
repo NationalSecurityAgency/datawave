@@ -15,6 +15,12 @@ import datawave.query.exceptions.WaitWindowOverrunException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableNestedIterator;
 
+/*
+ * The WaitWindowOverseerIterator is between the SerialIterator/PipelineIterator and the Ivarators, boolean, and other
+ * Datawave iterators that execute the query. It catches any WaitWindowOverrunExceptions during initialize, seek,
+ * hasNext, and next calls. When an exception is caught, a Map.Entry<Key, Document> is created that will be used for
+ * the subsequent next or document call.
+ */
 public class WaitWindowOverseerIterator extends SeekableNestedIterator<Key> {
 
     private Map.Entry<Key,Document> nextFromWaitWindowOverrunException = null;
@@ -48,8 +54,7 @@ public class WaitWindowOverseerIterator extends SeekableNestedIterator<Key> {
     public boolean hasNext() {
         if (this.nextFromWaitWindowOverrunException == null) {
             try {
-                boolean hasNext = super.hasNext();
-                return hasNext;
+                return super.hasNext();
             } catch (WaitWindowOverrunException e) {
                 this.nextFromWaitWindowOverrunException = new AbstractMap.SimpleEntry<>(e.getYieldKey(), WaitWindowObserver.getWaitWindowOverrunDocument());
                 return true;
@@ -61,17 +66,16 @@ public class WaitWindowOverseerIterator extends SeekableNestedIterator<Key> {
 
     @Override
     public Key next() {
-        Key next;
         if (this.nextFromWaitWindowOverrunException == null) {
             try {
-                next = super.next();
+                return super.next();
             } catch (WaitWindowOverrunException e) {
-                next = e.getYieldKey();
+                this.nextFromWaitWindowOverrunException = new AbstractMap.SimpleEntry<>(e.getYieldKey(), WaitWindowObserver.getWaitWindowOverrunDocument());
+                return this.nextFromWaitWindowOverrunException.getKey();
             }
         } else {
-            next = this.nextFromWaitWindowOverrunException.getKey();
+            return this.nextFromWaitWindowOverrunException.getKey();
         }
-        return next;
     }
 
     @Override
