@@ -1419,7 +1419,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // determine the list of indexed fields
         Set<String> indexedFields = this.getIndexedFields();
-        indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
+        Set<String> nonIndexedFields = this.getNonIndexedDataTypeMap().keySet();
+        indexedFields.removeAll(nonIndexedFields);
 
         // @formatter:off
         return c.newInstance()
@@ -1448,6 +1449,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
                 .setIncludes(indexedFields)
+                .setUnindexedFields(nonIndexedFields)
                 .setTermFrequencyFields(this.getTermFrequencyFields())
                 .setIsQueryFullySatisfied(isQueryFullySatisfied)
                 .setSortedUIDs(sortedUIDs)
