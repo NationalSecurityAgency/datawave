@@ -24,6 +24,8 @@ import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.HashMultimap;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
@@ -316,7 +318,7 @@ public class TermFrequencyIndexIteratorTest {
 
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), false);
 
-        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), typeMetadata, null, null, -1, -1, Collections.emptyMap(), null, fieldsToKeep);
+        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), typeMetadata, null, null, -1, -1, HashMultimap.create(), null, fieldsToKeep);
 
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);

@@ -13,6 +13,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import datawave.data.type.Type;
+import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
@@ -58,13 +59,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
     public static final String ORIGINAL_COUNT_SUFFIX = "_ORIGINAL_COUNT";
 
     // A map of fields and the number of values to limit the fields by
-    private final Map<String,Integer> limitFieldsMap;
+    private final Multimap<Integer,String> limitFieldsMap;
 
     // A collection of field sets where if the values match then those values
     // should not be dropped
     private final Set<Set<String>> matchingFieldSets;
 
-    public LimitFields(Map<String,Integer> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
+    public LimitFields(Multimap<Integer,String> limitFieldsMap, Set<Set<String>> matchingFieldSets) {
         this.limitFieldsMap = limitFieldsMap;
         this.matchingFieldSets = matchingFieldSets;
         if (log.isTraceEnabled())
@@ -91,12 +92,13 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
             // if there is an _ANYFIELD_ entry in the limitFieldsMap, then insert every key that is not yet in the map, using the
             // limit value for _ANYFIELD_
-            if (this.limitFieldsMap.containsKey("_ANYFIELD_") && this.limitFieldsMap.containsKey(keyNoGrouping) == false) {
-                this.limitFieldsMap.put(keyNoGrouping, this.limitFieldsMap.get("_ANYFIELD_"));
-                log.trace("added " + keyNoGrouping + " - " + this.limitFieldsMap.get(keyNoGrouping) + " to the limitFieldsMap because of the _ANYFIELD_ entry");
+            if (this.limitFieldsMap.containsValue(Constants.ANY_FIELD) && !this.limitFieldsMap.containsValue(keyNoGrouping)) {
+                Integer anyFieldKey = reverseGetFieldKey(limitFieldsMap, Constants.ANY_FIELD);
+                this.limitFieldsMap.put(anyFieldKey, keyNoGrouping);
+                log.trace("added " + keyNoGrouping + " - " + this.limitFieldsMap.get(anyFieldKey) + " to the limitFieldsMap because of the _ANYFIELD_ entry");
             }
 
-            if (this.limitFieldsMap.containsKey(keyNoGrouping)) { // look for the key without the grouping context
+            if (this.limitFieldsMap.containsValue(keyNoGrouping)) { // look for the key without the grouping context
                 if (log.isTraceEnabled())
                     log.trace("limitFieldsMap contains " + keyNoGrouping);
 
@@ -145,7 +147,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
                 String keyNoGrouping = removeGrouping(keyWithGrouping);
 
                 // if this was a limited field
-                if (this.limitFieldsMap.containsKey(keyNoGrouping)) {
+                if (this.limitFieldsMap.containsValue(keyNoGrouping)) {
 
                     int keepers = countKeepersForFieldMap.get(keyNoGrouping);
                     int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
@@ -194,8 +196,8 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
             String keyNoGrouping = removeGrouping(keyWithGrouping);
 
             // look for the key without the grouping context
-            if (this.limitFieldsMap.containsKey(keyNoGrouping)) {
-                int limit = this.limitFieldsMap.get(keyNoGrouping);
+            if (this.limitFieldsMap.containsValue(keyNoGrouping)) {
+                int limit = reverseGetFieldKey(limitFieldsMap, keyNoGrouping);
 
                 // short circuit if we are not actually limiting this field.
                 // this is keeping with the original logic where a negative limit means to keep only hits
@@ -262,7 +264,7 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
 
                     // some sanity checks
                     int missesRemaining = countMissesRemainingForFieldMap.get(keyNoGrouping);
-                    int limit = this.limitFieldsMap.get(keyNoGrouping);
+                    int limit = reverseGetFieldKey(limitFieldsMap, keyNoGrouping);
                     int missesToSet = Math.min(limit - keepers, missesRemaining);
                     if (missesToSet > 0) {
                         log.error("Failed to limit fields correctly, " + missesToSet + " attributes failed to be included");
@@ -274,6 +276,17 @@ public class LimitFields implements Function<Entry<Key,Document>,Entry<Key,Docum
         }
 
         return entry;
+    }
+
+    public static Integer reverseGetFieldKey(Multimap<Integer,String> limitFieldsMap, String field) {
+        Integer fieldKey = null;
+        for (Map.Entry<Integer,String> limitEntry : limitFieldsMap.entries()) {
+            if (limitEntry.getValue().equals(field)) {
+                fieldKey = limitEntry.getKey();
+            }
+        }
+
+        return fieldKey;
     }
 
     /**
