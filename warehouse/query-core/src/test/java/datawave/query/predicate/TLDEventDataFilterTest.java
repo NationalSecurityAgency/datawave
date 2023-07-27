@@ -11,9 +11,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.AbstractMap;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
@@ -25,6 +23,8 @@ import org.easymock.EasyMockSupport;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.data.type.LcNoDiacriticsType;
@@ -167,7 +167,7 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_emptyMapTest() {
-        Map<String,Integer> fieldLimits = Collections.emptyMap();
+        Multimap<Integer,String> fieldLimits = HashMultimap.create();
 
         expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
         expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
@@ -187,8 +187,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_anyFieldTest() throws ParseException {
-        Map<String,Integer> fieldLimits = new HashMap<>(1);
-        fieldLimits.put(Constants.ANY_FIELD, 1);
+        Multimap<Integer,String> fieldLimits = HashMultimap.create();
+        fieldLimits.put(1, Constants.ANY_FIELD);
 
         Set<String> blacklist = new HashSet<>();
         blacklist.add("FIELD3");
@@ -225,8 +225,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_limitFieldTest() {
-        Map<String,Integer> fieldLimits = new HashMap<>(1);
-        fieldLimits.put("FIELD1", 1);
+        Multimap<Integer,String> fieldLimits = HashMultimap.create();
+        fieldLimits.put(1, "FIELD1");
 
         expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
         expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
@@ -282,8 +282,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void getSeekRange_maxFieldSeekNotEqualToLimit() {
-        Map<String,Integer> fieldLimits = new HashMap<>(1);
-        fieldLimits.put("FIELD1", 1);
+        Multimap<Integer,String> fieldLimits = HashMultimap.create();
+        fieldLimits.put(1, "FIELD1");
 
         expect(mockScript.jjtGetNumChildren()).andReturn(0).anyTimes();
         expect(mockScript.jjtAccept(isA(EventDataQueryExpressionVisitor.class), eq(""))).andReturn(null);
@@ -542,8 +542,8 @@ public class TLDEventDataFilterTest extends EasyMockSupport {
 
     @Test
     public void keep_nonEventApplyBypass() throws ParseException {
-        Map<String,Integer> fieldLimits = new HashMap<>(1);
-        fieldLimits.put(Constants.ANY_FIELD, 1);
+        Multimap<Integer,String> fieldLimits = HashMultimap.create();
+        fieldLimits.put(1, Constants.ANY_FIELD);
 
         Set<String> blacklist = new HashSet<>();
         blacklist.add("FIELD3");

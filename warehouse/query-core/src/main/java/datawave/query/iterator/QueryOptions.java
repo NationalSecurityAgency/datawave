@@ -45,6 +45,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Splitter;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
@@ -283,7 +284,7 @@ public class QueryOptions implements OptionDescriber {
     protected Set<String> whiteListedFields = new HashSet<>();
     protected boolean useBlackListedFields = false;
     protected Set<String> blackListedFields = new HashSet<>();
-    protected Map<String,Integer> limitFieldsMap = new HashMap<>();
+    protected Multimap<Integer,String> limitFieldsMap = HashMultimap.create();
     protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
@@ -975,11 +976,11 @@ public class QueryOptions implements OptionDescriber {
         this.compressResults = compressResults;
     }
 
-    public Map<String,Integer> getLimitFieldsMap() {
+    public Multimap<Integer,String> getLimitFieldsMap() {
         return limitFieldsMap;
     }
 
-    public void setLimitFieldsMap(Map<String,Integer> limitFieldsMap) {
+    public void setLimitFieldsMap(Multimap<Integer,String> limitFieldsMap) {
         this.limitFieldsMap = limitFieldsMap;
     }
 
@@ -1455,7 +1456,7 @@ public class QueryOptions implements OptionDescriber {
             for (String paramGroup : Splitter.on(',').omitEmptyStrings().trimResults().split(limitFields)) {
                 String[] keyAndValue = Iterables.toArray(Splitter.on('=').omitEmptyStrings().trimResults().split(paramGroup), String.class);
                 if (keyAndValue != null && keyAndValue.length > 1) {
-                    this.getLimitFieldsMap().put(keyAndValue[0], Integer.parseInt(keyAndValue[1]));
+                    this.getLimitFieldsMap().put(Integer.parseInt(keyAndValue[1]), keyAndValue[0]);
                 }
             }
         }
