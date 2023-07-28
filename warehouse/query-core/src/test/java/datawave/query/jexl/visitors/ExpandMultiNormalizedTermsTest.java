@@ -594,7 +594,7 @@ public class ExpandMultiNormalizedTermsTest {
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "((" + LenientExpression.label() + " = true) && (FOO == 'ab32'))";
-        String expected = "((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'FOO == \\'ab32\\'')))";
+        String expected = "(_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'FOO == \\'ab32\\''))";
         expandTerms(original, expected);
     }
 
@@ -628,7 +628,7 @@ public class ExpandMultiNormalizedTermsTest {
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "((" + StrictExpression.label() + " = true) && (FOO == 'ab32'))";
-        String expected = "((_Eval_ = true) && (FOO == 'ab32'))";
+        String expected = "(_Eval_ = true) && (FOO == 'ab32')";
         expandTerms(original, expected);
     }
 
