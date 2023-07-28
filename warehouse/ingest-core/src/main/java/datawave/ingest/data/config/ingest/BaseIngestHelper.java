@@ -95,7 +95,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
 
     /**
      * Configuration parameter to specify whether to use type regex hierarchy. If true, this will use the datatype associated with the "most precise" regex. If
-     * false, all matching datatypes will be used.
+     * there are multiple matching regular expressions of the same precision, the last one read will be used. If false, all matching datatypes will be used.
      */
     public static final String USE_MOST_PRECISE_FIELD_TYPE_REGEX = "use.most.precise.field.type.regex";
 
@@ -626,8 +626,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                     if (useMostPreciseFieldTypeRegex) {
                         int patternLength = patternMatcher.pattern().toString().length();
                         if (patternLengths.contains(patternLength)) {
-                            log.error("Multiple regular expression patterns with the same length exist for matching field " + fieldName
-                                            + ". Please verify your configurations.");
+                            log.warn("Multiple regular expression patterns with the same length exist for matching field " + fieldName
+                                            + ". Only the last one read will be used. Please verify your configurations.");
                         }
                         patternLengths.add(patternLength);
 
