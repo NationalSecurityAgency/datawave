@@ -106,6 +106,13 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
      */
     public static final String DISCARD_INTERVAL = "event.discard.interval";
 
+    /**
+     * number which will be used to evaluate whether or not an Event should be processed. If the Event.getEventDate() is less than (now - futureInterval) then it
+     * will be processed.
+     */
+    public static final String DISCARD_FUTURE_INTERVAL = "event.discard.future.interval";
+
+
     public static final String CONTEXT_WRITER_CLASS = "ingest.event.mapper.context.writer.class";
     public static final String CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS = "ingest.event.mapper.context.writer.output.table.counters";
     public static final String FILE_NAME_COUNTERS = "ingest.event.mapper.file.name.counters";
@@ -137,9 +144,15 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
      */
     protected Map<String,Long> dataTypeDiscardIntervalCache = new HashMap<>();
 
+    /**
+     * might as well cache the discard future interval too
+     */
+    protected Map<String,Long> dataTypeDiscardFutureIntervalCache = new HashMap<>();
     private FileSplit split = null;
 
     private long interval = 0l;
+
+    private long futureInterval = 0l;
 
     private static Now now = Now.getInstance();
 
@@ -302,6 +315,8 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
             long myInterval = context.getConfiguration().getLong(typeStr + "." + DISCARD_INTERVAL, interval);
 
+            long myFutureInterval = context.getConfiguration().getLong(typeStr + "." + DISCARD_FUTURE_INTERVAL, futureInterval);
+
             dataTypeDiscardIntervalCache.put(typeStr, myInterval);
 
             log.info("Setting up type: " + typeStr + " with interval " + myInterval);
@@ -404,6 +419,9 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
 
         Long myInterval = dataTypeDiscardIntervalCache.get(value.getDataType().typeName());
 
+        Long myFutureInterval = dataTypeDiscardFutureIntervalCache.get(value.getDataType().typeName());
+
+
         // setup the configuration on the event
         // this is automatically done by the sequence reader....
         // value.setConf(context.getConfiguration());
@@ -463,11 +481,19 @@ public class EventMapper<K1,V1 extends RawRecordContainer,K2,V2> extends StatsDE
             value.setAuxProperty(ErrorDataTypeHandler.PROCESSED_COUNT, "1");
         }
 
-        // Determine whether the event date is greater than the interval. Excluding fatal error events.
+        // Determine whether the event date is earlier than the configured interval. Excluding fatal error events.
         if (!value.fatalError() && null != myInterval && 0L != myInterval && (value.getDate() < (now.get() - myInterval))) {
             if (log.isInfoEnabled())
                 log.info("Event with time " + value.getDate() + " older than specified interval of " + (now.get() - myInterval) + ", skipping...");
             getCounter(context, IngestInput.OLD_EVENT).increment(1);
+            return;
+        }
+
+        // Determine whether the event date is too far in the future compared to the configured interval. Excluding fatal error events.
+        if (!value.fatalError() && null != myFutureInterval && 0L != myFutureInterval && (value.getDate() < (now.get() - myFutureInterval))) {
+            if (log.isInfoEnabled())
+                log.info("Event with time " + value.getDate() + " newer than specified interval of " + (now.get() - myFutureInterval) + ", skipping...");
+            getCounter(context, IngestInput.FUTURE_EVENT).increment(1);
             return;
         }
 
