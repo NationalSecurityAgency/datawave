@@ -61,7 +61,7 @@ public class QueryStopwatch {
 
     /**
      * Creates a new stopwatch that will be printed at summarization iff nonSummarized is false
-     * @param header header header string to print during summarization
+     * @param header stopwatch header to print during summarization
      * @param nonSummarized boolean to determine if this stopwatch's time is tabulated during summarization
      * @return newly created instance
      */
