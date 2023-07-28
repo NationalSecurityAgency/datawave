@@ -449,7 +449,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setFieldsToAggregate(fieldsToAggregate);
             builder.setTimeFilter(timeFilter);
             builder.setAttrFilter(attrFilter);
-            builder.setDatatypeFilter(getDatatypeFilter());
             builder.setEnv(env);
             builder.setTermFrequencyAggregator(getTermFrequencyAggregator(identifier, sourceNode, attrFilter, tfNextSeek));
             builder.setNode(rootNode);
