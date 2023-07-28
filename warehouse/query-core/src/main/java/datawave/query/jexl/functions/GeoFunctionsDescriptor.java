@@ -1,14 +1,30 @@
 package datawave.query.jexl.functions;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
+import datawave.data.normalizer.GeoNormalizer;
+import datawave.data.normalizer.GeoNormalizer.GeoPoint;
+import datawave.data.normalizer.GeoNormalizer.OutOfRangeException;
+import datawave.data.normalizer.GeoNormalizer.ParseException;
+import datawave.data.normalizer.Normalizer;
+import datawave.data.type.AbstractGeometryType;
+import datawave.data.type.GeoType;
+import datawave.data.type.Type;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.exceptions.DatawaveFatalQueryException;
+import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.JexlNodeFactory;
+import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
+import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
+import datawave.query.jexl.nodes.BoundedRange;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
+import datawave.query.util.DateIndexHelper;
+import datawave.query.util.GeoUtils;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.commons.jexl2.parser.ASTFunctionNode;
 import org.apache.commons.jexl2.parser.ASTGENode;
@@ -25,33 +41,13 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Polygon;
 import org.locationtech.jts.util.GeometricShapeFactory;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
-
-import datawave.data.normalizer.GeoNormalizer;
-import datawave.data.normalizer.GeoNormalizer.GeoPoint;
-import datawave.data.normalizer.GeoNormalizer.OutOfRangeException;
-import datawave.data.normalizer.GeoNormalizer.ParseException;
-import datawave.data.normalizer.Normalizer;
-import datawave.data.type.AbstractGeometryType;
-import datawave.data.type.GeoType;
-import datawave.data.type.Type;
-import datawave.query.Constants;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.exceptions.DatawaveFatalQueryException;
-import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.JexlNodeFactory;
-import datawave.query.jexl.functions.arguments.JexlArgumentDescriptor;
-import datawave.query.jexl.functions.arguments.RebuildingJexlArgumentDescriptor;
-import datawave.query.jexl.nodes.BoundedRange;
-import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
-import datawave.query.util.DateIndexHelper;
-import datawave.query.util.GeoUtils;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This is the descriptor class for performing geo functions. It supports basic spatial relationships against points.
@@ -118,7 +114,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                         envs.add(geom.getEnvelopeInternal());
                     }
 
-                    returnNode = getIndexNode(geom, envs, getFieldNames(args.get(0), allFields), config.getGeoMaxExpansion());
+                    returnNode = getIndexNode(geom, envs, getFieldNames(args.get(0)), config.getGeoMaxExpansion());
                 } else {
 
                     double minLat, maxLat, minLon, maxLon;
@@ -202,12 +198,12 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 double lat = c.getLatitude();
                 double lon = c.getLongitude();
 
-                returnNode = getIndexNode(createCircle(lon, lat, radius), getFieldNames(args.get(0), allFields), config.getGeoMaxExpansion());
+                returnNode = getIndexNode(createCircle(lon, lat, radius), getFieldNames(args.get(0)), config.getGeoMaxExpansion());
             }
             return returnNode;
         }
 
-        public static List<String> getFieldNames(JexlNode node, Set<String> allFields) {
+        public static List<String> getFieldNames(JexlNode node) {
             List<String> fieldNames = new ArrayList<>();
             if (node.jjtGetNumChildren() > 1) {
                 for (int i = 0; i < node.jjtGetNumChildren(); i++) {
@@ -220,11 +216,7 @@ public class GeoFunctionsDescriptor implements JexlFunctionArgumentDescriptorFac
                 fieldNames.add(node.image);
             }
 
-            if (allFields == null || allFields.contains(Constants.ANY_FIELD)) {
-                return fieldNames;
-            } else {
-                return fieldNames.stream().distinct().filter(allFields::contains).collect(Collectors.toList());
-            }
+            return fieldNames;
         }
 
         public static JexlNode getIndexNode(Geometry geometry, List<String> fieldNames, int maxExpansion) {
