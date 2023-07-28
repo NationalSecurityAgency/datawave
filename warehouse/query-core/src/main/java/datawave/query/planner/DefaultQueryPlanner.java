@@ -909,7 +909,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
         
         if (!disableBoundedLookup) {
-            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)");
+            stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - Expand bounded query ranges (total)", true);
             
             // Expand any bounded ranges into a conjunction of discrete terms
             try {
