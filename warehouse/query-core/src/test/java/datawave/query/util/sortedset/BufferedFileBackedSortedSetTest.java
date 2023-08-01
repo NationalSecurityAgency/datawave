@@ -76,8 +76,9 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
             sortedOrder[i * 2] = sortedTemplate[i] + sortedTemplate.length;
             sortedOrder[i * 2 + 1] = sortedTemplate[i];
         }
-        set = new BufferedFileBackedSortedSet<>(getComparator(), getRewriteStrategy(), 5, 7, 2,
-                        Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
+        set = new BufferedFileBackedSortedSet.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy()).withBufferPersistThreshold(5)
+                        .withMaxOpenFiles(7).withNumRetries(2)
+                        .withHandlerFactories(Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
                             @Override
                             public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
                                 SortedSetTempFileHandler fileHandler = new SortedSetTempFileHandler();
@@ -89,7 +90,7 @@ public abstract class BufferedFileBackedSortedSetTest<E> {
                             public boolean isValid() {
                                 return true;
                             }
-                        }), getFactory());
+                        })).withSetFactory(getFactory()).build();
 
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...

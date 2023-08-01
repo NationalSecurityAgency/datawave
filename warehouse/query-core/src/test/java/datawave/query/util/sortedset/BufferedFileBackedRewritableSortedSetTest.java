@@ -28,7 +28,7 @@ public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends Buf
     public abstract void testFullEquality(Map.Entry<K,V> expected, Map.Entry<K,V> value);
 
     @Test
-    public void testRewrite() {
+    public void testRewrite() throws Exception {
         // create a new set of data, only half of which has greater Values
         Map.Entry<K,V>[] data2 = new Map.Entry[template.length * 2];
         for (int i = 0; i < template.length; i++) {
@@ -47,8 +47,9 @@ public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends Buf
             data2[i + template.length] = datum;
         }
 
-        set = new BufferedFileBackedSortedSet<>(getComparator(), getRewriteStrategy(), 5, 7, 2,
-                        Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
+        set = new BufferedFileBackedSortedSet.Builder().withComparator(getComparator()).withRewriteStrategy(getRewriteStrategy()).withBufferPersistThreshold(5)
+                        .withMaxOpenFiles(7).withNumRetries(2)
+                        .withHandlerFactories(Collections.singletonList(new BufferedFileBackedSortedSet.SortedSetFileHandlerFactory() {
                             @Override
                             public FileSortedSet.SortedSetFileHandler createHandler() throws IOException {
                                 SortedSetTempFileHandler fileHandler = new SortedSetTempFileHandler();
@@ -60,7 +61,7 @@ public abstract class BufferedFileBackedRewritableSortedSetTest<K,V> extends Buf
                             public boolean isValid() {
                                 return true;
                             }
-                        }), getFactory());
+                        })).withSetFactory(getFactory()).build();
 
         // adding in the data set multiple times to create underlying files with duplicate values making the
         // MergeSortIterator's job a little tougher...
