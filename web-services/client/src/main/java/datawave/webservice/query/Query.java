@@ -90,6 +90,10 @@ public abstract class Query implements Externalizable {
 
     public abstract void setEndDate(Date endDate);
 
+    public abstract String getSystemFrom();
+
+    public abstract void setSystemFrom(String systemFrom);
+
     public abstract Query duplicate(String newQueryName);
 
     public abstract Parameter findParameter(String parameter);

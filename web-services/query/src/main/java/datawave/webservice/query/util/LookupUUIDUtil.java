@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -63,11 +64,14 @@ public class LookupUUIDUtil {
     private static final String EVENT_TYPE_NAME = "event";
     private static final String FORWARD_SLASH = "/";
 
+    private static final String BANG = "!"; // you're dead!
+
     /**
      * Internally assigned parameter used to distinguish content lookup vs. regular query next(queryId) operations
      */
     public static final String PARAM_CONTENT_LOOKUP = "content.lookup";
 
+    public static final String PARAM_HIT_LIST = "hit.list";
     private static final String PARAM_LUCENE_QUERY_SYNTAX = ";query.syntax:LUCENE-UUID";
     protected static final String QUOTE = "\"";
     private static final String REGEX_GROUPING_CHARS = "[()]";
@@ -274,6 +278,16 @@ public class LookupUUIDUtil {
                 final String dataType = metadata.getDataType();
                 final String internalId = metadata.getInternalId();
 
+                String identifier = null;
+                List<FieldBase> fields = (List<FieldBase>) event.getFields();
+                if (fields != null) {
+                    for (FieldBase fb : fields) {
+                        if (fb.getName().equals("HIT_TERM")) {
+                            identifier = fb.getValueString();
+                        }
+                    }
+                }
+
                 // Increment the counter
                 eventCounter++;
 
@@ -293,6 +307,10 @@ public class LookupUUIDUtil {
                 contentQuery.append(DOCUMENT_FIELD_NAME).append(row);
                 contentQuery.append(FORWARD_SLASH).append(dataType);
                 contentQuery.append(FORWARD_SLASH).append(internalId);
+                if (identifier != null) {
+                    contentQuery.append(BANG);
+                    contentQuery.append(identifier);
+                }
             }
         }
 
@@ -798,8 +816,15 @@ public class LookupUUIDUtil {
         if (null != events) {
             guttedEvents = events;
             for (final EventBase event : events) {
-                if (null != event) {
-                    event.setFields(EMPTY_FIELDS);
+                if (null != event && null != event.getFields()) {
+                    final Iterator<FieldBase> it = (Iterator<FieldBase>) event.getFields().iterator();
+                    while (it.hasNext()) {
+                        final FieldBase fb = it.next();
+                        // hit term is used for enriching the content with the identifier used to retrieve it.
+                        if (!fb.getName().equals("HIT_TERM")) {
+                            it.remove();
+                        }
+                    }
                 }
             }
         } else {
@@ -898,6 +923,12 @@ public class LookupUUIDUtil {
         if (criteria.isContentLookup() && !criteria.isAllEventLookup()) {
             params = params + ';' + PARAM_CONTENT_LOOKUP + ':' + true;
         }
+
+        // Required so that we can return identifiers alongside the content returned in the content lookup.
+        if (criteria.isContentLookup()) {
+            params = params + ';' + PARAM_HIT_LIST + ':' + true;
+        }
+
         criteria.getQueryParameters().set(QueryParameters.QUERY_PARAMS, params);
 
         // All is well, so return the validated criteria

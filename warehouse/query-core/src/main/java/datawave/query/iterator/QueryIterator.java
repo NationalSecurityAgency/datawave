@@ -60,6 +60,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
@@ -1058,8 +1059,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // update the jexl evaluation to gather phrase offsets if required for excerpts
-        if (getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+        ExcerptFields excerptFields = getExcerptFields();
+        if (excerptFields != null && !excerptFields.isEmpty()) {
             jexlEvaluationFunction.setGatherPhraseOffsets(true);
+            jexlEvaluationFunction.setPhraseOffsetFields(excerptFields.getFields());
         }
 
         return jexlEvaluationFunction;
@@ -1415,7 +1418,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // determine the list of indexed fields
         Set<String> indexedFields = this.getIndexedFields();
-        indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
+        Set<String> nonIndexedFields = this.getNonIndexedDataTypeMap().keySet();
+        indexedFields.removeAll(nonIndexedFields);
 
         // @formatter:off
         return c.newInstance()
@@ -1444,6 +1448,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
                 .setIncludes(indexedFields)
+                .setUnindexedFields(nonIndexedFields)
                 .setTermFrequencyFields(this.getTermFrequencyFields())
                 .setIsQueryFullySatisfied(isQueryFullySatisfied)
                 .setSortedUIDs(sortedUIDs)

@@ -1878,12 +1878,13 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
 
-        MultivaluedMap<String,String> p = MapUtils
-                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        MultivaluedMap<String,String> p = MapUtils.toMultivaluedMap(
+                        DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         // Run the test
         PowerMock.replayAll();
@@ -1921,12 +1922,13 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
 
-        MultivaluedMap<String,String> p = MapUtils
-                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        MultivaluedMap<String,String> p = MapUtils.toMultivaluedMap(
+                        DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         // Run the test
         PowerMock.replayAll();
@@ -1964,13 +1966,14 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
         // Set expectations
 
-        MultivaluedMap<String,String> queryParameters = MapUtils
-                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
+                        DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -2032,6 +2035,7 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
 
@@ -2052,7 +2056,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
                             DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
-                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
             subject.createQueryAndNext(queryLogicName, queryParameters);
 
@@ -2083,6 +2087,7 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
 
@@ -2095,7 +2100,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
                             DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
-                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
             subject.defineQuery(queryLogicName, queryParameters);
 
@@ -2125,6 +2130,7 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
 
         boolean trace = false;
@@ -2138,7 +2144,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
                             DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
-                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
             subject.defineQuery(queryLogicName, queryParameters);
         } catch (DatawaveWebApplicationException e) {
@@ -2176,8 +2182,9 @@ public class ExtendedQueryExecutorBeanTest {
         List<String> dnList = Collections.singletonList(userDN);
         UUID queryId = UUID.randomUUID();
 
-        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(DefaultQueryParameters.paramsToMap(null, query, queryName, queryVisibility,
-                        beginDate, endDate, queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, trace));
+        MultivaluedMap<String,String> queryParameters = MapUtils
+                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, null, trace));
         queryParameters.putSingle("valid", "param");
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
@@ -3745,7 +3752,7 @@ public class ExtendedQueryExecutorBeanTest {
         try {
             MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
                             DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
-                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+                                            expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
             result1 = subject.execute(queryLogicName, queryParameters, httpHeaders);
 
@@ -4384,13 +4391,14 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
         // Set expectations
 
-        MultivaluedMap<String,String> queryParameters = MapUtils
-                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
+                        DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -4453,13 +4461,14 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
         // Set expectations
 
-        MultivaluedMap<String,String> queryParameters = MapUtils
-                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
+                        DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);
@@ -4522,13 +4531,14 @@ public class ExtendedQueryExecutorBeanTest {
         int pageTimeout = -1;
         Long maxResultsOverride = null;
         QueryPersistence persistenceMode = QueryPersistence.PERSISTENT;
+        String systemFrom = null;
         String parameters = null;
         boolean trace = false;
         // Set expectations
 
-        MultivaluedMap<String,String> queryParameters = MapUtils
-                        .toMultivaluedMap(DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate,
-                                        queryAuthorizations, expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, parameters, trace));
+        MultivaluedMap<String,String> queryParameters = MapUtils.toMultivaluedMap(
+                        DefaultQueryParameters.paramsToMap(queryLogicName, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, systemFrom, parameters, trace));
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
         marking.validate(queryParameters);

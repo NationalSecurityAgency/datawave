@@ -2,7 +2,6 @@ package datawave.query.model.edge;
 
 import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import datawave.edge.model.DefaultEdgeModelFieldsFactory;
 import datawave.edge.model.EdgeModelFields;
@@ -44,7 +43,6 @@ public class EdgeQueryModel extends QueryModel {
     public EdgeQueryModel(QueryModel other, EdgeModelFields fields) throws InvalidModelException {
         super(other);
         this.fields = fields;
-        setLenientForwardMappings(null);
         validateModel(this);
     }
 

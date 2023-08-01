@@ -372,6 +372,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
+        visitorManager.setDebugEnabled(log.isDebugEnabled());
+
         if (!(genericConfig instanceof ShardQueryConfiguration)) {
             throw new ClassCastException("Config object must be an instance of ShardQueryConfiguration");
         }
@@ -516,13 +518,13 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         // fields
         setCommonIteratorOptions(config, cfg);
 
+        configureExcerpts(config, cfg);
+
         addOption(cfg, QueryOptions.LIMIT_FIELDS, config.getLimitFieldsAsString(), false);
         addOption(cfg, QueryOptions.MATCHING_FIELD_SETS, config.getMatchingFieldSetsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS, config.getGroupFieldsAsString(), false);
         addOption(cfg, QueryOptions.GROUP_FIELDS_BATCH_SIZE, config.getGroupFieldsBatchSizeAsString(), false);
         addOption(cfg, QueryOptions.UNIQUE_FIELDS, config.getUniqueFields().toString(), false);
-        addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), false);
-        addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
         addOption(cfg, QueryOptions.HIT_LIST, Boolean.toString(config.isHitList()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCY_FIELDS, Joiner.on(',').join(config.getQueryTermFrequencyFields()), false);
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
@@ -533,6 +535,21 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, compressMappings);
+    }
+
+    /**
+     * Configure excerpt fields and iterator class, provided that term frequencies are required for the query
+     *
+     * @param config
+     *            the ShardQueryConfiguration
+     * @param cfg
+     *            the IteratorSetting
+     */
+    private void configureExcerpts(ShardQueryConfiguration config, IteratorSetting cfg) {
+        if (config.isTermFrequenciesRequired()) {
+            addOption(cfg, QueryOptions.EXCERPT_FIELDS, config.getExcerptFields().toString(), false);
+            addOption(cfg, QueryOptions.EXCERPT_ITERATOR, config.getExcerptIterator().getName(), false);
+        }
     }
 
     /*

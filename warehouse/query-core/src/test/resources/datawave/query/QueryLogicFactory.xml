@@ -247,6 +247,8 @@
         <!--    control when to log warnings for long aggregations    -->
         <property name="docAggregationThresholdMs" value="-1" />
         <property name="tfAggregationThresholdMs" value="-1" />
+        <!--   enable per-tablet pruning of certain query options     -->
+        <property name="pruneQueryOptions" value="false" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
