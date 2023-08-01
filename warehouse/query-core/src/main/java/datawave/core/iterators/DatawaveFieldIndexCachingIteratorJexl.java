@@ -815,7 +815,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
                 // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
                 // Note that we will not persist the data if we are not over the scan threshold and the data fits into
-                // one buffer (no persisted data).  That means that if we need to rebuild the sorted set that we can do
+                // one buffer (no persisted data). That means that if we need to rebuild the sorted set that we can do
                 // it relatively quickly so no need for a persisted set with a complete marker.
                 if (this.set != null && (this.set.hasPersistedData() || (scanThreshold <= scannedKeys.get()))) {
                     forcePersistence();
