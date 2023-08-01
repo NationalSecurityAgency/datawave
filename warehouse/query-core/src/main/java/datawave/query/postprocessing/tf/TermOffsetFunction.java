@@ -45,7 +45,7 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
 
         logStart();
         Map<String,Object> map = new HashMap<>(tfPopulator.getContextMap(from.first(), docKeys, fields));
-        logStop(docKeys.iterator().next());
+        logStop(docKeys);
 
         Document merged = from.second();
         merged.putAll(tfPopulator.document(), false);
@@ -96,14 +96,19 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         aggregationStart = System.currentTimeMillis();
     }
 
-    private void logStop(Key k) {
+    private void logStop(Set<Key> keys) {
         if (aggregationThreshold == -1) {
             return;
         }
 
         long elapsed = System.currentTimeMillis() - aggregationStart;
         if (elapsed > aggregationThreshold) {
-            log.warn("time to aggregate offsets " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + elapsed);
+            if (keys == null || keys.isEmpty()) {
+                log.warn("time to aggregate offsets was " + elapsed);
+            } else {
+                Key k = keys.iterator().next();
+                log.warn("time to aggregate offsets " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + elapsed);
+            }
         }
     }
 
