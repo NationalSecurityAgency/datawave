@@ -52,6 +52,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     protected Future<Boolean> timedScanFuture;
     protected long lookupStartTimeMillis = Long.MAX_VALUE;
     protected CountDownLatch lookupStartedLatch;
+    protected CountDownLatch lookupStoppedLatch;
 
     protected BatchScanner bs;
 
@@ -190,7 +191,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
     public synchronized IndexLookupMap lookup() {
         if (bs != null) {
             try {
-                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStartTimeMillis, config.getMaxIndexScanTimeMillis());
+                timedScanWait(timedScanFuture, lookupStartedLatch, lookupStoppedLatch, lookupStartTimeMillis, config.getMaxIndexScanTimeMillis());
             } finally {
                 scannerFactory.close(bs);
                 bs = null;
@@ -206,111 +207,116 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
 
     protected Callable<Boolean> createTimedCallable(final Iterator<Entry<Key,Value>> iter) {
         lookupStartedLatch = new CountDownLatch(1);
+        lookupStoppedLatch = new CountDownLatch(1);
 
         return () -> {
-            lookupStartTimeMillis = System.currentTimeMillis();
-            lookupStartedLatch.countDown();
-
-            Text holder = new Text();
             try {
-                if (log.isTraceEnabled()) {
-                    log.trace("Do we have next? " + iter.hasNext());
-                }
+                lookupStartTimeMillis = System.currentTimeMillis();
+                lookupStartedLatch.countDown();
 
-                while (iter.hasNext()) {
-
-                    Entry<Key,Value> entry = iter.next();
-                    if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
-                        throw new Exception("Timeout exceeded for bounded range lookup");
-                    }
-
-                    Key k = entry.getKey();
-
+                Text holder = new Text();
+                try {
                     if (log.isTraceEnabled()) {
-                        log.trace("Foward Index entry: " + entry.getKey());
+                        log.trace("Do we have next? " + iter.hasNext());
                     }
 
-                    k.getRow(holder);
-                    String uniqueTerm = holder.toString();
+                    while (iter.hasNext()) {
 
-                    SortedMap<Key,Value> keymap = WholeRowIterator.decodeRow(entry.getKey(), entry.getValue());
-
-                    String field = null;
-
-                    boolean foundDataType = false;
-
-                    for (Key topKey : keymap.keySet()) {
-                        if (null == field) {
-                            topKey.getColumnFamily(holder);
-                            field = holder.toString();
+                        Entry<Key,Value> entry = iter.next();
+                        if (TimeoutExceptionIterator.exceededTimedValue(entry)) {
+                            throw new Exception("Timeout exceeded for bounded range lookup");
                         }
-                        // Get the column qualifier from the key. It
-                        // contains the datatype and normalizer class
 
-                        if (null != topKey.getColumnQualifier()) {
-                            if (null != config.getDatatypeFilter() && !config.getDatatypeFilter().isEmpty()) {
+                        Key k = entry.getKey();
 
-                                String colq = topKey.getColumnQualifier().toString();
-                                int idx = colq.indexOf(Constants.NULL);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Foward Index entry: " + entry.getKey());
+                        }
 
-                                if (idx != -1) {
-                                    String type = colq.substring(idx + 1);
+                        k.getRow(holder);
+                        String uniqueTerm = holder.toString();
 
-                                    // If types are specified and this type
-                                    // is not in the list, skip it.
-                                    if (config.getDatatypeFilter().contains(type)) {
-                                        if (log.isTraceEnabled()) {
-                                            log.trace(config.getDatatypeFilter() + " contains " + type);
+                        SortedMap<Key,Value> keymap = WholeRowIterator.decodeRow(entry.getKey(), entry.getValue());
+
+                        String field = null;
+
+                        boolean foundDataType = false;
+
+                        for (Key topKey : keymap.keySet()) {
+                            if (null == field) {
+                                topKey.getColumnFamily(holder);
+                                field = holder.toString();
+                            }
+                            // Get the column qualifier from the key. It
+                            // contains the datatype and normalizer class
+
+                            if (null != topKey.getColumnQualifier()) {
+                                if (null != config.getDatatypeFilter() && !config.getDatatypeFilter().isEmpty()) {
+
+                                    String colq = topKey.getColumnQualifier().toString();
+                                    int idx = colq.indexOf(Constants.NULL);
+
+                                    if (idx != -1) {
+                                        String type = colq.substring(idx + 1);
+
+                                        // If types are specified and this type
+                                        // is not in the list, skip it.
+                                        if (config.getDatatypeFilter().contains(type)) {
+                                            if (log.isTraceEnabled()) {
+                                                log.trace(config.getDatatypeFilter() + " contains " + type);
+                                            }
+
+                                            foundDataType = true;
+                                            break;
                                         }
-
-                                        foundDataType = true;
-                                        break;
                                     }
+                                } else {
+                                    foundDataType = true;
                                 }
-                            } else {
-                                foundDataType = true;
+                            }
+                        }
+                        if (foundDataType) {
+
+                            // obtaining the size of a map can be expensive,
+                            // instead
+                            // track the count of each unique item added.
+                            indexLookupMap.put(field, uniqueTerm);
+
+                            // safety check...
+                            Preconditions.checkState(field.equals(literalRange.getFieldName()),
+                                            "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
+
+                            // If this range expands into to many values, we can
+                            // stop
+                            if (indexLookupMap.get(field).isThresholdExceeded()) {
+                                return true;
                             }
                         }
                     }
-                    if (foundDataType) {
-
-                        // obtaining the size of a map can be expensive,
-                        // instead
-                        // track the count of each unique item added.
-                        indexLookupMap.put(field, uniqueTerm);
-
-                        // safety check...
-                        Preconditions.checkState(field.equals(literalRange.getFieldName()),
-                                        "Got an unexpected field name when expanding range" + field + " " + literalRange.getFieldName());
-
-                        // If this range expands into to many values, we can
-                        // stop
-                        if (indexLookupMap.get(field).isThresholdExceeded()) {
-                            return true;
-                        }
+                } catch (Exception e) {
+                    log.info("Failed or timed out expanding range fields: " + e.getMessage());
+                    if (log.isDebugEnabled()) {
+                        log.debug("Failed or Timed out ", e);
                     }
-                }
-            } catch (Exception e) {
-                log.info("Failed or timed out expanding range fields: " + e.getMessage());
-                if (log.isDebugEnabled()) {
-                    log.debug("Failed or Timed out ", e);
-                }
-                // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
-                if (!unfieldedLookup) {
-                    for (String field : fields) {
-                        if (log.isTraceEnabled()) {
-                            log.trace("field is " + field);
-                            log.trace("field is " + (null == indexLookupMap));
+                    // Only if not doing an unfielded lookup should we mark all fields as having an exceeded threshold
+                    if (!unfieldedLookup) {
+                        for (String field : fields) {
+                            if (log.isTraceEnabled()) {
+                                log.trace("field is " + field);
+                                log.trace("field is " + (null == indexLookupMap));
+                            }
+                            indexLookupMap.put(field, "");
+                            indexLookupMap.get(field).setThresholdExceeded();
                         }
-                        indexLookupMap.put(field, "");
-                        indexLookupMap.get(field).setThresholdExceeded();
+                    } else {
+                        indexLookupMap.setKeyThresholdExceeded();
                     }
-                } else {
-                    indexLookupMap.setKeyThresholdExceeded();
+                    return false;
                 }
-                return false;
+                return true;
+            } finally {
+                lookupStoppedLatch.countDown();
             }
-            return true;
         };
     }
 }
