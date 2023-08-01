@@ -39,6 +39,7 @@ public class LoadModelFromXml {
         if (log.isDebugEnabled()) {
             log.debug(xmlModel.getName());
             for (FieldMapping fieldMapping : xmlModel.getFields()) {
+                fieldMapping.validate();
                 log.debug(fieldMapping.toString());
             }
         }
