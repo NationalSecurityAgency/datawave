@@ -80,9 +80,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     public UniqueTransform(QueryIterator queryIterator, UniqueFields uniqueFields) throws IOException {
         this(uniqueFields);
         if (uniqueFields.isMostRecent()) {
-            this.set = new HdfsBackedSortedSet<>(keyComparator, keyValueComparator, queryIterator.getUniqueCacheBufferSize(),
-                            getIvaratorCacheDirs(queryIterator), "MostRecentUniqueSet", queryIterator.getIvaratorMaxOpenFiles(),
-                            queryIterator.getIvaratorNumRetries(), queryIterator.getIvaratorPersistOptions(), new FileByteDocumentSortedSet.Factory());
+            this.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
+                            .withBufferPersistThreshold(queryIterator.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(queryIterator))
+                            .withUniqueSubPath("MostRecentUniqueSet").withMaxOpenFiles(queryIterator.getIvaratorMaxOpenFiles())
+                            .withNumRetries(queryIterator.getIvaratorNumRetries()).withPersistOptions(queryIterator.getIvaratorPersistOptions())
+                            .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
         }
     }
 
@@ -100,11 +102,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             setModelMappings(logic.getQueryModel());
         }
         if (uniqueFields.isMostRecent()) {
-            this.set = new HdfsBackedSortedSet<>(keyComparator, keyValueComparator, logic.getUniqueCacheBufferSize(), getIvaratorCacheDirs(logic),
-                            "FinalMostRecentUniqueSet", logic.getIvaratorMaxOpenFiles(), logic.getIvaratorNumRetries(),
-                            new FileSortedSet.PersistOptions(logic.isIvaratorPersistVerify(), logic.isIvaratorPersistVerify(),
-                                            logic.getIvaratorPersistVerifyCount()),
-                            new FileByteDocumentSortedSet.Factory());
+            this.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
+                            .withBufferPersistThreshold(logic.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(logic))
+                            .withUniqueSubPath("FinalMostRecentUniqueSet").withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
+                            .withNumRetries(logic.getIvaratorNumRetries()).withPersistOptions(new FileSortedSet.PersistOptions(logic.isIvaratorPersistVerify(),
+                                            logic.isIvaratorPersistVerify(), logic.getIvaratorPersistVerifyCount()))
+                            .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
         }
     }
 
