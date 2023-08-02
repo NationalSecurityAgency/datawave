@@ -51,7 +51,7 @@ jobs:
         cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
-        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
+        RUN_TESTS="mvn -V -U -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
