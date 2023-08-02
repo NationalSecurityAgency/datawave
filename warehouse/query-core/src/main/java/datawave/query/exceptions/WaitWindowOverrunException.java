@@ -13,24 +13,4 @@ public class WaitWindowOverrunException extends RuntimeException {
     public Key getYieldKey() {
         return yieldKey;
     }
-
-    // disallow other constructors that don't include a yieldKey
-    private WaitWindowOverrunException() {
-        super();
-    }
-
-    // disallow constructors that don't include a yieldKey
-    private WaitWindowOverrunException(String message) {
-        super(message);
-    }
-
-    // disallow constructors that don't include a yieldKey
-    private WaitWindowOverrunException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    // disallow constructors that don't include a yieldKey
-    private WaitWindowOverrunException(Throwable cause) {
-        super(cause);
-    }
 }

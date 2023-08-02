@@ -1,8 +1,6 @@
 package datawave.query.iterator;
 
 import static datawave.query.iterator.QueryOptions.COLLECT_TIMING_DETAILS;
-import static datawave.query.iterator.QueryOptions.MAX_EVALUATION_PIPELINES;
-import static datawave.query.iterator.QueryOptions.SERIAL_EVALUATION_PIPELINE;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -78,8 +76,8 @@ public class WaitWindowQueryIteratorSerialIT extends QueryIteratorIT {
     }
 
     // Custom WaitWindowObserver that allows checksBeforeYield checks
-    // before either yielding or reyurning a WAIT_WINDOW_OERRUN
-    // It will also limit the number of reseeks on the same startKey using maxNulls
+    // before either yielding or returning a WAIT_WINDOW_OVERRUN
+    // It will also limit the number of re-seeks on the same startKey using maxNulls
     static public class TestWaitWindowObserver extends WaitWindowObserver {
 
         private AtomicLong checksBeforeYield = new AtomicLong(2);
@@ -92,9 +90,11 @@ public class WaitWindowQueryIteratorSerialIT extends QueryIteratorIT {
         @Override
         public void start(Range seekRange, long yieldThresholdMs) {
             super.start(seekRange, Long.MAX_VALUE);
+            // use the seekRange from the parent class since it may have been
+            // modified if it was an infinite startKey
+            Key startKey = this.seekRange.getStartKey();
             // limit the number of times that the test yields in the
             // same place by counting the final null characters
-            Key startKey = seekRange.getStartKey();
             String s = null;
             if (WaitWindowObserver.hasMarker(startKey.getColumnFamily())) {
                 s = startKey.getColumnFamily().toString();

@@ -44,6 +44,8 @@ public class KeyAdjudicator<T> implements Iterator<Entry<Key,T>>, Function<Entry
     @Override
     public Entry<Key,T> apply(Entry<Key,T> entry) {
         final Key entryKey = entry.getKey();
+        // if the key has a YIELD_AT_BEGIN or YIELD_AT_END marker, then don't modify the key
+        // because doing so will adversely affect the subsequent yield and re-seek position
         if (WaitWindowObserver.hasMarker(entryKey)) {
             return entry;
         } else {
