@@ -366,6 +366,16 @@ public class QueryIteratorIT extends EasyMockSupport {
     }
 
     @Test
+    public void indexOnly_trailingRegex_infiniteRange_secondEvent_test() throws IOException {
+        // build an infinite range to make sure the wait window / yielding framework can handle it
+        Range seekRange = new Range(null, true, (Key) null, true);
+        String query = "((_Value_ = true) && (INDEX_ONLY_FIELD1 =~ 'ap.*'))";
+        Map.Entry<Key,Map<String,List<String>>> secondEvent = getBaseExpectedEvent("123.345.457");
+        secondEvent.getValue().put("INDEX_ONLY_FIELD1", Arrays.asList(new String[] {"apple"}));
+        indexOnly_test(seekRange, query, false, addEvent("123.345.457"), Arrays.asList(secondEvent));
+    }
+
+    @Test
     public void indexOnly_leadingRegex_documentSpecific_test() throws IOException {
         // build the seek range for a document specific pull
         Range seekRange = getDocumentRange("123.345.456");

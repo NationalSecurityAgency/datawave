@@ -583,9 +583,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         if (!sortedUIDs) {
             String cq = WaitWindowObserver.removeMarkers(startKey.getColumnQualifier()).toString();
             if (r.getStartKey().getColumnFamily().getLength() > 0 && cq.length() > 0) {
-                String cqSuffix = WaitWindowObserver.hasBeginMarker(startKey.getColumnQualifier()) ? "" : "\0";
                 int fieldnameIndex = cq.indexOf('\0');
                 if (fieldnameIndex >= 0) {
+                    // If startKey colQual has YIELD_AT_BEGIN marker then we want to include keys with the
+                    // fieldName / fieldValue in the key, otherwise we seek past this key by adding a \0
+                    String cqSuffix = WaitWindowObserver.hasBeginMarker(startKey.getColumnQualifier()) ? "" : "\0";
                     String cf = startKey.getColumnFamily().toString();
                     lastFiKey = new Key(startKey.getRow().toString(), "fi\0" + cq.substring(0, fieldnameIndex),
                                     cq.substring(fieldnameIndex + 1) + '\0' + cf + cqSuffix);

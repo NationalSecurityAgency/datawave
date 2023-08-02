@@ -35,13 +35,12 @@ import datawave.query.iterator.profile.QuerySpan;
 public class WaitWindowObserver {
 
     private static final Logger log = Logger.getLogger(WaitWindowObserver.class);
+    private static Timer timer = null;
     public static final String WAIT_WINDOW_OVERRUN = "WAIT_WINDOW_OVERRUN";
     public static final String YIELD_AT_BEGIN_STR = "!YIELD_AT_BEGIN";
     public static final Text YIELD_AT_BEGIN = new Text(YIELD_AT_BEGIN_STR);
     public static final String YIELD_AT_END_STR = "\uffffYIELD_AT_END";
     public static final Text YIELD_AT_END = new Text(YIELD_AT_END_STR);
-    private static Timer timer = null;
-    private boolean readyToYield = false;
 
     public static final Comparator<Comparable> keyComparator = (o1, o2) -> {
         if (o1 instanceof Key) {
@@ -57,12 +56,13 @@ public class WaitWindowObserver {
         return o2.compareTo(o1);
     };
 
+    protected boolean readyToYield = false;
     protected YieldCallback yieldCallback = null;
     // When the wait window is over. Set during the initial seek
     protected long endOfWaitWindow;
     // Remaining time in the wait window. Updated by the timerTask
     protected AtomicLong remainingTimeMs = new AtomicLong();
-    protected TimerTask timerTask = new WaitWindowTimerTask();
+    protected TimerTask timerTask = null;
     // How often the timerTask gets run
     protected long checkPeriod = 50;
     // Seek range of the QueryIterator. Used to ensure that yieldKey is in the range.
@@ -114,21 +114,41 @@ public class WaitWindowObserver {
         return WaitWindowObserver.timer;
     }
 
+    private Key convertInfiniteStartKey(Key key) {
+        if (key == null) {
+            return new Key(new Text(), YIELD_AT_BEGIN);
+        } else {
+            return key;
+        }
+    }
+
     /*
      * Set seekRange, remainingTimeMs, endOfWaitWindow and start the Timer
      */
     public void start(Range seekRange, long yieldThresholdMs) {
-        this.seekRange = seekRange;
+        Key startKey = seekRange.getStartKey();
+        if (startKey == null) {
+            startKey = convertInfiniteStartKey(startKey);
+            this.seekRange = new Range(startKey, seekRange.isStartKeyInclusive(), seekRange.getEndKey(), seekRange.isEndKeyInclusive());
+        } else {
+            this.seekRange = seekRange;
+        }
         this.remainingTimeMs.set(yieldThresholdMs);
         this.endOfWaitWindow = yieldThresholdMs + System.currentTimeMillis();
-        WaitWindowObserver.getTimer().schedule(this.timerTask, this.checkPeriod, this.checkPeriod);
+        if (this.timerTask == null) {
+            this.timerTask = new WaitWindowTimerTask();
+            WaitWindowObserver.getTimer().schedule(this.timerTask, this.checkPeriod, this.checkPeriod);
+        }
     }
 
     /*
      * Ensure that the WaitWindowTimerTask is cancelled. Called from QueryIterator.hasTop.
      */
     public void stop() {
-        this.timerTask.cancel();
+        if (this.timerTask != null) {
+            this.timerTask.cancel();
+            this.timerTask = null;
+        }
     }
 
     /*
@@ -207,6 +227,10 @@ public class WaitWindowObserver {
      * Create a yield key with YIELD_AT_BEGIN or YIELD_AT_END marker
      */
     public Key createYieldKey(Key yieldKey, boolean yieldToBeginning) {
+        if (yieldKey == null) {
+            // handle infinite (null) key which may be passed as a range startKey
+            yieldKey = convertInfiniteStartKey(yieldKey);
+        }
         if (isShardKey(yieldKey)) {
             return createShardYieldKey(yieldKey, yieldToBeginning);
         } else {
@@ -338,42 +362,42 @@ public class WaitWindowObserver {
      */
     static public boolean isShardKey(Key key) {
         Text colFam = key.getColumnFamily();
-        return colFam.equals(new Text()) || hasBeginMarker(colFam);
+        return key != null && (colFam.equals(new Text()) || hasBeginMarker(colFam));
     }
 
     /*
      * Check if YIELD_AT_BEGIN or YIELD_AT_END is in either the colFam or colQual
      */
     static public boolean hasMarker(Key key) {
-        return hasBeginMarker(key) || hasEndMarker(key);
+        return key != null && (hasBeginMarker(key) || hasEndMarker(key));
     }
 
     /*
      * Check if YIELD_AT_BEGIN or YIELD_AT_END is in this Text
      */
     static public boolean hasMarker(Text text) {
-        return hasBeginMarker(text) || hasEndMarker(text);
+        return text != null && (hasBeginMarker(text) || hasEndMarker(text));
     }
 
     /*
      * Check if YIELD_AT_BEGIN is in either the colFam or colQual
      */
     static public boolean hasBeginMarker(Key key) {
-        return hasBeginMarker(key.getColumnFamily()) || hasBeginMarker(key.getColumnQualifier());
+        return key != null && (hasBeginMarker(key.getColumnFamily()) || hasBeginMarker(key.getColumnQualifier()));
     }
 
     /*
      * YIELD_AT_BEGIN will always be at the beginning of the Text
      */
     static public boolean hasBeginMarker(Text text) {
-        return text.toString().startsWith(YIELD_AT_BEGIN_STR);
+        return text != null && (text.toString().startsWith(YIELD_AT_BEGIN_STR));
     }
 
     /*
      * Check if YIELD_AT_END is in either the colFam or colQual
      */
     static public boolean hasEndMarker(Key key) {
-        return hasEndMarker(key.getColumnFamily()) || hasEndMarker(key.getColumnQualifier());
+        return key != null && (hasEndMarker(key.getColumnFamily()) || hasEndMarker(key.getColumnQualifier()));
     }
 
     /*
@@ -381,7 +405,7 @@ public class WaitWindowObserver {
      * can not check for endsWith
      */
     static public boolean hasEndMarker(Text text) {
-        return text.toString().contains(YIELD_AT_END_STR);
+        return text != null && (text.toString().contains(YIELD_AT_END_STR));
     }
 
     static public Text removeMarkers(Text text) {

@@ -426,11 +426,16 @@ public class IndexIterator implements SortedKeyValueIterator<Key,Value>, Documen
      */
     protected Range buildIndexRange(Range r) {
         // include startKey if we yielded to the beginning of a document range
-        boolean includeStartKey = WaitWindowObserver.hasBeginMarker(r.getStartKey().getColumnQualifier()) ? true : r.isStartKeyInclusive();
-        Key startKey = permuteRangeKey(r.getStartKey(), includeStartKey);
-        Key endKey = permuteRangeKey(r.getEndKey(), r.isEndKeyInclusive());
+        Key startKey = r.getStartKey();
+        Key endKey = r.getEndKey();
+        boolean startKeyInclusive = r.isStartKeyInclusive();
+        if (startKey != null && WaitWindowObserver.hasBeginMarker(startKey.getColumnQualifier())) {
+            startKeyInclusive = true;
+        }
 
-        return new Range(startKey, includeStartKey, endKey, r.isEndKeyInclusive());
+        startKey = permuteRangeKey(startKey, startKeyInclusive);
+        endKey = permuteRangeKey(endKey, r.isEndKeyInclusive());
+        return new Range(startKey, startKeyInclusive, endKey, r.isEndKeyInclusive());
     }
 
     /**
