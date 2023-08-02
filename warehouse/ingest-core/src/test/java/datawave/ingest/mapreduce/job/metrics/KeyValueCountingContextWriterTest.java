@@ -1,6 +1,9 @@
 package datawave.ingest.mapreduce.job.metrics;
 
-import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.*;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.createEvent;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.createFields;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.family;
+import static datawave.ingest.mapreduce.job.metrics.MetricsTestData.qualifier;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
