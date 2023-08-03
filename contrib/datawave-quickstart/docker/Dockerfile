@@ -69,10 +69,8 @@ RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
 # Primary data volume (for HDFS, Accumulo, ZooKeeper, etc)
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/data"]
 
-
 # In case user wants to rebuild DW
 VOLUME ["$HOME/.m2/repository"]
-
 
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/hadoop/logs"]
 VOLUME ["/opt/datawave/contrib/datawave-quickstart/accumulo/logs"]
