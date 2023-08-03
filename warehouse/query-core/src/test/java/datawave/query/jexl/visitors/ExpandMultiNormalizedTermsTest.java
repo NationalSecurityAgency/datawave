@@ -1,8 +1,8 @@
 package datawave.query.jexl.visitors;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
