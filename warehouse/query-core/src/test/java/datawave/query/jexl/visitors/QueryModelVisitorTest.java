@@ -73,7 +73,7 @@ public class QueryModelVisitorTest {
         model.addTermToReverseModel("GENDER", "GEN");
         model.addTermToReverseModel("GENERE", "GEN");
 
-        model.addLenientForwardMappings("AG");
+        model.setModelFieldAttribute("AG", QueryModel.LENIENT);
 
         allFields = new HashSet<>();
         allFields.add("FOO");
@@ -355,14 +355,14 @@ public class QueryModelVisitorTest {
     @Test
     public void testLenientQuery() throws ParseException {
         String original = "AG == '123'";
-        String expected = "((_Lenient_ = true) && ((AGE == '123') || (ETA == '123')))";
+        String expected = "((_Lenient_ = true) && (AGE == '123' || ETA == '123'))";
         assertResult(original, expected);
     }
 
     @Test
     public void testLenientRegexQuery() throws ParseException {
         String original = "AG =~ '123'";
-        String expected = "((_Lenient_ = true) && ((AGE =~ '123') || (ETA =~ '123')))";
+        String expected = "((_Lenient_ = true) && (AGE =~ '123' || ETA =~ '123'))";
         assertResult(original, expected);
     }
 
@@ -374,28 +374,21 @@ public class QueryModelVisitorTest {
     }
 
     @Test
-    public void testLenientLiteralQuery() throws ParseException {
-        String original = "(NAM == ((_Lenient_ = true) && 'dude'))";
-        String expected = "((((_Lenient_ = true) && (NOME == 'dude')) || ((_Lenient_ = true) && (NAME == 'dude'))))";
-        assertResult(original, expected);
-    }
-
-    @Test
     public void testLenientOptionRegexQuery() throws ParseException {
         String original = "FOO =~ '123' && f:lenient(FOO)";
-        String expected = "((_Lenient_ = true) && ((BAR1 =~ '123') || (BAR2 =~ '123')))";
+        String expected = "((_Lenient_ = true) && (BAR1 =~ '123' || BAR2 =~ '123'))";
         testWithOptionFunction(original, expected, model, Collections.emptySet(), Sets.newHashSet("FOO"), Collections.emptySet());
     }
 
     @Test
     public void testStrictOptionRegexQuery() throws ParseException {
         String original = "AG =~ '123' && f:strict(AG)";
-        String expected = "AGE =~ '123' || ETA =~ '123'";
+        String expected = "((_Strict_ = true) && (AGE =~ '123' || ETA =~ '123'))";
         testWithOptionFunction(original, expected, model, Collections.emptySet(), Collections.emptySet(), Sets.newHashSet("AG"));
     }
 
-    @Test
-    public void testStrictPrecidenceRegexQuery() throws ParseException {
+    @Test(expected = IllegalArgumentException.class)
+    public void testStrictAndLenientRegexQuery() {
         String original = "FOO =~ '123' && f:lenient(FOO) && f:strict(FOO)";
         String expected = "(BAR1 =~ '123' || BAR2 =~ '123')";
         testWithOptionFunction(original, expected, model, Collections.emptySet(), Sets.newHashSet("FOO"), Sets.newHashSet("FOO"));
