@@ -355,14 +355,14 @@ public class QueryModelVisitorTest {
     @Test
     public void testLenientQuery() throws ParseException {
         String original = "AG == '123'";
-        String expected = "(AGE == '123') || (ETA == '123')";
+        String expected = "((_Lenient_ = true) && (AGE == '123' || ETA == '123'))";
         assertResult(original, expected);
     }
 
     @Test
     public void testLenientRegexQuery() throws ParseException {
         String original = "AG =~ '123'";
-        String expected = "(AGE =~ '123') || (ETA =~ '123')";
+        String expected = "((_Lenient_ = true) && (AGE =~ '123' || ETA =~ '123'))";
         assertResult(original, expected);
     }
 
@@ -376,7 +376,7 @@ public class QueryModelVisitorTest {
     @Test
     public void testLenientOptionRegexQuery() throws ParseException {
         String original = "FOO =~ '123' && f:lenient(FOO)";
-        String expected = "(BAR1 =~ '123') || (BAR2 =~ '123')";
+        String expected = "((_Lenient_ = true) && (BAR1 =~ '123' || BAR2 =~ '123'))";
         testWithOptionFunction(original, expected, model, Collections.emptySet(), Sets.newHashSet("FOO"), Collections.emptySet());
     }
 
