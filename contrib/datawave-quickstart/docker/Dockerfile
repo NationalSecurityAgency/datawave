@@ -34,26 +34,25 @@ WORKDIR /opt/datawave
 
 # Create new Git repo and configure environment...
 
-RUN rm -f .dockerignore && \
-    git init && \
-    git add . && \
-    git config user.email "root@localhost.local" && \
-    git config user.name "Root User" && \
-    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
-    DW_ACCUMULO_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz') && \
-    DW_ZOOKEEPER_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'apache-zookeeper*.tar.gz') && \
-    DW_MAVEN_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz') && \
-    DW_HADOOP_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/hadoop -name 'hadoop*.tar.gz') && \
-    DW_WILDFLY_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/datawave -name 'wildfly*.tar.gz') && \
-    echo "export DW_ACCUMULO_DIST_URI=file://$DW_ACCUMULO_DIST_URI" >> ~/.bashrc && \
-    echo "export DW_ZOOKEEPER_DIST_URI=file://$DW_ZOOKEEPER_DIST_URI" >> ~/.bashrc && \
-    echo "export DW_MAVEN_DIST_URI=file://$DW_MAVEN_DIST_URI" >> ~/.bashrc && \
-    echo "export DW_HADOOP_DIST_URI=file://$DW_HADOOP_DIST_URI" >> ~/.bashrc && \
-    echo "export DW_WILDFLY_DIST_URI=file://$DW_WILDFLY_DIST_URI" >> ~/.bashrc && \
-    echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc && \
-    echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc && \
-    echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
-
+RUN rm -f .dockerignore 
+    RUN git init 
+    RUN git add . 
+    RUN git config user.email "root@localhost.local" 
+    RUN git config user.name "Root User" 
+    RUN git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" 
+    RUN DW_ACCUMULO_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz') 
+    RUN DW_ZOOKEEPER_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'apache-zookeeper*.tar.gz') 
+    RUN DW_MAVEN_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz') 
+    RUN DW_HADOOP_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/hadoop -name 'hadoop*.tar.gz') 
+    RUN DW_WILDFLY_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/datawave -name 'wildfly*.tar.gz') 
+    RUN echo "export DW_ACCUMULO_DIST_URI=file://$DW_ACCUMULO_DIST_URI" >> ~/.bashrc 
+    RUN echo "export DW_ZOOKEEPER_DIST_URI=file://$DW_ZOOKEEPER_DIST_URI" >> ~/.bashrc 
+    RUN echo "export DW_MAVEN_DIST_URI=file://$DW_MAVEN_DIST_URI" >> ~/.bashrc 
+    RUN echo "export DW_HADOOP_DIST_URI=file://$DW_HADOOP_DIST_URI" >> ~/.bashrc
+    RUN echo "export DW_WILDFLY_DIST_URI=file://$DW_WILDFLY_DIST_URI" >> ~/.bashrc 
+    RUN echo "export JAVA_HOME=\"$DATAWAVE_JAVA_HOME\"" >> ~/.bashrc 
+    RUN echo "export PATH=\$JAVA_HOME/bin:\$PATH" >> ~/.bashrc 
+    RUN echo "source /opt/datawave/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc
 
 # This works exactly like the setup for a non-containerized instance of the datawave-quickstart
 # environment. That is, ~/.bashrc and datawave-quickstart/bin/env.sh are sourced, bootstrapping
