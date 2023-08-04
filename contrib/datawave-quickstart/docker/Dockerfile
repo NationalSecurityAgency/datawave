@@ -60,8 +60,9 @@ RUN rm -f .dockerignore
 # used to initialize services and their log dirs. Finally, web services are tested, services are
 # stopped gracefully, and any cruft is purged.
 
-RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" 
+RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D" 
     RUN /bin/bash -c "source ~/.bashrc"
+    RUN /bin/bash -c "cat ~/.bashrc"
     RUN /bin/bash -c "allInstall"
     RUN /bin/bash -c "datawaveStart"
     RUN /bin/bash -c "datawaveWebTest --blacklist-files QueryMetrics"
