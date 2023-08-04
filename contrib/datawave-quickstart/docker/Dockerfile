@@ -39,7 +39,7 @@ RUN rm -f .dockerignore
     RUN git add . 
     RUN git config user.email "root@localhost.local" 
     RUN git config user.name "Root User" 
-    RUN git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" 
+    RUN git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" --allow-empty
     RUN DW_ACCUMULO_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz') 
     RUN DW_ZOOKEEPER_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'apache-zookeeper*.tar.gz') 
     RUN DW_MAVEN_DIST_URI=$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz') 
