@@ -277,9 +277,18 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             final String fieldName = op.deconstructIdentifier();
             final Object literal = op.getLiteralValue();
 
-            // Nodes are lenient by default. Determine whether this was explicitly marked as strict.
+            // Determine whether this was explicitly marked as strict.
             boolean strict = config.getStrictFields().contains(fieldName)
                             || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(StrictExpression.class));
+            // Determine whether this was explicitly marked as lenient.
+            boolean lenient = config.getLenientFields().contains(fieldName)
+                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LenientExpression.class));
+
+            if (strict && lenient) {
+                log.warn("Field " + fieldName + " marked both as strict and lenient.  Applying neither");
+                strict = false;
+                lenient = false;
+            }
 
             // Get all the indexed or normalized dataTypes for the field name
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
@@ -343,6 +352,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // determine if we are marking this term as dropped or evaluation only
                     boolean droppedExpression = false;
                     boolean evaluationOnly = false;
+                    boolean isRegex = (node instanceof ASTNRNode || node instanceof ASTERNode);
                     if (failedNormalization) {
                         // if we are being strict then add the original term into the mix and make it eval only
                         if (strict) {
@@ -353,12 +363,23 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             evaluationOnly = true;
                         }
                         // else if we are being lenient and we have no successful normalizations, then drop the original term
-                        else if (normalizedNodes.isEmpty()) {
-                            if (!normalizedTerms.contains(term)) {
+                        else if (lenient) {
+                            if (normalizedNodes.isEmpty()) {
                                 normalizedTerms.add(term);
                                 normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                droppedExpression = true;
                             }
-                            droppedExpression = true;
+                        }
+                        // else we use the original methodology which is to keep the original term
+                        // and push it down to evaluation only IFF a regex
+                        else {
+                            if (isRegex) {
+                                if (!normalizedTerms.contains(term)) {
+                                    normalizedTerms.add(term);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                }
+                                evaluationOnly = true;
+                            }
                         }
                     }
 
