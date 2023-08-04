@@ -60,13 +60,13 @@ RUN rm -f .dockerignore
 # used to initialize services and their log dirs. Finally, web services are tested, services are
 # stopped gracefully, and any cruft is purged.
 
-RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" && \
-    /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop" && \
-    echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor && \
-    rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* && \
-    rm -rf contrib/datawave-quickstart/hadoop/logs/* && \
-    rm -rf contrib/datawave-quickstart/accumulo/logs/* && \
-    rm -rf contrib/datawave-quickstart/wildfly/standalone/log/*
+RUN /bin/bash -c "/usr/bin/nohup /usr/sbin/sshd -D &" 
+    RUN /bin/bash -c "source ~/.bashrc && allInstall && datawaveStart && datawaveWebTest --blacklist-files QueryMetrics && allStop" 
+    RUN echo "0.0.0.0" > contrib/datawave-quickstart/accumulo/conf/monitor 
+    RUN rm -rf contrib/datawave-quickstart/datawave-ingest/logs/* 
+    RUN rm -rf contrib/datawave-quickstart/hadoop/logs/* 
+    RUN rm -rf contrib/datawave-quickstart/accumulo/logs/* 
+    RUN rm -rf contrib/datawave-quickstart/wildfly/standalone/log/*
 
 # Lastly, establish volumes for data, logs & other directories, wire up
 # the entrypoint & bootstrap scripts, expose ports, and set default CMD...
