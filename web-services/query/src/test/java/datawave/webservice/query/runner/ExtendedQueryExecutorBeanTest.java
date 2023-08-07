@@ -2165,8 +2165,8 @@ public class ExtendedQueryExecutorBeanTest {
         UUID queryId = UUID.randomUUID();
 
         MultivaluedMap<String,String> queryParameters = new MultivaluedMapImpl<>();
-        queryParameters.putAll(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations, expirationDate,
-                        pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, null, trace));
+        queryParameters.putAll(QueryParametersImpl.paramsToMap(null, query, queryName, queryVisibility, beginDate, endDate, queryAuthorizations,
+                        expirationDate, pagesize, pageTimeout, maxResultsOverride, persistenceMode, null, null, trace));
         queryParameters.putSingle("valid", "param");
 
         ColumnVisibilitySecurityMarking marking = new ColumnVisibilitySecurityMarking();
