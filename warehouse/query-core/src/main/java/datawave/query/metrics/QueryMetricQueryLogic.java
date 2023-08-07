@@ -7,9 +7,9 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.microservice.query.Query;
 import datawave.query.language.parser.ParseException;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.Query;
 
 /**
  * Extension to the query logic that enforces the current user is equal to the USER field in the QueryMetrics <br>

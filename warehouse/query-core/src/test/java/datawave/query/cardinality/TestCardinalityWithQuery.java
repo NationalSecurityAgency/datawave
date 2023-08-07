@@ -38,6 +38,7 @@ import datawave.core.query.logic.AbstractQueryLogicTransformer;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.tables.ShardQueryLogic;
@@ -49,7 +50,6 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
 

@@ -5,9 +5,9 @@ import java.util.Collection;
 import java.util.Objects;
 
 import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.edge.DefaultExtendedEdgeQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 public class EdgeExtendedSummaryConfiguration extends EdgeQueryConfiguration implements Serializable {
     public static final String SUMMARIZE = "summarize";

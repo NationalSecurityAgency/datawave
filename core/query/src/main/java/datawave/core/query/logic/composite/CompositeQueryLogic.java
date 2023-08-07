@@ -33,10 +33,10 @@ import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseResponse;
 
 /**

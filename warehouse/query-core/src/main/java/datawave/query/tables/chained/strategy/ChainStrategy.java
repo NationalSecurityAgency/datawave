@@ -7,7 +7,7 @@ import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 
 /**
  * The approach to take when converting query results into another query

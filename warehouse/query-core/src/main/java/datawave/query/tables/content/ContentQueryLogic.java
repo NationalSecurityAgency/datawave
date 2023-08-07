@@ -30,13 +30,13 @@ import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ContentQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.ContentQueryTransformer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
 
 /**

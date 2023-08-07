@@ -17,8 +17,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
-import datawave.webservice.query.Query;
 
 public class ThreadedRangeBundlerTest {
 

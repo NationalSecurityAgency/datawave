@@ -13,12 +13,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectReader;
 
 import datawave.configuration.RefreshableScope;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
-import datawave.webservice.query.Query;
 
 /**
  * Retrieves an {@link EdgeDictionaryBase} from the remote edge dictionary service.

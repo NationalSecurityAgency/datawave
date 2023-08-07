@@ -35,11 +35,11 @@ import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.ingest.protobuf.Uid;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.MockAccumuloRecordWriter;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.TableName;
-import datawave.webservice.query.QueryImpl;
 
 public class DiscoveryLogicTest {
     private static Logger log = Logger.getLogger(DiscoveryLogicTest.class);

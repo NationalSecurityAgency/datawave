@@ -1,6 +1,8 @@
 package datawave.core.query.result.event;
 
 import datawave.core.query.cachedresults.CacheableQueryRowImpl;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.dictionary.data.DataDictionaryBase;
@@ -11,8 +13,6 @@ import datawave.webservice.dictionary.data.DescriptionBase;
 import datawave.webservice.dictionary.data.FieldsBase;
 import datawave.webservice.metadata.DefaultMetadataField;
 import datawave.webservice.metadata.MetadataFieldBase;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
 import datawave.webservice.query.result.edge.DefaultEdge;

@@ -50,6 +50,7 @@ import datawave.data.type.GeometryType;
 import datawave.data.type.Type;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.CompositeFunctionsTest;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
@@ -70,7 +71,6 @@ import datawave.query.util.MockMetadataHelper;
 import datawave.query.util.WiseGuysIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
 
 public abstract class ExecutableExpansionVisitorTest {
     @RunWith(Arquillian.class)

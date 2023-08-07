@@ -4,8 +4,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.security.Authorizations;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import datawave.microservice.query.Query;
 import datawave.webservice.query.predicate.QueryParameterPredicate;
 
 /**

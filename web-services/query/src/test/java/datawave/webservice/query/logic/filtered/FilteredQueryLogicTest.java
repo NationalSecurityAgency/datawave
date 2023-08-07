@@ -14,8 +14,8 @@ import org.powermock.api.easymock.PowerMock;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 
 public class FilteredQueryLogicTest {
 

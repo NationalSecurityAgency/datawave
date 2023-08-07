@@ -12,8 +12,8 @@ import datawave.core.query.dashboard.DashboardFields;
 import datawave.core.query.dashboard.DashboardSummary;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.ResponseEnricher;
+import datawave.microservice.query.Query;
 import datawave.query.tables.ShardQueryLogic;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseQueryResponse;
 

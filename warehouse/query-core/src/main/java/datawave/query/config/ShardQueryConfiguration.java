@@ -39,6 +39,8 @@ import datawave.core.query.configuration.QueryData;
 import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.DocumentSerialization.ReturnType;
@@ -59,8 +61,6 @@ import datawave.query.tld.TLDQueryIterator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.TableName;
 import datawave.util.UniversalSet;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 /**
  * <p>

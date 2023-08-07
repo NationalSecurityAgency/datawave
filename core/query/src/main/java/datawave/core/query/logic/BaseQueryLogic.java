@@ -18,10 +18,10 @@ import datawave.audit.SelectorExtractor;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.iterator.DatawaveTransformIterator;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor.AuditType;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
 public abstract class BaseQueryLogic<T> implements QueryLogic<T> {

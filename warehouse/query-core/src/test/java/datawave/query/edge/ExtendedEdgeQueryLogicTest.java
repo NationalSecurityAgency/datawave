@@ -15,9 +15,9 @@ import org.junit.Test;
 import datawave.core.iterators.ColumnRangeIterator;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.tables.edge.EdgeQueryFunctionalTest;
 import datawave.query.tables.edge.EdgeQueryLogic;
-import datawave.webservice.query.QueryImpl;
 
 public class ExtendedEdgeQueryLogicTest extends EdgeQueryFunctionalTest {
 

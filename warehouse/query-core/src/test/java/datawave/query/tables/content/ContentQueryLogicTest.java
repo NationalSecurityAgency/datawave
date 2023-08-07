@@ -29,9 +29,9 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.query.config.ContentQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 
 public class ContentQueryLogicTest {

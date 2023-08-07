@@ -11,8 +11,8 @@ import org.apache.hadoop.io.Text;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtobufIOUtil;
 import io.protostuff.Schema;

@@ -28,9 +28,8 @@ import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 @RunWith(PowerMockRunner.class)
 public class TestBaseQueryLogic {

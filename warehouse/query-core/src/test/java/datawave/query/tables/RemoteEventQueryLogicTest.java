@@ -22,11 +22,11 @@ import com.google.common.collect.Sets;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.remote.RemoteQueryService;
+import datawave.microservice.query.QueryImpl;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;

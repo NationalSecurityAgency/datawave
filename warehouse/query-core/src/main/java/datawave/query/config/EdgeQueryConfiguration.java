@@ -9,10 +9,10 @@ import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.Type;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.edge.EdgeQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 /**
  * Created with IntelliJ IDEA. To change this template use File | Settings | File Templates.

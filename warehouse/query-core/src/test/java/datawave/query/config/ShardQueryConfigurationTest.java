@@ -29,6 +29,7 @@ import datawave.data.type.GeometryType;
 import datawave.data.type.NoOpType;
 import datawave.data.type.StringType;
 import datawave.data.type.Type;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.UniqueFields;
 import datawave.query.attributes.UniqueGranularity;
@@ -37,7 +38,6 @@ import datawave.query.function.DocumentProjection;
 import datawave.query.model.QueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
-import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
 

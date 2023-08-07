@@ -11,8 +11,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetric;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryExceptionType;
 import datawave.webservice.query.map.QueryGeometry;
 import datawave.webservice.query.map.QueryGeometryResponse;

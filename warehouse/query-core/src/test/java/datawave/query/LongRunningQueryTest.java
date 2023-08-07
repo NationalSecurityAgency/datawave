@@ -15,7 +15,6 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.junit.Before;
@@ -29,6 +28,7 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
 import datawave.helpers.PrintUtility;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.DateIndexHelperFactory;
@@ -38,7 +38,6 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.util.TableName;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
 /**
