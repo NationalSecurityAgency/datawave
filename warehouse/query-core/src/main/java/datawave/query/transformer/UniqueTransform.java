@@ -63,13 +63,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
 
     private BloomFilter<byte[]> bloom;
-    private UniqueFields uniqueFields;
+    private final UniqueFields uniqueFields = new UniqueFields();
     private Multimap<String,String> modelMapping;
     private HdfsBackedSortedSet<Entry<byte[],Document>> set;
     private Iterator<Entry<byte[],Document>> setIterator;
 
     private UniqueTransform(UniqueFields uniqueFields) {
-        this.uniqueFields = uniqueFields;
+        this.uniqueFields.set(uniqueFields);
         this.uniqueFields.deconstructIdentifierFields();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
@@ -77,99 +77,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
-    public UniqueTransform(QueryIterator queryIterator, UniqueFields uniqueFields) throws IOException {
-        this(uniqueFields);
-        if (uniqueFields.isMostRecent()) {
-            this.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
-                            .withBufferPersistThreshold(queryIterator.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(queryIterator))
-                            .withUniqueSubPath("MostRecentUniqueSet").withMaxOpenFiles(queryIterator.getIvaratorMaxOpenFiles())
-                            .withNumRetries(queryIterator.getIvaratorNumRetries()).withPersistOptions(queryIterator.getIvaratorPersistOptions())
-                            .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
-        }
-    }
-
-    /**
-     * Create a new {@link UniqueTransform} that will capture the reverse field mapping defined within the model being used by the logic (if present).
-     *
-     * @param logic
-     *            the logic
-     * @param uniqueFields
-     *            the set of fields to find unique values for
-     */
-    public UniqueTransform(ShardQueryLogic logic, UniqueFields uniqueFields) throws IOException {
-        this(uniqueFields);
-        if (logic != null) {
-            setModelMappings(logic.getQueryModel());
-        }
-        if (uniqueFields.isMostRecent()) {
-            this.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
-                            .withBufferPersistThreshold(logic.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(logic))
-                            .withUniqueSubPath("FinalMostRecentUniqueSet").withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
-                            .withNumRetries(logic.getIvaratorNumRetries()).withPersistOptions(new FileSortedSet.PersistOptions(logic.isIvaratorPersistVerify(),
-                                            logic.isIvaratorPersistVerify(), logic.getIvaratorPersistVerifyCount()))
-                            .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
-        }
-    }
-
-    private List<IvaratorCacheDir> getIvaratorCacheDirs(ShardQueryLogic logic) throws IOException {
-        return getIvaratorCacheDirs(logic.getIvaratorCacheDirConfigs(), logic.getHdfsSiteConfigURLs(), logic.getConfig().getQuery().getId().toString());
-    }
-
-    private List<IvaratorCacheDir> getIvaratorCacheDirs(QueryIterator queryIterator) throws IOException {
-        return getIvaratorCacheDirs(queryIterator.getIvaratorCacheDirConfigs(), queryIterator.getHdfsSiteConfigURLs(),
-                        queryIterator.getQueryId() + '-' + queryIterator.getScanId());
-    }
-
-    /**
-     * Build a list of potential hdfs directories based on each ivarator cache dir configs.
-     *
-     * @param ivaratorCacheDirConfigs
-     * @param hdfsSiteConfigURLs
-     * @param subdirectory
-     * @return A path
-     * @throws IOException
-     *             for issues with read/write
-     */
-    private List<IvaratorCacheDir> getIvaratorCacheDirs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs, String hdfsSiteConfigURLs, String subdirectory)
-                    throws IOException {
-        // build a list of ivarator cache dirs from the configs
-        List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
-        if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
-            for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
-
-                // first, make sure the cache configuration is valid
-                if (config.isValid()) {
-                    Path path = new Path(config.getBasePathURI(), subdirectory);
-                    URI uri = path.toUri();
-                    FileSystem fs = new FileSystemCache(hdfsSiteConfigURLs).getFileSystem(uri);
-                    pathAndFs.add(new IvaratorCacheDir(config, fs, uri.toString()));
-                }
-            }
-        }
-
-        if (pathAndFs.isEmpty())
-            throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirConfigs);
-
-        return pathAndFs;
-    }
-
-    public static class MostRecentTimeStampStrategy implements RewritableSortedSet.RewriteStrategy<Map.Entry<byte[],Document>> {
-        @Override
-        public boolean rewrite(Map.Entry<byte[],Document> original, Map.Entry<byte[],Document> update) {
-            return (update.getValue().getTimestamp() > original.getValue().getTimestamp());
-        }
-    }
-
     public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
-        if (this.uniqueFields != uniqueFields) {
-            uniqueFields.deconstructIdentifierFields();
-            if (!this.uniqueFields.equals(uniqueFields)) {
-                this.uniqueFields = uniqueFields;
-                log.info("Resetting unique fields on the unique transform");
-                this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
-                if (log.isTraceEnabled()) {
-                    log.trace("unique fields: " + this.uniqueFields.getFields());
-                }
+        UniqueFields fields = new UniqueFields();
+        fields.set(uniqueFields);
+        fields.deconstructIdentifierFields();
+        if (!this.uniqueFields.equals(fields)) {
+            this.uniqueFields.set(fields);
+            log.info("Resetting unique fields on the unique transform");
+            this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
+            if (log.isTraceEnabled()) {
+                log.trace("unique fields: " + this.uniqueFields.getFields());
             }
         }
         setModelMappings(model);
@@ -423,37 +340,138 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
 
     }
 
-    private Comparator<Entry<byte[],Document>> keyComparator = new Comparator<>() {
-        private Comparator<byte[]> comparator = new ByteArrayComparator();
+    /**
+     * A builder of unique transforms
+     */
+    public static class Builder {
 
-        @Override
-        public int compare(Map.Entry<byte[],Document> o1, Map.Entry<byte[],Document> o2) {
-            return comparator.compare(o1.getKey(), o2.getKey());
+        private final UniqueTransform transform;
+
+        public Builder(UniqueFields fields) {
+            transform = new UniqueTransform(fields);
         }
-    };
 
-    private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Document>> keyValueComparator = new RewritableSortedSetImpl.RewriteStrategy<>() {
-        @Override
-        public boolean rewrite(Map.Entry<byte[],Document> original, Map.Entry<byte[],Document> update) {
-            int comparison = keyComparator.compare(original, update);
-            if (comparison == 0) {
-                long ts1 = getTimestamp(original.getValue());
-                long ts2 = getTimestamp(update.getValue());
-                return (ts2 > ts1);
+        private Comparator<Entry<byte[],Document>> keyComparator = new Comparator<>() {
+            private Comparator<byte[]> comparator = new ByteArrayComparator();
+
+            @Override
+            public int compare(Map.Entry<byte[],Document> o1, Map.Entry<byte[],Document> o2) {
+                return comparator.compare(o1.getKey(), o2.getKey());
             }
-            return comparison < 0;
-        }
-    };
+        };
 
-    private DocumentKey getDocKeyAttr(Document doc) {
-        return (DocumentKey) (doc.get(Document.DOCKEY_FIELD_NAME));
+        private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Document>> keyValueComparator = new RewritableSortedSetImpl.RewriteStrategy<>() {
+            @Override
+            public boolean rewrite(Map.Entry<byte[],Document> original, Map.Entry<byte[],Document> update) {
+                int comparison = keyComparator.compare(original, update);
+                if (comparison == 0) {
+                    long ts1 = getTimestamp(original.getValue());
+                    long ts2 = getTimestamp(update.getValue());
+                    return (ts2 > ts1);
+                }
+                return comparison < 0;
+            }
+        };
+
+        /**
+         * Setup an hdfs backed sorted set if "most recent".
+         *
+         * @param queryIterator
+         *            the queryIterator from which to get hdfs backed sorted set info
+         * @throws IOException
+         *             when we fail to create the ivarator cache dirs
+         **/
+        public Builder withQueryIterator(QueryIterator queryIterator) throws IOException {
+            if (transform.uniqueFields.isMostRecent()) {
+                transform.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
+                                .withBufferPersistThreshold(queryIterator.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(queryIterator))
+                                .withUniqueSubPath("MostRecentUniqueSet").withMaxOpenFiles(queryIterator.getIvaratorMaxOpenFiles())
+                                .withNumRetries(queryIterator.getIvaratorNumRetries()).withPersistOptions(queryIterator.getIvaratorPersistOptions())
+                                .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
+            }
+            return this;
+        }
+
+        /**
+         * Capture the reverse field mapping defined within the model being used by the logic (if present). Also setup an hdfs backed sorted set if "most
+         * recent".
+         *
+         * @param logic
+         *            the locic from which to get model mappings and hdfs backed sorted set info
+         * @throws IOException
+         *             when we fail to create the ivarator cache dirs
+         **/
+        public Builder withLogic(ShardQueryLogic logic) throws IOException {
+            transform.setModelMappings(logic.getQueryModel());
+            if (transform.uniqueFields.isMostRecent()) {
+                transform.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
+                                .withBufferPersistThreshold(logic.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(logic))
+                                .withUniqueSubPath("FinalMostRecentUniqueSet").withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
+                                .withNumRetries(logic.getIvaratorNumRetries())
+                                .withPersistOptions(new FileSortedSet.PersistOptions(logic.isIvaratorPersistVerify(), logic.isIvaratorPersistVerify(),
+                                                logic.getIvaratorPersistVerifyCount()))
+                                .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
+            }
+            return this;
+        }
+
+        public UniqueTransform build() {
+            return transform;
+        }
+
+        private static List<IvaratorCacheDir> getIvaratorCacheDirs(ShardQueryLogic logic) throws IOException {
+            return getIvaratorCacheDirs(logic.getIvaratorCacheDirConfigs(), logic.getHdfsSiteConfigURLs(), logic.getConfig().getQuery().getId().toString());
+        }
+
+        private static List<IvaratorCacheDir> getIvaratorCacheDirs(QueryIterator queryIterator) throws IOException {
+            return getIvaratorCacheDirs(queryIterator.getIvaratorCacheDirConfigs(), queryIterator.getHdfsSiteConfigURLs(),
+                            queryIterator.getQueryId() + '-' + queryIterator.getScanId());
+        }
+
+        /**
+         * Build a list of potential hdfs directories based on each ivarator cache dir configs.
+         *
+         * @param ivaratorCacheDirConfigs
+         * @param hdfsSiteConfigURLs
+         * @param subdirectory
+         * @return A path
+         * @throws IOException
+         *             for issues with read/write
+         */
+        private static List<IvaratorCacheDir> getIvaratorCacheDirs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs, String hdfsSiteConfigURLs,
+                        String subdirectory) throws IOException {
+            // build a list of ivarator cache dirs from the configs
+            List<IvaratorCacheDir> pathAndFs = new ArrayList<>();
+            if (ivaratorCacheDirConfigs != null && !ivaratorCacheDirConfigs.isEmpty()) {
+                for (IvaratorCacheDirConfig config : ivaratorCacheDirConfigs) {
+
+                    // first, make sure the cache configuration is valid
+                    if (config.isValid()) {
+                        Path path = new Path(config.getBasePathURI(), subdirectory);
+                        URI uri = path.toUri();
+                        FileSystem fs = new FileSystemCache(hdfsSiteConfigURLs).getFileSystem(uri);
+                        pathAndFs.add(new IvaratorCacheDir(config, fs, uri.toString()));
+                    }
+                }
+            }
+
+            if (pathAndFs.isEmpty())
+                throw new IOException("Unable to find a usable hdfs cache dir out of " + ivaratorCacheDirConfigs);
+
+            return pathAndFs;
+        }
+
     }
 
-    private long getTimestamp(Document doc) {
+    private static long getTimestamp(Document doc) {
         return getDocKeyAttr(doc).getTimestamp();
     }
 
-    private Key getDocKey(Document doc) {
+    private static DocumentKey getDocKeyAttr(Document doc) {
+        return (DocumentKey) (doc.get(Document.DOCKEY_FIELD_NAME));
+    }
+
+    private static Key getDocKey(Document doc) {
         return getDocKeyAttr(doc).getDocKey();
     }
 
