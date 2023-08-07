@@ -44,7 +44,7 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
     @Override
     protected UniqueTransform getUniqueTransform() {
         try {
-            return new UniqueTransform(logic, uniqueFields);
+            return new UniqueTransform.Builder(uniqueFields).withLogic(logic).build();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

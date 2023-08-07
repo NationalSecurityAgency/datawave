@@ -361,7 +361,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
     private Set<String> groupFields = new HashSet<>(0);
-    private UniqueFields uniqueFields = new UniqueFields();
+    private final UniqueFields uniqueFields = new UniqueFields();
     private boolean mostRecentUnique = false;
     private boolean cacheModel = false;
     /**
@@ -616,7 +616,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setGroupFieldsBatchSize(other.getGroupFieldsBatchSize());
         this.setAccrueStats(other.getAccrueStats());
         this.setGroupFields(null == other.getGroupFields() ? null : Sets.newHashSet(other.getGroupFields()));
-        this.setUniqueFields(UniqueFields.copyOf(other.getUniqueFields()));
+        this.setUniqueFields(other.getUniqueFields());
         this.setCacheModel(other.getCacheModel());
         this.setTrackSizes(other.isTrackSizes());
         this.setContentFieldNames(null == other.getContentFieldNames() ? null : Lists.newArrayList(other.getContentFieldNames()));
@@ -1679,11 +1679,9 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        if (uniqueFields == null) {
-            this.uniqueFields = new UniqueFields();
-        } else {
-            this.uniqueFields = uniqueFields;
-            uniqueFields.deconstructIdentifierFields();
+        if (uniqueFields != this.uniqueFields) {
+            this.uniqueFields.set(uniqueFields);
+            this.uniqueFields.deconstructIdentifierFields();
         }
     }
 

@@ -532,11 +532,7 @@ public class UniqueTransformTest {
     }
 
     protected UniqueTransform getUniqueTransform() {
-        try {
-            return new UniqueTransform((QueryIterator) null, uniqueFields);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return new UniqueTransform.Builder(uniqueFields).build();
     }
 
     protected void updateUniqueTransform(UniqueTransform uniqueTransform) {

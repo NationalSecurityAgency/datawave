@@ -159,6 +159,27 @@ public class UniqueFields implements Serializable {
     }
 
     /**
+     * Clear out the field map
+     */
+    public void clear() {
+        this.fieldMap = TreeMultimap.create();
+        this.mostRecent = false;
+    }
+
+    /**
+     * Set the fields base on another fields instance.
+     *
+     * @param fields
+     */
+    public void set(UniqueFields fields) {
+        clear();
+        if (fields != null) {
+            putAll(fields.getFieldMap());
+            setMostRecent(fields.isMostRecent());
+        }
+    }
+
+    /**
      * Put a field-{@link UniqueGranularity} key pair into this {@link UniqueFields}.
      *
      * @param field
@@ -331,12 +352,12 @@ public class UniqueFields implements Serializable {
             return false;
         }
         UniqueFields that = (UniqueFields) o;
-        return Objects.equals(fieldMap, that.fieldMap);
+        return Objects.equals(fieldMap, that.fieldMap) && mostRecent == that.mostRecent;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fieldMap);
+        return Objects.hash(fieldMap, mostRecent);
     }
 
 }

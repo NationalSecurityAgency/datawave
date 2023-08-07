@@ -638,7 +638,8 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
                     try {
-                        ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform(this, getConfig().getUniqueFields()));
+                        ((DocumentTransformer) this.transformerInstance)
+                                        .addTransform(new UniqueTransform.Builder(getConfig().getUniqueFields()).withLogic(this).build());
                     } catch (IOException ioe) {
                         throw new QueryException("Unable to create a unique transform", ioe);
                     }
