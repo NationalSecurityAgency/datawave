@@ -106,6 +106,7 @@ JCOMMANDER_JAR=$(findJar jcommander)
 OPENTELEMETRY_API_JAR=$(findJar opentelemetry-api)
 OPENTELEMETRY_CONTEXT_JAR=$(findJar opentelemetry-context)
 MICROMETER_CORE_JAR=$(findJar micrometer-core)
+MICROMETER_COMMONS_JAR=$(findJar micrometer-commons)
 
 #for geo hilbert curve processing
 JTS_CORE_JAR=$(findJar jts-core)
