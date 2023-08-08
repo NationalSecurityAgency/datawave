@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -19,9 +17,6 @@ import java.util.TreeSet;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
-import datawave.query.util.sortedset.ByteArrayComparator;
-import datawave.query.util.sortedset.MultiSetBackedSortedSet;
 
 public class MultiSetBackedSortedSetTest {
     private byte[][] data = null;
