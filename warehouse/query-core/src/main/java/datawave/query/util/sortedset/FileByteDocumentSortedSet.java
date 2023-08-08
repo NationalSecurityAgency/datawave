@@ -110,7 +110,7 @@ public class FileByteDocumentSortedSet extends FileSortedSet<Map.Entry<byte[],Do
     }
 
     /**
-     * Create an sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoid pulling
+     * Create a sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoids pulling
      * all of its entries into memory at once.
      *
      * @param set
