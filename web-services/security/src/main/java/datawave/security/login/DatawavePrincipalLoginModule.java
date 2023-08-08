@@ -25,6 +25,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AccountLockedException;
+import javax.security.auth.login.CredentialException;
 import javax.security.auth.login.FailedLoginException;
 import javax.security.auth.login.LoginException;
 
@@ -47,6 +48,7 @@ import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.configuration.spring.BeanProvider;
 import datawave.security.auth.DatawaveCredential;
 import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.util.StringUtils;
@@ -71,6 +73,8 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
      * login module will ensure that none of the required roles are included in the response to getRoleSets.
      */
     private Set<String> requiredRoles = new HashSet<>();
+
+    private Set<String> directRoles = new HashSet<>();
 
     @Inject
     private DatawaveUserService datawaveUserService;
@@ -133,6 +137,21 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
             requiredRoles.add("AuthorizedUser");
             requiredRoles.add("AuthorizedServer");
             requiredRoles.add("AuthorizedQueryServer");
+            requiredRoles.add("AuthorizedProxiedServer");
+        }
+
+        /**
+         * the directRoles check is restricted to UserType.SERVER so the AuthorizedUser is not required in this set. There is no explicit check to verify that
+         * there is overlap between requiredRoles and directRoles. If that check is wanted it could be added in the #getRoleSets()
+         */
+
+        option = (String) options.get("directRoles");
+        if (option != null) {
+            directRoles.clear();
+            directRoles.addAll(Arrays.asList(StringUtils.split(option, ':', false)));
+        } else {
+            directRoles.add("AuthorizedServer");
+            directRoles.add("AuthorizedQueryServer");
         }
 
         try {
@@ -189,6 +208,7 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                 if (principal.getProxiedUsers().stream().anyMatch(u -> Collections.disjoint(u.getRoles(), requiredRoles))) {
                     roles.removeAll(requiredRoles);
                 }
+
             }
             StringBuilder buf = new StringBuilder("[" + roles.size() + "] Groups for " + targetUser + " {");
             if (!roles.isEmpty()) {
@@ -330,6 +350,27 @@ public class DatawavePrincipalLoginModule extends AbstractServerLoginModule {
                     throw new AccountLockedException(message);
                 }
             }
+
+            /**
+             * Check terminal server to verify that it can directly connect. This requires the positive check that the terminal server has an approved role
+             * AuthorizedServer or AuthorizedQueryServer. If TerminalServer does not have the correct role we will fail the login. Currently this only checks
+             * for UserType.SERVER. However the predicate could be modified to include a check for UserType.USER. Logic just streams through the list of
+             * ProxiedUsers to get the last element (terminal server). Make sure it's not null and if it is a server then we want it to have a direct role.
+             */
+
+            DatawavePrincipal principal = (DatawavePrincipal) getIdentity();
+            DatawaveUser terminalServer = principal.getProxiedUsers().stream().reduce((prev, next) -> next).orElse(null);
+            // terminalUser should never be null, at a minimum the PrincipalUser should be in the chain
+            if (terminalServer == null || (terminalServer.getUserType() == DatawaveUser.UserType.SERVER
+                            && !(terminalServer.getRoles().stream().anyMatch(directRoles::contains)))) {
+                loginOk = false; // this is critical as it is what the parent class uses to actually deny login
+                String message = "Login denied for terminal server " + terminalServer.getDn() + " due to missing role. Needs one of: " + directRoles
+                                + " but has roles: " + terminalServer.getRoles();
+                log.debug(message);
+                throw new CredentialException(message);
+
+            }
+
         } catch (RuntimeException e) {
 
             log.warn("Login failed due to exception: " + e.getMessage(), e);
