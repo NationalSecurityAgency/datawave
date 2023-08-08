@@ -1,15 +1,15 @@
 package datawave.ingest.mapreduce.partition;
 
-import org.apache.log4j.Logger;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 public class MultiTableRRRangePartitioner extends MultiTableRangePartitioner {
-    
+
     private static final Logger LOG = Logger.getLogger(MultiTableRRRangePartitioner.class);
     private final Map<String,Map<Integer,Integer>> SPLIT_TO_REDUCER_MAP = new HashMap();
-    
+
     @Override
     protected int calculateIndex(int index, int numPartitions, String tableName, int cutPointArrayLength) {
         // check to see if the index is already in the SPLIT_TO_REDUCER_MAP map, if so, return the reducer number
@@ -44,8 +44,8 @@ public class MultiTableRRRangePartitioner extends MultiTableRangePartitioner {
             // amount.
             LOG.trace("Index was not found after recomputing the reducer map");
             return 0;
-            
+
         }
     }
-    
+
 }

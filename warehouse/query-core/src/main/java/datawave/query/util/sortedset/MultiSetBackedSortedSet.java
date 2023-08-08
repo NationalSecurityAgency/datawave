@@ -16,25 +16,26 @@ import java.util.TreeSet;
  */
 public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements SortedSet<E> {
     protected List<SortedSet<E>> sets = new ArrayList<>();
-    
+
     /**
      * Add a set to the underlying sets
-     * 
+     *
      * @param set
+     *            the set
      */
     public void addSet(SortedSet<E> set) {
         sets.add(set);
     }
-    
+
     /**
      * Get the underlying sets
-     * 
+     *
      * @return the sets
      */
     public List<SortedSet<E>> getSets() {
         return sets;
     }
-    
+
     /**
      * Return the size of this set. NOTE that this is somewhat expensive as we require iterating over the sets to determine the true value (see
      * MergeSortIterator);
@@ -48,7 +49,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return size;
     }
-    
+
     @Override
     public boolean isEmpty() {
         for (SortedSet<E> set : sets) {
@@ -58,7 +59,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return true;
     }
-    
+
     @Override
     public boolean contains(Object o) {
         for (SortedSet<E> set : sets) {
@@ -68,17 +69,17 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return false;
     }
-    
+
     @Override
     public Iterator<E> iterator() {
         return new MergeSortIterator<>(sets);
     }
-    
+
     @Override
     public boolean add(E e) {
         throw new UnsupportedOperationException("Please use addSet to add a sorted set or add this item to one of the existing underlying sets");
     }
-    
+
     @Override
     public boolean remove(Object o) {
         boolean removed = false;
@@ -89,7 +90,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return removed;
     }
-    
+
     @Override
     public void clear() {
         for (SortedSet<E> set : this.sets) {
@@ -103,7 +104,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         this.sets.clear();
     }
-    
+
     @Override
     public Comparator<? super E> comparator() {
         if (!sets.isEmpty()) {
@@ -111,7 +112,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return null;
     }
-    
+
     @Override
     public SortedSet<E> subSet(E fromElement, E toElement) {
         MultiSetBackedSortedSet<E> subSet = new MultiSetBackedSortedSet<>();
@@ -120,7 +121,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return subSet;
     }
-    
+
     @Override
     public SortedSet<E> headSet(E toElement) {
         MultiSetBackedSortedSet<E> subSet = new MultiSetBackedSortedSet<>();
@@ -129,7 +130,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return subSet;
     }
-    
+
     @Override
     public SortedSet<E> tailSet(E fromElement) {
         MultiSetBackedSortedSet<E> subSet = new MultiSetBackedSortedSet<>();
@@ -138,7 +139,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return subSet;
     }
-    
+
     @Override
     public E first() {
         SortedSet<E> firstSet = new TreeSet<>(comparator());
@@ -150,7 +151,7 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
         }
         return firstSet.first();
     }
-    
+
     @Override
     public E last() {
         SortedSet<E> lastSet = new TreeSet<>(comparator());

@@ -1,5 +1,6 @@
 package datawave.query.tables.remote;
 
+import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.remote.RemoteQueryService;
 import datawave.webservice.query.logic.QueryLogic;
 
@@ -8,4 +9,6 @@ import datawave.webservice.query.logic.QueryLogic;
  */
 public interface RemoteQueryLogic<T> extends QueryLogic<T> {
     public void setRemoteQueryService(RemoteQueryService service);
+
+    public void setUserOperations(UserOperations userOperations);
 }

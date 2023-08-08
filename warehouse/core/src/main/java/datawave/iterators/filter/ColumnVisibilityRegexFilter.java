@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 package datawave.iterators.filter;
 
@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Value;
 public class ColumnVisibilityRegexFilter extends RegexFilterBase {
     /**
      * This method returns a {@code String} object containing the column column visibility for {@code Key} object {@code k}
-     * 
+     *
      * @param k
      *            {@code Key} object containing the row, column family, and column qualifier.
      * @param v
@@ -24,5 +24,5 @@ public class ColumnVisibilityRegexFilter extends RegexFilterBase {
         // ASSUMING no special characters in the column visibility
         return new String(k.getColumnVisibilityData().getBackingArray());
     }
-    
+
 }

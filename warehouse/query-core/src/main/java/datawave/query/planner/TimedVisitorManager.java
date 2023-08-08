@@ -1,27 +1,30 @@
 package datawave.query.planner;
 
+import static datawave.query.planner.DefaultQueryPlanner.logQuery;
+
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.visitors.validate.ASTValidator;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-
-import static datawave.query.planner.DefaultQueryPlanner.logQuery;
 
 /**
  * Handles boilerplate code execution for operations like timing a visit call, logging the query tree, and eventualy validating the resulting query tree.
  */
-class TimedVisitorManager {
-    
-    private boolean isDebugEnabled; // log query tree after visit?
+public class TimedVisitorManager {
+
+    private boolean debugEnabled; // log query tree after visit?
     private boolean validateAst; // validate the query tree after visit?
-    
+
+    private ASTValidator validator = new ASTValidator();
+
     // default, do not log, do not validate
     public TimedVisitorManager() {
         this(false, false);
     }
-    
+
     /**
      * Sets flags to log the query or validate the query
      *
@@ -31,10 +34,10 @@ class TimedVisitorManager {
      *            set this flag to validate the query
      */
     public TimedVisitorManager(boolean isDebugEnabled, boolean validateAst) {
-        this.isDebugEnabled = isDebugEnabled;
+        this.debugEnabled = isDebugEnabled;
         this.validateAst = validateAst;
     }
-    
+
     /**
      * Wrap visitor execution with a timer and debug msg
      *
@@ -49,20 +52,20 @@ class TimedVisitorManager {
      *             if something goes wrong
      */
     public ASTJexlScript timedVisit(QueryStopwatch timers, String stageName, VisitorManager visitorManager) throws DatawaveQueryException {
-        
+
         ASTJexlScript script;
         TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stageName);
-        
+
         try {
             script = visitorManager.apply();
-            
-            if (isDebugEnabled) {
+
+            if (debugEnabled) {
                 logQuery(script, "Query after visit: " + stageName);
             }
-            
+
             if (validateAst) {
                 try {
-                    ASTValidator.isValid(script, stageName);
+                    validator.isValid(script, stageName);
                 } catch (InvalidQueryTreeException e) {
                     throw new DatawaveQueryException(e);
                 }
@@ -72,19 +75,43 @@ class TimedVisitorManager {
         }
         return script;
     }
-    
+
     // no timers, only validate
     public ASTJexlScript validateAndVisit(VisitorManager visitorManager) throws DatawaveQueryException {
         ASTJexlScript script = visitorManager.apply();
-        
+
         if (validateAst) {
             try {
-                ASTValidator.isValid(script);
+                validator.isValid(script);
             } catch (InvalidQueryTreeException e) {
                 throw new DatawaveQueryException(e);
             }
         }
-        
+
         return script;
+    }
+
+    public boolean isDebugEnabled() {
+        return debugEnabled;
+    }
+
+    public void setDebugEnabled(boolean debugEnabled) {
+        this.debugEnabled = debugEnabled;
+    }
+
+    public boolean isValidateAst() {
+        return validateAst;
+    }
+
+    public void setValidateAst(boolean validateAst) {
+        this.validateAst = validateAst;
+    }
+
+    public ASTValidator getValidator() {
+        return validator;
+    }
+
+    public void setValidator(ASTValidator validator) {
+        this.validator = validator;
     }
 }

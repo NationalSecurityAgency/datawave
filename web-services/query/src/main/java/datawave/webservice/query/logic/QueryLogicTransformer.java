@@ -1,18 +1,26 @@
 package datawave.webservice.query.logic;
 
+import org.apache.commons.collections4.Transformer;
+
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.result.BaseQueryResponse;
 
-import org.apache.commons.collections4.Transformer;
-
 public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
-    
+
+    /**
+     * Set a response transform to be applied in the createResponse method.
+     *
+     * @param responseTransform
+     *            a response transform
+     */
+    void setResponseEnricher(ResponseEnricher responseTransform);
+
     /*
      * @return a jaxb response object that is specific to this QueryLogic
      */
     BaseQueryResponse createResponse(ResultsPage resultList);
-    
+
     /**
      * Transforms the input object (leaving it unchanged) into some output object.
      *
@@ -24,11 +32,6 @@ public interface QueryLogicTransformer<I,O> extends Transformer<I,O> {
      */
     @Override
     O transform(I input) throws EmptyObjectException;
-    
-    /**
-     *
-     *
-     * @param queryExecutionForCurrentPageStartTime
-     */
+
     void setQueryExecutionForPageStartTime(long queryExecutionForCurrentPageStartTime);
 }

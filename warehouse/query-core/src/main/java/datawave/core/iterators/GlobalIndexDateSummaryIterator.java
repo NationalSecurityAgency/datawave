@@ -9,11 +9,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
-import datawave.marking.MarkingFunctions;
-
-import datawave.query.Constants;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -29,6 +24,11 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
 
 /**
  * <p>
@@ -46,34 +46,34 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
     protected SortedMap<Key,Value> returnCache = new TreeMap<>();
     protected Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-    
+
     public GlobalIndexDateSummaryIterator() {}
-    
+
     public GlobalIndexDateSummaryIterator(GlobalIndexDateSummaryIterator iter, IteratorEnvironment env) {
         this();
         this.iterator = iter.iterator.deepCopy(env);
         this.returnCache.putAll(iter.returnCache);
     }
-    
+
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new GlobalIndexDateSummaryIterator(this, env);
     }
-    
+
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (!validateOptions(options))
             throw new IOException("Iterator options are not correct");
         this.iterator = source;
     }
-    
+
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
         return new IteratorOptions(getClass().getSimpleName(), "returns global index keys aggregating shard_ids into a single date", options, null);
     }
-    
+
     public boolean validateOptions(Map<String,String> options) {
         return true;
     }
-    
+
     public boolean hasTop() {
         boolean hasTop = (returnValue != null);
         if (log.isDebugEnabled()) {
@@ -81,64 +81,67 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
         }
         return hasTop;
     }
-    
+
     public Key getTopKey() {
         return returnKey;
     }
-    
+
     public Value getTopValue() {
         return returnValue;
     }
-    
+
     public void next() throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("next called");
         }
-        
+
         returnKey = null;
         returnValue = null;
-        
+
         // ensure we have something if there is anything to get
         findTop();
-        
+
         // if we got something, then stage the first one to return
         if (!returnCache.isEmpty()) {
             returnKey = returnCache.firstKey();
             returnValue = returnCache.remove(returnKey);
         }
     }
-    
+
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("seek called: " + range);
         }
-        
+
         this.iterator.seek(range, columnFamilies, inclusive);
         next();
     }
-    
+
     /**
      * This method aggregates all information from the global index for a term for one day, type, and fieldname.
+     *
+     * @throws IOException
+     *             for issues with read/write
      */
     protected void findTop() throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("findTop called");
         }
-        
+
         // if we already have something cached, then simply return
         if (!returnCache.isEmpty()) {
             return;
         }
-        
+
         // Get the next valid term info
         TermInfo termInfo = getNextValidTermInfo();
-        
+
         // while we have a term info but nothing in the cache
         while (termInfo != null && returnCache.isEmpty()) {
             // start a summary
             TermInfoSummary summary = new TermInfoSummary(termInfo.fieldValue, termInfo.fieldName, termInfo.date);
             summary.addTermInfo(termInfo);
-            
+
             // get the next valid term info
             this.iterator.next();
             termInfo = getNextValidTermInfo();
@@ -147,22 +150,23 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                 this.iterator.next();
                 termInfo = getNextValidTermInfo();
             }
-            
+
             // now turn the summary into a set of key, value pairs
             returnCache.putAll(summary.getKeyValues());
-            
+
             // if we did not get any key values out of that summary, then loop on the next term info
             if (returnCache.isEmpty()) {
                 termInfo = getNextValidTermInfo();
             }
         }
     }
-    
+
     /**
      * Get the next TermInfo.valid term info.
-     * 
+     *
      * @return The next valid term info.
      * @throws IOException
+     *             for issues with read/write
      */
     protected TermInfo getNextValidTermInfo() throws IOException {
         while (this.iterator.hasTop()) {
@@ -174,22 +178,23 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
         }
         return null;
     }
-    
+
     /**
      * Get the next term info
-     * 
+     *
      * @return The next term info
      * @throws IOException
+     *             for issues with read/write
      */
     protected TermInfo getNextTermInfo() throws IOException {
         return new TermInfo(this.iterator.getTopKey(), this.iterator.getTopValue());
     }
-    
+
     /**
      * This class is used to summarize the info for a given fieldname
-     * 
-     * 
-     * 
+     *
+     *
+     *
      */
     protected static class TermInfoSummary {
         private String fieldValue = null;
@@ -197,17 +202,17 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
         private String date = null;
         private Map<String,MutableLong> summary = new HashMap<>();
         private Map<String,Set<ColumnVisibility>> columnVisibilitiesMap = Maps.newHashMap();
-        
+
         public TermInfoSummary(String fieldValue, String fieldName, String date) {
             this.fieldValue = fieldValue;
             this.fieldName = fieldName;
             this.date = date;
         }
-        
+
         public boolean isCompatible(TermInfo info) {
             return info.fieldValue.equals(fieldValue) && info.fieldName.equals(fieldName) && info.date.equals(date);
         }
-        
+
         public void addTermInfo(TermInfo info/* , Set<ColumnVisibility> columnVisibilities */) throws IOException {
             if (!isCompatible(info)) {
                 throw new IllegalArgumentException("Attempting to add term info for " + info.fieldName + "=" + info.fieldValue + ", " + info.date
@@ -223,7 +228,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                 if (info.vis.getExpression().length != 0) {
                     columnVisibilities.add(info.vis);
                 }
-                
+
                 MutableLong count = summary.get(info.datatype);
                 if (count == null) {
                     summary.put(info.datatype, new MutableLong(info.count));
@@ -238,7 +243,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                 throw new IOException(message, e);
             }
         }
-        
+
         public Map<Key,Value> getKeyValues() throws IOException {
             Map<Key,Value> resultsMap = new HashMap<>();
             for (Entry<String,MutableLong> entry : summary.entrySet()) {
@@ -246,17 +251,17 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                 // Value: count
                 String datatype = entry.getKey();
                 long count = entry.getValue().longValue();
-                
+
                 try {
                     // Calculate the ColumnVisibility for this key from the combiner.
                     Set<ColumnVisibility> columnVisibilities = this.columnVisibilitiesMap.get(datatype);
-                    
+
                     // Note that the access controls found in the combined ColumnVisibility will be pulled out appropriately here
                     ColumnVisibility cv = markingFunctions.combine(columnVisibilities);
-                    
+
                     // Create a new Key compatible with the shardIndex key format
                     Key k = new Key(this.fieldValue, this.fieldName, this.date + '\0' + datatype, new String(cv.getExpression()));
-                    
+
                     // Create a UID object with just the count for the Value
                     Builder uidBuilder = Uid.List.newBuilder();
                     uidBuilder.setIGNORE(false);
@@ -274,12 +279,12 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
             return resultsMap;
         }
     }
-    
+
     /**
      * This class is used to get the info for a specified global index entry
-     * 
-     * 
-     * 
+     *
+     *
+     *
      */
     protected static class TermInfo {
         protected long count = 0;
@@ -289,13 +294,13 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
         protected String datatype = null;
         protected ColumnVisibility vis = null;
         protected boolean valid = false;
-        
+
         public TermInfo(Key key, Value value) {
             // Get the shard id and datatype from the colq
             fieldValue = key.getRow().toString();
             fieldName = key.getColumnFamily().toString();
             String colq = key.getColumnQualifier().toString();
-            
+
             int separator = colq.indexOf(Constants.NULL_BYTE_STRING);
             if (separator != -1) {
                 int end_separator = colq.lastIndexOf(Constants.NULL_BYTE_STRING);
@@ -317,7 +322,7 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                     date = colq.substring(0, 8);
                     datatype = colq.substring(separator + 1);
                 }
-                
+
                 // Parse the UID.List object from the value
                 Uid.List uidList = null;
                 try {
@@ -329,15 +334,15 @@ public class GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Ke
                     // Don't add UID information, at least we know what shard
                     // it is located in.
                 }
-                
+
                 Text tvis = key.getColumnVisibility();
                 vis = new ColumnVisibility(tvis);
-                
+
                 // we now have a valid info
                 valid = true;
             }
         }
-        
+
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append(fieldName).append(" = ").append(fieldValue).append(" : ");

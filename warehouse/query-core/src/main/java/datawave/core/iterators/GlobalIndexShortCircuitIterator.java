@@ -12,11 +12,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.query.Constants;
-import datawave.util.TextUtil;
-
-import datawave.util.time.DateHelper;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -32,6 +27,11 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.query.Constants;
+import datawave.util.TextUtil;
+import datawave.util.time.DateHelper;
 
 /**
  * <p>
@@ -58,17 +58,17 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
      * When the number of shards that contain data for the given term passes this property value, then a range for the entire day will be returned
      */
     public static final String SHARDS_PER_DAY = "shards.per.day";
-    
+
     /**
      * When the number of events that contain data for the given term passes this property value, then a range for the entire day will be returned
      */
     public static final String EVENTS_PER_DAY = "events.per.day";
-    
+
     /**
      * Comma separated list of data types to return results for, optional.
      */
     public static final String DATA_TYPES = "data.types";
-    
+
     private SortedKeyValueIterator<Key,Value> iterator;
     private Key returnKey = null;
     private Value returnValue = null;
@@ -80,9 +80,9 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
     private Collection<ByteSequence> masterColumnFamilies = null;
     private boolean masterColumnFamiliesInclusive = false;
     protected static final Logger log = Logger.getLogger(GlobalIndexShortCircuitIterator.class);
-    
+
     public GlobalIndexShortCircuitIterator() {}
-    
+
     public GlobalIndexShortCircuitIterator(GlobalIndexShortCircuitIterator iter, IteratorEnvironment env) {
         this.iterator = iter.iterator.deepCopy(env);
         this.ranges = iter.ranges;
@@ -92,15 +92,15 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
         this.masterRange = iter.masterRange;
         this.masterColumnFamilies = iter.masterColumnFamilies;
         this.masterColumnFamiliesInclusive = iter.masterColumnFamiliesInclusive;
-        
+
     }
-    
+
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (!validateOptions(options))
             throw new IOException("Iterator options are not correct");
         this.iterator = source;
     }
-    
+
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
         options.put(DATA_TYPES, "comma separated list of types of data to return");
@@ -108,7 +108,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
         options.put(EVENTS_PER_DAY, "when the number of events per day is passed, then a range for the entire day is created");
         return new IteratorOptions(getClass().getSimpleName(), "returns aggregated index ranges for each day", options, null);
     }
-    
+
     public boolean validateOptions(Map<String,String> options) {
         if (options.containsKey(SHARDS_PER_DAY)) {
             this.shardsPerDay = Long.parseLong(options.get(SHARDS_PER_DAY));
@@ -125,32 +125,32 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
         }
         return true;
     }
-    
+
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new GlobalIndexShortCircuitIterator(this, env);
     }
-    
+
     public boolean hasTop() {
         return (returnValue != null);
     }
-    
+
     public void next() throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("next called");
         }
-        
+
         // Return K/V from the range map
         returnKey = null;
         returnValue = null;
         if (this.iterator.hasTop())
             findTop();
     }
-    
+
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("seek called: " + range);
         }
-        
+
         this.iterator.seek(range, columnFamilies, inclusive);
         this.masterRange = range;
         this.masterColumnFamilies = columnFamilies;
@@ -159,83 +159,86 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
         if (this.iterator.hasTop())
             findTop();
     }
-    
+
     public Key getTopKey() {
         if (log.isDebugEnabled()) {
             log.debug("topKey: " + returnKey);
         }
-        
+
         return returnKey;
     }
-    
+
     public Value getTopValue() {
         return returnValue;
     }
-    
+
     /**
      * This method aggregates all information from the global index for a term for one day. It will return when the day boundary has passed so that the ranges
      * for that term for that day can be retrieved via the getTopKey and getTopValue methods.
+     *
+     * @throws IOException
+     *             for issues with read/write
      */
     private void findTop() throws IOException {
         if (log.isDebugEnabled()) {
             log.debug("findTop called");
         }
-        
+
         Key startingRange = this.iterator.getTopKey();
         Date startDate = parseDateFromColQual(startingRange);
         long dayCount = 0;
         Set<String> shardsSeen = new HashSet<>();
         Set<Entry<String,String>> shardDatatypeRanges = new HashSet<>();
         boolean done = false;
-        
+
         if (log.isDebugEnabled()) {
             log.debug("MasterRange: " + this.masterRange);
         }
-        
+
         do {
             if (log.isDebugEnabled()) {
                 log.debug("top of do");
             }
-            
+
             // Check for hasTop again because we are in a loop and we are calling next() and seek()
             // on the source iterator inside this loop
             if (!this.iterator.hasTop()) {
                 if (log.isDebugEnabled()) {
                     log.debug("source iterator no longer has top, should be done.");
                 }
-                
+
                 done = true;
                 continue;
             }
-            
+
             Key currentKey = this.iterator.getTopKey();
             Value currentValue = this.iterator.getTopValue();
-            
+
             if (log.isDebugEnabled()) {
                 log.debug("currentKey: " + currentKey);
             }
-            
+
             // If we have passed the day boundary and we have ranges to pass back, then lets break out
             // of this loop.
             if (!startDate.equals(parseDateFromColQual(currentKey)) && !ranges.isEmpty()) {
                 if (log.isDebugEnabled()) {
                     log.debug("Not on the desired startDate and have found ranges to return");
                 }
-                
+
                 done = true;
                 continue;
             } else if (!this.masterRange.contains(currentKey)) {
                 if (log.isDebugEnabled()) {
                     log.debug("currentKey not contained in the masterRange");
                 }
-                
+
                 done = true;
                 continue;
             } else if (!startDate.equals(parseDateFromColQual(currentKey))) {
                 if (log.isDebugEnabled()) {
                     log.debug("Not on the desired startDate and have no ranges to return");
                 }
-                
+
                 // We have passed the date boundary but didn't have any ranges. In this case, we don't
                 // want to return, we want to reset the state for a new day and continue.
                 done = false;
@@ -245,7 +248,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                 shardsSeen.clear();
                 this.ranges.clear();
             }
-            
+
             // Get the shard id and datatype from the colq
             String colq = currentKey.getColumnQualifier().toString();
             int separator = colq.indexOf(Constants.NULL_BYTE_STRING);
@@ -257,33 +260,33 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             } else {
                 throw new IOException("Malformed global index qualifier: " + colq);
             }
-            
+
             // Keep track of the number of shards we have seen for this day
             shardsSeen.add(shardId);
-            
+
             // If the types have been set, then determine if we need to skip or continue
             if (!types.isEmpty() && !types.contains(datatype)) {
                 this.iterator.next();
                 continue;
             }
-            
+
             // Parse the UID.List object from the value
             Uid.List uidList = null;
             boolean forcedDayRange = false;
             try {
                 uidList = Uid.List.parseFrom(currentValue.get());
-                
+
                 if (log.isDebugEnabled()) {
                     log.debug("UidCOUNT for this key: " + uidList.getCOUNT());
                 }
-                
+
                 // Add the count for this shard to the total count for the term.
                 dayCount += uidList.getCOUNT();
             } catch (InvalidProtocolBufferException e) {
                 // Not an event specific range if we cannot decode the protobuf
                 forcedDayRange = true;
             }
-            
+
             // Lets create a range for the entire day if any of the following are true:
             // a - forcedDayRange is true; when we cant unpack a Uid.List object from one of the global index entries for that day
             // b - when the number of events for that term in the Uid.List passes the EVENTS_PER_DAY threshold
@@ -292,54 +295,54 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                 if (log.isDebugEnabled()) {
                     log.debug("Removing existing ranges and calculating a new one");
                 }
-                
+
                 // Empty the range set
                 this.ranges.clear();
                 shardDatatypeRanges.clear();
                 // Add in a range for the whole day
                 Key k = new Key(DateHelper.format(startDate));
-                
+
                 Date endDate = DateUtils.addDays(startDate, 1);
                 Key e = new Key(DateHelper.format(endDate));
-                
+
                 Range r = new Range(k, true, e, false);
                 this.ranges.add(r);
-                
+
                 // We want to seek over everything for this date since we just returned the entire day
                 Key masterStartKey = this.masterRange.getStartKey();
                 Key seekKey = new Key(masterStartKey.getRow(), masterStartKey.getColumnFamily(), new Text(DateHelper.format(endDate)));
-                
+
                 Range seekRange = new Range(seekKey, true, this.masterRange.getEndKey(), this.masterRange.isEndKeyInclusive());
-                
+
                 if (log.isDebugEnabled()) {
                     log.debug("Exhausted this date, seeking to: " + seekRange);
                 }
-                
+
                 this.iterator.seek(seekRange, this.masterColumnFamilies, this.masterColumnFamiliesInclusive);
                 this.masterRange = seekRange;
-                
+
                 // We don't know what the actual cardinality is, just that it's more than what we want
                 dayCount = Long.MAX_VALUE;
-                
+
                 done = true;
                 continue;
             } else {
                 if (log.isDebugEnabled()) {
                     log.debug("Handling the UID list");
                 }
-                
+
                 Text shard = new Text(shardId);
                 if (uidList.getIGNORE()) {
                     if (log.isDebugEnabled()) {
                         log.debug("Adding range for the shard & datatype");
                     }
-                    
+
                     // Add a Range for the entire shard and datatype.
                     Text cf = new Text(datatype);
                     Key startKey = new Key(shard, cf);
                     Key endKey = new Key(shard, new Text(cf + Constants.MAX_UNICODE_STRING + Constants.NULL_BYTE_STRING));
                     Range shardDatatypeRange = new Range(startKey, true, endKey, false);
-                    
+
                     // Remove all event-specific ranges for this shard/datatype
                     Iterator<Range> rangeIter = this.ranges.iterator();
                     while (rangeIter.hasNext()) {
@@ -348,9 +351,9 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                             rangeIter.remove();
                         }
                     }
-                    
+
                     this.ranges.add(shardDatatypeRange);
-                    
+
                     // Track that we already added a range for this shard+datatype
                     shardDatatypeRanges.add(new AbstractMap.SimpleEntry<>(shard.toString(), datatype));
                 } else {
@@ -362,7 +365,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                         if (log.isDebugEnabled()) {
                             log.debug("Adding ranges for each shard, datatype, UID");
                         }
-                        
+
                         // Add Event specific ranges
                         for (String uuid : uidList.getUIDList()) {
                             Text cf = new Text(datatype);
@@ -375,11 +378,11 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
                     }
                 }
             }
-            
+
             this.iterator.next();
-            
+
         } while (!done);
-        
+
         if (!this.ranges.isEmpty()) {
             // Set the returnKey with the following structure
             // row = original row
@@ -394,7 +397,7 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             this.ranges.clear();
         }
     }
-    
+
     private Date parseDateFromColQual(Key k) throws IOException {
         try {
             return DateHelper.parse(Text.decode(k.getColumnQualifierData().getBackingArray(), 0, 8));
@@ -402,5 +405,5 @@ public class GlobalIndexShortCircuitIterator implements SortedKeyValueIterator<K
             throw new IOException("Index entry column qualifier is not correct format: " + k);
         }
     }
-    
+
 }

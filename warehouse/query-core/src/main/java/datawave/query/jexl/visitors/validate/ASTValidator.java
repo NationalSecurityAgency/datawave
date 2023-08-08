@@ -1,16 +1,18 @@
 package datawave.query.jexl.visitors.validate;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Joiner;
+
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Validates an AST with respect to some basic assumptions. Intended to be called after a given visitor is done visiting a query tree.
@@ -24,23 +26,36 @@ import java.util.List;
  * </pre>
  */
 public class ASTValidator {
-    
+
     private static final Logger log = Logger.getLogger(ASTValidator.class);
-    
-    // this is a static utility class
-    private ASTValidator() {}
-    
+
+    private boolean isValid;
+    private final List<String> reasons = new ArrayList<>();
+
+    // toggles
+    private boolean validateLineage;
+    private boolean validateFlatten;
+    private boolean validateJunctions;
+    private boolean validateReferenceExpressions;
+    private boolean validateQueryPropertyMarkers;
+
+    public ASTValidator() {
+        // empty constructor
+    }
+
     /**
      * Determines if the provided AST meets all basic assumptions. Intended to be called outside of normal visitor validation
      *
      * @param root
      *            an arbitrary JexlNode
      * @return true if the tree is valid, otherwise throws an exception
+     * @throws InvalidQueryTreeException
+     *             for invalid tree
      */
-    public static boolean isValid(JexlNode root) throws InvalidQueryTreeException {
+    public boolean isValid(JexlNode root) throws InvalidQueryTreeException {
         return isValid(root, null, true);
     }
-    
+
     /**
      * Determines if the provided AST meets all basic assumptions of validity. Intended to be called after a visitor is done visiting a query tree.
      *
@@ -49,13 +64,15 @@ public class ASTValidator {
      * @param sourceVisitor
      *            the visitor calling this method
      * @return true if the AST is valid, otherwise
+     * @throws InvalidQueryTreeException
+     *             if the query tree is invalid
      */
-    public static boolean isValid(JexlNode root, String sourceVisitor) throws InvalidQueryTreeException {
+    public boolean isValid(JexlNode root, String sourceVisitor) throws InvalidQueryTreeException {
         return isValid(root, sourceVisitor, true);
     }
-    
+
     /**
-     * Determines if the AST meets all basic assumptions of validity. Throws an exception if the AST if not valid.
+     * Determines if the AST meets all basic assumptions of validity. Throws an exception if the AST is not valid.
      *
      * @param root
      *            an arbitrary JexlNode
@@ -64,40 +81,23 @@ public class ASTValidator {
      * @param failHard
      *            boolean to throw an exception if the tree fails validation
      * @return true if the AST is valid, otherwise throws an exception
+     * @throws InvalidQueryTreeException
+     *             if the query tree is invalid
      */
-    public static boolean isValid(JexlNode root, String sourceVisitor, boolean failHard) throws InvalidQueryTreeException {
-        
+    public boolean isValid(JexlNode root, String sourceVisitor, boolean failHard) throws InvalidQueryTreeException {
+
         log.info("Validating tree after visiting " + sourceVisitor);
-        
-        boolean isLineageValid = isLineageValid(root);
-        boolean isTreeFlattened = isTreeFlattened(root);
-        boolean areJunctionsValid = areJunctionsValid(root);
-        boolean areReferenceExpressionsValid = areReferenceExpressionsValid(root);
-        boolean areQueryPropertyMarkersValid = areQueryPropertyMarkersValid(root);
-        
-        //  @formatter:off
-        boolean isValid = isLineageValid && isTreeFlattened && areJunctionsValid && areReferenceExpressionsValid && areQueryPropertyMarkersValid;
-        //  @formatter:on
-        
+
+        isValid = true;
+        reasons.clear();
+
+        validateLineage(root);
+        validateFlatten(root);
+        validateJunctions(root);
+        validateReferenceExpressionsValid(root);
+        validateQueryPropertyMarkers(root);
+
         if (!isValid) {
-            
-            List<String> reasons = new ArrayList<>();
-            if (!isLineageValid) {
-                reasons.add("Lineage");
-            }
-            if (!isTreeFlattened) {
-                reasons.add("Flatten");
-            }
-            if (!areJunctionsValid) {
-                reasons.add("Junctions");
-            }
-            if (!areReferenceExpressionsValid) {
-                reasons.add("RefExpr");
-            }
-            if (!areQueryPropertyMarkersValid) {
-                reasons.add("Markers");
-            }
-            
             String joined = "[" + Joiner.on(',').join(reasons) + "]";
             log.error(sourceVisitor + " produced an invalid query tree for reasons " + joined);
             if (failHard) {
@@ -110,64 +110,115 @@ public class ASTValidator {
         }
         return isValid;
     }
-    
+
     /**
      * Validate the lineage of all nodes under this root
      *
      * @param root
      *            an arbitrary JexlNode
-     * @return true if all parent-child relationships are valid
      */
-    private static boolean isLineageValid(JexlNode root) {
-        // Do not fail hard
-        return JexlASTHelper.validateLineage(root, false);
+    private void validateLineage(JexlNode root) {
+        // do not fail hard
+        if (validateLineage && !JexlASTHelper.validateLineage(root, false)) {
+            isValid = false;
+            reasons.add("Lineage");
+        }
     }
-    
+
     /**
      * Determine if this AST is flattened
      *
      * @param root
      *            an arbitrary JexlNode
-     * @return true if the tree is flattened
      */
-    private static boolean isTreeFlattened(JexlNode root) {
-        JexlNode copy = RebuildingVisitor.copy(root);
-        String original = JexlStringBuildingVisitor.buildQueryWithoutParse(copy);
-        String flattened = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(copy));
-        return original.equals(flattened);
+    private void validateFlatten(JexlNode root) {
+        if (validateFlatten) {
+            JexlNode copy = RebuildingVisitor.copy(root);
+            String original = JexlStringBuildingVisitor.buildQueryWithoutParse(copy);
+            String flattened = JexlStringBuildingVisitor.buildQueryWithoutParse(TreeFlatteningRebuildingVisitor.flatten(copy));
+            if (!original.equals(flattened)) {
+                isValid = false;
+                reasons.add("Flatten");
+            }
+        }
     }
-    
+
     /**
      * Determine if this AST is valid with respect to And/Or nodes and the number of children
      *
      * @param node
      *            an arbitrary JexlNode
-     * @return true if the tree is valid
      */
-    private static boolean areJunctionsValid(JexlNode node) {
-        return JunctionValidatingVisitor.validate(node);
+    private void validateJunctions(JexlNode node) {
+        if (validateJunctions && !JunctionValidatingVisitor.validate(node)) {
+            isValid = false;
+            reasons.add("Junctions");
+        }
     }
-    
+
     /**
      * Validate the AST with respect to minimal reference expressions
      *
      * @param node
      *            an arbitrary JexlNode
-     * @return true if the tree is valid
      */
-    private static boolean areReferenceExpressionsValid(JexlNode node) {
-        return MinimalReferenceExpressionsVisitor.validate(node);
+    private void validateReferenceExpressionsValid(JexlNode node) {
+        if (validateReferenceExpressions && !MinimalReferenceExpressionsVisitor.validate(node)) {
+            isValid = false;
+            reasons.add("RefExpr");
+        }
     }
-    
+
     /**
      * Validate that all query property markers in this AST are properly structured
-     * 
+     *
      * @param node
      *            an arbitrary JexlNode
-     * @return true if the tree is valid
      */
-    private static boolean areQueryPropertyMarkersValid(JexlNode node) {
-        return ValidQueryPropertyMarkerVisitor.validate(node).isValid();
+    private void validateQueryPropertyMarkers(JexlNode node) {
+        if (validateQueryPropertyMarkers && !ValidQueryPropertyMarkerVisitor.validate(node).isValid()) {
+            isValid = false;
+            reasons.add("Markers");
+        }
     }
-    
+
+    public boolean isValidateLineage() {
+        return validateLineage;
+    }
+
+    public void setValidateLineage(boolean validateLineage) {
+        this.validateLineage = validateLineage;
+    }
+
+    public boolean getValidateFlatten() {
+        return validateFlatten;
+    }
+
+    public void setValidateFlatten(boolean validateFlatten) {
+        this.validateFlatten = validateFlatten;
+    }
+
+    public boolean getValidateJunctions() {
+        return validateJunctions;
+    }
+
+    public void setValidateJunctions(boolean validateJunctions) {
+        this.validateJunctions = validateJunctions;
+    }
+
+    public boolean getValidateReferenceExpressions() {
+        return validateReferenceExpressions;
+    }
+
+    public void setValidateReferenceExpressions(boolean validateReferenceExpressions) {
+        this.validateReferenceExpressions = validateReferenceExpressions;
+    }
+
+    public boolean getValidateQueryPropertyMarkers() {
+        return validateQueryPropertyMarkers;
+    }
+
+    public void setValidateQueryPropertyMarkers(boolean validateQueryPropertyMarkers) {
+        this.validateQueryPropertyMarkers = validateQueryPropertyMarkers;
+    }
 }

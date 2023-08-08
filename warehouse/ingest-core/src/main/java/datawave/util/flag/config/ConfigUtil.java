@@ -4,8 +4,12 @@
  */
 package datawave.util.flag.config;
 
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Arrays;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -15,24 +19,21 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Arrays;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 /**
  * Simple util to generate sample flag config file and has utility methods to serialize/deserialize <code>FlagMakerConfig</code> objects.
  */
 public class ConfigUtil {
     private static final String sampleFileName = "SampleFlagConfig.xml";
-    
+
     public static void main(String[] args) throws Exception {
         createSample();
         System.exit(0);
     }
-    
+
     static void createSample() throws Exception {
         File f = new File(sampleFileName);
         if (f.exists()) {
@@ -51,10 +52,10 @@ public class ConfigUtil {
         flags.setDefaultCfg(defCfg);
         saveXmlObject(flags, f);
     }
-    
+
     // Unmarshalling xml into java classes
     public static <T> T getXmlObject(Class<T> claz, String file) throws JAXBException, IOException {
-        
+
         SAXParserFactory factory = SAXParserFactory.newInstance();
         Source xmlSource = null;
         try {
@@ -65,7 +66,7 @@ public class ConfigUtil {
             JAXBContext jc = JAXBContext.newInstance(claz);
             Unmarshaller um = jc.createUnmarshaller();
             return um.unmarshal(xmlSource, claz).getValue();
-            
+
         } catch (SAXException | ParserConfigurationException e) {
             e.printStackTrace(); // Called from main()
             throw new RuntimeException(e);
@@ -74,7 +75,7 @@ public class ConfigUtil {
                 ((SAXSource) xmlSource).getInputSource().getCharacterStream().close();
         }
     }
-    
+
     // marshalling java classes into xml
     public static void saveXmlObject(Object o, File file) throws Exception {
         // open output stream
@@ -93,5 +94,5 @@ public class ConfigUtil {
             }
         }
     }
-    
+
 }

@@ -4,6 +4,7 @@ import static org.easymock.EasyMock.expect;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -15,12 +16,6 @@ import java.util.TreeMap;
 
 import javax.ejb.EJBContext;
 
-import datawave.security.authorization.DatawavePrincipal;
-
-import datawave.security.authorization.DatawaveUser;
-import datawave.security.authorization.DatawaveUser.UserType;
-import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.easymock.EasyMock;
@@ -35,26 +30,32 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.xml.XmlBeanDefinitionReader;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.DatawaveUser.UserType;
+import datawave.security.authorization.SubjectIssuerDNPair;
+import datawave.security.util.DnUtils.NpeUtils;
+
 @RunWith(EasyMockRunner.class)
 public class QueryLogicFactoryBeanTest extends EasyMockSupport {
-    
+
     QueryLogicFactoryImpl bean = new QueryLogicFactoryImpl();
-    
+
     @Mock
     QueryLogicFactoryConfiguration altFactoryConfig;
-    
+
     @Mock
     DatawavePrincipal altPrincipal;
-    
+
     @Mock
     ClassPathXmlApplicationContext applicationContext;
-    
+
     BaseQueryLogic<?> logic;
-    
+
     private QueryLogicFactoryConfiguration factoryConfig = null;
     private EJBContext ctx;
     private DatawavePrincipal principal = null;
-    
+
     @Before
     public void setup() throws IllegalArgumentException, IllegalAccessException {
         System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
@@ -66,23 +67,23 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         queryFactory.setConfigLocation("TestQueryLogicFactory.xml");
         queryFactory.refresh();
         factoryConfig = queryFactory.getBean(QueryLogicFactoryConfiguration.class.getSimpleName(), QueryLogicFactoryConfiguration.class);
-        
+
         Whitebox.setInternalState(bean, QueryLogicFactoryConfiguration.class, factoryConfig);
         Whitebox.setInternalState(bean, ClassPathXmlApplicationContext.class, queryFactory);
-        
+
         ctx = createMock(EJBContext.class);
         logic = createMockBuilder(BaseQueryLogic.class).addMockedMethods("setLogicName", "getMaxPageSize", "getPageByteTrigger").createMock();
         DatawaveUser user = new DatawaveUser(SubjectIssuerDNPair.of("CN=Poe Edgar Allan eapoe, OU=acme", "<CN=ca, OU=acme>"), UserType.USER, null, null, null,
                         0L);
         principal = new DatawavePrincipal(Collections.singletonList(user));
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetQueryLogicWrongName() throws IllegalArgumentException, CloneNotSupportedException {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
         bean.getQueryLogic("MyQuery", principal);
     }
-    
+
     @Test
     public void testGetQueryLogic() throws IllegalArgumentException, CloneNotSupportedException {
         EasyMock.expect(ctx.getCallerPrincipal()).andReturn(principal);
@@ -91,13 +92,13 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         assertEquals(12345, logic.getMaxResults());
         assertEquals(98765, logic.getMaxWork());
     }
-    
+
     @Test
     public void testGetQueryLogic_HasRequiredRoles() throws Exception {
         // Set the query name
         String queryName = "TestQuery";
         Collection<String> roles = Arrays.asList("Monkey King", "Monkey Queen");
-        
+
         // Set expectations
         QueryLogicFactoryConfiguration qlfc = new QueryLogicFactoryConfiguration();
         qlfc.setMaxPageSize(25);
@@ -107,7 +108,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         expect(this.logic.getMaxPageSize()).andReturn(25);
         expect(this.logic.getPageByteTrigger()).andReturn(1024L);
         expect(this.applicationContext.getBean(queryName)).andReturn(this.logic);
-        
+
         // Run the test
         replayAll();
         QueryLogicFactoryImpl subject = new QueryLogicFactoryImpl();
@@ -115,25 +116,25 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         Whitebox.getField(QueryLogicFactoryImpl.class, "applicationContext").set(subject, this.applicationContext);
         QueryLogic<?> result1 = subject.getQueryLogic(queryName, this.altPrincipal);
         verifyAll();
-        
+
         // Verify results
         assertSame("Query logic should not return null", this.logic, result1);
     }
-    
+
     @Test
     public void testGetQueryLogic_propertyOverride() throws Exception {
         // Set the query name
         String queryName = "TestQuery";
         Collection<String> roles = Arrays.asList("Monkey King", "Monkey Queen");
-        
+
         // Set expectations
         QueryLogicFactoryConfiguration qlfc = new QueryLogicFactoryConfiguration();
         qlfc.setMaxPageSize(25);
         qlfc.setPageByteTrigger(1024L);
-        
+
         Map<String,Collection<String>> rolesMap = new HashMap<>();
         rolesMap.put(queryName, roles);
-        
+
         this.logic.setPrincipal(altPrincipal);
         this.logic.setLogicName(queryName);
         expect(this.logic.getMaxPageSize()).andReturn(0);
@@ -141,7 +142,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         this.logic.setMaxPageSize(25);
         this.logic.setPageByteTrigger(1024L);
         expect(this.applicationContext.getBean(queryName)).andReturn(this.logic);
-        
+
         // Run the test
         replayAll();
         QueryLogicFactoryImpl subject = new QueryLogicFactoryImpl();
@@ -149,19 +150,43 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         Whitebox.getField(QueryLogicFactoryImpl.class, "applicationContext").set(subject, this.applicationContext);
         QueryLogic<?> result1 = subject.getQueryLogic(queryName, this.altPrincipal);
         verifyAll();
-        
+
         // Verify results
         assertSame("Query logic should not return null", this.logic, result1);
     }
-    
+
     @Test
     public void testQueryLogicList() throws Exception {
+        // Run the test
+        replayAll();
+        List<QueryLogic<?>> result1 = bean.getQueryLogicList();
+        verifyAll();
+
+        // Verify results
+        assertNotNull("Query logic list should not return null", result1);
+        assertEquals("Query logic list should return with 2 items", 2, result1.size());
+        for (QueryLogic logic : result1) {
+            if (logic.getLogicName().equals("TestQuery")) {
+                assertEquals(12345, logic.getMaxResults());
+                assertEquals(98765, logic.getMaxWork());
+            } else if (logic.getLogicName().equals("TestQuery2")) {
+                assertEquals(123456, logic.getMaxResults());
+                assertEquals(987654, logic.getMaxWork());
+            } else {
+                fail("Unexpected query logic name " + logic.getLogicName());
+            }
+        }
+    }
+
+    @Test
+    public void testAltQueryLogicList() throws Exception {
         // Set expectations
         Map<String,QueryLogic> logicClasses = new TreeMap<>();
         logicClasses.put("TestQuery", this.logic);
         expect(this.applicationContext.getBeansOfType(QueryLogic.class)).andReturn(logicClasses);
         this.logic.setLogicName("TestQuery");
-        
+        expect(this.altFactoryConfig.hasLogicMap()).andReturn(false);
+
         // Run the test
         replayAll();
         QueryLogicFactoryImpl subject = new QueryLogicFactoryImpl();
@@ -169,9 +194,10 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
         Whitebox.getField(QueryLogicFactoryImpl.class, "applicationContext").set(subject, this.applicationContext);
         List<QueryLogic<?>> result1 = subject.getQueryLogicList();
         verifyAll();
-        
+
         // Verify results
         assertNotNull("Query logic list should not return null", result1);
         assertEquals("Query logic list should return with 1 item", 1, result1.size());
     }
+
 }

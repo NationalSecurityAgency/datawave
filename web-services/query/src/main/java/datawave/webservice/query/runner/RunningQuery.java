@@ -1,38 +1,10 @@
 package datawave.webservice.query.runner;
 
-import datawave.microservice.querymetric.BaseQueryMetric;
-import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
-import datawave.microservice.querymetric.QueryMetric;
-import datawave.microservice.querymetric.QueryMetricFactory;
-import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.AbstractRunningQuery;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.exception.DatawaveErrorCode;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.WritesQueryMetrics;
-import datawave.webservice.query.logic.WritesResultCardinalities;
-import datawave.webservice.query.metric.QueryMetricsBean;
-import datawave.webservice.query.result.event.DefaultEvent;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.trace.thrift.TInfo;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
-import org.jboss.logging.NDC;
-
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -44,17 +16,49 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
+import org.jboss.logging.NDC;
+
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.Prediction;
+import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.QueryMetricFactory;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.security.util.AuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.cache.AbstractRunningQuery;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.data.ObjectSizeOf;
+import datawave.webservice.query.exception.DatawaveErrorCode;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.WritesQueryMetrics;
+import datawave.webservice.query.logic.WritesResultCardinalities;
+import datawave.webservice.query.metric.QueryMetricsBean;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
+
 /**
  * Object that encapsulates a running query
  *
  */
 public class RunningQuery extends AbstractRunningQuery implements Runnable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     private static Logger log = Logger.getLogger(RunningQuery.class);
-    
-    private transient Connector connection = null;
+
+    private transient AccumuloClient client = null;
     private AccumuloConnectionFactory.Priority connectionPriority = null;
     private transient QueryLogic<?> logic = null;
     private Query settings = null;
@@ -64,7 +68,6 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private Set<Authorizations> calculatedAuths = null;
     private boolean finished = false;
     private volatile boolean canceled = false;
-    private TInfo traceInfo = null;
     private transient QueryMetricsBean queryMetrics = null;
     private transient RunningQueryTiming timing = null;
     private ExecutorService executor = null;
@@ -77,34 +80,40 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
     private long maxResults = 0;
     private int currentTimeoutcount = 0;
     private boolean allowShortCircuitTimeouts = false;
-    
+
     public RunningQuery() {
         super(new QueryMetricFactoryImpl());
     }
-    
-    public RunningQuery(Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
+
+    public RunningQuery(AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
                     Principal principal, QueryMetricFactory metricFactory) throws Exception {
-        this(null, connection, priority, logic, settings, methodAuths, principal, null, null, metricFactory);
+        this(null, client, priority, logic, settings, methodAuths, principal, null, null, metricFactory);
     }
-    
-    public RunningQuery(Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
+
+    public RunningQuery(AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings, String methodAuths,
                     Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
-        this(null, connection, priority, logic, settings, methodAuths, principal, timing, metricFactory);
+        this(null, client, priority, logic, settings, methodAuths, principal, timing, metricFactory);
     }
-    
-    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, QueryMetricFactory metricFactory) throws Exception {
-        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, null, metricFactory);
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, null, metricFactory);
     }
-    
-    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryMetricFactory metricFactory) throws Exception {
-        this(queryMetrics, connection, priority, logic, settings, methodAuths, principal, timing, null, metricFactory);
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, metricFactory);
     }
-    
-    public RunningQuery(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
                     String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, QueryMetricFactory metricFactory)
                     throws Exception {
+        this(queryMetrics, client, priority, logic, settings, methodAuths, principal, timing, null, null, metricFactory);
+    }
+
+    public RunningQuery(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority, QueryLogic<?> logic, Query settings,
+                    String methodAuths, Principal principal, RunningQueryTiming timing, QueryPredictor predictor, UserOperations userOperations,
+                    QueryMetricFactory metricFactory) throws Exception {
         super(metricFactory);
         if (logic != null && logic.getCollectQueryMetrics()) {
             this.queryMetrics = queryMetrics;
@@ -113,10 +122,15 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         this.logic = logic;
         this.connectionPriority = priority;
         this.settings = settings;
-        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, principal);
+        // the query principal is our local principal unless the query logic has a different user operations
+        DatawavePrincipal queryPrincipal = (logic.getUserOperations() == null) ? (DatawavePrincipal) principal
+                        : logic.getUserOperations().getRemoteUser((DatawavePrincipal) principal);
+        // the overall principal (the one with combined auths across remote user operations) is our own user operations (probably the UserOperationsBean)
+        DatawavePrincipal overallPrincipal = (userOperations == null) ? (DatawavePrincipal) principal
+                        : userOperations.getRemoteUser((DatawavePrincipal) principal);
+        this.calculatedAuths = AuthorizationsUtil.getDowngradedAuthorizations(methodAuths, overallPrincipal, queryPrincipal);
         this.timing = timing;
         this.executor = Executors.newSingleThreadExecutor();
-        this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
         this.predictor = predictor;
         // set the metric information
         this.getMetric().populate(this.settings);
@@ -129,24 +143,25 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
         // If connection is null, then we are likely not going to use this object for query, probably for removing or closing it.
-        if (null != connection) {
-            setConnection(connection);
+        if (null != client) {
+            setClient(client);
         }
-        this.maxResults = this.logic.getResultLimit(this.settings.getDnList());
+
+        this.maxResults = this.logic.getResultLimit(this.settings);
         if (this.maxResults != this.logic.getMaxResults()) {
             log.info("Maximum results set to " + this.maxResults + " instead of default " + this.logic.getMaxResults() + ", user " + this.settings.getUserDN()
                             + " has a DN configured with a different limit");
         }
     }
-    
-    public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, Connector connection, AccumuloConnectionFactory.Priority priority,
+
+    public static RunningQuery createQueryWithAuthorizations(QueryMetricsBean queryMetrics, AccumuloClient client, AccumuloConnectionFactory.Priority priority,
                     QueryLogic<?> logic, Query settings, String methodAuths, RunningQueryTiming timing, QueryPredictor predictor,
                     QueryMetricFactory metricFactory) throws Exception {
-        RunningQuery runningQuery = new RunningQuery(queryMetrics, connection, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
+        RunningQuery runningQuery = new RunningQuery(queryMetrics, client, priority, logic, settings, methodAuths, null, timing, predictor, metricFactory);
         runningQuery.calculatedAuths = Collections.singleton(new Authorizations(methodAuths));
         return runningQuery;
     }
-    
+
     private void addNDC() {
         String user = this.settings.getUserDN();
         UUID uuid = this.settings.getId();
@@ -154,28 +169,29 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             NDC.push("[" + user + "] [" + uuid + "]");
         }
     }
-    
+
     private void removeNDC() {
         NDC.pop();
     }
-    
-    public void setConnection(Connector connection) throws Exception {
+
+    public void setClient(AccumuloClient client) throws Exception {
         // if we are setting this null, we shouldn't try to initialize
         // the internal logic
-        if (connection == null) {
-            this.connection = null;
+        if (client == null) {
+            this.client = null;
             return;
         }
-        
+
         try {
             addNDC();
             applyPrediction(null);
-            this.connection = connection;
+            this.client = client;
             long start = System.currentTimeMillis();
-            GenericQueryConfiguration configuration = this.logic.initialize(this.connection, this.settings, this.calculatedAuths);
+            GenericQueryConfiguration configuration = this.logic.initialize(this.client, this.settings, this.calculatedAuths);
             this.lastPageNumber = 0;
             this.logic.setupQuery(configuration);
             this.iter = this.logic.getTransformIterator(this.settings);
+            this.allowShortCircuitTimeouts = logic.isLongRunningQuery();
             // the configuration query string should now hold the planned query
             this.getMetric().setPlan(configuration.getQueryString());
             this.getMetric().setSetupTime((System.currentTimeMillis() - start));
@@ -205,13 +221,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
-    
+
     /**
      * This is the results thread which will pull results from the iterator and add them to a blocking queue. The blocking queue will be of size 1 which means
      * that the main RunningQuery.next() loop will have to pull the results before the next one can be retrieved. The hasNext and gotNext counters keep track of
      * the calls to hasNext and next on the underlying iterator. They will be decremented once a result is acknowledged in the RunningQuery.next() loop. The
      * running boolean will allow the graceful termination of this thread.
-     * 
+     *
      * @return running (with a value of false)
      */
     private Object getResultsThread() {
@@ -239,7 +255,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                             gotNext.notifyAll();
                         }
                     }
-                    
+
                     // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
                     if (iter.getTransformer() instanceof WritesQueryMetrics) {
                         ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
@@ -260,7 +276,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 throw new RuntimeException(e);
             }
         }
-        
+
         running.set(false);
         synchronized (hasNext) {
             hasNext.notifyAll();
@@ -268,16 +284,18 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         synchronized (gotNext) {
             gotNext.notifyAll();
         }
-        
+
         return running;
     }
-    
+
     /**
      * This method is used to determine if we have a next result. This will throw a timeout exception if the page short circuit limit is reached.
-     * 
+     *
      * @param pageStartTime
+     *            the page start time
      * @return true if hasNext()
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private boolean hasNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -311,14 +329,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
-    
+
     /**
      * This method will get the next object from the results thread queue. This presumes that hasNext has returned true. A timeout exception will be thrown if
      * the page short circuit timeout has been reached.
-     * 
+     *
      * @param pageStartTime
+     *            the page start time
      * @return the next object (could be null)
      * @throws TimeoutException
+     *             if there is a timeout
      */
     private Object getNext(long pageStartTime) throws TimeoutException {
         if (allowShortCircuitTimeouts) {
@@ -341,16 +361,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         } else {
             Object o = iter.next();
             gotNext.incrementAndGet();
-            
+
             // regardless whether the transform iterator returned a result, it may have updated the metrics (next/seek calls etc.)
             if (iter.getTransformer() instanceof WritesQueryMetrics) {
                 ((WritesQueryMetrics) iter.getTransformer()).writeQueryMetrics(this.getMetric());
             }
-            
+
             return o;
         }
     }
-    
+
     /**
      * terminate the results thread.
      */
@@ -365,12 +385,13 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         }
         executor.shutdown();
     }
-    
+
     /**
      * Get the next results page
-     * 
+     *
      * @return a results page.
      * @throws Exception
+     *             if there are issues
      */
     public ResultsPage next() throws Exception {
         // update AbstractRunningQuery.lastUsed
@@ -386,16 +407,16 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             addNDC();
             int currentPageCount = 0;
             long currentPageBytes = 0;
-            
+
             // test for any exceptions prior to loop as hasNext() would likely be false;
             testForUncaughtException(resultList.size());
-            
+
             // start up the results thread if needed
             if (this.allowShortCircuitTimeouts && future == null && !this.canceled && !this.finished) {
                 running.set(true);
                 future = executor.submit(() -> getResultsThread());
             }
-            
+
             try {
                 while (!this.finished && hasNext(pageStartTime)) {
                     // if we are canceled, then break out
@@ -442,7 +463,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     // use the pagestart time for the time in call since we only care about the execution time of
                     // this page.
                     long pageTimeInCall = (System.currentTimeMillis() - pageStartTime);
-                    
+
                     int maxPageSize = Math.min(this.settings.getPagesize(), this.logic.getMaxPageSize());
                     if (timing != null && currentPageCount > 0 && timing.shouldReturnPartialResults(currentPageCount, maxPageSize, pageTimeInCall)) {
                         log.info("Query logic max expire before page is full, returning existing results " + currentPageCount + " " + maxPageSize + " "
@@ -450,35 +471,35 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         hitPageTimeTrigger = true;
                         break;
                     }
-                    
+
                     // now get the next object
                     Object o = getNext(pageStartTime);
-                    
+
                     // now that we got the next object, acknowledge via the counters
                     hasNext.decrementAndGet();
                     gotNext.decrementAndGet();
-                    
-                    if (o instanceof DefaultEvent && ((DefaultEvent) o).isIntermediateResult()) {
+
+                    if (o instanceof EventBase && ((EventBase) o).isIntermediateResult()) {
                         log.info("Received an intermediate result");
                         // in this case we have timed out up stream somewhere, so lets return what we have
                         hitIntermediateResult = true;
                         break;
                     }
-                    
+
                     if (null == o) {
                         log.debug("Null result encountered, no more results");
                         this.finished = true;
                         terminateResultsThread();
                         break;
                     }
-                    
+
                     resultList.add(o);
                     if (this.logic.getPageByteTrigger() > 0) {
                         currentPageBytes += ObjectSizeOf.Sizer.getObjectSize(o);
                     }
                     currentPageCount++;
                     numResults++;
-                    
+
                     testForUncaughtException(resultList.size());
                 }
             } catch (TimeoutException te) {
@@ -497,7 +518,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
             // if the last hasNext() call failed, then we would catch the exception here
             testForUncaughtException(resultList.size());
-            
+
             // Update the metric
             long now = System.currentTimeMillis();
             this.getMetric().addPageTime(currentPageCount, now - pageStartTime, pageStartTime, now);
@@ -514,7 +535,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             // update AbstractRunningQuery.lastUsed in case this operation took a long time
             touch();
             removeNDC();
-            
+
             if (this.queryMetrics != null) {
                 try {
                     this.queryMetrics.updateMetric(this.getMetric());
@@ -523,17 +544,17 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
-        
+
         if (!resultList.isEmpty()) {
             log.info("Returning page of results");
             // we have results!
-            return new ResultsPage(
-                            resultList,
-                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery) ? ResultsPage.Status.PARTIAL
+            return new ResultsPage(resultList,
+                            ((hitPageByteTrigger || hitPageTimeTrigger || hitIntermediateResult || hitShortCircuitForLongRunningQuery)
+                                            ? ResultsPage.Status.PARTIAL
                                             : ResultsPage.Status.COMPLETE));
         } else {
             // we have no results. Let us determine whether we are done or not.
-            
+
             // if we have hit an intermediate result or a short circuit then check to see how many times we hit this
             if (hitIntermediateResult || hitShortCircuitForLongRunningQuery) {
                 currentTimeoutcount++;
@@ -542,8 +563,8 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                     terminateResultsThread();
                     // this means that we have timed out waiting for a result too many times over the course of this query.
                     // In this case we need to fail the next call with a timeout
-                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT, "Query timed out waiting for results for too many (" + currentTimeoutcount
-                                    + ") cycles.");
+                    throw new QueryException(DatawaveErrorCode.QUERY_TIMEOUT,
+                                    "Query timed out waiting for results for too many (" + currentTimeoutcount + ") cycles.");
                 } else {
                     log.info("Returning an empty partial results page");
                     // We are returning an empty page with a PARTIAL status to allow the query to continue running
@@ -557,56 +578,56 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
-    
+
     public void cancel() {
         this.canceled = true;
-        
+
         terminateResultsThread();
-        
+
         // change status to cancelled
         this.getMetric().setLifecycle(QueryMetric.Lifecycle.CANCELLED);
     }
-    
+
     public boolean isFinished() {
         return finished;
     }
-    
+
     public boolean isCanceled() {
         return canceled;
     }
-    
-    public Connector getConnection() {
-        return connection;
+
+    public AccumuloClient getClient() {
+        return client;
     }
-    
+
     public AccumuloConnectionFactory.Priority getConnectionPriority() {
         return connectionPriority;
     }
-    
+
     public QueryLogic<?> getLogic() {
         return logic;
     }
-    
+
     public Query getSettings() {
         return settings;
     }
-    
+
     public TransformIterator getTransformIterator() {
         return iter;
     }
-    
+
     protected Set<Authorizations> getCalculatedAuths() {
         return calculatedAuths;
     }
-    
+
     protected QueryPredictor getPredictor() {
         return this.predictor;
     }
-    
+
     public void setPredictor(QueryPredictor predictor) {
         this.predictor = predictor;
     }
-    
+
     protected void applyPrediction(String context) {
         if (getPredictor() != null) {
             try {
@@ -625,18 +646,18 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
-    
+
     public void closeConnection(AccumuloConnectionFactory factory) throws Exception {
         this.getMetric().setLifecycle(BaseQueryMetric.Lifecycle.CLOSED);
-        
+
         if (iter != null && iter.getTransformer() instanceof WritesResultCardinalities) {
             ((WritesResultCardinalities) iter.getTransformer()).writeResultCardinalities();
         }
-        
-        if (connection != null) {
+
+        if (client != null) {
             try {
-                factory.returnConnection(connection);
-                connection = null;
+                factory.returnClient(client);
+                client = null;
             } finally {
                 // only push metrics if this RunningQuery was initialized
                 if (this.queryMetrics != null) {
@@ -648,7 +669,7 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                 }
             }
         }
-        
+
         if (logic != null) {
             try {
                 addNDC();
@@ -660,17 +681,17 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
             }
         }
     }
-    
+
     @Override
     public long getLastPageNumber() {
         return this.lastPageNumber;
     }
-    
+
     @Override
     public String toString() {
-        
+
         String host = System.getProperty("jboss.host.name");
-        
+
         return new StringBuilder().append("host:").append(host).append(", id:").append(this.getSettings().getId()).append(", query:")
                         .append(StringEscapeUtils.escapeHtml(this.getSettings().getQuery())).append(", auths:")
                         .append(this.getSettings().getQueryAuthorizations()).append(", user:").append(this.getSettings().getOwner()).append(", queryLogic:")
@@ -679,49 +700,30 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
                         .append(this.getSettings().getEndDate()).append(", expiration:").append(this.getSettings().getExpirationDate()).append(", params: ")
                         .append(this.getSettings().getParameters()).append(", callTime: ")
                         .append((this.getTimeOfCurrentCall() == 0) ? 0 : System.currentTimeMillis() - this.getTimeOfCurrentCall()).toString();
-        
+
     }
-    
-    /**
-     * Sets {@link TInfo} for this query as an indication that the query is being traced. This trace info is also used to continue a trace across different
-     * thread boundaries.
-     */
-    public void setTraceInfo(TInfo traceInfo) {
-        this.traceInfo = traceInfo;
-    }
-    
-    /**
-     * Gets the {@link TInfo} associated with this query, if any. If the query is not being traced, then {@code null} is returned. Callers can continue a trace
-     * on a different thread by calling {@link org.apache.accumulo.core.trace.Trace#trace(TInfo, String)} with the info returned here, and then interacting with
-     * the returned {@link org.apache.accumulo.core.trace.Span}.
-     * 
-     * @return the {@link TInfo} associated with this query, if any
-     */
-    public TInfo getTraceInfo() {
-        return traceInfo;
-    }
-    
+
     public QueryMetricsBean getQueryMetrics() {
         return queryMetrics;
     }
-    
+
     public void setQueryMetrics(QueryMetricsBean queryMetrics) {
         if (logic != null && logic.getCollectQueryMetrics() == true) {
             this.queryMetrics = queryMetrics;
         }
     }
-    
+
     /**
      * An interface used to force returning from a next call within a running query.
      */
     public interface RunningQueryTiming {
         boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall);
-        
+
         int getMaxLongRunningTimeoutRetries();
-        
+
         long getPageShortCircuitTimeoutMs();
     }
-    
+
     /**
      * A noop implementation of the running query timing interface. -- only used by upstream tests
      */
@@ -729,28 +731,28 @@ public class RunningQuery extends AbstractRunningQuery implements Runnable {
         public boolean shouldReturnPartialResults(int pageSize, int maxPageSize, long timeInCall) {
             return false;
         }
-        
+
         public int getMaxLongRunningTimeoutRetries() {
             return 0;
         }
-        
+
         // hardcoded because only used by upstream tests.
         public long getPageShortCircuitTimeoutMs() {
             return 300000000000000L;
         }
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Runnable#run()
      */
     @Override
     public void run() {
         // TODO Auto-generated method stub
-        
+
     }
-    
+
     private void testForUncaughtException(int numResults) throws QueryException {
         QueryUncaughtExceptionHandler handler = settings.getUncaughtExceptionHandler();
         if (handler != null) {

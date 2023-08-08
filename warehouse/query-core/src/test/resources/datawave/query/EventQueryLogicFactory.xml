@@ -13,6 +13,8 @@
         isn't defined in Accumulo for whatever reason...
     -->
 
+    <bean id="ResponseObjectFactory" class="datawave.webservice.query.result.event.DefaultResponseObjectFactory"/>
+
     <!-- A list of lucene to jexl query functions -->
     <util:list id="allowedQueryFunctions" value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
         <bean class="datawave.query.language.functions.jexl.IsNull"/>
@@ -46,7 +48,8 @@
     
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="roleManager" ref="easyRoleManager" />
-        <property name="markingFunctions" ref="markingFunctions" />
+	<property name="markingFunctions" ref="markingFunctions" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
     </bean>
     
     <bean id="BaseEventQuery" parent="baseQueryLogic" scope="prototype" class="datawave.query.tables.ShardQueryLogic" abstract="true">

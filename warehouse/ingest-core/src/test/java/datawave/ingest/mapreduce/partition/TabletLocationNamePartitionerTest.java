@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.partition;
 
 import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.ShardedTableMapFile;
 import datawave.ingest.mapreduce.job.TableSplitsCache;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
@@ -21,7 +22,7 @@ import java.util.Map;
 public class TabletLocationNamePartitionerTest {
     Configuration conf = new Configuration();
     TabletLocationNamePartitioner partitioner = null;
-    
+
     @Before
     public void setUp() {
         conf = new Configuration();
@@ -29,21 +30,21 @@ public class TabletLocationNamePartitionerTest {
         partitioner = new TabletLocationNamePartitioner();
         partitioner.setConf(conf);
     }
-    
+
     @After
     public void tearDown() {
         conf.clear();
         conf = null;
         partitioner = null;
     }
-    
+
     @Test
     public void testSequentialLocationScheme() throws Exception {
         Map<String,Path> shardedTableMapFiles = new HashMap<>();
         // setup the location partition sheme
         URL file = getClass().getResource("/datawave/ingest/mapreduce/partition/_shards.lst");
         shardedTableMapFiles.put("shard", new Path(file.toURI().toString()));
-        
+
         // now read in a list of shards and display the distribution
         file = getClass().getResource("/datawave/ingest/mapreduce/partition/shards.list");
         conf.set(TableSplitsCache.SPLITS_CACHE_DIR, file.getPath().substring(0, file.getPath().lastIndexOf('/')));
@@ -76,6 +77,6 @@ public class TabletLocationNamePartitionerTest {
         if (errored) {
             Assert.fail("Failed to get expected distribution.  See console for unexpected entries");
         }
-        
+
     }
 }

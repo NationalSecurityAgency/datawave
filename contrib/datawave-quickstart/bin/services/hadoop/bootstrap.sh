@@ -3,7 +3,7 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.1.2/hadoop-3.1.2.tar.gz}"
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
@@ -56,7 +56,7 @@ yarn.nodemanager.log-dirs ${DW_CLOUD_DATA}/hadoop/yarn/log
 yarn.nodemanager.aux-services mapreduce_shuffle
 yarn.nodemanager.pmem-check-enabled false
 yarn.nodemanager.vmem-check-enabled false
-yarn.nodemanager.resource.memory-mb 4096
+yarn.nodemanager.resource.memory-mb 6144
 yarn.app.mapreduce.am.resource.mb 1024
 yarn.log.server.url http://localhost:8070/jobhistory/logs"
 
@@ -93,8 +93,8 @@ export PATH=${HADOOP_HOME}/bin:$PATH
 
 # Service helpers...
 
-DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && ./mr-jobhistory-daemon.sh start historyserver )"
-DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && ./mr-jobhistory-daemon.sh stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
+DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && mapred --daemon start historyserver )"
+DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
 DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
@@ -161,7 +161,7 @@ function hadoopStatus() {
     test -z "${_jobHist}" && warn "JobHistoryServer is not running"
     test -z "${_dataNode}" && warn "DataNode is not running"
     test -z "${_nameNode}" && warn "NameNode is not running"
-    test -z "${_secNameNode}" && warn "SecondaryName is not running"
+    test -z "${_secNameNode}" && warn "SecondaryNameNode is not running"
     test -z "${_nodeMgr}" && warn "NodeManager is not running"
     test -z "${_resourceMgr}" && warn "ResourceManager is not running"
 }

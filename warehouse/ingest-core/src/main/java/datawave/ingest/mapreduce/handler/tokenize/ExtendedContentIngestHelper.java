@@ -5,16 +5,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.data.type.Type;
-import datawave.ingest.metadata.id.MetadataIdParser;
-import datawave.ingest.data.RawDataErrorNames;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.data.config.ingest.EventFieldNormalizerHelper;
-import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
@@ -22,21 +12,31 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import datawave.data.type.Type;
+import datawave.ingest.data.RawDataErrorNames;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.data.config.ingest.EventFieldNormalizerHelper;
+import datawave.ingest.data.config.ingest.TermFrequencyIngestHelperInterface;
+import datawave.ingest.metadata.id.MetadataIdParser;
+
 public class ExtendedContentIngestHelper extends BaseIngestHelper implements TermFrequencyIngestHelperInterface {
-    
+
     private static final Logger log = Logger.getLogger(ExtendedContentIngestHelper.class);
-    
+
     private static final String UUID_PATTERN = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}.*";
     private static final int UUID_LENGTH = 36;
-    
+
     private ExtendedContentDataTypeHelper helper;
     private Set<String> zones = new HashSet<>();
     private EventFieldNormalizerHelper eventFieldNormalizerHelper = null;
-    
+
     public ExtendedContentDataTypeHelper getHelper() {
         return this.helper;
     }
-    
+
     @Override
     public void setup(Configuration config) {
         super.setup(config);
@@ -45,14 +45,14 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
         this.setEmbeddedHelper(helper);
         this.eventFieldNormalizerHelper = new EventFieldNormalizerHelper(config);
     }
-    
+
     public void addField(Multimap<String,NormalizedContentInterface> fields, String name, String value) {
         if (value != null && !value.isEmpty()) {
             NormalizedFieldAndValue n = new NormalizedFieldAndValue(name, value);
             fields.put(name, n);
         }
     }
-    
+
     public void addTokenField(Multimap<String,NormalizedContentInterface> fields, String name) {
         // add the field to the map of fields (value really doesn't matter, so
         // reuse name as value here)
@@ -60,37 +60,39 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
         // remember this field as one of our zones
         this.zones.add(name);
     }
-    
+
     /**
      * Add the metadata from the event into our event fields
-     * 
+     *
      * @param from
+     *            the from event fields
      * @param to
+     *            the to event fields
      */
     protected void addMetadata(Map<String,Collection<Object>> from, Multimap<String,NormalizedContentInterface> to) {
         if (from == null)
             return;
-        
+
         for (Map.Entry<String,Collection<Object>> v : from.entrySet()) {
             String key = v.getKey().toString();
             String fieldName = key.toUpperCase();
-            
+
             int sizeLimit = helper.getFieldSizeThreshold();
             int countLimit = helper.getMultiFieldSizeThreshold();
             int count = 0;
-            
+
             // the multi-valued fields config specifies a plural to singular
             // field name mapping in some cases.
             String singleFieldName = fieldName;
             if (helper.getMultiValuedFields().containsKey(fieldName)) {
                 singleFieldName = helper.getMultiValuedFields().get(fieldName);
             }
-            
+
             for (Object o : v.getValue()) {
                 if (helper.isValidMetadataKey(key) && o != null) {
                     String value = helper.clean(fieldName, o.toString());
                     value = helper.clean(singleFieldName, value);
-                    
+
                     if (value != null) {
                         if (count == countLimit) {
                             applyMultiValuedThresholdAction(to, fieldName, singleFieldName);
@@ -106,7 +108,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
             }
         }
     }
-    
+
     protected void applyThresholdAction(Multimap<String,NormalizedContentInterface> fields, String fieldName, String value, int sizeLimit) {
         switch (helper.getThresholdAction()) {
             case DROP:
@@ -123,7 +125,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
                 throw new IllegalArgumentException("A field : " + fieldName + " was too large to process");
         }
     }
-    
+
     protected void applyMultiValuedThresholdAction(Multimap<String,NormalizedContentInterface> fields, String fieldName, String singleFieldName) {
         switch (helper.getMultiValuedThresholdAction()) {
             case DROP:
@@ -147,12 +149,14 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
                 throw new IllegalArgumentException("A field : " + fieldName + " was too large to process");
         }
     }
-    
+
     /**
      * Parse metadata base on the id
-     * 
+     *
      * @param event
+     *            the event container
      * @param id
+     *            the event id
      */
     public void addMetadataFromId(RawRecordContainer event, String id) {
         Multimap<String,String> metadata = HashMultimap.create();
@@ -165,7 +169,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
             }
         }
     }
-    
+
     public void inheritFromRootPayload(RawRecordContainer event, Map<String,Collection<Object>> metadata) {
         // TODO: No-op here, but need to refactor the following in upstream
         // if (metadata == null)
@@ -180,15 +184,15 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
         // }
         // }
     }
-    
+
     public void addMetadataFromParms(RawRecordContainer event, Map<String,Collection<Object>> metadata, String id) {
-        
+
         for (Map.Entry<String,Collection<Object>> entry : metadata.entrySet()) {
             CharSequence key = entry.getKey();
             for (Object value : entry.getValue()) {
                 if (value == null)
                     continue;
-                
+
                 if (helper.getUuids().contains(key)) {
                     event.getAltIds().add(String.valueOf(value));
                 }
@@ -197,7 +201,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
                 }
             }
         }
-        
+
         Multimap<String,String> newMetadata = HashMultimap.create();
         Multimap<String,MetadataIdParser> fieldParsers = helper.getMetadataFieldParsers();
         for (String field : fieldParsers.keySet()) {
@@ -216,7 +220,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
                 }
             }
         }
-        
+
         // If the ID is a UUID (i.e., contains no date), try to get
         // event metadata from the parameters
         if ((id != null) && (id.length() >= UUID_LENGTH) && id.matches(UUID_PATTERN)) {
@@ -239,7 +243,7 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
             }
         }
     }
-    
+
     protected void addSecurityMetadataFromParms(CharSequence key, Object value, RawRecordContainer event) {
         // If fieldName is a security marking field (as configured by EVENT_SECURITY_MARKING_FIELD_NAMES),
         // then put the marking value into this.securityMarkings, where 'key' maps to the domain for the marking
@@ -248,17 +252,19 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
             event.addSecurityMarking(this.helper.getSecurityMarkingFieldDomainMap().get(key.toString()), value.toString());
         }
     }
-    
+
     /**
      * Override the normalize call to enable event field value normalization
+     *
+     * @return a set of the event content interface
      */
     public Set<NormalizedContentInterface> normalize(NormalizedContentInterface nci) {
-        
+
         // normalize the event field value as required
         Type<?> n = eventFieldNormalizerHelper.getType(nci.getEventFieldName());
         try {
             nci.setEventFieldValue(n.normalize(nci.getEventFieldValue()));
-            
+
             // copy the new value into the indexed value for further
             // normalization
             nci.setIndexedFieldValue(nci.getEventFieldValue());
@@ -266,27 +272,28 @@ public class ExtendedContentIngestHelper extends BaseIngestHelper implements Ter
             log.error("Failed to normalize " + nci.getEventFieldName() + '=' + nci.getEventFieldValue(), e);
             nci.setError(e);
         }
-        
+
         // now normalize the index field value as required
         return super.normalize(nci);
     }
-    
+
     /**
      * Make a wrapper around the aliaser's resolveAlias which is in the {@link BaseIngestHelper}. We don't maintain the Map of indexed content, so we want to
      * make sure the field name gets aliased (uppercased) properly.
-     * 
+     *
      * @param nci
-     * @return
+     *            the normalized content interface
+     * @return the normalized content interface with proper aliases
      */
     public NormalizedContentInterface resolveAlias(NormalizedContentInterface nci) {
         return super.aliaser.normalizeAndAlias(nci);
     }
-    
+
     @Override
     public boolean isTermFrequencyField(String field) {
         return zones.contains(field);
     }
-    
+
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer value) {
         throw new UnsupportedOperationException("getEventFields is not supported. If needed, then provide subclass implementation");

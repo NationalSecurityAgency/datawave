@@ -1,15 +1,5 @@
 package datawave.security.cache;
 
-import datawave.security.authorization.DatawaveUserInfo;
-import datawave.security.util.DnUtils;
-import datawave.webservice.HtmlProvider;
-import org.apache.commons.lang.StringEscapeUtils;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
-import javax.xml.bind.annotation.XmlTransient;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -18,35 +8,47 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
+
+import org.apache.commons.lang.StringEscapeUtils;
+
+import datawave.security.authorization.DatawaveUserInfo;
+import datawave.security.util.DnUtils;
+import datawave.webservice.HtmlProvider;
+
 @XmlRootElement
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DnList implements HtmlProvider {
     private static final String TITLE = "Credentials", EMPTY = "";
-    
+
     @XmlElement(name = "dn")
     private Collection<String> dns;
-    
+
     @XmlTransient
     private Map<String,? extends DatawaveUserInfo> userInfos;
-    
+
     @SuppressWarnings("unused")
     public DnList() {
         dns = Collections.emptyList();
     }
-    
+
     public DnList(List<String> dns) {
         this.dns = dns;
     }
-    
+
     public DnList(Collection<? extends DatawaveUserInfo> users) {
         this.userInfos = users.stream().collect(Collectors.toMap(i -> i.getDn().toString(), Function.identity()));
         this.dns = this.userInfos.keySet();
     }
-    
+
     public Collection<String> getDns() {
         return dns;
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder("DNs [\n");
@@ -56,40 +58,40 @@ public class DnList implements HtmlProvider {
         sb.append("]");
         return sb.toString();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getTitle()
      */
     @Override
     public String getTitle() {
         return TITLE;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getPageHeader()
      */
     @Override
     public String getPageHeader() {
         return getTitle();
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getHeadContent()
      */
     @Override
     public String getHeadContent() {
         return EMPTY;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.HtmlProvider#getMainContent()
      */
     @Override
@@ -98,7 +100,7 @@ public class DnList implements HtmlProvider {
         builder.append("<table>\n");
         builder.append("<thead><tr><th>DN</th><th>Created</th><th>Expires</th><th></th></tr></thead><tbody>");
         int x = 0;
-        
+
         for (String dn : this.getDns()) {
             // highlight alternating rows
             if (x % 2 == 0) {
@@ -107,7 +109,7 @@ public class DnList implements HtmlProvider {
                 builder.append("<tr>");
             }
             x++;
-            
+
             builder.append("<td>");
             builder.append("<a href=\"").append(dn).append("/list\">");
             String[] subDns = DnUtils.splitProxiedSubjectIssuerDNs(dn);
@@ -132,9 +134,9 @@ public class DnList implements HtmlProvider {
             builder.append("<td>").append("<a href=\"").append(dn).append("/evict\">").append("evict").append("</a>").append("</td>\n");
             builder.append("</tr>");
         }
-        
+
         builder.append("</tbody></table>");
-        
+
         return builder.toString();
     }
 }
