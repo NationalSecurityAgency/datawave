@@ -81,6 +81,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         UniqueFields fields = new UniqueFields();
         fields.set(uniqueFields);
         fields.deconstructIdentifierFields();
+        // only reset the bloom filter if changing the field set
         if (!this.uniqueFields.equals(fields)) {
             this.uniqueFields.set(fields);
             log.info("Resetting unique fields on the unique transform");

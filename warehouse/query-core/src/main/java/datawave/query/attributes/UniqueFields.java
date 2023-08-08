@@ -27,7 +27,7 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class UniqueFields implements Serializable {
 
-    private Multimap<String,UniqueGranularity> fieldMap;
+    private final Multimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
 
     /**
@@ -140,13 +140,11 @@ public class UniqueFields implements Serializable {
             return null;
         }
         UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.fieldMap = TreeMultimap.create(other.fieldMap);
+        uniqueFields.fieldMap.putAll(other.fieldMap);
         return uniqueFields;
     }
 
-    public UniqueFields() {
-        fieldMap = TreeMultimap.create();
-    }
+    public UniqueFields() {}
 
     /**
      * Create a new {@link UniqueFields} with the provided map as the underlying field map.
@@ -155,15 +153,14 @@ public class UniqueFields implements Serializable {
      *            the field map to use
      */
     public UniqueFields(SortedSetMultimap<String,UniqueGranularity> fieldMap) {
-        this.fieldMap = fieldMap;
+        putAll(fieldMap);
     }
 
     /**
      * Clear out the field map
      */
     public void clear() {
-        this.fieldMap = TreeMultimap.create();
-        this.mostRecent = false;
+        this.fieldMap.clear();
     }
 
     /**
@@ -172,11 +169,20 @@ public class UniqueFields implements Serializable {
      * @param fields
      */
     public void set(UniqueFields fields) {
-        clear();
-        if (fields != null) {
-            putAll(fields.getFieldMap());
-            setMostRecent(fields.isMostRecent());
+        if (fields != this) {
+            set(fields.fieldMap);
+            setMostRecent(fields.mostRecent);
         }
+    }
+
+    /**
+     * Set the field map
+     *
+     * @param fields
+     */
+    public void set(Multimap<String,UniqueGranularity> fields) {
+        clear();
+        putAll(fields);
     }
 
     /**
@@ -218,7 +224,7 @@ public class UniqueFields implements Serializable {
      * @return the field map
      */
     public Multimap<String,UniqueGranularity> getFieldMap() {
-        return fieldMap;
+        return TreeMultimap.create(fieldMap);
     }
 
     /**
@@ -234,7 +240,7 @@ public class UniqueFields implements Serializable {
                 newFieldMap.putAll(newField, fieldMap.get(field));
             }
         }
-        this.fieldMap = newFieldMap;
+        set(newFieldMap);
     }
 
     /**
@@ -252,7 +258,7 @@ public class UniqueFields implements Serializable {
                 model.get(field).forEach((newField) -> newFieldMap.putAll(newField, granularities));
             }
         }
-        this.fieldMap = newFieldMap;
+        set(newFieldMap);
     }
 
     /**

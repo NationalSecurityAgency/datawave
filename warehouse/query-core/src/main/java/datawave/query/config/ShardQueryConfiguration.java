@@ -1700,10 +1700,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        if (uniqueFields != this.uniqueFields) {
-            this.uniqueFields.set(uniqueFields);
-            this.uniqueFields.deconstructIdentifierFields();
-        }
+        this.uniqueFields.set(uniqueFields);
+        this.uniqueFields.deconstructIdentifierFields();
     }
 
     public boolean isHitList() {
