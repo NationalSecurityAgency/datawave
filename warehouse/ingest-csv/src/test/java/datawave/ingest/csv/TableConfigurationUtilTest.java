@@ -71,6 +71,7 @@ public class TableConfigurationUtilTest {
 
         conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, tempCacheFile.getAbsolutePath());
 
+        TableConfigCache.getCurrentCache(conf).clear();
     }
 
     @Test
@@ -93,6 +94,8 @@ public class TableConfigurationUtilTest {
     public void testCacheFile() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
 
         conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "true");
+        File tempCacheFile = File.createTempFile("tempCache1", null);
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, tempCacheFile.getAbsolutePath());
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
         TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
@@ -107,6 +110,7 @@ public class TableConfigurationUtilTest {
         validateTCU(tcu, conf);
 
         Assert.assertTrue(tcu.isUsingFileCache());
+        tempCacheFile.delete();
     }
 
     @Test
@@ -161,7 +165,7 @@ public class TableConfigurationUtilTest {
     }
 
     @Test(expected = IOException.class)
-    public void testOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
+    public void testDeserializeOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
         conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "false");
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
@@ -173,6 +177,25 @@ public class TableConfigurationUtilTest {
         tcu.addOutputTables("audit", conf);
 
         tcu.deserializeTableConfigs(conf);
+
+    }
+
+    @Test(expected = IOException.class)
+    public void testOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "true");
+        File tempCacheFile = File.createTempFile("tempCache2", null);
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, tempCacheFile.getAbsolutePath());
+
+        TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
+        TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
+        tcu.configureTables(conf);
+
+        tcu.updateCacheFile();
+
+        tcu.addOutputTables("nonexistent_table", conf);
+
+        tcu.serializeTableConfgurationIntoConf(conf);
+        tempCacheFile.delete();
 
     }
 
