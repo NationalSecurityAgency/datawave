@@ -20,6 +20,7 @@ import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor.AuditType;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -198,7 +199,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     @Override
-    public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
+    public final QueryLogicTransformer getEnrichedTransformer(Query settings) throws QueryException {
         QueryLogicTransformer transformer = this.getTransformer(settings);
         if (responseEnricherBuilder != null) {
             //@formatter:off
@@ -215,7 +216,7 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     @Override
-    public TransformIterator getTransformIterator(Query settings) {
+    public TransformIterator getTransformIterator(Query settings) throws QueryException {
         return new DatawaveTransformIterator(this.iterator(), this.getTransformer(settings));
     }
 

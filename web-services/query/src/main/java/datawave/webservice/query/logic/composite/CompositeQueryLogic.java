@@ -31,6 +31,7 @@ import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
@@ -331,7 +332,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
      * Method used to check that the configuration is correct and to get the response class by QueryExecutorBean.listQueryLogic()
      */
     @Override
-    public synchronized QueryLogicTransformer getTransformer(Query settings) {
+    public synchronized QueryLogicTransformer getTransformer(Query settings) throws QueryException {
         ResultsPage emptyList = new ResultsPage();
         Class<? extends BaseResponse> responseClass = null;
         List<QueryLogicTransformer> delegates = new ArrayList<>();

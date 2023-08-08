@@ -101,9 +101,9 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            query settings
      * @return Transformer that will convert Key,Value to a Result object
      */
-    QueryLogicTransformer getTransformer(Query settings);
+    QueryLogicTransformer getTransformer(Query settings) throws QueryException;
 
-    QueryLogicTransformer getEnrichedTransformer(Query settings);
+    QueryLogicTransformer getEnrichedTransformer(Query settings) throws QueryException;
 
     default String getResponseClass(Query query) throws QueryException {
         try {
@@ -122,7 +122,7 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
      *            The query settings object
      * @return Return a TransformIterator for the QueryLogic implementation
      */
-    TransformIterator getTransformIterator(Query settings);
+    TransformIterator getTransformIterator(Query settings) throws QueryException;
 
     /**
      * Whether the query is a type that should be allowed to be run long (exceed the short circuit timeout)

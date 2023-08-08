@@ -12,6 +12,7 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.dashboard.DashboardFields;
 import datawave.webservice.query.dashboard.DashboardSummary;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.query.logic.ResponseEnricher;
 import datawave.webservice.query.result.event.EventBase;
@@ -44,7 +45,7 @@ public class DashboardQueryLogic extends ShardQueryLogic implements QueryLogicTr
 
     @Override
     @SuppressWarnings("unchecked")
-    public TransformIterator getTransformIterator(Query settings) {
+    public TransformIterator getTransformIterator(Query settings) throws QueryException {
         TransformIterator origIter = super.getTransformIterator(settings);
         DashboardSummary summary = new DashboardSummary(settings.getEndDate());
         while (origIter.hasNext()) {

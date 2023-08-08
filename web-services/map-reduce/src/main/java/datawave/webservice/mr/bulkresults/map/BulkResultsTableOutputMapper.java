@@ -17,6 +17,7 @@ import org.apache.hadoop.io.Text;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
 import datawave.webservice.query.exception.EmptyObjectException;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
 import datawave.webservice.result.BaseQueryResponse;
@@ -48,7 +49,11 @@ public class BulkResultsTableOutputMapper extends ApplicationContextAwareMapper<
                             e);
         }
         QueryLogic<?> logic = (QueryLogic<?>) super.applicationContext.getBean(QUERY_LOGIC_NAME);
-        t = logic.getEnrichedTransformer(query);
+        try {
+            t = logic.getEnrichedTransformer(query);
+        } catch (QueryException qe) {
+            throw new IOException("Unable to create transformer", qe);
+        }
 
         this.tableName = new Text(context.getConfiguration().get(TABLE_NAME));
         this.format = SerializationFormat.valueOf(context.getConfiguration().get(BulkResultsFileOutputMapper.RESULT_SERIALIZATION_FORMAT));
