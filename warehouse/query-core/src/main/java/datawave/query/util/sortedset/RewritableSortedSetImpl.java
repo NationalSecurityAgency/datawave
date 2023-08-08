@@ -16,8 +16,8 @@ import datawave.webservice.query.exception.QueryException;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 
 /**
- * A sorted set that can use a replacement strategy to determine when to replace an element that is already contained in the set. This
- * will support null contained in the underlying sets iff a comparator is supplied that can handle null values.
+ * A sorted set that can use a replacement strategy to determine when to replace an element that is already contained in the set. This will support null
+ * contained in the underlying sets iff a comparator is supplied that can handle null values.
  *
  * @param <E>
  *            type of set
