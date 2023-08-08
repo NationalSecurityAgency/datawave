@@ -505,16 +505,6 @@ public class QueryParametersImpl implements QueryParameters {
     }
 
     @Override
-    public String getSystemFrom() {
-        return systemFrom;
-    }
-    
-    @Override
-    public void setSystemFrom(String systemFrom) {
-        this.systemFrom = systemFrom;
-    }
-    
-    @Override
     public Map<String,List<String>> getRequestHeaders() {
         return requestHeaders;
     }

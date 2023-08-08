@@ -386,16 +386,6 @@ public abstract class BaseQueryLogic<T> implements QueryLogic<T> {
     }
 
     @Override
-    public void setSystemFromResultLimits(Map<String,Long> systemFromLimits) {
-        this.systemFromResultLimits = systemFromLimits;
-    }
-    
-    @Override
-    public Map<String,Long> getSystemFromResultLimits() {
-        return systemFromResultLimits;
-    }
-    
-    @Override
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
         // no op
     }
