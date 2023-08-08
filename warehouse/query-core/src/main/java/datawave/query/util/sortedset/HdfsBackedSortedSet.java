@@ -17,7 +17,7 @@ import org.apache.log4j.Logger;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 
-public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> implements RewritableSortedSet<E> {
+public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> {
     private static final Logger log = Logger.getLogger(HdfsBackedSortedSet.class);
     private static final String FILENAME_PREFIX = "SortedSetFile.";
 

@@ -22,7 +22,7 @@ import datawave.query.util.sortedset.FileSortedSet.SortedSetFileHandler;
  * @param <E>
  *            type of the set
  */
-public class BufferedFileBackedSortedSet<E> implements RewritableSortedSet<E>, SortedSet<E> {
+public class BufferedFileBackedSortedSet<E> implements RewritableSortedSet<E> {
     private static final Logger log = Logger.getLogger(BufferedFileBackedSortedSet.class);
     protected static final int DEFAULT_BUFFER_PERSIST_THRESHOLD = 1000;
     protected static final int DEFAULT_MAX_OPEN_FILES = 100;

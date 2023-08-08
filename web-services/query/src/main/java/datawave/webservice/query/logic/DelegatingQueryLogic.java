@@ -81,12 +81,12 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
 
     @Override
-    public QueryLogicTransformer getTransformer(Query settings) {
+    public QueryLogicTransformer getTransformer(Query settings) throws QueryException {
         return delegate.getTransformer(settings);
     }
 
     @Override
-    public final QueryLogicTransformer getEnrichedTransformer(Query settings) {
+    public final QueryLogicTransformer getEnrichedTransformer(Query settings) throws QueryException {
         return delegate.getEnrichedTransformer(settings);
     }
 
@@ -96,7 +96,7 @@ public abstract class DelegatingQueryLogic implements QueryLogic<Object> {
     }
 
     @Override
-    public TransformIterator getTransformIterator(Query settings) {
+    public TransformIterator getTransformIterator(Query settings) throws QueryException {
         return delegate.getTransformIterator(settings);
     }
 
