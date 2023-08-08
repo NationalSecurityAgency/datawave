@@ -22,7 +22,7 @@ public interface RewritableSortedSet<E> extends SortedSet<E> {
         boolean rewrite(E original, E update);
     }
 
-    RewritableSortedSetImpl.RewriteStrategy getRewriteStrategy();
+    RewritableSortedSetImpl.RewriteStrategy<E> getRewriteStrategy();
 
     E get(E e);
 
