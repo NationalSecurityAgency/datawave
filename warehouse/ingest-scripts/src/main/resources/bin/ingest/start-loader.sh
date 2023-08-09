@@ -91,10 +91,11 @@ if [[${TOTAL} >0 ]]; then
     COUNT=${NUM_MAP_LOADERS_COPY[$LOADER]}
     echo "starting $COUNT map file loaders for ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} ..."
     SHUTDOWN_PORT=24100
-    check_port()
+    check_port
     for ((x = 0; x < $COUNT; x = $((x + 1)))); do
       $MAPFILE_LOADER_CMD -srcHdfs ${MAP_LOADER_HDFS_NAME_NODE} -destHdfs ${MAP_LOADER_HDFS_NAME_NODE} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader.$LOADER$COUNT.log 2>&1 &
       SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
+      check_port
     done
 
   done
@@ -111,8 +112,7 @@ if [[${TOTAL} >0 ]]; then
     export MAP_LOADER_WORKDIR=${BASE_WORK_DIR}
     echo "starting 1 map file loader for ${MAP_LOADER_WORKDIR} on ${EXTRA_MAP_LOADER} ..."
     SHUTDOWN_PORT=$((SHUTDOWN_PORT + 1))
-    check_port()
-
+    check_port
     $MAPFILE_LOADER_CMD -srcHdfs ${EXTRA_MAP_LOADER} -destHdfs ${EXTRA_MAP_LOADER} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader.$LOADER$COUNT.log 2>&1 &
   fi
 
@@ -120,7 +120,7 @@ if [[${TOTAL} >0 ]]; then
     for ((CUSTOM_LOADER = 0; CUSTOM_LOADER < ${#MAP_LOADER_CUSTOM[@]}; CUSTOM_LOADER = $((CUSTOM_LOADER + 1)))); do
       echo "starting additional map file loader: ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]}"
       SHUTDOWN_PORT=25100
-      check_port()
+      check_port
       ${MAP_LOADER_CUSTOM[$CUSTOM_LOADER]} -shutdownPort ${SHUTDOWN_PORT} >>$LOG_DIR/map-file-loader-custom.$CUSTOM_LOADER.log 2>&1 &
     done
   fi
