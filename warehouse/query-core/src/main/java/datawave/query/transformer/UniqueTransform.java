@@ -434,6 +434,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
          *             when we fail to create the ivarator cache dirs
          **/
         public Builder withQueryIterator(QueryIterator queryIterator) throws IOException {
+            // NOTE: The queryIterator cannot be cached or modified in any way here.
             if (transform.uniqueFields.isMostRecent()) {
                 transform.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
                                 .withBufferPersistThreshold(queryIterator.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(queryIterator))
@@ -454,6 +455,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
          *             when we fail to create the ivarator cache dirs
          **/
         public Builder withLogic(ShardQueryLogic logic) throws IOException {
+            // NOTE: The logic cannot be cached or modified in any way here.
             transform.setModelMappings(logic.getQueryModel());
             if (transform.uniqueFields.isMostRecent()) {
                 transform.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
