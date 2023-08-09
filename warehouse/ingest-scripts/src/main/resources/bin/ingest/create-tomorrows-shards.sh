@@ -1,4 +1,15 @@
 #!/bin/bash
+# Usage: create_tomorrows_shards.sh (numerator) (divisor) (errorTableShards) (queryMetricShards) (knowledgeTableShards)
+# $1 - numerator for the fraction of shards
+# $2 - divisor for the fraction of shards
+# $3 - total number of shards for the error shard table
+# $4 - total number of shards for the query metrics table
+# The script will create a new set of shards for the next day, based on the fraction of numerator/divisor as well as the total number of shards defined per table.
+# ex:
+# create_tomorrows_shards.sh 1 1 250 100
+# Generating 1/1 of 311 = 311 shards for 20230809
+# Generating 1/1 of 250 = 250 error table shards for 20230809
+# Generating 1/1 of 100 = 100 query metric shards for 20230809
 
 if [[ `uname` == "Darwin" ]]; then
         THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
