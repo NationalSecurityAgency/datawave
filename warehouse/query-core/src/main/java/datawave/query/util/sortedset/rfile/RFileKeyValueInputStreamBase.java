@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 
-public class RFileKeyValueInputStreamBase {
+public abstract class RFileKeyValueInputStreamBase {
     private final InputStream inputStream;
     private final long length;
     private Key start;
