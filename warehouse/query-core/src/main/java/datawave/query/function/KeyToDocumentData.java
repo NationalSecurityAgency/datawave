@@ -72,6 +72,7 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     private long aggregationStart;
     private long aggregationStop;
     private int aggregationThreshold;
+    private int maxKeys = -1;
 
     public KeyToDocumentData(SortedKeyValueIterator<Key,Value> source) {
         this(source, new PrefixEquality(PartialKey.ROW_COLFAM), false, false);
@@ -135,6 +136,17 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
     }
 
     /**
+     * Builder-style method for setting the max keys
+     * @param keyThreshold
+     *      The max number of keys to aggregate
+     * @return this object
+     */
+    public KeyToDocumentData withMaxKeys(int keyThreshold) {
+        this.maxKeys = keyThreshold;
+        return this;
+    }
+
+    /**
      * Append hierarchy fields, including parent and descendant counts, based on the specified range and key
      *
      * @param documentAttributes
@@ -183,6 +195,9 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
             log.error("Unable to collection document attributes for evaluation: " + keyRange, e);
             QueryException qe = new QueryException(DatawaveErrorCode.DOCUMENT_EVALUATION_ERROR, e);
             throw new DatawaveFatalQueryException(qe);
+        } catch (DocumentTooLargeException e) {
+            log.error("Document too large.  Skipping " + keyRange, e);
+            return null;
         }
     }
 
@@ -200,8 +215,8 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      * @throws IOException
      *             for issues with read/write
      */
-    public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException {
-        return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange);
+    public List<Entry<Key,Value>> collectDocumentAttributes(final Key documentStartKey, final Set<Key> docKeys, final Range keyRange) throws IOException, DocumentTooLargeException {
+        return collectAttributesForDocumentKey(documentStartKey, source, equality, filter, docKeys, keyRange, maxKeys);
     }
 
     /**
@@ -220,12 +235,14 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
      *            set of keys
      * @param filter
      *            a query filter
+     * @param maxKeys
+     *            The max number keys to collect
      * @return the attributes
      * @throws IOException
      *             for issues with read/write
      */
     private static List<Entry<Key,Value>> collectAttributesForDocumentKey(Key documentStartKey, SortedKeyValueIterator<Key,Value> source, Equality equality,
-                    EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange) throws IOException {
+                    EventDataQueryFilter filter, Set<Key> docKeys, Range keyRange, int maxKeys) throws IOException, DocumentTooLargeException {
 
         // set up the document key we are filtering for on the EventDataQueryFilter
         if (filter != null) {
@@ -247,10 +264,12 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
                     }
 
                     if (filter == null || filter.apply(Maps.immutableEntry(docAttrKey.get(), StringUtils.EMPTY))) {
+                        checkSize(documentAttributes, maxKeys);
                         documentAttributes.add(Maps.immutableEntry(docAttrKey.get(), source.getTopValue()));
                     } else {
                         Key limitKey = filter.transform(docAttrKey.get());
                         if (limitKey != null) {
+                            checkSize(documentAttributes, maxKeys);
                             documentAttributes.add(Maps.immutableEntry(limitKey, EMPTY_VALUE));
                         }
                         // request a seek range from the filter
@@ -280,6 +299,13 @@ public class KeyToDocumentData implements Function<Entry<Key,Document>,Entry<Doc
         }
         return documentAttributes;
     }
+
+    private static void checkSize(Collection<?> documentAttributes, int maxKeys) throws DocumentTooLargeException {
+        if (maxKeys > 0 && documentAttributes.size() >= maxKeys) {
+            throw new DocumentTooLargeException("Document keys exceeded the threshold of " + maxKeys);
+        }
+    }
+
 
     // map the key to the dockey (only shard, datatype, uid)
     public static Key getDocKey(Key key) {
