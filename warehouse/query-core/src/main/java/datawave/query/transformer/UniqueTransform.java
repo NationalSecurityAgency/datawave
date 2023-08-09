@@ -139,7 +139,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             try {
                 if (set != null) {
                     byte[] signature = getBytes(keyDocumentEntry.getValue());
-                    this.set.add(new UnmodifiableMapEntry(signature, keyDocumentEntry.getValue()));
+                    synchronized (set) {
+                        this.set.add(new UnmodifiableMapEntry(signature, keyDocumentEntry.getValue()));
+                    }
                     keyDocumentEntry = null;
                 } else if (isDuplicate(keyDocumentEntry.getValue())) {
                     keyDocumentEntry = null;
@@ -159,13 +161,15 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     @Override
     public Map.Entry<Key,Document> flush() {
         if (set != null) {
-            if (setIterator == null) {
-                setIterator = set.iterator();
-            }
-            if (setIterator.hasNext()) {
-                Map.Entry<byte[],Document> next = setIterator.next();
-                Document document = next.getValue();
-                return new UnmodifiableMapEntry(getDocKey(document), document);
+            synchronized (set) {
+                if (setIterator == null) {
+                    setIterator = set.iterator();
+                }
+                if (setIterator.hasNext()) {
+                    Map.Entry<byte[],Document> next = setIterator.next();
+                    Document document = next.getValue();
+                    return new UnmodifiableMapEntry(getDocKey(document), document);
+                }
             }
         }
         return null;
@@ -344,7 +348,7 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     }
 
     /**
-     * An iterator of documents for this unique transform
+     * An iterator of documents for this unique transform given an underlying iterator of documents.
      */
     public class UniqueTransformIterator implements Iterator<Map.Entry<Key,Document>> {
         private final Iterator<Map.Entry<Key,Document>> iterator;
