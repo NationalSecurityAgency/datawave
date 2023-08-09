@@ -68,7 +68,7 @@ for i in ${NUM_MAP_LOADERS_COPY[@]}; do
 done
 TOTAL=$((TOTAL + EXTRA_MAP))
 
-if [[${TOTAL} >0 ]]; then
+if [[ ${TOTAL} -gt 0 ]]; then
   for ((LOADER = 0; LOADER < ${#MAP_LOADER_HDFS_NAME_NODES[@]}; LOADER = $((LOADER + 1)))); do
     FILES_STUCK_LOADING=$($INGEST_HADOOP_HOME/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
     if [[ ! -z $FILES_STUCK_LOADING ]]; then
