@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: create_tomorrows_shards.sh (numerator) (divisor) (errorTableShards) (queryMetricShards) (knowledgeTableShards)
+# Usage: create_tomorrows_shards.sh (numerator) (divisor) (errorTableShards) (queryMetricShards)
 # $1 - numerator for the fraction of shards
 # $2 - divisor for the fraction of shards
 # $3 - total number of shards for the error shard table
