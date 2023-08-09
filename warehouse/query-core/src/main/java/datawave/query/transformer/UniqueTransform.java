@@ -44,19 +44,12 @@ import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileByteDocumentSortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
 import datawave.query.util.sortedset.HdfsBackedSortedSet;
-import datawave.query.util.sortedset.RewritableSortedSet;
 import datawave.query.util.sortedset.RewritableSortedSetImpl;
 
 /**
  * This iterator will filter documents based on uniqueness across a set of configured fields. Only the first instance of an event with a unique set of those
  * fields will be returned unless mostRecentUnique is specified in which case the most recent instance of an event will be returned. This transform is thread
  * safe.
- *
- * 1) FileByteKeySortedSet: ability to keep the most recent key for the same byte array done: setRewriteStrategy(rewriteStrategy) 2) MultiSetBackedSortedSet:
- * ability to keep the mote recent key for the same value when doing a merge sort done 3) Buffer all values in the file backed sorted set until we flush done 4)
- * Update the ShardQueryLogic to use the MostRecentUniqueTransform done 5) Create a MostRecentUniqueIterator akin to the GroupingIterator done 6) Update the
- * QueryIterator to apply the MostRecentUniqueIterator done 7) Create most recent test cases
- *
  */
 public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform {
 
@@ -77,6 +70,14 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
+    /**
+     * Update the configuration of this transform. If the configuration is actually changing, then the bloom filter will be reset as well.
+     *
+     * @param uniqueFields
+     *            The new set of unique fields.
+     * @param model
+     *            The query model
+     */
     public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
         UniqueFields fields = new UniqueFields();
         fields.set(uniqueFields);
@@ -93,6 +94,12 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         setModelMappings(model);
     }
 
+    /**
+     * Set the query model from which the reverse query mappings are pulled.
+     *
+     * @param model
+     *            The query model
+     */
     private void setModelMappings(QueryModel model) {
         if (model != null) {
             modelMapping = HashMultimap.create();
@@ -144,6 +151,11 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         return keyDocumentEntry;
     }
 
+    /**
+     * This will start pulling data from the hdfs backed set if one exists (only if mostRecent is true).
+     *
+     * @return The next unique document from the set.
+     */
     @Override
     public Map.Entry<Key,Document> flush() {
         if (set != null) {
@@ -253,7 +265,16 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         return count;
     }
 
-    // Return the set of values for the provided attribute.
+    /**
+     * Add the attribute values to the list of values.
+     *
+     * @param field
+     *            The attribute field
+     * @param attribute
+     *            The attribute
+     * @param values
+     *            The list of values to be updated
+     */
     private void addValues(final String field, Attribute<?> attribute, List<String> values) {
         if (attribute instanceof Attributes) {
             // @formatter:off
@@ -265,13 +286,25 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
-    // Return the query-specified field that the provided document matches, if one exists, or otherwise return null.
+    /**
+     * Return the query-specified field that the provided document matches, if one exists, or otherwise return null.
+     *
+     * @param documentField
+     *            The document field
+     * @return The query specified field
+     */
     private String getUniqueField(String documentField) {
         String baseDocumentField = getFieldWithoutGrouping(documentField);
         return uniqueFields.getFields().stream().filter((field) -> isMatchingField(baseDocumentField, field)).findFirst().orElse(null);
     }
 
-    // Return the provided field with any grouping context removed.
+    /**
+     * Return the provided field with any grouping context removed.
+     *
+     * @param field
+     *            The field
+     * @return The field with grouping stripped
+     */
     private String getFieldWithoutGrouping(String field) {
         int index = field.indexOf('.');
         if (index < 0) {
@@ -281,14 +314,25 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
-    // Return whether or not the provided document field is considered a case-insensitive match for the provided field, applying reverse model mappings if
-    // configured.
+    /**
+     * Return whether or not the provided document field is considered a case-insensitive match for the provided field, applying reverse model mappings if
+     * configured.
+     *
+     * @param baseField
+     *            The base field
+     * @param field
+     *            The field to match with
+     * @return true if matching
+     */
     private boolean isMatchingField(String baseField, String field) {
         baseField = baseField.toUpperCase();
         field = field.toUpperCase();
         return field.equals(baseField) || (modelMapping != null && modelMapping.get(field).contains(baseField));
     }
 
+    /**
+     * A funnel to use for the bloom filter
+     */
     public static class ByteFunnel implements Funnel<byte[]>, Serializable {
 
         private static final long serialVersionUID = -2126172579955897986L;
@@ -299,6 +343,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         }
     }
 
+    /**
+     * An iterator of documents for this unique transform
+     */
     public class UniqueTransformIterator implements Iterator<Map.Entry<Key,Document>> {
         private final Iterator<Map.Entry<Key,Document>> iterator;
         private Map.Entry<Key,Document> next = null;
