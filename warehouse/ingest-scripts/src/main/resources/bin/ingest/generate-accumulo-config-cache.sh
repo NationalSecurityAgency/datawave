@@ -13,6 +13,7 @@ cd $THIS_DIR
 export ACCUMULO_OTHER_OPTS="${ACCUMULO_OTHER_OPTS} $HADOOP_INGEST_OPTS"
 
 export CLASSPATH
+
 $WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.config.TableConfigCacheGenerator \
 -u $USERNAME \
 -p $PASSWORD \
