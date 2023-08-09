@@ -2,6 +2,7 @@ package datawave.ingest.csv;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +53,7 @@ public class TableConfigurationUtilTest {
     }
 
     @Before
-    public void setup() throws IOException {
+    public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {
         TypeRegistry.reset();
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
@@ -71,7 +72,10 @@ public class TableConfigurationUtilTest {
 
         conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, tempCacheFile.getAbsolutePath());
 
-        TableConfigCache.getCurrentCache(conf).clear();
+        Field cache = TableConfigCache.class.getDeclaredField("cache");
+        cache.setAccessible(true);
+        cache.set(null, null);
+
     }
 
     @Test

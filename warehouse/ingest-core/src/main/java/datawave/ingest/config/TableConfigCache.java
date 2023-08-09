@@ -22,6 +22,7 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
     public static final String ACCUMULO_CONFIG_FILE_CACHE_REPICAS_PROPERTY = "accumulo.config.cache.replicas";
 
     private Map<String,Map<String,String>> configMap = new HashMap<>();
+
     private static TableConfigCache cache;
 
     private static final Object lock = new Object();
@@ -47,7 +48,6 @@ public class TableConfigCache extends BaseHdfsFileCacheUtil {
 
     public void clear() {
         configMap = new HashMap();
-        cache = null;
     }
 
     public boolean isInitialized() {
