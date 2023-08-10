@@ -12,7 +12,7 @@ import org.apache.accumulo.core.data.Key;
 import datawave.query.attributes.Document;
 import datawave.query.util.sortedset.FileSortedSet;
 
-public class RFileByteDocumentInputStream extends RFileKeyValueInputStreamBase implements FileSortedSet.SortedSetInputStream<Map.Entry<byte[],Document>> {
+public class RFileByteDocumentInputStream extends RFileKeyValueInputStreamBase<Map.Entry<byte[],Document>> {
 
     public RFileByteDocumentInputStream(InputStream inputStream, long length) throws IOException {
         super(inputStream, length);

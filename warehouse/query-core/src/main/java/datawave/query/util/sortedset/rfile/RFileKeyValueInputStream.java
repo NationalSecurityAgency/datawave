@@ -9,7 +9,7 @@ import org.apache.accumulo.core.data.Value;
 
 import datawave.query.util.sortedset.FileSortedSet;
 
-public class RFileKeyValueInputStream extends RFileKeyValueInputStreamBase implements FileSortedSet.SortedSetInputStream<Map.Entry<Key,Value>> {
+public class RFileKeyValueInputStream extends RFileKeyValueInputStreamBase<Map.Entry<Key,Value>> {
 
     public RFileKeyValueInputStream(InputStream inputStream, long length) throws IOException {
         super(inputStream, length);

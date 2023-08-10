@@ -12,7 +12,9 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 
-public abstract class RFileKeyValueInputStreamBase {
+import datawave.query.util.sortedset.FileSortedSet;
+
+public abstract class RFileKeyValueInputStreamBase<E> implements FileSortedSet.SortedSetInputStream<E> {
     private final InputStream inputStream;
     private final long length;
     private Key start;
@@ -63,6 +65,7 @@ public abstract class RFileKeyValueInputStreamBase {
         return null;
     }
 
+    @Override
     public int readSize() throws IOException {
         if (size < 0) {
             if (iterator != null) {
@@ -75,6 +78,7 @@ public abstract class RFileKeyValueInputStreamBase {
         return size;
     }
 
+    @Override
     public void close() {
         if (reader != null) {
             reader.close();
