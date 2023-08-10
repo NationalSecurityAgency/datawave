@@ -34,12 +34,10 @@ import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.DocumentKey;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.ivarator.IvaratorCacheDir;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.profile.FinalDocumentTrackingIterator;
 import datawave.query.model.QueryModel;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.query.util.sortedset.ByteArrayComparator;
 import datawave.query.util.sortedset.FileByteDocumentSortedSet;
 import datawave.query.util.sortedset.FileSortedSet;
@@ -396,25 +394,31 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      * A builder of unique transforms
      */
     public static class Builder {
+        private UniqueFields uniqueFields;
+        private Comparator<Entry<byte[],Document>> keyComparator;
+        private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Document>> keyValueComparator;
+        private QueryModel model;
+        private int bufferPersistThreshold;
+        private List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs;
+        private String hdfsSiteConfigURLs;
+        private String subDirectory;
+        private String uniqueSubPath;
+        private int maxOpenFiles;
+        private int numRetries;
+        private FileSortedSet.PersistOptions persistOptions;
+        private FileSortedSet.FileSortedSetFactory<?> setFactory;
 
-        private final UniqueTransform transform;
+        public Builder() {
+            keyComparator = new Comparator<>() {
+                private Comparator<byte[]> comparator = new ByteArrayComparator();
 
-        public Builder(UniqueFields fields) {
-            transform = new UniqueTransform(fields);
-        }
+                @Override
+                public int compare(Map.Entry<byte[],Document> o1, Map.Entry<byte[],Document> o2) {
+                    return comparator.compare(o1.getKey(), o2.getKey());
+                }
+            };
 
-        private Comparator<Entry<byte[],Document>> keyComparator = new Comparator<>() {
-            private Comparator<byte[]> comparator = new ByteArrayComparator();
-
-            @Override
-            public int compare(Map.Entry<byte[],Document> o1, Map.Entry<byte[],Document> o2) {
-                return comparator.compare(o1.getKey(), o2.getKey());
-            }
-        };
-
-        private RewritableSortedSetImpl.RewriteStrategy<Map.Entry<byte[],Document>> keyValueComparator = new RewritableSortedSetImpl.RewriteStrategy<>() {
-            @Override
-            public boolean rewrite(Map.Entry<byte[],Document> original, Map.Entry<byte[],Document> update) {
+            keyValueComparator = (original, update) -> {
                 int comparison = keyComparator.compare(original, update);
                 if (comparison == 0) {
                     long ts1 = getTimestamp(original.getValue());
@@ -422,83 +426,10 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
                     return (ts2 > ts1);
                 }
                 return comparison < 0;
-            }
-        };
+            };
 
-        /**
-         * Setup an hdfs backed sorted set if "most recent".
-         *
-         * @param queryIterator
-         *            the queryIterator from which to get hdfs backed sorted set info
-         * @throws IOException
-         *             when we fail to create the ivarator cache dirs
-         **/
-        public Builder withQueryIterator(QueryIterator queryIterator) throws IOException {
-            // NOTE: The queryIterator cannot be cached or modified in any way here.
-            if (transform.uniqueFields.isMostRecent()) {
-                // @formatter:off
-                //noinspection unchecked
-                transform.set = (HdfsBackedSortedSet<Entry<byte[],Document>>) HdfsBackedSortedSet.builder()
-                        .withComparator(keyComparator)
-                        .withRewriteStrategy(keyValueComparator)
-                        .withBufferPersistThreshold(queryIterator.getUniqueCacheBufferSize())
-                        .withIvaratorCacheDirs(getIvaratorCacheDirs(queryIterator))
-                        .withUniqueSubPath("MostRecentUniqueSet")
-                        .withMaxOpenFiles(queryIterator.getIvaratorMaxOpenFiles())
-                        .withNumRetries(queryIterator.getIvaratorNumRetries())
-                        .withPersistOptions(queryIterator.getIvaratorPersistOptions())
-                        .withSetFactory(new FileByteDocumentSortedSet.Factory())
-                        .build();
-                // @formatter:on
-            }
-            return this;
-        }
-
-        /**
-         * Capture the reverse field mapping defined within the model being used by the logic (if present). Also setup an hdfs backed sorted set if "most
-         * recent".
-         *
-         * @param logic
-         *            the locic from which to get model mappings and hdfs backed sorted set info
-         * @throws IOException
-         *             when we fail to create the ivarator cache dirs
-         **/
-        public Builder withLogic(ShardQueryLogic logic) throws IOException {
-            // NOTE: The logic cannot be cached or modified in any way here.
-            transform.setModelMappings(logic.getQueryModel());
-            if (transform.uniqueFields.isMostRecent()) {
-                // @formatter:off
-                //noinspection unchecked
-                transform.set = (HdfsBackedSortedSet<Entry<byte[],Document>>) HdfsBackedSortedSet.builder()
-                        .withComparator(keyComparator)
-                        .withRewriteStrategy(keyValueComparator)
-                        .withBufferPersistThreshold(logic.getUniqueCacheBufferSize())
-                        .withIvaratorCacheDirs(getIvaratorCacheDirs(logic))
-                        .withUniqueSubPath("FinalMostRecentUniqueSet")
-                        .withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
-                        .withNumRetries(logic.getIvaratorNumRetries())
-                        .withPersistOptions(new FileSortedSet.PersistOptions(
-                                logic.isIvaratorPersistVerify(),
-                                logic.isIvaratorPersistVerify(),
-                                logic.getIvaratorPersistVerifyCount()))
-                        .withSetFactory(new FileByteDocumentSortedSet.Factory())
-                        .build();
-                // @formatter:on
-            }
-            return this;
-        }
-
-        public UniqueTransform build() {
-            return transform;
-        }
-
-        private static List<IvaratorCacheDir> getIvaratorCacheDirs(ShardQueryLogic logic) throws IOException {
-            return getIvaratorCacheDirs(logic.getIvaratorCacheDirConfigs(), logic.getHdfsSiteConfigURLs(), logic.getConfig().getQuery().getId().toString());
-        }
-
-        private static List<IvaratorCacheDir> getIvaratorCacheDirs(QueryIterator queryIterator) throws IOException {
-            return getIvaratorCacheDirs(queryIterator.getIvaratorCacheDirConfigs(), queryIterator.getHdfsSiteConfigURLs(),
-                            queryIterator.getQueryId() + '-' + queryIterator.getScanId());
+            uniqueSubPath = "FinalMostRecentUniqueSet";
+            setFactory = new FileByteDocumentSortedSet.Factory();
         }
 
         /**
@@ -534,6 +465,97 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             return pathAndFs;
         }
 
+        public Builder withUniqueFields(UniqueFields fields) {
+            this.uniqueFields = fields;
+            return this;
+        }
+
+        public Builder withKeyComparator(Comparator<Entry<byte[],Document>> keyComparator) {
+            this.keyComparator = keyComparator;
+            return this;
+        }
+
+        public Builder withKeyValueComparator(RewritableSortedSetImpl.RewriteStrategy<Entry<byte[],Document>> keyValueComparator) {
+            this.keyValueComparator = keyValueComparator;
+            return this;
+        }
+
+        public Builder withModel(QueryModel model) {
+            this.model = model;
+            return this;
+        }
+
+        public Builder withBufferPersistThreshold(int bufferPersistThreshold) {
+            this.bufferPersistThreshold = bufferPersistThreshold;
+            return this;
+        }
+
+        public Builder withIvaratorCacheDirConfigs(List<IvaratorCacheDirConfig> ivaratorCacheDirConfigs) {
+            this.ivaratorCacheDirConfigs = ivaratorCacheDirConfigs;
+            return this;
+        }
+
+        public Builder withHdfsSiteConfigURLs(String hdfsSiteConfigURLs) {
+            this.hdfsSiteConfigURLs = hdfsSiteConfigURLs;
+            return this;
+        }
+
+        public Builder withSubDirectory(String subDirectory) {
+            this.subDirectory = subDirectory;
+            return this;
+        }
+
+        public Builder withUniqueSubPath(String uniqueSubPath) {
+            this.uniqueSubPath = uniqueSubPath;
+            return this;
+        }
+
+        public Builder withMaxOpenFiles(int maxOpenFiles) {
+            this.maxOpenFiles = maxOpenFiles;
+            return this;
+        }
+
+        public Builder withNumRetries(int numRetries) {
+            this.numRetries = numRetries;
+            return this;
+        }
+
+        public Builder withPersistOptions(FileSortedSet.PersistOptions persistOptions) {
+            this.persistOptions = persistOptions;
+            return this;
+        }
+
+        public Builder withSetFactory(FileSortedSet.FileSortedSetFactory<?> setFactory) {
+            this.setFactory = setFactory;
+            return this;
+        }
+
+        public UniqueTransform build() throws IOException {
+            UniqueTransform transform = new UniqueTransform(uniqueFields);
+
+            if (model != null) {
+                transform.setModelMappings(model);
+            }
+
+            if (transform.uniqueFields.isMostRecent()) {
+                // @formatter:off
+                // noinspection unchecked
+                transform.set = (HdfsBackedSortedSet<Entry<byte[],Document>>) HdfsBackedSortedSet.builder()
+                        .withComparator(keyComparator)
+                        .withRewriteStrategy(keyValueComparator)
+                        .withBufferPersistThreshold(bufferPersistThreshold)
+                        .withIvaratorCacheDirs(getIvaratorCacheDirs(ivaratorCacheDirConfigs, hdfsSiteConfigURLs, subDirectory))
+                        .withUniqueSubPath(uniqueSubPath)
+                        .withMaxOpenFiles(maxOpenFiles)
+                        .withNumRetries(numRetries)
+                        .withPersistOptions(persistOptions)
+                        .withSetFactory(setFactory)
+                        .build();
+                // @formatter:on
+            }
+
+            return transform;
+        }
     }
 
     private static long getTimestamp(Document doc) {

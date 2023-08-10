@@ -81,6 +81,7 @@ import datawave.query.util.DateIndexHelperFactory;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
@@ -634,8 +635,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                     ((UniqueTransform) alreadyExists).updateConfig(getConfig().getUniqueFields(), getQueryModel());
                 } else {
                     try {
-                        ((DocumentTransformer) this.transformerInstance)
-                                        .addTransform(new UniqueTransform.Builder(getConfig().getUniqueFields()).withLogic(this).build());
+                        // @formatter:off
+                        ((DocumentTransformer) this.transformerInstance).addTransform(new UniqueTransform.Builder()
+                                .withUniqueFields(getConfig().getUniqueFields())
+                                .withModel(getQueryModel())
+                                .withBufferPersistThreshold(getUniqueCacheBufferSize())
+                                .withIvaratorCacheDirConfigs(getIvaratorCacheDirConfigs())
+                                .withHdfsSiteConfigURLs(getHdfsSiteConfigURLs())
+                                .withSubDirectory(getConfig().getQuery().getId().toString())
+                                .withMaxOpenFiles(getIvaratorMaxOpenFiles())
+                                .withNumRetries(getIvaratorNumRetries())
+                                .withPersistOptions(new FileSortedSet.PersistOptions(
+                                        isIvaratorPersistVerify(),
+                                        isIvaratorPersistVerify(),
+                                        getIvaratorPersistVerifyCount()))
+                                .build());
+                        // @formatter:on
                     } catch (IOException ioe) {
                         throw new QueryException("Unable to create a unique transform", ioe);
                     }
