@@ -1289,9 +1289,10 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                 this.createdRowDir = false;
             }
 
-            this.set = new HdfsBackedSortedSet.Builder().withBufferPersistThreshold(hdfsBackedSetBufferSize).withIvaratorCacheDirs(ivaratorCacheDirs)
-                            .withUniqueSubPath(row).withMaxOpenFiles(maxOpenFiles).withNumRetries(numRetries).withPersistOptions(persistOptions)
-                            .withSetFactory(new FileKeySortedSet.Factory()).build();
+            // noinspection unchecked
+            this.set = (HdfsBackedSortedSet<Key>) HdfsBackedSortedSet.builder().withBufferPersistThreshold(hdfsBackedSetBufferSize)
+                            .withIvaratorCacheDirs(ivaratorCacheDirs).withUniqueSubPath(row).withMaxOpenFiles(maxOpenFiles).withNumRetries(numRetries)
+                            .withPersistOptions(persistOptions).withSetFactory(new FileKeySortedSet.Factory()).build();
 
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
             this.currentRow = row;

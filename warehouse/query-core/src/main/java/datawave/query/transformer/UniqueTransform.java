@@ -436,11 +436,20 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
         public Builder withQueryIterator(QueryIterator queryIterator) throws IOException {
             // NOTE: The queryIterator cannot be cached or modified in any way here.
             if (transform.uniqueFields.isMostRecent()) {
-                transform.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
-                                .withBufferPersistThreshold(queryIterator.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(queryIterator))
-                                .withUniqueSubPath("MostRecentUniqueSet").withMaxOpenFiles(queryIterator.getIvaratorMaxOpenFiles())
-                                .withNumRetries(queryIterator.getIvaratorNumRetries()).withPersistOptions(queryIterator.getIvaratorPersistOptions())
-                                .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
+                // @formatter:off
+                //noinspection unchecked
+                transform.set = (HdfsBackedSortedSet<Entry<byte[],Document>>) HdfsBackedSortedSet.builder()
+                        .withComparator(keyComparator)
+                        .withRewriteStrategy(keyValueComparator)
+                        .withBufferPersistThreshold(queryIterator.getUniqueCacheBufferSize())
+                        .withIvaratorCacheDirs(getIvaratorCacheDirs(queryIterator))
+                        .withUniqueSubPath("MostRecentUniqueSet")
+                        .withMaxOpenFiles(queryIterator.getIvaratorMaxOpenFiles())
+                        .withNumRetries(queryIterator.getIvaratorNumRetries())
+                        .withPersistOptions(queryIterator.getIvaratorPersistOptions())
+                        .withSetFactory(new FileByteDocumentSortedSet.Factory())
+                        .build();
+                // @formatter:on
             }
             return this;
         }
@@ -458,13 +467,23 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
             // NOTE: The logic cannot be cached or modified in any way here.
             transform.setModelMappings(logic.getQueryModel());
             if (transform.uniqueFields.isMostRecent()) {
-                transform.set = new HdfsBackedSortedSet.Builder().withComparator(keyComparator).withRewriteStrategy(keyValueComparator)
-                                .withBufferPersistThreshold(logic.getUniqueCacheBufferSize()).withIvaratorCacheDirs(getIvaratorCacheDirs(logic))
-                                .withUniqueSubPath("FinalMostRecentUniqueSet").withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
-                                .withNumRetries(logic.getIvaratorNumRetries())
-                                .withPersistOptions(new FileSortedSet.PersistOptions(logic.isIvaratorPersistVerify(), logic.isIvaratorPersistVerify(),
-                                                logic.getIvaratorPersistVerifyCount()))
-                                .withSetFactory(new FileByteDocumentSortedSet.Factory()).build();
+                // @formatter:off
+                //noinspection unchecked
+                transform.set = (HdfsBackedSortedSet<Entry<byte[],Document>>) HdfsBackedSortedSet.builder()
+                        .withComparator(keyComparator)
+                        .withRewriteStrategy(keyValueComparator)
+                        .withBufferPersistThreshold(logic.getUniqueCacheBufferSize())
+                        .withIvaratorCacheDirs(getIvaratorCacheDirs(logic))
+                        .withUniqueSubPath("FinalMostRecentUniqueSet")
+                        .withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
+                        .withNumRetries(logic.getIvaratorNumRetries())
+                        .withPersistOptions(new FileSortedSet.PersistOptions(
+                                logic.isIvaratorPersistVerify(),
+                                logic.isIvaratorPersistVerify(),
+                                logic.getIvaratorPersistVerifyCount()))
+                        .withSetFactory(new FileByteDocumentSortedSet.Factory())
+                        .build();
+                // @formatter:on
             }
             return this;
         }

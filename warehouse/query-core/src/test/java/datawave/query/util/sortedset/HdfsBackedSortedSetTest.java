@@ -49,8 +49,16 @@ public class HdfsBackedSortedSetTest {
 
         String uniquePath = "blah";
 
-        HdfsBackedSortedSet<String> sortedSet = new HdfsBackedSortedSet.Builder().withIvaratorCacheDirs(ivaratorCacheDirs).withUniqueSubPath(uniquePath)
-                        .withMaxOpenFiles(9999).withNumRetries(2).withPersistOptions(new FileSortedSet.PersistOptions()).build();
+        // @formatter:off
+        @SuppressWarnings("unchecked")
+        HdfsBackedSortedSet<String> sortedSet = (HdfsBackedSortedSet<String>) HdfsBackedSortedSet.builder()
+                .withIvaratorCacheDirs(ivaratorCacheDirs)
+                .withUniqueSubPath(uniquePath)
+                .withMaxOpenFiles(9999)
+                .withNumRetries(2)
+                .withPersistOptions(new FileSortedSet.PersistOptions())
+                .build();
+        // @formatter:on
 
         // Add an entry to the sorted set
         String someTestString = "some test string";
@@ -74,8 +82,16 @@ public class HdfsBackedSortedSetTest {
         Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
 
         // Now make sure reloading an ivarator cache dir works
-        HdfsBackedSortedSet<String> reloadedSortedSet = new HdfsBackedSortedSet.Builder().withIvaratorCacheDirs(ivaratorCacheDirs).withUniqueSubPath(uniquePath)
-                        .withMaxOpenFiles(9999).withNumRetries(2).withPersistOptions(new FileSortedSet.PersistOptions()).build();
+        // @formatter:off
+        @SuppressWarnings("unchecked")
+        HdfsBackedSortedSet<String> reloadedSortedSet = (HdfsBackedSortedSet<String>) HdfsBackedSortedSet.builder()
+                .withIvaratorCacheDirs(ivaratorCacheDirs)
+                .withUniqueSubPath(uniquePath)
+                .withMaxOpenFiles(9999)
+                .withNumRetries(2)
+                .withPersistOptions(new FileSortedSet.PersistOptions())
+                .build();
+        // @formatter:on
 
         Assert.assertEquals(1, reloadedSortedSet.size());
         Assert.assertEquals(someTestString, reloadedSortedSet.first());
@@ -110,9 +126,16 @@ public class HdfsBackedSortedSetTest {
                 ivaratorCacheDirs.add(new IvaratorCacheDir(new IvaratorCacheDirConfig(dir.toURI().toString(), 1), fs, dir.toURI().toString()));
         }
 
-        HdfsBackedSortedSet<String> firstSortedSet = new HdfsBackedSortedSet.Builder()
-                        .withIvaratorCacheDirs(Collections.singletonList(ivaratorCacheDirs.get(0))).withUniqueSubPath(uniquePath).withMaxOpenFiles(9999)
-                        .withNumRetries(2).withPersistOptions(new FileSortedSet.PersistOptions()).build();
+        // @formatter:off
+        @SuppressWarnings("unchecked")
+        HdfsBackedSortedSet<String> firstSortedSet = (HdfsBackedSortedSet<String>) HdfsBackedSortedSet.builder()
+                .withIvaratorCacheDirs(Collections.singletonList(ivaratorCacheDirs.get(0)))
+                .withUniqueSubPath(uniquePath)
+                .withMaxOpenFiles(9999)
+                .withNumRetries(2)
+                .withPersistOptions(new FileSortedSet.PersistOptions())
+                .build();
+        // @formatter:on
 
         // Add an entry to the first sorted set
         String someTestString = "some test string";
@@ -121,9 +144,16 @@ public class HdfsBackedSortedSetTest {
         // persist the sorted set
         firstSortedSet.persist();
 
-        HdfsBackedSortedSet<String> thirdSortedSet = new HdfsBackedSortedSet.Builder()
-                        .withIvaratorCacheDirs(Collections.singletonList(ivaratorCacheDirs.get(2))).withUniqueSubPath(uniquePath).withMaxOpenFiles(9999)
-                        .withNumRetries(2).withPersistOptions(new FileSortedSet.PersistOptions()).build();
+        // @formatter:off
+        @SuppressWarnings("unchecked")
+        HdfsBackedSortedSet<String> thirdSortedSet = (HdfsBackedSortedSet<String>) HdfsBackedSortedSet.builder()
+                .withIvaratorCacheDirs(Collections.singletonList(ivaratorCacheDirs.get(2)))
+                .withUniqueSubPath(uniquePath)
+                .withMaxOpenFiles(9999)
+                .withNumRetries(2)
+                .withPersistOptions(new FileSortedSet.PersistOptions())
+                .build();
+        // @formatter:on
 
         // Add an entry to the third sorted set
         String anotherTestString = "another test string";
@@ -151,8 +181,16 @@ public class HdfsBackedSortedSetTest {
         Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
 
         // Now make sure reloading an ivarator cache dir works, and set maxOpenFiles to 1 so that we compact during the next persist
-        HdfsBackedSortedSet<String> reloadedSortedSet = new HdfsBackedSortedSet.Builder().withIvaratorCacheDirs(ivaratorCacheDirs).withUniqueSubPath(uniquePath)
-                        .withMaxOpenFiles(1).withNumRetries(2).withPersistOptions(new FileSortedSet.PersistOptions()).build();
+        // @formatter:off
+        @SuppressWarnings("unchecked")
+        HdfsBackedSortedSet<String> reloadedSortedSet = (HdfsBackedSortedSet<String>) HdfsBackedSortedSet.builder()
+                .withIvaratorCacheDirs(ivaratorCacheDirs)
+                .withUniqueSubPath(uniquePath)
+                .withMaxOpenFiles(1)
+                .withNumRetries(2)
+                .withPersistOptions(new FileSortedSet.PersistOptions())
+                .build();
+        // @formatter:on
 
         // Ensure that we have 2 entries total
         Assert.assertEquals(2, reloadedSortedSet.size());
@@ -187,8 +225,16 @@ public class HdfsBackedSortedSetTest {
         Assert.assertTrue(fileStatuses[0].getPath().getName().startsWith("SortedSet"));
 
         // Finally, make sure that the compacted data can be reloaded
-        HdfsBackedSortedSet<String> compactedSortedSet = new HdfsBackedSortedSet.Builder().withIvaratorCacheDirs(ivaratorCacheDirs)
-                        .withUniqueSubPath(uniquePath).withMaxOpenFiles(9999).withNumRetries(2).withPersistOptions(new FileSortedSet.PersistOptions()).build();
+        // @formatter:off
+        @SuppressWarnings("unchecked")
+        HdfsBackedSortedSet<String> compactedSortedSet = (HdfsBackedSortedSet<String>) HdfsBackedSortedSet.builder()
+                .withIvaratorCacheDirs(ivaratorCacheDirs)
+                .withUniqueSubPath(uniquePath)
+                .withMaxOpenFiles(9999)
+                .withNumRetries(2)
+                .withPersistOptions(new FileSortedSet.PersistOptions())
+                .build();
+        // @formatter:on
 
         // Ensure that we have 3 entries total
         Assert.assertEquals(3, compactedSortedSet.size());
