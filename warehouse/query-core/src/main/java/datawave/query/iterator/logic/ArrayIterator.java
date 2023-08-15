@@ -1,9 +1,13 @@
 package datawave.query.iterator.logic;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
 
 import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
@@ -34,6 +38,11 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
 
     public T next() {
         return values[offset];
+    }
+
+    // safe to do this since the array iterator's call to next does not advance the source
+    public T peek() {
+        return next();
     }
 
     public void remove() {}
@@ -70,6 +79,11 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
 
     public void initialize() {}
 
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        // no-op
+    }
+
     public Document document() {
         return doc;
     }
@@ -80,7 +94,8 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
     }
 
     @Override
-    public void setContext(T context) {
-        // no-op
+    public boolean isNonEventField() {
+        return false;
     }
+
 }

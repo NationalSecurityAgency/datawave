@@ -20,7 +20,6 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -71,8 +70,6 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
     public void setup() throws IOException {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
-        logic.setCollectTimingDetails(true);
-
         logic.setFullTableScanEnabled(true);
         // this should force regex expansion into ivarators
         logic.setMaxValueExpansionThreshold(1);
@@ -114,13 +111,14 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
     public static class YieldingQueryIterator implements SortedKeyValueIterator<Key,Value> {
 
         private QueryIterator __delegate;
-        private YieldCallback<Key> __yield = new YieldCallback<>();
-        private SortedKeyValueIterator<Key,Value> __source;
-        private Map<String,String> __options;
-        private IteratorEnvironment __env;
+        private final YieldCallback<Key> __yield = new YieldCallback<>();
         private Range __range;
         private Collection<ByteSequence> __columnFamilies;
         private boolean __inclusive;
+
+        private SortedKeyValueIterator<Key,Value> __source;
+        private Map<String,String> __options;
+        private IteratorEnvironment __env;
 
         public YieldingQueryIterator() {
             __delegate = new QueryIterator();
@@ -162,13 +160,14 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
                 __delegate.init(__source, __options, __env);
                 __delegate.enableYielding(__yield);
                 __range = new Range(key, false, __range.getEndKey(), __range.isEndKeyInclusive());
-                log.info("Yielded at " + __range.getStartKey());
+                log.info("next yielded at " + __range.getStartKey());
                 __delegate.seek(__range, __columnFamilies, __inclusive);
             }
         }
 
         @Override
         public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+
             __range = range;
             __columnFamilies = columnFamilies;
             __inclusive = inclusive;
@@ -182,7 +181,7 @@ public class IvaratorYieldingTest extends AbstractFunctionalQuery {
                 __delegate.init(__source, __options, __env);
                 __delegate.enableYielding(__yield);
                 __range = new Range(key, false, __range.getEndKey(), __range.isEndKeyInclusive());
-                log.info("Yielded at " + __range.getStartKey());
+                log.info("seek yielded at " + __range.getStartKey());
                 __delegate.seek(__range, __columnFamilies, __inclusive);
             }
         }

@@ -1,8 +1,11 @@
 package datawave.query.iterator;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 import datawave.query.attributes.Document;
@@ -14,16 +17,56 @@ import datawave.query.attributes.Document;
  * context for its evaluation. This is most often the case when checking for the absence of a specific value. While checking for a specific value is quick,
  * checking against all values that aren't the specific value without context would equate to a near full table scan (both things that aren't that value or just
  * don't have that field). By providing a context of a specific candidate to be tested, the lookup becomes tractable.
+ * <p>
+ * The call flow for an iterator that does not require context is simple
+ * <ol>
+ * <li>seek() - initial call to setup the iterator and any child iterators</li>
+ * <li>hasNext() - to determine if a next element exists</li>
+ * <li>next() - return the top element and calculate the next top element</li>
+ * </ol>
+ * <p>
+ * The call flow for an iterator that requires context is a little different
+ * <ol>
+ * <li>seek() - initial call to setup the iterator and any child iterators</li>
+ * <li>move(context) - moves the iterator up to the specified element, a hit may or may not exist</li>
+ * <li>next() - return the top element</li>
+ * </ol>
  */
 public interface NestedIterator<T> extends Iterator<T> {
     /**
      * A hook to allow lazy initialization of iterators. This is necessary because we want to set up the Accumulo iterator tree inside of init(), but can't
      * actually organize the iterators by value until after seek() is called.
+     * <p>
+     * TODO - document which cases still require this. Look at removing if it's easy.
      */
     void initialize();
 
     /**
-     * Tells the underlying iterator to return the first element that is greater than or equal to <code>minimum</code>.
+     * Seek the nested iterator and all child iterators. Called once at the beginning.
+     * <p>
+     * Future seeks happen via calls to {@link #move(Object minimum)}
+     *
+     * @param range
+     *            the range
+     * @param columnFamilies
+     *            the column families
+     * @param inclusive
+     *            the inclusive flag
+     * @throws IOException
+     *             if an underlying iterator encounters a problem
+     */
+    void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException;
+
+    /**
+     * The simplest way to understand the move method is that child iterators are trying to match the provided minimum.
+     * <p>
+     * Sub methods may handle the move differently, such as includes vs. excludes vs. context includes vs. context excludes. However, the move method will
+     * interpret the output of these sub methods to adhere to the matching principle.
+     * <p>
+     * If context is not required and a move is called but not matched, then the next-highest element is returned. This allows for efficient seeking across
+     * intersections.
+     * <p>
+     * If context is required and a move is called but not matched, then a null element is returned.
      *
      * @param minimum
      *            the minimum
@@ -71,10 +114,10 @@ public interface NestedIterator<T> extends Iterator<T> {
     boolean isContextRequired();
 
     /**
-     * Sets the context for evaluation, this may or may not be used depending upon the implementation
+     * This information is required for safely dropping terms from an intersection in the AndIterator
      *
-     * @param context
-     *            non-null context for evaluation
+     * @return true if the field is non-event
      */
-    void setContext(T context);
+    boolean isNonEventField();
+
 }

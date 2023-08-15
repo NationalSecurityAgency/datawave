@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
@@ -42,6 +43,11 @@ public class EventFieldIterator implements NestedIterator<Key> {
     }
 
     @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        source.seek(range, columnFamilies, inclusive);
+    }
+
+    @Override
     public Key move(Key minimum) {
         // simple sanity check that is free
         if (!range.contains(minimum)) {
@@ -52,12 +58,6 @@ public class EventFieldIterator implements NestedIterator<Key> {
         if (!source.hasTop()) {
             // no key can match the underlying source is empty
             return null;
-        }
-
-        Key top = source.getTopKey();
-
-        if (minimum.compareTo(top) < 0) {
-            throw new IllegalStateException("cannot move iterator backwards to " + minimum);
         }
 
         // update the range to start a minimum
@@ -99,8 +99,8 @@ public class EventFieldIterator implements NestedIterator<Key> {
     }
 
     @Override
-    public void setContext(Key context) {
-        // no-op
+    public boolean isNonEventField() {
+        return false;
     }
 
     @Override

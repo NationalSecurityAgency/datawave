@@ -57,7 +57,8 @@ public abstract class AbstractIteratorBuilder implements IteratorBuilder {
         }
     }
 
-    protected LinkedList<NestedIterator> includes = new LinkedList<>(), excludes = new LinkedList<>();
+    protected LinkedList<NestedIterator> includes = new LinkedList<>();
+    protected LinkedList<NestedIterator> excludes = new LinkedList<>();
 
     protected HashMultimap<String,String> observedFieldValues = HashMultimap.create();
 

@@ -21,7 +21,6 @@ import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.function.Equality;
 import datawave.query.iterator.NestedIterator;
-import datawave.query.iterator.SeekableIterator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 
 /**
@@ -119,11 +118,8 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
                 Collection<NestedIterator<Key>> leaves = delayedNodeIterator.leaves();
                 // for each leaf, see if its a match for the target field
                 for (NestedIterator<Key> leaf : leaves) {
-                    // init/seek the leaf
-                    leaf.initialize();
-                    if (leaf instanceof SeekableIterator) {
-                        ((SeekableIterator) leaf).seek(docRange, columnFamilies, inclusive);
-                    }
+                    leaf.initialize(); // only one iterator still requires this
+                    leaf.seek(docRange, columnFamilies, inclusive);
 
                     // for each value off the leaf add it to the document list as long as equality accepts it
                     while (leaf.hasNext()) {

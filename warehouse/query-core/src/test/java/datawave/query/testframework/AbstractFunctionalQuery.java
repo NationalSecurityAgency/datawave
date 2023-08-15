@@ -174,8 +174,8 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
         this.logic.setMetadataHelperFactory(new MetadataHelperFactory());
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
-        this.logic.setCollectTimingDetails(true);
-        this.logic.setLogTimingDetails(true);
+        // this.logic.setCollectTimingDetails(true);
+        // this.logic.setLogTimingDetails(true);
         this.logic.setMinimumSelectivity(0.03D);
         this.logic.setMaxIndexScanTimeMillis(5000);
 

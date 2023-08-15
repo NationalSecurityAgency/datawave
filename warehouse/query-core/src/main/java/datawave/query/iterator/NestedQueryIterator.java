@@ -1,8 +1,10 @@
 package datawave.query.iterator;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Queue;
 
+import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 
@@ -94,6 +96,11 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
     }
 
     @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        currentNest.seek(range, columnFamilies, inclusive);
+    }
+
+    @Override
     public T move(T minimum) {
         return currentNest.move(minimum);
     }
@@ -142,11 +149,11 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
 
     @Override
     public boolean isContextRequired() {
-        return false;
+        return currentNest.isContextRequired();
     }
 
     @Override
-    public void setContext(T context) {
-        // no-op
+    public boolean isNonEventField() {
+        return currentNest.isNonEventField();
     }
 }

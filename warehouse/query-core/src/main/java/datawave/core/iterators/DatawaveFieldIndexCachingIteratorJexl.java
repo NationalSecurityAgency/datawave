@@ -503,7 +503,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-
         this.initEnv = env;
     }
 
@@ -533,7 +532,6 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     @Override
     public void seek(Range r, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-
         if (log.isTraceEnabled()) {
             log.trace("begin seek, range: " + r);
         }
@@ -695,7 +693,11 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     }
 
     public int getMaxRangeSplit() {
-        return maxRangeSplit;
+        if (sortedUIDs) {
+            return maxRangeSplit;
+        }
+        // unsorted uids is executed serially, therefore no need for splitting the range
+        return 1;
     }
 
     /**
@@ -719,6 +721,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         String cqStr = cq.substring(cqNullIndex + 1);
         if (!sortedUIDs) {
             // to enable repositioning appropriately in the field index, we need the other elements as well.
+            // if we yielded on a document key we are missing some of the required pieces, but that is
+            // addressed in the addKey method
             keyType = PartialKey.ROW_COLFAM_COLQUAL_COLVIS_TIME;
         }
         switch (keyType) {
@@ -942,6 +946,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         }
 
         // if this is the first time through, then create a separate source, and seek
+        // also hits this case on a yield, or teardown/rebuild
         if (this.fiSource == null) {
             this.fiSource = getSourceCopy();
             if (!this.boundingFiRanges.isEmpty()) {
@@ -1071,6 +1076,12 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             if (sortedUIDs && log.isTraceEnabled()) {
                 log.trace("testing " + topEventKey + " against " + lastRangeSeeked);
             }
+
+            // for the unsorted case do not add any key that sorts before the previously returned key
+            if (!sortedUIDs && lastRangeSeeked.getStartKey().getColumnFamily().getLength() > 0 && lastRangeSeeked.getStartKey().compareTo(topEventKey) > 0) {
+                return false;
+            }
+
             // no need to check containership if not returning sorted uids
             if (!sortedUIDs || lastRangeSeeked.contains(topEventKey)) {
                 // avoid writing to set if cancelled

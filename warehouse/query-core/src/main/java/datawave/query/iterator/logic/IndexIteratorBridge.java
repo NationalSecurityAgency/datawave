@@ -7,8 +7,12 @@ import java.util.HashSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl3.parser.JexlNode;
+import org.apache.commons.lang3.builder.CompareToBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 
 import datawave.query.attributes.Document;
@@ -18,32 +22,38 @@ import datawave.query.iterator.SeekableIterator;
 
 /**
  * Wraps an Accumulo iterator with a NestedIterator interface. This bridges the gap between an IndexIterator and a NestedIterator.
- *
- *
- *
+ * <p>
+ * This bridge is required due to some idiosyncrasies with the SortedKeyValueIterator and the Iterator interface.
+ * <p>
+ * There two options for control flow
+ * <ol>
+ * <li>seek()</li>
+ * <li>hasNext()</li>
+ * <li>next()</li>
+ * <li>document()</li>
+ * </ol>
+ * Or
+ * <ol>
+ * <li>seek()</li>
+ * <li>move(context)</li>
+ * <li>document()</li>
+ * </ol>
  */
-public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key> {
-    private final static Logger log = Logger.getLogger(IndexIteratorBridge.class);
+public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key>, Comparable<IndexIteratorBridge> {
+    private static final Logger log = Logger.getLogger(IndexIteratorBridge.class);
+
+    private final String field;
+    private final JexlNode node;
+    private boolean nonEventField;
+
+    // cache layer that wraps the delegate iterator
+    private Key next;
+    private Document document;
 
     /*
      * The AccumuloIterator this object wraps.
      */
-    private DocumentIterator delegate;
-
-    /*
-     * Pointer to the next Key.
-     */
-    private Key next;
-
-    private String field;
-
-    private JexlNode node;
-
-    /**
-     * track the last Key returned for move purposes
-     */
-    private Key prevKey;
-    private Document prevDocument, nextDocument;
+    private final DocumentIterator delegate;
 
     public IndexIteratorBridge(DocumentIterator delegate, JexlNode node, String field) {
         this.delegate = delegate;
@@ -51,74 +61,83 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
         this.field = field;
     }
 
+    /**
+     * Populates the next element from the delegate and advances the delegate
+     *
+     * @return the next element
+     */
     public Key next() {
-        prevKey = next;
-        prevDocument = nextDocument;
-        next = null;
-        try {
+        if (delegate.hasTop()) {
+            next = delegate.getTopKey();
+            document = delegate.document();
+        }
 
-            if (delegate.hasTop()) {
-                next = delegate.getTopKey();
-                nextDocument = delegate.document();
-                delegate.next();
-            }
+        try {
+            delegate.next();
         } catch (IOException e) {
             log.error(e);
-            // throw the exception up the stack....
+            // throw the exception up the stack
             throw new RuntimeException(e);
         }
 
-        return prevKey;
-    }
-
-    public boolean hasNext() {
-        return next != null;
+        return next;
     }
 
     /**
-     * Advance to the next Key in the iterator that is greater than or equal to minimum. First check the cached value in next, then check the delegate cached
-     * value in getTopValue(), finally advance the delegate
+     * Uses the delegate to determine if a next element exists, otherwise clears the cache layer.
+     *
+     * @return true if the delegate has a top element
+     */
+    public boolean hasNext() {
+        if (delegate.hasTop()) {
+            return true;
+        } else {
+            next = null;
+            document = null;
+            return false;
+        }
+    }
+
+    /**
+     * Advance the bridge iterator to the next key that is greater than or equal to the minimum, taking into account the cache layer.
      *
      * @param minimum
      *            the minimum key to advance to
-     * @return the first Key greater than or equal to minimum found
-     * @throws IllegalStateException
-     *             if prevKey is greater than or equal to minimum
+     * @return the first key greater than or equal to minimum found
      */
     public Key move(Key minimum) {
-        if (prevKey != null && prevKey.compareTo(minimum) >= 0) {
-            throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + prevKey + ", movekey=" + minimum);
-        }
 
-        /*
-         * First check if the next Key to be returned meets the criteria and if so simply advance to it
-         */
-        if (this.hasNext() && this.next.compareTo(minimum) >= 0) {
-            // since next already contains the target, just advance to return that
-            return next();
-        }
-
-        // The IIB is caching the last K/V from the delegate, so we need to check
-        // as to avoid the exception thrown by II.move(min)
-        //
-        // e.g. `next` is 'A', minimum is 'B', but delegate.tk is 'C'
-        if (delegate.hasTop() && delegate.getTopKey().compareTo(minimum) < 0) {
-            // at this point both layers of caching have been checked and its safe to advance the underlying delegate
-            try {
-                // advance source and put the first key >= minimum found into getTopKey()/getTopValue()
-                delegate.move(minimum);
-            } catch (IOException e) {
-                log.error(e);
-                // throw the exception up the stack....
-                throw new RuntimeException(e);
+        // check the cache layer first
+        if (next != null) {
+            int result = minimum.compareTo(next, PartialKey.ROW_COLFAM);
+            if (result <= 0) {
+                // minimum < next < delegate.topKey or
+                // minimum == next < delegate.topKey
+                return next;
             }
         }
 
-        // either delegate.getTopKey() already contained the target Key, or the move advanced to it
-        // advance current delegate.getTopKey() into next, discarding the current next
-        next();
+        // check the delegate top key
+        if (hasNext()) {
+            int result = minimum.compareTo(delegate.getTopKey(), PartialKey.ROW_COLFAM);
+            if (result <= 0) {
+                // next < minimum < delegate.topKey or
+                // next < minimum == delegate.topKey
+                return next();
+            }
+        }
 
-        // now return the value which was propagated into next with the previous call
+        // at this point it is safe to move
+        try {
+            delegate.move(minimum);
+        } catch (IOException e) {
+            log.error(e);
+            throw new RuntimeException(e); // throw it up the stack
+        }
+
+        next = null;
+        document = null;
+
         return next();
     }
 
@@ -137,13 +156,6 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean includeCFs) {
         try {
             delegate.seek(range, columnFamilies, includeCFs);
-            if (delegate.hasTop()) {
-                next = delegate.getTopKey();
-                nextDocument = delegate.document();
-                delegate.next();
-            } else {
-                next = null;
-            }
         } catch (IOException e) {
             log.error(e);
             // throw the exception up the stack....
@@ -161,11 +173,14 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
         return Collections.emptyList();
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException("This iterator does not support remove().");
     }
 
-    public void initialize() {}
+    public void initialize() {
+        // no-op
+    }
 
     @Override
     public String toString() {
@@ -174,8 +189,7 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
 
     @Override
     public Document document() {
-        // If we can assert that this Document won't be reused, we can use _document()
-        return prevDocument;
+        return document;
     }
 
     public JexlNode getSourceNode() {
@@ -192,7 +206,51 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     }
 
     @Override
-    public void setContext(Key context) {
-        // no-op
+    public boolean isNonEventField() {
+        return nonEventField;
+    }
+
+    public void setNonEventField(boolean nonEventField) {
+        this.nonEventField = nonEventField;
+    }
+
+    @Override
+    public int compareTo(IndexIteratorBridge other) {
+        //  @formatter:off
+        return new CompareToBuilder()
+                        .append(this.field, other.field)
+                        .append(this.node, other.node)
+                        .append(this.delegate, other.delegate)
+                        .build();
+        //  @formatter:on
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o instanceof IndexIteratorBridge) {
+            IndexIteratorBridge other = (IndexIteratorBridge) o;
+            //  @formatter:off
+            return new EqualsBuilder()
+                            .append(field, other.field)
+                            .append(node, other.node)
+                            .append(delegate, other.delegate)
+                            .isEquals();
+            //  @formatter:on
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        //  @formatter:off
+        return new HashCodeBuilder(23,31)
+                        .append(field)
+                        .append(node)
+                        .append(delegate)
+                        .toHashCode();
+        //  @formatter:on
     }
 }

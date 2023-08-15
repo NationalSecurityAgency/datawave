@@ -32,9 +32,12 @@ import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
 
 /**
- * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,
- * "fi\u0000FIELD") - 3) Given a prefix, scan all keys that have a column qualifer that has that prefix that occur in the column family for all rows in a tablet
- *
+ * Scans a bounds within a column qualifier. This iterator needs to:
+ * <ol>
+ * <li>Be given a global Range (ie, [-inf,+inf])</li>
+ * <li>Select an arbitrary column family (ie, "fi\u0000FIELD")</li>
+ * <li>Given a prefix, scan all keys that have a column qualifier that has that prefix that occur in the column family for all rows in a tablet</li>
+ * </ol>
  */
 public class IndexIterator implements SortedKeyValueIterator<Key,Value>, DocumentIterator {
     private static final Logger log = Logger.getLogger(IndexIterator.class);

@@ -5,10 +5,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Range;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -107,6 +111,7 @@ public class NegationFilterTest {
     // A wrapper around a java.util.Iterator
     static class Itr<K extends Comparable<K>> implements NestedIterator<K> {
         private Iterator<K> i;
+        private K topKey;
         private boolean contextRequired;
 
         public Itr(Iterable<K> it, boolean contextRequired) {
@@ -135,6 +140,11 @@ public class NegationFilterTest {
 
         @Override
         public void initialize() {}
+
+        @Override
+        public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+            // no-op
+        }
 
         @Override
         public K move(K minimum) {
@@ -172,9 +182,48 @@ public class NegationFilterTest {
             return contextRequired;
         }
 
+        // this iterator shouldn't need to use the index only flag
         @Override
-        public void setContext(K context) {
-            // no-op
+        public boolean isNonEventField() {
+            return false;
+        }
+    }
+
+    static class InterruptedIterator<K> implements Iterator<K> {
+
+        private int count = 0;
+        private final Iterator<K> i;
+
+        public InterruptedIterator(Iterator<K> i) {
+            this.i = i;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return i.hasNext();
+        }
+
+        @Override
+        public K next() {
+            if (count == 0) {
+                count++;
+                return i.next();
+            }
+            throw new NoSuchElementException("Interrupted while calling next");
+        }
+    }
+
+    static class InterruptedIterable<K> implements Iterable<K> {
+
+        private final Iterator<K> i;
+
+        public InterruptedIterable(Iterator<K> i) {
+            this.i = i;
+        }
+
+        @Override
+        public Iterator<K> iterator() {
+            return new InterruptedIterator<>(i);
         }
     }
 }

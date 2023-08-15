@@ -30,16 +30,9 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
         this.totalRange = range;
         this.columnFamilies = columnFamilies;
         this.inclusive = inclusive;
-        if (source instanceof SeekableIterator) {
-            ((SeekableIterator) source).seek(range, columnFamilies, inclusive);
-        } else {
-            Iterable<? extends NestedIterator<?>> leaves = source.leaves();
-            for (NestedIterator<?> leaf : leaves) {
-                if (leaf instanceof SeekableIterator) {
-                    ((SeekableIterator) leaf).seek(range, columnFamilies, inclusive);
-                }
-            }
-        }
+
+        // seeking a nested iterator will propagate to all leaf nodes
+        source.seek(range, columnFamilies, inclusive);
     }
 
     @Override
@@ -88,7 +81,7 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     }
 
     @Override
-    public void setContext(T context) {
-        source.setContext(context);
+    public boolean isNonEventField() {
+        return source.isNonEventField();
     }
 }

@@ -42,9 +42,6 @@ public class NestedIteratorContextUtil {
         for (NestedIterator<T> source : contextRequiredIterators) {
             if (!headMap.values().contains(source) && !nullHeadMap.values().contains(source)) {
                 // first time touching this source, initialize it
-                if (source.isContextRequired()) {
-                    source.setContext(context);
-                }
                 source.initialize();
                 sourcesToMove.add(source);
             }
@@ -86,7 +83,6 @@ public class NestedIteratorContextUtil {
                     Util.Transformer<T> transformer) {
         Set<NestedIterator<T>> nullSources = new HashSet<>();
         for (NestedIterator<T> contextRequiredIterator : sourcesToMove) {
-            contextRequiredIterator.setContext(context);
             T result = contextRequiredIterator.move(context);
             if (result == null) {
                 // beyond the end of the iterator

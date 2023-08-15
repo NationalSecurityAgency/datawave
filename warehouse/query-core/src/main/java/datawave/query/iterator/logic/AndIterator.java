@@ -4,21 +4,20 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 
 import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.TreeMultimap;
 
 import datawave.query.attributes.Document;
+import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.SeekableIterator;
 import datawave.query.iterator.Util;
@@ -27,22 +26,36 @@ import datawave.query.iterator.Util.Transformer;
 /**
  * Performs a merge join of the child iterators. It is expected that all child iterators return values in sorted order.
  */
-public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, SeekableIterator {
-    // temporary stores of uninitialized streams of iterators
-    private List<NestedIterator<T>> includes, excludes, contextIncludes, contextExcludes;
-
-    private Map<T,T> transforms;
-    private Transformer<T> transformer;
-
-    private TreeMultimap<T,NestedIterator<T>> includeHeads, excludeHeads, contextIncludeHeads, contextExcludeHeads, contextIncludeNullHeads,
-                    contextExcludeNullHeads;
-    private T prev;
-    private T next;
-
-    private Document prevDocument, document;
-    private T evaluationContext;
-
+public class AndIterator<T extends Comparable<T>> implements SeekableIterator, NestedIterator<T> {
     private static final Logger log = Logger.getLogger(AndIterator.class);
+    private final Transformer<T> transformer = Util.keyTransformer();
+
+    // temporary stores of uninitialized streams of iterators
+    private final List<NestedIterator<T>> includes;
+    private final List<NestedIterator<T>> excludes;
+    private final List<NestedIterator<T>> contextIncludes;
+    private final List<NestedIterator<T>> contextExcludes;
+
+    // head maps
+    private final TreeMultimap<T,NestedIterator<T>> includeHeads;
+    private final TreeMultimap<T,NestedIterator<T>> excludeHeads;
+    private final TreeMultimap<T,NestedIterator<T>> contextIncludeHeads;
+    private final TreeMultimap<T,NestedIterator<T>> contextExcludeHeads;
+
+    // expired sources
+    private final List<NestedIterator<T>> expiredIncludes = new LinkedList<>();
+    private final List<NestedIterator<T>> expiredExcludes = new LinkedList<>();
+    private final List<NestedIterator<T>> expiredContextIncludes = new LinkedList<>();
+    private final List<NestedIterator<T>> expiredContextExcludes = new LinkedList<>();
+
+    // exhausted sources
+    private final List<NestedIterator<T>> exhaustedIncludes = new LinkedList<>();
+    private final List<NestedIterator<T>> exhaustedExcludes = new LinkedList<>();
+    private final List<NestedIterator<T>> exhaustedContextIncludes = new LinkedList<>();
+    private final List<NestedIterator<T>> exhaustedContextExcludes = new LinkedList<>();
+
+    private T next;
+    private Document document;
 
     public AndIterator(Iterable<NestedIterator<T>> sources) {
         this(sources, null);
@@ -73,101 +86,101 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 }
             }
         }
+
+        // initialize head maps
+        includeHeads = createHeadMap();
+        excludeHeads = createHeadMap();
+        contextIncludeHeads = createHeadMap();
+        contextExcludeHeads = createHeadMap();
     }
 
     public void initialize() {
-        Comparator<T> keyComp = Util.keyComparator();
-        // nestedIteratorComparator will keep a deterministic ordering, unlike hashCodeComparator
-        Comparator<NestedIterator<T>> itrComp = Util.nestedIteratorComparator();
-
-        transformer = Util.keyTransformer();
-        transforms = new HashMap<>();
-
-        includeHeads = TreeMultimap.create(keyComp, itrComp);
-        includeHeads = initSubtree(includeHeads, includes, transformer, transforms, true);
-
-        if (excludes.isEmpty()) {
-            excludeHeads = Util.getEmpty();
-        } else {
-            excludeHeads = TreeMultimap.create(keyComp, itrComp);
-            // pass null in for transforms as excludes are not returned
-            excludeHeads = initSubtree(excludeHeads, excludes, transformer, null, false);
-        }
-
-        if (!contextIncludes.isEmpty()) {
-            contextIncludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextIncludeNullHeads = TreeMultimap.create(keyComp, itrComp);
-        }
-
-        if (contextExcludes != null && !contextExcludes.isEmpty()) {
-            contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
-            contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
-        }
-
-        next();
-    }
-
-    public boolean isInitialized() {
-        return includeHeads != null;
+        // no-op
     }
 
     /**
-     * Apply a candidate as a context against both contextIncludes and contextExcludes.
+     * Create a sorted map of nested iterators mapped by their top keys.
      *
-     * @param candidate
-     *            to be used as context against contextIncludes and contextExcludes
-     * @return true if candidate is included in all contextIncludes and excluded in all contextExcludes, false otherwise
+     * @return a map of nested iterators
      */
-    private boolean applyContextRequired(T candidate) {
-        if (contextIncludes.size() > 0) {
-            T highestContextInclude = NestedIteratorContextUtil.intersect(candidate, contextIncludes, contextIncludeHeads, contextIncludeNullHeads,
-                            transformer);
-            // if there wasn't an intersection here move to the next one
-            if (!candidate.equals(highestContextInclude)) {
-                if (highestContextInclude != null) {
-                    // move to the next highest key
-                    includeHeads = moveIterators(candidate, highestContextInclude);
-                    return false;
+    private TreeMultimap<T,NestedIterator<T>> createHeadMap() {
+        // nestedIteratorComparator will keep a deterministic ordering, unlike hashCodeComparator
+        return TreeMultimap.create(Util.keyComparator(), Util.nestedIteratorComparator());
+    }
+
+    @Override
+    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
+        for (NestedIterator<T> child : children()) {
+            try {
+                child.seek(range, columnFamilies, inclusive);
+            } catch (Exception e) {
+                if (child.isNonEventField()) {
+                    // dropping a non-event term from the query means that the accuracy of the query
+                    // cannot be guaranteed. Thus, a fatal exception.
+                    log.error("Lookup of a non-event field failed, failing query");
+                    throw new DatawaveFatalQueryException("Lookup of non-event field failed", e);
                 } else {
-                    // all we know is they didn't intersect advance to next
-                    includeHeads = advanceIterators(candidate);
-                    return false;
+                    // otherwise we can safely drop this term from the intersection as the field will get re-introduced
+                    // to the context when the event is aggregated
+                    // Note: even though the precision of the query is affected the accuracy is not. i.e., documents that
+                    // would have been defeated at the field index will now be defeated at evaluation time
+                    removeIterator(child);
+
+                    if (includes.isEmpty()) {
+                        // no iterators remain
+                        throw new DatawaveFatalQueryException("Query failed because all terms within an intersection were dropped", e);
+                    } else {
+                        log.warn("Lookup of event field failed, precision of query reduced.");
+                    }
                 }
             }
         }
+    }
 
-        // test any contextExcludes against candidate
-        if (contextExcludes.size() > 0) {
-            // DeMorgans Law: (~A) AND (~B) == ~(A OR B)
-            // for an exclude union lowest with the set
-            T unionExclude = NestedIteratorContextUtil.union(candidate, contextExcludes, contextExcludeHeads, contextExcludeNullHeads, transformer);
-            // if the union matched it is not a hit
-            if (candidate.equals(unionExclude)) {
-                // advance and try again
-                includeHeads = advanceIterators(candidate);
-                return false;
-            }
+    /**
+     * Is there a next element
+     *
+     * @return true if there is a next element
+     */
+    public boolean hasNext() {
+        if (isContextRequired()) {
+            throw new IllegalStateException("Cannot call hasNext() on an iterator that requires context");
         }
 
-        return true;
+        if (!isIncludeInitialized()) {
+            initializeIncludes();
+            findNext();
+        } else {
+            nextIncludes();
+            findNext();
+        }
+
+        return next != null;
     }
 
     /**
      * return the previously found next and set its document. If there are more head references, advance until the lowest and highest match that is not
      * filtered, advancing all iterators tied to lowest and set next/document for the next call
+     * <p>
      *
      * @return the previously found next
      */
     public T next() {
-        if (!isInitialized()) {
-            throw new IllegalStateException("initialize() was never called");
-        }
-        if (isContextRequired() && evaluationContext == null) {
-            throw new IllegalStateException("evaluationContext must be set prior to calling next");
+        if (isContextRequired()) {
+            throw new IllegalStateException("cannot call 'next' on an intersection that requires context");
         }
 
-        prev = next;
-        prevDocument = document;
+        T nextValue = next;
+        next = null;
+        return nextValue;
+    }
+
+    /**
+     * Calculates the next element
+     */
+    private void findNext() {
+        next = null;
+        document = Util.emptyDocument();
 
         // look through includes for candidates if there are any
         while (!includeHeads.isEmpty()) {
@@ -175,118 +188,141 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
             T lowest = topKeys.first();
             T highest = topKeys.last();
 
-            // short circuit if possible from a supplied evaluation context
-            if (evaluationContext != null) {
-                int lowestCompare = lowest.compareTo(evaluationContext);
-                int highestCompare = highest.compareTo(evaluationContext);
-
-                if (lowestCompare > 0 || highestCompare > 0) {
-                    // if any value is beyond the evaluationContext it's not possible to intersect
-                    break;
-                }
-
-                // advance anything less than the evaluation context to the evaluation context
-                SortedSet<T> toMove = topKeys.headSet(evaluationContext);
-                if (!toMove.isEmpty()) {
-                    includeHeads = moveIterators(toMove, evaluationContext);
-                    continue;
-                }
+            if (!lowest.equals(highest)) {
+                advanceIncludes();
+                continue;
             }
 
-            // if the highest and lowest are the same we are currently intersecting
-            if (lowest.equals(highest)) {
-                // make sure this value isn't filtered
-                if (!NegationFilter.isFiltered(lowest, excludeHeads, transformer)) {
-                    // use this value as a candidate against any includes/excludes that require context
-                    if (applyContextRequired(lowest)) {
-                        // found a match, set next/document and advance
-                        next = transforms.get(lowest);
-                        document = Util.buildNewDocument(includeHeads.values());
-                        includeHeads = advanceIterators(lowest);
-                        break;
-                    }
-                } else {
-                    // filtered, advance the iterators (which are all currently pointing at the same point)
-                    includeHeads = advanceIterators(lowest);
+            if (!expiredIncludes.isEmpty()) {
+                moveExpiredIncludeSources(highest);
+                // if expired sources still exist after moving, then we must advance any includes again
+                if (!expiredIncludes.isEmpty()) {
+                    advanceIncludes();
                 }
-            } else {
-                // haven't converged yet, take the next highest and move it
-                T nextHighest = topKeys.headSet(highest).last();
-                includeHeads = moveIterators(nextHighest, highest);
+                continue;
             }
-        }
 
-        // for cases where there are no sources the only source for a candidate is the evaluationContext.
-        if (isContextRequired()) {
-            // test exclude for the candidate in case there are excludes
-            if (!NegationFilter.isFiltered(evaluationContext, excludeHeads, transformer)) {
-                if (applyContextRequired(evaluationContext)) {
-                    next = evaluationContext;
-                    document = Util.buildNewDocument(Collections.emptyList());
-                }
+            T exclude = moveExcludes(lowest);
+            if (exclude == null) {
+                nextIncludes();
+                continue;
             }
-        }
 
-        // if we didn't move after the loop, then we don't have a next after this
-        if (prev == next) {
-            next = null;
-        }
-
-        return prev;
-    }
-
-    public void remove() {
-        throw new UnsupportedOperationException("This iterator does not support remove.");
-    }
-
-    public boolean hasNext() {
-        if (!isInitialized()) {
-            throw new IllegalStateException("initialize() was never called");
-        }
-
-        return next != null;
-    }
-
-    @Override
-    public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
-        // seek all of the iterators. Drop those that fail, as long as we have at least one include left
-        Iterator<NestedIterator<T>> include = includes.iterator();
-        while (include.hasNext()) {
-            NestedIterator<T> child = include.next();
-            try {
-                for (NestedIterator<T> itr : child.leaves()) {
-                    if (itr instanceof SeekableIterator) {
-                        ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
-                    }
-                }
-            } catch (Exception e) {
-                include.remove();
-                if (includes.isEmpty()) {
-                    throw e;
-                } else {
-                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
-                }
-
+            T contextInclude = moveContextIncludes(lowest);
+            if (contextInclude == null) {
+                // context expired, need a new one from parent iterator
+                nextIncludes();
+                continue;
             }
-        }
-        Iterator<NestedIterator<T>> exclude = excludes.iterator();
-        while (exclude.hasNext()) {
-            NestedIterator<T> child = exclude.next();
-            for (NestedIterator<T> itr : child.leaves()) {
-                if (itr instanceof SeekableIterator) {
-                    ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
-                }
-            }
-        }
 
-        if (isInitialized()) {
-            // advance throwing next away and re-populating next with what should be
-            next();
+            T contextExclude = moveContextExcludes(lowest);
+            if (contextExclude == null) {
+                nextIncludes();
+                continue;
+            }
+
+            // found a match, set next/document and advance
+            next = includeHeads.keySet().first();
+            document = Util.buildNewDocument(includeHeads, contextIncludeHeads, lowest);
+            break;
         }
     }
 
     /**
-     * Test all layers of cache for the minimum, then if necessary advance heads
+     * Advance all include iterators to the next intersection
+     */
+    private void advanceIncludes() {
+        while (!includeHeads.isEmpty()) {
+            SortedSet<T> topKeys = includeHeads.keySet();
+            T lowest = topKeys.first();
+            T highest = topKeys.last();
+
+            // adding an expired include for the AndIterator causes an infinite loop somewhere..
+            if (lowest.equals(highest) && expiredIncludes.isEmpty()) {
+                return;
+            }
+
+            if (!includeHeads.keySet().headSet(highest).isEmpty()) {
+                moveIncludeSources(highest);
+            } else if (includeHeads.keySet().contains(highest)) {
+                // need to advance all sources that map to the highest key
+                SortedSet<NestedIterator<T>> sources = includeHeads.removeAll(highest);
+                for (NestedIterator<T> source : sources) {
+                    if (source.hasNext()) {
+                        T result = source.next();
+                        if (result != null) {
+                            T transformed = transformer.transform(result);
+                            includeHeads.put(transformed, source);
+                            // optimization, if the returned element is beyond the highest element, reset highest
+                            if (transformed.compareTo(highest) > 0) {
+                                highest = transformed;
+                            }
+                        } else if (!Util.isIteratorExhausted(source)) {
+                            // an include source can expire in a situation like
+                            // CONTEXT && (A || (B && !C)) which will end up having an expired iterator
+                            expiredIncludes.add(source);
+                        } else {
+                            // iterator exhausted, we're done
+                            exhaustedIncludes.addAll(includeHeads.values());
+                            exhaustedIncludes.addAll(sources);
+                            exhaustedIncludes.addAll(expiredIncludes);
+                            includeHeads.clear();
+                            return;
+                        }
+                    } else {
+                        // iterator exhausted, we're done
+                        exhaustedIncludes.addAll(includeHeads.values());
+                        exhaustedIncludes.addAll(sources);
+                        exhaustedIncludes.addAll(expiredIncludes);
+                        includeHeads.clear();
+                        return;
+                    }
+                }
+            }
+
+            // moving expired sources must happen last. Otherwise, we could move into a valid hit
+            // and immediately call next on the sources.
+            moveExpiredIncludeSources(highest);
+        }
+    }
+
+    @Override
+    public void remove() {
+        throw new UnsupportedOperationException("This iterator does not support remove.");
+    }
+
+    /**
+     * Handles removing an iterator from the underlying collections if an exception occurs.
+     *
+     * @param iterator
+     *            the iterator to remove
+     */
+    private void removeIterator(NestedIterator<T> iterator) {
+        log.error("removing iterator");
+        if (includes != null) {
+            includes.remove(iterator);
+        }
+        if (contextIncludes != null) {
+            contextIncludes.remove(iterator);
+        }
+        if (excludes != null) {
+            excludes.remove(iterator);
+        }
+        if (contextExcludes != null) {
+            contextExcludes.remove(iterator);
+        }
+    }
+
+    /**
+     * Move all iterators to the supplied minimum without converging beyond it, even if context is not required.
+     * <p>
+     * The minimum is returned IFF
+     * <ol>
+     * <li>ALL includes match</li>
+     * <li>ALL context includes match</li>
+     * <li>NO excludes match</li>
+     * <li>NO context includes match</li>
+     * </ol>
      *
      * @param minimum
      *            the minimum to return
@@ -295,33 +331,55 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
      *             if prev is greater than or equal to minimum
      */
     public T move(T minimum) {
-        if (!isInitialized()) {
-            throw new IllegalStateException("initialize() was never called");
+        // 0. test if the cached next is already beyond the minimum
+        if (next != null) {
+            int result = next.compareTo(minimum);
+            if (result == 0) {
+                return minimum; // matching
+            } else if (result > 0) {
+                return null; // next lies beyond the minimum, no match possible
+            }
         }
 
-        if (prev != null && prev.compareTo(minimum) >= 0) {
-            throw new IllegalStateException("Tried to call move when already at or beyond move point: topkey=" + prev + ", movekey=" + minimum);
+        next = null;
+        document = Util.emptyDocument();
+
+        // 1. move include sources
+        T include = moveIncludes(minimum);
+        if (!exhaustedIncludes.isEmpty()) {
+            return null; // include sources exhausted by move, no match possible
+        } else if (include != null && include.compareTo(minimum) > 0) {
+            minimum = include; // did not match minimum
         }
 
-        // test if the cached next is already beyond the minimum
-        if (next != null && next.compareTo(minimum) >= 0) {
-            // simply advance to next
-            return next();
+        // 2. sources for context include cannot return a higher element, example: (A || !B)
+        T contextInclude = moveContextIncludes(minimum);
+        if (contextInclude == null) {
+            return null; // no match
+        } // implicit match
+
+        // explicit check to make sure results match
+        if (include != null && !include.equals(contextInclude)) {
+            throw new IllegalStateException("include and context include did not match");
         }
 
-        SortedSet<T> headSet = includeHeads.keySet().headSet(minimum);
-        includeHeads = moveIterators(headSet, minimum);
-
-        // next < minimum, so advance throwing next away and re-populating next with what should be >= minimum
-        next();
-
-        // now as long as the newly computed next exists return it and advance
-        if (hasNext()) {
-            return next();
-        } else {
-            includeHeads = Util.getEmpty();
-            return null;
+        // 3. if excludes exist, they must not exclude the minimum
+        T exclude = moveExcludes(minimum);
+        if (exclude == null) {
+            return null; // minimum was excluded
         }
+
+        // 4. if contextExcludes exist, they must not exclude the minimum
+        T contextExclude = moveContextExcludes(minimum);
+        if (contextExclude == null) {
+            return null; // minimum was excluded
+        }
+
+        // build document from include and context include iterators
+        document = Util.buildNewDocument(includeHeads, contextIncludeHeads, minimum);
+
+        // minimum may have been set to a higher value, if this point is reached it was not excluded
+        return minimum;
     }
 
     public Collection<NestedIterator<T>> leaves() {
@@ -344,147 +402,379 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     }
 
     /**
-     * Advances all iterators associated with the supplied key and adds them back into the sorted multimap. If any of the sub-trees returns false, this method
-     * immediately returns false to indicate that a sub-tree has been exhausted.
+     * Advance the include iterators to the supplied minimum
+     *
+     * @param minimum
+     *            the context
+     * @return the minimum, or the next lowest intersection
+     */
+    private T moveIncludes(T minimum) {
+
+        // 0. check for short circuit
+        if (includes.isEmpty() && includeHeads.isEmpty() && expiredIncludes.isEmpty() && exhaustedIncludes.isEmpty()) {
+            return minimum; // no includes, match by default
+        }
+
+        if (!isIncludeInitialized()) {
+            initializeIncludes();
+        }
+
+        T highest = minimum;
+        while (!includeHeads.isEmpty()) {
+
+            // get the highest key
+            if (includeHeads.keySet().last().compareTo(minimum) > 0) {
+                highest = includeHeads.keySet().last();
+            }
+
+            // move the iterators
+            moveIncludeSources(highest);
+
+            // test for intersection
+            if (!includeHeads.isEmpty()) {
+                T first = includeHeads.keySet().first();
+                T last = includeHeads.keySet().last();
+                if (first.equals(last)) {
+                    return first;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Move all include sources to the provided minimum
+     *
+     * @param minimum
+     *            the minimum element
+     */
+    private void moveIncludeSources(T minimum) {
+        NestedIteratorUtil.moveSources(minimum, includeHeads, expiredIncludes, exhaustedIncludes, transformer);
+
+        if (!exhaustedIncludes.isEmpty()) {
+            exhaustedIncludes.addAll(includeHeads.values());
+            includeHeads.clear();
+        }
+    }
+
+    /**
+     * Move all expired include sources to the provided minimum
+     *
+     * @param minimum
+     *            the move target
+     */
+    private void moveExpiredIncludeSources(T minimum) {
+        NestedIteratorUtil.moveExpiredSources(minimum, includeHeads, expiredIncludes, exhaustedIncludes, transformer);
+    }
+
+    /**
+     * Move all excludes to the supplied minimum context. If all exclude iterators are exhausted then simply return the minimum.
+     * <ol>
+     * <li>Initialize excludes if necessary</li>
+     * <li>Move expired excludes if necessary (might not be possible)</li>
+     * <li>Move exclude sources</li>
+     * </ol>
+     * <p>
+     * For example: <code>(!A &amp;&amp; !B)</code> or <code>(!A &amp;&amp; !(B || C))</code>
+     *
+     * @param minimum
+     *            the minimum context
+     * @return the minimum if it was not excluded
+     */
+    private T moveExcludes(T minimum) {
+
+        // 0. check for short circuit
+        if (excludes.isEmpty() && excludeHeads.isEmpty() && expiredExcludes.isEmpty() && exhaustedExcludes.isEmpty()) {
+            return minimum; // nothing to do
+        }
+
+        // 1. Initialize excludes if necessary
+        if (!isExcludesInitialized()) {
+            initializeExcludeSources(minimum);
+        } else {
+            // 2. Move expired exclude sources if necessary
+            moveExpiredExcludeSources(minimum);
+
+            // 3. Move exclude sources
+            moveExcludeSources(minimum);
+        }
+
+        if (log.isTraceEnabled()) {
+            log.trace("move exclude to " + uidFromKey(minimum) + " heads: " + excludeHeads.size() + " expired: " + expiredExcludes.size());
+        }
+
+        // the minimum is matched IFF none of the sources match. Exhausted = automatic non-match
+        if (!excludeHeads.containsKey(minimum)) {
+            return minimum;
+        } else {
+            return null;
+        }
+    }
+
+    private String uidFromKey(T minimum) {
+        if (!(minimum instanceof Key)) {
+            return "no  uid";
+        }
+        return ((Key) minimum).getColumnFamily().toString().split("\u0000")[1];
+    }
+
+    private boolean isExcludesInitialized() {
+        return !(!excludes.isEmpty() && excludeHeads.isEmpty() && expiredExcludes.isEmpty() && exhaustedExcludes.isEmpty());
+    }
+
+    /**
+     * Initialize all exclude sources
+     */
+    private void initializeExcludeSources(T minimum) {
+        NestedIteratorUtil.initializeSources(minimum, excludeHeads, excludes, expiredIncludes, exhaustedExcludes, transformer);
+    }
+
+    /**
+     * Move all expired exclude sources to the provided minimum
+     *
+     * @param minimum
+     *            the minimum element
+     */
+    private void moveExpiredExcludeSources(T minimum) {
+        NestedIteratorUtil.moveExpiredSources(minimum, excludeHeads, expiredExcludes, exhaustedExcludes, transformer);
+    }
+
+    /**
+     * Move the exclude sources to the provided minimum
+     *
+     * @param minimum
+     *            the minimum element
+     */
+    private void moveExcludeSources(T minimum) {
+        NestedIteratorUtil.moveSources(minimum, excludeHeads, expiredExcludes, exhaustedExcludes, transformer);
+    }
+
+    /**
+     * Move all context includes to the supplied minimum. Returns the context if it matches or null otherwise
+     * <ol>
+     * <li>Initialize context includes if necessary</li>
+     * <li>Move expired iterators if necessary</li>
+     * <li>Move context includes</li>
+     * </ol>
+     *
+     * @param minimum
+     *            the minimum context
+     * @return the context if matches, otherwise null
+     */
+    private T moveContextIncludes(T minimum) {
+
+        // 0. check for short circuit
+        if (contextIncludes.isEmpty() && contextIncludeHeads.isEmpty() && expiredContextIncludes.isEmpty() && exhaustedContextIncludes.isEmpty()) {
+            return minimum;
+        }
+
+        // 1. Initialize context include sources if necessary
+        if (!isContextIncludesInitialized()) {
+            initializeContextIncludeSources(minimum);
+        } else if (!expiredContextIncludes.isEmpty()) {
+            // 2. Move expired context includes if necessary
+            moveExpiredContextIncludeSources(minimum);
+        }
+
+        if (contextIncludes.isEmpty() && !expiredContextIncludes.isEmpty()) {
+            return minimum; // no context includes is an automatic match
+        }
+
+        // 3. Move context include sources
+        moveContextIncludeSources(minimum);
+
+        // TODO -- need to check source return type (leaf vs. junction) to get the real answer
+        if (contextIncludeHeads.keySet().size() == 1) {
+            T top = contextIncludeHeads.keySet().iterator().next();
+            if (!top.equals(minimum)) {
+                // should not be possible to return a 'next higher' element
+                throw new IllegalStateException("top did not match minimum for AndIterator context include");
+            }
+            return top;
+        } else {
+            return null;
+        }
+    }
+
+    private boolean isContextIncludesInitialized() {
+        return !(!contextIncludes.isEmpty() && contextIncludeHeads.isEmpty() && expiredContextIncludes.isEmpty());
+    }
+
+    /**
+     * Initialize context includes using the provided minimum
+     *
+     * @param minimum
+     *            the minimum element
+     */
+    private void initializeContextIncludeSources(T minimum) {
+        NestedIteratorUtil.initializeSources(minimum, contextIncludeHeads, contextIncludes, expiredContextIncludes, exhaustedContextIncludes, transformer);
+    }
+
+    /**
+     * Move all expired context include sources to the provided minimum
+     *
+     * @param minimum
+     *            the minimum element
+     */
+    private void moveExpiredContextIncludeSources(T minimum) {
+        NestedIteratorUtil.moveExpiredSources(minimum, contextIncludeHeads, expiredContextIncludes, exhaustedContextIncludes, transformer);
+    }
+
+    /**
+     * Move context include sources to the provided minimum
+     *
+     * @param minimum
+     *            the minimum element
+     */
+    private void moveContextIncludeSources(T minimum) {
+        NestedIteratorUtil.moveSources(minimum, contextIncludeHeads, expiredContextIncludes, exhaustedContextIncludes, transformer);
+    }
+
+    /**
+     * Move all context exclude sources to the provided minimum
+     * <ol>
+     * <li>initialize excludes if necessary</li>
+     * <li>move expired excludes if necessary</li>
+     * <li>move exclude sources</li>
+     * </ol>
+     *
+     * @param minimum
+     *            the minimum element
+     * @return the context if it was not excluded, or null otherwise
+     */
+    private T moveContextExcludes(T minimum) {
+
+        // 0. check for short circuit
+        if (contextExcludes.isEmpty() && contextExcludeHeads.isEmpty() && expiredContextExcludes.isEmpty() && exhaustedContextExcludes.isEmpty()) {
+            return minimum; // no context excludes is an automatic match
+        }
+
+        // 1. initialize exclude sources if necessary
+        if (!isContextExcludesInitialized()) {
+            initializeContextExcludes(minimum);
+        }
+
+        // 2. move expired context excludes
+        if (!expiredContextExcludes.isEmpty()) {
+            moveExpiredContextExcludeSources(minimum);
+        }
+
+        // 3. move context exclude sources
+        moveContextExcludeSources(minimum);
+
+        if (log.isTraceEnabled()) {
+            log.trace("move context exclude to " + uidFromKey(minimum) + " heads: " + contextExcludeHeads.size() + " expired: "
+                            + expiredContextExcludes.size());
+        }
+
+        // TODO -- need to check source return type (leaf vs. junction) to get the real answer
+        if (contextExcludeHeads.keySet().size() == 1) {
+            if (contextExcludeHeads.keySet().contains(minimum)) {
+                return minimum;
+            } else {
+                return null;
+            }
+        }
+
+        if (!expiredContextExcludes.isEmpty()) {
+            return null;
+        } else {
+            return minimum;
+        }
+    }
+
+    private boolean isContextExcludesInitialized() {
+        return !(!contextExcludes.isEmpty() && contextExcludeHeads.isEmpty() && expiredContextExcludes.isEmpty());
+    }
+
+    private void initializeContextExcludes(T minimum) {
+        NestedIteratorUtil.initializeSources(minimum, contextExcludeHeads, contextExcludes, expiredContextExcludes, exhaustedContextExcludes, transformer);
+    }
+
+    private void moveExpiredContextExcludeSources(T minimum) {
+        NestedIteratorUtil.moveExpiredSources(minimum, contextExcludeHeads, expiredContextExcludes, exhaustedContextExcludes, transformer);
+    }
+
+    private void moveContextExcludeSources(T minimum) {
+        NestedIteratorUtil.moveSources(minimum, contextExcludeHeads, expiredContextExcludes, exhaustedContextExcludes, transformer);
+
+        if (!exhaustedContextExcludes.isEmpty()) {
+            throw new IllegalStateException("exhausted context exclude");
+        }
+    }
+
+    /**
+     * Call next on all includes
+     */
+    private void nextIncludes() {
+        if (!isIncludeInitialized()) {
+            initializeIncludes();
+        }
+
+        for (T key : includeHeads.keySet()) {
+            nextIncludes(key);
+        }
+    }
+
+    /**
+     * Call next on all includes that map to the provided key
      *
      * @param key
-     *            a key
-     * @return a sorted map
+     *            a top key in the head map
      */
-    protected TreeMultimap<T,NestedIterator<T>> advanceIterators(T key) {
-        T highest = null;
-        transforms.remove(key);
-        for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
-            T next;
+    private void nextIncludes(T key) {
+        SortedSet<NestedIterator<T>> sources = includeHeads.removeAll(key);
+        for (NestedIterator<T> source : sources) {
             try {
-                // if there is already a known highest go straight there instead of next
-                if (highest != null) {
-                    next = itr.move(highest);
-                } else if (itr.hasNext()) {
-                    next = itr.next();
+                if (source.hasNext()) {
+                    T result = source.next();
+                    if (result != null) {
+                        T transformed = transformer.transform(result);
+                        includeHeads.put(transformed, source);
+                    } else {
+                        exhaustedIncludes.add(source);
+                        exhaustedIncludes.addAll(sources);
+                        exhaustedIncludes.addAll(includeHeads.values());
+                        includeHeads.clear();
+                        return;
+                    }
+                } else if (!Util.isIteratorExhausted(source)) {
+                    expiredIncludes.add(source);
                 } else {
-                    return Util.getEmpty();
-                }
-
-                if (next == null) {
-                    return Util.getEmpty();
-                }
-
-                T transform = transformer.transform(next);
-                transforms.put(transform, next);
-                includeHeads.put(transform, itr);
-
-                // move the highest if the new key is higher than the current key and the highest seen so far
-                if ((highest == null && transform.compareTo(key) > 0) || (highest != null && transform.compareTo(highest) > 0)) {
-                    highest = transform;
+                    exhaustedIncludes.add(source);
+                    exhaustedIncludes.addAll(sources);
+                    exhaustedIncludes.addAll(includeHeads.values());
+                    includeHeads.clear();
+                    return;
                 }
             } catch (Exception e) {
-                // only need to actually fail if we have nothing left in the AND clause
-                if (includeHeads.isEmpty()) {
-                    throw e;
+                removeIterator(source);
+                if (source.isNonEventField()) {
+                    log.error("Lookup of a non-event field failed, failing query");
+                    throw new DatawaveFatalQueryException("Lookup of non-event field failed", e);
+                } else if (includes.isEmpty()) {
+                    throw new DatawaveFatalQueryException("Query failed because all terms within an intersection were dropped", e);
                 } else {
-                    log.warn("Failed include lookup, but dropping in lieu of other terms", e);
+                    log.warn("Lookup of event field failed, precision of query reduced.");
                 }
             }
         }
-        return includeHeads;
     }
 
-    /**
-     * Similar to <code>advanceIterators</code>, but instead of calling <code>next</code> on each sub-tree, this calls <code>move</code> with the supplied
-     * <code>to</code> parameter.
-     *
-     * @param key
-     *            a key
-     * @param to
-     *            the destination
-     * @return a sorted map
-     */
-    protected TreeMultimap<T,NestedIterator<T>> moveIterators(T key, T to) {
-        transforms.remove(key);
-        for (NestedIterator<T> itr : includeHeads.removeAll(key)) {
-            T next = itr.move(to);
-            if (next == null) {
-                return Util.getEmpty();
-            } else {
-                T transform = transformer.transform(next);
-                transforms.put(transform, next);
-                includeHeads.put(transform, itr);
+    // === include utilities ===
 
-                if (transform.compareTo(to) > 0) {
-                    to = transform;
-                }
-            }
-        }
-        return includeHeads;
+    private boolean isIncludeInitialized() {
+        return !includes.isEmpty() && (!includeHeads.isEmpty() || !exhaustedIncludes.isEmpty());
     }
 
-    protected TreeMultimap<T,NestedIterator<T>> moveIterators(SortedSet<T> toMove, T to) {
-        T highest = null;
+    private void initializeIncludes() {
+        NestedIteratorUtil.initializeSources(includeHeads, includes, expiredIncludes, exhaustedIncludes, transformer);
 
-        // get the highest key of toMove since it is likely to be the lowest cardinality
-        if (!toMove.isEmpty()) {
-            highest = toMove.last();
+        if (!exhaustedIncludes.isEmpty()) {
+            exhaustedIncludes.addAll(includeHeads.values());
+            includeHeads.clear();
         }
-
-        while (highest != null && !includeHeads.isEmpty()) {
-            // if include heads is higher than the target key, adjust the target key to the highest since an intersection is not possible at anything but the
-            // highest
-            T highestInternal = includeHeads.keySet().last();
-            if (highestInternal.compareTo(to) > 0) {
-                to = highestInternal;
-            }
-
-            // advance the iterators
-            includeHeads = moveIterators(highest, to);
-
-            // get the next highest key in the set to move
-            toMove = toMove.headSet(highest);
-            if (!toMove.isEmpty()) {
-                highest = toMove.last();
-            } else {
-                highest = null;
-            }
-        }
-
-        return includeHeads;
-    }
-
-    /**
-     * Creates a sorted mapping of values to iterators.
-     *
-     * @param subtree
-     *            a subtree
-     * @param <T>
-     *            type for the tree
-     * @param anded
-     *            boolean flag for anded
-     * @param transformer
-     *            the transformer
-     * @param transforms
-     *            mapping of transforms
-     * @param sources
-     *            nested iterator of sources
-     * @return a sorted map
-     */
-    private static <T extends Comparable<T>> TreeMultimap<T,NestedIterator<T>> initSubtree(TreeMultimap<T,NestedIterator<T>> subtree,
-                    Iterable<NestedIterator<T>> sources, Transformer<T> transformer, Map<T,T> transforms, boolean anded) {
-        for (NestedIterator<T> src : sources) {
-            src.initialize();
-            if (src.hasNext()) {
-                T next = src.next();
-                T transform = transformer.transform(next);
-                if (transforms != null) {
-                    transforms.put(transform, next);
-                }
-                subtree.put(transform, src);
-            } else if (anded) {
-                // If a source has no valid records, it shouldn't throw an exception. It should just return no results.
-                // For an And, once one source is exhausted, the entire tree is exhausted
-                return Util.getEmpty();
-            }
-        }
-        return subtree;
     }
 
     @Override
@@ -504,7 +794,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     }
 
     public Document document() {
-        return prevDocument;
+        return document;
     }
 
     /**
@@ -517,14 +807,37 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         return includes.isEmpty();
     }
 
-    /**
-     * This context will be used even if isContextRequired is false as an anchor point for highest/lowest during next calls
-     *
-     * @param context
-     *            a context
-     */
     @Override
-    public void setContext(T context) {
-        this.evaluationContext = context;
+    public boolean isNonEventField() {
+        for (NestedIterator<T> itr : includes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+        for (NestedIterator<T> itr : contextIncludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+        for (NestedIterator<T> itr : excludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+        for (NestedIterator<T> itr : contextExcludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Distinct from a {@link Iterator#hasNext()} call, this method determines if a next element is possible.
+     *
+     * @return true if this iterator is exhausted
+     */
+    public boolean isIteratorExhausted() {
+        return next == null && includeHeads.isEmpty() && excludeHeads.isEmpty() && contextIncludeHeads.isEmpty() && contextExcludeHeads.isEmpty();
     }
 }
