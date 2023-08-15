@@ -32,7 +32,6 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -75,15 +74,6 @@ public class TLDQueryIterator extends QueryIterator {
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         if (log.isTraceEnabled()) {
             log.trace("TLDQueryIterator init()");
-        }
-
-        // extract SeekingQueryPlanner fields if available
-        if (options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK) != null) {
-            maxFieldHitsBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_FIELD_HITS_BEFORE_SEEK));
-        }
-
-        if (options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK) != null) {
-            maxKeysBeforeSeek = Integer.parseInt(options.get(SeekingQueryPlanner.MAX_KEYS_BEFORE_SEEK));
         }
 
         super.init(source, options, env);

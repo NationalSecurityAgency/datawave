@@ -28,6 +28,7 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.KeyProjection;
 import datawave.query.util.TypeMetadata;
 
 public class TermFrequencyAggregatorTest {
@@ -53,10 +54,11 @@ public class TermFrequencyAggregatorTest {
         Set<String> keepFields = new HashSet<>();
         keepFields.add("FIELD2");
 
-        EventDataQueryFilter filter = new EventDataQueryFieldFilter();
-        Set<String> disallowlist = new HashSet<>();
-        disallowlist.add("FIELD1");
-        ((EventDataQueryFieldFilter) filter).setExcludes(disallowlist);
+        Set<String> denylist = new HashSet<>();
+        denylist.add("FIELD1");
+        KeyProjection keyProjection = new KeyProjection();
+        keyProjection.setExcludes(denylist);
+        EventDataQueryFilter filter = new EventDataQueryFieldFilter(keyProjection);
 
         aggregator = new TermFrequencyAggregator(keepFields, filter, -1);
         Key result = aggregator.apply(itr, doc, attributeFactory);

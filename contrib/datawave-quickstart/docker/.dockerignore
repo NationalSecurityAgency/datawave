@@ -1,4 +1,4 @@
-# This .dockerignore gets symlinked temporarily from the datawave repo's
+# This .dockerignore gets copied temporarily to the datawave repo's
 # root directory by docker-build.sh, since that directory is used as
 # the build context for the image.
 
@@ -15,9 +15,9 @@
 **/.project
 **/.settings
 
-# Ignore temporary .dockerignore symlink in the root directory...
+# Ignore temporary .dockerignore copy in the root directory...
 .dockerignore
-# ...but don't ignore the actual .dockerignore file
+# ...but don't ignore the actual .dockerignore source file
 !**/datawave-quickstart/docker/.dockerignore
 
 # Below, we mostly just ignore enviromnent-specific stuff that may have
