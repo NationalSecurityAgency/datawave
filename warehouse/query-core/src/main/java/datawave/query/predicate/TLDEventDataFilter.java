@@ -1,14 +1,12 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
-import datawave.query.Constants;
-import datawave.query.function.LimitFields;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.tld.TLD;
-import datawave.query.util.TypeMetadata;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -18,12 +16,16 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+
+import datawave.query.Constants;
+import datawave.query.function.LimitFields;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.tld.TLD;
+import datawave.query.util.TypeMetadata;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields

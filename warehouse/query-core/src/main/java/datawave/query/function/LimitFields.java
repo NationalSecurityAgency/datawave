@@ -1,8 +1,17 @@
 package datawave.query.function;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Function;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
 import datawave.data.type.Type;
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
@@ -11,13 +20,6 @@ import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 /**
  * <p>
