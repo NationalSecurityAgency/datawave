@@ -2,7 +2,6 @@ package datawave.modification;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -59,8 +58,7 @@ import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.data.parsers.DatawaveKey.KeyType;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.util.ScannerHelper;
 import datawave.util.TextUtil;
 import datawave.util.time.DateHelper;
@@ -306,15 +304,14 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
     // Default the insert history option to true so that the call remains backwards compatible.
     @Override
     public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
-                    Collection<? extends DatawaveUser> proxiedUsers) throws Exception {
-        this.process(client, request, mutableFieldList, userAuths, proxiedUsers, false, true);
+                    ProxiedUserDetails userDetails) throws Exception {
+        this.process(client, request, mutableFieldList, userAuths, userDetails, false, true);
     }
 
     public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
-                    Collection<? extends DatawaveUser> proxiedUsers, boolean purgeIndex, boolean insertHistory) throws Exception {
+                    ProxiedUserDetails userDetails, boolean purgeIndex, boolean insertHistory) throws Exception {
 
-        DatawavePrincipal principal = new DatawavePrincipal(proxiedUsers, System.currentTimeMillis());
-        String user = principal.getShortName();
+        String user = userDetails.getShortName();
 
         DefaultModificationRequest mr = DefaultModificationRequest.class.cast(request);
 
@@ -997,7 +994,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
      *             if there are issues
      */
     protected EventBase<?,?> findMatchingEventUuid(String uuid, String uuidType, Set<Authorizations> userAuths, ModificationOperation operation,
-                    Collection<? extends DatawaveUser> proxiedUsers) throws Exception {
+                    ProxiedUserDetails userDetails) throws Exception {
         String field = operation.getFieldName();
         String columnVisibility = operation.getColumnVisibility();
 
@@ -1014,7 +1011,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         String logicName = "LuceneUUIDEventQuery";
 
         EventBase e = null;
-        ModificationQueryService queryService = this.getQueryService(proxiedUsers);
+        ModificationQueryService queryService = this.getQueryService(userDetails);
         String id = null;
         HashSet<String> auths = new HashSet<>();
         for (Authorizations a : userAuths)

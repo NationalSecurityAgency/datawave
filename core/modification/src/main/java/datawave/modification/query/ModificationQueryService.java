@@ -1,11 +1,10 @@
 package datawave.modification.query;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
 import datawave.query.exceptions.DatawaveQueryException;
-import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
 
@@ -17,6 +16,6 @@ public interface ModificationQueryService {
     void close(String id) throws DatawaveQueryException;
 
     public interface ModificationQueryServiceFactory {
-        ModificationQueryService createService(Collection<? extends DatawaveUser> proxiedUsers);
+        ModificationQueryService createService(ProxiedUserDetails userDetails);
     }
 }

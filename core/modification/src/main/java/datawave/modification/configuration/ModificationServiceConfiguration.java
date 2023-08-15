@@ -1,6 +1,5 @@
 package datawave.modification.configuration;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,7 +9,7 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.modification.query.ModificationQueryService;
-import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.modification.ModificationRequestBase;
 
 public abstract class ModificationServiceConfiguration {
@@ -51,8 +50,8 @@ public abstract class ModificationServiceConfiguration {
      *
      * @return ModificationQueryService
      */
-    public ModificationQueryService getQueryService(Collection<? extends DatawaveUser> proxiedUsers) {
-        return queryServiceFactory.createService(proxiedUsers);
+    public ModificationQueryService getQueryService(ProxiedUserDetails userDetails) {
+        return queryServiceFactory.createService(userDetails);
     }
 
     public ModificationQueryService.ModificationQueryServiceFactory getQueryServiceFactory() {
@@ -80,13 +79,13 @@ public abstract class ModificationServiceConfiguration {
      *            map of datatype to set of fields that are mutable
      * @param userAuths
      *            authorizations of user making the call
-     * @param proxiedUsers
-     *            user proxy chain
+     * @param userDetails
+     *            user details
      * @throws Exception
      *             if there is an issue
      */
     public abstract void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList,
-                    Set<Authorizations> userAuths, Collection<? extends DatawaveUser> proxiedUsers) throws Exception;
+                    Set<Authorizations> userAuths, ProxiedUserDetails userDetails) throws Exception;
 
     /**
      *
