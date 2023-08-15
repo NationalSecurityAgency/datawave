@@ -91,4 +91,9 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     public void setContext(T context) {
         source.setContext(context);
     }
+
+    @Override
+    public boolean isIndexOnly() {
+        return source.isIndexOnly();
+    }
 }

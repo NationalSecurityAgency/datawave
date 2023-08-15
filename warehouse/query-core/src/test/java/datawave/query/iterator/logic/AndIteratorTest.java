@@ -10,7 +10,9 @@ import org.junit.Test;
 
 import com.google.common.collect.Lists;
 
+import datawave.query.attributes.Document;
 import datawave.query.iterator.NestedIterator;
+import datawave.query.iterator.logic.NegationFilterTest.InterruptedIterable;
 
 public class AndIteratorTest {
 
@@ -294,7 +296,31 @@ public class AndIteratorTest {
         Assert.assertFalse(iterator.hasNext());
     }
 
+    /**
+     * This test triggers the "Failed include lookup, but dropping in lieu of other terms" warning
+     * <p>
+     * The limitations of this test framework prevent us from asserting the resulting document.
+     */
+    @Test
+    public void testFailedIncludeLookup() {
+        Set<NestedIterator<String>> includes = new HashSet<>();
+        includes.add(getItr(Lists.newArrayList("a", "b", "c"), false));
+        includes.add(getInterruptableItr(Lists.newArrayList("a", "b", "c"), false));
+
+        AndIterator<String> iterator = new AndIterator<>(includes);
+        iterator.initialize();
+
+        Assert.assertTrue(iterator.hasNext());
+        Document d = iterator.document();
+        Assert.assertNull(d);
+    }
+
     private NegationFilterTest.Itr<String> getItr(List<String> source, boolean contextRequired) {
         return new NegationFilterTest.Itr<>(source, contextRequired);
+    }
+
+    private NegationFilterTest.Itr<String> getInterruptableItr(List<String> source, boolean contextRequired) {
+        InterruptedIterable<String> iterable = new InterruptedIterable<>(source.iterator());
+        return new NegationFilterTest.Itr<>(iterable, contextRequired);
     }
 }

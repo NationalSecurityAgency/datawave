@@ -197,4 +197,14 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     public void setContext(Key context) {
         // no-op
     }
+
+    /**
+     * By definition this iterator is not for an index only field
+     *
+     * @return false
+     */
+    @Override
+    public boolean isIndexOnly() {
+        return false;
+    }
 }

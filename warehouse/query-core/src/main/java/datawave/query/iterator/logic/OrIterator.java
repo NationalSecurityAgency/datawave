@@ -354,4 +354,10 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     public void setContext(T context) {
         this.evaluationContext = context;
     }
+
+    @Override
+    public boolean isIndexOnly() {
+        return false;
+    }
+
 }
