@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.configuration.RefreshableScope;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.QueryMetricsSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
@@ -46,12 +47,14 @@ public class RemoteQueryMetricService extends RemoteHttpService {
     private static final String UPDATE_METRIC_SUFFIX = "updateMetric";
     private static final String UPDATE_METRICS_SUFFIX = "updateMetrics";
     private static final String ID_METRIC_SUFFIX = "id/%s";
+    private static final String SUBPLAN_METRIC_SUFFIX = "id/%s/subplans";
     private static final String MAP_METRIC_SUFFIX = "id/%s/map";
     private static final String SUMMARY_ALL_SUFFIX = "summary/all";
     private static final String SUMMARY_USER_SUFFIX = "summary/user";
     private static final String AUTH_HEADER_NAME = "Authorization";
     private ObjectReader baseQueryMetricListResponseReader;
     private ObjectReader queryGeometryResponseReader;
+    private ObjectReader queryMetricsSubplanResponseReader;
     private ObjectReader queryMetricsSummaryResponseReader;
 
     @Inject
@@ -117,6 +120,7 @@ public class RemoteQueryMetricService extends RemoteHttpService {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         baseQueryMetricListResponseReader = objectMapper.readerFor(BaseQueryMetricListResponse.class);
         queryGeometryResponseReader = objectMapper.readerFor(QueryGeometryResponse.class);
+        queryMetricsSubplanResponseReader = objectMapper.readerFor(QueryMetricsSubplanResponse.class);
         queryMetricsSummaryResponseReader = objectMapper.readerFor(QueryMetricsSummaryResponse.class);
     }
 
@@ -160,6 +164,21 @@ public class RemoteQueryMetricService extends RemoteHttpService {
                         },
                         entity -> baseQueryMetricListResponseReader.readValue(entity.getContent()),
                         () -> suffix);
+        // @formatter:on
+    }
+
+    public QueryMetricsSubplanResponse subplan(String queryId) {
+        String suffix = String.format(SUBPLAN_METRIC_SUFFIX, queryId);
+        // @formatter:offr
+        return executeGetMethodWithRuntimeException(
+                suffix,
+                uriBuilder -> {},
+                httpGet -> {
+                    httpGet.setHeader(AUTH_HEADER_NAME, getBearer());
+                    httpGet.setHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON);
+                },
+                entity -> queryMetricsSubplanResponseReader.readValue(entity.getContent()),
+                () -> suffix);
         // @formatter:on
     }
 

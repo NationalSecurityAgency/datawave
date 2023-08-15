@@ -141,7 +141,7 @@ public class QueryMetricsBean {
     }
 
     /**
-     * Returns metrics for the current users queries that are identified by the id
+     * Returns subplans for the current users queries that are identified by the id
      *
      * @param id
      *
@@ -158,7 +158,7 @@ public class QueryMetricsBean {
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
     public BaseQueryMetricListResponse subplan(@PathParam("id") @Required("id") String id) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
-            return remoteQueryMetricService.id(id);
+            return remoteQueryMetricService.subplan(id);
         } else {
             // Find out who/what called this method
             DatawavePrincipal dp = null;
