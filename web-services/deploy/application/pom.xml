@@ -288,6 +288,7 @@
                             <forceTags>true</forceTags>
                             <imageTags>
                                 <imageTag>latest</imageTag>
+                                <imageTag>latest-${user.name}</imageTag>
                                 <imageTag>${project.version}</imageTag>
                             </imageTags>
                             <dockerDirectory>${project.build.directory}/wildfly</dockerDirectory>
