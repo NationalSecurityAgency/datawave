@@ -225,7 +225,7 @@ public class QueryOptionsTest {
     @Test
     public void testDataTypeFilter() {
         Map<String,String> opts = Maps.newHashMap();
-        opts.put(QueryOptions.DATATYPE_FILTER, "asdf,call,moip");
+        opts.put(QueryOptions.DATATYPE_FILTER, "foo,bar,meow");
         opts.put(QueryOptions.DISABLE_EVALUATION, "true");
         QueryOptions qopts = new QueryOptions();
         qopts.validateOptions(opts);
