@@ -71,12 +71,10 @@
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-api</artifactId>
-            <version>3.3.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-client-runtime</artifactId>
-            <version>3.3.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
