@@ -44,9 +44,6 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     private Document prevDocument, document;
     private T evaluationContext;
 
-    // flag to determine if this intersection contains an index only term
-    private boolean indexOnly;
-
     private static final Logger log = Logger.getLogger(AndIterator.class);
 
     public AndIterator(Iterable<NestedIterator<T>> sources) {
@@ -206,7 +203,7 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                     if (applyContextRequired(lowest)) {
                         // found a match, set next/document and advance
                         next = transforms.get(lowest);
-                        document = Util.buildNewDocument(includeHeads.values());
+                        document = Util.buildNewDocument(includeHeads, contextIncludeHeads, lowest);
                         includeHeads = advanceIterators(lowest);
                         break;
                     }
@@ -562,6 +559,13 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
         for (NestedIterator<T> include : includeHeads.values()) {
             if (include.isIndexOnly()) {
                 return true;
+            }
+        }
+        if (contextIncludeHeads != null) {
+            for (NestedIterator<T> contextExclude : contextIncludeHeads.values()) {
+                if (contextExclude.isIndexOnly()) {
+                    return true;
+                }
             }
         }
         return false;

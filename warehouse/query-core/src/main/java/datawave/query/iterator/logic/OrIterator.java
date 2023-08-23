@@ -22,7 +22,6 @@ import datawave.query.iterator.Util;
 /**
  * Performs a deduping merge of iterators.
  *
- *
  * @param <T>
  *            type cast
  */
@@ -41,6 +40,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     private Document prevDocument, document;
 
     private T evaluationContext;
+
+    private boolean indexOnly;
 
     public OrIterator(Iterable<NestedIterator<T>> sources) {
         this(sources, null);
@@ -91,6 +92,8 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             contextExcludeHeads = TreeMultimap.create(keyComp, itrComp);
             contextExcludeNullHeads = TreeMultimap.create(keyComp, itrComp);
         }
+
+        determineIndexOnlyState();
 
         next();
     }
@@ -357,7 +360,16 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
 
     @Override
     public boolean isIndexOnly() {
-        return false;
+        return indexOnly;
+    }
+
+    private void determineIndexOnlyState() {
+        for (NestedIterator include : includes) {
+            if (include.isIndexOnly()) {
+                indexOnly = true;
+                return;
+            }
+        }
     }
 
 }

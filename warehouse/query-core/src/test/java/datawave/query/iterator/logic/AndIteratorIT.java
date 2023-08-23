@@ -178,7 +178,6 @@ class AndIteratorIT {
     }
 
     // 3) applyContextRequired -> contextIncludes are uneven and there's no high key
-    // still working on this one
     @Test
     void testIterationExceptionDuringApplyContextRequired() throws IOException {
         SortedSet<String> uidsA = new TreeSet<>(Arrays.asList("a", "c", "e", "g", "i"));
@@ -207,12 +206,10 @@ class AndIteratorIT {
         assertTrue(o instanceof Key);
         IndexIteratorTest.assertTopKey((Key) o, "a");
 
-        int i = 0;
-
-        // Set<String> indexOnlyFields = Sets.newHashSet("FIELD_A", "FIELD_B");
-        // Set<String> droppedFields = Collections.singleton("FIELD_B");
-        // SortedSet<String> uids = intersectUids(uidsA, uidsB);
-        // driveIntersection(itr, indexOnlyFields, droppedFields, uids);
+        Set<String> indexOnlyFields = Sets.newHashSet("FIELD_A", "FIELD_B");
+        Set<String> droppedFields = Collections.singleton("FIELD_B");
+        SortedSet<String> uids = intersectUids(uidsA, uidsB);
+        assertThrows(DatawaveFatalQueryException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
     }
 
     // 4) applyContextRequired -> contextExcludes is treated as a union TODO
