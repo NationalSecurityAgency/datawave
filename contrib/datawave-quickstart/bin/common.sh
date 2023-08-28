@@ -134,6 +134,16 @@ function allStart() {
    done
 }
 
+function allDisplayBinaryInfo() {
+   # Starts all registered services
+   local services=(${DW_CLOUD_SERVICES})
+   for servicename in "${services[@]}" ; do
+      echo "========================================================="
+      echo "$(printGreen "Binary info for ${servicename}")"
+      ${servicename}DisplayBinaryInfo
+   done
+}
+
 function allStop() {
 
    [[ "${1}" == "--hard" ]] && local kill9=true
@@ -218,10 +228,53 @@ function allInstall() {
       allStatus
       return 1
    fi
+   allDisplayBinaryInfo ; echo
    local services=(${DW_CLOUD_SERVICES})
+   if ! checkBinaries ; then
+      askYesNo "Please review the reported inconsistencies in your current setup.
+Hint: Existing local binaries will take precedence over source binaries during installation.
+If that's not what you want, please use $(printGreen "[servicename|all]Uninstall --remove-binaries") to remove local binaries first
+Continue with installation?" || return 1
+   fi
    for servicename in "${services[@]}" ; do
       ${servicename}Install
    done
+}
+
+function checkBinaries()  {
+  local status=0
+  # Dump source and local binaries into distinct arrays
+  local sourceBinaries=()
+  local localBinaries=()
+  while IFS= read -r line; do
+    if [[ "${line}" =~ ^Source:.* ]] ; then
+       sourceBinaries+=("$(cut -d: -f2- <<<${line})")
+    else
+       localBinaries+=("$(cut -d: -f2- <<<${line})")
+    fi
+  done < <( allDisplayBinaryInfo | grep -E 'Source:|Local:' )
+
+  # Compare each tarball pair
+  for ((i=0; i<${#sourceBinaries[@]}; i++)); do
+     local sbin="$(basename "${sourceBinaries[$i]}")"
+     local lbin="$(basename "${localBinaries[$i]}")"
+     if [[ "${sbin}" != "${lbin}" ]] && [[ ! "${lbin}" =~ .*Not\ loaded.* ]] ; then
+        warn "Source and Local binaries are inconsistent: Source == ${sbin}, Local == ${lbin}"
+        status=1
+     fi
+  done
+  return ${status}
+}
+
+function getDataWaveVersion() {
+  local pomFile="${DW_DATAWAVE_SOURCE_DIR}/pom.xml"
+  if [[ -f "${pomFile}" ]]; then
+     local version="$(grep -m 1 '<version>' "${pomFile}" 2>/dev/null | sed 's|.*<version>\(.*\)</version>.*|\1|')"
+     [[ -z "${version}" ]] && return 1
+  else
+     return 1
+  fi
+  echo "${version}"
 }
 
 function allUninstall() {
@@ -307,7 +360,7 @@ function servicesAreRunning() {
 
 function jdkIsConfigured() {
    local javacBinary="$(which javac)"
-   local requiredVersion="javac 1.8.0"
+   local requiredVersion="javac 11.0"
    local foundIt=""
 
    # Check JAVA_HOME

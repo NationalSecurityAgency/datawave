@@ -1,50 +1,49 @@
 package datawave.query.transformer;
 
-import com.google.common.collect.Sets;
-import com.google.protobuf.InvalidProtocolBufferException;
-import datawave.edge.model.EdgeModelAware;
-import datawave.edge.util.EdgeValue;
-import datawave.marking.MarkingFunctions;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cachedresults.CacheableLogic;
-import datawave.webservice.query.cachedresults.CacheableQueryRow;
-import datawave.webservice.query.cachedresults.CacheableQueryRowImpl;
-import datawave.webservice.query.exception.QueryException;
-import datawave.webservice.query.logic.BaseQueryLogicTransformer;
-import datawave.webservice.query.result.EdgeQueryResponseBase;
-import datawave.webservice.query.result.edge.EdgeBase;
-import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.result.BaseQueryResponse;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.HashCodeBuilder;
-import org.apache.log4j.Logger;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.google.common.collect.Sets;
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.edge.model.EdgeModelAware;
+import datawave.edge.util.EdgeValue;
+import datawave.marking.MarkingFunctions;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cachedresults.CacheableLogic;
+import datawave.webservice.query.cachedresults.CacheableQueryRow;
+import datawave.webservice.query.exception.QueryException;
+import datawave.webservice.query.logic.BaseQueryLogicTransformer;
+import datawave.webservice.query.result.EdgeQueryResponseBase;
+import datawave.webservice.query.result.edge.EdgeBase;
+import datawave.webservice.query.result.event.ResponseObjectFactory;
+import datawave.webservice.result.BaseQueryResponse;
+
 public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTransformer<I,O> implements CacheableLogic, EdgeModelAware {
-    private Logger log = Logger.getLogger(EdgeQueryTransformerSupport.class);
     protected Authorizations auths;
     protected ResponseObjectFactory responseObjectFactory;
-    
+
     public EdgeQueryTransformerSupport(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.responseObjectFactory = responseObjectFactory;
         auths = new Authorizations(settings.getQueryAuthorizations().split(","));
     }
-    
+
     private static final String ERROR_INCORRECT_BYTE_ARRAY_SIZE = "The bitmask byte array is invalid. The array should have four bytes, but has %d bytes";
     private static final String ERROR_INVALID_HOUR = "The supplied hour must be a value of 0-23. Supplied hour: %d";
-    
+
     /**
      * Returns the bit for a given hour from within the bytes of an int32 Protobuf bitmask.
-     * 
+     *
      * @param bytes
      *            The bitmask bytes
      * @param hour
@@ -58,23 +57,25 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         if (hour < -1 || hour > 24) {
             throw new IllegalArgumentException(String.format(ERROR_INVALID_HOUR, hour));
         }
-        
+
         int tmpInt = 23 - hour;
         Double tmpDbl = Math.floor(((double) tmpInt) / 8);
         int idx = tmpDbl.intValue() + 1;
-        
+
         byte b = bytes[idx];
         tmpDbl = ((double) hour) / 8;
         int pos = hour - (tmpDbl.intValue() * 8);
         return (b >> pos & 1);
     }
-    
+
     /**
      * Returns a boolean array with the decoded hourly activity from the Value's bitmask.
-     * 
+     *
      * @param value
+     *            a value
      * @return the hourly activity
      * @throws InvalidProtocolBufferException
+     *             if the buffer is invalid
      */
     public static boolean[] decodeHourlyActivityToBooleanArray(Value value) throws InvalidProtocolBufferException {
         boolean[] hourlyActivity = new boolean[24];
@@ -90,12 +91,12 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         }
         return hourlyActivity;
     }
-    
+
     @Override
     public BaseQueryResponse createResponse(List<Object> resultList) {
         try {
             EdgeQueryResponseBase response = responseObjectFactory.getEdgeQueryResponse();
-            
+
             Set<ColumnVisibility> uniqueColumnVisibilities = Sets.newHashSet();
             for (Object result : resultList) {
                 EdgeBase edge = (EdgeBase) result;
@@ -103,7 +104,7 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
                 uniqueColumnVisibilities.add(this.markingFunctions.translateToColumnVisibility(markings));
                 response.addEdge(edge);
             }
-            
+
             ColumnVisibility combinedVisibility = this.markingFunctions.combine(uniqueColumnVisibilities);
             response.setMarkings(this.markingFunctions.translateFromColumnVisibility(combinedVisibility));
             return response;
@@ -111,19 +112,19 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
             throw new RuntimeException("could not handle markings in resultList ", ex);
         }
     }
-    
+
     @Override
     public List<CacheableQueryRow> writeToCache(Object o) throws QueryException {
-        
+
         List<CacheableQueryRow> cqoList = new ArrayList<>();
         EdgeBase edge = (EdgeBase) o;
-        
-        CacheableQueryRow cqo = new CacheableQueryRowImpl();
+
+        CacheableQueryRow cqo = responseObjectFactory.getCacheableQueryRow();
         cqo.setColFam("");
         cqo.setDataType("");
         cqo.setEventId(generateEventId(edge));
         cqo.setRow("");
-        
+
         if (edge.getSource() != null) {
             cqo.addColumn(EDGE_SOURCE, edge.getSource(), edge.getMarkings(), "", 0l);
         }
@@ -167,21 +168,21 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
         cqoList.add(cqo);
         return cqoList;
     }
-    
+
     @Override
     public List<Object> readFromCache(List<CacheableQueryRow> cacheableQueryRowList) {
-        
+
         List<Object> edgeList = new ArrayList<>();
-        
+
         for (CacheableQueryRow cqr : cacheableQueryRowList) {
             Map<String,String> markings = cqr.getMarkings();
-            
+
             EdgeBase edge = (EdgeBase) responseObjectFactory.getEdge();
-            
+
             edge.setMarkings(markings);
-            
+
             Map<String,String> columnValues = cqr.getColumnValues();
-            
+
             if (columnValues.containsKey(EDGE_SOURCE)) {
                 edge.setSource(columnValues.get(EDGE_SOURCE));
             }
@@ -231,15 +232,15 @@ public abstract class EdgeQueryTransformerSupport<I,O> extends BaseQueryLogicTra
             }
             edgeList.add(edge);
         }
-        
+
         return edgeList;
     }
-    
+
     public String generateEventId(EdgeBase edge) {
-        
+
         int hashCode = new HashCodeBuilder().append(this.getClass().getCanonicalName()).append(edge.getDate()).append(edge.getSource()).append(edge.getSink())
                         .append(edge.getEdgeRelationship()).toHashCode();
-        
-        return Integer.valueOf(hashCode).toString();
+
+        return Integer.toString(hashCode);
     }
 }

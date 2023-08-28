@@ -1,24 +1,25 @@
 package datawave.query.iterator.builder;
 
-import datawave.query.iterator.logic.IndexIterator;
-import datawave.query.iterator.logic.IndexIteratorBridge;
 import org.apache.hadoop.io.Text;
 
+import datawave.query.iterator.logic.IndexIterator;
+import datawave.query.iterator.logic.IndexIteratorBridge;
+
 public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
-    
+
     @SuppressWarnings("unchecked")
     public IndexIteratorBridge build() {
         if (notNull(field, value, source, datatypeFilter, keyTform, timeFilter)) {
             IndexIteratorBridge itr = new IndexIteratorBridge(IndexIterator.builder(new Text(field), new Text(value), source).withTimeFilter(timeFilter)
-                            .withTypeMetadata(typeMetadata)
-                            .shouldBuildDocument(this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field))
-                            .withDatatypeFilter(datatypeFilter).withAggregation(this.keyTform).build());
+                            .withTypeMetadata(typeMetadata).shouldBuildDocument(this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field))
+                            .withDatatypeFilter(datatypeFilter).withAggregation(this.keyTform).build(), getNode(), getField());
             field = null;
             value = null;
             source = null;
             timeFilter = null;
             datatypeFilter = null;
             keyTform = null;
+            node = null;
             return itr;
         } else {
             StringBuilder msg = new StringBuilder(256);
@@ -36,5 +37,5 @@ public class CardinalityIteratorBuilder extends IndexIteratorBuilder {
             throw new IllegalStateException(msg.toString());
         }
     }
-    
+
 }

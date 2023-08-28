@@ -12,7 +12,8 @@ cd $THIS_DIR
 . ./ingest-libs.sh
 
 HADOOP_NATIVE_LIB_DIR="$INGEST_HADOOP_HOME/lib/native"
-CLASSPATH=$CLASSPATH:$DATAWAVE_INGEST_CORE_JAR:`$HADOOP_HOME/bin/hadoop classpath`
+CLASSPATH=$CLASSPATH:`$HADOOP_HOME/bin/hadoop classpath`
+CLASSPATH=$CLASSPATH:../../config/log4j-flagmaker.xml
 JAVA_OPTS="${JAVA_OPTS} -Djava.library.path=${HADOOP_NATIVE_LIB_DIR}"
 export HADOOP_CLASSPATH=$CLASSPATH
 
@@ -24,7 +25,7 @@ start() {
       if pgrep -f "Dapp=FlagMaker -DappConfig=$config" 2>&1 >/dev/null ; then
         echo "FlagMaker for $config already running"
       else
-        $JAVA_HOME/bin/java -Dapp=FlagMaker -DappConfig=$config $JAVA_OPTS -cp $CLASSPATH datawave.util.flag.FlagMaker -flagConfig $config $1>> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
+        $JAVA_HOME/bin/java -Dlog4j.configuration=log4j-flagmaker.xml -Dapp=FlagMaker -DappConfig=$config $JAVA_OPTS -cp $CLASSPATH datawave.util.flag.FlagMaker -flagConfig $config ${FLAG_EXTRA_ARGS} $1>> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
       fi
     fi
   done
@@ -38,7 +39,7 @@ stop() {
       if ! pgrep -f "Dapp=FlagMaker -DappConfig=$config" 2>&1 >/dev/null ; then
         echo "FlagMaker for $config not running"
       else
-        $JAVA_HOME/bin/java $JAVA_OPTS -cp $CLASSPATH datawave.util.flag.FlagMaker -flagConfig $config -shutdown >> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
+        $JAVA_HOME/bin/java -Dlog4j.configuration=log4j-flagmaker.xml $JAVA_OPTS -cp $CLASSPATH datawave.util.flag.FlagMaker -flagConfig $config -shutdown >> ${LOG_DIR}/flag_maker_${config_base}.log 2>&1 < /dev/null &
       fi
     fi
   done

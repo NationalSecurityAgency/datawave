@@ -2,8 +2,6 @@ package datawave.query.language.builder.lucene;
 
 import java.util.List;
 
-import datawave.query.language.functions.lucene.LuceneQueryFunction;
-
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryTreeBuilder;
 import org.apache.lucene.queryparser.flexible.core.nodes.BooleanQueryNode;
@@ -16,6 +14,9 @@ import org.apache.lucene.queryparser.flexible.core.nodes.SlopQueryNode;
 import org.apache.lucene.queryparser.flexible.core.nodes.TokenizedPhraseQueryNode;
 import org.apache.lucene.queryparser.flexible.standard.nodes.TermRangeQueryNode;
 
+import datawave.query.language.functions.lucene.LuceneQueryFunction;
+
+@Deprecated
 public class AccumuloQueryTreeBuilder extends QueryTreeBuilder {
     public AccumuloQueryTreeBuilder() {
         setBuilder(TermRangeQueryNode.class, new RangeQueryNodeBuilder());
@@ -27,7 +28,7 @@ public class AccumuloQueryTreeBuilder extends QueryTreeBuilder {
         setBuilder(TokenizedPhraseQueryNode.class, new PhraseQueryNodeBuilder());
         setBuilder(SlopQueryNode.class, new SlopQueryNodeBuilder());
     }
-    
+
     public AccumuloQueryTreeBuilder(List<LuceneQueryFunction> allowedFunctions) {
         setBuilder(TermRangeQueryNode.class, new RangeQueryNodeBuilder());
         setBuilder(GroupQueryNode.class, new GroupQueryNodeBuilder());
@@ -38,7 +39,7 @@ public class AccumuloQueryTreeBuilder extends QueryTreeBuilder {
         setBuilder(TokenizedPhraseQueryNode.class, new PhraseQueryNodeBuilder());
         setBuilder(SlopQueryNode.class, new SlopQueryNodeBuilder());
     }
-    
+
     @Override
     public datawave.query.language.tree.QueryNode build(QueryNode queryNode) throws QueryNodeException {
         return (datawave.query.language.tree.QueryNode) super.build(queryNode);

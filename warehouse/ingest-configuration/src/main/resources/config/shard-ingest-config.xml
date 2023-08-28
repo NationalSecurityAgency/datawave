@@ -20,6 +20,11 @@
 </property>
 
 <property>
+    <name>shard.index.create.uids</name>
+    <value>${SHARD_INDEX_CREATE_UIDS}</value>
+</property>
+
+<property>
   <name>shard.table.loader.priority</name>
   <value>30</value>
 </property>
@@ -88,5 +93,9 @@
 <property>
     <name>partitioner.category.member.${table.name.shard}</name>
     <value>shardedTables</value>
+</property>
+<property>
+    <name>index.tables.keep.count.only.entries</name>
+    <value>${indexTables.keepCountOnlyEntries}</value>
 </property>
 </configuration>

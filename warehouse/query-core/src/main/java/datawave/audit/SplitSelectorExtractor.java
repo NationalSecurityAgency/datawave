@@ -2,21 +2,23 @@ package datawave.audit;
 
 import java.util.ArrayList;
 import java.util.List;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.IntRange;
 
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+
 public class SplitSelectorExtractor implements SelectorExtractor {
-    
+
     protected String separatorCharacter = null;
     protected String separatorParameter = null;
     protected List<IntRange> useSplitsList = null;
-    
+
     @Override
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
         List<String> selectorList = new ArrayList<>();
-        
+
         String selectorSeparator = this.separatorCharacter;
         if (this.separatorParameter != null) {
             QueryImpl.Parameter parameter = query.findParameter(separatorParameter);
@@ -27,7 +29,7 @@ public class SplitSelectorExtractor implements SelectorExtractor {
                 }
             }
         }
-        
+
         String queryStr = query.getQuery();
         if (selectorSeparator == null) {
             selectorList.add(query.getQuery());
@@ -42,7 +44,7 @@ public class SplitSelectorExtractor implements SelectorExtractor {
         }
         return selectorList;
     }
-    
+
     public void setSeparatorCharacter(String separatorCharacter) {
         if (StringUtils.isNotBlank(separatorCharacter) && !separatorCharacter.isEmpty()) {
             this.separatorCharacter = separatorCharacter;
@@ -50,18 +52,18 @@ public class SplitSelectorExtractor implements SelectorExtractor {
             throw new RuntimeException("Illegal separator: '" + separatorCharacter + "'");
         }
     }
-    
+
     public void setSeparatorParameter(String separatorParameter) {
         this.separatorParameter = separatorParameter;
     }
-    
+
     public void setUseSplits(String useSplits) {
-        
+
         this.useSplitsList = parseUseSplitsRanges(useSplits);
     }
-    
+
     public List<IntRange> parseUseSplitsRanges(String useSplits) {
-        
+
         List<IntRange> useSplitsList = new ArrayList<>();
         if (useSplits != null) {
             try {
@@ -69,15 +71,15 @@ public class SplitSelectorExtractor implements SelectorExtractor {
                 for (String s : split1) {
                     String[] split2 = s.trim().split("-");
                     if (split2.length == 1) {
-                        long v1 = Integer.valueOf(split2[0]);
+                        long v1 = Integer.parseInt(split2[0]);
                         if (s.endsWith("-")) {
                             useSplitsList.add(new IntRange(v1, Integer.MAX_VALUE));
                         } else {
                             useSplitsList.add(new IntRange(v1));
                         }
                     } else if (split2.length == 2) {
-                        long v1 = Long.valueOf(split2[0]);
-                        long v2 = Long.valueOf(split2[1]);
+                        long v1 = Long.parseLong(split2[0]);
+                        long v2 = Long.parseLong(split2[1]);
                         if (v1 > v2) {
                             throw new NumberFormatException(v1 + " > " + v2 + " in range " + s);
                         }
@@ -92,9 +94,9 @@ public class SplitSelectorExtractor implements SelectorExtractor {
         }
         return useSplitsList;
     }
-    
+
     public boolean useSplit(List<IntRange> useSplitList, int splitNumber) {
-        
+
         boolean useSplit = false;
         for (IntRange range : useSplitList) {
             if (range.containsInteger(splitNumber)) {

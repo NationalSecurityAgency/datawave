@@ -21,6 +21,7 @@
     <distributorType>simple</distributorType>
     <!-- No dot "." files -->
     <filePattern>2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
+    <filePattern>2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
     <hdfs>file://target</hdfs>
     <collectMetrics>false</collectMetrics>
     <socketPort>22222</socketPort>

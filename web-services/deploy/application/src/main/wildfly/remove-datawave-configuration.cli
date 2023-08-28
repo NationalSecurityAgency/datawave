@@ -22,6 +22,7 @@ undeploy datawave-web-service.ear
 
 /subsystem=logging/logger=org.jboss.jca.core.connectionmanager.listener.TxConnectionListener:remove
 /subsystem=logging/logger=datawave.query:remove
+/subsystem=logging/logger=datawave.webservice.common.cache.SharedCacheCoordinator:remove
 /subsystem=logging/logger=datawave.webservice.query.factory:remove
 /subsystem=logging/logger=datawave.webservice.query.iterator:remove
 /subsystem=logging/logger=datawave.webservice.query.logic:remove
@@ -182,8 +183,16 @@ jms-queue remove --queue-address=QueryMetricsQueue
 /system-property=dw.remoteDatawaveUserService.scheme:remove
 /system-property=dw.remoteDatawaveUserService.host:remove
 /system-property=dw.remoteDatawaveUserService.port:remove
+/system-property=dw.remoteQueryMetricService.useSrvDnsLookup:remove
+/system-property=dw.remoteQueryMetricService.srvDnsServers:remove
+/system-property=dw.remoteQueryMetricService.srvDnsPort:remove
+/system-property=dw.remoteQueryMetricService.scheme:remove
+/system-property=dw.remoteQueryMetricService.host:remove
+/system-property=dw.remoteQueryMetricService.port:remove
 /system-property=zookeeper.sasl.client:remove
 /system-property=dw.cache.tableNames:remove
+/system-property=dw.cache.reloadInterval:remove
+/system-property=dw.basemaps:remove
 
 # Restore default transaction node identifier
 /subsystem=transactions:write-attribute(name=node-identifier,value=1)

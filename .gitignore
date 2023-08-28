@@ -41,7 +41,11 @@ target/
 **/target/
 **/logs/
 
+**/.factorypath
+.vscode
+
 .DS_Store
 web-services/geoserver/geoserver-application/overlays/
 
 services/sample_configuration/*-dev.yml
+/.metadata/

@@ -12,9 +12,9 @@ import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 public class QueriesTableAgeOffIterator extends Filter {
-    
+
     private long currentTime = 0;
-    
+
     @Override
     public IteratorOptions describeOptions() {
         // There are no options
@@ -22,7 +22,7 @@ public class QueriesTableAgeOffIterator extends Filter {
         List<String> l = Collections.emptyList();
         return new IteratorOptions("QueriesTableAgeOffIterator", "rejects keys whose timestamp is less than now", m, l);
     }
-    
+
     @Override
     public boolean accept(Key k, Value v) {
         // The timestamp in the key of the queries table is the expiration date. If it is less than the
@@ -32,11 +32,11 @@ public class QueriesTableAgeOffIterator extends Filter {
         else
             return true;
     }
-    
+
     @Override
     public void init(SortedKeyValueIterator<Key,Value> source, Map<String,String> options, IteratorEnvironment env) throws IOException {
         super.init(source, options, env);
-        
+
         this.currentTime = System.currentTimeMillis();
     }
 }

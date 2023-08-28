@@ -12,11 +12,11 @@ import datawave.webservice.query.exception.DatawaveErrorCode;
  * Tests that for the field name arguments that are supplied, there are values that match that are also within the same grouping context
  */
 public class AtomValuesMatchFunction extends JexlQueryFunction {
-    
+
     public AtomValuesMatchFunction() {
         super("atom_values_match", new ArrayList<>());
     }
-    
+
     @Override
     public void validate() throws IllegalArgumentException {
         if (this.parameterList.size() < 2) {
@@ -24,7 +24,7 @@ public class AtomValuesMatchFunction extends JexlQueryFunction {
             throw new IllegalArgumentException(qe);
         }
     }
-    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -38,10 +38,10 @@ public class AtomValuesMatchFunction extends JexlQueryFunction {
         sb.append(")");
         return sb.toString();
     }
-    
+
     @Override
     public QueryFunction duplicate() {
         return new AtomValuesMatchFunction();
     }
-    
+
 }

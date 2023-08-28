@@ -1,46 +1,55 @@
 package datawave.test.helpers;
 
+import java.util.concurrent.TimeUnit;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.After;
 import org.junit.Before;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+
 public abstract class MockTableTest {
     public static final String TABLE_NAME = "test";
-    protected Connector connector;
+    protected AccumuloClient client;
     protected BatchWriter writer;
     protected TableOperations tableOperations;
-    
+
     @Before
     public void setup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, TableExistsException {
         InMemoryInstance i = new InMemoryInstance(this.getClass().toString());
-        connector = i.getConnector("root", new PasswordToken(""));
-        if (connector.tableOperations().exists(TABLE_NAME))
-            connector.tableOperations().delete(TABLE_NAME);
-        connector.tableOperations().create(TABLE_NAME);
+        client = new InMemoryAccumuloClient("root", i);
+        if (client.tableOperations().exists(TABLE_NAME))
+            client.tableOperations().delete(TABLE_NAME);
+        client.tableOperations().create(TABLE_NAME);
         writer = createBatchWriter();
-        tableOperations = connector.tableOperations();
+        tableOperations = client.tableOperations();
     }
-    
+
     @After
     public void cleanup() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        connector.tableOperations().delete(TABLE_NAME);
+        client.tableOperations().delete(TABLE_NAME);
     }
-    
+
     protected BatchWriter createBatchWriter() throws TableNotFoundException {
-        return connector.createBatchWriter(TABLE_NAME, 10000L, 1000L, 4);
+        return client.createBatchWriter(TABLE_NAME,
+                        new BatchWriterConfig().setMaxMemory(10000L).setMaxLatency(1000L, TimeUnit.MILLISECONDS).setMaxWriteThreads(4));
     }
-    
+
+    protected BatchWriter getWriter() {
+        return this.writer;
+    }
+
     public BatchScanner createBatchScanner(Authorizations authorizations, int threads) throws TableNotFoundException {
-        return connector.createBatchScanner(TABLE_NAME, authorizations, threads);
+        return client.createBatchScanner(TABLE_NAME, authorizations, threads);
     }
 }

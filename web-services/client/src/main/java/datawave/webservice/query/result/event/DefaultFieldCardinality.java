@@ -29,9 +29,11 @@ import io.protostuff.Schema;
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultFieldCardinality extends FieldCardinalityBase implements Serializable, Message<DefaultFieldCardinality> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
+    @XmlAttribute(name = "field")
+    private String field;
     @XmlAttribute(name = "columnVisibility")
     private String columnVisibility;
     @XmlAttribute(name = "lower")
@@ -40,149 +42,164 @@ public class DefaultFieldCardinality extends FieldCardinalityBase implements Ser
     private String upper;
     @XmlElement(name = "cardinality")
     private Long cardinality;
-    
+
     public DefaultFieldCardinality() {}
-    
-    public DefaultFieldCardinality(String columnVisibility, String lower, String upper, Long cardinality) {
+
+    public DefaultFieldCardinality(String field, String columnVisibility, String lower, String upper, Long cardinality) {
         super();
+        this.field = field;
         this.columnVisibility = columnVisibility;
         this.lower = lower;
         this.upper = upper;
         this.cardinality = cardinality;
     }
-    
-    /*
-     * (non-Javadoc)
-     * 
-     * @see datawave.webservice.query.result.event.FieldCardinalityInterface#setMarkings(java.util.Map)
-     */
+
+    @Override
+    public String getField() {
+        return field;
+    }
+
+    @Override
+    public void setField(String field) {
+        this.field = field;
+    }
+
     @Override
     public void setMarkings(Map<String,String> markings) {
         this.markings = markings;
     }
-    
+
     public Map<String,String> getMarkings() {
         return this.markings;
     }
-    
+
     public Long getCardinality() {
         return cardinality;
     }
-    
+
     public void setCardinality(Long cardinality) {
         this.cardinality = cardinality;
     }
-    
+
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder();
-        buf.append(" columnVisibility=").append(columnVisibility);
-        buf.append(" cardinality=").append(cardinality);
-        buf.append(" lower=").append(lower);
-        buf.append(" upper= ").append(upper).append("] ");
-        
-        return buf.toString();
+        return " field=" + field + " columnVisibility=" + columnVisibility + " cardinality=" + cardinality + " lower=" + lower + " upper= " + upper + "] ";
     }
-    
+
     @Override
     public int hashCode() {
-        return new HashCodeBuilder(17, 37).append(columnVisibility).append(cardinality).append(lower).append(upper).hashCode();
+        return new HashCodeBuilder(17, 37).append(field).append(columnVisibility).append(cardinality).append(lower).append(upper).hashCode();
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (o instanceof DefaultFieldCardinality) {
             DefaultFieldCardinality v = (DefaultFieldCardinality) o;
-            
+
             EqualsBuilder eb = new EqualsBuilder();
-            
+
+            eb.append(this.field, v.field);
             eb.append(this.columnVisibility, v.columnVisibility);
             eb.append(this.lower, v.lower);
             eb.append(this.upper, v.upper);
             eb.append(this.cardinality, v.cardinality);
             return eb.isEquals();
         }
-        
+
         return false;
     }
-    
+
     public String getLower() {
         return lower;
     }
-    
+
     public String getUpper() {
         return upper;
     }
-    
+
     public void setLower(String lower) {
         this.lower = lower;
     }
-    
+
     public void setUpper(String upper) {
         this.upper = upper;
     }
-    
+
     public static Schema<DefaultFieldCardinality> getSchema() {
         return SCHEMA;
     }
-    
+
+    public String getColumnVisibility() {
+        return columnVisibility;
+    }
+
+    public void setColumnVisibility(String columnVisibility) {
+        this.columnVisibility = columnVisibility;
+    }
+
     @Override
     public Schema<DefaultFieldCardinality> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<DefaultFieldCardinality> SCHEMA = new Schema<DefaultFieldCardinality>() {
-        
+
         @Override
         public DefaultFieldCardinality newMessage() {
             return new DefaultFieldCardinality();
         }
-        
+
         @Override
         public Class<? super DefaultFieldCardinality> typeClass() {
             return DefaultFieldCardinality.class;
         }
-        
+
         @Override
         public String messageName() {
             return DefaultFieldCardinality.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return DefaultFieldCardinality.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(DefaultFieldCardinality message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, DefaultFieldCardinality message) throws IOException {
+            output.writeString(1, message.columnVisibility, false);
+
             if (message.columnVisibility != null)
-                output.writeString(1, message.columnVisibility, false);
-            output.writeUInt64(2, message.cardinality, false);
-            output.writeString(3, message.lower, false);
-            output.writeString(4, message.upper, false);
+                output.writeString(2, message.columnVisibility, false);
+
+            output.writeUInt64(3, message.cardinality, false);
+            output.writeString(4, message.lower, false);
+            output.writeString(5, message.upper, false);
         }
-        
+
         @Override
         public void mergeFrom(Input input, DefaultFieldCardinality message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
                 switch (number) {
                     case 1:
-                        message.columnVisibility = input.readString();
+                        message.field = input.readString();
                         break;
                     case 2:
-                        message.cardinality = input.readUInt64();
+                        message.columnVisibility = input.readString();
                         break;
                     case 3:
-                        message.lower = input.readString();
+                        message.cardinality = input.readUInt64();
                         break;
                     case 4:
+                        message.lower = input.readString();
+                        break;
+                    case 5:
                         message.upper = input.readString();
                         break;
                     default:
@@ -191,43 +208,38 @@ public class DefaultFieldCardinality extends FieldCardinalityBase implements Ser
                 }
             }
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
-                    return "columnVisibility";
+                    return "field";
                 case 2:
-                    return "cardinality";
+                    return "columnVisibility";
                 case 3:
-                    return "lower";
+                    return "cardinality";
                 case 4:
+                    return "lower";
+                case 5:
                     return "upper";
                 default:
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
-            return number == null ? 0 : number.intValue();
+            return number == null ? 0 : number;
         }
-        
+
         private final HashMap<String,Integer> fieldMap = new HashMap<String,Integer>();
         {
-            fieldMap.put("columnVisibility", 1);
-            fieldMap.put("cardinality", 2);
-            fieldMap.put("lower", 3);
-            fieldMap.put("upper", 4);
+            fieldMap.put("field", 1);
+            fieldMap.put("columnVisibility", 2);
+            fieldMap.put("cardinality", 3);
+            fieldMap.put("lower", 4);
+            fieldMap.put("upper", 5);
         }
     };
-    
-    public String getColumnVisibility() {
-        return columnVisibility;
-    }
-    
-    public void setColumnVisibility(String columnVisibility) {
-        this.columnVisibility = columnVisibility;
-    }
 }

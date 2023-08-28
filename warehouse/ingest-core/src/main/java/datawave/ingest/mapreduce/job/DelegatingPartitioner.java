@@ -1,5 +1,9 @@
 package datawave.ingest.mapreduce.job;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
@@ -8,10 +12,6 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This partitioner delegates the partitioning logic to other partitioners based on table name. * The table may have its own dedicated partitioner or may share
@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> implements Configurable {
     protected static final Logger log = Logger.getLogger(DelegatingPartitioner.class);
-    
+
     // this gets populated with the table names that have non-default partitioners defined
     static final String TABLE_NAMES_WITH_CUSTOM_PARTITIONERS = "DelegatingPartitioner.custom.delegate._tablenames";
     //
@@ -34,31 +34,35 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
     static final String PREFIX_CATEGORY_PARTITIONER = PartitionerCache.PREFIX_CATEGORY_PARTITIONER; // add the category here
     // exactly one partitioner class
     static final String DEFAULT_DELEGATE_PARTITIONER = PartitionerCache.DEFAULT_DELEGATE_PARTITIONER;
-    
+
     private Configuration conf;
     private Map<Text,Integer> tableOffsets; // mapping from table name to its offset (see DelegatePartitioner)
     private PartitionerCache partitionerCache;
-    
+
     public DelegatingPartitioner() {}
-    
+
     public DelegatingPartitioner(Configuration configuration) {
         this.conf = configuration;
     }
-    
+
     // adds configuration properties
     public static void configurePartitioner(Job job, Configuration conf, String[] tableNames) {
         PartitionerCache partitionerCache = new PartitionerCache(conf);
         validateAndRegisterPartitioners(job, conf, tableNames, partitionerCache); // fault tolerant for misconfigured tables
         job.setPartitionerClass(DelegatingPartitioner.class);
     }
-    
+
     /**
      * Is fault tolerant: if a given table is misconfigured, it will not honor its override DelegatingPartitioner and log a warning
-     * 
+     *
      * @param job
+     *            the job
      * @param conf
+     *            the configuration
      * @param tableNames
+     *            the table names
      * @param partitionerCache
+     *            the partitioner cache
      */
     private static void validateAndRegisterPartitioners(Job job, Configuration conf, String[] tableNames, PartitionerCache partitionerCache) {
         String commaSeparatedTableNames = StringUtils.join(",", partitionerCache.validatePartitioners(tableNames, job));
@@ -66,34 +70,34 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
             conf.set(TABLE_NAMES_WITH_CUSTOM_PARTITIONERS, commaSeparatedTableNames);
         }
     }
-    
+
     @Override
     // delegates partitioning
     public int getPartition(BulkIngestKey key, Value value, int numPartitions) {
         Text tableName = key.getTableName();
-        
+
         Partitioner<BulkIngestKey,Value> partitioner = partitionerCache.getPartitioner(tableName);
-        
+
         int partition = partitioner.getPartition(key, value, numPartitions);
         Integer offset = this.tableOffsets.get(tableName);
-        
+
         if (null != offset) {
             return (offset + partition) % numPartitions;
         } else {
             return partition % numPartitions;
         }
     }
-    
+
     @Override
     public Configuration getConf() {
         return conf;
     }
-    
+
     @Override
     public void setConf(Configuration conf) {
         this.conf = conf;
         this.partitionerCache = new PartitionerCache(conf);
-        
+
         try {
             createDelegatesForTables();
         } catch (ClassNotFoundException e) {
@@ -102,7 +106,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
             throw new RuntimeException(e);
         }
     }
-    
+
     // looks at the property that specifies which tables have custom partitioners and registers each of those partitioners
     private void createDelegatesForTables() throws ClassNotFoundException {
         tableOffsets = new HashMap<>();
@@ -119,7 +123,7 @@ public class DelegatingPartitioner extends Partitioner<BulkIngestKey,Value> impl
             throw new IllegalArgumentException("Problem with tableNames or their partitioner class names. " + commaSeparatedTableNames, e);
         }
     }
-    
+
     private ArrayList<Text> getTableNames(String commaSeparatedTableNames) {
         ArrayList<Text> result = new ArrayList<>();
         for (String tableName : commaSeparatedTableNames.split(",")) {

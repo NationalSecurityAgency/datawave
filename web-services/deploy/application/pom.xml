@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-deploy-parent</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>5.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
@@ -42,11 +42,6 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-query-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-type-metadata-hdfs</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
@@ -155,6 +150,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>${version.commons-text}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
             <artifactId>commons-vfs2</artifactId>
         </dependency>
         <dependency>
@@ -192,75 +192,6 @@
             <artifactId>hadoop-hdfs</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.htrace</groupId>
-            <artifactId>htrace-core4</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <!--
-                         The following dependencies are pulled in just to silence some Wildfly warnings about missing jars that
-            are referenced in another jar's Class-Path in the manifest. Some of these are test jars that will
-            go away from future versions of the emissary jar.
-        
-        <dependency>
-            <groupId>asm</groupId>
-            <artifactId>asm-tree</artifactId>
-            <version>3.3.1</version>
-        </dependency>
-        <dependency>
-            <groupId>cobertura</groupId>
-            <artifactId>cobertura</artifactId>
-            <version>1.8</version>
-        </dependency>
-        <dependency>
-            <groupId>edu.ucar</groupId>
-            <artifactId>netcdf</artifactId>
-            <version>4.2.20-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>net.sf.jgrapht</groupId>
-            <artifactId>jgrapht</artifactId>
-            <version>0.8.3-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-epsg-wkt</artifactId>
-            <version>${version.geotools}-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>org.geotools</groupId>
-            <artifactId>gt-shapefile</artifactId>
-            <version>${version.geotools}-datawave</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-all</artifactId>
-            <version>1.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-core</artifactId>
-            <scope>compile</scope>
-            <version>1.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <scope>compile</scope>
-            <version>1.8.5</version>
-        </dependency>
-        <dependency>
-            <groupId>oro</groupId>
-            <artifactId>oro</artifactId>
-            <scope>compile</scope>
-            <version>2.0.8</version>
-        </dependency>
-       -->
     </dependencies>
     <build>
         <finalName>${project.artifactId}-${project.version}</finalName>
@@ -340,6 +271,92 @@
             the generated ear.
         -->
         <profile>
+            <id>docker</id>
+            <activation>
+                <property>
+                    <name>docker-release</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <version>1.1.1</version>
+                        <configuration>
+                            <imageName>${docker.image.prefix}datawave/webservice-${build.env}</imageName>
+                            <forceTags>true</forceTags>
+                            <imageTags>
+                                <imageTag>latest</imageTag>
+                                <imageTag>${project.version}</imageTag>
+                            </imageTags>
+                            <dockerDirectory>${project.build.directory}/wildfly</dockerDirectory>
+                            <resources>
+                                <resource>
+                                    <targetPath>/</targetPath>
+                                    <directory>${project.build.directory}</directory>
+                                    <include>${project.build.finalName}-${build.env}.ear</include>
+                                </resource>
+                            </resources>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>tag-image</id>
+                                <goals>
+                                    <goal>build</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-dependency-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-mysql-jar</id>
+                                <goals>
+                                    <goal>copy</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/wildfly/mysql</outputDirectory>
+                                    <overWriteIfNewer>true</overWriteIfNewer>
+                                    <artifactItems>
+                                        <artifactItem>
+                                            <groupId>mysql</groupId>
+                                            <artifactId>mysql-connector-java</artifactId>
+                                        </artifactItem>
+                                    </artifactItems>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>copy-dockerfile</id>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <phase>process-resources</phase>
+                                <configuration>
+                                    <outputDirectory>${project.build.directory}/wildfly</outputDirectory>
+                                    <resources>
+                                        <resource>
+                                            <directory>${project.basedir}/src/main/docker</directory>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>dist</id>
             <activation>
                 <property>
@@ -391,70 +408,6 @@
                                     <groupId>gov.nsa.datawave.webservices</groupId>
                                     <artifactId>datawave-ws-examples-client-login</artifactId>
                                 </ejbModule>
-                            </modules>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <!--
-            When the geoserver profile is active, we will include a geoserver deployment in the ear which includes
-            support for the GeoWave datastore.
-        -->
-        <profile>
-            <id>geoserver</id>
-            <activation>
-                <property>
-                    <name>geoserver</name>
-                </property>
-            </activation>
-            <dependencies>
-                <dependency>
-                    <groupId>gov.nsa.datawave.webservices</groupId>
-                    <artifactId>datawave-ws-geoserver-application</artifactId>
-                    <version>${project.version}</version>
-                    <type>war</type>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <version>3.0.0</version>
-                        <executions>
-                            <execution>
-                                <id>copy-dependencies</id>
-                                <goals>
-                                    <goal>copy</goal>
-                                </goals>
-                                <phase>prepare-package</phase>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>gov.nsa.datawave.webservices</groupId>
-                                            <artifactId>datawave-ws-geoserver-application</artifactId>
-                                            <version>${project.version}</version>
-                                            <type>war</type>
-                                            <overWrite>true</overWrite>
-                                            <outputDirectory>${project.build.directory}/${project.artifactId}-${project.version}</outputDirectory>
-                                            <destFileName>datawave-ws-geoserver-application-${project.version}.war</destFileName>
-                                        </artifactItem>
-                                    </artifactItems>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <artifactId>maven-ear-plugin</artifactId>
-                        <configuration>
-                            <modules>
-                                <webModule>
-                                    <groupId>gov.nsa.datawave.webservices</groupId>
-                                    <artifactId>datawave-ws-geoserver-application</artifactId>
-                                    <bundleFileName>datawave-ws-geoserver-application-${project.version}.war</bundleFileName>
-                                    <contextRoot>/geoserver</contextRoot>
-                                </webModule>
                             </modules>
                         </configuration>
                     </plugin>
@@ -554,9 +507,12 @@
                                             <artifactId>hadoop-common</artifactId>
                                         </artifactItem>
                                         <artifactItem>
-                                            <groupId>org.apache.htrace</groupId>
-                                            <artifactId>htrace-core4</artifactId>
-                                            <version>4.0.1-incubating</version>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-guava</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.apache.hadoop.thirdparty</groupId>
+                                            <artifactId>hadoop-shaded-protobuf_3_7</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>com.fasterxml.woodstox</groupId>
@@ -573,8 +529,16 @@
                                             <artifactId>protobuf-java</artifactId>
                                         </artifactItem>
                                         <artifactItem>
+                                            <groupId>commons-beanutils</groupId>
+                                            <artifactId>commons-beanutils</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
                                             <groupId>org.apache.commons</groupId>
                                             <artifactId>commons-configuration2</artifactId>
+                                        </artifactItem>
+                                        <artifactItem>
+                                            <groupId>org.apache.commons</groupId>
+                                            <artifactId>commons-text</artifactId>
                                         </artifactItem>
                                         <artifactItem>
                                             <groupId>javax.servlet</groupId>

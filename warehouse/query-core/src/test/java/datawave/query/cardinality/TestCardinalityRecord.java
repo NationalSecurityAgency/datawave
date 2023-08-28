@@ -1,8 +1,5 @@
 package datawave.query.cardinality;
 
-import com.vividsolutions.jts.util.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -10,26 +7,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.junit.Test;
+import org.locationtech.jts.util.Assert;
+
 public class TestCardinalityRecord {
-    
+
     @Test
     public void testCartesianProductOfFields1() {
-        
+
         Set<String> recordedFields = new HashSet<>();
         CardinalityRecord cr = new CardinalityRecord(recordedFields, CardinalityRecord.DateType.DOCUMENT);
-        
+
         Map<String,List<String>> valueMap = new HashMap<>();
         List<String> results = cr.assembleValues("FIELD1", valueMap);
-        
+
         Assert.equals(0, results.size());
     }
-    
+
     @Test
     public void testCartesianProductOfFields2() {
-        
+
         Set<String> recordedFields = new HashSet<>();
         CardinalityRecord cr = new CardinalityRecord(recordedFields, CardinalityRecord.DateType.DOCUMENT);
-        
+
         Map<String,List<String>> valueMap = new HashMap<>();
         List<String> list1 = new ArrayList<>();
         list1.add("L1V1");
@@ -38,17 +38,17 @@ public class TestCardinalityRecord {
         list1.add("L1V4");
         valueMap.put("FIELD1", list1);
         List<String> results = cr.assembleValues("FIELD1", valueMap);
-        
+
         int expectedSize = list1.size();
         Assert.equals(expectedSize, results.size());
     }
-    
+
     @Test
     public void testCartesianProductOfFields3() {
-        
+
         Set<String> recordedFields = new HashSet<>();
         CardinalityRecord cr = new CardinalityRecord(recordedFields, CardinalityRecord.DateType.DOCUMENT);
-        
+
         Map<String,List<String>> valueMap = new HashMap<>();
         List<String> list1 = new ArrayList<>();
         list1.add("L1V1");
@@ -63,17 +63,17 @@ public class TestCardinalityRecord {
         list2.add("L2V4");
         valueMap.put("FIELD2", list2);
         List<String> results = cr.assembleValues("FIELD1|FIELD2", valueMap);
-        
+
         int expectedSize = list1.size() * list2.size();
         Assert.equals(expectedSize, results.size());
     }
-    
+
     @Test
     public void testCartesianProductOfFields4() {
-        
+
         Set<String> recordedFields = new HashSet<>();
         CardinalityRecord cr = new CardinalityRecord(recordedFields, CardinalityRecord.DateType.DOCUMENT);
-        
+
         Map<String,List<String>> valueMap = new HashMap<>();
         List<String> list1 = new ArrayList<>();
         list1.add("L1V1");
@@ -105,7 +105,7 @@ public class TestCardinalityRecord {
         list5.add("L5V4");
         valueMap.put("FIELD5", list5);
         List<String> results = cr.assembleValues("FIELD1|FIELD2|FIELD3|FIELD4|FIELD5", valueMap);
-        
+
         int expectedSize = list1.size() * list2.size() * list3.size() * list4.size() * list5.size();
         Assert.equals(expectedSize, results.size());
     }

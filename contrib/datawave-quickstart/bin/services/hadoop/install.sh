@@ -89,12 +89,9 @@ else
 fi
 
 # Ensure that $JAVA_HOME is observed by all hadoop scripts
-sed -i "s|.*\(export JAVA_HOME=\).*|\1${JAVA_HOME}|g" ${HADOOP_CONF_DIR}/hadoop-env.sh
+sed -i'' -e "s|.*\(export JAVA_HOME=\).*|\1${JAVA_HOME}|g" ${HADOOP_CONF_DIR}/hadoop-env.sh
 
 verifySSHConfig
-
-assertCreateDir "${DW_HADOOP_MR_INTER_DIR}"
-assertCreateDir "${DW_HADOOP_MR_DONE_DIR}"
 
 # Format namenode
 ${HADOOP_HOME}/bin/hdfs namenode -format || fatal "Failed to initialize Hadoop"

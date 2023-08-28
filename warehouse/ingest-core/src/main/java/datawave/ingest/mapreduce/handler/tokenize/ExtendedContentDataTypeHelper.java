@@ -9,6 +9,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.conf.Configuration;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.CSVHelper;
@@ -18,38 +24,32 @@ import datawave.ingest.data.config.DataTypeHelperImpl;
 import datawave.ingest.metadata.id.MetadataIdParser;
 import datawave.ingest.validation.EventValidator;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.hadoop.conf.Configuration;
-
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-
 public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
-    
+
     public interface Properties {
         String REVERSE_INDEXING = ".reverse.indexing";
-        
+
         String KEY_METADATA_PARSERS = ".id.metadata";
-        
+
         String FIELD_METADATA_PARSERS = ".field.metadata";
-        
+
         String FIELD_UUID_METADATA_PARSERS = ".field.metadata.uuid";
-        
+
         String UUID_METADATA = ".uuids";
-        
+
         String EXPECT_UUID = ".expect.uuid";
-        
+
         String IGNORED_FIELDS = ".data.field.drop";
-        
+
         String INCLUDE_CONTENT = ".include.full.content";
-        
+
         String VALID_METADATA_KEY_REGEX = ".valid.metadata.key.regex";
         String DEFAULT_KEY_REGEX = "[A-Za-z0-9_-]{2,50}+";
-        
+
         String METADATA_TOKENIZE_SKIP = ".tokenizer.skip.metadata.fields";
-        
+
         String INHERITED_PAYLOAD_FIELDS = ".inherited.payload.fields";
-        
+
         String USE_TOKEN_OFFSET_CACHE = ".use.token.offset.cache";
         /**
          * Comma-delimited list of fields in the header to use as security markings. This parameter supports multiple datatypes, for example
@@ -63,13 +63,13 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
          * {@link EVENT_SECURITY_MARKING_FIELD_NAMES}
          */
         String EVENT_SECURITY_MARKING_FIELD_DOMAINS = ".data.category.security.field.domains";
-        
+
         String EVENT_VALIDATORS = ".event.validators";
-        
+
         String SESSION_METADATA_PROPAGATION_ENABLED = ".session.metadata.propagation.enabled";
-        
+
         String SESSION_METADATA_PROPAGATION_BLACKLIST = ".session.metadata.propagation.blacklist";
-        
+
         String SESSION_METADATA_PROPAGATION_WHITELIST = ".session.metadata.propagation.whitelist";
         /**
          * Parameter to specify the fields that are multivalued
@@ -119,9 +119,9 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
          * Parameter to specify the field to add to an event to denote fields that were dropped
          */
         String MULTI_VALUED_DROP_FIELD = CSVHelper.MULTI_VALUED_DROP_FIELD;
-        
+
     }
-    
+
     private boolean reverseIndexing = false;
     private List<MetadataIdParser> metadataKeyParsers = new ArrayList<>();
     private Multimap<String,MetadataIdParser> metadataFieldParsers = HashMultimap.create();
@@ -153,17 +153,17 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
     private String dropField = "DROPPED_FIELD";
     private String multiValuedTruncateField = "TRUNCATED_MULTI_VALUED_FIELD";
     private String multiValuedDropField = "DROPPED_MULTI_VALUED_FIELD";
-    
+
     public ExtendedContentDataTypeHelper() {
         this("extcontent");
     }
-    
+
     private String dataType;
-    
+
     public ExtendedContentDataTypeHelper(String dataType) {
         this.dataType = dataType;
     }
-    
+
     @Override
     public void setup(Configuration conf) throws IllegalArgumentException {
         super.setup(conf);
@@ -179,8 +179,8 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         thresholdReplacement = conf.get(this.getType().typeName() + Properties.THRESHOLD_FIELD_REPLACEMENT, thresholdReplacement);
         truncateField = conf.get(this.getType().typeName() + Properties.TRUNCATE_FIELD, truncateField);
         dropField = conf.get(this.getType().typeName() + Properties.DROP_FIELD, dropField);
-        multiValuedThresholdAction = ThresholdAction.valueOf(conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_ACTION,
-                        multiValuedThresholdAction.name()).toUpperCase());
+        multiValuedThresholdAction = ThresholdAction.valueOf(
+                        conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_ACTION, multiValuedThresholdAction.name()).toUpperCase());
         multiValuedThresholdReplacement = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_THRESHOLD_FIELD_REPLACEMENT,
                         multiValuedThresholdReplacement);
         multiValuedTruncateField = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_TRUNCATE_FIELD, multiValuedTruncateField);
@@ -189,20 +189,20 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         for (EventValidator validator : validators) {
             validator.setup(getType(), conf);
         }
-        
+
         String prefix = this.getType().typeName() + Properties.KEY_METADATA_PARSERS;
         Map<String,String> keyParsers = getValues(conf, prefix);
         for (String value : keyParsers.values()) {
             metadataKeyParsers.add(MetadataIdParser.createParser(value));
         }
-        
+
         this.putMetadataParsers(conf, Properties.FIELD_METADATA_PARSERS, metadataFieldParsers);
         this.putMetadataParsers(conf, Properties.FIELD_UUID_METADATA_PARSERS, metadataFieldUuidParsers);
-        
+
         uuidMetadata.addAll(conf.getStringCollection(this.getType().typeName() + Properties.UUID_METADATA));
-        
+
         inheritedFields.addAll(conf.getStringCollection(this.getType().typeName() + Properties.INHERITED_PAYLOAD_FIELDS));
-        
+
         // Get the multi-valued fields configuration
         for (String field : conf.getStrings(this.getType().typeName() + Properties.MULTI_VALUED_FIELDS, new String[0])) {
             int index = field.indexOf(':');
@@ -213,42 +213,42 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
             }
         }
         this.multiValueSeparator = conf.get(this.getType().typeName() + Properties.MULTI_VALUED_SEPARATOR, ";");
-        
+
         // Get the list of metadata fields we should not tokenize
         for (String field : conf.getStrings(this.getType().typeName() + Properties.METADATA_TOKENIZE_SKIP, new String[0])) {
             this.skipTokenizeMetadataFields.add(field.trim());
         }
-        
+
         sessionMetadataPropagationEnabled = conf.getBoolean(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_ENABLED,
                         sessionMetadataPropagationEnabled);
-        
+
         for (String field : conf.getStrings(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_BLACKLIST, new String[0])) {
             this.sessionMetadataPropagationBlacklist.add(field.trim());
         }
-        
+
         for (String field : conf.getStrings(this.getType().typeName() + Properties.SESSION_METADATA_PROPAGATION_WHITELIST, new String[0])) {
             this.sessionMetadataPropagationWhitelist.add(field.trim());
         }
-        
+
         // Get the list of security marking field names
         String[] eventSecurityMarkingFieldNames = conf.get(this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_NAMES, "").split(",");
         // Get the list of security marking field domains
         String[] eventSecurityMarkingFieldDomains = conf.get(this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS, "").split(",");
-        
+
         if (eventSecurityMarkingFieldNames.length != eventSecurityMarkingFieldDomains.length) {
             throw new IllegalArgumentException("Both " + this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_NAMES + " and "
                             + this.getType().typeName() + Properties.EVENT_SECURITY_MARKING_FIELD_DOMAINS + " must contain the same number of values.");
         }
-        
+
         for (int i = 0; i < eventSecurityMarkingFieldNames.length; i++) {
             eventSecurityMarkingFieldDomainMap.put(eventSecurityMarkingFieldNames[i], eventSecurityMarkingFieldDomains[i]);
         }
     }
-    
+
     public boolean isSessionMetadataPropagationEnabled() {
         return sessionMetadataPropagationEnabled;
     }
-    
+
     public boolean sessionMetadataShouldPropagate(String field, Collection<Object> value) {
         if (this.sessionMetadataPropagationEnabled) {
             if (!this.sessionMetadataPropagationBlacklist.isEmpty()) {
@@ -256,16 +256,16 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
             } else if (!this.sessionMetadataPropagationWhitelist.isEmpty()) {
                 return this.sessionMetadataPropagationWhitelist.contains(field);
             }
-            
+
             return true;
         }
         return false;
     }
-    
+
     /**
      * Populates the provided metadata parser map from the configuration. This allows different metadata parser maps to be populated based on different
      * configuration keys.
-     * 
+     *
      * @param conf
      *            Configuration
      * @param keySuffix
@@ -294,7 +294,7 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
             metadataParserMap.put(field, MetadataIdParser.createParser(entry.getValue()));
         }
     }
-    
+
     protected Map<String,String> getValues(Configuration conf, String prefix) {
         Map<String,String> values = new HashMap<>();
         for (Map.Entry<String,String> entry : conf) {
@@ -309,113 +309,118 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
         }
         return values;
     }
-    
+
     public boolean isReverseIndexing() {
         return reverseIndexing;
     }
-    
+
     public boolean useTokenOffsetCache() {
         return useTokenOffsetCache;
     }
-    
+
     public List<MetadataIdParser> getMetadataKeyParsers() {
         return metadataKeyParsers;
     }
-    
+
     public Multimap<String,MetadataIdParser> getMetadataFieldUuidParsers() {
         return metadataFieldUuidParsers;
     }
-    
+
     public Multimap<String,MetadataIdParser> getMetadataFieldParsers() {
         return metadataFieldParsers;
     }
-    
+
     public Set<String> getUuids() {
         return uuidMetadata;
     }
-    
+
     public Set<String> getInheritedPayloadFields() {
         return inheritedFields;
     }
-    
+
     public boolean expectUuid() {
         return expectUuid;
     }
-    
+
     public boolean includeContent() {
         return includeContent;
     }
-    
+
     public boolean isValidMetadataKey(String key) {
         return validMetadataKey.matcher(key).matches();
     }
-    
+
     public Map<String,String> getMultiValuedFields() {
         return multiValuedFields;
     }
-    
+
     public String getMultiValueSeparator() {
         return multiValueSeparator;
     }
-    
+
     public int getMultiFieldSizeThreshold() {
         return multiFieldSizeThreshold;
     }
-    
+
     public int getFieldSizeThreshold() {
         return fieldSizeThreshold;
     }
-    
+
     public ThresholdAction getThresholdAction() {
         return thresholdAction;
     }
-    
+
     public String getThresholdReplacement() {
         return thresholdReplacement;
     }
-    
+
     public ThresholdAction getMultiValuedThresholdAction() {
         return multiValuedThresholdAction;
     }
-    
+
     public String getMultiValuedThresholdReplacement() {
         return multiValuedThresholdReplacement;
     }
-    
+
     public String getTruncateField() {
         return truncateField;
     }
-    
+
     public String getDropField() {
         return dropField;
     }
-    
+
     public String getMultiValuedTruncateField() {
         return multiValuedTruncateField;
     }
-    
+
     public String getMultiValuedDropField() {
         return multiValuedDropField;
     }
-    
+
     public Set<String> getSkipTokenizeMetadataFields() {
         return skipTokenizeMetadataFields;
     }
-    
+
     /**
      * Since this helper may be used in the RecordReader during ingest, all configs will be loaded which means that the data.name value is actually random. We
      * need to override getType to return the correct one.
+     *
+     * @return the data type
      */
     @Override
     public Type getType() {
         return TypeRegistry.getType(dataType);
     }
-    
+
     /**
      * Lowercase MD5,SHA1,SHA256 but do *not* remove any whitespace
-     * 
+     *
+     * @param fieldName
+     *            the field name
      * @param fieldValue
-     * @return
+     *            the field value
+     * @return a string of the field value
      */
     public String clean(String fieldName, String fieldValue) {
         if (StringUtils.isEmpty(fieldValue)) {
@@ -425,15 +430,15 @@ public class ExtendedContentDataTypeHelper extends DataTypeHelperImpl {
             return fieldValue.toLowerCase();
         return fieldValue;
     }
-    
+
     public String[] getIgnoredFields() {
         return ignoredFields;
     }
-    
+
     public List<EventValidator> getValidators() {
         return validators;
     }
-    
+
     public Map<String,String> getSecurityMarkingFieldDomainMap() {
         return eventSecurityMarkingFieldDomainMap;
     }

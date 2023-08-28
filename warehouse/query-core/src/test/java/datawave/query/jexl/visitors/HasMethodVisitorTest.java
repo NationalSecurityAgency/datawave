@@ -1,32 +1,26 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
+import org.apache.commons.jexl2.parser.ParseException;
 import org.junit.Test;
 
+import datawave.query.jexl.JexlASTHelper;
+
 public class HasMethodVisitorTest {
-    
-    private static final Logger log = ThreadConfigurableLogger.getLogger(HasMethodVisitorTest.class);
-    
-    String[] originalQueries = { //
-    
-    "FOO.size() > 0", //
-            "AG.max() == 40", //
-            "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'", //
-            "FOO == 'bar'"};
-    boolean[] expectedResults = {true, true, true, false};
-    
+
     @Test
-    public void test() throws Exception {
-        
-        for (int i = 0; i < originalQueries.length; i++) {
-            String query = originalQueries[i];
-            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            
-            Assert.assertEquals("query:" + query, expectedResults[i], JexlASTHelper.HasMethodVisitor.hasMethod(script));
-        }
+    public void testHasMethod() throws Exception {
+        assertTrue(hasMethod("FOO.size() > 0"));
+        assertTrue(hasMethod("AG.max() == 40"));
+        assertTrue(hasMethod("BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'"));
+        assertFalse(hasMethod("FOO == 'bar'"));
+    }
+
+    private boolean hasMethod(String query) throws ParseException {
+        ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
+        return JexlASTHelper.HasMethodVisitor.hasMethod(script);
     }
 }

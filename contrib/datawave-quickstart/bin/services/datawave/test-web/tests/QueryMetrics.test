@@ -13,7 +13,7 @@ setCurlData \
         begin=19701231 \
         end=20500101 \
         pagesize=1 \
-        auths=PUBLIC \
+        auths=PRIVATE \
         columnVisibility=PRIVATE \
         query.syntax=JEXL
 
@@ -65,7 +65,7 @@ setCurlData \
         begin=19701231 \
         end=20500101 \
         pagesize=1 \
-        auths=PUBLIC \
+        auths=PRIVATE \
         columnVisibility=PRIVATE \
         query.syntax=JEXL
 

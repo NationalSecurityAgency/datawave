@@ -15,87 +15,87 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlTransient;
 
+import com.google.common.collect.Maps;
+
+import datawave.webservice.query.data.ObjectSizeOf;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-import datawave.webservice.query.data.ObjectSizeOf;
-
-import com.google.common.collect.Maps;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements Serializable, Message<SimpleEvent>, ObjectSizeOf {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElementWrapper(name = "Markings")
     private Map<String,String> markings;
-    
+
     @XmlElement(name = "Metadata")
     private Metadata metadata = null;
-    
+
     @XmlElementWrapper(name = "Fields")
     @XmlElement(name = "Field")
     private List<SimpleField> fields = null;
-    
+
     public List<SimpleField> getFields() {
         return fields;
     }
-    
+
     public void setFields(List<SimpleField> fields) {
         this.fields = fields;
     }
-    
+
     @Override
     public String toString() {
         return getMarkings() + ": " + this.fields;
     }
-    
+
     public Metadata getMetadata() {
         return metadata;
     }
-    
+
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
     }
-    
+
     public static Schema<SimpleEvent> getSchema() {
         return SCHEMA;
     }
-    
+
     // @Override
     public Schema<SimpleEvent> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<SimpleEvent> SCHEMA = new Schema<SimpleEvent>() {
         public SimpleEvent newMessage() {
             return new SimpleEvent();
         }
-        
+
         public Class<SimpleEvent> typeClass() {
             return SimpleEvent.class;
         }
-        
+
         public String messageName() {
             return SimpleEvent.class.getSimpleName();
         }
-        
+
         public String messageFullName() {
             return SimpleEvent.class.getName();
         }
-        
+
         public boolean isInitialized(SimpleEvent message) {
             return true;
         }
-        
+
         public void writeTo(Output output, SimpleEvent message) throws IOException {
             if (message.metadata != null) {
                 output.writeObject(1, message.metadata, Metadata.getSchema(), false);
             }
-            
+
             if (message.fields != null) {
                 for (SimpleField field : message.fields) {
                     if (field != null)
@@ -106,7 +106,7 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                 output.writeObject(3, message.markings, MapSchema.SCHEMA, false);
             }
         }
-        
+
         public void mergeFrom(Input input, SimpleEvent message) throws IOException {
             int number;
             while ((number = input.readFieldNumber(this)) != 0) {
@@ -130,7 +130,7 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                 }
             }
         }
-        
+
         public String getFieldName(int number) {
             switch (number) {
                 case 1:
@@ -143,12 +143,12 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
                     return null;
             }
         }
-        
+
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final HashMap<String,Integer> fieldMap = new HashMap<>();
         {
             fieldMap.put("metadata", 1);
@@ -156,10 +156,10 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
             fieldMap.put("markings", 3);
         }
     };
-    
+
     // the approximate size in bytes of this event
     private long size = -1;
-    
+
     /**
      * @param size
      *            the approximate size of this event in bytes
@@ -167,14 +167,14 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
     public void setSizeInBytes(long size) {
         this.size = size;
     }
-    
+
     /**
      * @return The set size in bytes, -1 if unset
      */
     public long getSizeInBytes() {
         return this.size;
     }
-    
+
     /**
      * Get the approximate size of this event in bytes. Used by the ObjectSizeOf mechanism in the webservice. Throws an exception if the local size was not set
      * to allow the ObjectSizeOf mechanism to do its thang.
@@ -186,5 +186,5 @@ public class SimpleEvent extends EventBase<SimpleEvent,SimpleField> implements S
         }
         return this.size;
     }
-    
+
 }

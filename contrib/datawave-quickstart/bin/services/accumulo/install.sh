@@ -5,8 +5,11 @@ THIS_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 SERVICES_DIR="$( dirname "${THIS_DIR}" )"
 BIN_DIR="$( dirname "${SERVICES_DIR}" )"
 
+# shellcheck source=../../env.sh
 source "${BIN_DIR}/env.sh"
+# shellcheck source=./bootstrap.sh
 source "${THIS_DIR}/bootstrap.sh"
+# shellcheck source=../hadoop/bootstrap.sh
 source "${SERVICES_DIR}/hadoop/bootstrap.sh"
 
 hadoopIsInstalled || fatal "Accumulo requires that Hadoop be installed"
@@ -38,34 +41,34 @@ info "Accumulo and ZooKeeper tarballs extracted and symlinked"
 DW_ZOOKEEPER_CONF_DIR="${ZOOKEEPER_HOME}/conf"
 DW_ACCUMULO_CONF_DIR="${ACCUMULO_HOME}/conf"
 
-# Move example configs into place.
-cp ${DW_ACCUMULO_CONF_DIR}/examples/2GB/standalone/* ${DW_ACCUMULO_CONF_DIR}
+# Create default accumulo config
+"${ACCUMULO_HOME}/bin/accumulo-cluster" create-config
 
-# Overwrite the example accumulo-site.xml with our own settings from DW_ACCUMULO_SITE_CONF...
-if [ ! -z "${DW_ACCUMULO_SITE_CONF}" ] ; then
-   writeSiteXml "${DW_ACCUMULO_CONF_DIR}/accumulo-site.xml" "${DW_ACCUMULO_SITE_CONF}" || fatal "Failed to write accumulo-site.xml"
-   info "Accumulo accumulo-site.xml written"
+# Create accumulo.properties from DW_ACCUMULO_PROPERTIES...
+if [ -n "${DW_ACCUMULO_PROPERTIES}" ] ; then
+   echo "${DW_ACCUMULO_PROPERTIES}" > "${DW_ACCUMULO_CONF_DIR}/accumulo.properties"
+   info "Accumulo accumulo.properties written"
 else
-   warn "No accumulo-site.xml content defined! :("
+   warn "No accumulo.properties content defined! :("
 fi
 
-if [ ! -z "${DW_ACCUMULO_CLIENT_CONF}" ] ; then
-   echo "${DW_ACCUMULO_CLIENT_CONF}" > "${DW_ACCUMULO_CONF_DIR}/client.conf"
-   info "Accumulo client.conf written"
+if [ -n "${DW_ACCUMULO_CLIENT_CONF}" ] ; then
+   echo "${DW_ACCUMULO_CLIENT_CONF}" > "${DW_ACCUMULO_CONF_DIR}/accumulo-client.properties"
+   info "Accumulo accumulo-client.properties written"
 else
-   warn "No client.conf content defined! :("
+   warn "No accumulo-client.properties content defined! :("
 fi
 
 assertCreateDir "${DW_ACCUMULO_JVM_HEAPDUMP_DIR}"
 
 # Update tserver and other options in accumulo-env.sh
-sed -i "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
-sed -i "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
-sed -i "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" ${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh
+sed -i'' -e "s~\(ACCUMULO_TSERVER_OPTS=\).*$~\1\"${DW_ACCUMULO_TSERVER_OPTS}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+sed -i'' -e "s~\(export JAVA_HOME=\).*$~\1\"${JAVA_HOME}\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
+sed -i'' -e "s~\(export ACCUMULO_MONITOR_OPTS=\).*$~\1\"\${POLICY} -Xmx2g -Xms512m\"~g" "${DW_ACCUMULO_CONF_DIR}/accumulo-env.sh"
 
 # Write zoo.cfg file using our settings in DW_ZOOKEEPER_CONF
-if [ ! -z "${DW_ZOOKEEPER_CONF}" ] ; then 
-   echo "${DW_ZOOKEEPER_CONF}" > ${DW_ZOOKEEPER_CONF_DIR}/zoo.cfg || fatal "Failed to write zoo.cfg"
+if [ -n "${DW_ZOOKEEPER_CONF}" ] ; then
+   echo "${DW_ZOOKEEPER_CONF}" > "${DW_ZOOKEEPER_CONF_DIR}/zoo.cfg" || fatal "Failed to write zoo.cfg"
 else
    warn "No zoo.cfg content defined! :("
 fi
@@ -82,11 +85,11 @@ fi
 
 # Create VFS classpath directories
 if [ -n "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" ] && [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" != false ] ; then
-   ${HADOOP_HOME}/bin/hdfs dfs -mkdir -p "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
+   "${HADOOP_HOME}/bin/hdfs" dfs -mkdir -p "${DW_ACCUMULO_VFS_DATAWAVE_DIR}" || fatal "Failed to create ${DW_ACCUMULO_VFS_DATAWAVE_DIR}"
 fi
 
 # Initialize Accumulo
-${ACCUMULO_HOME}/bin/accumulo init \
+"${ACCUMULO_HOME}/bin/accumulo" init \
  --clear-instance-name \
  --instance-name "${DW_ACCUMULO_INSTANCE_NAME}" \
  --password "${DW_ACCUMULO_PASSWORD}" || fatal "Failed to initialize Accumulo"

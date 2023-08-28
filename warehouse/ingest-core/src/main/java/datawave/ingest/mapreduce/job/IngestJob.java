@@ -1,56 +1,46 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.filter.KeyValueFilter;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
-import datawave.ingest.mapreduce.EventMapper;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.handler.shard.NumShards;
-import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
-import datawave.ingest.mapreduce.job.reduce.AggregatingReducer;
-import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
-import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
-import datawave.ingest.mapreduce.job.statsd.CounterStatsDClient;
-import datawave.ingest.mapreduce.job.statsd.CounterToStatsDConfiguration;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import datawave.ingest.mapreduce.job.writer.AggregatingContextWriter;
-import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
-import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
-import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
-import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
-import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
-import datawave.ingest.metric.IngestInput;
-import datawave.ingest.metric.IngestProcess;
-import datawave.ingest.table.config.ShardTableConfigHelper;
-import datawave.ingest.table.config.TableConfigHelper;
-import datawave.iterators.PropogatingIterator;
-import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
-import datawave.util.cli.PasswordConverter;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Observer;
+import java.util.Set;
 
 import org.apache.accumulo.core.Constants;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.ClientConfiguration;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.Combiner;
-import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.io.comparator.LastModifiedFileComparator;
 import org.apache.commons.io.filefilter.RegexFileFilter;
@@ -71,6 +61,8 @@ import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobStatus;
 import org.apache.hadoop.mapred.RunningJob;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.InputFormat;
 import org.apache.hadoop.mapreduce.Job;
@@ -89,34 +81,35 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
+import datawave.ingest.mapreduce.EventMapper;
+import datawave.ingest.mapreduce.handler.JobSetupHandler;
+import datawave.ingest.mapreduce.handler.shard.NumShards;
+import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
+import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
+import datawave.ingest.mapreduce.job.statsd.CounterStatsDClient;
+import datawave.ingest.mapreduce.job.statsd.CounterToStatsDConfiguration;
+import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
+import datawave.ingest.mapreduce.job.writer.AggregatingContextWriter;
+import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
+import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
+import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
+import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
+import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
+import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
+import datawave.ingest.metric.IngestProcess;
+import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
+import datawave.util.cli.PasswordConverter;
 
 /**
  * Class that starts a MapReduce job to create Accumulo Map files that to be bulk imported into Accumulo If outputMutations is specified, then Mutations are
@@ -134,14 +127,14 @@ import java.util.Set;
  * {@code <workDir>/mapFiles} directory For live ingest the AccumuloOutputFormat is then used to apply the mutations directly to accumulo
  */
 public class IngestJob implements Tool {
-    
+
     public static final String DAEMON_PROCESSES_PROPERTY = "accumulo.ingest.daemons";
     public static final String REDUCE_TASKS_ARG_PREFIX = "-mapreduce.job.reduces=";
-    
+
     protected boolean eventProcessingError = false;
     protected Logger log = Logger.getLogger("datawave.ingest");
-    private ConsoleAppender ca = new ConsoleAppender(new PatternLayout("%p [%c{1}] %m%n"));
-    
+    private ConsoleAppender ca = new ConsoleAppender();
+
     protected ArrayList<String[]> confOverrides = new ArrayList<>();
     protected int reduceTasks = 0;
     protected String inputPaths = null;
@@ -151,9 +144,9 @@ public class IngestJob implements Tool {
     // where the initial part of the file is our script line and the remainder contains the actual file list
     protected String inputFileListMarker = null;
     protected String idFilterFsts = null;
-    
+
     protected String workDir = null;
-    protected String[] tableNames = null;
+    protected Set<String> tableNames = null;
     protected String flagFile = null;
     protected String flagFileDir = null;
     protected String flagFilePattern = null;
@@ -173,7 +166,7 @@ public class IngestJob implements Tool {
     protected boolean disableSpeculativeExecution = false;
     protected boolean enableBloomFilters = false;
     protected boolean collectDistributionStats = false;
-    protected boolean createTablesOnly = false;
+    protected boolean createTables = false;
     protected boolean metricsOutputEnabled = true;
     private String metricsLabelOverride = null;
     protected boolean generateMapFileRowKeys = false;
@@ -185,12 +178,12 @@ public class IngestJob implements Tool {
     protected Class<? extends InputFormat> inputFormat = EventSequenceFileInputFormat.class;
     @SuppressWarnings("rawtypes")
     protected Class<? extends Mapper> mapper = EventMapper.class;
-    
+
     protected String instanceName = null;
     protected String zooKeepers = null;
     protected String userName = null;
     protected byte[] password = null;
-    
+
     protected URI srcHdfs = null;
     protected URI destHdfs = null;
     protected String distCpConfDir = null;
@@ -198,18 +191,20 @@ public class IngestJob implements Tool {
     protected int distCpMaxMaps = 200;
     protected String distCpStrategy = "dynamic";
     protected boolean deleteAfterDistCp = true;
-    
+
     protected ArrayList<Path> jobDependencies = new ArrayList<>();
-    
+
     protected boolean writeDirectlyToDest = false;
-    
+
     private Configuration hadoopConfiguration;
-    
+    private List<Observer> jobObservers = new ArrayList<>();
+    private JobObservable jobObservable;
+
     public static void main(String[] args) throws Exception {
         System.out.println("Running main");
         System.exit(ToolRunner.run(null, new IngestJob(), args));
     }
-    
+
     protected void printUsage() {
         System.out.println("Usage: " + getClass().getSimpleName() + " inputpath configfile configfile");
         System.out.println("                     -user username -pass password -instance instanceName");
@@ -219,7 +214,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-distCpConfDir distCpHadoopConfDir] [-distCpBandwidth bandwidth]");
         System.out.println("                     [-distCpMaxMaps maps] [-distCpStrategy strategy]");
         System.out.println("                     [-writeDirectlyToDest]");
-        System.out.println("                     [-createTablesOnly]");
+        System.out.println("                     [-createTables]");
         System.out.println("                     [-doNotDeleteAfterDistCp]");
         System.out.println("                     [-idFilterFsts comma-separated-list-of-files]");
         System.out.println("                     [-inputFormat inputFormatClass]");
@@ -227,6 +222,7 @@ public class IngestJob implements Tool {
         System.out.println("                     [-splitsCacheTimeoutMs timeout]");
         System.out.println("                     [-disableRefreshSplits]");
         System.out.println("                     [-splitsCacheDir /path/to/directory]");
+        System.out.println("                     [-accumuloConfigCachePath /path/to/file]");
         System.out.println("                     [-cacheBaseDir baseDir] [-cacheJars jar,jar,...]");
         System.out.println("                     [-multipleNumShardsCacheDir /path/to/directory]");
         System.out.println("                     [-skipMarkerFileGeneration] [-markerFileLIFO]");
@@ -248,36 +244,48 @@ public class IngestJob implements Tool {
         System.out.println("                     [-compressionTableBlackList table,table,...");
         System.out.println("                     [-maxRFileUndeduppedEntries maxEntries]");
         System.out.println("                     [-maxRFileUncompressedSize maxSize]");
+        System.out.println("                     [-jobObservers jobObserverClasses]");
         System.out.println("                     [-shardedMapFiles table1=/hdfs/path/table1splits.seq[,table2=/hdfs/path/table2splits.seq] ]");
     }
-    
+
     @Override
     public int run(String[] args) throws Exception {
-        
+
         Logger.getLogger(TypeRegistry.class).setLevel(Level.ALL);
-        
+
+        ca.setLayout(new PatternLayout("%p [%c{1}] %m%n"));
         ca.setThreshold(Level.INFO);
         log.addAppender(ca);
         log.setLevel(Level.INFO);
-        
+
         // Initialize the markings file helper so we get the right markings file
         MarkingFunctions.Factory.createMarkingFunctions();
         TypeRegistry.reset();
-        
+
         // Parse the job arguments
         Configuration conf = parseArguments(args, this.getConf());
-        
+
         if (conf == null) {
             printUsage();
             return -1;
         }
-        
+
         updateConfWithOverrides(conf);
+
+        jobObservable = new JobObservable(srcHdfs != null ? getFileSystem(conf, srcHdfs) : null);
+        for (Observer observer : jobObservers) {
+            this.jobObservable.addObserver(observer);
+            if (observer instanceof Configurable) {
+                log.info("Applying configuration to observer");
+                ((Configurable) observer).setConf(conf);
+            }
+        }
+
         AccumuloHelper cbHelper = new AccumuloHelper();
         cbHelper.setup(conf);
-        
+
         TypeRegistry.getInstance(conf);
-        
+
         log.info(conf.toString());
         log.info(String.format("getStrings('%s') = %s", TypeRegistry.INGEST_DATA_TYPES, conf.get(TypeRegistry.INGEST_DATA_TYPES)));
         log.info(String.format("getStrings('data.name') = %s", conf.get("data.name")));
@@ -285,49 +293,45 @@ public class IngestJob implements Tool {
         for (String name : TypeRegistry.getTypeNames()) {
             log.info(String.format("name[%d] = '%s'", index++, name));
         }
-        
+
         if (TypeRegistry.getTypes().isEmpty()) {
             log.error("No data types were configured");
             return -1;
         }
-        
-        if (!registerTableNames(conf)) {
-            return -1;
+
+        TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
+        tableConfigUtil.registerTableNamesFromConfigFiles(conf);
+        tableNames = tableConfigUtil.getJobOutputTableNames(conf);
+
+        if (createTables) {
+            boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);
+            if (!wasConfigureTablesSuccessful) {
+                return -1;
+            } else
+                log.info("Created tables: " + tableNames + " successfully!");
         }
-        
-        boolean wasConfigureTablesSuccessful = configureTables(cbHelper, conf);
-        if (!wasConfigureTablesSuccessful) {
-            return -1;
-        } else if (createTablesOnly) {
-            // Exit early if we are only creating tables
-            log.info("Created tables: " + getTables(conf) + " successfully!");
-            return 0;
-        }
-        
-        try {
-            serializeAggregatorConfiguration(cbHelper, conf, log);
-        } catch (TableNotFoundException tnf) {
-            log.error("One or more configured DataWave tables are missing in Accumulo. If this is a new system or if new tables have recently been introduced, run a job using the '-createTablesOnly' flag before attempting to ingest more data",
-                            tnf);
-            return -1;
-        }
-        
+
+        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
+
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
         FileSystem outputFs = (writeDirectlyToDest ? getFileSystem(conf, destHdfs) : inputFs);
         conf.set("output.fs.uri", outputFs.getUri().toString());
-        
+
         // get the qualified work directory path
         Path unqualifiedWorkPath = Path.getPathWithoutSchemeAndAuthority(new Path(workDir));
         conf.set("ingest.work.dir.unqualified", unqualifiedWorkPath.toString());
         Path workDirPath = new Path(new Path(writeDirectlyToDest ? destHdfs : srcHdfs), unqualifiedWorkPath);
         conf.set("ingest.work.dir.qualified", workDirPath.toString());
-        
+
         // Create the Job
         Job job = Job.getInstance(conf);
         // Job copies the configuration, so any changes made after this point don't get captured in the job.
         // Use the job's configuration from this point.
         conf = job.getConfiguration();
+
+        setupHandlers(conf);
+
         if (!useMapOnly || !outputMutations) {
             // Calculate the sampled splits, splits file, and set up the partitioner, but not if only doing only a map phase and outputting mutations
             // if not outputting mutations and only doing a map phase, we still need to go through this logic as the MultiRFileOutputFormatter
@@ -336,41 +340,47 @@ public class IngestJob implements Tool {
                 configureBulkPartitionerAndOutputFormatter(job, cbHelper, conf, outputFs);
             } catch (Exception e) {
                 log.error(e);
+                log.info("Deleting orphaned directory: " + workDirPath);
+                try {
+                    outputFs.delete(workDirPath, true);
+                } catch (Exception er) {
+                    log.error("Unable to remove directory: " + workDirPath, er);
+                }
                 return -1;
             }
         }
-        
+
         job.setJarByClass(this.getClass());
         for (Path inputPath : getFilesToProcess(inputFs, inputFileLists, inputFileListMarker, inputPaths)) {
             FileInputFormat.addInputPath(job, inputPath);
         }
         for (Path dependency : jobDependencies)
             job.addFileToClassPath(dependency);
-        
+
         configureInputFormat(job, cbHelper, conf);
-        
+
         configureJob(job, conf, workDirPath, outputFs);
-        
+
         // Log configuration
         log.info("Types: " + TypeRegistry.getTypeNames());
-        log.info("Tables: " + Arrays.toString(tableNames));
+        log.info("Tables: " + tableNames);
         log.info("InputFormat: " + job.getInputFormatClass().getName());
         log.info("Mapper: " + job.getMapperClass().getName());
         log.info("Reduce tasks: " + (useMapOnly ? 0 : reduceTasks));
         log.info("Split File: " + workDirPath + "/splits.txt");
-        
+
         // Note that if we run any other jobs in the same vm (such as a sampler), then we may
         // need to catch and throw away an exception here
         URL.setURLStreamHandlerFactory(new FsUrlStreamHandlerFactory(conf));
-        
+
         startDaemonProcesses(conf);
         long start = System.currentTimeMillis();
         job.submit();
         JobID jobID = job.getJobID();
         log.info("JOB ID: " + jobID);
-        
+
         createFileWithRetries(outputFs, new Path(workDirPath, jobID.toString()));
-        
+
         // Wait for reduce progress to pass the 30% mark and then
         // kick off the next job of this type.
         boolean done = false;
@@ -417,39 +427,55 @@ public class IngestJob implements Tool {
                 }
             }
         }
-        
+
         job.waitForCompletion(true);
         long stop = System.currentTimeMillis();
-        
+
         // output the counters to the log
         Counters counters = job.getCounters();
         log.info(counters);
-        
-        JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration());
-        RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
-        
-        // If the job failed, then don't bring the map files online.
-        if (!job.isSuccessful()) {
-            return jobFailed(job, runningJob, outputFs, workDirPath);
-        }
-        
-        // determine if we had processing errors
-        if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
-            eventProcessingError = true;
-            log.error("Found Runtime Exceptions in the counters");
+        try (JobClient jobClient = new JobClient((org.apache.hadoop.mapred.JobConf) job.getConfiguration())) {
+            RunningJob runningJob = jobClient.getJob(new org.apache.hadoop.mapred.JobID(jobID.getJtIdentifier(), jobID.getId()));
+
+            // If the job failed, then don't bring the map files online.
+            if (!job.isSuccessful()) {
+                return jobFailed(job, runningJob, outputFs, workDirPath);
+            }
+
+            // determine if we had processing errors
+            if (counters.findCounter(IngestProcess.RUNTIME_EXCEPTION).getValue() > 0) {
+                eventProcessingError = true;
+                log.error("Found Runtime Exceptions in the counters");
+                long numExceptions = 0;
+                long numRecords = 0;
+                CounterGroup exceptionCounterGroup = counters.getGroup(IngestProcess.RUNTIME_EXCEPTION.name());
+                for (Counter exceptionC : exceptionCounterGroup) {
+                    numExceptions += exceptionC.getValue();
+                }
+                CounterGroup recordCounterGroup = counters.getGroup(IngestOutput.EVENTS_PROCESSED.name());
+                for (Counter recordC : recordCounterGroup) {
+                    numRecords += recordC.getValue();
+                }
+                // records that throw runtime exceptions are still counted as processed
+                float percentError = 100 * ((float) numExceptions / numRecords);
+                log.info(String.format("Percent Error: %.2f", percentError));
+                if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
+                    return jobFailed(job, runningJob, outputFs, workDirPath);
+                }
+            }
         }
         if (counters.findCounter(IngestInput.EVENT_FATAL_ERROR).getValue() > 0) {
             eventProcessingError = true;
             log.error("Found Fatal Errors in the counters");
         }
-        
+
         // If we're doing "live" ingest (sending mutations to accumulo rather than
         // bringing map files online), then simply delete the workDir since it
         // doesn't contain anything we need. If we are doing bulk ingest, then
         // write out a marker file to indicate that the job is complete and a
         // separate process will bulk import the map files.
         if (outputMutations) {
-            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job));
+            markFilesLoaded(inputFs, FileInputFormat.getInputPaths(job), job.getJobID());
             boolean deleted = outputFs.delete(workDirPath, true);
             if (!deleted) {
                 log.error("Unable to remove job working directory: " + workDirPath);
@@ -457,7 +483,7 @@ public class IngestJob implements Tool {
         } else {
             // now move the job directory over to the warehouse if needed
             FileSystem destFs = getFileSystem(conf, destHdfs);
-            
+
             if (!inputFs.equals(destFs) && !writeDirectlyToDest) {
                 Configuration distCpConf = conf;
                 // Use the configuration dir specified on the command-line for DistCP if necessary.
@@ -473,7 +499,7 @@ public class IngestJob implements Tool {
                         distCpConf.addResource(path);
                     }
                 }
-                
+
                 log.info("Moving (using distcp) " + unqualifiedWorkPath + " from " + inputFs.getUri() + " to " + destFs.getUri());
                 try {
                     distCpDirectory(unqualifiedWorkPath, inputFs, destFs, distCpConf, deleteAfterDistCp);
@@ -482,7 +508,7 @@ public class IngestJob implements Tool {
                     return -3;
                 }
             }
-            
+
             Path destWorkDirPath = FileSystem.get(destHdfs, conf).makeQualified(unqualifiedWorkPath);
             boolean marked = markJobComplete(destFs, destWorkDirPath);
             if (!marked) {
@@ -490,10 +516,10 @@ public class IngestJob implements Tool {
                 return -3;
             }
         }
-        
+
         // if we had a failure writing the metrics, or we have event processing errors, then return -5
         // this should result in administrators getting an email, but the job will be considered successful
-        
+
         if (metricsOutputEnabled) {
             log.info("Writing Stats");
             Path statsDir = new Path(unqualifiedWorkPath.getParent(), "IngestMetrics");
@@ -504,39 +530,73 @@ public class IngestJob implements Tool {
         } else {
             log.info("Ingest stats output disabled via 'ingestMetricsDisabled' flag");
         }
-        
+
         if (eventProcessingError) {
             log.warn("Job had processing errors.  See counters for more information");
             return -5;
         }
-        
+
         return 0;
     }
-    
+
+    private void setupHandlers(Configuration conf) {
+        // default to all types
+        Collection<Type> types = TypeRegistry.getTypes();
+
+        // when an override is specified only load handlers associated with that data type
+        String override = conf.get(DataTypeHelper.Properties.DATA_NAME_OVERRIDE);
+        if (override != null) {
+            types = Collections.singleton(TypeRegistry.getType(override));
+        }
+
+        for (Type t : types) {
+            String[] handlers = t.getDefaultDataTypeHandlers();
+            if (handlers != null) {
+                for (String handler : handlers) {
+                    try {
+                        Object o = Class.forName(handler).getDeclaredConstructor().newInstance();
+                        if (o instanceof JobSetupHandler) {
+                            JobSetupHandler setupHandler = (JobSetupHandler) o;
+                            conf.set(DataTypeHelper.Properties.DATA_NAME, t.typeName());
+                            setupHandler.setup(conf);
+                        }
+                    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+                        log.warn("Could not setup handler: " + handler, e);
+                    }
+                }
+            }
+        }
+    }
+
     protected Configuration interpolateEnvironment(Configuration conf) {
         // We have set up the Configuration, now replace all instances of ${DATAWAVE_INGEST_HOME} with
         // the value that is set in the environment.
         String ingestHomeValue = System.getenv("DATAWAVE_INGEST_HOME");
         if (null == ingestHomeValue)
             throw new IllegalArgumentException("DATAWAVE_INGEST_HOME must be set in the environment.");
-        
+
         log.info("Replacing ${DATAWAVE_INGEST_HOME} with " + ingestHomeValue);
-        
+
         return ConfigurationHelper.interpolate(conf, "\\$\\{DATAWAVE_INGEST_HOME\\}", ingestHomeValue);
-        
+
     }
-    
+
     /**
      * Parse the arguments and update the configuration as needed
      *
      * @param args
+     *            the args
      * @param conf
+     *            the config
      * @throws ClassNotFoundException
+     *             if class is not found
      * @throws URISyntaxException
+     *             if there are issues with URI syntax
+     * @return the configuration
      */
     protected Configuration parseArguments(String[] args, Configuration conf) throws ClassNotFoundException, URISyntaxException, IllegalArgumentException {
         List<String> activeResources = new ArrayList<>();
-        
+
         inputPaths = args[0];
         log.info("InputPaths is " + inputPaths);
         for (int i = 1; i < args.length; i++) {
@@ -590,13 +650,18 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-mapper")) {
                 mapper = Class.forName(args[++i]).asSubclass(Mapper.class);
             } else if (args[i].equals("-splitsCacheTimeoutMs")) {
-                conf.set(MetadataTableSplitsCacheStatus.SPLITS_CACHE_TIMEOUT_MS, args[++i]);
+                conf.set(TableSplitsCacheStatus.SPLITS_CACHE_TIMEOUT_MS, args[++i]);
             } else if (args[i].equals("-disableRefreshSplits")) {
-                conf.setBoolean(MetadataTableSplits.REFRESH_SPLITS, false);
+                conf.setBoolean(TableSplitsCache.REFRESH_SPLITS, false);
             } else if (args[i].equals("-splitsCacheDir")) {
-                conf.set(MetadataTableSplits.SPLITS_CACHE_DIR, args[++i]);
+                conf.set(TableSplitsCache.SPLITS_CACHE_DIR, args[++i]);
             } else if (args[i].equals("-multipleNumShardsCacheDir")) {
                 conf.set(NumShards.MULTIPLE_NUMSHARDS_CACHE_PATH, args[++i]);
+            } else if (args[i].equals("-enableAccumuloConfigCache")) {
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
+            } else if (args[i].equalsIgnoreCase("-accumuloConfigCachePath")) {
+                conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, args[++i]);
+                conf.setBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, true);
             } else if (args[i].equals("-disableSpeculativeExecution")) {
                 disableSpeculativeExecution = true;
             } else if (args[i].equals("-skipMarkerFileGeneration")) {
@@ -661,14 +726,35 @@ public class IngestJob implements Tool {
             } else if (args[i].equals("-shardedMapFiles")) {
                 conf.set(ShardedTableMapFile.SHARDED_MAP_FILE_PATHS_RAW, args[++i]);
                 ShardedTableMapFile.extractShardedTableMapFilePaths(conf);
-            } else if (args[i].equals("-createTablesOnly")) {
-                createTablesOnly = true;
+            } else if (args[i].equals("-createTables")) {
+                createTables = true;
             } else if (args[i].startsWith(REDUCE_TASKS_ARG_PREFIX)) {
                 try {
                     reduceTasks = Integer.parseInt(args[i].substring(REDUCE_TASKS_ARG_PREFIX.length(), args[i].length()));
                 } catch (NumberFormatException e) {
                     log.error("ERROR: mapred.reduce.tasks must be set to an integer (" + REDUCE_TASKS_ARG_PREFIX + "#)");
                     return null;
+                }
+            } else if (args[i].equals("-jobObservers")) {
+                if (i + 2 > args.length) {
+                    log.error("-jobObservers must be followed by a class name");
+                    System.exit(-2);
+                }
+                String jobObserverClasses = args[++i];
+                try {
+                    String[] classes = jobObserverClasses.split(",");
+                    for (String jobObserverClass : classes) {
+                        log.info("Adding job observer: " + jobObserverClass);
+                        Class clazz = Class.forName(jobObserverClass);
+                        Observer o = (Observer) clazz.newInstance();
+                        jobObservers.add(o);
+                    }
+                } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+                    log.error("cannot instantiate job observer class '" + jobObserverClasses + "'", e);
+                    System.exit(-2);
+                } catch (ClassCastException e) {
+                    log.error("cannot cast '" + jobObserverClasses + "' to Observer", e);
+                    System.exit(-2);
                 }
             } else if (args[i].startsWith("-")) {
                 // Configuration key/value entries can be overridden via the command line
@@ -680,101 +766,72 @@ public class IngestJob implements Tool {
                 activeResources.add(args[i]);
             }
         }
-        
+
         conf = interpolateEnvironment(conf);
-        
+
         for (String resource : activeResources) {
             conf.addResource(resource);
         }
-        
-        if (!createTablesOnly) {
-            // To enable passing the MONITOR_SERVER_HOME environment variable through to the monitor,
-            // pull it into the configuration
-            String monitorHostValue = System.getenv("MONITOR_SERVER_HOST");
-            log.info("Setting MONITOR_SERVER_HOST to " + monitorHostValue);
-            if (null != monitorHostValue) {
-                conf.set("MONITOR_SERVER_HOST", monitorHostValue);
-            }
-            
-            if (workDir == null) {
-                log.error("ERROR: Must provide a working directory name");
-                return null;
-            }
-            
-            if ((!useMapOnly) && (reduceTasks == 0)) {
-                log.error("ERROR: -mapred.reduce.tasks must be set");
-                return null;
-            }
-            
-            if (flagFileDir == null && generateMarkerFile) {
-                log.error("ERROR: -flagFileDir must be set");
-                return null;
-            }
-            
-            if (useMapOnly && !outputMutations) {
-                log.error("ERROR: Cannot do bulk ingest mapOnly (i.e. without the reduce phase).  Bulk ingest required sorted keys.");
-                return null;
-            }
-            
-            if (!outputMutations && destHdfs == null) {
-                log.error("ERROR: -destHdfs must be specified for bulk ingest");
-                return null;
-            }
+
+        // To enable passing the MONITOR_SERVER_HOME environment variable through to the monitor,
+        // pull it into the configuration
+        String monitorHostValue = System.getenv("MONITOR_SERVER_HOST");
+        log.info("Setting MONITOR_SERVER_HOST to " + monitorHostValue);
+        if (null != monitorHostValue) {
+            conf.set("MONITOR_SERVER_HOST", monitorHostValue);
         }
-        
+
+        if (workDir == null) {
+            log.error("ERROR: Must provide a working directory name");
+            return null;
+        }
+
+        if ((!useMapOnly) && (reduceTasks == 0)) {
+            log.error("ERROR: -mapred.reduce.tasks must be set");
+            return null;
+        }
+
+        if (flagFileDir == null && generateMarkerFile) {
+            log.error("ERROR: -flagFileDir must be set");
+            return null;
+        }
+
+        if (useMapOnly && !outputMutations) {
+            log.error("ERROR: Cannot do bulk ingest mapOnly (i.e. without the reduce phase).  Bulk ingest required sorted keys.");
+            return null;
+        }
+
+        if (!outputMutations && destHdfs == null) {
+            log.error("ERROR: -destHdfs must be specified for bulk ingest");
+            return null;
+        }
+
         return conf;
     }
-    
-    /**
-     * Configure the accumulo tables (create and set aggregators etc)
-     *
-     * @param cbHelper
-     * @param conf
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     * @throws ClassNotFoundException
-     */
-    private boolean configureTables(AccumuloHelper cbHelper, Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException,
-                    ClassNotFoundException {
-        // Check to see if the tables exist
-        TableOperations tops = cbHelper.getConnector().tableOperations();
-        NamespaceOperations namespaceOperations = cbHelper.getConnector().namespaceOperations();
-        createAndConfigureTablesIfNecessary(tableNames, tops, namespaceOperations, conf, log, enableBloomFilters);
-        
-        return true;
-    }
-    
-    /**
-     * @param conf
-     *            configuration file that contains data handler types and other information necessary for determining the set of tables required
-     * @return true if a non-empty comma separated list of table names was properly set to conf's job table.names property
-     */
-    private boolean registerTableNames(Configuration conf) {
-        Set<String> tables = getTables(conf);
-        
-        if (tables.isEmpty()) {
-            log.error("Configured tables for configured data types is empty");
-            return false;
-        }
-        tableNames = tables.toArray(new String[tables.size()]);
-        conf.set("job.table.names", org.apache.hadoop.util.StringUtils.join(",", tableNames));
-        return true;
-    }
-    
+
     /**
      * Configure the partitioner and the output formatter.
      *
      * @param job
+     *            the job
      * @param cbHelper
+     *            the accumulo helper
      * @param conf
+     *            the config
      * @param outputFs
+     *            the file system
      * @throws AccumuloSecurityException
+     *             for issues with accumulo security
      * @throws AccumuloException
+     *             for general accumulo issues
      * @throws IOException
+     *             for issues with read or write
      * @throws URISyntaxException
+     *             for issues with URI syntax
      * @throws TableExistsException
+     *             if the table already exists
      * @throws TableNotFoundException
+     *             if the table is not found
      */
     protected void configureBulkPartitionerAndOutputFormatter(Job job, AccumuloHelper cbHelper, Configuration conf, FileSystem outputFs)
                     throws AccumuloSecurityException, AccumuloException, IOException, URISyntaxException, TableExistsException, TableNotFoundException {
@@ -784,13 +841,13 @@ public class IngestJob implements Tool {
         conf.setInt("splits.num.reduce", this.reduceTasks);
         // used by the output formatter and the sharded partitioner
         ShardedTableMapFile.setupFile(conf);
-        
+
         conf.setInt(MultiRFileOutputFormatter.EVENT_PARTITION_COUNT, this.reduceTasks * 2);
         configureMultiRFileOutputFormatter(conf, compressionType, compressionTableBlackList, maxRFileEntries, maxRFileSize, generateMapFileRowKeys);
-        
-        DelegatingPartitioner.configurePartitioner(job, conf, tableNames); // sets the partitioner
+        String[] tables = tableNames.toArray(new String[tableNames.size()]);
+        DelegatingPartitioner.configurePartitioner(job, conf, tables); // sets the partitioner
     }
-    
+
     protected void configureInputFormat(Job job, AccumuloHelper cbHelper, Configuration conf) throws Exception {
         // see if we need to do any accumulo setup on the input format class (initial for EventProcessingErrorTableFileInputFormat)
         if (inputFormat != null) {
@@ -805,12 +862,12 @@ public class IngestJob implements Tool {
             job.setInputFormatClass(inputFormat);
         }
     }
-    
+
     protected void configureJob(Job job, Configuration conf, Path workDirPath, FileSystem outputFs) throws Exception {
         // create a job name
         SimpleDateFormat format = new SimpleDateFormat("yyyyMMddHHmmss.SSS");
         job.setJobName(IngestJob.class.getSimpleName() + "_" + format.format(new Date()));
-        
+
         // if doing this as a bulk job, create the job.paths file and the flag file if supplied
         if (!outputMutations) {
             writeInputPathsFile(outputFs, workDirPath, FileInputFormat.getInputPaths(job));
@@ -818,19 +875,19 @@ public class IngestJob implements Tool {
                 writeFlagFile(outputFs, workDirPath, flagFile);
             }
         }
-        
+
         // Setup the Mapper
         job.setMapperClass(mapper);
         job.setSortComparatorClass(BulkIngestKey.Comparator.class);
-        
+
         if (idFilterFsts != null) {
             job.getConfiguration().set(EventMapper.ID_FILTER_FSTS, idFilterFsts);
         }
-        
+
         // Setup the context writer counters boolean
         job.getConfiguration().setBoolean(AbstractContextWriter.CONTEXT_WRITER_COUNTERS, contextWriterCounters);
         job.getConfiguration().setBoolean(EventMapper.FILE_NAME_COUNTERS, fileNameCounters);
-        
+
         // if we are using the combiner, then ensure the flag is set
         if (useCombiner || useInlineCombiner) {
             job.getConfiguration().setBoolean(BulkIngestKeyDedupeCombiner.USING_COMBINER, true);
@@ -842,16 +899,16 @@ public class IngestJob implements Tool {
                 log.info("Using an inline combiner");
             }
         }
-        
+
         // Setup the job output and reducer classes
         if (outputMutations) {
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Mutation.class);
-            
+
             if (!useMapOnly) {
                 job.setMapOutputKeyClass(BulkIngestKey.class);
                 job.setMapOutputValueClass(Value.class);
-                
+
                 if (useCombiner) {
                     // Dedupe combiner will remove dupes and reset timestamps
                     // Note: to guarantee the combiner runs we need the min combine splits to be 1
@@ -859,7 +916,7 @@ public class IngestJob implements Tool {
                     job.getConfiguration().setClass(BulkIngestKeyDedupeCombiner.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
                     job.setCombinerClass(BulkIngestKeyDedupeCombiner.class);
                 }
-                
+
                 if (useInlineCombiner) {
                     // The dedupe context writer invokes the BulkIngestKeyDedupeCombiner.
                     // We are running the DedupeContextWriter in the context writer stream instead of using a combiner for performance reasons
@@ -869,7 +926,7 @@ public class IngestJob implements Tool {
                     job.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ChainedContextWriter.class);
                 }
                 job.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
-                
+
                 // Aggregating reducer will remove dupes for each reduce task and reset the reset timestamps
                 // The reducer will take care of translating from BulkIngestKeys to Mutations by using the LiveContextWriter
                 job.getConfiguration().setClass(BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_CLASS, LiveContextWriter.class, ContextWriter.class);
@@ -878,28 +935,28 @@ public class IngestJob implements Tool {
             } else {
                 job.setMapOutputKeyClass(Text.class);
                 job.setMapOutputValueClass(Mutation.class);
-                
+
                 // The dedupe context writer invokes the BulkIngestKeyDedupeCombiner, and the aggregating context writer
                 // invokes the BulkIngestKeyAggregatingReducer. The LiveContextWriter will take care of translating from BulkIngestKeys to Mutations
                 job.getConfiguration().setBoolean(EventMapper.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, tableCounters);
-                
+
                 if (useCombiner || useInlineCombiner) {
                     job.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, DedupeContextWriter.class, ChainedContextWriter.class);
                     job.getConfiguration().setClass(DedupeContextWriter.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ContextWriter.class);
                 } else {
                     job.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ChainedContextWriter.class);
                 }
-                
+
                 job.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, AggregatingContextWriter.class, ContextWriter.class);
                 job.getConfiguration().setClass(AggregatingContextWriter.CONTEXT_WRITER_CLASS, LiveContextWriter.class, ContextWriter.class);
             }
-            
+
         } else {
             job.setMapOutputKeyClass(BulkIngestKey.class);
             job.setMapOutputValueClass(Value.class);
             job.setOutputKeyClass(BulkIngestKey.class);
             job.setOutputValueClass(Value.class);
-            
+
             if (!useMapOnly) {
                 if (useCombiner) {
                     // Dedupe combiner will remove dupes and reset timestamps
@@ -908,7 +965,7 @@ public class IngestJob implements Tool {
                     job.getConfiguration().setClass(BulkIngestKeyDedupeCombiner.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
                     job.setCombinerClass(BulkIngestKeyDedupeCombiner.class);
                 }
-                
+
                 if (useInlineCombiner) {
                     // The dedupe context writer invokes the BulkIngestKeyDedupeCombiner.
                     // We are running the DedupeContextWriter in the context writer stream instead of using a combiner for performance reasons
@@ -918,7 +975,7 @@ public class IngestJob implements Tool {
                     job.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ChainedContextWriter.class);
                 }
                 job.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
-                
+
                 // Aggregating reducer will remove dupes for each reduce task and reset the reset timestamps
                 job.getConfiguration().setClass(BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
                 job.getConfiguration().setBoolean(BulkIngestKeyAggregatingReducer.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, tableCounters);
@@ -927,19 +984,19 @@ public class IngestJob implements Tool {
                 // The dedupe context writer invokes the BulkIngestKeyDedupeCombiner, and the aggregating context writer
                 // invokes the BulkIngestKeyAggregatingReducer. The LiveContextWriter will take care of translating from BulkIngestKeys to Mutations
                 job.getConfiguration().setBoolean(EventMapper.CONTEXT_WRITER_OUTPUT_TABLE_COUNTERS, tableCounters);
-                
+
                 if (useCombiner || useInlineCombiner) {
                     job.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, DedupeContextWriter.class, ChainedContextWriter.class);
                     job.getConfiguration().setClass(DedupeContextWriter.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ContextWriter.class);
                 } else {
                     job.getConfiguration().setClass(EventMapper.CONTEXT_WRITER_CLASS, TableCachingContextWriter.class, ChainedContextWriter.class);
                 }
-                
+
                 job.getConfiguration().setClass(TableCachingContextWriter.CONTEXT_WRITER_CLASS, AggregatingContextWriter.class, ContextWriter.class);
                 job.getConfiguration().setClass(AggregatingContextWriter.CONTEXT_WRITER_CLASS, BulkContextWriter.class, ContextWriter.class);
             }
         }
-        
+
         // If only doing a map phase, then no reduce tasks to run
         if (useMapOnly) {
             job.setNumReduceTasks(0);
@@ -947,7 +1004,7 @@ public class IngestJob implements Tool {
         } else {
             job.setNumReduceTasks(reduceTasks);
         }
-        
+
         // Turn off speculative execution if we're using live ingest.
         // We don't want to send the same mutations to accumulo multiple times.
         // Normally for bulk we use speculative execution since there are no
@@ -958,41 +1015,40 @@ public class IngestJob implements Tool {
             setMapSpeculativeExecution(job.getConfiguration(), false);
             setReduceSpeculativeExecution(job.getConfiguration(), false);
         }
-        
+
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.setZooKeeperInstance(job, ClientConfiguration.loadDefault().withInstance(instanceName).withZkHosts(zooKeepers));
-            CBMutationOutputFormatter.setOutputInfo(job, userName, password, true, null);
+            CBMutationOutputFormatter.configure(job.getConfiguration()).createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));
             job.setOutputFormatClass(MultiRFileOutputFormatter.class);
         }
-        
+
         // Setup the location for the history output (old and new property names)
         job.getConfiguration().setIfUnset("hadoop.job.history.user.location", workDirPath + "/mapFiles");
         job.getConfiguration().setIfUnset("mapreduce.job.userhistorylocation", workDirPath + "/mapFiles");
-        
+
         // verbose counters will add counters showing the output in the EventMapper, and the input to the reducers
         if (verboseCounters) {
             job.getConfiguration().setBoolean("verboseCounters", true);
         }
-        
+
         // we always want the job to use our jars instead of the ones in $HADOOP_HOME/lib
         job.getConfiguration().setBoolean("mapreduce.job.user.classpath.first", true);
-        
+
         // fetch the multiple numshards cache, if necessary
         if (job.getConfiguration().getBoolean(NumShards.ENABLE_MULTIPLE_NUMSHARDS, false)) {
             NumShards numShards = new NumShards(job.getConfiguration());
             String multipleNumShardsConfig = numShards.readMultipleNumShardsConfig();
-            
+
             // this could return empty string, if the feature is enabled, but no entries in the metadata table
             // if it didn't throw RuntimeException, it found a valid cache file
             job.getConfiguration().set(NumShards.PREFETCHED_MULTIPLE_NUMSHARDS_CONFIGURATION, multipleNumShardsConfig == null ? "" : multipleNumShardsConfig);
         }
     }
-    
+
     /**
      * @param keyValue
      *            of format 'key=value'
@@ -1006,13 +1062,13 @@ public class IngestJob implements Tool {
             confOverrides.add(strArr);
         }
     }
-    
+
     private void updateConfWithOverrides(Configuration conf) {
         for (String[] conOverride : confOverrides) {
             conf.set(conOverride[0], conOverride[1]);
         }
     }
-    
+
     protected int jobFailed(Job job, RunningJob runningJob, FileSystem fs, Path workDir) throws IOException {
         log.error("Map Reduce job " + job.getJobName() + " was unsuccessful. Check the logs.");
         log.error("Since job was not successful, deleting work directory: " + workDir);
@@ -1028,11 +1084,11 @@ public class IngestJob implements Tool {
             return -3;
         }
     }
-    
+
     protected boolean createFileWithRetries(FileSystem fs, Path file) throws IOException, InterruptedException {
         return createFileWithRetries(fs, file, file);
     }
-    
+
     protected boolean createFileWithRetries(FileSystem fs, Path file, Path verification) throws IOException, InterruptedException {
         Exception exception = null;
         // we will attempt this 10 times at most....
@@ -1067,23 +1123,27 @@ public class IngestJob implements Tool {
             log.error("Failed to create " + file, exception);
         }
         return false;
-        
+
     }
-    
+
     protected boolean markJobComplete(FileSystem fs, Path workDir) throws IOException, InterruptedException {
         return createFileWithRetries(fs, new Path(workDir, "job.complete"), new Path(workDir, "job.[^p]*"));
     }
-    
+
     /**
      * Get the files to process
      *
      * @param fs
      *            used by extending classes such as MapFileMergeJob
      * @param inputFileLists
+     *            the input file lists
      * @param inputFileListMarker
+     *            the input file list marker
      * @param inputPaths
-     * @return
+     *            the input paths
+     * @return a list of paths
      * @throws IOException
+     *             if there is an issue with read or write
      */
     protected Path[] getFilesToProcess(FileSystem fs, boolean inputFileLists, String inputFileListMarker, String inputPaths) throws IOException {
         String[] paths = StringUtils.trimAndRemoveEmptyStrings(StringUtils.split(inputPaths, ','));
@@ -1118,227 +1178,22 @@ public class IngestJob implements Tool {
         }
         return inputPathList.toArray(new Path[inputPathList.size()]);
     }
-    
+
     protected FileSystem getFileSystem(Configuration conf, URI uri) throws IOException {
         return (uri == null ? FileSystem.get(conf) : FileSystem.get(uri, conf));
     }
-    
-    /**
-     * Creates the tables that are needed to load data using this ingest job if they don't already exist. If a table is created, it is configured with the
-     * appropriate iterators, aggregators, and locality groups that are required for ingest and query functionality to work correctly.
-     *
-     * @param tableNames
-     *            the names of the table to create if they don't exist
-     * @param tops
-     *            accumulo table operations helper for checking/creating tables
-     * @param conf
-     *            the Hadoop {@link Configuration} for retrieving table configuration information
-     * @param log
-     *            a logger for diagnostic messages
-     * @param enableBloomFilters
-     *            an indication of whether bloom filters should be enabled in the configuration
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     */
-    protected void createAndConfigureTablesIfNecessary(String[] tableNames, TableOperations tops, NamespaceOperations namespaceOperations, Configuration conf,
-                    Logger log, boolean enableBloomFilters) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
-        for (String table : tableNames) {
-            createNamespaceIfNecessary(namespaceOperations, table);
-            // If the tables don't exist, then create them.
-            try {
-                if (!tops.exists(table)) {
-                    tops.create(table);
-                }
-            } catch (TableExistsException te) {
-                // in this case, somebody else must have created the table after our existence check
-                log.info("Tried to create " + table + " but somebody beat us to the punch");
-            }
-        }
-        
-        // Pass along the enabling of bloom filters using the configuration
-        conf.setBoolean(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, enableBloomFilters);
-        
-        configureTablesIfNecessary(tableNames, tops, conf, log);
-    }
-    
-    private void createNamespaceIfNecessary(NamespaceOperations namespaceOperations, String table) throws AccumuloException, AccumuloSecurityException {
-        // if the table has a namespace in it that doesn't already exist, create it
-        if (table.contains(".")) {
-            String namespace = table.split("\\.")[0];
-            try {
-                if (!namespaceOperations.exists(namespace)) {
-                    namespaceOperations.create(namespace);
-                }
-            } catch (NamespaceExistsException e) {
-                // in this case, somebody else must have created the namespace after our existence check
-                log.info("Tried to create " + namespace + " but somebody beat us to the punch");
-            }
-        }
-    }
-    
-    /**
-     * Instantiates TableConfigHelper classes for tables as defined in the configuration
-     *
-     * @param log
-     *            a {@link Logger} for diagnostic messages
-     * @param conf
-     *            the Hadoop {@link Configuration} for retrieving ingest table configuration information
-     * @param tableNames
-     *            the names of the tables to configure
-     * @return Map&lt;String,TableConfigHelper&gt; map from table names to their setup TableConfigHelper classes
-     */
-    private Map<String,TableConfigHelper> getTableConfigs(Logger log, Configuration conf, String[] tableNames) {
-        
-        Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.length);
-        
-        for (String table : tableNames) {
-            helperMap.put(table, TableConfigHelperFactory.create(table, conf, log));
-        }
-        
-        return helperMap;
-    }
-    
-    /**
-     * Configures tables that are needed to load data using this ingest job, only if they don't already have the required configuration.
-     *
-     * @param tableNames
-     *            the names of the tables to configure
-     * @param tops
-     *            accumulo table operations helper for configuring tables
-     * @param conf
-     *            the Hadoop {@link Configuration} for retrieving ingest table configuration information
-     * @param log
-     *            a {@link Logger} for diagnostic messages
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     */
-    private void configureTablesIfNecessary(String[] tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
-                    AccumuloException, TableNotFoundException {
-        
-        Map<String,TableConfigHelper> tableConfigs = getTableConfigs(log, conf, tableNames);
-        
-        for (String table : tableNames) {
-            TableConfigHelper tableHelper = tableConfigs.get(table);
-            if (tableHelper != null) {
-                tableHelper.configure(tops);
-            } else {
-                log.info("No configuration supplied for table " + table);
-            }
-        }
-    }
-    
-    /**
-     * Looks up aggregator configuration for all of the tables in {@code tableNames} and serializes the configuration into {@code conf}, so that it is available
-     * for retrieval and use in mappers or reducers. Currently, this is used in {@link AggregatingReducer} and its subclasses to aggregate output key/value
-     * pairs rather than making accumulo do it at scan or major compaction time on the resulting rfile.
-     *
-     * @param accumuloHelper
-     *            for accessing tableOperations
-     * @param conf
-     *            the Hadoop configuration into which serialized aggregator configuration is placed
-     * @param log
-     *            a logger for sending diagnostic information
-     * @throws AccumuloSecurityException
-     * @throws AccumuloException
-     * @throws TableNotFoundException
-     * @throws ClassNotFoundException
-     */
-    void serializeAggregatorConfiguration(AccumuloHelper accumuloHelper, Configuration conf, Logger log) throws AccumuloSecurityException, AccumuloException,
-                    TableNotFoundException, ClassNotFoundException {
-        TableOperations tops = accumuloHelper.getConnector().tableOperations();
-        
-        // We're arbitrarily choosing the scan scope for gathering aggregator information.
-        // For the aggregators configured in this job, that's ok since they are added to all
-        // scopes. If someone manually added another aggregator and didn't apply it to scan
-        // time, then we wouldn't pick that up here, but the chances of that are very small
-        // since any aggregation we care about in the reducer doesn't make sense unless the
-        // aggregator is a scan aggregator.
-        IteratorScope scope = IteratorScope.scan;
-        for (String table : tableNames) {
-            ArrayList<IteratorSetting> iters = new ArrayList<>();
-            HashMap<String,Map<String,String>> allOptions = new HashMap<>();
-            
-            // Go through all of the configuration properties of this table and figure out which
-            // properties represent iterator configuration. For those that do, store the iterator
-            // setup and options in a map so that we can group together all of the options for each
-            // iterator.
-            for (Entry<String,String> entry : tops.getProperties(table)) {
-                
-                if (entry.getKey().startsWith(Property.TABLE_ITERATOR_PREFIX.getKey())) {
-                    
-                    String suffix = entry.getKey().substring(Property.TABLE_ITERATOR_PREFIX.getKey().length());
-                    String suffixSplit[] = suffix.split("\\.", 4);
-                    
-                    if (!suffixSplit[0].equals(scope.name())) {
-                        continue;
-                    }
-                    
-                    if (suffixSplit.length == 2) {
-                        String sa[] = entry.getValue().split(",");
-                        int prio = Integer.parseInt(sa[0]);
-                        String className = sa[1];
-                        iters.add(new IteratorSetting(prio, suffixSplit[1], className));
-                    } else if (suffixSplit.length == 4 && suffixSplit[2].equals("opt")) {
-                        String iterName = suffixSplit[1];
-                        String optName = suffixSplit[3];
-                        
-                        Map<String,String> options = allOptions.get(iterName);
-                        if (options == null) {
-                            options = new HashMap<>();
-                            allOptions.put(iterName, options);
-                        }
-                        
-                        options.put(optName, entry.getValue());
-                        
-                    } else {
-                        log.warn("Unrecognizable option: " + entry.getKey());
-                    }
-                }
-            }
-            
-            // Now go through all of the iterators, and for those that are aggregators, store
-            // the options in the Hadoop config so that we can parse it back out in the reducer.
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (PropogatingIterator.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        for (Entry<String,String> option : options.entrySet()) {
-                            String key = String.format("aggregator.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            conf.set(key, option.getValue());
-                        }
-                    } else
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                    
-                } else {
-                    log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't appear to be a combiner.");
-                }
-            }
-            
-            for (IteratorSetting iter : iters) {
-                Class<?> klass = Class.forName(iter.getIteratorClass());
-                if (Combiner.class.isAssignableFrom(klass)) {
-                    Map<String,String> options = allOptions.get(iter.getName());
-                    if (null != options) {
-                        String key = String.format("combiner.%s.%d.iterClazz", table, iter.getPriority());
-                        conf.set(key, iter.getIteratorClass());
-                        for (Entry<String,String> option : options.entrySet()) {
-                            key = String.format("combiner.%s.%d.%s", table, iter.getPriority(), option.getKey());
-                            conf.set(key, option.getValue());
-                        }
-                    } else
-                        log.trace("Skipping iterator class " + iter.getIteratorClass() + " since it doesn't have options.");
-                    
-                }
-            }
-            
-        }
-    }
-    
+
     /**
      * Writes the input paths for this job into the work directory in a file named "job.paths"
+     *
+     * @param fs
+     *            the filesystem
+     * @param workDir
+     *            the work directory
+     * @param inputPaths
+     *            the input paths
+     * @throws IOException
+     *             for issues with read or write
      */
     protected void writeInputPathsFile(FileSystem fs, Path workDir, Path[] inputPaths) throws IOException {
         FSDataOutputStream os = fs.create(new Path(workDir, "job.paths"));
@@ -1348,24 +1203,32 @@ public class IngestJob implements Tool {
         }
         ps.close();
     }
-    
+
     /**
      * Writes the flag file for this job into the work directory in a file with the same name
+     *
+     * @param fs
+     *            the file system
+     * @param workDir
+     *            the work directory
+     * @param flagFileName
+     *            the flag file name
+     * @throws IOException
+     *             for read or write related issues
      */
+
     protected void writeFlagFile(FileSystem fs, Path workDir, String flagFileName) throws IOException {
         File flagFile = new File(flagFileName);
         if (!flagFile.exists() || !flagFile.isFile() || !flagFile.canRead()) {
             throw new IOException("Unable to access " + flagFile + " for copying into hdfs " + workDir + " directory");
         }
-        
-        InputStream is = new BufferedInputStream(new FileInputStream(flagFile));
-        try {
+
+        try (InputStream is = new BufferedInputStream(new FileInputStream(flagFile))) {
             String flagFileBase = getBaseFlagFileName(flagFile.getName());
             Path destFile = new Path(workDir, flagFileBase);
-            OutputStream os = new BufferedOutputStream(fs.create(destFile));
             log.info("Copying flag file into " + destFile);
-            try {
-                
+            try (OutputStream os = new BufferedOutputStream(fs.create(destFile))) {
+
                 byte[] buffer = new byte[2048];
                 int bytesRead = is.read(buffer);
                 while (bytesRead >= 0) {
@@ -1374,14 +1237,10 @@ public class IngestJob implements Tool {
                     }
                     bytesRead = is.read(buffer);
                 }
-            } finally {
-                os.close();
             }
-        } finally {
-            is.close();
         }
     }
-    
+
     /*
      * Get the base flag filename. The name supplied may have something line '.inprogress' tagged on the end. Return everything up to and including .flag.
      */
@@ -1397,11 +1256,20 @@ public class IngestJob implements Tool {
             }
         }
     }
-    
+
     /**
      * Marks the input files given to this job as loaded by moving them from the "flagged" directory to the "loaded" directory.
+     *
+     * @param fs
+     *            the filesystem
+     * @param inputPaths
+     *            the input paths
+     * @param jobID
+     *            the job id
+     * @throws IOException
+     *             if there is an issue with read or write
      */
-    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths) throws IOException {
+    protected void markFilesLoaded(FileSystem fs, Path[] inputPaths, JobID jobID) throws IOException {
         for (Path src : inputPaths) {
             String ssrc = src.toString();
             if (ssrc.contains("/flagged/")) {
@@ -1417,12 +1285,20 @@ public class IngestJob implements Tool {
                 }
             }
         }
+
+        // notify observers
+        jobObservable.setJobId(jobID.toString());
     }
-    
+
     /**
      * Some properties cannot be set using the new API. However, we know internally that the configuration Hadoop uses is really just the old JobConf which
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
+     *
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setMapSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1430,11 +1306,16 @@ public class IngestJob implements Tool {
             jobConf.setMapSpeculativeExecution(value);
         }
     }
-    
+
     /**
      * Some properties cannot be set using the new API. However, we know internally that the configuration Hadoop uses is really just the old JobConf which
      * exposes the methods we want. In particular, we have to turn off speculative execution since we are loading data and don't want Hadoop to spawn many
      * speculative tasks that will load duplicate data.
+     *
+     * @param conf
+     *            the configuration
+     * @param value
+     *            a boolean value
      */
     protected void setReduceSpeculativeExecution(Configuration conf, boolean value) {
         if (conf instanceof org.apache.hadoop.mapred.JobConf) {
@@ -1442,7 +1323,7 @@ public class IngestJob implements Tool {
             jobConf.setReduceSpeculativeExecution(value);
         }
     }
-    
+
     /**
      * Configures the output formatter with the correct accumulo instance information, splits file, and shard table.
      *
@@ -1452,12 +1333,16 @@ public class IngestJob implements Tool {
      *            type of compression to use for the output format
      * @param compressionTableBlackList
      *            a set of table names for which we will not compress the rfile output
+     * @param maxEntries
+     *            the max entries
+     * @param maxSize
+     *            the max size
      */
     public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableBlackList, int maxEntries,
                     long maxSize) {
         IngestJob.configureMultiRFileOutputFormatter(config, compressionType, compressionTableBlackList, maxEntries, maxSize, false);
     }
-    
+
     public static void configureMultiRFileOutputFormatter(Configuration config, String compressionType, Set<String> compressionTableBlackList, int maxEntries,
                     long maxSize, boolean generateMapFileRowKeys) {
         MultiRFileOutputFormatter.setAccumuloConfiguration(config);
@@ -1470,7 +1355,7 @@ public class IngestJob implements Tool {
         MultiRFileOutputFormatter.setRFileLimits(config, maxEntries, maxSize);
         MultiRFileOutputFormatter.setGenerateMapFileRowKeys(config, generateMapFileRowKeys);
     }
-    
+
     protected void startDaemonProcesses(Configuration configuration) {
         String daemonClassNames = configuration.get(DAEMON_PROCESSES_PROPERTY);
         if (daemonClassNames == null) {
@@ -1480,7 +1365,7 @@ public class IngestJob implements Tool {
             try {
                 @SuppressWarnings("unchecked")
                 Class<? extends Runnable> daemonClass = (Class<? extends Runnable>) Class.forName(className.trim());
-                Runnable daemon = daemonClass.newInstance();
+                Runnable daemon = daemonClass.getDeclaredConstructor().newInstance();
                 if (daemon instanceof Configurable) {
                     Configurable configurable = (Configurable) daemon;
                     configurable.setConf(configuration);
@@ -1488,24 +1373,24 @@ public class IngestJob implements Tool {
                 Thread daemonThread = new Thread(daemon);
                 daemonThread.setDaemon(true);
                 daemonThread.start();
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 throw new IllegalArgumentException(e);
             }
         }
     }
-    
+
     protected void distCpDirectory(Path workDir, FileSystem src, FileSystem dest, Configuration distcpConfig, boolean deleteAfterDistCp) throws Exception {
         Path srcPath = src.makeQualified(workDir);
         Path destPath = dest.makeQualified(workDir);
         Path logPath = new Path(destPath, "logs");
-        
+
         // Make sure the destination path doesn't already exist, so that distcp won't
         // complain. We could add -i to the distcp command, but we don't want to hide
         // any other failures that we might care about (such as map files failing to
         // copy). We know the distcp target shouldn't exist, so if it does, it could
         // only be from a previous failed attempt.
         dest.delete(destPath, true);
-        
+
         // NOTE: be careful with the preserve option. We only want to preserve user, group, and permissions but
         // not carry block size or replication across. This is especially important because by default the
         // MapReduce jobs produce output with the replication set to 1 and we definitely don't want to preserve
@@ -1525,7 +1410,7 @@ public class IngestJob implements Tool {
             .withBlocking(true)
             .build();
         //@formatter:on
-        
+
         DistCp cp = new DistCp(distcpConfig, options);
         log.info("Starting distcp from " + srcPath + " to " + destPath + " with configuration: " + options);
         try {
@@ -1538,72 +1423,72 @@ public class IngestJob implements Tool {
         for (FileStatus destFile : dest.listStatus(destPath)) {
             destFiles.put(destFile.getPath().getName(), destFile);
         }
-        
+
         for (FileStatus srcFile : src.listStatus(srcPath)) {
             FileStatus destFile = destFiles.get(srcFile.getPath().getName());
             if (destFile == null || destFile.getLen() != srcFile.getLen()) {
                 throw new RuntimeException("DistCp failed to copy " + srcFile.getPath());
             }
         }
-        
+
         // now we can clean up the src job directory
         if (deleteAfterDistCp) {
             src.delete(srcPath, true);
         }
     }
-    
+
     protected boolean writeStats(Logger log, Job job, JobID jobId, Counters counters, long start, long stop, boolean outputMutations, FileSystem fs,
                     Path statsDir, String metricsLabelOverride) throws IOException, InterruptedException {
-        
+
         Configuration conf = job.getConfiguration();
-        
+
         // We are going to serialize the counters into a file in HDFS.
         // The context was set in the processKeyValues method below, and should not be null. We'll guard against NPE anyway
-        RawLocalFileSystem rawFS = new RawLocalFileSystem();
-        rawFS.setConf(conf);
-        CompressionCodec cc = new GzipCodec();
-        CompressionType ct = CompressionType.BLOCK;
-        
-        // Add additional counters
-        if (!outputMutations) {
-            counters.findCounter(IngestProcess.OUTPUT_DIRECTORY.name(), job.getWorkingDirectory().getName()).increment(1);
-        } else {
-            counters.findCounter(IngestProcess.LIVE_INGEST).increment(1);
+        try (RawLocalFileSystem rawFS = new RawLocalFileSystem()) {
+            rawFS.setConf(conf);
+            CompressionCodec cc = new GzipCodec();
+            CompressionType ct = CompressionType.BLOCK;
+
+            // Add additional counters
+            if (!outputMutations) {
+                counters.findCounter(IngestProcess.OUTPUT_DIRECTORY.name(), job.getWorkingDirectory().getName()).increment(1);
+            } else {
+                counters.findCounter(IngestProcess.LIVE_INGEST).increment(1);
+            }
+            counters.findCounter(IngestProcess.START_TIME).increment(start);
+            counters.findCounter(IngestProcess.END_TIME).increment(stop);
+
+            if (metricsLabelOverride != null) {
+                counters.getGroup(IngestProcess.METRICS_LABEL_OVERRIDE.name()).findCounter(metricsLabelOverride).increment(1);
+            }
+
+            // Serialize the counters to a file in HDFS.
+            Path src = new Path("/tmp" + File.separator + job.getJobName() + ".metrics");
+            src = rawFS.makeQualified(src);
+            createFileWithRetries(rawFS, src);
+            try (Writer writer = SequenceFile.createWriter(conf, Writer.file(src), Writer.keyClass(Text.class), Writer.valueClass(Counters.class),
+                            Writer.compression(ct, cc))) {
+                writer.append(new Text(jobId.toString()), counters);
+            }
+
+            // Now we will try to move the file to HDFS.
+            // Copy the file to the temp dir
+            try {
+                if (!fs.exists(statsDir))
+                    fs.mkdirs(statsDir);
+                Path dst = new Path(statsDir, src.getName());
+                log.info("Copying file " + src + " to " + dst);
+                fs.copyFromLocalFile(false, true, src, dst);
+                // If this worked, then remove the local file
+                rawFS.delete(src, false);
+                // also remove the residual crc file
+                rawFS.delete(getCrcFile(src), false);
+            } catch (IOException e) {
+                // If an error occurs in the copy, then we will leave in the local metrics directory.
+                log.error("Error copying metrics file into HDFS, will remain in metrics directory.", e);
+                return false;
+            }
         }
-        counters.findCounter(IngestProcess.START_TIME).increment(start);
-        counters.findCounter(IngestProcess.END_TIME).increment(stop);
-        
-        if (metricsLabelOverride != null) {
-            counters.getGroup(IngestProcess.METRICS_LABEL_OVERRIDE.name()).findCounter(metricsLabelOverride).increment(1);
-        }
-        
-        // Serialize the counters to a file in HDFS.
-        Path src = new Path("/tmp" + File.separator + job.getJobName() + ".metrics");
-        src = rawFS.makeQualified(src);
-        createFileWithRetries(rawFS, src);
-        Writer writer = SequenceFile.createWriter(conf, Writer.file(src), Writer.keyClass(Text.class), Writer.valueClass(Counters.class),
-                        Writer.compression(ct, cc));
-        writer.append(new Text(jobId.toString()), counters);
-        writer.close();
-        
-        // Now we will try to move the file to HDFS.
-        // Copy the file to the temp dir
-        try {
-            if (!fs.exists(statsDir))
-                fs.mkdirs(statsDir);
-            Path dst = new Path(statsDir, src.getName());
-            log.info("Copying file " + src + " to " + dst);
-            fs.copyFromLocalFile(false, true, src, dst);
-            // If this worked, then remove the local file
-            rawFS.delete(src, false);
-            // also remove the residual crc file
-            rawFS.delete(getCrcFile(src), false);
-        } catch (IOException e) {
-            // If an error occurs in the copy, then we will leave in the local metrics directory.
-            log.error("Error copying metrics file into HDFS, will remain in metrics directory.", e);
-            return false;
-        }
-        
         // now if configured, lets write the stats out to statsd
         CounterToStatsDConfiguration statsDConfig = new CounterToStatsDConfiguration(conf);
         if (statsDConfig.isConfigured()) {
@@ -1615,14 +1500,14 @@ public class IngestJob implements Tool {
                 statsd.close();
             }
         }
-        
+
         return true;
     }
-    
+
     private Path getCrcFile(Path path) {
         return new Path(path.getParent(), "." + path.getName() + ".crc");
     }
-    
+
     /**
      * Output some verbose counters
      *
@@ -1632,21 +1517,29 @@ public class IngestJob implements Tool {
      *            the table name to write in the counter
      * @param mutation
      *            a Mutation containing the key-value pairs to log to counters
+     * @param location
+     *            the location
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, Text tableName, Mutation mutation) {
         for (KeyValue keyValue : getKeyValues(mutation)) {
-            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(), keyValue
-                            .getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
+            verboseCounter(context, location, tableName, keyValue.getKey().getRow().getBytes(), keyValue.getKey().getColumnFamily().getBytes(),
+                            keyValue.getKey().getColumnQualifier().getBytes(), keyValue.getKey().getColumnVisibility(), keyValue.getValue().get());
         }
     }
-    
+
     /**
      * Output some verbose counters. Since the input is an iterable, this will cache the values in a list and return the new iterable.
      *
      * @param context
+     *            the task context
      * @param key
+     *            the ingest key
+     * @param location
+     *            the location
      * @param values
+     *            the value
+     * @return the iterable for the value list
      */
     @SuppressWarnings("rawtypes")
     public static Iterable<Value> verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Iterable<Value> values) {
@@ -1657,12 +1550,14 @@ public class IngestJob implements Tool {
         }
         return valueList;
     }
-    
+
     /**
      * Output some verbose counters
      *
      * @param context
      *            hadoop task context for writing counter values
+     * @param location
+     *            the location
      * @param key
      *            hadoop key to log all key-value pairs to counters
      * @param value
@@ -1670,15 +1565,17 @@ public class IngestJob implements Tool {
      */
     @SuppressWarnings("rawtypes")
     public static void verboseCounters(TaskInputOutputContext context, String location, BulkIngestKey key, Value value) {
-        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(), key.getKey()
-                        .getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
+        verboseCounter(context, location, key.getTableName(), key.getKey().getRow().getBytes(), key.getKey().getColumnFamily().getBytes(),
+                        key.getKey().getColumnQualifier().getBytes(), key.getKey().getColumnVisibility(), value.get());
     }
-    
+
     /**
      * Output a verbose counter
      *
      * @param context
      *            hadoop task context for writing counter values
+     * @param location
+     *            the location string
      * @param tableName
      *            the table name to write in the counter
      * @param row
@@ -1700,12 +1597,12 @@ public class IngestJob implements Tool {
                         + Key.toPrintableString(colFamily, 0, colFamily.length, Constants.MAX_DATA_TO_PRINT) + ":"
                         + Key.toPrintableString(colQualifier, 0, colQualifier.length, Constants.MAX_DATA_TO_PRINT) + " " + labelString + " "
                         + (val == null ? "null" : String.valueOf(val.length) + " value bytes");
-        
+
         s = s.replace('\n', ' ');
-        
+
         context.getCounter("TABLE.KEY.VALUElen", tableName.toString() + ' ' + location + ' ' + s).increment(1);
     }
-    
+
     /**
      * Turn a mutation's column update into a key
      *
@@ -1716,151 +1613,17 @@ public class IngestJob implements Tool {
     public static List<KeyValue> getKeyValues(Mutation m) {
         List<KeyValue> values = new ArrayList<>();
         for (ColumnUpdate update : m.getUpdates()) {
-            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(), (update
-                            .hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
+            values.add(new KeyValue(new Key(m.getRow(), update.getColumnFamily(), update.getColumnQualifier(), update.getColumnVisibility(),
+                            (update.hasTimestamp() ? update.getTimestamp() : -1), update.isDeleted()), update.getValue()));
         }
         return values;
     }
-    
-    /**
-     * Get the table priorities
-     *
-     * @param conf
-     *            hadoop configuration
-     * @return map of table names to priorities
-     */
-    public static Map<String,Integer> getTablePriorities(Configuration conf) {
-        TypeRegistry.getInstance(conf);
-        Map<String,Integer> tablePriorities = new HashMap<>();
-        for (Type type : TypeRegistry.getTypes()) {
-            if (null != type.getDefaultDataTypeHandlers()) {
-                for (String handlerClassName : type.getDefaultDataTypeHandlers()) {
-                    Class<? extends DataTypeHandler<?>> handlerClass;
-                    try {
-                        handlerClass = TypeRegistry.getHandlerClass(handlerClassName);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + handlerClassName, e);
-                    }
-                    DataTypeHandler<?> handler;
-                    try {
-                        handler = handlerClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);
-                    }
-                    String[] handlerTableNames = handler.getTableNames(conf);
-                    int[] handlerTablePriorities = handler.getTableLoaderPriorities(conf);
-                    for (int i = 0; i < handlerTableNames.length; i++) {
-                        tablePriorities.put(handlerTableNames[i], handlerTablePriorities[i]);
-                    }
-                }
-            }
-            if (null != type.getDefaultDataTypeFilters()) {
-                for (String filterClassNames : type.getDefaultDataTypeFilters()) {
-                    Class<? extends KeyValueFilter<?,?>> filterClass;
-                    try {
-                        filterClass = TypeRegistry.getFilterClass(filterClassNames);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + filterClassNames, e);
-                    }
-                    KeyValueFilter<?,?> filter;
-                    try {
-                        filter = filterClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + filterClassNames, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + filterClassNames, e);
-                    }
-                    String[] filterTableNames = filter.getTableNames(conf);
-                    int[] filterTablePriorities = filter.getTableLoaderPriorities(conf);
-                    for (int i = 0; i < filterTableNames.length; i++) {
-                        tablePriorities.put(filterTableNames[i], filterTablePriorities[i]);
-                    }
-                }
-            }
-        }
-        
-        if (MetricsConfiguration.isEnabled(conf)) {
-            String metricsTable = MetricsConfiguration.getTable(conf);
-            int priority = MetricsConfiguration.getTablePriority(conf);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
-                tablePriorities.put(metricsTable, priority);
-            }
-        }
-        
-        return tablePriorities;
-    }
-    
-    /**
-     * Get the table names
-     *
-     * @param conf
-     *            hadoop configuration
-     * @return map of table names to priorities
-     */
-    public static Set<String> getTables(Configuration conf) throws IllegalArgumentException {
-        TypeRegistry.getInstance(conf);
-        
-        Set<String> tables = new HashSet<>();
-        for (Type type : TypeRegistry.getTypes()) {
-            if (type.getDefaultDataTypeHandlers() != null) {
-                for (String handlerClassName : type.getDefaultDataTypeHandlers()) {
-                    Class<? extends DataTypeHandler<?>> handlerClass;
-                    try {
-                        handlerClass = TypeRegistry.getHandlerClass(handlerClassName);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + handlerClassName, e);
-                    }
-                    DataTypeHandler<?> handler;
-                    try {
-                        handler = handlerClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + handlerClassName, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + handlerClassName, e);
-                    }
-                    String[] handlerTableNames = handler.getTableNames(conf);
-                    Collections.addAll(tables, handlerTableNames);
-                }
-            }
-            if (type.getDefaultDataTypeFilters() != null) {
-                for (String filterClassNames : type.getDefaultDataTypeFilters()) {
-                    Class<? extends KeyValueFilter<?,?>> filterClass;
-                    try {
-                        filterClass = TypeRegistry.getFilterClass(filterClassNames);
-                    } catch (ClassNotFoundException e) {
-                        throw new IllegalArgumentException("Unable to find " + filterClassNames, e);
-                    }
-                    KeyValueFilter<?,?> filter;
-                    try {
-                        filter = filterClass.newInstance();
-                    } catch (InstantiationException e) {
-                        throw new IllegalArgumentException("Unable to instantiate " + filterClassNames, e);
-                    } catch (IllegalAccessException e) {
-                        throw new IllegalArgumentException("Unable to access default constructor for " + filterClassNames, e);
-                    }
-                    String[] filterTableNames = filter.getTableNames(conf);
-                    Collections.addAll(tables, filterTableNames);
-                }
-            }
-        }
-        
-        if (MetricsConfiguration.isEnabled(conf)) {
-            String metricsTable = MetricsConfiguration.getTable(conf);
-            if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
-                tables.add(metricsTable);
-            }
-        }
-        
-        return tables;
-    }
-    
+
     @Override
     public Configuration getConf() {
         return hadoopConfiguration;
     }
-    
+
     @Override
     public void setConf(Configuration conf) {
         this.hadoopConfiguration = conf;

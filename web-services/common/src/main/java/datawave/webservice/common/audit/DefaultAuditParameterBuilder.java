@@ -1,20 +1,22 @@
 package datawave.webservice.common.audit;
 
-import datawave.webservice.query.QueryParameters;
+import java.util.Map;
+
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.MultivaluedMap;
-import java.util.Map;
+import datawave.webservice.query.QueryParameters;
 
 public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
     private Logger log = LoggerFactory.getLogger(getClass().getName());
-    
+
     @Override
     public Map<String,String> convertAndValidate(MultivaluedMap<String,String> queryParameters) {
         AuditParameters validatedParams = new AuditParameters();
-        
+
         MultivaluedMapImpl<String,String> auditParams = new MultivaluedMapImpl<>();
         // Pull parameters that are specified as query parameters (potentially under a different name) into the
         // audit parameters.
@@ -22,7 +24,7 @@ public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
             auditParams.put(AuditParameters.QUERY_AUTHORIZATIONS, queryParameters.get(AuditParameters.QUERY_AUTHORIZATIONS));
         if (queryParameters.containsKey(QueryParameters.QUERY_STRING))
             auditParams.put(AuditParameters.QUERY_STRING, queryParameters.get(AuditParameters.QUERY_STRING));
-        
+
         // Put additional values passed by the caller (because these values were computed programmatically and not
         // directly supplied in the query call) into the audit parameters.
         if (queryParameters.containsKey(PrivateAuditConstants.AUDIT_TYPE))
@@ -35,14 +37,17 @@ public class DefaultAuditParameterBuilder implements AuditParameterBuilder {
             auditParams.putSingle(AuditParameters.QUERY_LOGIC_CLASS, queryParameters.getFirst(PrivateAuditConstants.LOGIC_CLASS));
         if (queryParameters.containsKey(PrivateAuditConstants.SELECTORS))
             validatedParams.setSelectors(queryParameters.get(PrivateAuditConstants.SELECTORS));
-        
+        if (queryParameters.containsKey(AuditParameters.AUDIT_ID)) {
+            validatedParams.setAuditId(queryParameters.getFirst(AuditParameters.AUDIT_ID));
+        }
+
         // Now validate the audit parameters and convert to a map.
         validatedParams.validate(auditParams);
-        
+
         log.debug("generated audit parameters: " + validatedParams);
         return validatedParams.toMap();
     }
-    
+
     @Override
     public Map<String,String> validate(MultivaluedMap<String,String> auditParameters) {
         AuditParameters validatedParams = new AuditParameters();

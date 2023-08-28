@@ -1,19 +1,25 @@
 package datawave.query.planner;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Sets;
+
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
+import datawave.query.attributes.ExcerptFields;
+import datawave.query.attributes.UniqueFields;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.util.StringUtils;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import org.apache.log4j.Logger;
-
-import java.util.Map;
 
 public class QueryOptionsSwitch {
-    
+
     private static final Logger log = ThreadConfigurableLogger.getLogger(QueryOptionsSwitch.class);
-    
+
     public static void apply(Map<String,String> optionsMap, ShardQueryConfiguration config) {
         for (Map.Entry<String,String> entry : optionsMap.entrySet()) {
             String key = entry.getKey();
@@ -29,8 +35,9 @@ public class QueryOptionsSwitch {
                     String[] lf = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
                     config.setLimitFields(Sets.newHashSet(lf));
                     break;
-                case QueryParameters.TYPE_METADATA_IN_HDFS:
-                    config.setTypeMetadataInHdfs(Boolean.parseBoolean(value));
+                case QueryParameters.MATCHING_FIELD_SETS:
+                    String[] mfs = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
+                    config.setMatchingFieldSets(Sets.newHashSet(mfs));
                     break;
                 case QueryParameters.GROUP_FIELDS:
                     String[] groups = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
@@ -45,8 +52,22 @@ public class QueryOptionsSwitch {
                     }
                     break;
                 case QueryParameters.UNIQUE_FIELDS:
-                    String[] uniqueFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);
-                    config.setUniqueFields(Sets.newHashSet(uniqueFields));
+                    UniqueFields uniqueFields = UniqueFields.from(value);
+                    config.setUniqueFields(uniqueFields);
+                    break;
+                case QueryParameters.EXCERPT_FIELDS:
+                    ExcerptFields excerptFields = ExcerptFields.from(value);
+                    config.setExcerptFields(excerptFields);
+                    break;
+                case QueryParameters.NO_EXPANSION_FIELDS:
+                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
+                case QueryParameters.LENIENT_FIELDS:
+                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
+                case QueryParameters.STRICT_FIELDS:
+                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    break;
             }
         }
     }

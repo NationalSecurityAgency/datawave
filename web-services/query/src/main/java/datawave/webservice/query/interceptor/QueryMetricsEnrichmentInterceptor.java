@@ -12,26 +12,26 @@ import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.WriterInterceptorContext;
 
+import org.apache.deltaspike.core.api.exclude.Exclude;
+import org.apache.log4j.Logger;
+import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
+import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
+import org.jboss.resteasy.util.FindAnnotation;
+
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
+import datawave.microservice.querymetric.BaseQueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.resteasy.interceptor.BaseMethodStatsInterceptor;
 import datawave.webservice.query.annotation.EnrichQueryMetrics;
 import datawave.webservice.query.annotation.EnrichQueryMetrics.MethodType;
 import datawave.webservice.query.cache.QueryCache;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.metric.BaseQueryMetric;
-import datawave.webservice.query.metric.BaseQueryMetric.PageMetric;
 import datawave.webservice.query.metric.QueryMetricsBean;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.GenericResponse;
-
-import org.apache.deltaspike.core.api.exclude.Exclude;
-import org.apache.log4j.Logger;
-import org.jboss.resteasy.core.interception.ContainerResponseContextImpl;
-import org.jboss.resteasy.core.interception.PreMatchContainerRequestContext;
-import org.jboss.resteasy.util.FindAnnotation;
 
 @Provider
 @Priority(Priorities.USER)
@@ -41,36 +41,36 @@ public class QueryMetricsEnrichmentInterceptor extends BaseMethodStatsIntercepto
     protected static class QueryCall {
         MethodType methodType;
         String queryID;
-        
+
         public QueryCall(MethodType methodType, String queryID) {
             super();
             this.methodType = methodType;
             this.queryID = queryID;
         }
     }
-    
+
     private Logger log = Logger.getLogger(QueryMetricsEnrichmentInterceptor.class);
-    
+
     @Inject
     private QueryMetricsBean queryMetricsBean;
     @Inject
     private QueryCache queryCache;
-    
+
     @Override
     public void filter(ContainerRequestContext request) throws IOException {
         // Just call the parent doPreProcess so that we save stats for this call and look them up in the postProcess/write
         doPreProcess((PreMatchContainerRequestContext) request);
     }
-    
+
     @Override
     public void filter(ContainerRequestContext request, ContainerResponseContext response) throws IOException {
         super.filter(request, response);
-        
+
         if (response instanceof ContainerResponseContextImpl) {
             ContainerResponseContextImpl containerResponseImpl = (ContainerResponseContextImpl) response;
             EnrichQueryMetrics e = FindAnnotation.findAnnotation(containerResponseImpl.getJaxrsResponse().getAnnotations(), EnrichQueryMetrics.class);
             if (e != null) {
-                
+
                 Object entity = response.getEntity();
                 if (entity instanceof GenericResponse) {
                     @SuppressWarnings("unchecked")
@@ -88,11 +88,11 @@ public class QueryMetricsEnrichmentInterceptor extends BaseMethodStatsIntercepto
             }
         }
     }
-    
+
     @Override
     public void aroundWriteTo(WriterInterceptorContext context) throws IOException, WebApplicationException {
         ResponseMethodStats stats = doWrite(context);
-        
+
         QueryCall queryCall = (QueryCall) context.getProperty(QueryCall.class.getName());
         if (queryCall != null) {
             if (queryCache != null) {
@@ -134,7 +134,7 @@ public class QueryMetricsEnrichmentInterceptor extends BaseMethodStatsIntercepto
                                     }
                                     break;
                             }
-                            
+
                             if (queryMetricsBean != null)
                                 queryMetricsBean.updateMetric(metric);
                             else

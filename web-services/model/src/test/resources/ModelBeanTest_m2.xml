@@ -1,4 +1,4 @@
-<Model xmlns="http://webservice.datawave/v1" name="Model2">
+<Model xmlns="http://webservice.datawave.nsa/v1" name="Model2">
 	<Mappings>
 		<Mapping datatype="d2" fieldName="EVENT_DATE" modelFieldName="start-time" direction="FORWARD" columnVisibility="PRIVATE"/>
 		<Mapping datatype="d2" fieldName="EVENT_DATE" modelFieldName="start-time" direction="REVERSE" columnVisibility="PRIVATE"/>

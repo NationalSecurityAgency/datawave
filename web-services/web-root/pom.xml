@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.webservices</groupId>
         <artifactId>datawave-ws-parent</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>5.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-ws-web-root</artifactId>
     <packaging>war</packaging>
@@ -42,6 +42,14 @@
                                 </artifactItem>
                                 <artifactItem>
                                     <groupId>org.webjars</groupId>
+                                    <artifactId>leaflet</artifactId>
+                                    <version>1.5.1</version>
+                                    <type>jar</type>
+                                    <outputDirectory>${project.build.directory}/webjars</outputDirectory>
+                                    <includes>META-INF/resources/webjars/leaflet/1.5.1/leaflet*,META-INF/resources/webjars/leaflet/1.5.1/images/*</includes>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.webjars</groupId>
                                     <artifactId>jquery</artifactId>
                                     <version>3.3.1-1</version>
                                     <type>jar</type>
@@ -73,6 +81,9 @@
                         </resource>
                         <resource>
                             <directory>${project.build.directory}/webjars/META-INF/resources/webjars/foundation/6.4.3-1/dist/js</directory>
+                        </resource>
+                        <resource>
+                            <directory>${project.build.directory}/webjars/META-INF/resources/webjars/leaflet/1.5.1</directory>
                         </resource>
                         <resource>
                             <directory>${project.build.directory}/webjars/META-INF/resources/webjars/datatables/1.10.19/js</directory>

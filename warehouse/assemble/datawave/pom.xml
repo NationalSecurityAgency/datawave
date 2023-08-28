@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave</groupId>
         <artifactId>assemble-parent</artifactId>
-        <version>3.0.0-SNAPSHOT</version>
+        <version>5.10.0-SNAPSHOT</version>
     </parent>
     <artifactId>assemble-datawave</artifactId>
     <packaging>pom</packaging>
@@ -29,7 +29,7 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-balancers</artifactId>
+            <artifactId>datawave-accumulo-extensions</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -112,6 +112,10 @@
             <artifactId>datawave-ws-query</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
         </dependency>
@@ -126,6 +130,22 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-1.2-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
         </dependency>
         <dependency>
             <groupId>org.infinispan</groupId>
@@ -447,9 +467,6 @@
                                 <defineStatement>debug_package %{nil}</defineStatement>
                                 <defineStatement>__os_install_post %{nil}</defineStatement>
                             </defineStatements>
-                            <postinstallScriptlet>
-                                <script>/opt/datawave-ingest/current/bin/system/install.sh -force</script>
-                            </postinstallScriptlet>
                             <cleanScriptlet>
                                 <script>rm -rf $RPM_BUILD_ROOT</script>
                             </cleanScriptlet>
@@ -531,6 +548,7 @@
                                     <dependency>
                                         <includes>
                                             <include>commons-pool:commons-pool</include>
+                                            <include>commons-lang:commons-lang</include>
                                             <include>org.apache.commons:commons-lang3</include>
                                             <include>com.google.protobuf:protobuf-java</include>
                                             <include>com.esotericsoftware.kryo:kryo</include>
@@ -551,10 +569,11 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-collections4</include>
                                             <include>org.apache.commons:commons-jexl</include>
                                             <include>${project.groupId}:datawave-core</include>
-                                            <include>${project.groupId}:datawave-balancers</include>
+                                            <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>
                                             <include>${project.groupId}:datawave-ingest-core</include>
                                             <include>${project.groupId}:datawave-ingest-configuration</include>
@@ -580,13 +599,11 @@
                                             <include>com.clearspring.analytics:stream</include>
                                             <include>org.apache.lucene:lucene-core</include>
                                             <include>com.timgroup:java-statsd-client</include>
-                                            <!-- For the NGA Geometry code -->
-                                            <include>mil.nga.giat:geowave-adapter-vector</include>
-                                            <include>mil.nga.giat:geowave-core-geotime</include>
-                                            <include>mil.nga.giat:geowave-core-store</include>
-                                            <include>mil.nga.giat:geowave-core-index</include>
-                                            <include>mil.nga.giat:geowave-core-ingest</include>
-                                            <include>com.vividsolutions:jts</include>
+                                            <!-- For the Geometry code -->
+                                            <include>org.locationtech.geowave:geowave-core-geotime</include>
+                                            <include>org.locationtech.geowave:geowave-core-store</include>
+                                            <include>org.locationtech.geowave:geowave-core-index</include>
+                                            <include>org.locationtech.jts:jts-core</include>
                                             <include>com.google.uzaygezen:uzaygezen-core</include>
                                             <!-- for dependency injection -->
                                             <include>org.springframework:spring-aop</include>
@@ -609,6 +626,7 @@
                                     <directoryIncluded>false</directoryIncluded>
                                     <dependency>
                                         <includes>
+                                            <include>com.github.ben-manes.caffeine:caffeine</include>
                                             <include>org.apache.commons:commons-lang3</include>
                                             <include>${project.groupId}:datawave-core</include>
                                             <include>${project.groupId}:datawave-query-core</include>
@@ -639,43 +657,6 @@
                                 <goals>
                                     <goal>rpm</goal>
                                 </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>geoserver</id>
-            <activation>
-                <property>
-                    <name>geoserver</name>
-                </property>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <artifactId>maven-dependency-plugin</artifactId>
-                        <executions>
-                            <!-- In support of GeoWave tables created by the GeoWaveDataTypeHandler -->
-                            <execution>
-                                <id>geowave-dependencies</id>
-                                <goals>
-                                    <goal>unpack</goal>
-                                </goals>
-                                <phase>generate-resources</phase>
-                                <configuration>
-                                    <artifactItems>
-                                        <artifactItem>
-                                            <groupId>gov.nsa.datawave</groupId>
-                                            <artifactId>assemble-geowave</artifactId>
-                                            <classifier>dist</classifier>
-                                            <type>tar.gz</type>
-                                        </artifactItem>
-                                    </artifactItems>
-                                    <includes>**/*.jar</includes>
-                                    <outputDirectory>${project.build.directory}/archive/accumulo-geowave/lib/ext</outputDirectory>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

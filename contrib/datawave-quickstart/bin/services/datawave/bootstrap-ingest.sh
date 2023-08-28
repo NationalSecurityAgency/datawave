@@ -83,10 +83,10 @@ DW_DATAWAVE_INGEST_DIST="${tarball}"
 
 DW_DATAWAVE_INGEST_CMD_START="( cd ${DW_DATAWAVE_INGEST_HOME}/bin/system && ./start-all.sh -allforce )"
 DW_DATAWAVE_INGEST_CMD_STOP="( cd ${DW_DATAWAVE_INGEST_HOME}/bin/system && ./stop-all.sh )"
-DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS="pgrep -f 'ingest-server.sh|Dapp=FlagMaker|mapreduce.job.BulkIngestMapFileLoader|datawave.ingest.mapreduce.job.IngestJob|ingest/cleanup-server.py'"
+DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'ingest-server.sh|Dapp=FlagMaker|mapreduce.job.BulkIngestMapFileLoader|datawave.ingest.mapreduce.job.IngestJob|ingest/cleanup-server.py'"
 
 function datawaveIngestIsRunning() {
-    DW_DATAWAVE_INGEST_PID_LIST="$(eval "${DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_DATAWAVE_INGEST_PID_LIST="$(eval "${DW_DATAWAVE_INGEST_CMD_FIND_ALL_PIDS}")"
     [[ -z "${DW_DATAWAVE_INGEST_PID_LIST}" ]] && return 1 || return 0
 }
 
@@ -103,72 +103,16 @@ function datawaveIngestStop() {
 }
 
 function datawaveIngestStatus() {
-    # use a state to parse entries
-    local _opt=pid
-    local _bulkIngest
-    local _liveIngest
-    local _pid
 
-    echo "======  Datawave Ingest Status  ======"
-    datawaveIngestIsRunning && {
-        local -r _pids=${DW_DATAWAVE_INGEST_PID_LIST// /|}
-        echo "pids:${DW_DATAWAVE_INGEST_PID_LIST}"
+    echo "======  DataWave Ingest Status  ======"
+    if datawaveIngestIsRunning ; then
+        echo "pids: ${DW_DATAWAVE_INGEST_PID_LIST}"
+        $DW_DATAWAVE_INGEST_HOME/bin/ingest/list-ingest.sh
 
-        for _proc in $(pgrep -af ingest-server.sh | egrep ${_pids}); do
-            case ${_opt} in
-                pid)
-                    _pid=$_proc
-                    _opt=name
-                    ;;
-                name)
-                    local _name=${_proc%%-ingest-ser}
-                    case "${_name}" in
-                        bulk) _bulkIngest=${_pid};;
-                        live) _liveIngest=${_pid};;
-                    esac
-                    _opt=pid
-                    ;;
-
-            esac
-        done
-
-        local -r _flagMaker=$(pgrep -f 'Dapp=FlagMaker' | egrep ${_pids})
-        local -r _cleanup=$(pgrep -f 'ingest/cleanup-server.py' | egrep ${_pids} )
-
-        for _job in BulkIngestMapFileLoader IngestJob; do
-            local _mapPids=$(pgrep -d ' ' -f datawave.ingest.mapreduce.job.${_job} | egrep ${_pids})
-            case ${_job} in
-                BulkIngestMapFileLoader) local -r _bulkPids="${_mapPids}";;
-                IngestJob) local -r _livePids="${_mapPids}";;
-            esac
-        done
-    }
-
-    if [[ -n "${_bulkIngest}" ]]; then
-        info "bulk ingest server => ${_bulkIngest}"
     else
-        info "bulk ingest server is not running"
-    fi
-    if [[ -n "${_liveIngest}" ]]; then
-        info "live ingest server => ${_liveIngest}"
-    else
-        info "live ingest server is not running"
+        info "No ingest processes are running"
     fi
 
-    if [[ -n "${_flagMaker}" ]]; then
-        info "flag maker => ${_flagMaker}"
-    else
-        info "flag maker is not running"
-    fi
-
-    if [[ -n "${_cleanup}" ]]; then
-        info "cleanup server => ${_cleanup}"
-    else
-        info "cleanup server is not running"
-    fi
-
-    info "bulk ingest pids: ${_bulkPids}"
-    info "live ingest pids: ${_livePids}"
 }
 
 function datawaveIngestIsInstalled() {
@@ -239,9 +183,8 @@ function datawaveIngestWikipedia() {
    [ -z "${wikipediaRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${wikipediaRawFile}" ] && error "File not found: ${wikipediaRawFile}" && return 1
 
-   local wikipediaHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/wikipedia"
-   local wikipediaHdfsFile="${wikipediaHdfsDir}/$( basename ${wikipediaRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${wikipediaRawFile} ${wikipediaHdfsDir}"
+   local wikipediaHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${wikipediaRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal ${wikipediaRawFile} ${wikipediaHdfsFile}"
 
    local inputFormat="datawave.ingest.wikipedia.WikipediaEventInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${wikipediaHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=wikipedia ${extraOpts}"
@@ -267,9 +210,8 @@ function datawaveIngestCsv() {
    [ -z "${csvRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${csvRawFile}" ] && error "File not found: ${csvRawFile}" && return 1
 
-   local csvHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/mycsv"
-   local csvHdfsFile="${csvHdfsDir}/$( basename ${csvRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${csvRawFile} ${csvHdfsDir}"
+   local csvHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${csvRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal ${csvRawFile} ${csvHdfsFile}"
 
    local inputFormat="datawave.ingest.csv.mr.input.CSVFileInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${csvHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=mycsv ${extraOpts}"
@@ -289,9 +231,8 @@ function datawaveIngestJson() {
    [ -z "${jsonRawFile}" ] && error "Missing raw file argument" && return 1
    [ ! -f "${jsonRawFile}" ] && error "File not found: ${jsonRawFile}" && return 1
 
-   local jsonHdfsDir="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/myjson"
-   local jsonHdfsFile="${jsonHdfsDir}/$( basename ${jsonRawFile} )"
-   local putFileCommand="hdfs dfs -copyFromLocal ${jsonRawFile} ${jsonHdfsDir}"
+   local jsonHdfsFile="${DW_DATAWAVE_INGEST_HDFS_BASEDIR}/$( basename ${jsonRawFile} )"
+   local putFileCommand="hdfs dfs -copyFromLocal ${jsonRawFile} ${jsonHdfsFile}"
 
    local inputFormat="datawave.ingest.json.mr.input.JsonInputFormat"
    local jobCommand="${DW_DATAWAVE_INGEST_HOME}/bin/ingest/live-ingest.sh ${jsonHdfsFile} ${DW_DATAWAVE_INGEST_NUM_SHARDS} -inputFormat ${inputFormat} -data.name.override=myjson ${extraOpts}"
@@ -390,4 +331,19 @@ function datawaveIngestCreateTableSplits() {
 
    # Force splits file creation for use by any upcoming jobs, to ensure proper partitioning
    ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-splits-file.sh
+}
+
+function datawaveIngestDisplayBinaryInfo() {
+  echo "Source: DataWave Ingest Version $(getDataWaveVersion)//$(datawaveIngestTarballName)"
+  local installedTarball="$(ls -1 ${DW_DATAWAVE_SERVICE_DIR}/$(basename ${DW_DATAWAVE_INGEST_TARBALL}) 2>/dev/null)"
+  if [[ -n "${installedTarball}" ]]; then
+     echo " Local: ${installedTarball}"
+  else
+     echo " Local: Not loaded"
+  fi
+}
+
+function datawaveIngestTarballName() {
+   local dwVersion="$(getDataWaveVersion)"
+   echo "$( basename "${DW_DATAWAVE_INGEST_TARBALL/-\*-/-$dwVersion-}" )"
 }

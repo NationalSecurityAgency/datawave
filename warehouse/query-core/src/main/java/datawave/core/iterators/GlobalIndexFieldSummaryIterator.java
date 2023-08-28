@@ -20,24 +20,24 @@ import org.apache.log4j.Logger;
  */
 public class GlobalIndexFieldSummaryIterator extends GlobalIndexDateSummaryIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
     protected static final Logger log = Logger.getLogger(GlobalIndexFieldSummaryIterator.class);
-    
+
     public GlobalIndexFieldSummaryIterator() {
         super();
     }
-    
+
     public GlobalIndexFieldSummaryIterator(GlobalIndexFieldSummaryIterator iter, IteratorEnvironment env) {
         super(iter, env);
     }
-    
+
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new GlobalIndexFieldSummaryIterator(this, env);
     }
-    
+
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
         return new IteratorOptions(getClass().getSimpleName(), "returns global index keys aggregating fields names by type and date", options, null);
     }
-    
+
     /**
      * This method aggregates all information from the global index by fieldname, day, and type
      */
@@ -45,32 +45,32 @@ public class GlobalIndexFieldSummaryIterator extends GlobalIndexDateSummaryItera
         if (log.isDebugEnabled()) {
             log.debug("findTop called");
         }
-        
+
         // create a map of summaries by fieldValue, fieldName and date
         Map<String,TermInfoSummary> summaries = new HashMap<>();
-        
+
         // Get the next valid term info
         TermInfo termInfo = getNextValidTermInfo();
-        
+
         // while we have a term info
         while (termInfo != null) {
             String key = new StringBuilder().append(termInfo.fieldValue).append('\0').append(termInfo.fieldName).append('\0').append(termInfo.date).toString();
             if (!summaries.containsKey(key)) {
                 summaries.put(key, new TermInfoSummary(termInfo.fieldValue, termInfo.fieldName, termInfo.date));
             }
-            
+
             TermInfoSummary summary = summaries.get(key);
             summary.addTermInfo(termInfo);
-            
+
             this.iterator.next();
             termInfo = getNextValidTermInfo();
         }
-        
+
         for (TermInfoSummary summary : summaries.values()) {
             // now turn the summary into a set of key, value pairs
             returnCache.putAll(summary.getKeyValues());
         }
-        
+
         if (log.isDebugEnabled()) {
             log.debug("findTop returning with " + returnCache.size() + " results");
         }

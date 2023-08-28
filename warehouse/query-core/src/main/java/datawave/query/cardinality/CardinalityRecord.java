@@ -1,8 +1,5 @@
 package datawave.query.cardinality;
 
-import com.google.common.base.Splitter;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Sets;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -23,38 +20,42 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Sets;
+
 public class CardinalityRecord implements Serializable {
     private static final long serialVersionUID = 1L;
     private Set<String> resultCardinalityValueFields = null;
     private HashMultimap<Integer,DateFieldValueCardinalityRecord> cardinalityMap = HashMultimap.create();
     private static Logger log = Logger.getLogger(CardinalityRecord.class);
-    
+
     public enum DateType {
         DOCUMENT, CURRENT
     }
-    
+
     private DateType dateType = DateType.DOCUMENT;
-    
+
     public CardinalityRecord(Set<String> recordedFields, DateType dateType) {
         this.resultCardinalityValueFields = recordedFields;
         this.dateType = dateType;
     }
-    
+
     public CardinalityRecord(CardinalityRecord other) {
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             this.dateType = other.dateType;
             this.resultCardinalityValueFields = new HashSet<>();
             this.resultCardinalityValueFields.addAll(other.resultCardinalityValueFields);
-            
+
             this.cardinalityMap = HashMultimap.create();
             for (Map.Entry<Integer,DateFieldValueCardinalityRecord> entry : other.cardinalityMap.entries()) {
                 this.cardinalityMap.put(entry.getKey(), new DateFieldValueCardinalityRecord(entry.getValue()));
             }
         }
     }
-    
+
     public void addEntry(Map<String,List<String>> valueMap, String eventId, String dataType, Date dataDate) {
-        
+
         try {
             long ts = 0;
             if (dateType.equals(DateType.DOCUMENT)) {
@@ -69,9 +70,9 @@ public class CardinalityRecord implements Serializable {
             log.error(e.getMessage(), e);
         }
     }
-    
+
     public void addEntry(Map<String,List<String>> valueMap, String eventId, String dataType, String date) {
-        
+
         try {
             for (String field : this.resultCardinalityValueFields) {
                 List<String> values = assembleValues(field, valueMap);
@@ -84,16 +85,16 @@ public class CardinalityRecord implements Serializable {
             log.error(e.getMessage(), e);
         }
     }
-    
+
     public List<String> assembleValues(String field, Map<String,List<String>> valueMap) {
-        
+
         List<String> values = new ArrayList<>();
         List<List<String>> valueLists = new ArrayList<>();
         Iterable<String> fieldSplit = Splitter.on("|").split(field);
-        
+
         int numSplits = 0;
         for (String s : fieldSplit) {
-            
+
             if (valueMap.containsKey(s)) {
                 valueLists.add(valueMap.get(s));
             } else {
@@ -105,7 +106,7 @@ public class CardinalityRecord implements Serializable {
             }
             numSplits++;
         }
-        
+
         if (numSplits == 1) {
             values.addAll(valueLists.get(0));
         } else {
@@ -116,7 +117,7 @@ public class CardinalityRecord implements Serializable {
         }
         return values;
     }
-    
+
     protected <T> List<List<T>> cartesianProduct(List<List<T>> lists) {
         List<List<T>> resultLists = new ArrayList<>();
         if (lists.isEmpty()) {
@@ -136,42 +137,42 @@ public class CardinalityRecord implements Serializable {
         }
         return resultLists;
     }
-    
+
     protected void addRecord(DateFieldValueCardinalityRecord record) {
-        
+
         String date = record.getEventDate();
         String fieldName = record.getFieldName();
         String fieldValue = record.getFieldValue();
         String dataType = record.getDataType();
-        
+
         DateFieldValueCardinalityRecord fvc = getDateFieldValueCardinalityRecord(date, fieldName, fieldValue, dataType);
         if (fvc == null) {
             fvc = new DateFieldValueCardinalityRecord(date, fieldName, fieldValue, dataType);
-            synchronized (cardinalityMap) {
+            synchronized (this) {
                 cardinalityMap.put(fvc.hashCode(), fvc);
             }
         }
         fvc.merge(record);
     }
-    
+
     protected void addResult(String date, String fieldName, String fieldValue, String dataType, String eventId) {
-        
+
         DateFieldValueCardinalityRecord fvc = getDateFieldValueCardinalityRecord(date, fieldName, fieldValue, dataType);
         if (fvc == null) {
             fvc = new DateFieldValueCardinalityRecord(date, fieldName, fieldValue, dataType);
             int hash = DateFieldValueCardinalityRecord.hash(date, fieldName, fieldValue, dataType);
-            synchronized (cardinalityMap) {
+            synchronized (this) {
                 cardinalityMap.put(hash, fvc);
             }
         }
         fvc.addEventId(eventId);
     }
-    
+
     protected DateFieldValueCardinalityRecord getDateFieldValueCardinalityRecord(String date, String fieldName, String fieldValue, String dataType) {
-        
+
         int hash = DateFieldValueCardinalityRecord.hash(date, fieldName, fieldValue, dataType);
         Set<DateFieldValueCardinalityRecord> possibleFvcSet = null;
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             possibleFvcSet = cardinalityMap.get(hash);
         }
         DateFieldValueCardinalityRecord fvc = null;
@@ -186,56 +187,52 @@ public class CardinalityRecord implements Serializable {
         }
         return fvc;
     }
-    
+
     public HashMultimap<Integer,DateFieldValueCardinalityRecord> getCardinalityMap() {
         HashMultimap<Integer,DateFieldValueCardinalityRecord> newCardinalityMap = HashMultimap.create();
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             for (Map.Entry<Integer,DateFieldValueCardinalityRecord> entry : cardinalityMap.entries()) {
                 newCardinalityMap.put(entry.getKey(), new DateFieldValueCardinalityRecord(entry.getValue()));
             }
         }
         return newCardinalityMap;
     }
-    
+
     public void flushToDisk(final File file) {
-        
+
         // make a copy of the object, clear the current object, and write the copy to disk asynchronously
         CardinalityRecord newCardinalityRecord;
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             newCardinalityRecord = new CardinalityRecord(this);
             this.cardinalityMap.clear();
         }
         CardinalityRecord.writeToDisk(newCardinalityRecord, file);
     }
-    
+
     public void writeToDisk(final File file) {
-        
+
         // make a copy of the object and write the copy to disk asynchronously
         CardinalityRecord newResulsCardinalityRecord;
-        synchronized (cardinalityMap) {
+        synchronized (this) {
             newResulsCardinalityRecord = new CardinalityRecord(this);
         }
         CardinalityRecord.writeToDisk(newResulsCardinalityRecord, file);
     }
-    
+
     public static CardinalityRecord readFromDisk(File file) {
-        
+
         CardinalityRecord cardinalityRecord = null;
-        ObjectInputStream ois = null;
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            ois = new ObjectInputStream(fis);
+        try (FileInputStream fis = new FileInputStream(file); ObjectInputStream ois = new ObjectInputStream(fis)) {
+
             cardinalityRecord = (CardinalityRecord) ois.readObject();
         } catch (Exception e) {
             log.error(e);
-        } finally {
-            IOUtils.closeQuietly(ois);
         }
         return cardinalityRecord;
     }
-    
+
     public static void writeToDisk(final CardinalityRecord cardinalityRecord, final File file) {
-        
+
         if (!cardinalityRecord.getCardinalityMap().isEmpty()) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             executor.execute(() -> {
@@ -257,41 +254,41 @@ public class CardinalityRecord implements Serializable {
             executor.shutdown();
         }
     }
-    
+
     public void merge(CardinalityRecord other) {
-        
+
         int intersectionSize = Sets.intersection(this.resultCardinalityValueFields, other.resultCardinalityValueFields).size();
         if (intersectionSize != this.resultCardinalityValueFields.size() || intersectionSize != other.resultCardinalityValueFields.size()) {
             throw new IllegalArgumentException("ResultsCardinalityRecords have different recorded fields");
         }
-        
-        synchronized (cardinalityMap) {
+
+        synchronized (this) {
             for (DateFieldValueCardinalityRecord record : other.cardinalityMap.values()) {
                 addRecord(record);
             }
         }
     }
-    
+
     public void merge(File file) {
-        
+
         CardinalityRecord cardinalityRecord = CardinalityRecord.readFromDisk(file);
-        
+
         int intersectionSize = Sets.intersection(this.resultCardinalityValueFields, cardinalityRecord.resultCardinalityValueFields).size();
         if (intersectionSize != this.resultCardinalityValueFields.size() || intersectionSize != cardinalityRecord.resultCardinalityValueFields.size()) {
             throw new IllegalArgumentException("ResultsCardinalityRecords have different resultCardinalityValueFields");
         }
-        
-        synchronized (cardinalityMap) {
+
+        synchronized (this) {
             for (DateFieldValueCardinalityRecord record : cardinalityRecord.cardinalityMap.values()) {
                 addRecord(record);
             }
         }
     }
-    
+
     public int getNumEntries() {
         return cardinalityMap.size();
     }
-    
+
     public long getSize() {
         long size = 0;
         for (Map.Entry<Integer,DateFieldValueCardinalityRecord> entry : cardinalityMap.entries()) {

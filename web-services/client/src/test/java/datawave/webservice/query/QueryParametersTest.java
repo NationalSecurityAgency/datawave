@@ -3,21 +3,19 @@ package datawave.webservice.query;
 import java.text.ParseException;
 import java.util.Date;
 
-import javax.ws.rs.core.MultivaluedHashMap;
-import javax.ws.rs.core.MultivaluedMap;
-
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 public class QueryParametersTest {
-    
+
     private QueryParameters qp;
     private String auths = "THERE,IS,NO,SPOON,007,DistrictB13,Order66";
-    
+
     private Date beginDate;
     private Date endDate;
     private Date expDate;
@@ -26,21 +24,21 @@ public class QueryParametersTest {
     private QueryPersistence persistenceMode;
     private String query;
     private String queryName;
-    private MultivaluedMap<String,String> requestHeaders;
+    private MultiValueMap<String,String> requestHeaders;
     private boolean trace;
-    
+
     private long accumuloDate = 1470528000000l; // Accumulo - Aug 7, 2016
     private long nifiDate = 1470614400000l; // NiFi - Aug 8, 2016
-    
+
     private String formatDateCheck = "20160807 000000.000";
     @SuppressWarnings("deprecation")
     private Date parseDateCheck = new Date("Sun Aug 7 00:00:00 GMT 2016");
-    
+
     private String headerName = "Header-name1";
     private String headerValue = "headervalue1";
-    
+
     private static final Logger log = Logger.getLogger(QueryParametersTest.class);
-    
+
     @Before
     public void beforeTests() {
         beginDate = new Date(accumuloDate);
@@ -51,14 +49,14 @@ public class QueryParametersTest {
         persistenceMode = QueryPersistence.PERSISTENT;
         query = "WHEREIS:Waldo";
         queryName = "myQueryForTests";
-        requestHeaders = new MultivaluedHashMap<String,String>();
+        requestHeaders = new LinkedMultiValueMap<>();
         requestHeaders.add(headerName, headerValue);
         trace = true;
-        
+
         // Build initial QueryParameters
         qp = buildQueryParameters();
     }
-    
+
     private QueryParameters buildQueryParameters() {
         QueryParametersImpl qpBuilder = new QueryParametersImpl();
         qpBuilder.setAuths(auths);
@@ -72,13 +70,13 @@ public class QueryParametersTest {
         qpBuilder.setQueryName(queryName);
         qpBuilder.setRequestHeaders(requestHeaders);
         qpBuilder.setTrace(trace);
-        
+
         return qpBuilder;
     }
-    
+
     @Test
     public void testAllTheParams() {
-        
+
         // Validate that query was built correctly
         Assert.assertEquals(auths, qp.getAuths());
         Assert.assertEquals(beginDate, qp.getBeginDate());
@@ -91,14 +89,14 @@ public class QueryParametersTest {
         Assert.assertEquals(queryName, qp.getQueryName());
         Assert.assertEquals(requestHeaders, qp.getRequestHeaders());
         Assert.assertEquals(trace, qp.isTrace());
-        
+
         // Store results of hashCode() method, pre-clear
         int hashCode = qp.hashCode();
-        
+
         // Test and validate the QueryParamters.equals(QueryParameters params) method
         QueryParameters carbonCopy = buildQueryParameters();
         Assert.assertTrue(qp.equals(carbonCopy));
-        
+
         // Test and validate date formatting, parsing
         try {
             Assert.assertEquals(formatDateCheck, QueryParametersImpl.formatDate(beginDate));
@@ -106,10 +104,10 @@ public class QueryParametersTest {
         } catch (ParseException e) {
             log.error(e);
         }
-        
+
         // Test the QueryParametersImpl.validate(QueryParametersImpl params) method
-        MultivaluedMap<String,String> params = new MultivaluedMapImpl<String,String>();
-        
+        MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
+
         // Reset the MulivaluedMap for a QueryParametersImpl.validate() call
         try {
             params.add(QueryParameters.QUERY_STRING, "string");
@@ -126,24 +124,25 @@ public class QueryParametersTest {
         } catch (ParseException e) {
             log.error(e);
         }
-        
+
         // Add an unknown parameter
         params.add("key", "value");
-        
-        MultivaluedMap<String,String> unknownParams = qp.getUnknownParameters(params);
+
+        MultiValueMap<String,String> unknownParams = new LinkedMultiValueMap<>();
+        unknownParams.putAll(qp.getUnknownParameters(params));
         Assert.assertEquals("params", unknownParams.getFirst(QueryParameters.QUERY_PARAMS));
         Assert.assertEquals("value", unknownParams.getFirst("key"));
         Assert.assertEquals(2, unknownParams.size());
-        
+
         // Test the QueryParameters.validate() method
         qp.validate(params);
-        
+
         // Test and validate the QueryParameters.clear() method
         Date start = new Date();
         qp.clear();
         Date end = new Date();
         long delta = end.getTime() - start.getTime();
-        
+
         Assert.assertNull(qp.getAuths());
         Assert.assertNull(qp.getBeginDate());
         Assert.assertNull(qp.getEndDate());
@@ -155,7 +154,7 @@ public class QueryParametersTest {
         Assert.assertNull(qp.getQueryName());
         Assert.assertNull(qp.getRequestHeaders());
         Assert.assertFalse(qp.isTrace());
-        
+
         // Reset a few variables so hashCode() doesn't blow up, then
         // store results of hashCode() method, post-clear
         qp.setQuery(query);
@@ -163,7 +162,7 @@ public class QueryParametersTest {
         qp.setPersistenceMode(persistenceMode);
         qp.setAuths(auths);
         qp.setExpirationDate(expDate);
-        
+
         int hashCodePostClear = qp.hashCode();
         Assert.assertNotEquals(hashCode, hashCodePostClear);
     }

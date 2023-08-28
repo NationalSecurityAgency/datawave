@@ -6,46 +6,56 @@ import org.apache.commons.jexl2.parser.JexlNode;
  * This is a node that can be put in place of an ASTERNode to denote that the value threshold was exceeded preventing expansion into a conjunction of terms
  */
 public class ExceededValueThresholdMarkerJexlNode extends QueryPropertyMarker {
-    
-    public ExceededValueThresholdMarkerJexlNode(int id) {
-        super(id);
+
+    private static final String LABEL = "_Value_";
+
+    /**
+     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
+     *
+     * @return the label
+     */
+    public static String label() {
+        return LABEL;
     }
-    
+
+    /**
+     * Create and return a new {@link ExceededValueThresholdMarkerJexlNode} with the given source.
+     *
+     * @param node
+     *            the source node
+     * @return the new marker node
+     * @see QueryPropertyMarker#create(JexlNode, Class)
+     */
+    public static JexlNode create(JexlNode node) {
+        return create(node, ExceededValueThresholdMarkerJexlNode.class);
+    }
+
     public ExceededValueThresholdMarkerJexlNode() {
         super();
     }
-    
+
+    public ExceededValueThresholdMarkerJexlNode(int id) {
+        super(id);
+    }
+
     /**
-     * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:ExceededValueThresholdMarkerJexlNode True node (the one specified
-     * 
-     * Hence the resulting expression will be ((ExceededValueThresholdMarkerJexlNode = True) AND {specified node})
-     * 
+     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
+     *
      * @param node
+     *            the source node
+     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
      */
     public ExceededValueThresholdMarkerJexlNode(JexlNode node) {
         super(node);
     }
-    
+
     /**
-     * A routine to determine whether an and node is actually an exceeded value threshold marker. The reason for this routine is that if the query is serialized
-     * and deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is an exceeded value marker
+     * Returns {@value #LABEL}.
+     *
+     * @return the label
      */
-    public static boolean instanceOf(JexlNode node) {
-        return QueryPropertyMarker.instanceOf(node, ExceededValueThresholdMarkerJexlNode.class);
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
-    
-    /**
-     * A routine to determine get the node which is the source of the exceeded value threshold (i.e. the underlying regex or range)
-     * 
-     * @param node
-     * @return the source node or null if not an an exceededValueThreshold Marker
-     */
-    public static JexlNode getExceededValueThresholdSource(JexlNode node) {
-        return QueryPropertyMarker.getQueryPropertySource(node, ExceededValueThresholdMarkerJexlNode.class);
-    }
-    
 }

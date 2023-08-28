@@ -1,6 +1,6 @@
 
 # You may override DW_WILDFLY_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-http://download.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz}"
+DW_WILDFLY_DIST_URI="${DW_WILDFLY_DIST_URI:-https://download.jboss.org/wildfly/17.0.1.Final/wildfly-17.0.1.Final.tar.gz}"
 DW_WILDFLY_DIST="$( downloadTarball "${DW_WILDFLY_DIST_URI}" "${DW_DATAWAVE_SERVICE_DIR}" && echo "${tarball}" )"
 DW_WILDFLY_BASEDIR="wildfly-install"
 DW_WILDFLY_SYMLINK="wildfly"
@@ -14,7 +14,7 @@ DW_DATAWAVE_WEB_CMD_START="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAV
 DW_DATAWAVE_WEB_CMD_START_DEBUG="( cd "${WILDFLY_HOME}/bin" && JAVA_OPTS=\"$DW_DATAWAVE_WEB_JAVA_OPTS\" nohup ./standalone.sh --debug -c standalone-full.xml & )"
 DW_DATAWAVE_WEB_CMD_STOP="datawaveWebIsRunning && [[ ! -z \$DW_DATAWAVE_WEB_PID_LIST ]] && kill -15 \$DW_DATAWAVE_WEB_PID_LIST"
 
-DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -f 'jboss.home.dir=${DW_CLOUD_HOME}/.*wildfly'"
+DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'jboss.home.dir=${DW_CLOUD_HOME}/.*wildfly'"
 
 DW_DATAWAVE_WEB_SYMLINK="datawave-webservice"
 DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
@@ -22,8 +22,11 @@ DW_DATAWAVE_WEB_BASEDIR="datawave-webservice-install"
 getDataWaveTarball "${DW_DATAWAVE_WEB_TARBALL}"
 DW_DATAWAVE_WEB_DIST="${tarball}"
 
+# uncomment to enable environment passwords in the quickstart
+# export DW_ACCUMULO_PASSWORD="secret"
+
 function datawaveWebIsRunning() {
-    DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_DATAWAVE_WEB_PID_LIST="$(eval "${DW_DATAWAVE_WEB_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_DATAWAVE_WEB_PID_LIST}" ] && return 1 || return 0
 }
 
@@ -43,7 +46,8 @@ function datawaveWebStop() {
 }
 
 function datawaveWebStatus() {
-    datawaveWebIsRunning && echo "DataWave Web is running. PIDs: ${DW_DATAWAVE_WEB_PID_LIST}" || echo "DataWave Web is not running"
+    echo "======  DataWave Web Status  ======"
+    datawaveWebIsRunning && info "Wildfly is running => ${DW_DATAWAVE_WEB_PID_LIST}" || warn "Wildfly is not running"
 }
 
 function datawaveWebIsInstalled() {
@@ -144,6 +148,7 @@ function datawaveWebStart() {
           echo
           info "Documentation: https://localhost:8443/DataWave/doc"
           info "Data Dictionary: https://localhost:8443/DataWave/DataDictionary"
+          info "NOTE: DataDictionary will need to be deployed separately via the microservices modules in order to function."
           echo
           return 0
        fi
@@ -158,4 +163,26 @@ function datawaveWebStart() {
        sleep $pollInterval
     done
     return 1
+}
+
+function datawaveWebDisplayBinaryInfo() {
+  echo "Source: DataWave Web Version $(getDataWaveVersion)//$(datawaveWebTarballName)"
+  local installedTarball="$(ls -1 ${DW_DATAWAVE_SERVICE_DIR}/$(basename ${DW_DATAWAVE_WEB_TARBALL}) 2>/dev/null)"
+  if [[ -n "${installedTarball}" ]]; then
+     echo " Local: ${installedTarball}"
+  else
+     echo " Local: Not loaded"
+  fi
+  echo "Source: ${DW_WILDFLY_DIST_URI}"
+  local tarballName="$(basename "$DW_WILDFLY_DIST_URI")"
+  if [[ -f "${DW_DATAWAVE_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_DATAWAVE_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
+}
+
+function datawaveWebTarballName() {
+   local dwVersion="$(getDataWaveVersion)"
+   echo "$( basename "${DW_DATAWAVE_WEB_TARBALL/-\*-/-$dwVersion-}" )"
 }

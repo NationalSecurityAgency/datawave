@@ -2,47 +2,55 @@ package datawave.audit;
 
 import java.util.ArrayList;
 import java.util.List;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.webservice.query.Query;
+
+import org.apache.commons.jexl2.JexlException;
 import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
-import datawave.query.language.tree.QueryNode;
+import org.apache.log4j.Logger;
+
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
+import datawave.webservice.query.Query;
 
 public class DatawaveSelectorExtractor implements SelectorExtractor {
-    
-    private LuceneToJexlQueryParser luceneToJexlParser = new LuceneToJexlQueryParser();
-    
+
+    private static final Logger log = Logger.getLogger(DatawaveSelectorExtractor.class);
+    private LuceneToJexlQueryParser luceneToJexlQueryParser = new LuceneToJexlQueryParser();
+
     @Override
     public List<String> extractSelectors(Query query) throws IllegalArgumentException {
         List<String> selectorList = new ArrayList<>();
-        List<ASTEQNode> eqNodes = null;
-        QueryNode node = null;
-        ASTJexlScript jexlScript = null;
-        
         try {
-            jexlScript = JexlASTHelper.parseJexlQuery(query.getQuery());
-        } catch (Throwable t1) {
-            // not JEXL, try LUCENE
+            ASTJexlScript jexlScript;
             try {
-                node = luceneToJexlParser.parse(query.getQuery());
+                // Parse & Flatten to reduce the number of node traversals in later method calls
+                jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(query.getQuery());
+            } catch (Exception e) {
+                // not JEXL, try LUCENE
+                QueryNode node = luceneToJexlQueryParser.parse(query.getQuery());
                 String jexlQuery = node.getOriginalQuery();
-                jexlScript = JexlASTHelper.parseJexlQuery(jexlQuery);
-            } catch (Throwable t2) {
-                
+                jexlScript = JexlASTHelper.parseAndFlattenJexlQuery(jexlQuery);
             }
-        }
-        
-        if (jexlScript != null) {
-            eqNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
-        }
-        
-        for (ASTEQNode n : eqNodes) {
-            Object literal = JexlASTHelper.getLiteralValue(n);
-            if (literal != null) {
-                selectorList.add(literal.toString());
+
+            if (jexlScript != null) {
+                List<ASTEQNode> eqNodes = JexlASTHelper.getPositiveEQNodes(jexlScript);
+                for (ASTEQNode n : eqNodes) {
+                    Object literal = JexlASTHelper.getLiteralValue(n);
+                    if (literal != null) {
+                        selectorList.add(literal.toString());
+                    }
+                }
             }
+        } catch (JexlException e) {
+            log.error("Failure to extract selectors, failure parsing query");
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
         return selectorList;
+    }
+
+    public void setLuceneToJexlQueryParser(LuceneToJexlQueryParser luceneToJexlQueryParser) {
+        this.luceneToJexlQueryParser = luceneToJexlQueryParser;
     }
 }
