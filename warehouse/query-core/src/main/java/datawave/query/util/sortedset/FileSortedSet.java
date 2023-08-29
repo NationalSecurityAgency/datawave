@@ -25,20 +25,17 @@ import datawave.webservice.query.exception.QueryException;
 
 /**
  * A sorted set that can be persisted into a file and still be read in its persisted state. The set can always be re-loaded and then all operations will work as
- * expected. This will support null contained in the underlying sets iff a comparator is supplied that can handle null values.
- *
- * The persisted file will contain the serialized entries, followed by the actual size.
+ * expected. This will support null contained in the underlying sets iff a comparator is supplied that can handle null values. The persisted file will contain
+ * the serialized entries, followed by the actual size.
  *
  * @param <E>
  *            type of set
  */
 public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
-    private static Logger log = Logger.getLogger(FileSortedSet.class);
-    protected boolean persisted = false;
+    private static final Logger log = Logger.getLogger(FileSortedSet.class);
+    protected boolean persisted;
     protected E[] range;
-    protected SortedSet<E> set = null;
-    // A null entry placeholder
-    public static final NullObject NULL_OBJECT = new NullObject();
+    protected SortedSet<E> set;
 
     // The file handler that handles the underlying io
     public TypedSortedSetFileHandler handler;
@@ -47,9 +44,6 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
 
     /**
      * A class that represents a null object within the set
-     *
-     *
-     *
      */
     public static class NullObject implements Serializable {
         private static final long serialVersionUID = -5528112099317370355L;
@@ -149,7 +143,7 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     }
 
     /**
-     * Create an sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoid pulling
+     * Create a sorted set out of another sorted set. If persist is true, then the set will be directly persisted using the set's iterator which avoid pulling
      * all of its entries into memory at once.
      *
      * @param set
@@ -314,7 +308,6 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      *             for issues with read/write
      */
     private int readSize() throws IOException {
-        long bytesToSkip = handler.getSize() - 4;
         try (SortedSetInputStream<E> inStream = handler.getInputStream()) {
             return inStream.readSize();
         }
@@ -397,12 +390,9 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     public boolean contains(Object o) {
         if (persisted) {
             E t = (E) o;
-            for (Iterator<E> it = iterator(); it.hasNext();) {
-                if (it.hasNext()) {
-                    E next = it.next();
-                    if (equals(next, t)) {
-                        return true;
-                    }
+            for (E next : this) {
+                if (equals(next, t)) {
+                    return true;
                 }
             }
             return false;
@@ -600,32 +590,24 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
 
     @Override
     public E first() {
-        boolean gotFirst = false;
-        E first = null;
+        E first;
         if (persisted) {
             try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
                 first = stream.readObject();
-                gotFirst = true;
+                return first;
             } catch (Exception e) {
-                QueryException qe = new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR, e);
-                throw (new IllegalStateException(qe));
+                throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR, e));
             }
         } else if (!set.isEmpty()) {
             first = set.first();
-            gotFirst = true;
-        }
-        if (!gotFirst) {
-            QueryException qe = new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR);
-            throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
-        } else {
             return first;
         }
+        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR));
     }
 
     @Override
     public E last() {
-        boolean gotLast = false;
-        E last = null;
+        E last;
         if (persisted) {
             try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
                 last = stream.readObject();
@@ -634,29 +616,20 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
                     last = next;
                     next = stream.readObject();
                 }
-                gotLast = true;
+                return last;
             } catch (Exception e) {
-                throw new IllegalStateException("Unable to get last from file", e);
+                throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR, e));
             }
         } else if (!set.isEmpty()) {
             last = set.last();
-            gotLast = true;
-        }
-        if (!gotLast) {
-            QueryException qe = new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR);
-            throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
-        } else {
             return last;
         }
+        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR));
     }
 
     @Override
     public String toString() {
-        if (persisted) {
-            return handler.toString();
-        } else {
-            return set.toString();
-        }
+        return persisted ? handler.toString() : set.toString();
     }
 
     /**
@@ -722,25 +695,19 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
     }
 
     private int compare(E a, E b) {
-        if (this.set.comparator() != null) {
-            return this.set.comparator().compare(a, b);
-        } else {
-            return ((Comparable<E>) a).compareTo(b);
-        }
+        return (this.set.comparator() != null) ? this.set.comparator().compare(a, b) : ((Comparable<E>) a).compareTo(b);
     }
 
     public BoundedTypedSortedSetFileHandler<E> getBoundedFileHandler() {
         return new DefaultBoundedTypedSortedSetFileHandler();
     }
 
-    /********* Some sub classes ***********/
-
     /**
      * This is the iterator for a persisted FileSortedSet
      */
     protected class FileIterator implements Iterator<E> {
-        private SortedSetInputStream<E> stream = null;
-        private E next = null;
+        private SortedSetInputStream<E> stream;
+        private E next;
 
         public FileIterator() {
             try {
@@ -1044,9 +1011,9 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
      * An input stream that supports bounding the objects. Used when the underlying stream does not already support bounding.
      */
     public class BoundedInputStream implements SortedSetInputStream<E> {
-        private SortedSetInputStream<E> delegate;
-        private E from;
-        private E to;
+        private final SortedSetInputStream<E> delegate;
+        private final E from;
+        private final E to;
 
         public BoundedInputStream(SortedSetInputStream<E> stream, E from, E to) {
             this.delegate = stream;
@@ -1084,10 +1051,6 @@ public abstract class FileSortedSet<E> implements SortedSet<E>, Cloneable {
         private int numElementsToVerify = 100;
 
         public PersistOptions() {}
-
-        public PersistOptions(boolean verify) {
-            this.verifySize = this.verifyElements = verify;
-        }
 
         public PersistOptions(boolean verifySize, boolean verifyElements) {
             this.verifySize = verifySize;
