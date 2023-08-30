@@ -846,6 +846,12 @@
                 <groupId>org.geotools</groupId>
                 <artifactId>gt-geojson</artifactId>
                 <version>${version.geotools}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.eclipse.emf</groupId>
+                        <artifactId>*</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.geotools</groupId>
