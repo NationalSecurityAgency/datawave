@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.ws.rs.core.MultivaluedMap;
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorOrder;
@@ -17,7 +16,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
 import com.google.common.collect.Maps;
 
@@ -30,9 +30,9 @@ import com.google.common.collect.Maps;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultModificationRequest extends ModificationRequestBase implements Serializable {
-    
+
     private static final long serialVersionUID = 2L;
-    
+
     @XmlElementWrapper(name = "Events", required = true)
     @XmlElement(name = "Event", required = true)
     protected List<EventIdentifier> events = null;
@@ -52,75 +52,75 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
     private Map<String,String> oldFieldMarkings;
     @XmlElement(name = "oldColumnVisibility")
     protected String oldColumnVisibility = null;
-    
+
     public List<EventIdentifier> getEvents() {
         return events;
     }
-    
+
     public void setEvents(List<EventIdentifier> events) {
         this.events = events;
     }
-    
+
     public String getFieldName() {
         return fieldName;
     }
-    
+
     public void setFieldName(String fieldName) {
         this.fieldName = fieldName;
     }
-    
+
     public String getFieldValue() {
         return fieldValue;
     }
-    
+
     public void setFieldValue(String fieldValue) {
         this.fieldValue = fieldValue;
     }
-    
+
     public Map<String,String> getFieldMarkings() {
         if (this.fieldMarkings == null)
             this.fieldMarkings = Maps.newHashMap();
         return Maps.newHashMap(fieldMarkings);
     }
-    
+
     public void setFieldMarkings(Map<String,String> fieldMarkings) {
         this.fieldMarkings = (fieldMarkings == null ? new HashMap<String,String>() : new HashMap<String,String>(fieldMarkings));
     }
-    
+
     public Map<String,String> getOldFieldMarkings() {
         if (this.oldFieldMarkings == null)
             this.oldFieldMarkings = Maps.newHashMap();
         return Maps.newHashMap(oldFieldMarkings);
     }
-    
+
     public void setOldFieldMarkings(Map<String,String> oldFieldMarkings) {
         this.oldFieldMarkings = (oldFieldMarkings == null ? new HashMap<String,String>() : new HashMap<String,String>(oldFieldMarkings));
     }
-    
+
     public String getOldFieldValue() {
         return oldFieldValue;
     }
-    
+
     public void setOldFieldValue(String oldFieldValue) {
         this.oldFieldValue = oldFieldValue;
     }
-    
+
     public String getColumnVisibility() {
         return columnVisibility;
     }
-    
+
     public void setColumnVisibility(String columnVisibility) {
         this.columnVisibility = columnVisibility;
     }
-    
+
     public String getOldColumnVisibility() {
         return oldColumnVisibility;
     }
-    
+
     public void setOldColumnVisibility(String oldColumnVisibility) {
         this.oldColumnVisibility = oldColumnVisibility;
     }
-    
+
     @Override
     public String toString() {
         ToStringBuilder tsb = new ToStringBuilder(this);
@@ -135,10 +135,10 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
         tsb.append("oldColumnVisibility", oldColumnVisibility);
         return tsb.toString();
     }
-    
+
     @Override
-    public MultivaluedMap<String,String> toMap() {
-        MultivaluedMap<String,String> p = new MultivaluedMapImpl<String,String>();
+    public Map<String,List<String>> toMap() {
+        MultiValueMap<String,String> p = new LinkedMultiValueMap<>();
         p.putAll(super.toMap());
         if (this.events != null) {
             for (EventIdentifier e : events) {
@@ -170,7 +170,7 @@ public class DefaultModificationRequest extends ModificationRequestBase implemen
         if (this.oldColumnVisibility != null) {
             p.add("oldColumnVisibility", oldColumnVisibility);
         }
-        
+
         return p;
     }
 }

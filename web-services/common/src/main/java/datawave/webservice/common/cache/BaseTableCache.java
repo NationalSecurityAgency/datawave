@@ -10,19 +10,15 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.common.connection.WrappedConnector;
-
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
-import org.apache.accumulo.core.client.Connector;
+import org.apache.accumulo.core.client.BatchWriterConfig;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.admin.NamespaceOperations;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -35,128 +31,134 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Lists;
 
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.common.connection.WrappedAccumuloClient;
+
 public class BaseTableCache implements Serializable, TableCache {
-    
+
     private static final long serialVersionUID = 1L;
-    
-    private final Logger log = Logger.getLogger(this.getClass());
-    
+
+    private final transient Logger log = Logger.getLogger(this.getClass());
+
     /** should be set by configuration **/
     private String tableName = null;
     private String connectionPoolName = null;
     private String auths = null;
     private long reloadInterval = 0;
     private long maxRows = Long.MAX_VALUE;
-    
+
     /** set programatically **/
     private Date lastRefresh = new Date(0);
     private AccumuloConnectionFactory connectionFactory = null;
-    private InMemoryInstance instance = null;
+    private transient InMemoryInstance instance = null;
     private SharedCacheCoordinator watcher = null;
     private Future<Boolean> reference = null;
-    
+
     private ReentrantLock lock = new ReentrantLock();
-    
+
     @Override
     public String getTableName() {
         return tableName;
     }
-    
+
     @Override
     public String getConnectionPoolName() {
         return connectionPoolName;
     }
-    
+
     @Override
     public String getAuths() {
         return auths;
     }
-    
+
     @Override
     public long getReloadInterval() {
         return reloadInterval;
     }
-    
+
     @Override
     public Date getLastRefresh() {
         return lastRefresh;
     }
-    
+
     @Override
     public AccumuloConnectionFactory getConnectionFactory() {
         return connectionFactory;
     }
-    
+
     @Override
     public InMemoryInstance getInstance() {
         return instance;
     }
-    
+
     @Override
     public SharedCacheCoordinator getWatcher() {
         return watcher;
     }
-    
+
     @Override
     public Future<Boolean> getReference() {
         return reference;
     }
-    
+
     @Override
     public void setTableName(String tableName) {
         this.tableName = tableName;
     }
-    
+
     @Override
     public void setConnectionPoolName(String connectionPoolName) {
         this.connectionPoolName = connectionPoolName;
     }
-    
+
     @Override
     public void setAuths(String auths) {
         this.auths = auths;
     }
-    
+
     @Override
     public void setReloadInterval(long reloadInterval) {
         this.reloadInterval = reloadInterval;
     }
-    
+
     @Override
     public void setLastRefresh(Date lastRefresh) {
         this.lastRefresh = lastRefresh;
     }
-    
+
     @Override
     public void setConnectionFactory(AccumuloConnectionFactory connectionFactory) {
         this.connectionFactory = connectionFactory;
     }
-    
+
     @Override
     public void setInstance(InMemoryInstance instance) {
         this.instance = instance;
     }
-    
+
     @Override
     public void setWatcher(SharedCacheCoordinator watcher) {
         this.watcher = watcher;
     }
-    
+
     @Override
     public void setReference(Future<Boolean> reference) {
         this.reference = reference;
     }
-    
+
     @Override
     public long getMaxRows() {
         return this.maxRows;
     }
-    
+
     @Override
     public void setMaxRows(long maxRows) {
         this.maxRows = maxRows;
     }
-    
+
     @Override
     public Boolean call() throws Exception {
         if (!lock.tryLock(0, TimeUnit.SECONDS))
@@ -164,48 +166,49 @@ public class BaseTableCache implements Serializable, TableCache {
         // Read from the table in the real Accumulo
         BatchScanner scanner = null;
         BatchWriter writer = null;
-        Connector accumuloConn = null;
-        
+        AccumuloClient accumuloClient = null;
+
         String tempTableName = tableName + "Temp";
         try {
             Map<String,String> map = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
-            accumuloConn = connectionFactory.getConnection(connectionPoolName, Priority.ADMIN, map);
-            if (accumuloConn instanceof WrappedConnector) {
-                accumuloConn = ((WrappedConnector) accumuloConn).getReal();
+            accumuloClient = connectionFactory.getClient(connectionPoolName, Priority.ADMIN, map);
+            if (accumuloClient instanceof WrappedAccumuloClient) {
+                accumuloClient = ((WrappedAccumuloClient) accumuloClient).getReal();
             }
-            Authorizations authorizations = null;
+            Authorizations authorizations;
             if (null == auths) {
-                authorizations = accumuloConn.securityOperations().getUserAuthorizations(accumuloConn.whoami());
+                authorizations = accumuloClient.securityOperations().getUserAuthorizations(accumuloClient.whoami());
             } else {
                 authorizations = new Authorizations(auths);
             }
-            scanner = accumuloConn.createBatchScanner(tableName, authorizations, 10);
-            
-            Connector instanceConnector = instance.getConnector(AccumuloTableCache.MOCK_USERNAME, AccumuloTableCache.MOCK_PASSWORD);
-            instanceConnector.securityOperations().changeUserAuthorizations(AccumuloTableCache.MOCK_USERNAME, authorizations);
-            
-            createNamespaceIfNecessary(instanceConnector.namespaceOperations(), tempTableName);
-            
-            if (instanceConnector.tableOperations().exists(tempTableName)) {
-                instanceConnector.tableOperations().delete(tempTableName);
+            scanner = accumuloClient.createBatchScanner(tableName, authorizations, 10);
+
+            AccumuloClient instanceClient = new InMemoryAccumuloClient(AccumuloTableCache.MOCK_USERNAME, instance);
+            instanceClient.securityOperations().changeLocalUserPassword(AccumuloTableCache.MOCK_USERNAME, AccumuloTableCache.MOCK_PASSWORD);
+            instanceClient.securityOperations().changeUserAuthorizations(AccumuloTableCache.MOCK_USERNAME, authorizations);
+
+            createNamespaceIfNecessary(instanceClient.namespaceOperations(), tempTableName);
+
+            if (instanceClient.tableOperations().exists(tempTableName)) {
+                instanceClient.tableOperations().delete(tempTableName);
             }
-            
-            instanceConnector.tableOperations().create(tempTableName);
-            
-            writer = instanceConnector.createBatchWriter(tempTableName, 10L * (1024L * 1024L), 100L, 1);
-            
+
+            instanceClient.tableOperations().create(tempTableName);
+
+            writer = instanceClient.createBatchWriter(tempTableName,
+                            new BatchWriterConfig().setMaxMemory(10L * (1024L * 1024L)).setMaxLatency(100L, TimeUnit.MILLISECONDS).setMaxWriteThreads(1));
             setupScanner(scanner);
-            
+
             Iterator<Entry<Key,Value>> iter = scanner.iterator();
             long count = 0;
             while (iter.hasNext()) {
-                
+
                 if (count > maxRows)
                     break;
                 Entry<Key,Value> value = iter.next();
-                
+
                 Key valueKey = value.getKey();
-                
+
                 Mutation m = new Mutation(value.getKey().getRow());
                 m.put(valueKey.getColumnFamily(), valueKey.getColumnQualifier(), new ColumnVisibility(valueKey.getColumnVisibility()), valueKey.getTimestamp(),
                                 value.getValue());
@@ -214,19 +217,19 @@ public class BaseTableCache implements Serializable, TableCache {
             }
             this.lastRefresh = new Date();
             try {
-                instanceConnector.tableOperations().delete(tableName);
+                instanceClient.tableOperations().delete(tableName);
             } catch (TableNotFoundException e) {
                 // the table will not exist the first time this is run
             }
-            instanceConnector.tableOperations().rename(tempTableName, tableName);
+            instanceClient.tableOperations().rename(tempTableName, tableName);
             log.info("Cached " + count + " k,v for table: " + tableName);
         } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
         } finally {
             try {
-                if (null != accumuloConn)
-                    connectionFactory.returnConnection(accumuloConn);
+                if (null != accumuloClient)
+                    connectionFactory.returnClient(accumuloClient);
             } catch (Exception e) {
                 log.error(e.getMessage(), e);
             }
@@ -242,7 +245,7 @@ public class BaseTableCache implements Serializable, TableCache {
         }
         return true;
     }
-    
+
     public void setupScanner(BatchScanner scanner) {
         scanner.setRanges(Lists.newArrayList(new Range()));
         Map<String,String> options = new HashMap<>();
@@ -251,12 +254,12 @@ public class BaseTableCache implements Serializable, TableCache {
         IteratorSetting settings = new IteratorSetting(100, "skipFColumn", RegExFilter.class, options);
         scanner.addScanIterator(settings);
     }
-    
+
     @Override
     public String toString() {
         return "tableName: " + getTableName() + ", connectionPoolName: " + getConnectionPoolName() + ", auths: " + getAuths();
     }
-    
+
     private void createNamespaceIfNecessary(NamespaceOperations namespaceOperations, String table) throws AccumuloException, AccumuloSecurityException {
         // if the table has a namespace in it that doesn't already exist, create it
         if (table.contains(".")) {

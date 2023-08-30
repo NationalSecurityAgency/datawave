@@ -1,11 +1,25 @@
 package datawave.query.predicate;
 
+import java.nio.charset.CharacterCodingException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Function;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
+
 import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.ingest.data.config.ingest.CompositeIngest;
@@ -19,43 +33,32 @@ import datawave.query.attributes.TypeAttribute;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.commons.collections4.map.LRUMap;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
-import java.nio.charset.CharacterCodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
- * 
+ *
  * Unused. It was written to put Composite Fields into fetched documents. It is preserved in case we change the way composite fields are managed
- * 
- * 
+ *
+ *
  */
 public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<Entry<String,Attribute<? extends Comparable<?>>>>> {
     private static final Logger log = Logger.getLogger(ValueToAttributes.class);
-    
-    private final Text holder = new Text(), cvHolder = new Text();
-    
+
+    private final Text holder = new Text();
+
     private AttributeFactory attrFactory;
-    
+
     private Map<String,Multimap<String,String>> compositeToFieldMap;
     private Map<String,Map<String,String>> compositeFieldSeparatorsByType;
     private MarkingFunctions markingFunctions;
     private Multimap<String,Attribute<?>> componentFieldToValues = ArrayListMultimap.create();
-    
+
     private EventDataQueryFilter attrFilter;
-    
-    private LRUMap cvCache = new LRUMap(256);
-    
-    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions) {
+
+    // Whether the value is from the index
+    private final boolean fromIndex;
+
+    public ValueToAttributes(CompositeMetadata compositeMetadata, TypeMetadata typeMetadata, EventDataQueryFilter attrFilter, MarkingFunctions markingFunctions,
+                    boolean fromIndex) {
         this.attrFactory = new AttributeFactory(typeMetadata);
         this.markingFunctions = markingFunctions;
         this.attrFilter = attrFilter;
@@ -63,20 +66,21 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             this.compositeToFieldMap = compositeMetadata.getCompositeFieldMapByType();
             this.compositeFieldSeparatorsByType = compositeMetadata.getCompositeFieldSeparatorsByType();
         }
+        this.fromIndex = fromIndex;
     }
-    
+
     @Override
     public Iterable<Entry<String,Attribute<? extends Comparable<?>>>> apply(Entry<Key,String> from) {
         String origFieldName = from.getValue();
         String modifiedFieldName = JexlASTHelper.deconstructIdentifier(origFieldName, false);
         Key key = from.getKey();
-        
-        Attribute curAttr = getFieldValue(modifiedFieldName, key);
-        
+
+        Attribute<?> curAttr = getFieldValue(modifiedFieldName, key);
+
         // by default, we will return the attribute for the given entry
         List<Entry<String,Attribute<? extends Comparable<?>>>> list = new ArrayList<>();
-        list.add(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(origFieldName, curAttr));
-        
+        list.add(Maps.immutableEntry(origFieldName, curAttr));
+
         // check to see if we can create any composite attributes using this entry
         String ingestDatatype = this.getDatatypeFromKey(key);
         Multimap<String,String> compToFieldMap = (this.compositeToFieldMap != null) ? this.compositeToFieldMap.get(ingestDatatype) : null;
@@ -86,10 +90,10 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             if (inverted.containsKey(modifiedFieldName)) {
                 // save a list of composites that could be built from this component
                 List<String> compsToBuild = new ArrayList<>(inverted.get(modifiedFieldName));
-                
+
                 // add this component to the list of composite components
                 componentFieldToValues.put(modifiedFieldName, curAttr);
-                
+
                 // try to build each of the composites with this component
                 for (String composite : compsToBuild) {
                     List<Collection<Attribute<?>>> componentAttributes = new ArrayList<>();
@@ -106,7 +110,7 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                             break;
                         }
                     }
-                    
+
                     // if we have attributes for each component, we'll build composites
                     if (componentAttributes.size() == components.size()) {
                         list.addAll(buildCompositesFromComponents(
@@ -118,19 +122,18 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         }
         return list;
     }
-    
+
     private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
                     List<Collection<Attribute<?>>> componentAttributes, String separator) {
         return buildCompositesFromComponents(isOverloadedComposite, compositeField, null, componentAttributes, separator);
     }
-    
+
     private List<Entry<String,Attribute<? extends Comparable<?>>>> buildCompositesFromComponents(boolean isOverloadedComposite, String compositeField,
                     Collection<Attribute<?>> currentAttributes, List<Collection<Attribute<?>>> componentAttributes, String separator) {
         if (componentAttributes == null) {
             // finally create the composite from what we have
             try {
-                return Arrays.asList(Maps.<String,Attribute<? extends Comparable<?>>> immutableEntry(compositeField,
-                                joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
+                return Arrays.asList(Maps.immutableEntry(compositeField, joinAttributes(compositeField, currentAttributes, isOverloadedComposite, separator)));
             } catch (Exception e) {
                 log.debug("could not join attributes:", e);
             }
@@ -147,42 +150,41 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
         }
         return new ArrayList<>();
     }
-    
+
     public String getCompositeAttributeKey(String composite, String grouping) {
         if (grouping == null || grouping.isEmpty()) {
             return composite;
         }
         return composite + JexlASTHelper.GROUPING_CHARACTER_SEPARATOR + grouping;
     }
-    
+
     public Attribute<?> getFieldValue(String fieldName, Key k) {
         k.getColumnQualifier(holder);
         int index = holder.find(Constants.NULL);
-        
+
         if (0 > index) {
             throw new IllegalArgumentException("Could not find null-byte contained in columnqualifier for key: " + k);
         }
-        
+
         try {
             String data = Text.decode(holder.getBytes(), index + 1, (holder.getLength() - (index + 1)));
-            
-            ColumnVisibility cv = getCV(k);
-            
+
             Attribute<?> attr = this.attrFactory.create(fieldName, data, k, (attrFilter == null || attrFilter.keep(k)));
             if (attrFilter != null) {
                 attr.setToKeep(attrFilter.keep(k));
             }
-            
+            attr.setFromIndex(fromIndex);
+
             if (log.isTraceEnabled()) {
                 log.trace("Created " + attr.getClass().getName() + " for " + fieldName);
             }
-            
+
             return attr;
         } catch (CharacterCodingException e) {
             throw new IllegalArgumentException(e);
         }
     }
-    
+
     public Attribute<?> joinAttributes(String compositeName, Collection<Attribute<?>> in, boolean isOverloadedComposite, String separator) throws Exception {
         Collection<ColumnVisibility> columnVisibilities = Sets.newHashSet();
         List<String> dataList = new ArrayList<>();
@@ -246,7 +248,9 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
                 columnVisibilities.add(attr.getColumnVisibility());
             }
         }
-        log.debug("dataList is " + dataList);
+        if (log.isDebugEnabled()) {
+            log.debug("dataList is " + dataList);
+        }
         ColumnVisibility combinedColumnVisibility = this.markingFunctions.combine(columnVisibilities);
         metadata = new Key(metadata.getRow(), metadata.getColumnFamily(), new Text(), combinedColumnVisibility, timestamp);
         if (dataList.size() == 1) {
@@ -259,43 +263,32 @@ public class ValueToAttributes implements Function<Entry<Key,String>,Iterable<En
             return attributes;
         }
     }
-    
+
     private List<String> attributeValues(Attributes attrs) {
         List<String> attributeValues = new ArrayList<>();
-        for (Attribute attr : attrs.getAttributes()) {
+        for (Attribute<?> attr : attrs.getAttributes()) {
             List<String> attrValues = attributeValues(attr);
             if (attrValues != null && !attrValues.isEmpty())
                 attributeValues.addAll(attrValues);
         }
         return attributeValues;
     }
-    
-    private List<String> attributeValues(Attribute attr) {
+
+    private List<String> attributeValues(Attribute<?> attr) {
         if (attr instanceof TypeAttribute) {
-            Type type = ((TypeAttribute) attr).getType();
-            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType) type).getNormalizedValues() : Arrays
-                            .asList(type.getNormalizedValue());
+            Type<?> type = ((TypeAttribute<?>) attr).getType();
+            return (type instanceof OneToManyNormalizerType) ? ((OneToManyNormalizerType<?>) type).getNormalizedValues()
+                            : Arrays.asList(type.getNormalizedValue());
         } else {
             new Exception().printStackTrace(System.err);
             return Arrays.asList(String.valueOf(attr.getData()));
         }
     }
-    
-    private ColumnVisibility getCV(Key k) {
-        Text expr = k.getColumnVisibility(cvHolder);
-        ColumnVisibility vis = (ColumnVisibility) cvCache.get(expr);
-        if (vis == null) {
-            // the column visibility needs to take ownership of the expression
-            vis = new ColumnVisibility(new Text(expr));
-            cvCache.put(expr, vis);
-        }
-        return vis;
-    }
-    
+
     protected String getDatatypeFromKey(Key key) {
-        String colf = key.getColumnFamily().toString();
-        int indexOfNull = colf.indexOf("\0");
-        return colf.substring(0, indexOfNull);
+        String cf = key.getColumnFamily().toString();
+        int indexOfNull = cf.indexOf('\u0000');
+        return cf.substring(0, indexOfNull);
     }
-    
+
 }

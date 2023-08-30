@@ -8,6 +8,13 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
 import datawave.query.util.MetadataHelper;
 import datawave.webservice.common.exception.BadRequestException;
 import datawave.webservice.modification.ModificationOperation.OPERATIONMODE;
@@ -17,13 +24,6 @@ import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.result.VoidResponse;
-
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
 
 /**
  * Class that handles requests for modification requests (INSERT, UPDATE, DELETE, REPLACE) for metadata. From a DefaultUUIDModificationRequest it performs <br>
@@ -36,9 +36,9 @@ import org.apache.log4j.Logger;
  * <br>
  * <br>
  * INSERT Example:
- * 
+ *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -56,12 +56,12 @@ import org.apache.log4j.Logger;
  *   &lt;/Events&gt;
  * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
- * 
+ *
  * <br>
  * DELETE Example:
- * 
+ *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -79,12 +79,12 @@ import org.apache.log4j.Logger;
  *   &lt;/Events&gt;
  * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
- * 
+ *
  * <br>
  * UPDATE Example:
- * 
+ *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -103,12 +103,12 @@ import org.apache.log4j.Logger;
  *   &lt;/Events&gt;
  * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
- * 
+ *
  * <br>
  * REPLACE Example:
- * 
+ *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -126,12 +126,12 @@ import org.apache.log4j.Logger;
  *   &lt;/Events&gt;
  * &lt;/DefaultUUIDModificationRequest&gt;
  * </pre>
- * 
+ *
  * <br>
  * Example of bulk request:
- * 
+ *
  * <pre>
- * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave/v1&quot;&gt;
+ * &lt;DefaultUUIDModificationRequest xmlns=&quot;http://webservice.datawave.nsa/v1&quot;&gt;
  *   &lt;Events&gt;
  *     &lt;Event&gt;
  *       &lt;id&gt;A12BCD34-56E7-8FG9-0HIJ123KLM4N&lt;/id&gt;
@@ -172,27 +172,27 @@ import org.apache.log4j.Logger;
  */
 
 public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
-    
+
     private static final String DESCRIPTION = "Service that processes modification requests of event " + "fields for event(s) identified by an ID.";
     private Logger log = Logger.getLogger(this.getClass());
-    
+
     private String fieldName = "";
     private String fieldValue = "";
     private String oldFieldValue = null;
     private Map<String,OPERATIONMODE> replaceMap = new HashMap<>();
     private String fieldColumnVisibility = "";
     private int fieldCount = 0;
-    
+
     @Override
     public Class<? extends ModificationRequestBase> getRequestClass() {
         return DefaultUUIDModificationRequest.class;
     }
-    
+
     @Override
     public String getDescription() {
         return DESCRIPTION;
     }
-    
+
     public void ResetValues() {
         fieldValue = "";
         fieldCount = 0;
@@ -204,18 +204,18 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
             replaceMap.clear();
         }
     }
-    
+
     @Override
-    public void process(Connector con, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths, String user)
-                    throws BadRequestException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
+    public void process(AccumuloClient client, ModificationRequestBase request, Map<String,Set<String>> mutableFieldList, Set<Authorizations> userAuths,
+                    String user) throws BadRequestException, AccumuloException, AccumuloSecurityException, TableNotFoundException, ExecutionException {
         VoidResponse response = new VoidResponse();
         ArrayList<Exception> exceptions = new ArrayList<>();
-        MetadataHelper mHelper = getMetadataHelper(con);
-        
+        MetadataHelper mHelper = getMetadataHelper(client);
+
         // Receive DefaultUUIDModificationRequest
         DefaultUUIDModificationRequest uuidModReq = DefaultUUIDModificationRequest.class.cast(request);
         List<ModificationEvent> events = uuidModReq.getEvents();
-        
+
         for (ModificationEvent event : events) {
             List<ModificationOperationImpl> operations = event.getOperations();
             for (ModificationOperationImpl operation : operations) {
@@ -224,7 +224,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                 String columnVisibility = operation.getColumnVisibility();
                 String oldColumnVisibility = operation.getOldColumnVisibility();
                 String eventUser = event.getUser();
-                
+
                 // check whether this is a security-marking exempt field. Meaning we can pull the marking if not specified
                 boolean securityMarkingExempt = false;
                 fieldName = operation.getFieldName();
@@ -233,21 +233,21 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                         securityMarkingExempt = true;
                     }
                 }
-                
+
                 // if they are updating, assume the old values should be the same as current
                 if (OPERATIONMODE.UPDATE.equals(mode) && oldColumnVisibility == null) {
                     oldColumnVisibility = columnVisibility;
                 }
-                
+
                 try {
                     if (mHelper.getIndexOnlyFields(mutableFieldList.keySet()).contains(event.getIdType().toUpperCase())) {
                         throw new IllegalStateException("Cannot perform modification because " + event.getIdType() + " is index only. Please search "
                                         + "with a different uuidType to identify the event you wish to modify.");
                     }
-                    
+
                     // perform the lookupUUID
                     EventBase<?,? extends FieldBase<?>> idEvent = findMatchingEventUuid(event.getId(), event.getIdType(), userAuths, operation);
-                    
+
                     // extract contents from lookupUUID necessary for modification
                     List<? extends FieldBase<?>> fields = idEvent.getFields();
                     if (operation.getOldFieldValue() != null)
@@ -257,18 +257,18 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                         for (FieldBase<?> f : fields) {
                             if (f.getName().equals(fieldName)) {
                                 fieldCount++;
-                                
+
                                 // if they are doing a replace, we need all the current values, store them
                                 if (operation.getOperationMode().equals(OPERATIONMODE.REPLACE)) {
                                     if (log != null)
                                         log.trace("Adding " + f.getValueString() + ",delete to replaceMap");
                                     replaceMap.put(f.getValueString(), OPERATIONMODE.DELETE);
                                 }
-                                
+
                                 // user sent an oldValue and we found that value or no oldValue
                                 if ((oldFieldValue != null && f.getValueString().equals(oldFieldValue)) || oldFieldValue == null) {
                                     fieldValue = f.getValueString();
-                                    
+
                                     if (columnVisibility == null && securityMarkingExempt) {
                                         fieldColumnVisibility = f.getColumnVisibility();
                                     }
@@ -282,9 +282,9 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                 fieldColumnVisibility = f.getColumnVisibility();
                             }
                         }
-                        
+
                         List<DefaultModificationRequest> modificationRequests = new ArrayList<>();
-                        
+
                         if (OPERATIONMODE.INSERT.equals(mode) || OPERATIONMODE.UPDATE.equals(mode) || OPERATIONMODE.DELETE.equals(mode)) {
                             modificationRequests
                                             .add(createModificationRequest(idEvent, operation, columnVisibility, oldColumnVisibility, securityMarkingExempt));
@@ -292,7 +292,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                             if (log != null)
                                 log.trace("Adding " + operation.getFieldValue() + ",insert to replaceMap");
                             replaceMap.put(operation.getFieldValue(), OPERATIONMODE.INSERT);
-                            
+
                             // create a modification request of delete for each current value and an insert for the new value
                             for (String s : replaceMap.keySet()) {
                                 ModificationOperation replaceOperation = operation.clone();
@@ -303,7 +303,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                                 securityMarkingExempt));
                             }
                         }
-                        
+
                         if (log != null)
                             log.trace("modificationRequests= " + modificationRequests);
                         for (DefaultModificationRequest modReq : modificationRequests) {
@@ -320,14 +320,14 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                                     log.info("eventUser = " + eventUser + ", event.getUser() = " + event.getUser());
                                     if (log != null)
                                         log.trace("Submitting request to MutableMetadataHandler from MutableMetadataUUIDHandler: " + modReq);
-                                    
+
                                     // make sure user isn't null or empty
                                     if (eventUser == null || eventUser.equals("")) {
                                         if (log != null)
                                             log.trace("No user provided for event. Using caller: " + user);
-                                        super.process(con, modReq, mutableFieldList, userAuths, user);
+                                        super.process(client, modReq, mutableFieldList, userAuths, user);
                                     } else {
-                                        super.process(con, modReq, mutableFieldList, userAuths, event.getUser());
+                                        super.process(client, modReq, mutableFieldList, userAuths, event.getUser());
                                     }
                                 }
                             }
@@ -347,10 +347,10 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
                         log.error("Modification error", e);
                     exceptions.add(new Exception(event.getId() + ": " + e.getMessage() + "\n"));
                 }
-                
+
             }
         }
-        
+
         // If any errors occurred, return them in the response to the user
         if (!exceptions.isEmpty()) {
             for (Exception e : exceptions) {
@@ -361,7 +361,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
             throw new BadRequestException(e, response);
         }
     }
-    
+
     // transforms a ModificationOperation and event information into a DefaultModificationRequest that can be used by the MutableMetadataHandler
     public DefaultModificationRequest createModificationRequest(EventBase<?,? extends FieldBase<?>> idEvent, ModificationOperation operation,
                     String columnVisibility, String oldColumnVisibility, boolean securityMarkingExempt) throws Exception {
@@ -373,11 +373,11 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         List<EventIdentifier> thisEvent = Collections.singletonList(ei);
         if (log != null)
             log.trace("operation=" + operation);
-        
+
         // set values for modification request
         DefaultModificationRequest modReq = new DefaultModificationRequest();
         modReq.setEvents(thisEvent);
-        
+
         if (OPERATIONMODE.INSERT.equals(operation.getOperationMode())) {
             modReq.setMode(MODE.INSERT);
         } else if (OPERATIONMODE.DELETE.equals(operation.getOperationMode())) {
@@ -387,7 +387,7 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
         } else {
             throw new Exception("Invalid operationMode: " + operation.getOperationMode());
         }
-        
+
         modReq.setFieldName(fieldName);
         modReq.setFieldMarkings(null);
         modReq.setColumnVisibility(columnVisibility);
@@ -397,10 +397,10 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
             // replace potential brackets with nothing so the visibility can be parsed correctly
             fieldColumnVisibility = fieldColumnVisibility.replaceAll("\\[", "");
             fieldColumnVisibility = fieldColumnVisibility.replaceAll("\\]", "");
-            
+
             modReq.setColumnVisibility(fieldColumnVisibility);
         }
-        
+
         if (modReq.getMode() == MODE.UPDATE) {
             modReq.setFieldValue(operation.getFieldValue());
             modReq.setOldFieldValue(fieldValue);
@@ -412,10 +412,10 @@ public class MutableMetadataUUIDHandler extends MutableMetadataHandler {
             else
                 modReq.setFieldValue(oldFieldValue);
         }
-        
+
         if (log != null)
             log.trace("Returning modReq=" + modReq);
         return modReq;
     }
-    
+
 }

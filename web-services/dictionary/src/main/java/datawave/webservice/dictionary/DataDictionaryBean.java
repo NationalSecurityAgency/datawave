@@ -1,8 +1,6 @@
 package datawave.webservice.dictionary;
 
-import datawave.webservice.datadictionary.RemoteDataDictionary;
-import org.apache.http.client.utils.URIBuilder;
-import org.xbill.DNS.TextParseException;
+import java.net.URISyntaxException;
 
 import javax.annotation.security.PermitAll;
 import javax.ejb.LocalBean;
@@ -14,7 +12,11 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.net.URISyntaxException;
+
+import org.apache.http.client.utils.URIBuilder;
+import org.xbill.DNS.TextParseException;
+
+import datawave.webservice.datadictionary.RemoteDataDictionary;
 
 /**
  * A simple proxy that redirects GET requests for the DataDictionary to the external dictionary service that is configured in the {@link RemoteDataDictionary}.
@@ -25,11 +27,11 @@ import java.net.URISyntaxException;
 @Stateless
 @PermitAll
 public class DataDictionaryBean {
-    
+
     @Inject
     private RemoteDataDictionary remoteDataDictionary;
-    
-    /**
+
+    /*
      * Capture and redirect GET requests to the root path for the data dictionary.
      */
     @GET
@@ -37,8 +39,8 @@ public class DataDictionaryBean {
     public Response getDataDictionary(@Context UriInfo uriInfo) throws TextParseException, URISyntaxException {
         return sendRedirect("", uriInfo);
     }
-    
-    /**
+
+    /*
      * Capture and redirect GET requests to any sub-path for the data dictionary.
      */
     @GET
@@ -46,7 +48,7 @@ public class DataDictionaryBean {
     public Response getDataDictionaryWithSuffix(@PathParam("suffix") String suffix, @Context UriInfo uriInfo) throws TextParseException, URISyntaxException {
         return sendRedirect(suffix, uriInfo);
     }
-    
+
     private Response sendRedirect(String suffix, UriInfo uriInfo) throws TextParseException, URISyntaxException {
         URIBuilder builder = remoteDataDictionary.buildURI(suffix);
         uriInfo.getQueryParameters().forEach((pname, valueList) -> valueList.forEach(pvalue -> builder.addParameter(pname, pvalue)));

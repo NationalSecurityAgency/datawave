@@ -1,69 +1,63 @@
 package datawave.query.jexl.nodes;
 
+import java.util.function.Function;
+
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
 
 /**
  * This is a node that can wrap an expression (normally an EQ or RE node) to denote that it references a known hole in the global index.
  */
 public class IndexHoleMarkerJexlNode extends QueryPropertyMarker {
-    
-    public IndexHoleMarkerJexlNode(int id) {
-        super(id);
+
+    private static final String LABEL = "_Hole_";
+
+    /**
+     * Return the label this marker type: {@value #LABEL}. Overrides {@link QueryPropertyMarker#label()}.
+     *
+     * @return the label
+     */
+    public static String label() {
+        return LABEL;
     }
-    
+
+    /**
+     * Create and return a new {@link IndexHoleMarkerJexlNode} with the given source.
+     *
+     * @param node
+     *            the source node
+     * @return the new marker node
+     * @see QueryPropertyMarker#create(JexlNode, Function)
+     */
+    public static IndexHoleMarkerJexlNode create(JexlNode node) {
+        return create(node, IndexHoleMarkerJexlNode::new);
+    }
+
     public IndexHoleMarkerJexlNode() {
         super();
     }
-    
+
+    public IndexHoleMarkerJexlNode(int id) {
+        super(id);
+    }
+
     /**
-     * This will create a structure as follows around the specified node: Reference (this node) Reference Expression AND Reference Reference Expression
-     * Assignment Reference Identifier:IndexHoleMarkerJexlNode True node (the one specified
-     *
-     * Hence the resulting expression will be ((IndexHoleMarkerJexlNode = True) AND {specified node})
+     * Returns a new query property marker with the expression <code>(({@value #LABEL} = true) &amp;&amp; ({source}))</code>.
      *
      * @param node
+     *            the source node
+     * @see QueryPropertyMarker#QueryPropertyMarker(JexlNode) the super constructor for additional information on the tree structure
      */
     public IndexHoleMarkerJexlNode(JexlNode node) {
         super(node);
     }
-    
+
     /**
-     * @param node
-     * @return
+     * Returns {@value #LABEL}.
+     *
+     * @return the label
      */
-    public static IndexHoleMarkerJexlNode create(JexlNode node) {
-        
-        JexlNode parent = node.jjtGetParent();
-        
-        IndexHoleMarkerJexlNode expr = new IndexHoleMarkerJexlNode(node);
-        
-        if (parent != null) {
-            JexlNodes.replaceChild(parent, node, expr);
-        }
-        
-        return expr;
+    @Override
+    public String getLabel() {
+        return LABEL;
     }
-    
-    /**
-     * A routine to determine whether an and node is actually an index hold marker. The reason for this routine is that if the query is serialized and
-     * deserialized, then only the underlying assignment will persist.
-     * 
-     * @param node
-     * @return true if this and node is an index hold marker
-     */
-    public static boolean instanceOf(JexlNode node) {
-        return instanceOf(node, IndexHoleMarkerJexlNode.class);
-    }
-    
-    /**
-     * A routine to determine get the node which is the source of the index hold (i.e. the underlying eq, regex or range)
-     * 
-     * @param node
-     * @return the source node or null if not an an index hole Marker
-     */
-    public static JexlNode getIndexHoleSource(JexlNode node) {
-        return getQueryPropertySource(node, IndexHoleMarkerJexlNode.class);
-    }
-    
 }

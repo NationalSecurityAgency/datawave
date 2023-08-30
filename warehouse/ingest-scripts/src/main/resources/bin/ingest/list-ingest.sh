@@ -15,8 +15,8 @@ FORCE=true
 host=`hostname -s`
 ps -efww | egrep "bash .*bulk-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Bulk Ingest Server/"
 ps -efww | egrep "bash .*live-ingest-server.sh" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Live Ingest Server/"
-ps -efww | egrep "bash .*execute-ingest.sh.*" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*ingest.sh .*\/flags\/\([[:graph:]]*\).*/$host: \1: Ingest Job \2/"
+ps -efww | egrep "bash .*execute-ingest.sh.*" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*ingest.sh .*\/flags\/\([[:graph:]]*\).*/$host: \1: Ingest Job: \2/"
 ps -efww | egrep "python .*cleanup-server.py.*" | grep -v grep | sed "s/[[:graph:]]* *\([[:digit:]]*\).*/$host: \1: Cleanup Server/"
 ./list-loader.sh
-ps -efww | egrep "python .*_flag_maker.py.*" | grep -v grep | grep -v sed | sed "s/[[:graph:]]* *\([[:digit:]]*\).*\/ingest\/\(.*\)_flag_maker.py.*/$host: \1: \2 Flag Maker/"
-jps -m | egrep FlagMaker | grep -v grep | grep -v sed | sed "s/\([[:digit:]]*\).*-flagConfig \(.*\)/$host: \1: \2 Flag Maker/"
+ps -efww | egrep "python .*_flag_maker.py.*" | grep -v grep | grep -v sed | sed "s/[[:graph:]]* *\([[:digit:]]*\).*\/ingest\/\(.*\)_flag_maker.py.*/$host: \1: Flag Maker: \2/"
+jps -m | egrep FlagMaker | grep -v grep | grep -v sed | sed "s/\([[:digit:]]*\).*-flagConfig \(.*\)/$host: \1: Flag Maker: \2/"

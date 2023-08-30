@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!--
+    This should be opened up for debate, but for now all DM_DEFAULT_ENCODING
+    occurrences are being excluded due to the large number of hits.
+
+    The debate includes, but is not limited to, A) modifying code to use a specific
+    charset, e.g.,'StandardCharsets.UTF_8', for *every* flagged method/constructor
+    invocation, or B) overriding the local default encoding via JVM system property
+    instead, which requires zero code, e.g.,
+
+       java -Dfile.encoding="UTF-8" ...
+
+    However, there are caveats with overriding in this manner. See the following
+    for background...
+
+       https://bugs.openjdk.java.net/browse/JDK-8187041
+       https://www.baeldung.com/java-char-encoding
+    -->
+    <Match>
+        <Bug pattern="DM_DEFAULT_ENCODING" />
+    </Match>
+
+    <!--
+    Auto-generated protobuf classes
+    -->
+
+    <Match>
+        <Class name="~datawave\.edge\.protobuf\.EdgeData.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.ingest\.protobuf\.TermWeight.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.ingest\.protobuf\.Uid.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.user\.UserMessages.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.webservice\.query\.QueryMessages.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.webservice\.query\.exception\.ExceptionMessages.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.webservice\.query\.metric\.MetricsMessages.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.webservice\.result\.ResponseMessages.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.webservice\.results\.cached.result\.CachedresultMessages.*" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.ingest\.protobuf\.RawRecordContainer.*" />
+    </Match>
+
+    <!--
+    The offending MarkingFunctionsFactory instance is a container-managed singleton,
+    so not really a concern. Having 'postConstruct' (instance method) delegate this
+    write to a new static method would silence this bug, but that seems unnecessary
+    -->
+    <Match>
+        <Class name="datawave.marking.MarkingFunctionsFactory" />
+        <Field name="markingFunctions" />
+        <Bug pattern="ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD" />
+    </Match>
+
+    <!--
+    Are we sure that System.gc() call is providing the expected benefit?
+    -->
+    <Match>
+        <Class name="datawave.ingest.mapreduce.job.BulkIngestMapFileLoader" />
+        <Method name="sleep" />
+        <Bug pattern="DM_GC" />
+    </Match>
+
+    <!--
+    The exception is ignored in this case b/c the preferred default value is defined just prior
+    to the potential NumberFormatException, and error handling is deferred to just outside the
+    try/catch scope
+    -->
+    <Match>
+        <Class name="datawave.query.language.parser.lucene.AccumuloSyntaxParser" />
+        <Method name="Term" />
+        <Bug pattern="DE_MIGHT_IGNORE" />
+    </Match>
+
+    <!--
+    The transient currentRow field will take its default value upon deserialization, and that is
+    exactly what is desired here. Implementing custom serialization (readObject/writeObject) to
+    silence this finding isn't needed/justified
+    -->
+    <Match>
+        <Class name="datawave.webservice.results.cached.CachedRunningQuery" />
+        <Field name="currentRow" />
+        <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED" />
+    </Match>
+
+    <!--
+    Equals method is only implemented in order to throw UnsupportedOperationException.
+    So, there's no reason to override Object.hashCode
+    -->
+    <Match>
+        <Class name="datawave.query.iterator.ParentQueryIterator$KeepAllFlagSetter" />
+        <Bug pattern="HE_EQUALS_USE_HASHCODE" />
+    </Match>
+
+    <!--
+    Needs further review. See inline code comments
+    -->
+    <Match>
+        <Class name="datawave.query.language.functions.jexl.Chain" />
+        <Bug pattern="RE_POSSIBLE_UNINTENDED_PATTERN" />
+    </Match>
+
+    <!--
+    For the CN_IDIOM_NO_SUPER_CALL instances excluded below, the super.clone() call is sometimes not
+    possible, i.e., because clone() is abstract in the superclass. In all cases, it is not actually
+    warranted b/c we are simply using clone() to delegate instantiation to a copy constructor, which
+    inevitably invokes the superclass constructor as appropriate
+
+    We should probably re-evaluate the utility of implementing clone/Cloneable at all...
+
+        https://www.artima.com/intv/bloch13.html
+    -->
+
+    <Match>
+        <Class name="~datawave\.query\..*" />
+        <Method name="clone" />
+        <Bug pattern="CN_IDIOM_NO_SUPER_CALL" />
+    </Match>
+
+    <!-- False-positive: byteSeq local var is clearly being used in multiple places (??) -->
+    <Match>
+        <Class name="datawave.query.transformer.UniqueTransform" />
+        <Method name="isDuplicate" />
+        <Bug pattern="DLS_DEAD_LOCAL_STORE" />
+    </Match>
+
+    <!-- False-positive?? -->
+    <Match>
+        <Class name="~datawave\.query\.util\.cache.*Loader" />
+        <Method name="load" />
+        <Bug pattern="NP_NONNULL_PARAM_VIOLATION" />
+    </Match>
+    <Match>
+        <Class name="datawave.query.index.lookup.TupleToRange" />
+        <Method name="createDayRange" />
+        <Bug pattern="NP_NULL_PARAM_DEREF" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.query.*Configuration" />
+        <Field type="java.util.Map" />
+        <Bug pattern="SE_BAD_FIELD" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.query.*Configuration" />
+        <Field type="java.util.Set" />
+        <Bug pattern="SE_BAD_FIELD" />
+    </Match>
+
+    <Match>
+        <Class name="~datawave\.query.*Configuration" />
+        <Field type="java.util.List" />
+        <Bug pattern="SE_BAD_FIELD" />
+    </Match>
+
+</FindBugsFilter>

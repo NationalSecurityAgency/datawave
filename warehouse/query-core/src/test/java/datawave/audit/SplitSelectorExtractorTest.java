@@ -1,18 +1,20 @@
 package datawave.audit;
 
-import com.google.common.collect.Lists;
 import java.util.List;
 
-import datawave.webservice.query.QueryImpl;
 import org.apache.commons.lang.math.IntRange;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
+
+import datawave.webservice.query.QueryImpl;
+
 public class SplitSelectorExtractorTest {
-    
+
     @Test
     public void extractSelectorsLuceneQuery1() {
-        
+
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         QueryImpl q = new QueryImpl();
         q.setQuery("selector1");
@@ -20,10 +22,10 @@ public class SplitSelectorExtractorTest {
         List<String> expected = Lists.newArrayList("selector1");
         Assert.assertEquals(expected, selectorList);
     }
-    
+
     @Test
     public void extractSelectorsLuceneQuery2() {
-        
+
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         extractor.setSeparatorCharacter(";");
         QueryImpl q = new QueryImpl();
@@ -32,10 +34,10 @@ public class SplitSelectorExtractorTest {
         List<String> expected = Lists.newArrayList("selector1", "selector2", "selector3");
         Assert.assertEquals(expected, selectorList);
     }
-    
+
     @Test
     public void extractSelectorsLuceneQuery3() {
-        
+
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         extractor.setSeparatorCharacter("\0");
         QueryImpl q = new QueryImpl();
@@ -44,10 +46,10 @@ public class SplitSelectorExtractorTest {
         List<String> expected = Lists.newArrayList("selector1", "selector2", "selector3");
         Assert.assertEquals(expected, selectorList);
     }
-    
+
     @Test
     public void extractSelectorsLuceneQuery4() {
-        
+
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
         extractor.setSeparatorParameter("delimiter");
         QueryImpl q = new QueryImpl();
@@ -57,7 +59,7 @@ public class SplitSelectorExtractorTest {
         List<String> expected = Lists.newArrayList("selector1", "selector2", "selector3");
         Assert.assertEquals(expected, selectorList);
     }
-    
+
     @Test
     public void rangeTest1() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
@@ -67,7 +69,7 @@ public class SplitSelectorExtractorTest {
         Assert.assertTrue(extractor.useSplit(useSplitRanges, 2));
         Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
     }
-    
+
     @Test
     public void rangeTest2() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
@@ -76,7 +78,7 @@ public class SplitSelectorExtractorTest {
         Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
         Assert.assertTrue(extractor.useSplit(useSplitRanges, 4));
     }
-    
+
     @Test
     public void rangeTest3() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
@@ -85,7 +87,7 @@ public class SplitSelectorExtractorTest {
         Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
         Assert.assertTrue(extractor.useSplit(useSplitRanges, 4));
     }
-    
+
     @Test
     public void rangeTest4() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
@@ -98,7 +100,7 @@ public class SplitSelectorExtractorTest {
         Assert.assertTrue(extractor.useSplit(useSplitRanges, 100));
         Assert.assertTrue(extractor.useSplit(useSplitRanges, 1000));
     }
-    
+
     @Test
     public void rangeTest5() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
@@ -111,7 +113,7 @@ public class SplitSelectorExtractorTest {
         Assert.assertTrue(extractor.useSplit(useSplitRanges, 100));
         Assert.assertTrue(extractor.useSplit(useSplitRanges, 1000));
     }
-    
+
     @Test
     public void rangeTest6() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();

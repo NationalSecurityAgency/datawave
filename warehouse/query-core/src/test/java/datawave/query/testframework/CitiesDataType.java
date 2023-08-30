@@ -1,14 +1,5 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.data.type.LcNoDiacriticsType;
-import datawave.data.type.NumberType;
-import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ingest.BaseIngestHelper;
-import datawave.ingest.input.reader.EventRecordReader;
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.HashMap;
@@ -20,14 +11,27 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+
+import datawave.data.normalizer.Normalizer;
+import datawave.data.type.GeoType;
+import datawave.data.type.LcNoDiacriticsType;
+import datawave.data.type.NumberType;
+import datawave.ingest.csv.config.helper.ExtendedCSVHelper;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ingest.BaseIngestHelper;
+import datawave.ingest.input.reader.EventRecordReader;
+import datawave.marking.MarkingFunctions;
+
 /**
  * Contains all of the relevant data needed to configure any of the cities data types.
  */
 public class CitiesDataType extends AbstractDataTypeConfig {
-    
+
     private static final Logger log = Logger.getLogger(CitiesDataType.class);
     private static final Random rVal = new Random(System.currentTimeMillis());
-    
+
     /**
      * Contains predefined names for the cities datatype. Each enumeration will contain the path of the data ingest file.
      */
@@ -49,29 +53,29 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         multivalue("input/multivalue-cities.csv", "multi"),
         // values for max expansion tests
         maxExp("input/max-expansion-cities.csv", "max-exp");
-        
+
         private final String ingestFile;
         private final String cityName; // also serves as datatype
-        
+
         CityEntry(final String file, final String name) {
             this.ingestFile = file;
             this.cityName = name;
         }
-        
-        private String getIngestFile() {
+
+        public String getIngestFile() {
             return this.ingestFile;
         }
-        
+
         /**
          * Returns the datatype for the entry.
-         * 
+         *
          * @return datatype for instance
          */
         public String getDataType() {
             return this.cityName;
         }
     }
-    
+
     /**
      * Defines the data fields for cities datatype.
      */
@@ -85,14 +89,15 @@ public class CitiesDataType extends AbstractDataTypeConfig {
         CONTINENT(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         CODE(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
         ACCESS(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
-        NUM((Normalizer.NUMBER_NORMALIZER));
-        
+        NUM((Normalizer.NUMBER_NORMALIZER)),
+        GEO(Normalizer.GEO_NORMALIZER);
+
         private static final List<String> Headers;
-        
+
         static {
             Headers = Stream.of(CityField.values()).map(e -> e.name()).collect(Collectors.toList());
         }
-        
+
         /**
          * Retrieves the enumeration that matches the specified field.
          *
@@ -108,14 +113,14 @@ public class CitiesDataType extends AbstractDataTypeConfig {
                     return f;
                 }
             }
-            
+
             throw new AssertionError("invalid city field(" + field + ")");
         }
-        
+
         public static List<String> headers() {
             return Headers;
         }
-        
+
         private static final Map<String,RawMetaData> fieldMetadata;
         static {
             fieldMetadata = new HashMap<>();
@@ -123,16 +128,16 @@ public class CitiesDataType extends AbstractDataTypeConfig {
                 fieldMetadata.put(field.name().toLowerCase(), field.metadata);
             }
         }
-        
+
         /**
          * Returns mapping of ip address fields to the metadata for the field.
-         * 
+         *
          * @return populate map
          */
         public static Map<String,RawMetaData> getFieldsMetadata() {
             return fieldMetadata;
         }
-        
+
         /**
          * Returns a random set of fields, with or without {@link #EVENT_ID}.
          *
@@ -147,29 +152,29 @@ public class CitiesDataType extends AbstractDataTypeConfig {
                     fields.add(field.name());
                 }
             }
-            
+
             // check to see if event id must be included
             if (withEventId) {
                 fields.add(CityField.EVENT_ID.name());
             } else {
                 fields.remove(CityField.EVENT_ID.name());
             }
-            
+
             return fields;
         }
-        
+
         private static final Map<String,RawMetaData> metadataMapping = new HashMap<>();
-        
+
         private RawMetaData metadata;
-        
+
         CityField(final Normalizer<?> normalizer) {
             this(normalizer, false);
         }
-        
+
         CityField(final Normalizer<?> normalizer, final boolean isMulti) {
             this.metadata = new RawMetaData(this.name(), normalizer, isMulti);
         }
-        
+
         /**
          * Returns the metadata for this field.
          *
@@ -179,15 +184,15 @@ public class CitiesDataType extends AbstractDataTypeConfig {
             return metadata;
         }
     }
-    
+
     // ==================================
     // data manager info
     private static final RawDataManager cityManager = new CityDataManager();
-    
+
     public static RawDataManager getManager() {
         return cityManager;
     }
-    
+
     /**
      * Creates a cities datatype entry with all of the key/value configuration settings.
      *
@@ -203,10 +208,10 @@ public class CitiesDataType extends AbstractDataTypeConfig {
     public CitiesDataType(final CityEntry city, final FieldConfig config) throws IOException, URISyntaxException {
         this(city.getDataType(), city.getIngestFile(), config);
     }
-    
+
     /**
      * Constructor for city/ingest files that are not defined in the class {@link CityEntry}.
-     * 
+     *
      * @param city
      *            name of the city datatype
      * @param ingestFile
@@ -220,24 +225,48 @@ public class CitiesDataType extends AbstractDataTypeConfig {
      */
     public CitiesDataType(final String city, final String ingestFile, final FieldConfig config) throws IOException, URISyntaxException {
         super(city, ingestFile, config, cityManager);
-        
+
         // NOTE: see super for default settings
         // set datatype settings
         this.hConf.set(this.dataType + "." + CityField.NUM.name() + BaseIngestHelper.FIELD_TYPE, NumberType.class.getName());
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_NAME, CityField.START_DATE.name());
         this.hConf.set(this.dataType + EventRecordReader.Properties.EVENT_DATE_FIELD_FORMAT, DATE_FIELD_FORMAT);
-        
+
         this.hConf.set(this.dataType + ExtendedCSVHelper.Properties.EVENT_ID_FIELD_NAME, CityField.EVENT_ID.name());
-        
+
         // fields
         this.hConf.set(this.dataType + CSVHelper.DATA_HEADER, String.join(",", CityField.headers()));
-        
+
         // the CODE field type needs to be set for the index hole tests
         this.hConf.set(this.dataType + "." + CityField.CODE.name() + BaseIngestHelper.FIELD_TYPE, LcNoDiacriticsType.class.getName());
-        
+
+        this.hConf.set(this.dataType + "." + CityField.GEO.name() + BaseIngestHelper.FIELD_TYPE, GeoType.class.getName());
+
         log.debug(this.toString());
     }
-    
+
+    private static final String[] AUTH_VALUES = new String[] {"Euro", "NA"};
+    private static final Authorizations TEST_AUTHS = new Authorizations(AUTH_VALUES);
+    private static final Authorizations EXPANSION_AUTHS = new Authorizations("ct-a", "b-ct", "not-b-ct");
+
+    public static Authorizations getTestAuths() {
+        return TEST_AUTHS;
+    }
+
+    public static Authorizations getExpansionAuths() {
+        return EXPANSION_AUTHS;
+    }
+
+    @Override
+    public String getSecurityMarkingFieldNames() {
+        return CityField.ACCESS.name();
+    }
+
+    @Override
+    public String getSecurityMarkingFieldDomains() {
+        return MarkingFunctions.Default.COLUMN_VISIBILITY;
+    }
+
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "{" + super.toString() + "}";

@@ -1,57 +1,60 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.webservice.common.logging.ThreadConfigurableLogger;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.junit.Test;
+
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+
 public class HasUnfieldedTermVisitorTest {
-    
-    private static final Logger log = ThreadConfigurableLogger.getLogger(HasUnfieldedTermVisitorTest.class);
-    
-    String[] originalQueries = { //
-    
-    "_ANYFIELD_ == 'FOO'", //
-            "AG.max() == 40", //
-            "BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'", //
-            "FOO == 'bar'"};
-    boolean[] expectedResults = {true, false, false, false};
-    
+
+    private ASTJexlScript script;
+
     @Test
     public void test() throws Exception {
-        
-        for (int i = 0; i < originalQueries.length; i++) {
-            String query = originalQueries[i];
-            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
-            
-            Assert.assertEquals("query:" + query, expectedResults[i],
-                            ((AtomicBoolean) new JexlASTHelper.HasUnfieldedTermVisitor().visit(script, new AtomicBoolean(false))).get());
-        }
+        givenJexlQuery("_ANYFIELD_ == 'FOO'");
+        assertTrue(hasUnfieldedTermVisitor());
+
+        givenJexlQuery("AG.max() == 40");
+        assertFalse(hasUnfieldedTermVisitor());
+
+        givenJexlQuery("BIRTH_DATE.min() < '1920-12-28T00:00:05.000Z'");
+        assertFalse(hasUnfieldedTermVisitor());
+
+        givenJexlQuery("FOO == 'bar'");
+        assertFalse(hasUnfieldedTermVisitor());
     }
-    
+
     @Test
     public void testLucene() throws Exception {
-        
-        String[] originalQueries = { //
-        
-        "FOO", //
-                "FOO || BAR || AG:40", //
-                "BIRTH_DATE:1920", //
-                "FOO:bar"};
-        boolean[] expectedResults = {true, true, false, false};
-        for (int i = 0; i < originalQueries.length; i++) {
-            String query = originalQueries[i];
-            ASTJexlScript script = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(query).toString());
-            // JexlASTHelper.parseJexlQuery(query);
-            
-            Assert.assertEquals("query:" + query, expectedResults[i],
-                            ((AtomicBoolean) new JexlASTHelper.HasUnfieldedTermVisitor().visit(script, new AtomicBoolean(false))).get());
-        }
+        givenLuceneQuery("FOO");
+        assertTrue(hasUnfieldedTermVisitor());
+
+        givenLuceneQuery("FOO || BAR || AG:40");
+        assertTrue(hasUnfieldedTermVisitor());
+
+        givenLuceneQuery("BIRTH_DATE:1920");
+        assertFalse(hasUnfieldedTermVisitor());
+
+        givenLuceneQuery("FOO:bar");
+        assertFalse(hasUnfieldedTermVisitor());
     }
-    
+
+    private void givenJexlQuery(String query) throws ParseException {
+        script = JexlASTHelper.parseJexlQuery(query);
+    }
+
+    private void givenLuceneQuery(String query) throws datawave.query.language.parser.ParseException, ParseException {
+        script = JexlASTHelper.parseJexlQuery(new LuceneToJexlQueryParser().convertToJexlNode(query).toString());
+    }
+
+    private boolean hasUnfieldedTermVisitor() {
+        return ((AtomicBoolean) new JexlASTHelper.HasUnfieldedTermVisitor().visit(script, new AtomicBoolean(false))).get();
+    }
 }

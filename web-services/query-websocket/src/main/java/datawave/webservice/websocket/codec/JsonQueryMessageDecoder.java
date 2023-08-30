@@ -4,16 +4,18 @@ import java.io.StringReader;
 
 import javax.json.Json;
 import javax.json.JsonException;
+import javax.json.JsonReader;
 import javax.json.stream.JsonParser;
 import javax.websocket.DecodeException;
 import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
 import datawave.webservice.websocket.messages.CancelMessage;
 import datawave.webservice.websocket.messages.CreateQueryMessage;
 import datawave.webservice.websocket.messages.QueryMessage;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
 /**
  * Decodes incoming JSON text into a {@link QueryMessage}. Based on the message content, the returned object will be one of the known types of query messages.
@@ -22,11 +24,12 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
     @Override
     public QueryMessage decode(String s) throws DecodeException {
         MultivaluedMapImpl<String,String> map = new MultivaluedMapImpl<>();
-        JsonParser parser = Json.createParser(new StringReader(s));
-        while (parser.hasNext()) {
-            if (parser.next() == JsonParser.Event.KEY_NAME) {
-                String key = parser.getString();
-                addValueToMap(key, parser, map);
+        try (JsonParser parser = Json.createParser(new StringReader(s))) {
+            while (parser.hasNext()) {
+                if (parser.next() == JsonParser.Event.KEY_NAME) {
+                    String key = parser.getString();
+                    addValueToMap(key, parser, map);
+                }
             }
         }
         if (map.size() == 1 && map.containsKey("cancel"))
@@ -34,7 +37,7 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
         else
             return new CreateQueryMessage(map);
     }
-    
+
     private void addValueToMap(String key, JsonParser parser, MultivaluedMap<String,String> map) {
         boolean done = true; // By default we expect only a single value, but we could see an array.
         do {
@@ -65,21 +68,21 @@ public class JsonQueryMessageDecoder implements Decoder.Text<QueryMessage> {
             }
         } while (!done);
     }
-    
+
     @Override
     public boolean willDecode(String s) {
         // See if it's valid JSON. If so, then we indicate we can read it.
-        try {
-            Json.createReader(new StringReader(s)).read();
+        try (JsonReader reader = Json.createReader(new StringReader(s))) {
+            reader.read();
             return true;
         } catch (JsonException | IllegalStateException e) {
             return false;
         }
     }
-    
+
     @Override
     public void init(EndpointConfig config) {}
-    
+
     @Override
     public void destroy() {}
 }

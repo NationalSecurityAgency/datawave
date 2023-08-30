@@ -1,17 +1,17 @@
-20150707,ldn-uk-7,London,London,United Kingdom,Europe,GBR,Euro,10
-20150707,ldn-usa-tx-7, London,Texas,United States,North America,USA,NA,101
-20150707,ldn-usa-mi-7, London,Michigan,United States,North America,USA,NA,111
-20150707,ldn-usa-oh-7,London,Ohio,United States,North America,USA,NA,145
-20150707,ldn-usa-or-7,London,Oregon,United States,North America,USA,NA,155
-20150707,ldn-usa-ca-7,London,California,United States,North America,USA,NA,133
-20150808,ldn-usa-tx-8,London,Texas,United States,North America,USA,NA,102
-20150808,ldn-usa-mi-8,London,Michigan,United States,North America,USA,NA,112
-20150808,ldn-usa-oh-8,London,Ohio,United States,North America,USA,NA,146
-20150808,ldn-usa-or-8,London,Oregon,United States,North America,USA,NA,134
-20150808,ldn-usa-ca-8,London,California,United States,North America,USA,NA,166
-20160404,ldn-can-4,London,Ontario,Canada,North America,CAN,NA,210
-20160404,ldn-ven-4,London,Miranda,Venezuela,South America,VEN,SA,500
-20160404,ldn-rus-4,London,Altaisky krai,Russia,Asia,RUS,Asia,303
-20160404,ldn-usa-ca-4,London,California,United States,North America,USA,NA,165
-20160505,ldn-nga-5,London,Delta,Nigeria,Africa,NGA,AF,722
-20160505,ldn-usa-ca-5,London,California,United States,North America,USA,NA,164
+20150707,ldn-uk-7,London,London,United Kingdom,Europe,GBR,Euro,10,0_0
+20150707,ldn-usa-tx-7, London,Texas,United States,North America,USA,NA,101,0_0
+20150707,ldn-usa-mi-7, London,Michigan,United States,North America,USA,NA,111,0_0
+20150707,ldn-usa-oh-7,London,Ohio,United States,North America,USA,NA,145,0_0
+20150707,ldn-usa-or-7,London,Oregon,United States,North America,USA,NA,155,0_0
+20150707,ldn-usa-ca-7,London,California,United States,North America,USA,NA,133,0_0
+20150808,ldn-usa-tx-8,London,Texas,United States,North America,USA,NA,102,0_0
+20150808,ldn-usa-mi-8,London,Michigan,United States,North America,USA,NA,112,0_0
+20150808,ldn-usa-oh-8,London,Ohio,United States,North America,USA,NA,146,0_0
+20150808,ldn-usa-or-8,London,Oregon,United States,North America,USA,NA,134,0_0
+20150808,ldn-usa-ca-8,London,California,United States,North America,USA,NA,166,0_0
+20160404,ldn-can-4,London,Ontario,Canada,North America,CAN,NA,210,0_0
+20160404,ldn-ven-4,London,Miranda,Venezuela,South America,VEN,SA,500,0_0
+20160404,ldn-rus-4,London,Altaisky krai,Russia,Asia,RUS,Asia,303,0_0
+20160404,ldn-usa-ca-4,London,California,United States,North America,USA,NA,165,0_0
+20160505,ldn-nga-5,London,Delta,Nigeria,Africa,NGA,AF,722,0_0
+20160505,ldn-usa-ca-5,London,California,United States,North America,USA,NA,164,0_0

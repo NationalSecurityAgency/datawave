@@ -1,4 +1,16 @@
 #!/bin/bash
+
+if [[ `uname` == "Darwin" ]]; then
+        THIS_SCRIPT=`python -c 'import os,sys;print os.path.realpath(sys.argv[1])' $0`
+else
+        THIS_SCRIPT=`readlink -f $0`
+fi
+
+THIS_DIR="${THIS_SCRIPT%/*}"
+cd $THIS_DIR
+
+. ../util/pid-functions.sh
+
 function usage
 {
     echo -e "usage: stop-ingest-servers.sh [options] where options include:\n
@@ -6,6 +18,8 @@ function usage
     \t-signal\tSignal command to send as first arg to kill
     \t-help\tprint this message\n"
 }
+
+MAX_SLEEP_TIME_SECS="${MAX_SLEEP_TIME_SECS:-30}"
 
 BULK_SCRIPT="bulk-ingest-server.sh"
 BULK_TEXT="bulk"
@@ -69,6 +83,7 @@ do
      else
         echo "stopping ${!text} ingest server $SIGNAL"
         kill $SIGNAL $PID
+        pid::waitForDeath ${PID} ${MAX_SLEEP_TIME_SECS}
      fi
 done
 

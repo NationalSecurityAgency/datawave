@@ -71,6 +71,7 @@
             <useStrictFiltering>true</useStrictFiltering>
             <fileMode>0444</fileMode>
             <includes>
+                  <include>commons-lang:commons-lang</include>
                   <include>org.apache.commons:commons-lang3</include>
                   <include>commons-pool:commons-pool</include>
                   <include>com.google.protobuf:protobuf-java</include>
@@ -93,7 +94,7 @@
             <includes>
                 <include>org.apache.commons:commons-collections4</include>
                 <include>org.apache.commons:commons-jexl</include>
-                <include>${groupId}:datawave-balancers</include>
+                <include>${groupId}:datawave-accumulo-extensions</include>
                 <include>${groupId}:datawave-common</include>
                 <include>${groupId}:datawave-core</include>
                 <include>${groupId}:datawave-data-dictionary-core</include>
@@ -116,6 +117,7 @@
                 <include>gov.nsa.datawave.webservices:datawave-ws-common-util</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-client</include>
                 <include>gov.nsa.datawave.webservices:datawave-ws-query</include>
+                <include>io.dropwizard.metrics:metrics-core</include>
                 <include>org.javatuples:javatuples</include>
                 <include>com.google.code.gson:gson</include>
                 <include>org.apache.lucene:lucene-core</include>
@@ -130,13 +132,11 @@
                 <include>org.springframework:spring-context-support</include>
                 <include>org.springframework:spring-expression</include>
                 <include>aopalliance:aopalliance</include>
-                <!-- For the NGA Geometry code -->
-                <include>mil.nga.giat:geowave-adapter-vector</include>
-                <include>mil.nga.giat:geowave-core-geotime</include>
-                <include>mil.nga.giat:geowave-core-store</include>
-                <include>mil.nga.giat:geowave-core-index</include>
-                <include>mil.nga.giat:geowave-core-ingest</include>
-                <include>com.vividsolutions:jts</include>
+                <!-- For the Geometry code -->
+                <include>org.locationtech.geowave:geowave-core-geotime</include>
+                <include>org.locationtech.geowave:geowave-core-store</include>
+                <include>org.locationtech.geowave:geowave-core-index</include>
+                <include>org.locationtech.jts:jts-core</include>
                 <include>com.google.uzaygezen:uzaygezen-core</include>
                 <include>com.fasterxml.jackson.core:jackson-databind</include>
                 <include>com.fasterxml.jackson.core:jackson-core</include>

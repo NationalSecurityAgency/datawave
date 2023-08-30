@@ -11,21 +11,19 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.accumulo.core.client.Accumulo;
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.BatchDeleter;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
-import org.apache.accumulo.core.client.Instance;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.MutationsRejectedException;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.ZooKeeperInstance;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
@@ -53,10 +51,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
     private AccumuloCacheStoreConfiguration configuration;
     private String tableName;
     private Authorizations authorizations = new Authorizations();
-    
-    private Connector connector;
+
+    private AccumuloClient accumuloClient;
     private BatchWriter batchWriter;
-    
+
     @Override
     public void init(InitializationContext ctx) {
         this.ctx = ctx;
@@ -64,28 +62,25 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         tableName = configuration.tableName();
         List<String> auths = configuration.auths();
         if (auths != null && !auths.isEmpty())
-            authorizations = new Authorizations(auths.toArray(new String[auths.size()]));
+            authorizations = new Authorizations(auths.toArray(new String[0]));
     }
-    
+
     @Override
     public void start() {
-        Instance instance = configuration.instance();
-        if (instance == null) {
-            instance = new ZooKeeperInstance(configuration.instanceName(), configuration.zookeepers());
-        }
-        try {
-            connector = instance.getConnector(configuration.username(), new PasswordToken(configuration.password()));
-        } catch (AccumuloException | AccumuloSecurityException e) {
-            throw new RuntimeException("Unable to connect to Accumulo.", e);
-        }
-        
+        // @formatter:off
+        accumuloClient = Accumulo.newClient()
+                .to(configuration.instanceName(), configuration.zookeepers())
+                .as(configuration.username(), configuration.password())
+                .build();
+        // @formatter:on
+
         IteratorSetting ageoffConfig = new IteratorSetting(configuration.ageoffPriority(), AgeOffFilter.class.getSimpleName(), AgeOffFilter.class);
         AgeOffFilter.setTTL(ageoffConfig, configuration.ageoffTTLhours() * 60L * 60L * 1000L);
-        
-        if (!connector.tableOperations().exists(tableName)) {
+
+        if (!accumuloClient.tableOperations().exists(tableName)) {
             try {
-                connector.tableOperations().create(tableName);
-                connector.tableOperations().attachIterator(tableName, ageoffConfig, EnumSet.allOf(IteratorUtil.IteratorScope.class));
+                accumuloClient.tableOperations().create(tableName);
+                accumuloClient.tableOperations().attachIterator(tableName, ageoffConfig, EnumSet.allOf(IteratorUtil.IteratorScope.class));
             } catch (TableExistsException e) {
                 log.debug("Attempted to create cache table {} but someone else beat us to the punch.", tableName);
             } catch (TableNotFoundException e) {
@@ -101,12 +96,13 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             // one server might remove the setting, a second server might remove and re-add, and then the first server tries
             // to add again, causing an iterator name conflict.
             try {
-                IteratorSetting existingSetting = connector.tableOperations().getIteratorSetting(tableName, ageoffConfig.getName(),
+                IteratorSetting existingSetting = accumuloClient.tableOperations().getIteratorSetting(tableName, ageoffConfig.getName(),
                                 IteratorUtil.IteratorScope.scan);
                 if (existingSetting == null || !existingSetting.equals(ageoffConfig)) {
-                    connector.tableOperations().removeIterator(tableName, AgeOffFilter.class.getSimpleName(), EnumSet.allOf(IteratorUtil.IteratorScope.class));
+                    accumuloClient.tableOperations().removeIterator(tableName, AgeOffFilter.class.getSimpleName(),
+                                    EnumSet.allOf(IteratorUtil.IteratorScope.class));
                     try {
-                        connector.tableOperations().attachIterator(tableName, ageoffConfig, EnumSet.allOf(IteratorUtil.IteratorScope.class));
+                        accumuloClient.tableOperations().attachIterator(tableName, ageoffConfig, EnumSet.allOf(IteratorUtil.IteratorScope.class));
                     } catch (IllegalArgumentException e) {
                         log.trace("Hit race condition on configuring age-off iterator. Ignoring exception.");
                     }
@@ -117,17 +113,17 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
                 throw new RuntimeException("Unable to configure Accumulo cache table " + tableName, e);
             }
         }
-        
+
         BatchWriterConfig bwConfig = new BatchWriterConfig().setMaxWriteThreads(configuration.writeThreads())
                         .setMaxLatency(configuration.maxLatency(), TimeUnit.SECONDS).setMaxMemory(configuration.maxMemory());
         try {
-            batchWriter = connector.createBatchWriter(tableName, bwConfig);
+            batchWriter = accumuloClient.createBatchWriter(tableName, bwConfig);
         } catch (TableNotFoundException e) {
             // should never happen - we create the table right here
             throw new RuntimeException("Unable to create BatchWriter.", e);
         }
     }
-    
+
     @Override
     public void stop() {
         try {
@@ -135,18 +131,20 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         } catch (MutationsRejectedException e) {
             throw new RuntimeException("Unable to write cache value(s) to Accumulo", e);
         }
+
+        accumuloClient.close();
     }
-    
+
     @Override
     public void write(MarshalledEntry<? extends K,? extends V> entry) {
         log.trace("Adding value for {} to the accumulo cache for table {}.", entry.getKey(), tableName);
-        
+
         org.infinispan.commons.io.ByteBuffer keyBytes = entry.getKeyBytes();
         org.infinispan.commons.io.ByteBuffer valueBytes = entry.getValueBytes();
         org.infinispan.commons.io.ByteBuffer metadataBytes = entry.getMetadataBytes();
         int metadataLength = metadataBytes == null ? 0 : metadataBytes.getLength();
         int len = 4 + 4 + valueBytes.getLength() + metadataLength;
-        
+
         ByteBuffer buffer = ByteBuffer.allocate(len);
         buffer.putInt(valueBytes.getLength());
         buffer.putInt(metadataLength);
@@ -154,7 +152,7 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         if (metadataBytes != null)
             buffer.put(metadataBytes.getBuf(), metadataBytes.getOffset(), metadataBytes.getLength());
         buffer.flip();
-        
+
         Mutation m = new Mutation(keyBytes.getBuf(), keyBytes.getOffset(), keyBytes.getLength());
         m.put("", "", entry.getMetadata().created(), new Value(buffer));
         try {
@@ -164,24 +162,21 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException("Unable to write cache value to Accumulo", e);
         }
     }
-    
+
     @Override
     public void clear() {
         log.trace("Clearing Accumulo cache for table {}.", tableName);
         try {
             BatchWriterConfig bwCfg = new BatchWriterConfig();
-            BatchDeleter deleter = connector.createBatchDeleter(tableName, authorizations, 10, bwCfg);
-            try {
+            try (BatchDeleter deleter = accumuloClient.createBatchDeleter(tableName, authorizations, 10, bwCfg)) {
                 deleter.setRanges(Collections.singletonList(new Range()));
                 deleter.delete();
-            } finally {
-                deleter.close();
             }
         } catch (MutationsRejectedException | TableNotFoundException e) {
             throw new PersistenceException("Unable to clear Accumulo cache for " + tableName, e);
         }
     }
-    
+
     @Override
     public boolean delete(Object key) {
         log.trace("Deleting value for {} from the Accumulo cache for table {}.", key, tableName);
@@ -200,16 +195,16 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException("Unable to serialize key: " + key, e);
         }
     }
-    
+
     @Override
     public MarshalledEntry<K,V> load(Object key) {
         return _load(key, true, true);
     }
-    
+
     public MarshalledEntry<K,V> _load(Object key, boolean loadValue, boolean loadMetadata) {
         Scanner scanner;
         try {
-            scanner = connector.createScanner(tableName, authorizations);
+            scanner = accumuloClient.createScanner(tableName, authorizations);
             byte[] keyBytes = ctx.getMarshaller().objectToByteBuffer(key);
             scanner.setRange(new Range(new Text(keyBytes)));
         } catch (TableNotFoundException e) {
@@ -217,12 +212,12 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
         } catch (IOException | InterruptedException e) {
             throw new PersistenceException("Unable to serialize key " + key, e);
         }
-        
+
         Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
         Map.Entry<Key,Value> entry = iterator.hasNext() ? iterator.next() : null;
         return decodeEntry(entry, key, loadValue, loadMetadata);
     }
-    
+
     private MarshalledEntry<K,V> decodeEntry(Map.Entry<Key,Value> entry, Object key, boolean loadValue, boolean loadMetadata) {
         if (entry != null) {
             ByteBufferFactory bbFactory = ctx.getByteBufferFactory();
@@ -246,11 +241,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             return null;
         }
     }
-    
+
     @Override
     public boolean contains(Object key) {
-        try {
-            Scanner scanner = connector.createScanner(tableName, authorizations);
+        try (Scanner scanner = accumuloClient.createScanner(tableName, authorizations)) {
             scanner.setRange(new Range(String.valueOf(key)));
             Iterator<Map.Entry<Key,Value>> iterator = scanner.iterator();
             return iterator.hasNext();
@@ -258,11 +252,10 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException(e);
         }
     }
-    
+
     @Override
     public int size() {
-        try {
-            BatchScanner batchScanner = connector.createBatchScanner(tableName, authorizations, 5);
+        try (BatchScanner batchScanner = accumuloClient.createBatchScanner(tableName, authorizations, 5)) {
             batchScanner.setRanges(Collections.singleton(new Range()));
             try {
                 int rows = 0;
@@ -277,23 +270,23 @@ public class AccumuloCacheStore<K extends Serializable,V> implements AdvancedLoa
             throw new PersistenceException("Unable to calculate size of Accumulo cache table " + tableName, e);
         }
     }
-    
+
     @Override
     public void purge(Executor threadPool, PurgeListener<? super K> listener) {
         // This is a no-op since we use an age-off iterator on the cache entries
     }
-    
+
     @Override
     public void process(KeyFilter<? super K> filter, CacheLoaderTask<K,V> task, Executor executor, boolean fetchValue, boolean fetchMetadata) {
-        try {
-            BatchScanner batchScanner = connector.createBatchScanner(tableName, authorizations, 5);
+        try (BatchScanner batchScanner = accumuloClient.createBatchScanner(tableName, authorizations, 5)) {
+
             batchScanner.setRanges(Collections.singleton(new Range()));
             try {
                 TaskContext taskContext = new TaskContextImpl();
                 for (Map.Entry<Key,Value> entry : batchScanner) {
                     if (taskContext.isStopped())
                         break;
-                    
+
                     try {
                         ByteSequence rowData = entry.getKey().getRowData();
                         @SuppressWarnings("unchecked")

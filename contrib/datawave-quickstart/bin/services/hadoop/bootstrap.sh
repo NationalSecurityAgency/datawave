@@ -3,14 +3,14 @@
 DW_HADOOP_SERVICE_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # You may override DW_HADOOP_DIST_URI in your env ahead of time, and set as file:///path/to/file.tar.gz for local tarball, if needed
-DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://mirrors.advancedhosters.com/apache/hadoop/common/hadoop-3.1.1/hadoop-3.1.1.tar.gz}"
+DW_HADOOP_DIST_URI="${DW_HADOOP_DIST_URI:-http://archive.apache.org/dist/hadoop/common/hadoop-3.3.4/hadoop-3.3.4.tar.gz}"
 DW_HADOOP_DIST="$( downloadTarball "${DW_HADOOP_DIST_URI}" "${DW_HADOOP_SERVICE_DIR}" && echo "${tarball}" )"
 DW_HADOOP_BASEDIR="hadoop-install"
 DW_HADOOP_SYMLINK="hadoop"
 
 DW_HADOOP_DFS_URI="hdfs://localhost:9000"
-DW_HADOOP_MR_INTER_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/inter"
-DW_HADOOP_MR_DONE_DIR="${DW_CLOUD_DATA}/hadoop/jobhist/done"
+DW_HADOOP_MR_INTER_DIR="/jobhist/inter"
+DW_HADOOP_MR_DONE_DIR="/jobhist/done"
 DW_HADOOP_RESOURCE_MANAGER_ADDRESS="localhost:8050"
 
 HADOOP_HOME="${DW_CLOUD_HOME}/${DW_HADOOP_SYMLINK}"
@@ -22,6 +22,7 @@ io.compression.codecs org.apache.hadoop.io.compress.GzipCodec"
 
 # hdfs-site.xml (Format: <property-name><space><property-value>{<newline>})
 DW_HADOOP_HDFS_SITE_CONF="dfs.namenode.name.dir file://${DW_CLOUD_DATA}/hadoop/nn
+dfs.namenode.secondary.http-address localhost
 dfs.namenode.checkpoint.dir file://${DW_CLOUD_DATA}/hadoop/nnchk
 dfs.datanode.data.dir file://${DW_CLOUD_DATA}/hadoop/dn
 dfs.datanode.handler.count 10
@@ -55,7 +56,7 @@ yarn.nodemanager.log-dirs ${DW_CLOUD_DATA}/hadoop/yarn/log
 yarn.nodemanager.aux-services mapreduce_shuffle
 yarn.nodemanager.pmem-check-enabled false
 yarn.nodemanager.vmem-check-enabled false
-yarn.nodemanager.resource.memory-mb 4096
+yarn.nodemanager.resource.memory-mb 6144
 yarn.app.mapreduce.am.resource.mb 1024
 yarn.log.server.url http://localhost:8070/jobhistory/logs"
 
@@ -94,10 +95,10 @@ export PATH=${HADOOP_HOME}/bin:$PATH
 
 DW_HADOOP_CMD_START="( cd ${HADOOP_HOME}/sbin && ./start-dfs.sh && ./start-yarn.sh && mapred --daemon start historyserver )"
 DW_HADOOP_CMD_STOP="( cd ${HADOOP_HOME}/sbin && mapred --daemon stop historyserver && ./stop-yarn.sh && ./stop-dfs.sh )"
-DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -f 'datanode.DataNode|namenode.NameNode|namenode.SecondaryNameNode|nodemanager.NodeManager|resourcemanager.ResourceManager|mapreduce.v2.hs.JobHistoryServer'"
+DW_HADOOP_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'proc_datanode|proc_namenode|proc_secondarynamenode|proc_nodemanager|proc_resourcemanager|mapreduce.v2.hs.JobHistoryServer'"
 
 function hadoopIsRunning() {
-    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS} -d ' '")"
+    DW_HADOOP_PID_LIST="$(eval "${DW_HADOOP_CMD_FIND_ALL_PIDS}")"
     [ -z "${DW_HADOOP_PID_LIST}" ] && return 1 || return 0
 }
 
@@ -157,12 +158,12 @@ function hadoopStatus() {
         done
     }
 
-    test -z "${_jobHist}" && error "hadoop job history is not running"
-    test -z "${_dataNode}" && error "hadoop data node is not running"
-    test -z "${_nameNode}" && error "hadoop name node is not running"
-    test -z "${_secNameNode}" && error "hadoop secondary name node is not running"
-    test -z "${_nodeMgr}" && error "hadoop node manager is not running"
-    test -z "${_resourceMgr}" && error "hadoop resource maanger is not running"
+    test -z "${_jobHist}" && warn "JobHistoryServer is not running"
+    test -z "${_dataNode}" && warn "DataNode is not running"
+    test -z "${_nameNode}" && warn "NameNode is not running"
+    test -z "${_secNameNode}" && warn "SecondaryNameNode is not running"
+    test -z "${_nodeMgr}" && warn "NodeManager is not running"
+    test -z "${_resourceMgr}" && warn "ResourceManager is not running"
 }
 
 function hadoopIsInstalled() {
@@ -205,4 +206,14 @@ function hadoopPidList() {
 
    hadoopIsRunning && echo "${DW_HADOOP_PID_LIST}"
 
+}
+
+function hadoopDisplayBinaryInfo() {
+  echo "Source: ${DW_HADOOP_DIST_URI}"
+  local tarballName="$(basename "$DW_HADOOP_DIST_URI")"
+  if [[ -f "${DW_HADOOP_SERVICE_DIR}/${tarballName}" ]]; then
+     echo " Local: ${DW_HADOOP_SERVICE_DIR}/${tarballName}"
+  else
+     echo " Local: Not loaded"
+  fi
 }

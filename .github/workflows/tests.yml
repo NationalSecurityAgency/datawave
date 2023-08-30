@@ -1,0 +1,108 @@
+name: Tests
+
+on:
+  push:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+    branches:
+    - 'integration'
+    - 'release/version*'
+    - 'feature/accumulo-2.0'
+  pull_request:
+    paths-ignore: ['*.md', 'CODEOWNERS', 'LICENSE']
+  workflow_dispatch:
+  
+env:
+  JAVA_VERSION: '11'
+  JAVA_DISTRIBUTION: 'zulu' #This is the default on v1 of the action for 1.8
+  MAVEN_OPTS: "-Djansi.force=true -Dhttps.protocols=TLSv1.2 -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Djava.awt.headless=true"
+
+jobs:
+  # Runs the pom sorter and code formatter to ensure that the code
+  # is formatted and poms are sorted according to project rules. This
+  # will fail if the formatter makes any changes.
+  check-code-formatting:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        cache: 'maven'
+    - name: Format code
+      run: |
+        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Pautoformat
+        git status
+        git diff-index --quiet HEAD || (echo "Error! There are modified files after formatting." && false)
+
+  # Build the code and run the unit/integration tests.
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        cache: 'maven'
+    - name: Build and Run Unit Tests
+      run: |
+        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
+        $RUN_TESTS \
+          || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
+          || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+
+  quickstart-build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    - name: Set up JDK ${{env.JAVA_VERSION}}
+      uses: actions/setup-java@v3
+      with:
+        distribution: ${{env.JAVA_DISTRIBUTION}}
+        java-version: ${{env.JAVA_VERSION}}
+        cache: 'maven'
+    # Allow us to use the "--squash" option below
+    - name: Turn on Docker experimental features and move Docker data root
+      run: |
+        if [[ -f /etc/docker/daemon.json ]]; then
+          sudo sed -ri 's|\s*}\s*$|, "experimental": true, "data-root": "/mnt/docker" }|' /etc/docker/daemon.json
+        else
+          echo $'{\n    "experimental": true, "data-root": "/mnt/docker"\n}' | sudo tee /etc/docker/daemon.json
+        fi
+        sudo systemctl restart docker
+        echo Docker Experimental Features: $(docker version -f '{{.Server.Experimental}}')
+    # Builds the quickstart docker image and run the query tests
+    - name: Quickstart Query Tests
+      env:
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -Ddeploy -Dtar -DskipTests clean package"
+        DOCKER_BUILD_OPTS: "--squash --force-rm"
+      run: |
+        TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+        contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
+
+    # Here's an example of how you'd deploy the image to the github package registry.
+    # We don't want to do this by default since packages on github cannot be deleted
+    # or overwritten. So this could only be done for tags, however it seems the quickstart
+    # image may also exceed the maximum size allowed by github.
+    # - name: Deploy Quickstart Image
+    #   env:
+    #     IMAGE_REGISTRY: "docker.pkg.github.com"
+    #     IMAGE_USERNAME: "brianloss"
+    #     IMAGE_NAME: "datawave/quickstart"
+    #   run: |
+    #     # Set up env vars
+    #     TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
+    #     REMOTE_IMAGE_NAME="${IMAGE_REGISTRY}/${IMAGE_USERNAME}/${IMAGE_NAME}"
+    #     # Log in to the package registry
+    #     echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${GITHUB_ACTOR} --password-stdin
+    #     # Tag and push the image
+    #     docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
+    #     docker images
+    #     docker push ${REMOTE_IMAGE_NAME}:${TAG}
+

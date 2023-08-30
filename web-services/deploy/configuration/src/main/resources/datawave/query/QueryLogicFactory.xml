@@ -10,7 +10,9 @@
     http://www.springframework.org/schema/context/spring-context-4.0.xsd
     http://www.springframework.org/schema/util
     http://www.springframework.org/schema/util/spring-util-4.0.xsd">
-    
+
+    <bean id="ResponseObjectFactory" class="${response.object.factory.class}"/>
+
     <!--  part of what enforces any Required properties to be set on loading of the context -->
     <bean class="org.springframework.beans.factory.annotation.RequiredAnnotationBeanPostProcessor" />
 
@@ -35,8 +37,19 @@
         <bean class="datawave.query.language.functions.jexl.MatchesAtLeastCountOf"/>
         <bean class="datawave.query.language.functions.jexl.TimeFunction"/>
         <bean class="datawave.query.language.functions.jexl.Jexl"/>
+        <bean class="datawave.query.language.functions.jexl.AtomValuesMatchFunction"/>
         <bean class="datawave.query.language.functions.jexl.Options"/>
         <bean class="datawave.query.language.functions.jexl.Unique"/>
+        <bean class="datawave.query.language.functions.jexl.GroupBy"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByDay"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByHour"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByMinute"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByMonth"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByYear"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueBySecond"/>
+        <bean class="datawave.query.language.functions.jexl.UniqueByTenthOfHour"/>
+        <bean class="datawave.query.language.functions.jexl.NoExpansion"/>
+        <bean class="datawave.query.language.functions.jexl.Compare"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Contains"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.CoveredBy"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Covers"/>
@@ -44,6 +57,11 @@
         <bean class="datawave.query.language.functions.jexl.Geowave.Intersects"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Overlaps"/>
         <bean class="datawave.query.language.functions.jexl.Geowave.Within"/>
+        <bean class="datawave.query.language.functions.jexl.EvaluationOnly">
+            <property name="parser" ref="LuceneToJexlQueryParser"/>
+        </bean>
+        <bean class="datawave.query.language.functions.jexl.ExcerptFields"/>
+        <bean class="datawave.query.language.functions.jexl.Matches"/>
     </util:list>
 
     <!-- Fields we should not tokenize in a tokenized query. In non-tokenized 
@@ -74,18 +92,10 @@
         <property name="allowedFunctions" ref="allowedQueryFunctions"/>
     </bean>
 
-    <bean id="ChainedQueryParser" scope="prototype" class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser">
-        <property name="allowedFunctions">
-            <util:list value-type="datawave.query.language.functions.jexl.JexlQueryFunction">
-                <bean class="datawave.query.language.functions.jexl.ChainStart"/>
-                <bean class="datawave.query.language.functions.jexl.Chain"/>
-            </util:list>
-        </property>
-    </bean>
-
     <bean id="DefaultQueryPlanner" scope="prototype" class="datawave.query.planner.DefaultQueryPlanner" >
         <property name="compressOptionMappings" value="true" />
         <property name="queryModelProviderFactory" ref="queryModelProviderFactory" />
+        <property name="visitorManager" ref="TimedVisitorManager"/>
         <!-- the first integer arg is to define the number of ranges per batch -->
         <constructor-arg>
             <value>2611</value>
@@ -112,17 +122,69 @@
 
     <bean id="metadataHelperQueryModelProvider" scope="prototype" class="datawave.query.planner.MetadataHelperQueryModelProvider" />
 
+    <bean id="TimedVisitorManager" scope="prototype" class="datawave.query.planner.TimedVisitorManager">
+        <property name="debugEnabled" value="false"/>
+        <property name="validateAst" value="false"/>
+        <property name="validator" ref="AstValidator"/>
+    </bean>
+
+    <bean id="AstValidator" scope="prototype" class="datawave.query.jexl.visitors.validate.ASTValidator">
+        <property name="validateLineage" value="true"/>
+        <property name="validateFlatten" value="true"/>
+        <property name="validateJunctions" value="true"/>
+        <property name="validateReferenceExpressions" value="true"/>
+        <property name="validateQueryPropertyMarkers" value="true"/>
+    </bean>
+
+
     <bean id="BooleanChunkingQueryPlanner" scope="prototype" class="datawave.query.planner.BooleanChunkingQueryPlanner" />
 
     <!-- Begin SelectorExtractors for injection into query logics -->
 
-    <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" />
+    <bean id="DatawaveSelectorExtractor" scope="prototype" class="datawave.audit.DatawaveSelectorExtractor" >
+        <property name="luceneToJexlQueryParser" ref="LuceneToJexlQueryParser"/>
+    </bean>
 
     <!-- End SelectorExtractors -->
 
     <bean id="baseQueryLogic" class="datawave.webservice.query.logic.BaseQueryLogic" abstract="true" >
         <property name="roleManager" ref="easyRoleManager" />
         <property name="markingFunctions" ref="markingFunctions" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+    </bean>
+
+    <!-- Here is an example of configuring a remote user operations service if needed for a remote event query -->
+    <bean id="MyRemoteUserOps" class="datawave.security.authorization.remote.RemoteUserOperationsImpl">
+        <property name="queryServiceScheme" value="https" />
+        <property name="queryServiceHost" value="localhost" />
+        <property name="queryServicePort" value="8443" />
+        <property name="queryServiceURI" value="/DataWave/Security/User/" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+    </bean>
+
+    <!-- Configure the remote operation here for use by the local UserOperationsBean -->
+    <util:list id="RemoteUserOperationsList" value-type="datawave.security.authorization.RemoteUserOperations">
+        <!--ref bean="MyRemoteUserOps"/-->
+    </util:list>
+
+    <!-- Here is an example of configuring a remote query service and a remote event query -->
+    <bean id="RemoteQueryService" class="datawave.webservice.query.remote.RemoteQueryServiceImpl">
+        <property name="queryServiceScheme" value="https" />
+        <property name="queryServiceHost" value="localhost" />
+        <property name="queryServicePort" value="8443" />
+        <property name="queryServiceURI" value="/DataWave/Query/" />
+        <property name="responseObjectFactory" ref="ResponseObjectFactory" />
+    </bean>
+
+    <bean id="RemoteEventQuery" parent="baseQueryLogic" class="datawave.query.tables.RemoteEventQueryLogic">
+        <property name="tableName" value="${shard.table.name}" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
+        <property name="maxResults" value="${event.query.max.results}" />
+        <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="remoteQueryService" ref="RemoteQueryService" />
+        <property name="remoteQueryLogic" value="EventQuery" />
+        <property name="userOperations" ref="MyRemoteUserOps" />
     </bean>
 
     <bean id="BaseEventQuery" parent="baseQueryLogic" class="datawave.query.tables.ShardQueryLogic" abstract="true">
@@ -173,10 +235,6 @@
             </list>
         </property>
         <property name="filterOptions" ref="BaseEventQueryFilterOptions" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Retrieve sharded events/documents, leveraging the global index tables as needed" />
         <!-- Determines how many events in the global index lookup will be
@@ -185,8 +243,10 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${beq.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${beq.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${beq.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
@@ -212,7 +272,7 @@
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
-        <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
+        <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
         <property name="ivaratorFstHdfsBaseURIs" value ="${ivarator.fst.hdfs.base.uris}" />
         <!-- the size after which a buffer is flushed to a file. -->
@@ -239,13 +299,22 @@
         </property>
         <property name="queryPlanner" ref="DefaultQueryPlanner" />
         <property name="sendTimingToStatsd" value="false" />
-	<property name="collectQueryMetrics" value="true" />
-	<property name="logTimingDetails" value="false" />
+        <property name="collectQueryMetrics" value="true" />
+        <property name="logTimingDetails" value="false" />
         <property name="statsdHost" value="localhost" />
         <property name="statsdPort" value="8125" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+        <property name="evaluationOnlyFields" value="${evaluation.only.fields}" />
+        <property name="lazySetMechanismEnabled" value="false" />
+        <!--    control when to log warnings for long aggregations    -->
+        <property name="docAggregationThresholdMs" value="-1" />
+        <property name="tfAggregationThresholdMs" value="-1" />
     </bean>
-    
+
+    <util:list id="IvaratorCacheDirConfigs">
+        ${ivarator.cache.dir.config}
+    </util:list>
+
     <util:map id="BaseEventQueryFilterOptions">
         ${event.query.filters.options}
     </util:map>
@@ -310,13 +379,19 @@
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Indexed Fields Only:  Given FIELDNAME returns counts for each unique value. Given FIELDNAME:FIELDVALUE returns count for only that value." />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
+    </bean>
+
+    <!-- The Top Level Document query (queries document tree as if it were one document, and then returns the top level document as the representative) -->
+    <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
+        <property name="collapseUids" value="false"/>
+        <property name="indexFilteringClassNames">
+            <list value-type="java.lang.String">
+                <value>datawave.query.function.NormalizedVersionPredicate</value>
+            </list>
+        </property>
     </bean>
     
     <!-- Query Logic that returns document content -->
@@ -324,12 +399,17 @@
         <property name="tableName" value="${shard.table.name}" />
         <property name="maxResults" value="-1" />
         <property name="maxWork" value="-1" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Query that returns a document given the document identifier" />
+    </bean>
+
+    <!-- Query Logic that returns document term frequency information -->
+    <bean id="TermFrequencyQuery" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.term.TermFrequencyQueryTable">
+        <property name="tableName" value="${shard.table.name}" />
+        <property name="maxResults" value="-1" />
+        <property name="maxWork" value="-1" />
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Query that returns data from the term frequency query table" />
     </bean>
 
     <!-- Query Logic which performs a count on error table fieldIndex keys -->
@@ -345,10 +425,6 @@
         <property name="modelTableName" value="${metadata.table.name}" />
         <property name="modelName" value="DATAWAVE" />
         <property name="maxUniqueValues" value="20000" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="FieldIndex count query (experimental)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -369,33 +445,37 @@
       <property name="logicDescription" value="Composite query logic that retrieves records from the event and error tables, based on known UUID fields, ie, those configured via UUIDTypeList in QueryLogicFactory.xml" />
       <property name="auditType" value="NONE" />
       <property name="queryLogics">
-        <list value-type="datawave.webservice.query.logic.BaseQueryLogic">
-          <bean scope="prototype" parent="BaseEventQuery">
-            <property name="auditType" value="NONE" />
-            <property name="logicDescription" value="Lucene query for event/document UUIDs" />
-            <property name="mandatoryQuerySyntax">
-                <util:set>
-                    <value>LUCENE-UUID</value>
-                </util:set>
-            </property>
-            <property name="connPoolName" value="UUID" />
-          </bean>
-          <bean scope="prototype" parent="BaseEventQuery">
-            <property name="tableName" value="${error.shard.table.name}" />
-            <property name="dateIndexTableName" value="" />
-            <property name="metadataTableName" value="${error.metadata.table.name}" />
-            <property name="indexTableName" value="${error.index.table.name}" />
-            <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
-            <property name="auditType" value="NONE" />
-            <property name="logicDescription" value="Lucene query for event/document UUIDs for events that encountered errors at ingest time" />
-            <property name="mandatoryQuerySyntax">
-                <util:set>
-                    <value>LUCENE-UUID</value>
-                </util:set>
-            </property>
-            <property name="connPoolName" value="UUID" />
-          </bean>
-        </list>
+        <map key-type="java.lang.String" value-type="datawave.core.query.logic.BaseQueryLogic">
+            <entry key="EventQuery">
+              <bean scope="prototype" parent="BaseEventQuery">
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+              </bean>
+            </entry>
+            <entry key="ErrorEventQuery">
+              <bean scope="prototype" parent="BaseEventQuery">
+                <property name="tableName" value="${error.shard.table.name}" />
+                <property name="dateIndexTableName" value="" />
+                <property name="metadataTableName" value="${error.metadata.table.name}" />
+                <property name="indexTableName" value="${error.index.table.name}" />
+                <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
+                <property name="auditType" value="NONE" />
+                <property name="logicDescription" value="Lucene query for event/document UUIDs for events that encountered errors at ingest time" />
+                <property name="mandatoryQuerySyntax">
+                    <util:set>
+                        <value>LUCENE-UUID</value>
+                    </util:set>
+                </property>
+                <property name="connPoolName" value="UUID" />
+              </bean>
+            </entry>
+        </map>
       </property>
       <property name="selectorExtractor"><null/></property>
     </bean>
@@ -410,19 +490,19 @@
         <property name="selectorExtractor"><null/></property>
     </bean>
 
-	<bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.metrics.QueryMetricQueryLogic">
-	    <property name="logicDescription" value="Retrieve query metrics based on the given search term(s)" />
-	    <property name="includeHierarchyFields" value="false" />
-	    <property name="modelTableName" value="${querymetrics.metadata.table.name}" />
-	    <property name="modelName" value="NONE" />
-	    <property name="tableName" value="${querymetrics.shard.table.name}" />
+    <bean id="QueryMetricsQuery" scope="prototype"  parent="BaseEventQuery" class="datawave.query.metrics.QueryMetricQueryLogic">
+        <property name="logicDescription" value="Retrieve query metrics based on the given search term(s)" />
+        <property name="includeHierarchyFields" value="false" />
+        <property name="modelTableName" value="${querymetrics.metadata.table.name}" />
+        <property name="modelName" value="NONE" />
+        <property name="tableName" value="${querymetrics.shard.table.name}" />
         <property name="dateIndexTableName" value="${querymetrics.dateindex.table.name}" />
-	    <property name="metadataTableName" value="${querymetrics.metadata.table.name}" />
+        <property name="metadataTableName" value="${querymetrics.metadata.table.name}" />
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
-	    <property name="indexTableName" value="${querymetrics.index.table.name}" />
-	    <property name="reverseIndexTableName" value="${querymetrics.rindex.table.name}" />
-	    <property name="auditType" value="NONE" />
-	</bean>
+        <property name="indexTableName" value="${querymetrics.index.table.name}" />
+        <property name="reverseIndexTableName" value="${querymetrics.rindex.table.name}" />
+        <property name="auditType" value="NONE" />
+    </bean>
 
     <bean id="EventQuery" scope="prototype"  parent="BaseEventQuery">
         <property name="logicDescription" value="Query the sharded event/document schema, leveraging the global index tables as needed" />
@@ -444,10 +524,6 @@
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -466,10 +542,6 @@
         <property name="metadataHelperFactory" ref="metadataHelperFactory" />
         <property name="fullTableScanEnabled" value="false" />
         <property name="allowLeadingWildcard" value="true" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Discovery query that returns information from the ingest errors index about the supplied term(s)" />
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
@@ -481,6 +553,30 @@
         <property name="metadataTableName" value="${error.metadata.table.name}" />
         <property name="indexTableName" value="${error.index.table.name}" />
         <property name="reverseIndexTableName" value="${error.rindex.table.name}" />
+    </bean>
+
+    <bean id="FacetedQuery" parent="BaseEventQuery" scope="prototype" class="datawave.query.tables.facets.FacetedQueryLogic">
+        <property name="auditType" value="NONE" />
+        <property name="logicDescription" value="Faceted search over indexed fields, returning aggregate counts for field values" />
+        <property name="facetedSearchType" value="FIELD_VALUE_FACETS" />
+        <property name="facetTableName" value="${table.name.facet}" />
+        <property name="facetMetadataTableName" value="${table.name.facet.metadata}" />
+        <property name="facetHashTableName" value="${table.name.facet.hashes}" />
+        <property name="fullTableScanEnabled" value="false" />
+        <property name="maximumFacetGrouping" value="200" />
+        <property name="minimumFacet" value="1" />
+        <property name="streaming" value="true" />
+        <property name="querySyntaxParsers">
+            <map key-type="java.lang.String" value-type="datawave.query.language.parser.QueryParser">
+                <entry key="JEXL">
+                    <null/>
+                </entry>
+                <entry key="LUCENE">
+                    <bean class="datawave.query.language.parser.jexl.LuceneToJexlQueryParser" />
+                </entry>
+                <entry key="LUCENE-UUID" value-ref="LuceneToJexlUUIDQueryParser" />
+            </map>
+        </property>
     </bean>
 
     <bean id="HitHighlights" parent="baseQueryLogic" scope="prototype"  class="datawave.query.tables.IndexQueryLogic">
@@ -495,10 +591,6 @@
         <property name="includeDataTypeAsField" value="false" />
         <property name="includeGroupingContext" value="false" />
         <property name="useEnrichers" value="false" />
-        <property name="undisplayedVisibilities">
-            <util:set>
-            </util:set>
-        </property>
         <property name="auditType" value="NONE" />
         <property name="logicDescription" value="Fast boolean query over indexed fields, only returning fields queried on" />
         <!-- Determines how many events in the global index lookup will be
@@ -507,8 +599,10 @@
         <!-- Determines how many shards in the global index lookup will be
         aggregated into a day range -->
         <property name="shardsPerDayThreshold" value="${beq.shardsPerDayThreshold}" />
+        <!-- The max number of terms BEFORE all expansions -->
+        <property name="initialMaxTermThreshold" value="${beq.initialMaxTermThreshold}" />
         <!-- The max number of terms AFTER all expansions -->
-        <property name="maxTermThreshold" value="${beq.maxTermThreshold}" />
+        <property name="finalMaxTermThreshold" value="${beq.finalMaxTermThreshold}" />
         <!-- The max query depth -->
         <property name="maxDepthThreshold" value="${beq.maxDepthThreshold}" />
         <!-- The max unfielded (_ANYFIELD_) expansion per term -->
@@ -536,7 +630,7 @@
         <!-- the zookeeper configuration (could be something like file:///opt/datawave/zookeeper-warehouse/conf/zoo.cfg, or the zookeeper list (somehost1:2181,somehost2:2181,…)-->
         <property name="zookeeperConfig" value="${ivarator.zookeeper.hosts}" />
         <!-- the list of directories in which the ivarator puts its caches (selection always made on tserver side) -->
-        <property name="ivaratorCacheBaseURIs" value="${ivarator.cache.base.uris}" />
+        <property name="ivaratorCacheDirConfigs" ref="IvaratorCacheDirConfigs" />
         <!-- the hdfs location where FST's will be stored (see maxOrExpansionFstThreshold above) -->
         <property name="ivaratorFstHdfsBaseURIs" value ="${ivarator.fst.hdfs.base.uris}" />
         <!-- the size after which a buffer is flushed to a file. -->
@@ -557,18 +651,14 @@
                 </entry>
                 <entry key="LUCENE-UUID" value-ref="LuceneToJexlUUIDQueryParser" />
             </map>
-				</property>
+        </property>
         <property name="selectorExtractor" ref="DatawaveSelectorExtractor" />
     </bean>
 
     <bean id="queryLogicFactory" scope="prototype" class="datawave.webservice.query.logic.QueryLogicFactoryImpl" >
-        <property name="queryLogicFactoryConfiguration" ref="QueryLogicFactoryConfiguration" />        
+        <property name="queryLogicFactoryConfiguration" ref="QueryLogicFactoryConfiguration" />
     </bean>
 
-    <bean id="queryMetricHandler" scope="prototype" class="datawave.query.metrics.ShardTableQueryMetricHandler">
-        <property name="queryLogicFactory" ref="queryLogicFactory"/>
-    </bean>
- 
     <bean id="datawaveRoleManager" class="datawave.webservice.query.logic.DatawaveRoleManager" />
     
     <bean id="easyRoleManager" class="datawave.webservice.query.logic.EasyRoleManager" />

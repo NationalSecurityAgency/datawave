@@ -14,10 +14,12 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 
-import com.codahale.metrics.annotation.Timed;
-import datawave.webservice.result.GenericResponse;
 import org.apache.deltaspike.core.api.jmx.JmxManaged;
 import org.apache.deltaspike.core.api.jmx.MBean;
+
+import com.codahale.metrics.annotation.Timed;
+
+import datawave.webservice.result.GenericResponse;
 
 @MBean
 @Singleton
@@ -38,23 +40,25 @@ public class ConfigurationBean {
     @Inject
     @Any
     private Event<RefreshLifecycle> refreshLifecycleEvent;
-    
+
     @PermitAll
     @JmxManaged
     public void refreshInternal() {
         refreshLifecycleEvent.fire(RefreshLifecycle.INITIATED);
-        
+
         // Tell spring configurations to reload
         configurationEvent.fire(new ConfigurationEvent());
         // Now refresh the refreshable context to ensure beans that need to be are recreated.
         refreshEvent.fire(new RefreshEvent());
-        
+
         refreshLifecycleEvent.fire(RefreshLifecycle.COMPLETE);
     }
-    
+
     /**
      * Causes reloadable configuration to be re-read from disk. If a spring config file on disk is edited, or a system property is changed, call this endpoint
      * to have all classes that are able to refresh themselves using the updated configuration.
+     *
+     * @return endpoint response
      */
     @GET
     @Path("/refresh")

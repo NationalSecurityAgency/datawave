@@ -71,6 +71,7 @@ if [ "${DW_ACCUMULO_VFS_DATAWAVE_ENABLED}" == true ]; then
       ${HADOOP_HOME}/bin/hdfs dfs -put -f ${DW_DATAWAVE_INGEST_HOME}/accumulo-warehouse/lib/ext/*.jar ${DW_ACCUMULO_VFS_DATAWAVE_DIR}
    fi
 else
+   mkdir "${ACCUMULO_HOME}/lib/ext"
    [ ! -d ${ACCUMULO_HOME}/lib/ext ] && fatal "Unable to update Accumulo classpath. ${ACCUMULO_HOME}/lib/ext does not exist!"
    info "Removing any existing jars from ${ACCUMULO_HOME}/lib/ext"
    rm -f ${ACCUMULO_HOME}/lib/ext/*.jar
@@ -141,7 +142,7 @@ fi
 function initializeDatawaveTables() {
     # create tables
     if [[ ${DW_DATAWAVE_SKIP_CREATE_TABLES} != true ]]; then
-        info "creating datawave tables and splits ..."
+        info "creating datawave tables, splits, and caches ..."
         ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/create-all-tables.sh || fatal "error creating tables"
         # create splits for shard table for today
         local _today=$(date "+%Y%m%d")
@@ -151,6 +152,10 @@ function initializeDatawaveTables() {
 
         # set splits cache
         ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-splits-file.sh
+
+	#set config cache
+	 ${DW_DATAWAVE_INGEST_HOME}/bin/ingest/generate-accumulo-config-cache.sh
+
     fi
 }
 

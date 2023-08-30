@@ -25,12 +25,6 @@
   </property>
 
   <property>
-    <name>sharded.table.names</name>
-    <value>${table.name.shard}</value>
-    <description>Comma-separated list of tables that need to pull splits from accumulo</description>
-  </property>
-
-  <property>
     <name>shardStats.input.table</name>
     <value>${table.name.shard}</value>
     <description>input table for stats index data</description>

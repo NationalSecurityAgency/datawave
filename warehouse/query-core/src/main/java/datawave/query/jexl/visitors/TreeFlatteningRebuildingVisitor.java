@@ -1,267 +1,367 @@
 package datawave.query.jexl.visitors;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.LiteralRange;
-
-import datawave.query.jexl.nodes.ExceededOrThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededTermThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.ExceededValueThresholdMarkerJexlNode;
-import datawave.query.jexl.nodes.IndexHoleMarkerJexlNode;
-import datawave.query.jexl.nodes.QueryPropertyMarker;
+import org.apache.commons.jexl2.parser.ASTAdditiveNode;
+import org.apache.commons.jexl2.parser.ASTAdditiveOperator;
+import org.apache.commons.jexl2.parser.ASTAmbiguous;
 import org.apache.commons.jexl2.parser.ASTAndNode;
+import org.apache.commons.jexl2.parser.ASTArrayAccess;
+import org.apache.commons.jexl2.parser.ASTArrayLiteral;
 import org.apache.commons.jexl2.parser.ASTAssignment;
-import org.apache.commons.jexl2.parser.ASTDelayedPredicate;
-import org.apache.commons.jexl2.parser.ASTEvaluationOnly;
+import org.apache.commons.jexl2.parser.ASTBitwiseAndNode;
+import org.apache.commons.jexl2.parser.ASTBitwiseComplNode;
+import org.apache.commons.jexl2.parser.ASTBitwiseOrNode;
+import org.apache.commons.jexl2.parser.ASTBitwiseXorNode;
+import org.apache.commons.jexl2.parser.ASTBlock;
+import org.apache.commons.jexl2.parser.ASTConstructorNode;
+import org.apache.commons.jexl2.parser.ASTDivNode;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTERNode;
+import org.apache.commons.jexl2.parser.ASTEmptyFunction;
+import org.apache.commons.jexl2.parser.ASTFalseNode;
+import org.apache.commons.jexl2.parser.ASTFloatLiteral;
+import org.apache.commons.jexl2.parser.ASTForeachStatement;
+import org.apache.commons.jexl2.parser.ASTFunctionNode;
+import org.apache.commons.jexl2.parser.ASTGENode;
+import org.apache.commons.jexl2.parser.ASTGTNode;
+import org.apache.commons.jexl2.parser.ASTIdentifier;
+import org.apache.commons.jexl2.parser.ASTIfStatement;
+import org.apache.commons.jexl2.parser.ASTIntegerLiteral;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ASTLENode;
+import org.apache.commons.jexl2.parser.ASTLTNode;
+import org.apache.commons.jexl2.parser.ASTMapEntry;
+import org.apache.commons.jexl2.parser.ASTMapLiteral;
+import org.apache.commons.jexl2.parser.ASTMethodNode;
+import org.apache.commons.jexl2.parser.ASTModNode;
+import org.apache.commons.jexl2.parser.ASTMulNode;
+import org.apache.commons.jexl2.parser.ASTNENode;
+import org.apache.commons.jexl2.parser.ASTNRNode;
 import org.apache.commons.jexl2.parser.ASTNotNode;
+import org.apache.commons.jexl2.parser.ASTNullLiteral;
+import org.apache.commons.jexl2.parser.ASTNumberLiteral;
 import org.apache.commons.jexl2.parser.ASTOrNode;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
+import org.apache.commons.jexl2.parser.ASTReturnStatement;
+import org.apache.commons.jexl2.parser.ASTSizeFunction;
+import org.apache.commons.jexl2.parser.ASTSizeMethod;
+import org.apache.commons.jexl2.parser.ASTStringLiteral;
+import org.apache.commons.jexl2.parser.ASTTernaryNode;
+import org.apache.commons.jexl2.parser.ASTTrueNode;
+import org.apache.commons.jexl2.parser.ASTUnaryMinusNode;
+import org.apache.commons.jexl2.parser.ASTUnknownFieldERNode;
+import org.apache.commons.jexl2.parser.ASTUnsatisfiableERNode;
+import org.apache.commons.jexl2.parser.ASTVar;
+import org.apache.commons.jexl2.parser.ASTWhileStatement;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.JexlNodes;
-import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
 
 /**
- * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. NOTE: If you remove reference
- * expressions and references, this will adversly affect the jexl evaluation of the query.
+ * This is a wrapper for the TreeFlatteningRebuilder which allows the TreeFlatteningRebuilder to be run as a Jexl node visitor.
  */
 public class TreeFlatteningRebuildingVisitor extends RebuildingVisitor {
-    private static final Logger log = Logger.getLogger(TreeFlatteningRebuildingVisitor.class);
-    private boolean removeReferences = false;
-    
+
+    final private TreeFlatteningRebuilder treeFlatteningRebuilder;
+
     public TreeFlatteningRebuildingVisitor(boolean removeReferences) {
-        this.removeReferences = removeReferences;
+        this.treeFlatteningRebuilder = new TreeFlatteningRebuilder(removeReferences);
     }
-    
+
     /**
      * This will flatten ands and ors.
+     *
+     * @param node
+     *            the node to flatten
+     * @param <T>
+     *            type of the node
+     * @return the flattened copy
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flatten(T node) {
-        return flatten(node, false);
+        return TreeFlatteningRebuilder.flatten(node);
     }
-    
+
     /**
      * This will flatten ands, ors, and references and references expressions NOTE: If you remove reference expressions and references, this may adversely
      * affect the evaluation of the query (true in the index query logic case: bug?).
+     *
+     * @param node
+     *            the node to flatten
+     * @param <T>
+     *            type of the node
+     * @return the flattened copy
      */
     @SuppressWarnings("unchecked")
     public static <T extends JexlNode> T flattenAll(T node) {
-        return flatten(node, true);
+        return TreeFlatteningRebuilder.flattenAll(node);
     }
-    
-    /**
-     * This will flatten ands and ors. If requested this will also remove reference expressions and references where possible. NOTE: If you remove reference
-     * expressions and references, this may adversely affect the evaluation of the query (true in the index query logic case: bug?).
-     */
-    @SuppressWarnings("unchecked")
-    private static <T extends JexlNode> T flatten(T node, boolean removeReferences) {
-        TreeFlatteningRebuildingVisitor visitor = new TreeFlatteningRebuildingVisitor(removeReferences);
-        
-        return (T) node.jjtAccept(visitor, null);
+
+    @Override
+    public ASTJexlScript apply(ASTJexlScript input) {
+        return treeFlatteningRebuilder.flattenTree(input);
     }
-    
+
+    @Override
+    public Object visit(ASTJexlScript node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
     @Override
     public Object visit(ASTOrNode node, Object data) {
-        ASTOrNode orNode = JexlNodes.newInstanceOfType(node);
-        orNode.image = node.image;
-        
-        return flattenTree(node, orNode, data);
+        return treeFlatteningRebuilder.flattenTree(node);
     }
-    
-    private boolean isBoundedRange(ASTAndNode node) {
-        List<JexlNode> otherNodes = new ArrayList<>();
-        Map<LiteralRange<?>,List<JexlNode>> ranges = JexlASTHelper.getBoundedRangesIndexAgnostic(node, otherNodes, false);
-        if (ranges.size() == 1 && otherNodes.isEmpty()) {
-            return true;
-        }
-        return false;
-    }
-    
+
     @Override
     public Object visit(ASTAndNode node, Object data) {
-        if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
-                        || ExceededOrThresholdMarkerJexlNode.instanceOf(node) || ASTDelayedPredicate.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
-            return super.visit(node, data);
-        } else {
-            ASTAndNode andNode = JexlNodes.newInstanceOfType(node);
-            andNode.image = node.image;
-            
-            return flattenTree(node, andNode, data);
-        }
-        
+        return treeFlatteningRebuilder.flattenTree(node);
     }
-    
+
+    @Override
+    public Object visit(ASTEQNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTNENode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTLTNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTGTNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTLENode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTGENode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTERNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTNRNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTNotNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTIdentifier node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTNullLiteral node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTTrueNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTFalseNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTIntegerLiteral node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTFloatLiteral node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTStringLiteral node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTFunctionNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
     @Override
     public Object visit(ASTReference node, Object data) {
-        if (!removeReferences) {
-            return super.visit(node, data);
-        } else if (ASTDelayedPredicate.instanceOf(node) || IndexHoleMarkerJexlNode.instanceOf(node) || ASTEvaluationOnly.instanceOf(node)) {
-            return super.visit(node, data);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
-                        || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
-            return super.visit(node, data);
-        } else if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
-            return super.visit(node, data);
-        } else if (node.jjtGetParent() instanceof ASTAndNode) {
-            ASTAndNode andNode = JexlNodes.newInstanceOfType(((ASTAndNode) (node.jjtGetParent())));
-            andNode.image = node.jjtGetParent().image;
-            
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                JexlNode newNode = (JexlNode) node.jjtGetChild(i).jjtAccept(this, null);
-                newNode.jjtSetParent(andNode);
-                andNode.jjtAddChild(newNode, andNode.jjtGetNumChildren());
-            }
-            
-            return andNode;
-        } else if (node.jjtGetParent() instanceof ASTOrNode) {
-            ASTOrNode orNode = JexlNodes.newInstanceOfType(((ASTOrNode) (node.jjtGetParent())));
-            orNode.image = node.jjtGetParent().image;
-            
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                JexlNode newNode = (JexlNode) node.jjtGetChild(i).jjtAccept(this, null);
-                newNode.jjtSetParent(orNode);
-                orNode.jjtAddChild(newNode, orNode.jjtGetNumChildren());
-            }
-            
-            return orNode;
-            
-        } else if (node.jjtGetParent() instanceof ASTNotNode) {
-            // ensure we keep negated expressions
-            return super.visit(node, data);
-        } else {
-            JexlNode newNode = (JexlNode) super.visit(node, data);
-            JexlNode childNode = null;
-            /**
-             * Explore the possibility that we have an unnecessary top level ASTReference expression. Could walk up the tree, but this will be less work as
-             * we're checking if we're the root, then advance to see if we've within a Reference expression.
-             */
-            if (null == newNode.jjtGetParent() && (childNode = advanceReferenceExpression(newNode)) != null) {
-                if (childNode.jjtGetNumChildren() == 1)
-                    return childNode.jjtGetChild(0);
-                
-            }
-            return newNode;
-        }
+        return treeFlatteningRebuilder.flattenTree(node);
     }
-    
+
+    @Override
+    public Object visit(ASTNumberLiteral node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
     @Override
     public Object visit(ASTReferenceExpression node, Object data) {
-        ASTReferenceExpression newExpressive = null;
-        if (!removeReferences) {
-            return super.visit(node, data);
-        } else if (ExceededValueThresholdMarkerJexlNode.instanceOf(node) || ExceededTermThresholdMarkerJexlNode.instanceOf(node)
-                        || ExceededOrThresholdMarkerJexlNode.instanceOf(node)) {
-            return super.visit(node, data);
-        } else if (JexlASTHelper.dereference(node) instanceof ASTAssignment) {
-            return super.visit(node, data);
-        } else if (node.jjtGetParent() instanceof ASTAndNode) {
-            ASTAndNode andNode = JexlNodes.newInstanceOfType(((ASTAndNode) (node.jjtGetParent())));
-            andNode.image = node.jjtGetParent().image;
-            
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                JexlNode newNode = (JexlNode) node.jjtGetChild(i).jjtAccept(this, null);
-                newNode.jjtSetParent(andNode);
-                andNode.jjtAddChild(newNode, andNode.jjtGetNumChildren());
-            }
-            
-            return andNode;
-        } else if (node.jjtGetParent() instanceof ASTOrNode) {
-            ASTOrNode orNode = JexlNodes.newInstanceOfType(((ASTOrNode) (node.jjtGetParent())));
-            orNode.image = node.jjtGetParent().image;
-            
-            for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                JexlNode newNode = (JexlNode) node.jjtGetChild(i).jjtAccept(this, null);
-                newNode.jjtSetParent(orNode);
-                orNode.jjtAddChild(newNode, orNode.jjtGetNumChildren());
-            }
-            
-            return orNode;
-        } else if (node.jjtGetParent() instanceof ASTNotNode || node.jjtGetParent() instanceof ASTReference) {
-            // ensure we keep negated expressions
-            return super.visit(node, data);
-        } else if (node.jjtGetNumChildren() == 1 && (newExpressive = advanceReferenceExpression(node.jjtGetChild(0))) != null) {
-            return visit(newExpressive, data);
-        }
-        
-        return super.visit(node, data);
-        
+        return treeFlatteningRebuilder.flattenTree(node);
     }
-    
-    /**
-     * Advances a child reference expression, if one is embedded Ex. {@code Ref RefExpr <-- this way we at Ref RefExpr}
-     * 
-     * will become
-     * 
-     * {@code Ref RefExpr <-- this still way we at}
-     * 
-     * @param jexlNode
-     *            Incoming JexlNode
-     * @return
-     */
-    protected ASTReferenceExpression advanceReferenceExpression(JexlNode jexlNode) {
-        
-        if (jexlNode instanceof ASTReference) {
-            
-            if (jexlNode.jjtGetNumChildren() == 1 && jexlNode.jjtGetChild(0) instanceof ASTReferenceExpression) {
-                ASTReferenceExpression expression = new ASTReferenceExpression(ParserTreeConstants.JJTREFERENCEEXPRESSION);
-                if (null != jexlNode.jjtGetParent())
-                    expression.image = jexlNode.jjtGetParent().image;
-                else
-                    expression.image = null;
-                
-                JexlNode node = jexlNode.jjtGetChild(0);
-                
-                for (int i = 0; i < node.jjtGetNumChildren(); i++) {
-                    JexlNode newNode = (JexlNode) node.jjtGetChild(i).jjtAccept(this, null);
-                    newNode.jjtSetParent(expression);
-                    expression.jjtAddChild(newNode, expression.jjtGetNumChildren());
-                }
-                
-                return expression;
-            }
-        }
-        return null;
+
+    @Override
+    public Object visit(ASTBlock node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
     }
-    
-    protected JexlNode flattenTree(JexlNode currentNode, JexlNode newNode, Object data) {
-        if (!currentNode.getClass().equals(newNode.getClass())) {
-            log.warn("newNode is not the same type as currentNode ... something has probably gone horribly wrong");
-        }
-        
-        for (int i = 0; i < currentNode.jjtGetNumChildren(); i++) {
-            JexlNode node = (JexlNode) currentNode.jjtGetChild(i).jjtAccept(this, null);
-            JexlNode dereferenced = JexlASTHelper.dereference(node);
-            
-            if (acceptableNodesToCombine(currentNode, dereferenced, !node.equals(dereferenced))) {
-                flattenTree(dereferenced, newNode, data);
-            } else {
-                newNode.jjtAddChild(node, newNode.jjtGetNumChildren());
-                node.jjtSetParent(newNode);
-            }
-        }
-        
-        return newNode;
+
+    @Override
+    public Object visit(ASTAmbiguous node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
     }
-    
-    protected boolean acceptableNodesToCombine(JexlNode currentNode, JexlNode newNode, boolean isWrapped) {
-        if (currentNode.getClass().equals(newNode.getClass())) {
-            // if this is a bounded range or marker node, then to not combine
-            if (newNode instanceof ASTAndNode && isBoundedRange((ASTAndNode) newNode)) {
-                return false;
-            }
-            // don't allow combination of a marker node UNLESS it's already unwrapped
-            else if (newNode instanceof ASTAndNode && QueryPropertyMarker.instanceOf(newNode, null) && isWrapped) {
-                return false;
-            }
-            
-            return true;
-        }
-        
-        return false;
+
+    @Override
+    public Object visit(ASTIfStatement node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTWhileStatement node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTForeachStatement node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTAssignment node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTTernaryNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTBitwiseOrNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTBitwiseXorNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTBitwiseAndNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTAdditiveNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTAdditiveOperator node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTMulNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTDivNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTModNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTUnaryMinusNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTBitwiseComplNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTArrayLiteral node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTMapLiteral node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTMapEntry node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTEmptyFunction node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTSizeFunction node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTMethodNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTSizeMethod node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTConstructorNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTArrayAccess node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTReturnStatement node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTVar node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTUnknownFieldERNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
+    }
+
+    @Override
+    public Object visit(ASTUnsatisfiableERNode node, Object data) {
+        return treeFlatteningRebuilder.flattenTree(node);
     }
 }

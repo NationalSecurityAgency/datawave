@@ -1,16 +1,17 @@
 package datawave.webservice.common.cache;
 
-import org.apache.deltaspike.core.api.config.ConfigProperty;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.deltaspike.core.api.config.ConfigProperty;
+
 public class AccumuloTableCacheConfiguration {
-    
+
     @Inject
     @ConfigProperty(name = "dw.warehouse.zookeepers")
     private String zookeepers = null;
@@ -24,9 +25,9 @@ public class AccumuloTableCacheConfiguration {
     @Inject
     @ConfigProperty(name = "dw.cache.reloadInterval", defaultValue = "86400000")
     private long reloadInterval;
-    
+
     private Map<String,TableCache> caches = new HashMap<>();
-    
+
     @PostConstruct
     private void initializeCaches() {
         for (String tableName : tableNames) {
@@ -37,15 +38,15 @@ public class AccumuloTableCacheConfiguration {
             caches.put(tableName, cache);
         }
     }
-    
+
     public String getZookeepers() {
         return zookeepers;
     }
-    
+
     public void setZookeepers(String zookeepers) {
         this.zookeepers = zookeepers;
     }
-    
+
     public Map<String,TableCache> getCaches() {
         return Collections.unmodifiableMap(caches);
     }

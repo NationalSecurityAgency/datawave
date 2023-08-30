@@ -1,5 +1,0 @@
-# This template is for configuring your DEV profile for the cache microservice.
-# You should copy this file to cache-dev.yml before changing configuration.
-
-server:
-  port: ${cachePort:8543}

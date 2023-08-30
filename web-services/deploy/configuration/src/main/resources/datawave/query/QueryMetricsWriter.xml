@@ -18,5 +18,6 @@
         <property name="timelyMetricTags">
             ${query.metrics.timelyMetricTags}
         </property>
+        <property name="useRemoteService" value="${querymetric.remoteservice.enabled}" />
     </bean>
 </beans>

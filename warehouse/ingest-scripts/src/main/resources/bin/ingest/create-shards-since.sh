@@ -45,11 +45,16 @@ else
     count=$2
 fi
 
-TABLES="${SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME},${QUERYMETRICS_SHARD_TABLE_NAME}"
+shardsPerSplit=1
 if [[ -n "$3" ]]; then
+    shardsPerSplit=$3
+fi
+
+TABLES="${SHARD_TABLE_NAME},${ERROR_SHARD_TABLE_NAME},${QUERYMETRICS_SHARD_TABLE_NAME}"
+if [[ -n "$4" ]]; then
     # user-specified set of tables to generate shard splits on
     # must be comma-delimited, no spaces
-    TABLES="$3"
+    TABLES="$4"
 fi
 
 OLD_IFS="$IFS"
@@ -59,8 +64,8 @@ IFS="$OLD_IFS"
 
 TYPES=${BULK_INGEST_DATA_TYPES},${LIVE_INGEST_DATA_TYPES},${COMPOSITE_DATA_TYPES}
 
-ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR,$THIS_DIR/$COMMON_UTIL_JAR,$THIS_DIR/$DATAWAVE_CORE_JAR
+ADDJARS=$THIS_DIR/$DATAWAVE_INGEST_CORE_JAR:$THIS_DIR/$COMMON_UTIL_JAR:$THIS_DIR/$DATAWAVE_CORE_JAR:$THIS_DIR/$DATAWAVE_COMMON_UTILS_JAR:$THIS_DIR/$COMMONS_LANG_JAR
 
 for table in "${TABLES[@]}" ; do
-   $WAREHOUSE_ACCUMULO_BIN/accumulo -add $ADDJARS datawave.ingest.util.GenerateShardSplits $date $count ${NUM_SHARDS} -addShardMarkers $USERNAME $PASSWORD ${table} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
+   CLASSPATH=$ADDJARS $WAREHOUSE_ACCUMULO_BIN/accumulo datawave.ingest.util.GenerateShardSplits $date $count ${NUM_SHARDS} $shardsPerSplit -addShardMarkers $USERNAME $PASSWORD ${table} $WAREHOUSE_INSTANCE_NAME $WAREHOUSE_ZOOKEEPERS
 done

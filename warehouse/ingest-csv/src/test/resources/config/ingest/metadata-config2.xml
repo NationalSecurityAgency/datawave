@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+<property>
+	<name>metadata.ingest.helper.class</name>
+	<value>datawave.ingest.data.config.ingest.MetaDataIngestHelper</value>
+</property>
+
+<property>
+	<name>metadata.reader.class</name>
+	<value></value>
+</property>
+
+<property>
+	<name>metadata.handler.classes</name>
+	<value></value>
+</property>
+
+<property>
+  <name>metadata.table.name</name>
+  <value>datawave.metadata</value>
+</property>
+
+<property>
+  <name>metadata.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+  <name>datawave.metadata.table.config.class</name>
+  <value>datawave.ingest.table.config.MetadataTableConfigHelper</value>
+</property>
+
+<property>
+  <name>metadata.loaddates.enabled</name>
+  <value>true</value>
+</property>
+
+<property>
+  <name>metadata.loaddates.table.name</name>
+  <value>datawave.loadDates</value>
+</property>
+
+<property>
+  <name>metadata.loaddates.table.loader.priority</name>
+  <value>30</value>
+</property>
+
+<property>
+    <name>metadata.loaddates.table.locality.groups</name>
+    <value></value>
+    <description>The list of locality groups.  Groups are comma separated.  Column families are semicolon separated, e.g. groupName1:colFamily1;colFamily2,groupName2:colFamily3</description>
+</property>
+
+<property>
+  <name>datawave.loadDates.table.config.class</name>
+  <value>datawave.ingest.table.config.LoadDateTableConfigHelper</value>
+</property>
+
+<property>
+  <name>metadata.term.frequency.enabled</name>
+  <value>true</value>
+</property>
+
+</configuration>

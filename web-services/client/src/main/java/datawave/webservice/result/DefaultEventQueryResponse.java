@@ -15,28 +15,27 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.result.event.EventBase;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
 
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.result.event.DefaultEvent;
-import datawave.webservice.query.result.event.EventBase;
-
 @XmlRootElement(name = "DefaultEventQueryResponse")
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlAccessorOrder(XmlAccessOrder.ALPHABETICAL)
 public class DefaultEventQueryResponse extends EventQueryResponseBase implements TotalResultsAware, Serializable, Message<DefaultEventQueryResponse> {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     @XmlElement(name = "TotalEvents")
     private Long totalEvents = null;
-    
+
     @XmlElement(name = "ReturnedEvents")
     private Long returnedEvents = null;
-    
+
     /**
      * A list of unique field names contained in this response's collection of Events specific to only this response.
      *
@@ -46,44 +45,44 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
     @XmlElementWrapper(name = "Fields")
     @XmlElement(name = "Field")
     private List<String> fields = null;
-    
+
     @XmlElementWrapper(name = "Events")
     @XmlElement(name = "Event")
     private List<DefaultEvent> events = null;
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.result.EventQueryResponse#getTotalEvents()
      */
     @Override
     public Long getTotalEvents() {
         return totalEvents;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.result.EventQueryResponse#getReturnedEvents()
      */
     @Override
     public Long getReturnedEvents() {
         return returnedEvents;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.result.EventQueryResponse#getFields()
      */
     @Override
     public List<String> getFields() {
         return fields;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.result.EventQueryResponse#getEvents()
      */
     @Override
@@ -95,98 +94,99 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
         baseEvents.addAll(events);
         return baseEvents;
     }
-    
+
     public void setTotalEvents(Long totalEvents) {
         this.totalEvents = totalEvents;
     }
-    
+
     public void setReturnedEvents(Long returnedEvents) {
         this.returnedEvents = returnedEvents;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.result.EventQueryResponse#setFields(java.util.List)
      */
     @Override
     public void setFields(List<String> fields) {
         this.fields = fields;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.result.EventQueryResponse#setEvents(java.util.List)
      */
     @Override
     public void setEvents(List<EventBase> entries) {
-        if (entries == null) {
+        if (entries == null || entries.isEmpty()) {
             this.events = null;
+        } else {
+            List<DefaultEvent> events = new ArrayList<>(entries.size());
+            for (EventBase event : entries) {
+                events.add((DefaultEvent) event);
+            }
+            this.events = events;
         }
-        List<DefaultEvent> events = new ArrayList<DefaultEvent>(entries.size());
-        for (EventBase event : entries) {
-            events.add((DefaultEvent) event);
-        }
-        this.events = events;
     }
-    
+
     public static Schema<DefaultEventQueryResponse> getSchema() {
         return SCHEMA;
     }
-    
+
     @Override
     public Schema<DefaultEventQueryResponse> cachedSchema() {
         return SCHEMA;
     }
-    
+
     @XmlTransient
     private static final Schema<DefaultEventQueryResponse> SCHEMA = new Schema<DefaultEventQueryResponse>() {
         // schema methods
-        
+
         @Override
         public DefaultEventQueryResponse newMessage() {
             return new DefaultEventQueryResponse();
         }
-        
+
         @Override
         public Class<DefaultEventQueryResponse> typeClass() {
             return DefaultEventQueryResponse.class;
         }
-        
+
         @Override
         public String messageName() {
             return DefaultEventQueryResponse.class.getSimpleName();
         }
-        
+
         @Override
         public String messageFullName() {
             return DefaultEventQueryResponse.class.getName();
         }
-        
+
         @Override
         public boolean isInitialized(DefaultEventQueryResponse message) {
             return true;
         }
-        
+
         @Override
         public void writeTo(Output output, DefaultEventQueryResponse message) throws IOException {
-            
+
             if (message.totalEvents != null) {
                 output.writeUInt64(1, message.totalEvents, false);
             }
-            
+
             if (message.returnedEvents != null) {
                 output.writeUInt64(2, message.returnedEvents, false);
             }
-            
+
             if (message.fields != null) {
                 for (String msg : message.fields) {
                     if (msg != null)
                         output.writeString(3, msg, true);
                 }
             }
-            
+
             if (message.events != null) {
                 Schema<DefaultEvent> schema = null;
                 for (DefaultEvent event : message.events) {
@@ -198,17 +198,17 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
                     }
                 }
             }
-            
+
             if (message.getQueryId() != null) {
                 output.writeString(5, message.getQueryId(), false);
             }
-            
+
             if (message.getLogicName() != null) {
                 output.writeString(6, message.getLogicName(), false);
             }
-            
+
             output.writeUInt64(7, message.getOperationTimeMS(), false);
-            
+
             List<String> messages = message.getMessages();
             if (messages != null) {
                 for (String msg : messages) {
@@ -216,7 +216,7 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
                         output.writeString(8, msg, true);
                 }
             }
-            
+
             List<QueryExceptionType> exceptions = message.getExceptions();
             if (exceptions != null) {
                 for (QueryExceptionType exception : exceptions) {
@@ -225,7 +225,7 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
                 }
             }
         }
-        
+
         @Override
         public void mergeFrom(Input input, DefaultEventQueryResponse message) throws IOException {
             LinkedList<QueryExceptionType> exceptions = null;
@@ -278,7 +278,7 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
             if (exceptions != null)
                 message.setExceptions(exceptions);
         }
-        
+
         @Override
         public String getFieldName(int number) {
             switch (number) {
@@ -304,13 +304,13 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
                     return null;
             }
         }
-        
+
         @Override
         public int getFieldNumber(String name) {
             final Integer number = fieldMap.get(name);
             return number == null ? 0 : number.intValue();
         }
-        
+
         final java.util.HashMap<String,Integer> fieldMap = new java.util.HashMap<String,Integer>();
         {
             fieldMap.put("totalEvents", 1);
@@ -324,22 +324,22 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
             fieldMap.put("exceptions", 9);
         }
     };
-    
+
     @Override
     public void setTotalResults(long totalResults) {
         this.totalEvents = totalResults;
     }
-    
+
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see datawave.webservice.result.EventQueryResponse#getTotalResults()
      */
     @Override
     public long getTotalResults() {
         return totalEvents == null ? -1 : totalEvents;
     }
-    
+
     @Override
     public void merge(EventQueryResponseBase other) {
         if (null != other.getEvents()) {
@@ -350,7 +350,7 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
                 this.events.add((DefaultEvent) event);
             }
         }
-        
+
         if (null != other.getFields()) {
             if (null == this.fields) {
                 this.fields = new ArrayList<String>(other.getFields());
@@ -358,16 +358,16 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
                 this.fields.addAll(other.getFields());
             }
         }
-        
+
         this.returnedEvents += other.getReturnedEvents();
         this.totalEvents += other.getTotalEvents();
         this.setOperationTimeMS(this.getOperationTimeMS() + other.getOperationTimeMS());
-        
+
         // If either is partial results, then this is partial results
         if (this.isPartialResults() != other.isPartialResults()) {
             this.setPartialResults(true);
         }
-        
+
         if (null != other.getMessages()) {
             if (null == this.getMessages()) {
                 this.setMessages(other.getMessages());
@@ -375,7 +375,7 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
                 this.getMessages().addAll(other.getMessages());
             }
         }
-        
+
         if (null != other.getExceptions()) {
             if (null == this.getExceptions()) {
                 this.setExceptions(new LinkedList<QueryExceptionType>(other.getExceptions()));
@@ -384,5 +384,5 @@ public class DefaultEventQueryResponse extends EventQueryResponseBase implements
             }
         }
     }
-    
+
 };

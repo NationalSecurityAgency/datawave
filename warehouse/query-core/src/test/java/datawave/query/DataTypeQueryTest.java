@@ -1,19 +1,11 @@
 package datawave.query;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetupHelper;
-import datawave.query.testframework.BaseRawData;
-import datawave.query.testframework.CitiesDataType;
-import datawave.query.testframework.CitiesDataType.CityEntry;
-import datawave.query.testframework.CitiesDataType.CityField;
-import datawave.query.testframework.DataTypeHadoopConfig;
-import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.GenericCityFields;
-import joptsimple.internal.Strings;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.GTE_OP;
+import static datawave.query.testframework.RawDataManager.LTE_OP;
+import static datawave.query.testframework.RawDataManager.NE_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,22 +14,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.GTE_OP;
-import static datawave.query.testframework.RawDataManager.LTE_OP;
-import static datawave.query.testframework.RawDataManager.NE_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.testframework.AbstractFunctionalQuery;
+import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.BaseRawData;
+import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.CitiesDataType.CityEntry;
+import datawave.query.testframework.CitiesDataType.CityField;
+import datawave.query.testframework.DataTypeHadoopConfig;
+import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 
 public class DataTypeQueryTest extends AbstractFunctionalQuery {
-    
+
+    @ClassRule
+    public static AccumuloSetup accumuloSetup = new AccumuloSetup();
+
     private static final Logger log = Logger.getLogger(DataTypeQueryTest.class);
-    
+
     private static final List<String> TEST_STATES = Arrays.asList("'ohio'", "'Missouri'", "'Maine'");
     private static final List<String> TEST_NUMS = Arrays.asList("100", "110", "120");
     private static final List<CityEntry> TEST_DATATYPES = Arrays.asList(CityEntry.generic, CityEntry.usa, CityEntry.dup_usa);
     private static final List<String> INVALID_DATATYPES = Arrays.asList("invalid-one", "invalid-two");
-    
+
     @BeforeClass
     public static void filterSetup() throws Exception {
         Collection<DataTypeHadoopConfig> dataTypes = new ArrayList<>();
@@ -46,23 +51,23 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
         for (String idx : generic.getIndexFields()) {
             generic.addReverseIndexField(idx);
         }
-        
+
         for (CityEntry entry : TEST_DATATYPES) {
             dataTypes.add(new CitiesDataType(entry, generic));
         }
-        
-        final AccumuloSetupHelper helper = new AccumuloSetupHelper(dataTypes);
-        connector = helper.loadTables(log);
+
+        accumuloSetup.setData(FileType.CSV, dataTypes);
+        client = accumuloSetup.loadTables(log);
     }
-    
+
     public DataTypeQueryTest() {
         super(CitiesDataType.getManager());
     }
-    
+
     @Test
     public void testDataTypeEqualInQuery() throws Exception {
         log.info("------  testDataTypeEqualInQuery  ------");
-        
+
         for (CityEntry dtEntry : TEST_DATATYPES) {
             String event = "'" + dtEntry.getDataType() + "'";
             for (String state : TEST_STATES) {
@@ -71,11 +76,11 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             }
         }
     }
-    
+
     @Test
     public void testDataTypeNotEqualInQuery() throws Exception {
         log.info("------  testDataTypeEqualInQuery  ------");
-        
+
         for (CityEntry dtEntry : TEST_DATATYPES) {
             String event = "'" + dtEntry.getDataType() + "'";
             for (String state : TEST_STATES) {
@@ -84,16 +89,16 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             }
         }
     }
-    
+
     @Test
     public void testSimpleParam() throws Exception {
         log.info("------  testSimpleParam  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
         for (CityEntry dtEntry : TEST_DATATYPES) {
             String dataType = dtEntry.getDataType();
             qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dataType);
-            
+
             for (String state : TEST_STATES) {
                 String query = CityField.STATE.name() + EQ_OP + state;
                 String expect = query + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + dataType + "'";
@@ -101,15 +106,15 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             }
         }
     }
-    
+
     @Test
     public void testMultiDatatype() throws Exception {
         log.info("------  testMultiDatatype  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
         String dtFilter = CityEntry.generic.getDataType() + ShardQueryConfiguration.PARAM_VALUE_SEP_STR + CityEntry.usa.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-        
+
         for (String state : TEST_STATES) {
             String query = CityField.STATE.name() + EQ_OP + state;
             String expect = query + AND_OP + "(" + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'" + OR_OP
@@ -117,81 +122,83 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             runTest(query, expect, qOptions);
         }
     }
-    
+
     @Test
     public void testEventPerDay() throws Exception {
         log.info("------  testEventPerDay  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-        
+
         this.logic.setEventPerDayThreshold(1);
-        
+
         String query = CityField.STATE.name() + EQ_OP + "'missouri'";
         String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
         runTest(query, expect, qOptions);
     }
-    
+
     @Test
     public void testEventAndShardsPerDay() throws Exception {
         log.info("------  testEventAndShardsPerDay  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-        
+
         this.logic.setEventPerDayThreshold(1);
         this.logic.setShardsPerDayThreshold(1);
-        
+
         String query = CityField.STATE.name() + EQ_OP + "'missouri'";
         String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
         runTest(query, expect, qOptions);
     }
-    
+
     @Test
     public void testRange() throws Exception {
         log.info("------  testRange  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
         String dtFilter = CityEntry.generic.getDataType();
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-        
+
         for (String num : TEST_NUMS) {
             String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
+            query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);
         }
     }
-    
+
     @Test
     public void testRangeInvalidDatatypes() throws Exception {
         log.info("------  testRangeInvalidDatatypes  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
         String dtFilter = CityEntry.generic.getDataType() + ShardQueryConfiguration.PARAM_VALUE_SEP_STR
-                        + Strings.join(INVALID_DATATYPES, ShardQueryConfiguration.PARAM_VALUE_SEP_STR);
+                        + String.join(ShardQueryConfiguration.PARAM_VALUE_SEP_STR, INVALID_DATATYPES);
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-        
+
         for (String num : TEST_NUMS) {
             String query = CityField.NUM.name() + GTE_OP + num + AND_OP + CityField.NUM.name() + LTE_OP + num;
             String expect = "(" + query + ")" + AND_OP + BaseRawData.EVENT_DATATYPE + EQ_OP + "'" + CityEntry.generic.getDataType() + "'";
+            query = "((_Bounded_ = true) && (" + query + "))";
             runTest(query, expect, qOptions);
         }
     }
-    
+
     @Test
     public void testAnyFieldMultiDatatypes() throws Exception {
         log.info("------  testAnyFieldMultiDatatypes  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
         final List<String> dtEntries = new ArrayList<>();
         for (CityEntry dt : TEST_DATATYPES) {
             dtEntries.add(dt.getDataType());
         }
-        String dtFilter = Strings.join(dtEntries, ShardQueryConfiguration.PARAM_VALUE_SEP_STR);
+        String dtFilter = String.join(ShardQueryConfiguration.PARAM_VALUE_SEP_STR, dtEntries);
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-        
+
         final String phrase = EQ_OP + "'ohio'";
         final String any = this.dataManager.convertAnyField(phrase);
         for (String num : TEST_NUMS) {
@@ -207,15 +214,15 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             runTest(query, expect.toString(), qOptions);
         }
     }
-    
+
     @Test
     public void testAnyFieldInvalidDatatypes() throws Exception {
         log.info("------  testAnyFieldInvalidDatatypes  ------");
-        
+
         final Map<String,String> qOptions = new HashMap<>();
-        String dtFilter = Strings.join(INVALID_DATATYPES, ShardQueryConfiguration.PARAM_VALUE_SEP_STR);
+        String dtFilter = String.join(ShardQueryConfiguration.PARAM_VALUE_SEP_STR, INVALID_DATATYPES);
         qOptions.put(QueryParameters.DATATYPE_FILTER_SET, dtFilter);
-        
+
         final String phrase = EQ_OP + "'ohio'";
         final String any = this.dataManager.convertAnyField(phrase);
         for (String num : TEST_NUMS) {
@@ -231,7 +238,7 @@ public class DataTypeQueryTest extends AbstractFunctionalQuery {
             runTest(query, expect.toString(), qOptions);
         }
     }
-    
+
     // ============================================
     // implemented abstract methods
     protected void testInit() {

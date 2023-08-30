@@ -1,4 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-datawave.microservice.cached.HazelcastK8sClientAutoConfiguration,\
-datawave.microservice.cached.HazelcastDiscoveryClientAutoConfiguration,\
-datawave.microservice.cached.HazelcastDefaultClientAutoConfiguration

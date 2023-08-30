@@ -10,6 +10,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.log4j.Logger;
+import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
+import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
+import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
+import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
+
 import datawave.query.language.builder.lucene.AccumuloQueryTreeBuilder;
 import datawave.query.language.functions.lucene.LuceneQueryFunction;
 import datawave.query.language.parser.ParseException;
@@ -24,29 +30,24 @@ import datawave.query.search.FieldedTerm;
 import datawave.query.search.RangeFieldedTerm;
 import datawave.query.search.Term;
 
-import org.apache.log4j.Logger;
-import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
-import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
-import org.apache.lucene.queryparser.flexible.core.nodes.QueryNode;
-import org.apache.lucene.queryparser.flexible.core.processors.QueryNodeProcessor;
-
+@Deprecated
 public class LuceneQueryParser implements QueryParser {
     private static Logger log = Logger.getLogger(LuceneQueryParser.class.getName());
     private Map<String,String> filters = new HashMap<>();
     private List<LuceneQueryFunction> allowedFunctions = null;
-    
+
     @Override
     public datawave.query.language.tree.QueryNode parse(String query) throws ParseException {
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
         query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
-        
+
         datawave.query.language.tree.QueryNode parsedQuery = null;
-        
+
         try {
             Locale.setDefault(Locale.US);
             AccumuloSyntaxParser syntaxParser = new AccumuloSyntaxParser();
             syntaxParser.enable_tracing();
-            
+
             org.apache.lucene.queryparser.flexible.core.config.QueryConfigHandler queryConfigHandler = new QueryConfigHandler();
             QueryNodeProcessor processor = new CustomQueryNodeProcessorPipeline(queryConfigHandler);
             QueryBuilder builder = null;
@@ -55,18 +56,18 @@ public class LuceneQueryParser implements QueryParser {
             } else {
                 builder = new AccumuloQueryTreeBuilder(allowedFunctions);
             }
-            
+
             QueryNode queryTree = syntaxParser.parse(query, "");
             queryTree = processor.process(queryTree);
             parsedQuery = (datawave.query.language.tree.QueryNode) builder.build(queryTree);
-            
+
             Set<FieldedTerm> positiveFilters = new TreeSet<>();
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("Query before filters extracted: " + parsedQuery.getContents());
             }
             extractFilters(parsedQuery, positiveFilters);
-            
+
             parsedQuery.setPositiveFilters(positiveFilters);
             if (log.isTraceEnabled()) {
                 log.trace("Query after filters extracted: " + parsedQuery.getContents());
@@ -74,18 +75,18 @@ public class LuceneQueryParser implements QueryParser {
         } catch (QueryNodeException | RuntimeException e) {
             throw new ParseException(e);
         }
-        
+
         return parsedQuery;
     }
-    
+
     public Map<String,String> getFilters() {
         return filters;
     }
-    
+
     public void setFilters(Map<String,String> filters) {
         this.filters = filters;
     }
-    
+
     private void extractFilters(datawave.query.language.tree.QueryNode node, Set<FieldedTerm> filters) {
         if (node instanceof FunctionNode) {
             throw new IllegalArgumentException("Insufficient terms to evaluate");
@@ -96,33 +97,33 @@ public class LuceneQueryParser implements QueryParser {
             filters.addAll(alwaysFilterTerms);
             node.setChildren(childrenList);
         }
-        
+
         if (node instanceof SoftAndNode || node instanceof HardAndNode) {
             List<datawave.query.language.tree.QueryNode> evaluateNodes = new ArrayList<>();
             evaluateNodes.addAll(node.getChildren());
             Set<FieldedTerm> possibleFilters = extractFilters(evaluateNodes);
-            
+
             if (!evaluateNodes.isEmpty()) {
                 filters.addAll(possibleFilters);
-                
+
                 for (datawave.query.language.tree.QueryNode n : evaluateNodes) {
                     extractFilters(n, filters);
                 }
                 node.setChildren(evaluateNodes);
             }
-            
+
         } else if (node instanceof NotNode) {
             List<datawave.query.language.tree.QueryNode> children = node.getChildren();
-            
+
             // If the first child of a NOT node might have filterable fields in it
             datawave.query.language.tree.QueryNode positiveNode = children.get(0);
             extractFilters(positiveNode, filters);
         }
     }
-    
+
     private Set<FieldedTerm> extractAlwaysFilterNodes(Set<FieldedTerm> possibleFilters, List<datawave.query.language.tree.QueryNode> nodes) {
         ListIterator<datawave.query.language.tree.QueryNode> itr = nodes.listIterator(nodes.size());
-        
+
         while (itr.hasPrevious() && !nodes.isEmpty()) {
             datawave.query.language.tree.QueryNode n = itr.previous();
             if (n instanceof FunctionNode) {
@@ -142,12 +143,12 @@ public class LuceneQueryParser implements QueryParser {
         }
         return possibleFilters;
     }
-    
+
     private Set<FieldedTerm> extractFilters(List<datawave.query.language.tree.QueryNode> nodes) {
         Set<FieldedTerm> possibleFilters = new TreeSet<>();
-        
+
         ListIterator<datawave.query.language.tree.QueryNode> itr = nodes.listIterator(nodes.size());
-        
+
         // Don't remove the last remaining node, even if it is filter-able
         // traverse in reverse order since users have been trained to place high cardinality
         // fields at the end of the query -- we want to filter those first if possible
@@ -180,11 +181,11 @@ public class LuceneQueryParser implements QueryParser {
         }
         return possibleFilters;
     }
-    
+
     public List<LuceneQueryFunction> getAllowedFunctions() {
         return allowedFunctions;
     }
-    
+
     public void setAllowedFunctions(List<LuceneQueryFunction> allowedFunctions) {
         this.allowedFunctions = allowedFunctions;
     }

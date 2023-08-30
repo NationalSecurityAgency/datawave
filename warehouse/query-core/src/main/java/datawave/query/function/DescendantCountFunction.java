@@ -12,25 +12,25 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.data.hash.UID;
-import datawave.data.hash.UIDConstants;
-import datawave.query.Constants;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.util.Tuple3;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IterationInterruptedException;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.log4j.Logger;
+
+import datawave.data.hash.UID;
+import datawave.data.hash.UIDConstants;
+import datawave.query.Constants;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.util.Tuple3;
 
 /**
  * Count and output the number of descendant events, immediate child events, or both based on the specified tuple elements, including:
@@ -65,36 +65,36 @@ import org.apache.log4j.Logger;
  * The event-seeking legacy implementation is a fallback if the fi count can't be attempted at all, either by virtue of the configuration or document
  * attributes. Potentially less efficient that the fi-iterating implementation, this logic tries to count children by seeking to each parent event's child in
  * the shard. Because it seeks directly to 1st generation children, it does not have the option of outputting a DESCENDANT_COUNT key at all.
- * 
+ *
  * @see KeyToDocumentData
  */
 public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key,List<Entry<Key,Value>>>,DescendantCount> {
     private static final Logger LOG = Logger.getLogger(DescendantCountFunction.class);
-    
+
     private static final String DEFAULT_DELIMITER_PATTERN = "-att-\\d*";
-    
+
     private static final CountResult ZERO_COUNT = new CountResult(0);
-    
+
     private Collection<ByteSequence> columnFamilies = KeyToDocumentData.columnFamilies;
-    
+
     private boolean inclusive = KeyToDocumentData.inclusive;
-    
+
     private Text indexCf;
-    
+
     private ByteSequence indexComparator;
-    
+
     private Pattern indexDelimiterPattern;
-    
+
     private boolean outputChildCount = true;
-    
+
     private boolean outputDescendantCount = false;
-    
+
     private boolean outputHasChildren = false;
-    
+
     private int skipThreshold = -1;
-    
+
     private SortedKeyValueIterator<Key,Value> source;
-    
+
     @Override
     public DescendantCount apply(final Tuple3<Range,Key,List<Entry<Key,Value>>> tuple) {
         // Extract the key and document attributes from which the child count will be determined
@@ -110,7 +110,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             key = null;
             documentAttributes = null;
         }
-        
+
         // Get the descendant count(s), including applicable keys
         DescendantCount finalCount = ZERO_COUNT;
         if ((null != range) && (null != key) && (this.outputChildCount || this.outputHasChildren || this.outputDescendantCount)) {
@@ -122,7 +122,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                 final String message = "Unable to count child events";
                 LOG.error(message, e);
             }
-            
+
             // Create a list of key entries based on tallied counts, if any
             if (null != count) {
                 // Create keys
@@ -132,20 +132,20 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         final ColumnVisibility visibility = key.getColumnVisibilityParsed();
                         long timestamp = key.getTimestamp();
                         boolean hasChildren = count.hasDescendants();
-                        final Key hasChildrenKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_HAS_CHILDREN_FIELDNAME + '\0'
-                                        + Boolean.toString(hasChildren)), visibility, timestamp);
+                        final Key hasChildrenKey = new Key(key.getRow(), key.getColumnFamily(),
+                                        new Text(QueryOptions.DEFAULT_HAS_CHILDREN_FIELDNAME + '\0' + Boolean.toString(hasChildren)), visibility, timestamp);
                         countKeys.add(hasChildrenKey);
                     }
-                    
+
                     if (this.outputChildCount && count.hasDescendants()) {
                         final ColumnVisibility visibility = key.getColumnVisibilityParsed();
                         long timestamp = key.getTimestamp();
                         int numChildren = count.getFirstGenerationCount();
-                        final Key childCountKey = new Key(key.getRow(), key.getColumnFamily(), new Text(QueryOptions.DEFAULT_CHILD_COUNT_FIELDNAME + '\0'
-                                        + Integer.toString(numChildren)), visibility, timestamp);
+                        final Key childCountKey = new Key(key.getRow(), key.getColumnFamily(),
+                                        new Text(QueryOptions.DEFAULT_CHILD_COUNT_FIELDNAME + '\0' + Integer.toString(numChildren)), visibility, timestamp);
                         countKeys.add(childCountKey);
                     }
-                    
+
                     if (this.outputDescendantCount && (count.getAllGenerationsCount() > 0)) {
                         final ColumnVisibility visibility = key.getColumnVisibilityParsed();
                         long timestamp = key.getTimestamp();
@@ -156,37 +156,37 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         } else {
                             text = new Text(QueryOptions.DEFAULT_DESCENDANT_COUNT_FIELDNAME + '\0' + Integer.toString(numDescendants));
                         }
-                        
+
                         final Key descendantCountKey = new Key(key.getRow(), key.getColumnFamily(), text, visibility, timestamp);
                         countKeys.add(descendantCountKey);
                     }
-                    
+
                     if (!countKeys.isEmpty()) {
                         count.setKeys(countKeys);
                     }
                 }
-                
+
                 // Re-assign the return value;
                 finalCount = count;
             }
         }
-        
+
         return finalCount;
     }
-    
+
     protected CountResult countDescendants(final Range range, final Key key, final List<Entry<Key,Value>> documentAttributes) throws IOException {
         final CountResult childCount;
-        
+
         if ((null != range) && (null != key)) {
             // Get the range and key information needed for child count determination
             final Text row = key.getRow();
             final String cf = key.getColumnFamily().toString();
-            
+
             int index = cf.indexOf('\0');
             final String dataType = cf.substring(0, index);
             final String uidString = cf.substring(index + 1);
             final UID uid = UID.parse(uidString);
-            
+
             // Validate marker
             Key marker = null;
             if (this.source.hasTop()) {
@@ -197,7 +197,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                     marker = null;
                 }
             }
-            
+
             // Get the root value to use for field-indexed child counts, if applicable
             String fiRootValue = null;
             if ((null != this.indexComparator) && (null != documentAttributes)) {
@@ -212,7 +212,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                     }
                 }
             }
-            
+
             // If the root value is defined, determine the child count using the field index
             long startTime = (LOG.isTraceEnabled()) ? System.currentTimeMillis() : 0;
             if ((null != fiRootValue) && !fiRootValue.isEmpty()) {
@@ -222,14 +222,14 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             else {
                 childCount = new CountResult(this.getCountByEventScan(range, row, dataType, uid, marker));
             }
-            
+
             // trace it
             if (LOG.isTraceEnabled()) {
                 int numChildren = childCount.getFirstGenerationCount();
                 int numDescendants = childCount.getAllGenerationsCount();
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 String method = ((null != fiRootValue) && !fiRootValue.isEmpty()) ? "field index" : "traditional scanning";
-                
+
                 final String message = elapsedTime + " ms to count " + numChildren + " children and " + numDescendants + " descendants for " + row + '\\'
                                 + dataType + '\\' + uid + " using " + method;
                 if (childCount.skippedDescendants()) {
@@ -245,41 +245,41 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
         } else {
             childCount = new CountResult(0, 0);
         }
-        
+
         return childCount;
     }
-    
+
     public Collection<ByteSequence> getColumnFamilies() {
         return columnFamilies;
     }
-    
+
     private int getCountByEventScan(final Range seekRange, final Text row, final String dataType, final UID uid, Key marker) throws IOException {
-        
+
         try {
             final Text colqT = new Text();
             final Text colfT = new Text();
             Key tk;
-            
+
             // create the children range
             String baseUid = uid.getBaseUid();
             Key startKey = new Key(row, new Text(dataType + '\0' + baseUid + UIDConstants.DEFAULT_SEPARATOR));
             Key endKey = new Key(row, new Text(dataType + '\0' + baseUid + Constants.MAX_UNICODE_STRING));
             Range range = new Range(startKey, true, endKey, false);
-            
+
             // seek too the new range
             Set<ByteSequence> emptyCfs = Collections.emptySet();
             this.source.seek(range, emptyCfs, false);
-            
+
             // the list of children uids
             Set<String> uids = new HashSet<>();
-            
+
             // now iterator through the keys and gather up the children uids
             String parentUid = uid.toString() + UIDConstants.DEFAULT_SEPARATOR;
             while (this.source.hasTop()) {
                 tk = this.source.getTopKey();
                 tk.getColumnFamily(colfT);
                 tk.getColumnQualifier(colqT);
-                
+
                 String cf = this.source.getTopKey().getColumnFamily().toString();
                 int index = cf.indexOf('\0');
                 String uidString = cf.substring(index + 1);
@@ -299,7 +299,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         startKey = new Key(row, new Text(dataType + '\0' + uidString.substring(0, nextIndex) + '0'));
                     }
                 } else {
-                    
+
                     if (LOG.isTraceEnabled())
                         LOG.trace("Passing by a non-child UID: " + parentUid + " <= " + uidString);
                     /**
@@ -316,13 +316,13 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                 range = new Range(startKey, true, endKey, false);
                 this.source.seek(range, emptyCfs, false);
             }
-            
+
             // now reset the iterator back to where it was
             // if the iterator was done when we started, no need to seek anywhere as we are in that state again
             if (marker != null) {
                 this.source.seek(new Range(marker, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), columnFamilies, inclusive);
             }
-            
+
             // and return the count
             return uids.size();
         } catch (IterationInterruptedException e) {
@@ -335,27 +335,27 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             throw new IOException("Error aggregating event", e);
         }
     }
-    
+
     private CountResult getCountByFieldIndexScan(final Range seekRange, final Text row, final String dataType, final UID uid, final String fiRootValue,
                     Key marker) throws IOException {
         try {
             final Text colqT = new Text();
             Key tk;
-            
+
             // Alternately assign marker
             if ((null == marker) && this.source.hasTop()) {
                 marker = this.source.getTopKey();
             }
-            
+
             // create the children range
             final Key startKey = new Key(row, this.indexCf, new Text(fiRootValue + '-'));
             final Key endKey = new Key(row, this.indexCf, new Text(fiRootValue + '.'));
             final Range range = new Range(startKey, true, endKey, false);
-            
+
             // seek to the first possible child
             final Set<ByteSequence> emptyCfs = Collections.emptySet();
             this.source.seek(range, emptyCfs, false);
-            
+
             // now iterate through the keys and count matching column qualifiers
             boolean countImmediateChildren = this.outputChildCount;
             boolean breakLoopIfAnyChildrenExist = (!this.outputChildCount && !this.outputDescendantCount);
@@ -366,7 +366,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             while (this.source.hasTop()) {
                 // This is at least a child or grandchild, so increment the descendant count
                 numberOfDescendants++;
-                
+
                 // Evaluate to see if the current key qualifies as an immediate child
                 //
                 // Note: Normally, the first item should normally always qualify. Exceptional cases might
@@ -376,7 +376,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                     // Get the key
                     tk = this.source.getTopKey();
                     tk.getColumnQualifier(colqT);
-                    
+
                     final String cq = colqT.toString();
                     int nullIndex = cq.indexOf('\0');
                     if ((nullIndex > 0) && (nullIndex < cq.length())) {
@@ -401,24 +401,24 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         }
                     }
                 }
-                
+
                 // Break the loop immediately if we're only interested in hasChildren == true
                 if (breakLoopIfAnyChildrenExist) {
                     break;
                 }
-                
+
                 // Advance to the next item
                 if (getNext) {
                     this.source.next();
                 }
             }
-            
+
             // now reset the iterator back to where it was
             // if the iterator was done when we started, no need to seek anywhere as we are in that state again
             if (marker != null) {
                 this.source.seek(new Range(marker, true, seekRange.getEndKey(), seekRange.isEndKeyInclusive()), columnFamilies, inclusive);
             }
-            
+
             // and return the count
             final CountResult result = new CountResult(numberOfImmediateChildren, numberOfDescendants);
             result.setSkippedDescendants(skippedSomeDescendants);
@@ -433,7 +433,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             throw new IOException("Error aggregating event", e);
         }
     }
-    
+
     @SuppressWarnings("unchecked")
     @Override
     public <K extends WritableComparable<?>,V extends Writable> void init(final SortedKeyValueIterator<K,V> source, final Map<String,String> options,
@@ -447,7 +447,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         // Assign the reusable Text and ByteSequences
                         this.indexCf = new Text(Constants.FI_PREFIX_WITH_NULL + fieldname);
                         this.indexComparator = new ArrayByteSequence((fieldname + '\0').getBytes());
-                        
+
                         // Assign the child delimiter pattern based on a configured pattern
                         if (options.containsKey(QueryOptions.CHILD_COUNT_INDEX_PATTERN)) {
                             final String pattern = options.get(QueryOptions.CHILD_COUNT_INDEX_PATTERN);
@@ -455,7 +455,7 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                                 this.indexDelimiterPattern = Pattern.compile(pattern);
                             }
                         }
-                        
+
                         // If still undefined, assign the child delimiter pattern based on a configured delimiter appended with "\d*"
                         if ((null == this.indexDelimiterPattern) && options.containsKey(QueryOptions.CHILD_COUNT_INDEX_DELIMITER)) {
                             final String delimiter = options.get(QueryOptions.CHILD_COUNT_INDEX_DELIMITER);
@@ -463,24 +463,24 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                                 this.indexDelimiterPattern = Pattern.compile(delimiter + "\\d*");
                             }
                         }
-                        
+
                         // If still undefined, assign the child delimiter pattern based on the default value
                         if (null == this.indexDelimiterPattern) {
                             this.indexDelimiterPattern = Pattern.compile(DEFAULT_DELIMITER_PATTERN);
                         }
-                        
+
                         // Determine whether or not to output the DESCENDANT_COUNT field
                         // Note: A complete DESCENDANT_COUNT is currently available only using field-index scanning
                         if (options.containsKey(QueryOptions.CHILD_COUNT_OUTPUT_ALL_DESCDENDANTS)) {
                             final String value = options.get(QueryOptions.CHILD_COUNT_OUTPUT_ALL_DESCDENDANTS);
                             this.outputDescendantCount = Boolean.valueOf(value);
                         }
-                        
+
                         // Determine whether or not to specify a "skip threshold" for events with excessively deep descendant counts
                         if (options.containsKey(QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD)) {
                             final String value = options.get(QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD);
                             try {
-                                int threshold = Integer.valueOf(value);
+                                int threshold = Integer.parseInt(value);
                                 this.skipThreshold = (threshold > 1) ? threshold : this.skipThreshold;
                             } catch (NumberFormatException e) {
                                 final String message = "Unable to configure " + QueryOptions.CHILD_COUNT_INDEX_SKIP_THRESHOLD;
@@ -489,31 +489,31 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                         }
                     }
                 }
-                
+
                 // Determine whether or not to output the CHILD_COUNT field
                 if (options.containsKey(QueryOptions.CHILD_COUNT_OUTPUT_IMMEDIATE_CHILDREN)) {
                     final String value = options.get(QueryOptions.CHILD_COUNT_OUTPUT_IMMEDIATE_CHILDREN);
                     this.outputChildCount = Boolean.valueOf(value);
                 }
-                
+
                 // Determine whether or not to output the HAS_CHILDREN field
                 if (options.containsKey(QueryOptions.CHILD_COUNT_OUTPUT_HASCHILDREN)) {
                     final String value = options.get(QueryOptions.CHILD_COUNT_OUTPUT_HASCHILDREN);
                     this.outputHasChildren = Boolean.valueOf(value);
                 }
             }
-            
+
             this.source = (SortedKeyValueIterator<Key,Value>) source;
         } else {
             final String message = "Unable to initialize " + this.getClass().getSimpleName();
             LOG.error(message, new IllegalArgumentException("Iterator source is null"));
         }
     }
-    
+
     public boolean isInclusive() {
         return inclusive;
     }
-    
+
     public void setColumnFamilies(final Collection<ByteSequence> columnFamilies) {
         if (null != columnFamilies) {
             this.columnFamilies = columnFamilies;
@@ -521,35 +521,35 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
             this.columnFamilies = Collections.emptyList();
         }
     }
-    
+
     public void setInclusive(boolean inclusive) {
         this.inclusive = inclusive;
     }
-    
-    private boolean skipExcessiveNumberOfDescendants(final String childSuffix, final Matcher matcher, final Text row, final String fiRootValue, final Key endKey)
-                    throws IOException {
+
+    private boolean skipExcessiveNumberOfDescendants(final String childSuffix, final Matcher matcher, final Text row, final String fiRootValue,
+                    final Key endKey) throws IOException {
         boolean skipped;
-        if (matcher.find() && (matcher.start() < childSuffix.length())) {
+        if (matcher.find(0) && (matcher.start() < childSuffix.length())) {
             // Get the base matching child suffix
-            final String baseMatch = childSuffix.substring(0, matcher.start());
-            
+            final String baseMatch = childSuffix.substring(matcher.start(), matcher.end());
+
             // create the skipping range
             final Key skipStartKey = new Key(row, this.indexCf, new Text(fiRootValue + baseMatch + '0'));
             final Range skipRange = new Range(skipStartKey, true, endKey, false);
-            
+
             // seek to the next first-generation child, if one exists
             final Set<ByteSequence> emptyCfs = Collections.emptySet();
             this.source.seek(skipRange, emptyCfs, false);
-            
+
             // Assign the return value
             skipped = true;
         } else {
             skipped = false;
         }
-        
+
         return skipped;
     }
-    
+
     /**
      * Provides the tallies of descendant events
      */
@@ -558,37 +558,37 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
         private final int numberOfChildren;
         private final int numberOfDescendants;
         private boolean skippedDescendants;
-        
+
         public CountResult(int numberOfChildren) {
             this(numberOfChildren, -1);
         }
-        
+
         public CountResult(int numberOfChildren, int numberOfDescendants) {
             this.keys = Collections.emptyList();
             this.numberOfChildren = numberOfChildren;
             this.numberOfDescendants = numberOfDescendants;
         }
-        
+
         @Override
         public int getAllGenerationsCount() {
             return numberOfDescendants;
         }
-        
+
         @Override
         public int getFirstGenerationCount() {
             return numberOfChildren;
         }
-        
+
         @Override
         public List<Key> getKeys() {
             return Collections.unmodifiableList(this.keys);
         }
-        
+
         @Override
         public boolean hasDescendants() {
             return ((numberOfChildren > 0) || (numberOfDescendants > 0));
         }
-        
+
         public void setKeys(final List<Key> keys) {
             if (null != keys) {
                 this.keys = keys;
@@ -596,11 +596,11 @@ public class DescendantCountFunction implements SourcedFunction<Tuple3<Range,Key
                 this.keys = Collections.emptyList();
             }
         }
-        
+
         public void setSkippedDescendants(boolean skippedDescendants) {
             this.skippedDescendants = skippedDescendants;
         }
-        
+
         public boolean skippedDescendants() {
             return this.skippedDescendants;
         }

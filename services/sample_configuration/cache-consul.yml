@@ -1,8 +1,0 @@
-# Customize the default Consul settings for some additions we need to do Consul discovery of the Hazelcast cluster members.
-spring:
-  cloud:
-    consul:
-      discovery:
-        # Register tags to store the Hazelcast cluster port (which is different from the HTTP port)
-        tags:
-          hzPort=${hazelcast.cluster.port}, hzHost=${hazelcast.cluster.host}

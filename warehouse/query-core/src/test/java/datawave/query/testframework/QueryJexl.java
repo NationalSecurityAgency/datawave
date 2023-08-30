@@ -1,7 +1,17 @@
 package datawave.query.testframework;
 
-import datawave.data.normalizer.Normalizer;
-import datawave.data.normalizer.NumberNormalizer;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.commons.jexl2.Expression;
 import org.apache.commons.jexl2.ExpressionImpl;
 import org.apache.commons.jexl2.JexlContext;
@@ -16,25 +26,15 @@ import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.jexl2.parser.Parser;
 import org.apache.commons.jexl2.parser.SimpleNode;
 import org.apache.commons.jexl2.parser.TokenMgrError;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.StringReader;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import datawave.data.normalizer.Normalizer;
+import datawave.data.normalizer.NumberNormalizer;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Provides for the parsing and execution of a Jexl query string for test execution only. The {@link #evaluate()} method should produce the same results that
@@ -61,15 +61,15 @@ import java.util.Set;
  * </ul>
  */
 public class QueryJexl {
-    
+
     private static final Logger log = Logger.getLogger(QueryJexl.class);
-    
+
     private static final JexlEngine jEngine = new JexlEngine();
     private final RawDataManager manager;
     private final Date startDate;
     private final Date endDate;
     private final Expression jExpr;
-    
+
     /**
      * @param queryStr
      *            query for test
@@ -84,28 +84,28 @@ public class QueryJexl {
         this.manager = dataManager;
         this.startDate = start;
         this.endDate = end;
-        
+
         log.debug("query[" + queryStr + "] start(" + this.startDate + ") + end(" + this.endDate + ")");
         this.jExpr = createNormalizedExpression(queryStr);
     }
-    
+
     /**
      * Performs the evaluation of a Jexl query.
-     * 
+     *
      * @return matching entries for the current manager
      */
     public Set<Map<String,String>> evaluate() {
         final JexlContext jCtx = new MapContext();
         final Set<Map<String,String>> response = new HashSet<>();
         Iterator<Map<String,String>> entries = this.manager.rangeData(this.startDate, this.endDate);
-        
+
         // one can either normalize the query string or match the variables in the expression
         // for simplicity it is easier just to match the variables to the correct field
         final ExpressionImpl exp = (ExpressionImpl) this.jExpr;
         // see limitations in the javadoc
         // an expression that has "((...))" will not return the correct variables
         final Set<List<String>> vars = exp.getVariables();
-        
+
         while (entries.hasNext()) {
             Map<String,String> mapping = entries.next();
             for (final Map.Entry<String,String> entry : mapping.entrySet()) {
@@ -122,7 +122,7 @@ public class QueryJexl {
                 response.add(mapping);
             }
         }
-        
+
         if (log.isTraceEnabled()) {
             log.trace("    ======  expected response data  ======");
             for (Map<String,String> data : response) {
@@ -131,16 +131,15 @@ public class QueryJexl {
                 }
             }
         }
-        
+
         return response;
     }
-    
+
     // =================================
     // private methods
     private Expression createNormalizedExpression(final String query) {
         try {
-            Parser parser = new Parser(new StringReader(";"));
-            ASTJexlScript script = parser.parse(new StringReader(query), null);
+            ASTJexlScript script = JexlASTHelper.parseJexlQuery(query);
             Deque<SimpleNode> nodes = new LinkedList<>();
             normalizeScript(script, nodes);
             return new NormalizedExpression(jEngine, query, script);
@@ -148,7 +147,7 @@ public class QueryJexl {
             throw new AssertionError(pe);
         }
     }
-    
+
     /**
      * Normalizes all of the {@link ASTIdentifier}, {@link ASTStringLiteral}, and {@link ASTNumberLiteral} entries that exist in a {@link ASTJexlScript}.
      *
@@ -176,7 +175,7 @@ public class QueryJexl {
                     ASTIdentifier id = (ASTIdentifier) child;
                     // change identifier to lower case
                     id.image = id.image.toLowerCase();
-                    
+
                     // check for string or numeric literal on node stack
                     SimpleNode entry = nodes.removeFirst();
                     Assert.assertNotNull(entry);
@@ -207,7 +206,7 @@ public class QueryJexl {
             }
         }
     }
-    
+
     private void normalizeField(final String field, final JexlNode value, final SimpleNode opNode) {
         Assert.assertNotNull(opNode);
         Normalizer<?> norm = this.manager.getNormalizer(field);
@@ -229,7 +228,7 @@ public class QueryJexl {
             }
         }
     }
-    
+
     /**
      * Test class used to create an expression from the normalized JEXL script. <br>
      * NOTE: The query string wil not be changed but the script will represent the normalized expression.
@@ -238,18 +237,18 @@ public class QueryJexl {
         NormalizedExpression(JexlEngine engine, String query, ASTJexlScript script) {
             super(engine, query, script);
         }
-        
+
     }
-    
+
     // =============================
     // classes for testing purposes
     public static class QueryJexlTest {
-        
+
         private static final int TEST_ENTRIES = 4;
         private static final String testDate = "20151010";
         private final RawDataManager manager = new TestManager();
         private Date date;
-        
+
         public QueryJexlTest() {
             try {
                 this.date = DataTypeHadoopConfig.YMD_DateFormat.parse(testDate);
@@ -257,7 +256,7 @@ public class QueryJexl {
                 Assert.fail("invalid test date (" + testDate + ")");
             }
         }
-        
+
         @Test
         public void testSimple() {
             log.info("valid simple jexl parser/evaluation");
@@ -273,7 +272,7 @@ public class QueryJexl {
                 Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
-        
+
         @Test
         public void testRegex() {
             log.info("valid regex jexl parser/evaluation");
@@ -285,7 +284,7 @@ public class QueryJexl {
                 Assert.assertEquals(TEST_ENTRIES, resp.size());
             }
         }
-        
+
         @Test
         public void testNotRegex() {
             log.info("valid NOT regex jexl parser/evaluation");
@@ -302,7 +301,7 @@ public class QueryJexl {
                 }
             }
         }
-        
+
         @Test
         public void testAnd() {
             log.info("jexl AND test");
@@ -313,7 +312,7 @@ public class QueryJexl {
             Map<String,String> entry = resp.iterator().next();
             Assert.assertEquals("away-2", entry.get(TestHeader.away.name()));
         }
-        
+
         @Test
         public void testOr() {
             log.info("jexl OR test");
@@ -326,7 +325,7 @@ public class QueryJexl {
                 Assert.assertTrue(away.equals("away-2") || away.equals("away-3"));
             }
         }
-        
+
         @Test
         public void testNoMatch() {
             log.info("jexl OR/AND test");
@@ -334,9 +333,9 @@ public class QueryJexl {
             QueryJexl p = new QueryJexl(q, manager, date, date);
             Set<Map<String,String>> resp = p.evaluate();
             Assert.assertEquals(0, resp.size());
-            
+
         }
-        
+
         @Test
         public void testCompound() {
             log.info("jexl compound test");
@@ -349,7 +348,7 @@ public class QueryJexl {
                 Assert.assertTrue(away.equals("away-3") || away.equals("away-1"));
             }
         }
-        
+
         @Test
         public void testAny() {
             for (int n = 1; n <= TEST_ENTRIES; n++) {
@@ -362,7 +361,7 @@ public class QueryJexl {
                 Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
-        
+
         @Test
         public void testAnyNumeric() {
             for (int n = 1; n <= TEST_ENTRIES; n++) {
@@ -375,7 +374,7 @@ public class QueryJexl {
                 Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
-        
+
         @Test
         public void testNumeric() {
             log.info("jexl numeric test");
@@ -388,7 +387,7 @@ public class QueryJexl {
                 Assert.assertEquals("" + n, entry.get(TestHeader.num.name()));
             }
         }
-        
+
         @Test
         public void testOrAnd() {
             log.info("jexl OR/AND test");
@@ -400,17 +399,19 @@ public class QueryJexl {
             Assert.assertEquals("away-2", entry.get("away"));
         }
     }
-    
+
     private enum TestHeader {
-        date(Normalizer.LC_NO_DIACRITICS_NORMALIZER), home(Normalizer.LC_NO_DIACRITICS_NORMALIZER), away(Normalizer.LC_NO_DIACRITICS_NORMALIZER), num(
-                        Normalizer.NUMBER_NORMALIZER);
-        
+        date(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        home(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        away(Normalizer.LC_NO_DIACRITICS_NORMALIZER),
+        num(Normalizer.NUMBER_NORMALIZER);
+
         private final Normalizer<?> normalizer;
-        
+
         TestHeader(Normalizer<?> norm) {
             this.normalizer = norm;
         }
-        
+
         static List<String> headers() {
             final List<String> vals = new ArrayList<>();
             for (final TestHeader header : TestHeader.values()) {
@@ -418,16 +419,16 @@ public class QueryJexl {
             }
             return vals;
         }
-        
+
         Normalizer getNormalizer() {
             return this.normalizer;
         }
     }
-    
+
     private static class TestManager extends BaseTestManager {
-        
+
         private static final String dataType = "sample";
-        
+
         private TestManager() {
             super("home", "date", TestHeader.headers());
             createData();
@@ -437,7 +438,7 @@ public class QueryJexl {
             anyIndexes.add(TestHeader.num.name());
             this.rawDataIndex.put(dataType, anyIndexes);
         }
-        
+
         private void createData() {
             String[] vals = new String[TestHeader.values().length];
             final Set<RawData> data = new HashSet<>();
@@ -450,26 +451,26 @@ public class QueryJexl {
                 data.add(raw);
             }
             this.rawData.put(dataType, data);
-            
+
             this.metadata = TestRawData.metadata;
         }
     }
-    
+
     static class TestRawData extends BaseRawData {
-        
+
         static final Map<String,RawMetaData> metadata = new HashMap<>();
-        
+
         static {
             for (final TestHeader field : TestHeader.values()) {
                 final RawMetaData meta = new RawMetaData(field.name(), field.getNormalizer(), true);
                 metadata.put(field.name(), meta);
             }
         }
-        
+
         TestRawData(final String fields[]) {
             super(TestManager.dataType, fields, TestHeader.headers(), metadata);
         }
-        
+
         @Override
         public boolean containsField(final String field) {
             return (TestHeader.headers()).contains(field);

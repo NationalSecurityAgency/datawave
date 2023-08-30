@@ -1,34 +1,31 @@
 package datawave.query.planner;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.configuration.spring.SpringBean;
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.BaseNormalizedContent;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
-import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
-import datawave.query.metrics.MockStatusReporter;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.util.TableName;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryParameters;
-import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.configuration.QueryData;
+import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
+import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
+import static datawave.webservice.query.QueryParameters.QUERY_END;
+import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
+import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
+import static datawave.webservice.query.QueryParameters.QUERY_NAME;
+import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
+import static datawave.webservice.query.QueryParameters.QUERY_STRING;
+import static org.junit.Assert.assertTrue;
+
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.inject.Inject;
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.admin.TableOperations;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
@@ -52,50 +49,56 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.inject.Inject;
-import javax.ws.rs.core.MultivaluedMap;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
-import static datawave.webservice.query.QueryParameters.QUERY_AUTHORIZATIONS;
-import static datawave.webservice.query.QueryParameters.QUERY_BEGIN;
-import static datawave.webservice.query.QueryParameters.QUERY_END;
-import static datawave.webservice.query.QueryParameters.QUERY_EXPIRATION;
-import static datawave.webservice.query.QueryParameters.QUERY_LOGIC_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_NAME;
-import static datawave.webservice.query.QueryParameters.QUERY_PERSISTENCE;
-import static datawave.webservice.query.QueryParameters.QUERY_STRING;
-import static org.junit.Assert.assertTrue;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.configuration.spring.SpringBean;
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.BaseNormalizedContent;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.ContentBaseIngestHelper;
+import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.GeoWaveQueryInfoVisitor;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.testframework.MockStatusReporter;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.QueryParameters;
+import datawave.webservice.query.QueryParametersImpl;
+import datawave.webservice.query.configuration.QueryData;
 
 @RunWith(Arquillian.class)
 public class GeoSortedQueryDataTest {
-    
+
     private static final int NUM_SHARDS = 241;
     private static final String DATA_TYPE_NAME = "wkt";
     private static final String INGEST_HELPER_CLASS = TestIngestHelper.class.getName();
     private static final String FIELD_NAME = "GEO_FIELD";
-    
-    private static final String PASSWORD = "";
+
     private static final String AUTHS = "ALL";
-    
+
     private static final String formatPattern = "yyyyMMdd HHmmss.SSS";
     private static final SimpleDateFormat formatter = new SimpleDateFormat(formatPattern);
-    
+
     private static final String BEGIN_DATE = "20000101 000000.000";
     private static final String END_DATE = "20500101 000000.000";
-    
+
     private static final String USER = "testcorp";
     private static final String USER_DN = "cn=test.testcorp.com, ou=datawave, ou=development, o=testcorp, c=us";
-    
+
     private static final Configuration conf = new Configuration();
-    
+
     // @formatter:off
     private static final String[] wktData = {
             "POINT(0 0)",
@@ -113,63 +116,60 @@ public class GeoSortedQueryDataTest {
             "POLYGON((90 90, -90 90, -90 -90, 90 -90, 90 90))",
             "POLYGON((180 90, 0 90, 0 -90, 180 -90, 180 90))",
             "POLYGON((90 0, -90 0, -90 -180, 90 -180, 90 0))"};
-    
+
     private static final long[] dates = {
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180),
-    
+
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180),
-    
+
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180),
-    
+
             0,
             TimeUnit.DAYS.toMillis(90),
             TimeUnit.DAYS.toMillis(180)};
     // @formatter:on
-    
+
     private static final String QUERY_WKT = "POLYGON((-180 -90, 180 -90, 180 90, -180 90, -180 -90))";
-    
+
     @Inject
     @SpringBean(name = "EventQuery")
     ShardQueryLogic logic;
-    
+
     private static InMemoryInstance instance;
-    
+
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
-        return ShrinkWrap
-                        .create(JavaArchive.class)
+        return ShrinkWrap.create(JavaArchive.class)
                         .addPackages(true, "org.apache.deltaspike", "io.astefanutti.metrics.cdi", "datawave.query", "datawave.webservice.query.result.event")
-                        .deleteClass(DefaultEdgeEventQueryLogic.class)
-                        .deleteClass(RemoteEdgeDictionary.class)
-                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class)
-                        .deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
-                        .addAsManifestResource(
-                                        new StringAsset("<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>"
-                                                        + "</alternatives>"), "beans.xml");
+                        .deleteClass(DefaultEdgeEventQueryLogic.class).deleteClass(RemoteEdgeDictionary.class)
+                        .deleteClass(datawave.query.metrics.QueryMetricQueryLogic.class).deleteClass(datawave.query.metrics.ShardTableQueryMetricHandler.class)
+                        .addAsManifestResource(new StringAsset(
+                                        "<alternatives>" + "<stereotype>datawave.query.tables.edge.MockAlternative</stereotype>" + "</alternatives>"),
+                                        "beans.xml");
     }
-    
+
     @BeforeClass
     public static void setupClass() throws Exception {
         setupEnvVariables();
         conf.addResource(ClassLoader.getSystemResource("datawave/query/tables/geo-test-config.xml"));
         resolveEnvVariables(conf);
-        
+
         TypeRegistry.reset();
         TypeRegistry registry = TypeRegistry.getInstance(conf);
-        
+
         TaskAttemptContext ctx = new TaskAttemptContextImpl(conf, new TaskAttemptID());
-        
+
         AbstractColumnBasedHandler<Text> dataTypeHandler = new AbstractColumnBasedHandler<>();
         dataTypeHandler.setup(ctx);
-        
+
         TestIngestHelper ingestHelper = (TestIngestHelper) dataTypeHandler.getHelper(registry.get(DATA_TYPE_NAME));
-        
+
         // create and process events with WKT data
         RawRecordContainer record = new RawRecordContainerImpl();
         Multimap<BulkIngestKey,Value> keyValues = HashMultimap.create();
@@ -183,26 +183,26 @@ public class GeoSortedQueryDataTest {
             record.setRawData(wktData[i].getBytes("UTF8"));
             record.generateId(null);
             record.setVisibility(new ColumnVisibility(AUTHS));
-            
+
             final Multimap<String,NormalizedContentInterface> fields = ingestHelper.getEventFields(record);
-            
+
             Multimap kvPairs = dataTypeHandler.processBulk(new Text(), record, fields, new MockStatusReporter());
-            
+
             keyValues.putAll(kvPairs);
-            
+
             dataTypeHandler.getMetadata().addEvent(ingestHelper, record, fields);
         }
-        
+
         keyValues.putAll(dataTypeHandler.getMetadata().getBulkMetadata());
-        
+
         // write these values to their respective tables
         instance = new InMemoryInstance();
-        Connector connector = instance.getConnector("root", PASSWORD);
-        connector.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
-        
-        writeKeyValues(connector, keyValues);
+        AccumuloClient client = new InMemoryAccumuloClient("root", instance);
+        client.securityOperations().changeUserAuthorizations("root", new Authorizations(AUTHS));
+
+        writeKeyValues(client, keyValues);
     }
-    
+
     public static void setupEnvVariables() {
         System.setProperty("subject.dn.pattern", "(?:^|,)\\s*OU\\s*=\\s*My Department\\s*(?:,|$)");
         System.setProperty("NUM_SHARDS", Integer.toString(NUM_SHARDS));
@@ -215,13 +215,14 @@ public class GeoSortedQueryDataTest {
         System.setProperty("INGEST_HELPER_CLASS", INGEST_HELPER_CLASS);
         System.setProperty("FIELD_NAME", FIELD_NAME);
     }
-    
+
     public static void resolveEnvVariables(Configuration conf) {
+        StringBuilder sb = new StringBuilder();
         Pattern p = Pattern.compile("\\$\\{(\\w+)\\}|\\$(\\w+)");
         for (Map.Entry<String,String> entry : conf) {
             boolean reset = false;
             Matcher m = p.matcher(entry.getKey());
-            StringBuffer sb = new StringBuffer();
+
             while (m.find()) {
                 String envVarName = null == m.group(1) ? m.group(2) : m.group(1);
                 String envVarValue = System.getProperty(envVarName);
@@ -230,9 +231,9 @@ public class GeoSortedQueryDataTest {
             }
             m.appendTail(sb);
             String key = sb.toString();
-            
+
             m = p.matcher(entry.getValue());
-            sb = new StringBuffer();
+            sb.setLength(0);
             while (m.find()) {
                 String envVarName = null == m.group(1) ? m.group(2) : m.group(1);
                 String envVarValue = System.getProperty(envVarName);
@@ -241,23 +242,24 @@ public class GeoSortedQueryDataTest {
             }
             m.appendTail(sb);
             String value = sb.toString();
-            
+            sb.setLength(0);
+
             if (reset) {
                 conf.unset(entry.getKey());
                 conf.set(key, value);
             }
         }
     }
-    
-    private static void writeKeyValues(Connector connector, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
-        final TableOperations tops = connector.tableOperations();
+
+    private static void writeKeyValues(AccumuloClient client, Multimap<BulkIngestKey,Value> keyValues) throws Exception {
+        final TableOperations tops = client.tableOperations();
         final Set<BulkIngestKey> biKeys = keyValues.keySet();
         for (final BulkIngestKey biKey : biKeys) {
             final String tableName = biKey.getTableName().toString();
             if (!tops.exists(tableName))
                 tops.create(tableName);
-            
-            final BatchWriter writer = connector.createBatchWriter(tableName, new BatchWriterConfig());
+
+            final BatchWriter writer = client.createBatchWriter(tableName, new BatchWriterConfig());
             for (final Value val : keyValues.get(biKey)) {
                 final Mutation mutation = new Mutation(biKey.getKey().getRow());
                 mutation.put(biKey.getKey().getColumnFamily(), biKey.getKey().getColumnQualifier(), biKey.getKey().getColumnVisibilityParsed(), val);
@@ -266,25 +268,22 @@ public class GeoSortedQueryDataTest {
             writer.close();
         }
     }
-    
+
     @Before
     public void setupTest() {
         // increase the depth threshold
         logic.setMaxDepthThreshold(10);
-        
+
         // set the pushdown threshold really high to avoid collapsing uids into shards (overrides setCollapseUids if #terms is greater than this threshold)
         ((DefaultQueryPlanner) (logic.getQueryPlanner())).setPushdownThreshold(1000000);
-        
-        // lets avoid condensing uids to ensure that shard ranges are not collapsed into day ranges
-        ((DefaultQueryPlanner) (logic.getQueryPlanner())).setCondenseUidsInRangeStream(false);
     }
-    
+
     @Test
     public void testSortedGeoRanges() throws Exception {
         logic.setSortGeoWaveQueryRanges(true);
-        
+
         Iterator<QueryData> queryIter = initializeGeoQuery();
-        
+
         // ensure that the queries are sorted geo granularity (high to low)
         GeoWaveQueryInfoVisitor visitor = new GeoWaveQueryInfoVisitor(Arrays.asList(FIELD_NAME));
         GeoWaveQueryInfoVisitor.GeoWaveQueryInfo prevQueryInfo = null;
@@ -297,13 +296,13 @@ public class GeoSortedQueryDataTest {
             prevQueryInfo = queryInfo;
         }
     }
-    
+
     @Test
     public void testUnsortedGeoRanges() throws Exception {
         logic.setSortGeoWaveQueryRanges(false);
-        
+
         Iterator<QueryData> queryIter = initializeGeoQuery();
-        
+
         // ensure that the queries are sorted by shard (ascending)
         String prevShard = null;
         while (queryIter.hasNext()) {
@@ -314,7 +313,7 @@ public class GeoSortedQueryDataTest {
             prevShard = range.getStartKey().getRow().toString();
         }
     }
-    
+
     private Iterator<QueryData> initializeGeoQuery() throws Exception {
         MultivaluedMap<String,String> params = new MultivaluedMapImpl<>();
         params.putSingle(QUERY_STRING, "geowave:intersects(" + FIELD_NAME + ", '" + QUERY_WKT + "')");
@@ -325,25 +324,25 @@ public class GeoSortedQueryDataTest {
         params.putSingle(QUERY_EXPIRATION, "20200101 000000.000");
         params.putSingle(QUERY_BEGIN, BEGIN_DATE);
         params.putSingle(QUERY_END, END_DATE);
-        
+
         QueryParameters queryParams = new QueryParametersImpl();
         queryParams.validate(params);
-        
+
         Set<Authorizations> auths = new HashSet<>();
         auths.add(new Authorizations(AUTHS));
-        
+
         Query query = new QueryImpl();
         query.initialize(USER, Arrays.asList(USER_DN), null, queryParams, null);
-        
+
         ShardQueryConfiguration config = ShardQueryConfiguration.create(logic, query);
-        
-        logic.initialize(config, instance.getConnector("root", PASSWORD), query, auths);
-        
+
+        logic.initialize(config, new InMemoryAccumuloClient("root", instance), query, auths);
+
         logic.setupQuery(config);
-        
+
         return config.getQueries();
     }
-    
+
     public static class TestIngestHelper extends ContentBaseIngestHelper {
         @Override
         public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer record) {

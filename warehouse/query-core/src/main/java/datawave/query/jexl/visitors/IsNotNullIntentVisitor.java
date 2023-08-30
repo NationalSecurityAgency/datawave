@@ -1,51 +1,44 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
 import org.apache.commons.jexl2.parser.ASTERNode;
 import org.apache.commons.jexl2.parser.ASTNENode;
 import org.apache.commons.jexl2.parser.ASTNullLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
-import org.apache.log4j.Logger;
+
+import datawave.query.jexl.JexlASTHelper;
 
 /**
- * A visitor that checks the query tree to change any terms like FOO == '
- * 
+ * This visitor replaces any occurrences of <code>FIELD =~'.*?'</code> with the more efficient equivalent <code>FIELD != null</code>.
  */
-public class IsNotNullIntentVisitor extends RebuildingVisitor {
-    private static final Logger log = Logger.getLogger(IsNotNullIntentVisitor.class);
-    
+public class IsNotNullIntentVisitor extends BaseVisitor {
+
     /**
-     * 
-     * @param script
-     * @return
+     * Apply this visitor to the provided node and return the result.
+     *
+     * @param node
+     *            a JexlNode
+     * @param <T>
+     *            the type
+     * @return the same node
      */
-    @SuppressWarnings("unchecked")
-    public static <T extends JexlNode> T fixNotNullIntent(T script) {
-        IsNotNullIntentVisitor visitor = new IsNotNullIntentVisitor();
-        
-        return (T) script.jjtAccept(visitor, null);
+    public static <T extends JexlNode> T fixNotNullIntent(T node) {
+        node.jjtAccept(new IsNotNullIntentVisitor(), null);
+        return node;
     }
-    
-    /**
-     */
+
     @Override
     public Object visit(ASTERNode node, Object data) {
-        
-        // if this ER node is of the form FIELD =~ '*', then the user probably means: FIELD != null
-        // change it!
-        String field = JexlASTHelper.getIdentifier(node);
+        // If the ER node is meant to match any string, it can be replaced with FIELD != null.
         Object value = JexlASTHelper.getLiteralValue(node);
-        
         if (".*?".equals(value)) {
-            
-            ASTNENode neNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
-            neNode.jjtAddChild(node.jjtGetChild(0), 0);
-            neNode.jjtAddChild(new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL), 1);
-            return super.visit(neNode, data);
+            JexlNode nullLiteral = new ASTNullLiteral(ParserTreeConstants.JJTNULLLITERAL);
+            JexlNode neNode = new ASTNENode(ParserTreeConstants.JJTNENODE);
+            JexlNodes.children(neNode, node.jjtGetChild(0), nullLiteral);
+
+            JexlNodes.replaceChild(node.jjtGetParent(), node, neNode);
         }
-        
-        return super.visit(node, data);
+        return data;
     }
-    
 }

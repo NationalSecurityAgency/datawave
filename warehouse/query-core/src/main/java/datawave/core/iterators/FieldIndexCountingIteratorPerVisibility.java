@@ -13,11 +13,6 @@ import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import datawave.iterators.IteratorSettingHelper;
-import datawave.marking.MarkingFunctions;
-import datawave.query.Constants;
-import datawave.util.TextUtil;
-
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
@@ -38,17 +33,22 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
 
+import datawave.iterators.IteratorSettingHelper;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
+import datawave.util.TextUtil;
+
 /**
- * 
+ *
  * An iterator for the Datawave shard table, it searches FieldIndex keys and returns Event keys (its topKey must be an Event key).
- * 
+ *
  * FieldIndex keys: fi\0{fieldName}:{fieldValue}\0datatype\0uid
- * 
+ *
  * Return key: Row - ShardId Fam - FieldName Qual - FieldValue - Datatype - count
- * 
+ *
  */
 public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator implements SortedKeyValueIterator<Key,Value>, OptionDescriber {
-    
+
     protected static final Logger log = Logger.getLogger(FieldIndexCountingIteratorPerVisibility.class);
     // Config constants
     public static final String START_TIME = "FieldIndexCountingIterator.START_TIME";
@@ -61,7 +61,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     public static final String UNIQ_BY_DATA_TYPE = "FieldIndexCountingIterator.UNIQ_BY_DATA_TYPE";
     public static final String UNIQ_BY_VISIBILITY = "FieldIndexCountingIterator.UNIQ_BY_VISIBILITY";
     public static final String SEP = ",";
-    
+
     // Timestamp variables
     private final SimpleDateFormat dateParser = initDateParser();
     private long stamp_start;
@@ -75,12 +75,12 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     private TreeSet<String> fieldNameFilter;
     private TreeSet<String> fieldValueFilter; // Let us do specific field values.
     private TreeSet<String> dataTypeFilter; // hold ordered set of data types to include
-    
+
     protected Key topKey = null;
     protected Value topValue = null;
     protected Range parentRange;
     protected TreeSet<ByteSequence> seekColumnFamilies; // This iterator can only have a columnFamilies of the form fi\x00FIELDNAME
-    
+
     private long count = 0L;
     private long maxTimeStamp = 0L;
     private Text currentRow = null;
@@ -88,35 +88,35 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     private String currentFieldValue = null;
     private String currentDataType = null;
     private Map<Text,MutableInt> currentVisibilityCounts = null;
-    
+
     private StringBuilder dataTypeStringBuilder = new StringBuilder();
     private StringBuilder fieldValueStringBuilder = new StringBuilder();
-    
+
     public static final String ONE_BYTE_STRING = "\u0001";
     public static final String DATE_FORMAT_STRING = "yyyyMMddHHmmss";
-    
+
     private Set<ColumnVisibility> columnVisibilities = Sets.newHashSet();
     private TreeMap<Key,Value> keyCache = null;
-    protected static MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
-    
+    protected static final MarkingFunctions markingFunctions = MarkingFunctions.Factory.createMarkingFunctions();
+
     // -------------------------------------------------------------------------
     // ------------- Constructors
     public FieldIndexCountingIteratorPerVisibility() {
         currentVisibilityCounts = new TreeMap<>();
-        
+
         keyCache = new TreeMap<>();
     }
-    
+
     public FieldIndexCountingIteratorPerVisibility(FieldIndexCountingIteratorPerVisibility other, IteratorEnvironment env) {
         this();
         this.source = other.getSource().deepCopy(env);
         this.seekColumnFamilies = new TreeSet<>(other.seekColumnFamilies);
         this.parentRange = new Range(other.parentRange);
-        
+
         this.stamp_start = other.stamp_start;
         this.stamp_end = other.stamp_end;
         this.stampRange = new LongRange(stamp_start, stamp_end);
-        
+
         this.uniqByDataTypeOption = other.uniqByDataTypeOption;
         this.uniqByVisibilityOption = other.uniqByVisibilityOption;
         if (null != other.fieldNameFilter && !other.fieldNameFilter.isEmpty()) {
@@ -128,16 +128,16 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         if (null != other.dataTypeFilter && !other.dataTypeFilter.isEmpty()) {
             this.dataTypeFilter = new TreeSet<>(other.dataTypeFilter);
         }
-        
+
         if (log.isTraceEnabled()) {
             for (ByteSequence bs : this.seekColumnFamilies) {
                 log.trace("seekColumnFamilies for this iterator: " + (new String(bs.toArray())).replaceAll("\u0000", "%00"));
             }
         }
-        
+
         this.keyCache.putAll(other.keyCache);
     }
-    
+
     @Override
     public IteratorOptions describeOptions() {
         Map<String,String> options = new HashMap<>();
@@ -150,14 +150,15 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         options.put(DATA_TYPES, "The (optional) data types to filter by");
         options.put(UNIQ_BY_DATA_TYPE, "Boolean value denoting whether the counts should separated by data type");
         options.put(UNIQ_BY_VISIBILITY, "Boolean value denoting whether the counts should separated by visibility");
-        
+
         return new IteratorOptions(getClass().getSimpleName(), "An iterator used to count items in the field index", options, null);
     }
-    
+
     /**
      * Get an IteratorSetting given a hadoop configuration
-     * 
+     *
      * @param conf
+     *            a configuration
      * @return the iterator setting
      */
     public static IteratorSetting getIteratorSetting(Configuration conf) {
@@ -183,13 +184,13 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         return new IteratorSetting(IteratorSettingHelper.BASE_ITERATOR_PRIORITY + 40, "FieldIndexCountingIterator",
                         FieldIndexCountingIteratorPerVisibility.class.getName(), summaryIteratorSettings);
     }
-    
+
     private static void putIfNotNull(Map<String,String> map, String key, String value) {
         if (key != null && value != null) {
             map.put(key, value);
         }
     }
-    
+
     // -------------------------------------------------------------------------
     // ------------- Overrides
     @Override
@@ -197,7 +198,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         if (!this.validateOptions(options)) {
             throw new IllegalArgumentException("options not set properly");
         }
-        
+
         this.source = src;
         this.seekColumnFamilies = new TreeSet<>();
         if (this.fieldNameFilter != null) {
@@ -210,42 +211,42 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 log.trace("seekColumnFamilies for this iterator: " + (new String(bs.toArray())).replaceAll("\u0000", "%00"));
             }
         }
-        
+
         if (log.isTraceEnabled()) {
             log.trace("timestamp range: " + this.stampRange);
         }
     }
-    
+
     @Override
     protected void setSource(SortedKeyValueIterator<Key,Value> src) {
         this.source = src;
     }
-    
+
     @Override
     protected SortedKeyValueIterator<Key,Value> getSource() {
         return source;
     }
-    
+
     @Override
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
         return new FieldIndexCountingIteratorPerVisibility(this, env);
     }
-    
+
     @Override
     public Key getTopKey() {
         return topKey;
     }
-    
+
     @Override
     public Value getTopValue() {
         return topValue;
     }
-    
+
     @Override
     public boolean hasTop() {
         return (topKey != null);
     }
-    
+
     @Override
     public void next() throws IOException {
         if (!popCache()) {
@@ -255,48 +256,49 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             popCache();
         }
     }
-    
+
     private boolean popCache() {
         this.topKey = null;
         this.topValue = null;
-        
+
         if (!keyCache.isEmpty()) {
             Map.Entry<Key,Value> entry = keyCache.pollFirstEntry();
             this.topKey = entry.getKey();
             this.topValue = entry.getValue();
             return true;
         }
-        
+
         return false;
     }
-    
+
     @Override
     public void seek(Range r, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         this.parentRange = new Range(r);
-        
+
         this.topKey = null;
         this.topValue = null;
-        
+
         if (log.isTraceEnabled()) {
             log.trace("begin seek, range: " + parentRange);
             for (ByteSequence bs : this.seekColumnFamilies) {
                 log.trace("seekColumnFamilies for this iterator: " + (new String(bs.toArray())).replaceAll("\u0000", "%00"));
             }
         }
-        
+
         Key pStartKey = parentRange.getStartKey();
-        
+
         // Check if we are recovering from IterationInterruptedException
         if (null != pStartKey && null != pStartKey.getRow() && null != pStartKey.getColumnFamily() && !pStartKey.getColumnFamily().toString().isEmpty()
-                        && null != pStartKey.getColumnQualifier() && !pStartKey.getColumnQualifier().toString().isEmpty() && !parentRange.isStartKeyInclusive()) {
-            
+                        && null != pStartKey.getColumnQualifier() && !pStartKey.getColumnQualifier().toString().isEmpty()
+                        && !parentRange.isStartKeyInclusive()) {
+
             Key startKey = new Key(pStartKey.getRow(), pStartKey.getColumnFamily(), new Text(pStartKey.getColumnQualifier() + ONE_BYTE_STRING));
             this.parentRange = new Range(startKey, true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
             source.seek(parentRange, this.seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
         } else {
             source.seek(parentRange, this.seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
         }
-        
+
         // if the start key of our bounding range > parentKey.endKey we can stop
         if (!source.hasTop() || !parentRange.contains(source.getTopKey())) {
             if (log.isTraceEnabled()) {
@@ -304,44 +306,45 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             }
             return;
         }
-        
+
         // advance to the field index if needed
         advanceToFieldIndex();
-        
+
         // now if we still have some cached keys, then reset the parentRange to include the next one
         if (!keyCache.isEmpty()) {
             parentRange = new Range(keyCache.firstKey(), true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
         }
-        
+
         // now get the next top key
         next();
-        
+
         if (log.isTraceEnabled()) {
             log.trace("seek, topKey : " + ((null == topKey) ? "null" : topKey));
         }
     }
-    
+
     @Override
     public String toString() {
         return "FieldIndexCountingIterator{" + "stamp_start=" + stamp_start + ", stamp_end=" + stamp_end + ", uniqByDataTypeOption=" + uniqByDataTypeOption
                         + ", uniqByVisibilityOption=" + uniqByVisibilityOption + ", currentRow=" + currentRow + ", currentFieldValue=" + currentFieldValue
                         + ", currentDataType=" + currentDataType + '}';
     }
-    
+
     // -------------------------------------------------------------------------
     // ------------- other stuff
-    
+
     /**
      * Given a Key to consume, update any necessary counters etc.
      *
      * @param key
+     *            a key
      */
     private void consume(Key key) {
-        
+
         if (log.isTraceEnabled()) {
             log.trace("consume, key: " + key);
         }
-        
+
         // update the visibility set
         MutableInt counter = this.currentVisibilityCounts.get(key.getColumnVisibility());
         if (counter == null) {
@@ -349,28 +352,28 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         } else {
             counter.increment();
         }
-        
+
         // update current count
         this.count += 1;
-        
+
         // set most recent timestamp
         this.maxTimeStamp = (this.maxTimeStamp > key.getTimestamp()) ? maxTimeStamp : key.getTimestamp();
     }
-    
+
     private boolean acceptTimestamp(Key k) {
         return this.stampRange.containsLong(k.getTimestamp());
     }
-    
+
     private boolean isFieldIndexKey(Key key) {
         Text cf = key.getColumnFamily();
         return (cf.getLength() >= 3 && cf.charAt(0) == 'f' && cf.charAt(1) == 'i' && cf.charAt(2) == '\0');
     }
-    
+
     private void advanceToFieldIndex() throws IOException {
         if (!source.hasTop()) {
             return;
         }
-        
+
         if (!isFieldIndexKey(source.getTopKey())) {
             Text cFam = new Text(Constants.FIELD_INDEX_PREFIX + (this.fieldNameFilter == null ? "" : this.fieldNameFilter.first()));
             Text cQual = new Text();
@@ -381,11 +384,11 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 }
             }
             Key startKey = new Key(source.getTopKey().getRow(), cFam, cQual);
-            
+
             if (log.isTraceEnabled()) {
                 log.trace("seeking to field index: " + startKey);
             }
-            
+
             if (startKey.compareTo(parentRange.getEndKey()) > 0) {
                 Range r = new Range(parentRange.getEndKey(), true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
                 source.seek(r, this.seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
@@ -395,12 +398,12 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             }
         }
     }
-    
+
     private void advanceToNextFieldIndex() throws IOException {
         if (!source.hasTop()) {
             return;
         }
-        
+
         // seek to the next row
         Text row = new Text(source.getTopKey().getRow());
         TextUtil.textAppend(row, "\0");
@@ -412,7 +415,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             source.seek(new Range(new Key(row), true, parentRange.getEndKey(), parentRange.isEndKeyInclusive()), this.seekColumnFamilies,
                             (!this.seekColumnFamilies.isEmpty()));
         }
-        
+
         // if the start key of our bounding range > parentKey.endKey we can stop
         if (!source.hasTop() || !parentRange.contains(source.getTopKey())) {
             if (log.isTraceEnabled()) {
@@ -420,22 +423,22 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             }
             return;
         }
-        
+
         advanceToFieldIndex();
     }
-    
+
     private void advanceToNextDataType(String fieldVal, String dType) throws IOException {
         // seek the source iterator to the next datatype on the list
         dataTypeStringBuilder.delete(0, dataTypeStringBuilder.length());
         Key sKey = this.source.getTopKey();
-        
+
         // Given a datatype, get the next, highest one on the set.
         dType = this.dataTypeFilter.higher(dType);
         if (log.isTraceEnabled()) {
             log.trace("\t\tnext data type: " + dType);
             log.trace("\t\tcurrentFieldValue: " + this.currentFieldValue);
         }
-        
+
         dataTypeStringBuilder.append(fieldVal);
         if (null == dType) {
             // no more valid datatypes in this particular field value, skip to next
@@ -443,7 +446,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         } else {
             dataTypeStringBuilder.append(Constants.NULL_BYTE_STRING).append(dType);
         }
-        
+
         sKey = new Key(sKey.getRow(), sKey.getColumnFamily(), new Text(dataTypeStringBuilder.toString()));
         if (log.isTraceEnabled()) {
             log.trace("\t\tadvanceToNextDataType, startKey: " + sKey);
@@ -456,26 +459,26 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             source.seek(parentRange, seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
         }
     }
-    
+
     private void advanceToNextFieldValue(String fieldVal) throws IOException {
         // seek the source iterator to the next fieldValue on the list
-        
+
         fieldValueStringBuilder.delete(0, fieldValueStringBuilder.length());
         Key sKey = this.source.getTopKey();
-        
+
         // Given a datatype, get the next, highest one on the set.
         fieldVal = this.fieldValueFilter.higher(fieldVal);
-        
+
         if (log.isTraceEnabled()) {
             log.trace("\t\tcurrentFieldValue: " + this.currentFieldValue);
         }
-        
+
         if (null == fieldVal) {
             // end of our fieldValues move to next row.
             sKey = new Key(sKey.followingKey(PartialKey.ROW));
         } else {
             fieldValueStringBuilder.append(fieldVal);
-            
+
             // if we have datatypes, start back at the first one.
             if (null != this.dataTypeFilter) {
                 fieldValueStringBuilder.append(Constants.NULL_BYTE_STRING);
@@ -486,7 +489,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         if (log.isTraceEnabled()) {
             log.trace("\t\tadvanceToNextFieldValue, startKey: " + sKey);
         }
-        
+
         if (sKey.compareTo(parentRange.getEndKey()) > 0) {
             parentRange = new Range(parentRange.getEndKey(), true, parentRange.getEndKey(), parentRange.isEndKeyInclusive());
             source.seek(parentRange, seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
@@ -495,11 +498,12 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             source.seek(parentRange, seekColumnFamilies, (!this.seekColumnFamilies.isEmpty()));
         }
     }
-    
+
     /**
      *
      * @return true if we have a new key to return, false if the count is empty. This also resets current counters etc.
      * @throws java.io.IOException
+     *             for issues with read/write
      */
     private boolean wrapUpCurrent() throws IOException {
         if (log.isTraceEnabled()) {
@@ -515,18 +519,18 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         } else {
             // fill the cache
             this.keyCache.putAll(buildReturnKeys());
-            
+
             // reset for the next round
             resetCurrent();
         }
-        
+
         return (!this.keyCache.isEmpty());
     }// -----------------------------
-    
+
     /**
      * Row : shardId Fam : fieldName Qual: fieldValue \x00 datatype
      *
-     * @return
+     * @return a map of the keys and values
      */
     private Map<Key,Value> buildReturnKeys() {
         if (log.isTraceEnabled()) {
@@ -534,12 +538,12 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             log.trace("buildReturnKeys, currentFieldName: " + this.currentFieldName);
             log.trace("buildReturnKeys, currentFieldValue: " + this.currentFieldValue);
         }
-        
+
         Text cq = new Text(this.currentFieldValue);
         if (this.uniqByDataTypeOption) {
             TextUtil.textAppend(cq, this.currentDataType);
         }
-        
+
         // if doing this by visibility, then build a set of Keys
         if (this.uniqByVisibilityOption) {
             Map<Key,Value> keys = new TreeMap<>();
@@ -557,7 +561,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                     log.error("Error parsing columnVisibility of key", e);
                 }
             }
-            
+
             ColumnVisibility cv = null;
             try {
                 // Calculate the columnVisibility for this key from the combiner.
@@ -566,13 +570,13 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 log.error("Could not create combined columnVisibility for the count", e);
                 return null;
             }
-            
+
             Key key = new Key(this.currentRow, new Text(this.currentFieldName), cq, new Text(cv.getExpression()), this.maxTimeStamp);
             Value value = new Value(Long.toString(count).getBytes());
             return Collections.singletonMap(key, value);
         }
     }
-    
+
     private void resetCurrent() {
         this.currentRow = null;
         this.currentFieldName = null;
@@ -583,29 +587,30 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         this.columnVisibilities.clear();
         this.currentVisibilityCounts.clear();
     }
-    
+
     /**
      * Basic method to find our topKey which matches our given FieldName,FieldValue.
      *
      * @throws java.io.IOException
+     *             for issues with read/write
      */
     protected void updateCache() throws IOException {
         resetCurrent();
         String cq;
         String fv;
-        
+
         while (true) {
             if (!source.hasTop()) {
                 log.trace("Source does not have top");
                 wrapUpCurrent();
                 return;
             }
-            
+
             Key key = source.getTopKey();
             if (log.isTraceEnabled()) {
                 log.trace("updateCache examining key: " + key);
             }
-            
+
             // check that the key is within the parent range
             if (!parentRange.contains(key)) {
                 if (log.isTraceEnabled()) {
@@ -614,12 +619,12 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 wrapUpCurrent();
                 return;
             }
-            
+
             // Check ROW
             if (null == currentRow) {
                 currentRow = key.getRow();
             }
-            
+
             int rowCompare = currentRow.compareTo(key.getRow());
             if (rowCompare < 0) { // current row is behind
                 if (log.isTraceEnabled()) {
@@ -635,7 +640,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 throw new IllegalArgumentException("source iterator is behind us, how did this happen? OurRow: " + currentRow + " Source key- Row:"
                                 + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: " + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
             } else { // same row
-            
+
                 // if not a field index key, then advance to the next field index
                 if (!isFieldIndexKey(key)) {
                     if (wrapUpCurrent()) {// sets top key/val and resets counters
@@ -644,12 +649,12 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                     advanceToNextFieldIndex();
                     continue;
                 }
-                
+
                 // check FIELD NAME (COLFAM)
                 if (null == currentFieldName) {
                     currentFieldName = key.getColumnFamily(); // seekColFams should ensure we are only on valid field names.
                 }
-                
+
                 int fnCompare = currentFieldName.compareTo(key.getColumnFamily());
                 if (fnCompare < 0) { // current field name is behind
                     if (log.isTraceEnabled()) {
@@ -663,11 +668,11 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                                     + currentFieldName + " Source key- Row:" + key.getRow() + " CF: " + key.getColumnFamily() + " CQ: "
                                     + key.getColumnQualifier() + " VIS: " + key.getColumnVisibility());
                 } else { // same field name
-                
+
                     // check FIELD VALUE, there are multiple conditions here
                     // 1. we were given a set of field values to look for
                     // 2. we are doing all field values.
-                    
+
                     // parse column qualifier (from the end incase we have a nasty field value)
                     cq = key.getColumnQualifier().toString();
                     int idx2 = cq.lastIndexOf(Constants.NULL_BYTE_STRING);
@@ -681,7 +686,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                         throw new IllegalArgumentException("Found an invalid field index key; expected cq of the form fv%00dt%00uid? " + key);
                     }
                     fv = cq.substring(0, idx1);
-                    
+
                     // if we're looking for spedific field values, this logic will skip ones
                     // not in our list.
                     if (null != this.fieldValueFilter && !this.fieldValueFilter.contains(fv)) {
@@ -693,11 +698,11 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                         // source.next();
                         continue;
                     }
-                    
+
                     if (null == this.currentFieldValue) {
                         this.currentFieldValue = fv;
                     }
-                    
+
                     int fvCompare = this.currentFieldValue.compareTo(fv);
                     if (fvCompare != 0) { // we have a new field value
                         if (log.isTraceEnabled()) {
@@ -707,9 +712,9 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                             return;
                         }
                         continue;
-                        
+
                     } else { // same field value
-                    
+
                         // see if we care about data type
                         if (this.uniqByDataTypeOption || this.dataTypeFilter != null) {
                             if (log.isTraceEnabled()) {
@@ -717,7 +722,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                             }
                             // parse out the datatype
                             String dataType = cq.substring(idx1 + 1, idx2);
-                            
+
                             if (!uniqByDataTypeOption) { // we are returning aggregate types
                                 // we only care if it's in our filter list, if not skip
                                 // to the next one we care about.
@@ -731,7 +736,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                                     continue;
                                 }
                                 // else -> we are good fall through & check timestamp.
-                                
+
                             } else { // we are returning uniq data types
                                 if (null == this.currentDataType) {
                                     if (null == this.dataTypeFilter) { // if the dataTypeFilter is null then just accept it.
@@ -767,7 +772,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                                 }
                             }
                         }
-                        
+
                         // check if this is a deleted key, and ignore if so
                         if (key.isDeleted()) {
                             if (log.isTraceEnabled()) {
@@ -788,20 +793,20 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                                 log.trace("ignoring key outside time range: " + key);
                             }
                         }
-                        
+
                         // advance
                         source.next();
                     }
                 }
-                
+
             }
-            
+
         }
     }
-    
+
     @Override
     public boolean validateOptions(Map<String,String> options) {
-        
+
         // -----------------------------
         // set up timestamp range
         try {
@@ -824,7 +829,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
             log.error("Invalid time range for " + FieldIndexCountingIteratorPerVisibility.class.getName());
             return false;
         }
-        
+
         // -----------------------------
         // Set the field names
         if (null == options.get(FIELD_NAMES)) {
@@ -840,11 +845,11 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 for (String f : fieldNameFilter) {
                     b.append(f).append(" ");
                 }
-                
+
                 log.debug("Iter configured with FieldNames: " + b);
             }
         }
-        
+
         // -----------------------------
         // Set the field values
         if (null != options.get(FIELD_VALUES) && !options.get(FIELD_VALUES).trim().isEmpty()) {
@@ -853,7 +858,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 fieldValueFilter = null;
             }
         }
-        
+
         // -----------------------------
         // See if we have a data type filter
         if (null != options.get(DATA_TYPES) && !options.get(DATA_TYPES).trim().isEmpty()) {
@@ -862,7 +867,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 log.trace("data types: " + options.get(DATA_TYPES));
             }
         }
-        
+
         // -----------------------------
         // See if we need to return counts per datatype
         if (null != options.get(UNIQ_BY_DATA_TYPE)) {
@@ -871,7 +876,7 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 log.trace(UNIQ_BY_DATA_TYPE + ":" + uniqByDataTypeOption);
             }
         }
-        
+
         // -----------------------------
         // See if we need to return counts per visibility
         if (null != options.get(UNIQ_BY_VISIBILITY)) {
@@ -880,10 +885,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
                 log.trace(UNIQ_BY_VISIBILITY + ":" + uniqByVisibilityOption);
             }
         }
-        
+
         return true;
     }
-    
+
     // --------------------------------------------------------------------------
     // All timestamp stuff, taken from org.apache.accumulo.core.iterators.user.TimestampFilter
     private static SimpleDateFormat initDateParser() {
@@ -891,10 +896,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         dateParser.setTimeZone(TimeZone.getTimeZone("GMT"));
         return dateParser;
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -905,10 +910,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     public static void setRange(IteratorSetting is, String start, String end) {
         setRange(is, start, true, end, true);
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -924,10 +929,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         setStart(is, start, startInclusive);
         setEnd(is, end, endInclusive);
     }
-    
+
     /**
      * A convenience method for setting the stamp_start timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -939,10 +944,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         is.addOption(START_TIME, start);
         is.addOption(START_TIME_INCL, Boolean.toString(startInclusive));
     }
-    
+
     /**
      * A convenience method for setting the stamp_end timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param end
@@ -954,10 +959,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         is.addOption(STOP_TIME, end);
         is.addOption(STOP_TIME_INCL, Boolean.toString(endInclusive));
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -968,10 +973,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
     public static void setRange(IteratorSetting is, long start, long end) {
         setRange(is, start, true, end, true);
     }
-    
+
     /**
      * A convenience method for setting the range of timestamps accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -987,10 +992,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         setStart(is, start, startInclusive);
         setEnd(is, end, endInclusive);
     }
-    
+
     /**
      * A convenience method for setting the stamp_start timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param start
@@ -1003,10 +1008,10 @@ public class FieldIndexCountingIteratorPerVisibility extends WrappingIterator im
         is.addOption(START_TIME, dateParser.format(new Date(start)));
         is.addOption(START_TIME_INCL, Boolean.toString(startInclusive));
     }
-    
+
     /**
      * A convenience method for setting the stamp_end timestamp accepted by the timestamp filter.
-     * 
+     *
      * @param is
      *            the iterator setting object to configure
      * @param end
