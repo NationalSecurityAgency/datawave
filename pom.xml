@@ -794,12 +794,12 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
-                <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
+                <artifactId>org.eclipse.emf.ecore</artifactId>
                 <version>${version.eclipse.emf}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.emf</groupId>
-                <artifactId>org.eclipse.emf.ecore</artifactId>
+                <artifactId>org.eclipse.emf.ecore.xmi</artifactId>
                 <version>${version.eclipse.emf}</version>
             </dependency>
             <dependency>
