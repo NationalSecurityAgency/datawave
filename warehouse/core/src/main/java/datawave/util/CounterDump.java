@@ -5,14 +5,13 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 
 import com.google.common.collect.Maps;
-
-import datawave.util.CounterDump.CounterSource;
 
 public class CounterDump {
 
@@ -52,6 +51,9 @@ public class CounterDump {
 
         @Override
         public Entry<String,Counters> next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
             Counters cntrs = new Counters();
             ByteArrayInputStream input = new ByteArrayInputStream(getNextCounterData());
             DataInputStream dataInput = new DataInputStream(input);
