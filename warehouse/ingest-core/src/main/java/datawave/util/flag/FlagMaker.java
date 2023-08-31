@@ -664,7 +664,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * @return The size in characters of the flag file
      */
     private long getFlagFileSize(FlagDataTypeConfig fc, Collection<InputFile> inFiles) {
-        long length = fmc.getDatawaveHome().length() + 1 + fc.getScript().length();
+        long length = fmc.getDatawaveHome().length() + 1L + fc.getScript().length();
         int first = -1;
         for (InputFile inFile : inFiles) {
             length += 1 + inFile.getTrackedDirLength(InputFile.TrackedDir.FLAGGED_DIR);
