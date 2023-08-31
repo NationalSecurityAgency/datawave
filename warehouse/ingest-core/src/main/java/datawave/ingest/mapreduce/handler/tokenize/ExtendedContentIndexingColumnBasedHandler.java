@@ -219,7 +219,6 @@ public abstract class ExtendedContentIndexingColumnBasedHandler<KEYIN,KEYOUT,VAL
 
     /**
      * This method will block until all of the documents have been written to Accumulo, or a timeout has been reached.
-     * <p>
      * TODO make the timeout configurable
      */
     @Override
