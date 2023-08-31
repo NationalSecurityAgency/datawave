@@ -78,6 +78,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
+    protected Random random = new Random();
 
     // thread-safe cache where the key is the original query, and the value is the expanded query
     private Cache<String,String> queryCache;
@@ -571,7 +572,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
         if (config.getIvaratorFstHdfsBaseURIs() != null) {
             String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
-            int index = new Random().nextInt(choices.length);
+            int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());
             return path.toUri();
         }
