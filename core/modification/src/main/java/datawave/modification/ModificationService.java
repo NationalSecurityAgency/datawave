@@ -71,7 +71,7 @@ public class ModificationService {
     /**
      * Execute a Modification service with the given name and runtime parameters
      *
-     * @param proxiedUsers
+     * @param userDetails
      *            The proxied user list
      * @param modificationServiceName
      *            Name of the modification service configuration
