@@ -60,6 +60,14 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
         return new NYCTLCHelper();
     }
 
+    private String getFirstEventFieldValue(Collection<NormalizedContentInterface> collection) {
+        if (collection.stream().findFirst().isPresent()) {
+            return collection.stream().findFirst().get().getEventFieldValue();
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
         final Multimap<String,NormalizedContentInterface> eventFields = super.getEventFields(event);
@@ -72,8 +80,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
             Collection<NormalizedContentInterface> latNci = eventFields.get(PICKUP_LATITUDE);
             Collection<NormalizedContentInterface> lonNci = eventFields.get(PICKUP_LONGITUDE);
             if (latNci.size() == 1 && lonNci.size() == 1) {
-                pickupLat = latNci.stream().findAny().get().getEventFieldValue();
-                pickupLon = lonNci.stream().findAny().get().getEventFieldValue();
+                pickupLat = getFirstEventFieldValue(latNci);
+                pickupLon = getFirstEventFieldValue(lonNci);
             } else
                 log.warn("Did not expect multiple pickup lat/lon pairs in the event.");
         } else
@@ -83,8 +91,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
             Collection<NormalizedContentInterface> latNci = eventFields.get(DROPOFF_LATITUDE);
             Collection<NormalizedContentInterface> lonNci = eventFields.get(DROPOFF_LONGITUDE);
             if (latNci.size() == 1 && lonNci.size() == 1) {
-                dropoffLat = latNci.stream().findAny().get().getEventFieldValue();
-                dropoffLon = lonNci.stream().findAny().get().getEventFieldValue();
+                dropoffLat = getFirstEventFieldValue(latNci);
+                dropoffLon = getFirstEventFieldValue(lonNci);
             } else
                 log.warn("Did not expect multiple dropoff lat/lon pairs in the event.");
         } else
@@ -141,7 +149,7 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
         if (eventFields.containsKey("TOTAL_AMOUNT")) {
             Collection<NormalizedContentInterface> totalAmountNci = eventFields.get(TOTAL_AMOUNT);
             if (totalAmountNci.size() == 1) {
-                derivedFields.put(TOTAL_AMOUNT_INDEXED, totalAmountNci.stream().findAny().get().getEventFieldValue());
+                derivedFields.put(TOTAL_AMOUNT_INDEXED, getFirstEventFieldValue(totalAmountNci));
             } else
                 log.warn("Did not expect multiple TOTAL_AMOUNT values in the event.");
         }

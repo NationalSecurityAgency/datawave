@@ -37,18 +37,37 @@ public class DocumentProjection implements DocumentPermutation {
      */
     private boolean trackSizes = true;
 
+    @Deprecated
     public DocumentProjection() {
         this(false, false);
     }
 
+    public DocumentProjection(Set<String> projections, Projection.ProjectionType projectionType) {
+        this(false, false, projections, projectionType);
+    }
+
+    @Deprecated
     public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse) {
         this(includeGroupingContext, reducedResponse, true);
     }
 
+    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, Set<String> projections, Projection.ProjectionType projectionType) {
+        this(includeGroupingContext, reducedResponse, true, projections, projectionType);
+    }
+
+    /*@Deprecated
     public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes) {
         this.includeGroupingContext = includeGroupingContext;
         this.reducedResponse = reducedResponse;
         this.projection = new Projection();
+        this.trackSizes = trackSizes;
+    }*/
+
+    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes, Set<String> projections,
+                    Projection.ProjectionType projectionType) {
+        this.includeGroupingContext = includeGroupingContext;
+        this.reducedResponse = reducedResponse;
+        this.projection = new Projection(projections, projectionType);
         this.trackSizes = trackSizes;
     }
 

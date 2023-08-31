@@ -135,7 +135,8 @@ public class WeightedValuePruningStrategy extends NGramTokenizationStrategy {
                 if (ratioOfTotalNgramCountsToMaxAllowed > 1.0f) {
                     reducedScaleNgramCount = Math.round(((float) reducedScaleNgramCount) * ratioOfTotalNgramCountsToMaxAllowed);
                 } else {
-                    reducedScaleNgramCount = Math.round(((float) reducedScaleNgramCount) / ratioOfTotalNgramCountsToMaxAllowed);
+                    reducedScaleNgramCount = (ratioOfTotalNgramCountsToMaxAllowed == 0.0) ? 0
+                                    : Math.round(((float) reducedScaleNgramCount) / ratioOfTotalNgramCountsToMaxAllowed);
                 }
 
                 totalNgramCounts += reducedScaleNgramCount;
