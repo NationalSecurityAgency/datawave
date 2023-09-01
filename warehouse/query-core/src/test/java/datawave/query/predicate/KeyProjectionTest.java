@@ -41,27 +41,7 @@ public class KeyProjectionTest {
 
     @Test(expected = RuntimeException.class)
     public void testNoConfiguration() {
-        KeyProjection projection = new KeyProjection();
-
-        Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchConfiguration() {
-        KeyProjection projection = new KeyProjection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-
-        Iterator<Entry<Key,String>> iter = fiData.iterator();
-        assertTrue(projection.apply(iter.next()));
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchOfTheSameConfiguration() {
-        KeyProjection projection = new KeyProjection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        KeyProjection projection = new KeyProjection(null);
 
         Iterator<Entry<Key,String>> iter = fiData.iterator();
         assertTrue(projection.apply(iter.next()));
@@ -69,8 +49,7 @@ public class KeyProjectionTest {
 
     @Test
     public void testIncludes() {
-        KeyProjection projection = new KeyProjection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
+        KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
 
         assertTrue(projection.getProjection().isUseIncludes());
         assertFalse(projection.getProjection().isUseExcludes());
@@ -98,8 +77,7 @@ public class KeyProjectionTest {
 
     @Test
     public void testExcludes() {
-        KeyProjection projection = new KeyProjection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        KeyProjection projection = new KeyProjection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
         assertFalse(projection.getProjection().isUseIncludes());
         assertTrue(projection.getProjection().isUseExcludes());

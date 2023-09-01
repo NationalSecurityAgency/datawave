@@ -11,30 +11,13 @@ public class ProjectionTest {
 
     @Test(expected = RuntimeException.class)
     public void testNoConfiguration() {
-        Projection projection = new Projection();
-        assertTrue(projection.apply("FIELD_A"));
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchConfiguration() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
-        assertTrue(projection.apply("FIELD_A"));
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testTooMuchOfTheSameConfiguration() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
+        Projection projection = new Projection(null, Projection.ProjectionType.INCLUDES);
         assertTrue(projection.apply("FIELD_A"));
     }
 
     @Test
     public void testIncludes() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
+        Projection projection = new Projection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
 
         assertTrue(projection.isUseIncludes());
         assertFalse(projection.isUseExcludes());
@@ -49,8 +32,7 @@ public class ProjectionTest {
 
     @Test
     public void testIncludesWithGroupingContext() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("FIELD_A", "FIELD_B"));
+        Projection projection = new Projection(Sets.newHashSet("FIELD_A", "FIELD_B"), Projection.ProjectionType.INCLUDES);
 
         assertTrue(projection.isUseIncludes());
         assertFalse(projection.isUseExcludes());
@@ -65,8 +47,7 @@ public class ProjectionTest {
 
     @Test
     public void testExcludes() {
-        Projection projection = new Projection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        Projection projection = new Projection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
         assertFalse(projection.isUseIncludes());
         assertTrue(projection.isUseExcludes());
@@ -81,8 +62,7 @@ public class ProjectionTest {
 
     @Test
     public void testExcludesWithGroupingContext() {
-        Projection projection = new Projection();
-        projection.setExcludes(Sets.newHashSet("FIELD_X", "FIELD_Y"));
+        Projection projection = new Projection(Sets.newHashSet("FIELD_X", "FIELD_Y"), Projection.ProjectionType.EXCLUDES);
 
         assertFalse(projection.isUseIncludes());
         assertTrue(projection.isUseExcludes());
@@ -97,8 +77,7 @@ public class ProjectionTest {
 
     @Test
     public void testTheAbsurd() {
-        Projection projection = new Projection();
-        projection.setIncludes(Sets.newHashSet("PREFIX"));
+        Projection projection = new Projection(Sets.newHashSet("PREFIX"), Projection.ProjectionType.INCLUDES);
         assertTrue(projection.apply("$PREFIX.SUFFIX01.SUFFIX.02"));
     }
 }
