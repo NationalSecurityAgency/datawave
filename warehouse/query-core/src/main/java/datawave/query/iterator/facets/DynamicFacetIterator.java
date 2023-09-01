@@ -49,6 +49,7 @@ import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.KeyProjection;
+import datawave.query.predicate.Projection;
 import datawave.query.tables.facets.FacetedConfiguration;
 import datawave.query.tables.facets.FacetedSearchType;
 import datawave.query.util.TypeMetadata;
@@ -170,9 +171,7 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> documents = null;
 
         if (!configuration.getFacetedFields().isEmpty()) {
-            KeyProjection keyProjection = new KeyProjection();
-            keyProjection.setIncludes(configuration.getFacetedFields());
-            projection = new EventDataQueryFieldFilter(keyProjection);
+            projection = new EventDataQueryFieldFilter(configuration.getFacetedFields(), Projection.ProjectionType.INCLUDES);
         }
 
         if (!configuration.hasFieldLimits() || projection != null) {

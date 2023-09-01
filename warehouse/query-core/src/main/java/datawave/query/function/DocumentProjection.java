@@ -37,37 +37,44 @@ public class DocumentProjection implements DocumentPermutation {
      */
     private boolean trackSizes = true;
 
+    @Deprecated
     public DocumentProjection() {
-        this(false, false);
+        this.includeGroupingContext = false;
+        this.reducedResponse = false;
+        this.projection = new Projection();
     }
 
+    @Deprecated
     public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse) {
-        this(includeGroupingContext, reducedResponse, true);
-    }
-
-    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes) {
         this.includeGroupingContext = includeGroupingContext;
         this.reducedResponse = reducedResponse;
         this.projection = new Projection();
+    }
+
+    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, boolean trackSizes, Set<String> projections,
+                    Projection.ProjectionType projectionType) {
+        this.includeGroupingContext = includeGroupingContext;
+        this.reducedResponse = reducedResponse;
+        this.projection = new Projection(projections, projectionType);
         this.trackSizes = trackSizes;
     }
 
-    /**
-     * Set the delegate {@link Projection} with the fields to include
-     *
-     * @param includes
-     *            the set of fields to include
-     */
+    @Deprecated
+    public DocumentProjection(Set<String> projections, Projection.ProjectionType projectionType) {
+        this(false, false, projections, projectionType);
+    }
+
+    @Deprecated
+    public DocumentProjection(boolean includeGroupingContext, boolean reducedResponse, Set<String> projections, Projection.ProjectionType projectionType) {
+        this(includeGroupingContext, reducedResponse, true, projections, projectionType);
+    }
+
+    @Deprecated
     public void setIncludes(Set<String> includes) {
         this.projection.setIncludes(includes);
     }
 
-    /**
-     * Configure the delegate {@link Projection} with the fields to exclude
-     *
-     * @param excludes
-     *            the set of fields to exclude
-     */
+    @Deprecated
     public void setExcludes(Set<String> excludes) {
         this.projection.setExcludes(excludes);
     }
