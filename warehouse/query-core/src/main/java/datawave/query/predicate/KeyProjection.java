@@ -18,9 +18,9 @@ public class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
     private Projection projection;
 
     @Deprecated
-    //public KeyProjection() {
-    //    projection = new Projection();
-    //}
+    // public KeyProjection() {
+    // projection = new Projection();
+    // }
 
     public KeyProjection(Set<String> projections, Projection.ProjectionType projectionType) {
         projection = new Projection(projections, projectionType);
