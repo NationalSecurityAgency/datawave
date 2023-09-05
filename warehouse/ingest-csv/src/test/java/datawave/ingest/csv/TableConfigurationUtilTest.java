@@ -197,9 +197,11 @@ public class TableConfigurationUtilTest {
         tcu.updateCacheFile();
 
         tcu.addOutputTables("nonexistent_table", conf);
-
-        tcu.serializeTableConfgurationIntoConf(conf);
-        tempCacheFile.delete();
+        try {
+            tcu.serializeTableConfgurationIntoConf(conf);
+        } finally {
+            tempCacheFile.delete();
+        }
 
     }
 
