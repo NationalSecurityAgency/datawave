@@ -2,6 +2,13 @@ package datawave.query.iterator.builder;
 
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.JexlNode;
+
 import datawave.query.iterator.NestedIterator;
 import datawave.query.iterator.logic.IndexIteratorBridge;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
@@ -9,16 +16,6 @@ import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.util.TypeMetadata;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import org.apache.commons.jexl2.parser.JexlNode;
 
 /**
  * A convenience class that aggregates a field, value, source iterator, normalizer mappings, index only fields, data type filter and key transformer when
@@ -31,7 +28,6 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
     protected SortedKeyValueIterator<Key,Value> source;
     protected TypeMetadata typeMetadata;
     protected Set<String> compositeFields;
-    protected Predicate<Key> datatypeFilter = Predicates.alwaysTrue();
     protected TimeFilter timeFilter = TimeFilter.alwaysTrue();
     protected Set<String> fieldsToAggregate;
     protected EventDataQueryFilter attrFilter;
@@ -87,14 +83,6 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
         this.compositeFields = compositeFields;
     }
 
-    public Predicate<Key> getDatatypeFilter() {
-        return datatypeFilter;
-    }
-
-    public void setDatatypeFilter(Predicate<Key> datatypeFilter) {
-        this.datatypeFilter = datatypeFilter;
-    }
-
     public TimeFilter getTimeFilter() {
         return timeFilter;
     }
@@ -121,15 +109,15 @@ public class TermFrequencyIndexBuilder implements IteratorBuilder {
 
     @SuppressWarnings("unchecked")
     public NestedIterator<Key> build() {
-        if (notNull(field, range, source, datatypeFilter, timeFilter)) {
-            IndexIteratorBridge itr = new IndexIteratorBridge(new TermFrequencyIndexIterator(range, source, this.timeFilter, this.typeMetadata,
-                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), this.datatypeFilter, termFrequencyAggregator),
+        if (notNull(field, range, source, timeFilter)) {
+            IndexIteratorBridge itr = new IndexIteratorBridge(
+                            new TermFrequencyIndexIterator(range, source, this.timeFilter, this.typeMetadata,
+                                            this.fieldsToAggregate == null ? false : this.fieldsToAggregate.contains(field), termFrequencyAggregator),
                             getNode(), getField());
             field = null;
             range = null;
             source = null;
             timeFilter = null;
-            datatypeFilter = null;
             node = null;
             return itr;
         } else {

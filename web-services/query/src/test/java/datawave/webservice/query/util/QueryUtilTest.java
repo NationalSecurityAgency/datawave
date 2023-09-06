@@ -5,18 +5,18 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryImpl.Parameter;
-
-import org.apache.hadoop.io.Text;
-import org.junit.Assert;
-import org.junit.Test;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.hadoop.io.Text;
+import org.junit.Assert;
+import org.junit.Test;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.QueryImpl.Parameter;
 
 public class QueryUtilTest {
 

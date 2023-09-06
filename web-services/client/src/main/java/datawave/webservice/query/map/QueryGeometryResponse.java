@@ -1,7 +1,7 @@
 package datawave.webservice.query.map;
 
-import datawave.webservice.HtmlProvider;
-import datawave.webservice.result.BaseResponse;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -11,8 +11,9 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import java.util.List;
-import java.util.stream.Collectors;
+
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.result.BaseResponse;
 
 /**
  * This response includes information about what query geometries were present in a given query. The geometries are displayed on a map using leaflet.

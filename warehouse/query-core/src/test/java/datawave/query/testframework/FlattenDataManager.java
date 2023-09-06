@@ -1,11 +1,5 @@
 package datawave.query.testframework;
 
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
@@ -13,6 +7,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
 
 /**
  * Data manager for testing various flatteners for JSON data.

@@ -1,9 +1,14 @@
 package datawave.ingest.mapreduce.job.metrics;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.iterators.IteratorUtil.IteratorScope;
 import org.apache.accumulo.core.iterators.user.SummingCombiner;
@@ -13,11 +18,7 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Map;
-import java.util.TreeMap;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertEquals;
+import datawave.accumulo.inmemory.InMemoryInstance;
 
 public class MetricsTableConfigHelperTest {
 

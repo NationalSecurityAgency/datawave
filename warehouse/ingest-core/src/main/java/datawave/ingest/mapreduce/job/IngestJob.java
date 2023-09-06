@@ -1,48 +1,41 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.config.TableConfigCache;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
-import datawave.ingest.mapreduce.EventMapper;
-import datawave.ingest.mapreduce.handler.JobSetupHandler;
-import datawave.ingest.mapreduce.handler.shard.NumShards;
-import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
-import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
-import datawave.ingest.mapreduce.job.statsd.CounterStatsDClient;
-import datawave.ingest.mapreduce.job.statsd.CounterToStatsDConfiguration;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import datawave.ingest.mapreduce.job.writer.AggregatingContextWriter;
-import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
-import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
-import datawave.ingest.mapreduce.job.writer.ContextWriter;
-import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
-import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
-import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
-import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
-import datawave.ingest.metric.IngestInput;
-import datawave.ingest.metric.IngestOutput;
-import datawave.ingest.metric.IngestProcess;
-import datawave.marking.MarkingFunctions;
-import datawave.util.StringUtils;
-import datawave.util.cli.PasswordConverter;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Observer;
+import java.util.Set;
 
 import org.apache.accumulo.core.Constants;
-import org.apache.accumulo.core.client.Accumulo;
-import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.NamespaceExistsException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
-import org.apache.accumulo.core.conf.Property;
 import org.apache.accumulo.core.data.ColumnUpdate;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.KeyValue;
@@ -88,36 +81,35 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Observer;
-import java.util.Set;
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
+import datawave.ingest.mapreduce.EventMapper;
+import datawave.ingest.mapreduce.handler.JobSetupHandler;
+import datawave.ingest.mapreduce.handler.shard.NumShards;
+import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
+import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
+import datawave.ingest.mapreduce.job.statsd.CounterStatsDClient;
+import datawave.ingest.mapreduce.job.statsd.CounterToStatsDConfiguration;
+import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
+import datawave.ingest.mapreduce.job.writer.AggregatingContextWriter;
+import datawave.ingest.mapreduce.job.writer.BulkContextWriter;
+import datawave.ingest.mapreduce.job.writer.ChainedContextWriter;
+import datawave.ingest.mapreduce.job.writer.ContextWriter;
+import datawave.ingest.mapreduce.job.writer.DedupeContextWriter;
+import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
+import datawave.ingest.mapreduce.job.writer.TableCachingContextWriter;
+import datawave.ingest.mapreduce.partition.MultiTableRangePartitioner;
+import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
+import datawave.ingest.metric.IngestProcess;
+import datawave.marking.MarkingFunctions;
+import datawave.util.StringUtils;
+import datawave.util.cli.PasswordConverter;
 
 /**
  * Class that starts a MapReduce job to create Accumulo Map files that to be bulk imported into Accumulo If outputMutations is specified, then Mutations are
@@ -465,7 +457,7 @@ public class IngestJob implements Tool {
                     numRecords += recordC.getValue();
                 }
                 // records that throw runtime exceptions are still counted as processed
-                float percentError = 100 * ((float) numExceptions / numRecords);
+                float percentError = (numRecords == 0) ? 0.0f : 100 * ((float) numExceptions / numRecords);
                 log.info(String.format("Percent Error: %.2f", percentError));
                 if (conf.getInt("job.percent.error.threshold", 101) <= percentError) {
                     return jobFailed(job, runningJob, outputFs, workDirPath);
@@ -1027,9 +1019,7 @@ public class IngestJob implements Tool {
         // Setup the Output
         job.setWorkingDirectory(workDirPath);
         if (outputMutations) {
-            CBMutationOutputFormatter.configure()
-                            .clientProperties(Accumulo.newClientProperties().to(instanceName, zooKeepers).as(userName, new PasswordToken(password)).build())
-                            .createTables(true).store(job);
+            CBMutationOutputFormatter.configure(job.getConfiguration()).createTables(true).store(job);
             job.setOutputFormatClass(CBMutationOutputFormatter.class);
         } else {
             FileOutputFormat.setOutputPath(job, new Path(workDirPath, "mapFiles"));

@@ -12,14 +12,13 @@ import java.util.SortedSet;
 
 import javax.annotation.Nullable;
 
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.predicate.EventDataQueryFieldFilter;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 import com.google.common.base.Function;
 import com.google.common.base.Splitter;
@@ -46,11 +45,13 @@ import datawave.query.iterator.aggregation.DocumentData;
 import datawave.query.iterator.builder.CardinalityIteratorBuilder;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.functions.CardinalityAggregator;
+import datawave.query.jexl.functions.FieldIndexAggregator;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
+import datawave.query.predicate.EventDataQueryFieldFilter;
+import datawave.query.predicate.KeyProjection;
 import datawave.query.tables.facets.FacetedConfiguration;
 import datawave.query.tables.facets.FacetedSearchType;
 import datawave.query.util.TypeMetadata;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
 
 /**
  *
@@ -169,8 +170,9 @@ public class DynamicFacetIterator extends FieldIndexOnlyQueryIterator {
         Iterator<Entry<Key,Document>> documents = null;
 
         if (!configuration.getFacetedFields().isEmpty()) {
-            projection = new EventDataQueryFieldFilter();
-            projection.setIncludes(configuration.getFacetedFields());
+            KeyProjection keyProjection = new KeyProjection();
+            keyProjection.setIncludes(configuration.getFacetedFields());
+            projection = new EventDataQueryFieldFilter(keyProjection);
         }
 
         if (!configuration.hasFieldLimits() || projection != null) {

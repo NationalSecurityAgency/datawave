@@ -4,8 +4,15 @@
  */
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.util.TableName;
+import static org.junit.Assert.assertEquals;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -19,14 +26,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.TreeMap;
-
-import static org.junit.Assert.assertEquals;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.util.TableName;
 
 public class MultiTableRRRangePartitionerTest {
 
@@ -53,8 +54,8 @@ public class MultiTableRRRangePartitionerTest {
         int resultFour = instance.calculateIndex(indexFour, numPartitions, tableName, cutPointArrayLength);
         assertEquals(result, resultTwo);
         assertEquals(result, expectedResult);
-        Assert.assertNotNull(resultThree);
-        Assert.assertNotNull(resultFour);
+        Assert.assertEquals(4, resultThree);
+        Assert.assertEquals(0, resultFour);
     }
 
     private static final String TABLE_NAME = "abc";

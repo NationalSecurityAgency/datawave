@@ -11,9 +11,10 @@ import java.util.Optional;
 import java.util.PriorityQueue;
 import java.util.Set;
 
+import org.apache.log4j.Logger;
+
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.postprocessing.tf.TermOffsetMap;
-import org.apache.log4j.Logger;
 
 /**
  * <p>
@@ -233,12 +234,15 @@ public class ContentUnorderedEvaluator extends ContentFunctionEvaluator {
                 OffsetList o = offsetQueue.remove();
 
                 if (maxOffset.get().getLowOffset() - o.getMinOffset().getOffset() <= distance) {
-                    // Track the start and end offset for the phrase.
-                    int startOffset = o.getMinOffset().getOffset();
-                    int endOffset = maxOffset.get().getLowOffset();
-                    termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
-                    if (log.isTraceEnabled()) {
-                        log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " to jexl context");
+                    // Only record the phrase index if this is a targeted excerpt field.
+                    if (termOffsetMap.shouldRecordPhraseIndex(field)) {
+                        // Track the start and end offset for the phrase.
+                        int startOffset = o.getMinOffset().getOffset();
+                        int endOffset = maxOffset.get().getLowOffset();
+                        termOffsetMap.addPhraseIndexTriplet(field, eventId, startOffset, endOffset);
+                        if (log.isTraceEnabled()) {
+                            log.trace("Adding phrase indexes [" + startOffset + "," + endOffset + "] for field " + field + " to jexl context");
+                        }
                     }
                     return true;
                 }

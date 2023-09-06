@@ -1,6 +1,9 @@
 package datawave.query.util;
 
-import datawave.util.TableName;
+import java.text.SimpleDateFormat;
+import java.util.BitSet;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -9,9 +12,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 
-import java.text.SimpleDateFormat;
-import java.util.BitSet;
-import java.util.concurrent.TimeUnit;
+import datawave.util.TableName;
 
 public class DateIndexTestIngest {
 

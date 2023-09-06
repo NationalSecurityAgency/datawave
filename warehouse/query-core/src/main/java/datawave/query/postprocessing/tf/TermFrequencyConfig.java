@@ -1,15 +1,16 @@
 package datawave.query.postprocessing.tf;
 
-import datawave.query.function.Equality;
-import datawave.query.predicate.EventDataQueryFilter;
-import datawave.query.util.TypeMetadata;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 
-import java.util.Set;
+import datawave.query.function.Equality;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.util.TypeMetadata;
 
 /**
  * Configs required to setup various term frequency related objects
@@ -18,7 +19,6 @@ public class TermFrequencyConfig {
 
     private ASTJexlScript script;
     private SortedKeyValueIterator<Key,Value> source;
-    private IteratorEnvironment iterEnv;
     private Set<String> contentExpansionFields;
     private Set<String> tfFields;
     private TypeMetadata typeMetadata;
@@ -43,19 +43,6 @@ public class TermFrequencyConfig {
     // Return the source
     public SortedKeyValueIterator<Key,Value> getSource() {
         return this.source;
-    }
-
-    // Return a copy of the source
-    public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-        return source.deepCopy(iterEnv);
-    }
-
-    public IteratorEnvironment getIterEnv() {
-        return iterEnv;
-    }
-
-    public void setIterEnv(IteratorEnvironment iterEnv) {
-        this.iterEnv = iterEnv;
     }
 
     public Set<String> getContentExpansionFields() {

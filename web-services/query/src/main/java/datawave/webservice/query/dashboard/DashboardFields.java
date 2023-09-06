@@ -3,11 +3,11 @@ package datawave.webservice.query.dashboard;
 import java.util.Arrays;
 import java.util.List;
 
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.result.event.FieldBase;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 
 public final class DashboardFields {
 

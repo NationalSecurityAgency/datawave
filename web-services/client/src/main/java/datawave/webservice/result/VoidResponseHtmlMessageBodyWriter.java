@@ -1,12 +1,13 @@
 package datawave.webservice.result;
 
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.util.AbstractHtmlProviderMessageBodyWriter;
-
-import javax.ws.rs.core.MediaType;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
 import java.util.List;
+
+import javax.ws.rs.core.MediaType;
+
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.util.AbstractHtmlProviderMessageBodyWriter;
 
 public class VoidResponseHtmlMessageBodyWriter extends AbstractHtmlProviderMessageBodyWriter<VoidResponse> {
     @Override

@@ -2,10 +2,12 @@ package datawave.audit;
 
 import java.util.ArrayList;
 import java.util.List;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.IntRange;
+
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 
 public class SplitSelectorExtractor implements SelectorExtractor {
 

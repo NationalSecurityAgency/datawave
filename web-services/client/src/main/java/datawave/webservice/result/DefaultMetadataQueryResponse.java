@@ -1,11 +1,10 @@
 package datawave.webservice.result;
 
-import io.protostuff.Input;
-import io.protostuff.Message;
-import io.protostuff.Output;
-import io.protostuff.Schema;
-import datawave.webservice.query.result.metadata.DefaultMetadataField;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.xml.bind.annotation.XmlAccessOrder;
 import javax.xml.bind.annotation.XmlAccessType;
@@ -15,11 +14,13 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+
+import datawave.webservice.query.result.metadata.DefaultMetadataField;
+import datawave.webservice.query.result.metadata.MetadataFieldBase;
+import io.protostuff.Input;
+import io.protostuff.Message;
+import io.protostuff.Output;
+import io.protostuff.Schema;
 
 @XmlRootElement(name = "DefaultMetadataQueryResponse")
 @XmlAccessorType(XmlAccessType.NONE)

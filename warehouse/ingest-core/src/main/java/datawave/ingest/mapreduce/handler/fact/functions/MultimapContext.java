@@ -1,8 +1,9 @@
 package datawave.ingest.mapreduce.handler.fact.functions;
 
+import org.apache.commons.jexl2.JexlContext;
+
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import org.apache.commons.jexl2.JexlContext;
 
 /**
  *

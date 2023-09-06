@@ -1,15 +1,17 @@
 package datawave.webservice.query.dashboard;
 
+import java.text.ParseException;
+import java.util.Date;
+
+import javax.ws.rs.core.MultivaluedMap;
+
+import org.apache.commons.lang.time.DateUtils;
+import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
+
 import datawave.webservice.common.extjs.ExtJsResponse;
 import datawave.webservice.query.QueryParametersImpl;
 import datawave.webservice.query.QueryPersistence;
 import datawave.webservice.query.runner.QueryExecutor;
-import org.apache.commons.lang.time.DateUtils;
-import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
-
-import javax.ws.rs.core.MultivaluedMap;
-import java.text.ParseException;
-import java.util.Date;
 
 public class DashboardQuery {
 
@@ -23,6 +25,7 @@ public class DashboardQuery {
     private static final int pageSize = 10000;
     private static final int pageTimeout = -1;
     private static final Long maxResultsOverride = null;
+    private static final String systemFrom = "";
 
     private DashboardQuery() {}
 
@@ -32,7 +35,7 @@ public class DashboardQuery {
 
         MultivaluedMap<String,String> paramsMap = new MultivaluedMapImpl<>();
         paramsMap.putAll(QueryParametersImpl.paramsToMap(logicName, queryString, queryName, columnVisibility, beginDate, endDate, auths,
-                        DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride, persistence, parameters, trace));
+                        DateUtils.addDays(now, 1), pageSize, pageTimeout, maxResultsOverride, persistence, systemFrom, parameters, trace));
         return (ExtJsResponse) queryExecutor.createQueryAndNext(logicName, paramsMap);
     }
 }

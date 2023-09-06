@@ -1,14 +1,7 @@
 package datawave.query.function;
 
-import datawave.query.Constants;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.ValueTuple;
-import datawave.query.jexl.ArithmeticJexlEngines;
-import datawave.query.jexl.DefaultArithmetic;
-import datawave.query.jexl.DelayedNonEventIndexContext;
-import datawave.query.postprocessing.tf.PhraseIndexes;
-import datawave.query.postprocessing.tf.TermOffsetMap;
-import datawave.query.transformer.ExcerptTransform;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.jexl2.DatawaveJexlScript;
@@ -19,11 +12,20 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Predicate;
 
-import datawave.query.jexl.DatawaveJexlContext;
+import datawave.query.Constants;
+import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Content;
 import datawave.query.attributes.Document;
-import datawave.query.jexl.HitListArithmetic;
+import datawave.query.attributes.ValueTuple;
+import datawave.query.jexl.ArithmeticJexlEngines;
+import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.DatawaveJexlEngine;
+import datawave.query.jexl.DefaultArithmetic;
+import datawave.query.jexl.DelayedNonEventIndexContext;
+import datawave.query.jexl.HitListArithmetic;
+import datawave.query.postprocessing.tf.PhraseIndexes;
+import datawave.query.postprocessing.tf.TermOffsetMap;
+import datawave.query.transformer.ExcerptTransform;
 import datawave.query.util.Tuple3;
 
 public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJexlContext>> {
@@ -37,6 +39,9 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
 
     // do we need to gather phrase offsets
     private boolean gatherPhraseOffsets = false;
+
+    // The set of fields for which we should gather phrase offsets for.
+    private Set<String> phraseOffsetFields;
 
     /**
      * Compiled and flattened jexl script
@@ -81,6 +86,7 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         TermOffsetMap termOffsetMap = (TermOffsetMap) input.third().get(Constants.TERM_OFFSET_MAP_JEXL_VARIABLE_NAME);
         if (termOffsetMap != null && isGatherPhraseOffsets() && arithmetic instanceof HitListArithmetic) {
             termOffsetMap.setGatherPhraseOffsets(true);
+            termOffsetMap.setExcerptFields(phraseOffsetFields);
         }
 
         // now evaluate
@@ -163,4 +169,11 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
         this.gatherPhraseOffsets = gatherPhraseOffsets;
     }
 
+    public Set<String> getPhraseOffsetFields() {
+        return phraseOffsetFields;
+    }
+
+    public void setPhraseOffsetFields(Set<String> phraseOffsetFields) {
+        this.phraseOffsetFields = phraseOffsetFields;
+    }
 }

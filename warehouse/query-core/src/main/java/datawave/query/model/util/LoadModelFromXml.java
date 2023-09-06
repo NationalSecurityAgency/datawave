@@ -1,17 +1,19 @@
 package datawave.query.model.util;
 
-import datawave.query.model.QueryModel;
-import datawave.query.model.FieldMapping;
-import datawave.webservice.model.Model;
-import org.apache.log4j.Logger;
-import org.xml.sax.InputSource;
+import java.io.InputStream;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.sax.SAXSource;
-import java.io.InputStream;
+
+import org.apache.log4j.Logger;
+import org.xml.sax.InputSource;
+
+import datawave.query.model.FieldMapping;
+import datawave.query.model.QueryModel;
+import datawave.webservice.model.Model;
 
 /**
  * Utility class to load a model from XML using jaxb objects generated in web service
@@ -43,20 +45,21 @@ public class LoadModelFromXml {
 
         QueryModel model = new QueryModel();
         for (FieldMapping mapping : xmlModel.getFields()) {
-            switch (mapping.getDirection()) {
-                case FORWARD:
-                    if (mapping.isLenientMarker()) {
-                        model.addLenientForwardMappings(mapping.getModelFieldName());
-                    } else {
+            if (mapping.isFieldMapping()) {
+                switch (mapping.getDirection()) {
+                    case FORWARD:
                         model.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
-                    }
-                    break;
-                case REVERSE:
-                    model.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
-                    break;
-                default:
-                    log.error("Unknown direction: " + mapping.getDirection());
+                        break;
+                    case REVERSE:
+                        model.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
+                        break;
+                    default:
+                        log.error("Unknown direction: " + mapping.getDirection());
+                }
+            } else {
+                model.setModelFieldAttributes(mapping.getModelFieldName(), mapping.getAttributes());
             }
+
         }
 
         if (model.getForwardQueryMapping().isEmpty() && model.getReverseQueryMapping().isEmpty()) {

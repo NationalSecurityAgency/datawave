@@ -6,21 +6,21 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.jexl2.JexlException;
+import org.apache.commons.jexl2.parser.ASTEQNode;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.lang.time.DateUtils;
+import org.apache.log4j.Logger;
+
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.QueryMetricSummary;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
-
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.language.tree.QueryNode;
 import datawave.webservice.query.metric.QueryMetricHandler;
-
-import org.apache.commons.jexl2.parser.ASTEQNode;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.lang.time.DateUtils;
-import org.apache.log4j.Logger;
 
 /**
  *
@@ -147,6 +147,8 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
                         }
                     }
                 }
+            } catch (JexlException e) {
+                log.error("populateMetricSelectors: Failure parsing query");
             } catch (Exception e) {
                 log.error("populateMetricSelectors: " + e.getMessage());
             }

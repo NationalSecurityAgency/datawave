@@ -1,29 +1,9 @@
 package datawave.query.tables.facets;
 
-import datawave.query.QueryParameters;
-
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
-
-import datawave.query.DocumentSerialization;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.function.FacetedGrouping;
-import datawave.query.function.deserializer.DocumentDeserializer;
-import datawave.query.function.serializer.DocumentSerializer;
-import datawave.query.iterator.QueryOptions;
-import datawave.query.planner.FacetedQueryPlanner;
-import datawave.query.planner.QueryPlanner;
-import datawave.query.predicate.EmptyDocumentFilter;
-import datawave.query.Constants;
-import datawave.query.transformer.FacetedTransformer;
-import datawave.query.tables.IndexQueryLogic;
-import datawave.util.StringUtils;
-import datawave.query.attributes.Document;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.QueryLogicTransformer;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.data.Key;
@@ -35,6 +15,25 @@ import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+
+import datawave.query.Constants;
+import datawave.query.DocumentSerialization;
+import datawave.query.QueryParameters;
+import datawave.query.attributes.Document;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.function.FacetedGrouping;
+import datawave.query.function.deserializer.DocumentDeserializer;
+import datawave.query.function.serializer.DocumentSerializer;
+import datawave.query.iterator.QueryOptions;
+import datawave.query.planner.FacetedQueryPlanner;
+import datawave.query.planner.QueryPlanner;
+import datawave.query.predicate.EmptyDocumentFilter;
+import datawave.query.tables.IndexQueryLogic;
+import datawave.query.transformer.FacetedTransformer;
+import datawave.util.StringUtils;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.logic.QueryLogicTransformer;
 
 /**
  *

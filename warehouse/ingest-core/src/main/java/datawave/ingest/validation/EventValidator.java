@@ -3,10 +3,10 @@ package datawave.ingest.validation;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
+
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.Type;
-
-import org.apache.hadoop.conf.Configuration;
 
 public interface EventValidator {
     /**

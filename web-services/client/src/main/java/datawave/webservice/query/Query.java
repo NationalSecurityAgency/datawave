@@ -1,16 +1,17 @@
 package datawave.webservice.query;
 
-import datawave.webservice.query.QueryImpl.Parameter;
-import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
-
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlSeeAlso;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlSeeAlso;
+
+import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlSeeAlso(QueryImpl.class)
@@ -72,6 +73,10 @@ public abstract class Query {
     public abstract Date getEndDate();
 
     public abstract void setEndDate(Date endDate);
+
+    public abstract String getSystemFrom();
+
+    public abstract void setSystemFrom(String systemFrom);
 
     public abstract Query duplicate(String newQueryName);
 

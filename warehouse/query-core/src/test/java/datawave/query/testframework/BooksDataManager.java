@@ -1,17 +1,5 @@
 package datawave.query.testframework;
 
-import au.com.bytecode.opencsv.CSVReader;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import datawave.data.hash.UID;
-import datawave.data.normalizer.Normalizer;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.MutationsRejectedException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -24,6 +12,20 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.MutationsRejectedException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+
+import au.com.bytecode.opencsv.CSVReader;
+import datawave.data.hash.UID;
+import datawave.data.normalizer.Normalizer;
 
 /**
  * Creates accumulo data as grouping data. However, that does not limit additional test classes for other purposes.

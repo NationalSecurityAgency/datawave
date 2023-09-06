@@ -3,10 +3,10 @@ package datawave.query.predicate;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Key;
+
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
-
-import org.apache.accumulo.core.data.Key;
 
 /**
  * Wraps a {@link Projection} so it can be applied to a {@link Key}.

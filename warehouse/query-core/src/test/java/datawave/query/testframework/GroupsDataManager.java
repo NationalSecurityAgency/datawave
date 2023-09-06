@@ -1,11 +1,5 @@
 package datawave.query.testframework;
 
-import au.com.bytecode.opencsv.CSVReader;
-import datawave.data.normalizer.Normalizer;
-import datawave.query.testframework.GroupsDataType.GroupField;
-import org.apache.log4j.Logger;
-import org.junit.Assert;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.net.URI;
@@ -15,6 +9,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.log4j.Logger;
+import org.junit.Assert;
+
+import au.com.bytecode.opencsv.CSVReader;
+import datawave.data.normalizer.Normalizer;
+import datawave.query.testframework.GroupsDataType.GroupField;
 
 public class GroupsDataManager extends AbstractDataManager {
 

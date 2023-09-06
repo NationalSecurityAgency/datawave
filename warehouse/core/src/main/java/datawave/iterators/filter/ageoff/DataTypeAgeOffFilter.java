@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.iterators.filter.AgeOffConfigParams;
-
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -16,6 +14,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Sets;
+
+import datawave.iterators.filter.AgeOffConfigParams;
 
 /**
  * Data type age off filter. Traverses through indexed tables
@@ -295,12 +295,16 @@ public class DataTypeAgeOffFilter extends AppliedRule {
 
                 final String dataTypeHasScanTime = options.getOption(dataType + ".hasScanTime");
                 if (Boolean.parseBoolean(dataTypeHasScanTime)) {
-                    final String scanTime = iterEnv.getConfig().get("table.custom.timestamp.current." + dataType);
-                    try {
-                        dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
-                    } catch (final NumberFormatException e) {
-                        throw new NumberFormatException(dataType + " marked as hasScanTime but corresponding table.custom.timestamp.current." + dataType
-                                        + " is invalid: " + scanTime);
+                    if (iterEnv != null) {
+                        final String scanTime = iterEnv.getConfig().get("table.custom.timestamp.current." + dataType);
+                        try {
+                            dataTypeScanTimes.put(dataType, Long.parseLong(scanTime, 10));
+                        } catch (final NumberFormatException e) {
+                            throw new NumberFormatException(dataType + " marked as hasScanTime but corresponding table.custom.timestamp.current." + dataType
+                                            + " is invalid: " + scanTime);
+                        }
+                    } else {
+                        throw new NullPointerException("IteratorEnvironment is null");
                     }
                 }
             }

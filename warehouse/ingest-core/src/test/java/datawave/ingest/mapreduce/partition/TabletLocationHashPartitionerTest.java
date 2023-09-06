@@ -1,6 +1,9 @@
 package datawave.ingest.mapreduce.partition;
 
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.hadoop.conf.Configuration;
 import org.junit.After;
 import org.junit.Assert;
@@ -9,9 +12,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
 
 public class TabletLocationHashPartitionerTest {
     public static final int MAX_EXPECTED_COLLISIONS = 70;

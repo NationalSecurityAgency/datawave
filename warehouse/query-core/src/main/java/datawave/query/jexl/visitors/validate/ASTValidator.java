@@ -1,16 +1,18 @@
 package datawave.query.jexl.visitors.validate;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.log4j.Logger;
+
 import com.google.common.base.Joiner;
+
 import datawave.query.exceptions.InvalidQueryTreeException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Validates an AST with respect to some basic assumptions. Intended to be called after a given visitor is done visiting a query tree.

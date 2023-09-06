@@ -1,14 +1,16 @@
 package datawave.metrics.analytic;
 
-import com.google.common.io.ByteStreams;
+import static datawave.metrics.analytic.MetricsDailySummaryReducer.WeightedPair;
 
-import datawave.ingest.metric.IngestInput;
-import datawave.ingest.metric.IngestOutput;
-import datawave.ingest.metric.IngestProcess;
-import datawave.metrics.config.MetricsConfig;
-import datawave.metrics.mapreduce.util.JobSetupUtil;
-import datawave.metrics.util.Connections;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
@@ -35,17 +37,15 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.common.io.ByteStreams;
 
-import static datawave.metrics.analytic.MetricsDailySummaryReducer.WeightedPair;
+import datawave.ingest.metric.IngestInput;
+import datawave.ingest.metric.IngestOutput;
+import datawave.ingest.metric.IngestProcess;
+import datawave.metrics.config.MetricsConfig;
+import datawave.metrics.mapreduce.util.JobSetupUtil;
+import datawave.metrics.util.Connections;
+import datawave.util.time.DateHelper;
 
 /**
  * This MapReduce job computes a by-day summary of ingest job activity. We look at each file that was marked as loaded during the specified range, and output
@@ -187,17 +187,16 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
 
             Range r = new Range("jobId\0" + jobId);
             ingestScanner.setRange(r);
-            for (Map.Entry<Key,Value> entry : ingestScanner) {
-                try {
-                    counters.readFields(ByteStreams.newDataInput(entry.getValue().get()));
-                } catch (IOException e) {
-                    System.err.println("Error parsing counters for job " + jobId);
-                    e.printStackTrace(System.err); // Called from main
-                    // ignore for now -- bad counters so we'll just return partial/empty ones
-                }
-                processedJobs.add(jobId);
-                break;
+            Map.Entry<Key,Value> entry = ingestScanner.iterator().next();
+            try {
+                counters.readFields(ByteStreams.newDataInput(entry.getValue().get()));
+            } catch (IOException e) {
+                System.err.println("Error parsing counters for job " + jobId);
+                e.printStackTrace(System.err); // Called from main
+                // ignore for now -- bad counters so we'll just return partial/empty ones
             }
+            processedJobs.add(jobId);
+
             if (!processedJobs.contains(jobId)) {
                 System.err.println("Couldn't find ingest counters for job " + jobId);
                 processedJobs.add(jobId);

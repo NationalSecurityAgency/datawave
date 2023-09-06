@@ -1,32 +1,22 @@
 package datawave.webservice.modification;
 
-import com.google.common.base.Function;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Multimap;
-import datawave.core.iterators.FieldIndexDocumentFilter;
-import datawave.data.ColumnFamilyConstants;
-import datawave.data.type.Type;
-import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
-import datawave.marking.MarkingFunctions;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.data.parsers.DatawaveKey.KeyType;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.MetadataHelperFactory;
-import datawave.security.util.ScannerHelper;
-import datawave.util.TextUtil;
-import datawave.util.time.DateHelper;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.modification.ModificationRequestBase.MODE;
-import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
-import datawave.webservice.query.QueryParametersImpl;
-import datawave.webservice.query.QueryPersistence;
-import datawave.webservice.query.result.event.EventBase;
-import datawave.webservice.query.runner.QueryExecutorBean;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
-import datawave.webservice.result.GenericResponse;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+
+import javax.annotation.Nullable;
+import javax.ws.rs.core.MultivaluedMap;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -50,21 +40,34 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 import org.jboss.resteasy.specimpl.MultivaluedMapImpl;
 
-import javax.annotation.Nullable;
-import javax.ws.rs.core.MultivaluedMap;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
+import com.google.common.base.Function;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Multimap;
+
+import datawave.core.iterators.FieldIndexDocumentFilter;
+import datawave.data.ColumnFamilyConstants;
+import datawave.data.type.Type;
+import datawave.ingest.protobuf.Uid;
+import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.marking.MarkingFunctions;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.data.parsers.DatawaveKey.KeyType;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
+import datawave.security.util.ScannerHelper;
+import datawave.util.TextUtil;
+import datawave.util.time.DateHelper;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.modification.ModificationRequestBase.MODE;
+import datawave.webservice.modification.configuration.ModificationServiceConfiguration;
+import datawave.webservice.query.QueryParametersImpl;
+import datawave.webservice.query.QueryPersistence;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.runner.QueryExecutorBean;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
+import datawave.webservice.result.GenericResponse;
 
 /**
  * Class that handles requests for modification requests (INSERT, UPDATE, DELETE) for metadata in the shard schema. <br>
@@ -1018,7 +1021,7 @@ public class MutableMetadataHandler extends ModificationServiceConfiguration {
         try {
             MultivaluedMap<String,String> paramsMap = new MultivaluedMapImpl<>();
             paramsMap.putAll(QueryParametersImpl.paramsToMap(logicName, query.toString(), "Query to find matching records for metadata modification",
-                            columnVisibility, new Date(0), new Date(), StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT,
+                            columnVisibility, new Date(0), new Date(), StringUtils.join(auths, ','), expiration, 2, -1, null, QueryPersistence.TRANSIENT, null,
                             queryOptions.toString(), false));
             GenericResponse<String> createResponse = queryService.createQuery(logicName, paramsMap);
 

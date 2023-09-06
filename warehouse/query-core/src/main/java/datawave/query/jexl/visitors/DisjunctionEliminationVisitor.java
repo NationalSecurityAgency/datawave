@@ -1,6 +1,11 @@
 package datawave.query.jexl.visitors;
 
-import datawave.query.jexl.JexlASTHelper;
+import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ASTOrNode;
@@ -11,11 +16,7 @@ import org.apache.commons.jexl2.parser.JexlNodes;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
-import static org.apache.commons.jexl2.parser.ParserTreeConstants.JJTANDNODE;
+import datawave.query.jexl.JexlASTHelper;
 
 /**
  * Visitor that removes disjunction children of AND nodes that are made redundant by virtue of distributed equivalency. For example:

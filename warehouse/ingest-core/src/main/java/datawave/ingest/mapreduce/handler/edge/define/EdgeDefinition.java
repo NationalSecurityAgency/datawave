@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
-import datawave.data.type.LcNoDiacriticsType;
-
 import java.util.List;
+
+import datawave.data.type.LcNoDiacriticsType;
 
 /**
  * Helper class to parse the various Edge Definition formats

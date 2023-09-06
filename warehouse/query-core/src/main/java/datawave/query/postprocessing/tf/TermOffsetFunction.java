@@ -6,7 +6,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.PartialKey;
+import org.apache.log4j.Logger;
+
 import com.google.common.collect.Multimap;
+
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
 import datawave.query.attributes.Document;
@@ -14,10 +19,6 @@ import datawave.query.attributes.DocumentKey;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-import org.apache.accumulo.core.data.PartialKey;
 
 public class TermOffsetFunction implements com.google.common.base.Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
     private static final Logger log = Logger.getLogger(TermOffsetFunction.class);
@@ -45,7 +46,7 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
 
         logStart();
         Map<String,Object> map = new HashMap<>(tfPopulator.getContextMap(from.first(), docKeys, fields));
-        logStop(docKeys.iterator().next());
+        logStop(docKeys);
 
         Document merged = from.second();
         merged.putAll(tfPopulator.document(), false);
@@ -96,14 +97,19 @@ public class TermOffsetFunction implements com.google.common.base.Function<Tuple
         aggregationStart = System.currentTimeMillis();
     }
 
-    private void logStop(Key k) {
+    private void logStop(Set<Key> keys) {
         if (aggregationThreshold == -1) {
             return;
         }
 
         long elapsed = System.currentTimeMillis() - aggregationStart;
         if (elapsed > aggregationThreshold) {
-            log.warn("time to aggregate offsets " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + elapsed);
+            if (keys == null || keys.isEmpty()) {
+                log.warn("time to aggregate offsets was " + elapsed);
+            } else {
+                Key k = keys.iterator().next();
+                log.warn("time to aggregate offsets " + k.getRow() + " " + k.getColumnFamily().toString().replace("\0", "0x00") + " was " + elapsed);
+            }
         }
     }
 

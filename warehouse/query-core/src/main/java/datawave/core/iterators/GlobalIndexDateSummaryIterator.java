@@ -9,11 +9,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import datawave.ingest.protobuf.Uid;
-import datawave.ingest.protobuf.Uid.List.Builder;
-import datawave.marking.MarkingFunctions;
-
-import datawave.query.Constants;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -29,6 +24,11 @@ import org.apache.log4j.Logger;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.ingest.protobuf.Uid.List.Builder;
+import datawave.marking.MarkingFunctions;
+import datawave.query.Constants;
 
 /**
  * <p>

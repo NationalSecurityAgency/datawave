@@ -6,14 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
 import java.util.concurrent.TimeUnit;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.job.RFileInputFormat;
-import datawave.mr.bulk.split.FileRangeSplit;
-import datawave.mr.bulk.split.RfileSplit;
-import datawave.mr.bulk.split.TabletSplitSplit;
-import datawave.query.util.Tuple2;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -43,6 +36,13 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.TreeMultimap;
 
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.job.RFileInputFormat;
+import datawave.mr.bulk.split.FileRangeSplit;
+import datawave.mr.bulk.split.RfileSplit;
+import datawave.mr.bulk.split.TabletSplitSplit;
+import datawave.query.util.Tuple2;
+
 public class MultiRfileInputformat extends RFileInputFormat {
     /**
      * The following can be set via your configuration to override the default namespace
@@ -59,7 +59,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
     private static final String HDFS_BASE = "hdfs://";
     private static final String ACCUMULO_BASE_PATH = "/accumulo";
 
-    private static final String FS_DEFAULT_NAME = "fs.default.name";
+    private static final String FS_DEFAULT_NAME = "fs.defaultFS";
     private static final Logger log = Logger.getLogger(MultiRfileInputformat.class);
     public static final String tableStr = Path.SEPARATOR + "tables" + Path.SEPARATOR;
 

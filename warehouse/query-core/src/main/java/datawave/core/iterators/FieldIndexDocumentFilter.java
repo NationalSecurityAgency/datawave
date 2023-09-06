@@ -3,6 +3,7 @@ package datawave.core.iterators;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;

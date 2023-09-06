@@ -7,17 +7,8 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
-import com.fasterxml.jackson.databind.AnnotationIntrospector;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
-import datawave.webservice.query.result.EdgeQueryResponseBase;
-import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.EventQueryResponseBase;
-import datawave.webservice.result.GenericResponse;
-import datawave.webservice.result.VoidResponse;
+import javax.net.ssl.SSLContext;
+
 import org.apache.http.Header;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -34,7 +25,18 @@ import org.apache.http.message.BasicHeader;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.ssl.SSLContextBuilder;
 
-import javax.net.ssl.SSLContext;
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+import com.fasterxml.jackson.databind.AnnotationIntrospector;
+import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector;
+
+import datawave.webservice.query.result.EdgeQueryResponseBase;
+import datawave.webservice.result.BaseQueryResponse;
+import datawave.webservice.result.EventQueryResponseBase;
+import datawave.webservice.result.GenericResponse;
+import datawave.webservice.result.VoidResponse;
 
 /**
  * An example showing a simple query to the DATAWAVE web service, using the client classes to simplify parsing the query response.

@@ -4,15 +4,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-
-import datawave.ingest.data.config.ingest.FieldNameAliaserNormalizer;
-import datawave.policy.IngestPolicyEnforcer;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.ingest.FieldNameAliaserNormalizer;
+import datawave.policy.IngestPolicyEnforcer;
 
 /**
  * Base helper object that supports validation of the datatype. Subclasses will further validate the configuration object.

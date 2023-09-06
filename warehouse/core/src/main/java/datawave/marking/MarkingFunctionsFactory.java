@@ -6,10 +6,11 @@ import javax.enterprise.context.Initialized;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
-import datawave.configuration.spring.SpringBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import datawave.configuration.spring.SpringBean;
 
 /**
  * This version of the MarkingFunctionsFactory is to be used on the webservers, and is optimized to load the application context via CDI when possible.

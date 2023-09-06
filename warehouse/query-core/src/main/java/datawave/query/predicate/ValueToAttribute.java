@@ -3,11 +3,6 @@ package datawave.query.predicate;
 import java.nio.charset.CharacterCodingException;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Attribute;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.util.TypeMetadata;
-
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.Text;
@@ -15,6 +10,11 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.TypeMetadata;
 
 /**
  * Transform the given fieldName/fieldValue (String/String) into String/Attribute

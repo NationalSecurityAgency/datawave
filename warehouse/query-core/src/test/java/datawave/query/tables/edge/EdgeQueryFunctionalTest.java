@@ -6,11 +6,6 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.container.test.api.Deployment;
@@ -20,6 +15,11 @@ import org.jboss.shrinkwrap.api.asset.StringAsset;
 import org.jboss.shrinkwrap.api.spec.JavaArchive;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 @RunWith(Arquillian.class)
 public class EdgeQueryFunctionalTest extends BaseEdgeQueryTest {

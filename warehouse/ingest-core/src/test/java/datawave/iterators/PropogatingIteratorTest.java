@@ -1,8 +1,14 @@
 package datawave.iterators;
 
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,8 +37,6 @@ import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.aggregator.GlobalIndexUidAggregator;
-
-import static org.junit.Assert.assertTrue;
 
 public class PropogatingIteratorTest {
     private static final String SHARD = "20121002_1";

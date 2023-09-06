@@ -1,20 +1,23 @@
 package datawave.ingest.mapreduce.job.writer;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
+
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyDedupeCombiner;
 
 /**
  * This is a caching context writer that will cache the entries for a table and will only actually flush entries once that cache is full. The cache will be

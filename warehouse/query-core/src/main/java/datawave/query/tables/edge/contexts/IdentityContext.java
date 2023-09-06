@@ -1,7 +1,8 @@
 package datawave.query.tables.edge.contexts;
 
-import datawave.edge.model.EdgeModelAware;
 import org.apache.commons.lang.StringUtils;
+
+import datawave.edge.model.EdgeModelAware;
 
 public class IdentityContext implements EdgeModelAware, EdgeContext {
     private String identity;

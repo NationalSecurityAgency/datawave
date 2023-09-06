@@ -2,8 +2,8 @@ package datawave.data.hash;
 
 import static datawave.data.hash.UIDConstants.CONFIG_MACHINE_ID_KEY;
 import static datawave.data.hash.UIDConstants.CONFIG_UID_TYPE_KEY;
-import static datawave.data.hash.UIDConstants.MILLISECONDS_PER_DAY;
 import static datawave.data.hash.UIDConstants.DEFAULT_SEPARATOR;
+import static datawave.data.hash.UIDConstants.MILLISECONDS_PER_DAY;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -14,11 +14,11 @@ import java.lang.reflect.Method;
 import java.util.Comparator;
 import java.util.Date;
 
-import datawave.util.StringUtils;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.log4j.Logger;
+
+import datawave.util.StringUtils;
 
 /**
  * Internal, DATAWAVE-specific, unique identifier. Instead of using a UUID which consumes 128 bits, we are using:

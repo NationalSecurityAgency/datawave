@@ -1,5 +1,47 @@
 package datawave.query.iterator;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
+
+import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+import org.apache.accumulo.core.data.ByteSequence;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.accumulo.core.iterators.YieldCallback;
+import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
+import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
+import org.apache.accumulo.tserver.tablet.TabletClosedException;
+import org.apache.commons.collections4.iterators.EmptyIterator;
+import org.apache.commons.jexl2.JexlArithmetic;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.JexlNode;
+import org.apache.commons.lang.builder.CompareToBuilder;
+import org.apache.commons.pool.BasePoolableObjectFactory;
+import org.apache.commons.pool.impl.GenericObjectPool;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
+
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
@@ -8,6 +50,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.UnmodifiableIterator;
+
 import datawave.core.iterators.DatawaveFieldIndexListIteratorJexl;
 import datawave.data.type.Type;
 import datawave.data.type.util.NumericalEncoder;
@@ -17,6 +60,7 @@ import datawave.query.Constants;
 import datawave.query.DocumentSerialization.ReturnType;
 import datawave.query.attributes.AttributeKeepFilter;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
@@ -33,8 +77,8 @@ import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.LimitFields;
 import datawave.query.function.MaskedValueFilterFactory;
 import datawave.query.function.MaskedValueFilterInterface;
-import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.RangeProvider;
+import datawave.query.function.RemoveGroupingContext;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
 import datawave.query.function.serializer.KryoDocumentSerializer;
 import datawave.query.function.serializer.ToStringDocumentSerializer;
@@ -80,47 +124,6 @@ import datawave.query.util.Tuple3;
 import datawave.query.util.TupleToEntry;
 import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
-import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iteratorsImpl.system.IterationInterruptedException;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.YieldCallback;
-import org.apache.accumulo.core.iterators.YieldingKeyValueIterator;
-import org.apache.accumulo.tserver.tablet.TabletClosedException;
-import org.apache.commons.collections4.iterators.EmptyIterator;
-import org.apache.commons.jexl2.JexlArithmetic;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
-import org.apache.commons.lang.builder.CompareToBuilder;
-import org.apache.commons.pool.BasePoolableObjectFactory;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.Text;
-
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig.ConfigException;
-
-import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkNotNull;
-import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
 /**
  * <p>
@@ -947,7 +950,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
                 TermFrequencyConfig tfConfig = new TermFrequencyConfig();
                 tfConfig.setScript(getScript(documentSource));
-                tfConfig.setIterEnv(myEnvironment);
                 tfConfig.setSource(sourceDeepCopy.deepCopy(myEnvironment));
                 tfConfig.setContentExpansionFields(getContentExpansionFields());
                 tfConfig.setTfFields(getTermFrequencyFields());
@@ -1056,8 +1058,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         }
 
         // update the jexl evaluation to gather phrase offsets if required for excerpts
-        if (getExcerptFields() != null && !getExcerptFields().isEmpty()) {
+        ExcerptFields excerptFields = getExcerptFields();
+        if (excerptFields != null && !excerptFields.isEmpty()) {
             jexlEvaluationFunction.setGatherPhraseOffsets(true);
+            jexlEvaluationFunction.setPhraseOffsetFields(excerptFields.getFields());
         }
 
         return jexlEvaluationFunction;
@@ -1414,7 +1418,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
         // determine the list of indexed fields
         Set<String> indexedFields = this.getIndexedFields();
-        indexedFields.removeAll(this.getNonIndexedDataTypeMap().keySet());
+        Set<String> nonIndexedFields = this.getNonIndexedDataTypeMap().keySet();
+        indexedFields.removeAll(nonIndexedFields);
 
         // @formatter:off
         return c.newInstance()
@@ -1443,6 +1448,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 .setIvaratorSourcePool(createIvaratorSourcePool(this.maxIvaratorSources))
                 .setMaxIvaratorResults(this.getMaxIvaratorResults())
                 .setIncludes(indexedFields)
+                .setUnindexedFields(nonIndexedFields)
                 .setTermFrequencyFields(this.getTermFrequencyFields())
                 .setIsQueryFullySatisfied(isQueryFullySatisfied)
                 .setSortedUIDs(sortedUIDs)

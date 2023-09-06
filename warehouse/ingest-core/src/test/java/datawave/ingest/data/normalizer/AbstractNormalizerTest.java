@@ -1,12 +1,5 @@
 package datawave.ingest.data.normalizer;
 
-import datawave.TestBaseIngestHelper;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.NormalizedFieldAndValue;
-
-import datawave.data.normalizer.NormalizationException;
-
 import org.apache.hadoop.conf.Configuration;
 import org.junit.Assert;
 import org.junit.Before;
@@ -14,6 +7,12 @@ import org.junit.Test;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.TestBaseIngestHelper;
+import datawave.data.normalizer.NormalizationException;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.NormalizedFieldAndValue;
 
 public class AbstractNormalizerTest {
     public AbstractNormalizer normalizer = new AbstractNormalizer() {

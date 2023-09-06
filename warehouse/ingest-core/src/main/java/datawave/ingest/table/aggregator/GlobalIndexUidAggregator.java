@@ -5,18 +5,18 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 
-import datawave.ingest.protobuf.Uid.List.Builder;
 import org.apache.accumulo.core.client.IteratorSetting;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
-
-import com.google.protobuf.InvalidProtocolBufferException;
-
-import datawave.ingest.protobuf.Uid;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.ingest.protobuf.Uid;
+import datawave.ingest.protobuf.Uid.List.Builder;
 
 /**
  * Implementation of an Aggregator that aggregates objects of the type Uid.List. This is an optimization for the shardIndex and shardReverseIndex, where the
@@ -157,7 +157,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     // the count and removal UIDs will decrement it. Apply this logic on the existing
                     // information available (the list of UIDs and removal UIDs) for consistency.
                     seenIgnore = true;
-                    count = this.uids.size() - this.uidsToRemove.size();
+                    count = (long) this.uids.size() - this.uidsToRemove.size();
                     log.debug("Switch to seenIgnore is true. Skipping collections");
                 } else {
                     // Save a starting count in the event that we go over the max UID count while
@@ -172,7 +172,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     //
                     // However, if the maximum is not exceeded, we want to track UIDs by name in the internal
                     // set because that will take care of de-duping any duplicate UIDs.
-                    long prevCount = uids.size() - uidsToRemove.size();
+                    long prevCount = (long) uids.size() - uidsToRemove.size();
 
                     boolean isUnderMaxThreshold = processRemovalUids(v) && processAddedUids(v);
                     if (!isUnderMaxThreshold) {

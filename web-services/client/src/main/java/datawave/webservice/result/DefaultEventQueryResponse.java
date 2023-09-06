@@ -15,14 +15,13 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
+import datawave.webservice.query.exception.QueryExceptionType;
+import datawave.webservice.query.result.event.DefaultEvent;
+import datawave.webservice.query.result.event.EventBase;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
 import io.protostuff.Schema;
-
-import datawave.webservice.query.exception.QueryExceptionType;
-import datawave.webservice.query.result.event.DefaultEvent;
-import datawave.webservice.query.result.event.EventBase;
 
 @XmlRootElement(name = "DefaultEventQueryResponse")
 @XmlAccessorType(XmlAccessType.NONE)

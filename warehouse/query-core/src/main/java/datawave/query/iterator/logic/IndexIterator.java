@@ -1,18 +1,10 @@
 package datawave.query.iterator.logic;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
-import datawave.query.Constants;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttributeFactory;
-import datawave.query.iterator.DocumentIterator;
-import datawave.query.iterator.LimitedSortedKeyValueIterator;
-import datawave.query.iterator.Util;
-import datawave.query.jexl.functions.FieldIndexAggregator;
-import datawave.query.jexl.functions.IdentityAggregator;
-import datawave.query.predicate.SeekingFilter;
-import datawave.query.predicate.TimeFilter;
-import datawave.query.util.TypeMetadata;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -24,10 +16,20 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Map;
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
+
+import datawave.query.Constants;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
+import datawave.query.iterator.DocumentIterator;
+import datawave.query.iterator.LimitedSortedKeyValueIterator;
+import datawave.query.iterator.Util;
+import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.functions.IdentityAggregator;
+import datawave.query.predicate.SeekingFilter;
+import datawave.query.predicate.TimeFilter;
+import datawave.query.util.TypeMetadata;
 
 /**
  * Scans a bounds within a column qualifier. This iterator needs to: - 1) Be given a global Range (ie, [-inf,+inf]) - 2) Select an arbitrary column family (ie,

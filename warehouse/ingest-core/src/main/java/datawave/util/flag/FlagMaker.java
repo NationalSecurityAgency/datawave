@@ -1,30 +1,5 @@
 package datawave.util.flag;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
-import datawave.metrics.util.flag.FlagFile;
-import datawave.util.flag.config.ConfigUtil;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.processor.DateUtils;
-import datawave.util.flag.processor.FlagDistributor;
-import datawave.util.flag.processor.SizeValidator;
-import datawave.util.flag.processor.UnusableFileException;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile.CompressionType;
-import org.apache.hadoop.io.compress.CompressionCodec;
-import org.apache.hadoop.io.compress.GzipCodec;
-import org.apache.hadoop.mapred.JobConf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.xml.bind.JAXBException;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -50,6 +25,34 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import javax.xml.bind.JAXBException;
+
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.SequenceFile.CompressionType;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.mapred.JobConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
+
+import datawave.metrics.util.flag.FlagFile;
+import datawave.util.flag.config.ConfigUtil;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.processor.DateUtils;
+import datawave.util.flag.processor.FlagDistributor;
+import datawave.util.flag.processor.SizeValidator;
+import datawave.util.flag.processor.UnusableFileException;
 
 /**
  *
@@ -661,7 +664,7 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
      * @return The size in characters of the flag file
      */
     private long getFlagFileSize(FlagDataTypeConfig fc, Collection<InputFile> inFiles) {
-        long length = fmc.getDatawaveHome().length() + 1 + fc.getScript().length();
+        long length = fmc.getDatawaveHome().length() + 1L + fc.getScript().length();
         int first = -1;
         for (InputFile inFile : inFiles) {
             length += 1 + inFile.getTrackedDirLength(InputFile.TrackedDir.FLAGGED_DIR);

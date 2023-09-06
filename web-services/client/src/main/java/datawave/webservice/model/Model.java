@@ -2,8 +2,6 @@ package datawave.webservice.model;
 
 import java.io.Serializable;
 import java.text.MessageFormat;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.TreeSet;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -13,15 +11,17 @@ import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 
-import datawave.query.model.Direction;
-import datawave.query.model.FieldMapping;
-import datawave.query.model.QueryModel;
-import datawave.webservice.HtmlProvider;
-import datawave.webservice.result.BaseResponse;
-
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
+
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+
+import datawave.query.model.Direction;
+import datawave.query.model.FieldMapping;
+import datawave.webservice.HtmlProvider;
+import datawave.webservice.result.BaseResponse;
 
 @XmlRootElement(name = "Model")
 @XmlAccessorType(XmlAccessType.NONE)
@@ -133,28 +133,30 @@ public class Model extends BaseResponse implements Serializable, HtmlProvider {
         builder.append("<div id=\"myTable_wrapper\" class=\"dataTables_wrapper no-footer\">\n");
         builder.append("<table id=\"myTable\" class=\"dataTable no-footer\" role=\"grid\" aria-describedby=\"myTable_info\">\n");
 
-        builder.append("<thead><tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th><th>Lenient</th></tr></thead>");
+        builder.append("<thead><tr><th>Visibility</th><th>FieldName</th><th>DataType</th><th>ModelFieldName</th><th>Direction</th><th>Attributes</th></tr></thead>");
         builder.append("<tbody>");
 
-        // first gather the model fields that are deemed "lenient" (i.e. where the model field name has a mapping to the field called "lenient")
-        Set<String> lenientModelFields = new HashSet<>();
+        // first gather the model fields that are deemed "lenient" (i.e. where the model field name has a lenient attribute)
+        Multimap<String,String> modelFieldAttributes = HashMultimap.create();
         for (FieldMapping field : this.getFields()) {
-            if (field.getDirection() == Direction.FORWARD) {
-                if (field.isLenientMarker()) {
-                    lenientModelFields.add(field.getModelFieldName());
-                }
+            if (!field.isFieldMapping()) {
+                modelFieldAttributes.putAll(field.getModelFieldName(), field.getAttributes());
             }
         }
 
         for (FieldMapping f : this.getFields()) {
-            // don't include the lenient marker itself
-            if (!f.isLenientMarker()) {
+            // don't include model field attributes
+            if (f.isFieldMapping()) {
                 builder.append("<td>").append(f.getColumnVisibility()).append("</td>");
                 builder.append("<td>").append(f.getFieldName()).append("</td>");
                 builder.append("<td>").append(f.getDatatype()).append("</td>");
                 builder.append("<td>").append(f.getModelFieldName()).append("</td>");
                 builder.append("<td>").append(f.getDirection()).append("</td>");
-                builder.append("<td>").append(lenientModelFields.contains(f.getModelFieldName())).append("</td>");
+                TreeSet<String> attributes = new TreeSet<>(f.getAttributes());
+                if (modelFieldAttributes.containsKey(f.getModelFieldName())) {
+                    attributes.addAll(modelFieldAttributes.get(f.getModelFieldName()));
+                }
+                builder.append("<td>").append(attributes).append("</td>");
                 builder.append("</tr>");
             }
         }

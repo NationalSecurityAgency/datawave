@@ -1,22 +1,22 @@
 package datawave.query;
 
-import datawave.configuration.spring.SpringBean;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Document;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.TypeAttribute;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.WiseGuysIngest;
-import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
@@ -40,21 +40,23 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.inject.Inject;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import datawave.configuration.spring.SpringBean;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Document;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.TypeAttribute;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.WiseGuysIngest;
+import datawave.test.JexlNodeAssert;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Loads some data in a mock accumulo table and then issues queries against the table using the shard query table.
@@ -246,6 +248,7 @@ public abstract class LenientFieldsTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
+        extraParameters.put("lenient.fields", "ETA,AGE,MAGIC,NOME,NAME,NAM,AG");
 
         if (log.isDebugEnabled()) {
             log.debug("testLenientFields");
@@ -258,10 +261,10 @@ public abstract class LenientFieldsTest {
                 "NAM == 'abc40'",
         };
         String[] expectedPlans = {
-                "((_Eval_ = true) && ((AGE > 'abc10') || (ETA > 'abc10')))",
+                "(((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'ETA > \\'abc10\\''))) || ((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'AGE > \\'abc10\\''))))",
                 "(ETA == '+bE4' || AGE == '+bE4')",
                 "(MAGIC > '+bE4' || NOME > '40' || NAME > '40')",
-                "(NAME == 'abc40' || NOME == 'abc40' || ((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and lenient') && (_Query_ = 'MAGIC == \\'abc40\\''))))",
+                "(NAME == 'abc40' || NOME == 'abc40' || ((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'MAGIC == \\'abc40\\''))))",
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {

@@ -1,6 +1,25 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+import static datawave.query.testframework.RawDataManager.RN_OP;
+import static org.junit.Assert.fail;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import com.google.common.collect.Multimap;
+
 import datawave.data.ColumnFamilyConstants;
 import datawave.ingest.data.config.ingest.CompositeIngest;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -18,23 +37,6 @@ import datawave.query.testframework.FieldConfig;
 import datawave.query.testframework.FileType;
 import datawave.query.testframework.GenericCityFields;
 import datawave.query.testframework.RawDataManager;
-import org.apache.accumulo.core.data.Key;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.util.Arrays;
-import java.util.Collections;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
-import static datawave.query.testframework.RawDataManager.JEXL_OR_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
-import static datawave.query.testframework.RawDataManager.RN_OP;
-import static org.junit.Assert.fail;
 
 public class AnyFieldQueryTest extends AbstractFunctionalQuery {
 
@@ -118,6 +120,7 @@ public class AnyFieldQueryTest extends AbstractFunctionalQuery {
     @Test
     public void testNotEqual() throws Exception {
         log.info("------  testNotEqual  ------");
+
         for (final TestCities city : TestCities.values()) {
             String cityPhrase = " != " + "'" + city.name() + "'";
             String query = Constants.ANY_FIELD + cityPhrase;

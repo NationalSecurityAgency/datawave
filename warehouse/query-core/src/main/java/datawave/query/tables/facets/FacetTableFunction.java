@@ -3,8 +3,6 @@ package datawave.query.tables.facets;
 import java.io.IOException;
 import java.util.Map.Entry;
 
-import datawave.query.attributes.Cardinality;
-import datawave.query.attributes.FieldValueCardinality;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 
@@ -12,7 +10,9 @@ import com.clearspring.analytics.stream.cardinality.HyperLogLogPlus;
 import com.google.common.base.Function;
 import com.google.common.collect.Maps;
 
+import datawave.query.attributes.Cardinality;
 import datawave.query.attributes.Document;
+import datawave.query.attributes.FieldValueCardinality;
 import datawave.util.StringUtils;
 
 public class FacetTableFunction implements Function<Entry<Key,Value>,Entry<Key,Document>> {

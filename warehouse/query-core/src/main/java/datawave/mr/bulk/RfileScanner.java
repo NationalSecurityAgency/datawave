@@ -21,7 +21,6 @@ import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import datawave.common.util.ArgumentChecker;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -32,6 +31,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
+import datawave.common.util.ArgumentChecker;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.query.tables.SessionOptions;
 import datawave.security.iterator.ConfigurableVisibilityFilter;

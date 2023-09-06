@@ -2,12 +2,12 @@ package datawave.query.util;
 
 import java.util.Map;
 
-import datawave.webservice.query.Query;
-
 import org.apache.commons.lang.StringUtils;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+
+import datawave.webservice.query.Query;
 
 /**
  *

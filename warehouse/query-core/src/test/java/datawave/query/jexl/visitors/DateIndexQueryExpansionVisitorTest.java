@@ -1,24 +1,15 @@
 package datawave.query.jexl.visitors;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.helpers.PrintUtility;
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.util.DateIndexTestIngest;
-import datawave.query.util.DateIndexHelper;
-import datawave.query.util.DateIndexHelperFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.query.util.MetadataHelperFactory;
-import datawave.test.JexlNodeAssert;
-import datawave.util.TableName;
-import datawave.util.time.DateHelper;
+import java.util.Collections;
+import java.util.Date;
+import java.util.TimeZone;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableExistsException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import datawave.accumulo.inmemory.InMemoryInstance;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
@@ -26,9 +17,19 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.TimeZone;
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.helpers.PrintUtility;
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.util.DateIndexHelper;
+import datawave.query.util.DateIndexHelperFactory;
+import datawave.query.util.DateIndexTestIngest;
+import datawave.query.util.MetadataHelper;
+import datawave.query.util.MetadataHelperFactory;
+import datawave.test.JexlNodeAssert;
+import datawave.util.TableName;
+import datawave.util.time.DateHelper;
 
 /**
  * Test the function index query expansion

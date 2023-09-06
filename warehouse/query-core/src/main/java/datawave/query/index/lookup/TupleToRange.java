@@ -4,18 +4,18 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
-import datawave.query.config.ShardQueryConfiguration;
-import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
-import datawave.query.planner.QueryPlan;
-import datawave.query.ranges.RangeFactory;
-import datawave.query.util.Tuple2;
-
 import org.apache.accumulo.core.data.Range;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
+
+import datawave.query.config.ShardQueryConfiguration;
+import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
+import datawave.query.planner.QueryPlan;
+import datawave.query.ranges.RangeFactory;
+import datawave.query.util.Tuple2;
 
 /**
  * Transforms information from the index into ranges used to search the shard table.

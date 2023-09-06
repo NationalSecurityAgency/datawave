@@ -12,12 +12,6 @@ import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
 
-import datawave.data.normalizer.DateNormalizer;
-import datawave.data.type.util.NumericalEncoder;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -37,6 +31,12 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
+
+import datawave.data.normalizer.DateNormalizer;
+import datawave.data.type.util.NumericalEncoder;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.util.StringUtils;
 
 /*
  The edge table may contain different versions of the edge key structure. In order to be able to generate the new keys

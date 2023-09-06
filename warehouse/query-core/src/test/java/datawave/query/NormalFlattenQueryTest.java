@@ -1,5 +1,27 @@
 package datawave.query;
 
+import static datawave.query.testframework.RawDataManager.AND_OP;
+import static datawave.query.testframework.RawDataManager.EQ_OP;
+import static datawave.query.testframework.RawDataManager.GT_OP;
+import static datawave.query.testframework.RawDataManager.LT_OP;
+import static datawave.query.testframework.RawDataManager.OR_OP;
+
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.apache.log4j.Logger;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+
 import datawave.data.normalizer.Normalizer;
 import datawave.ingest.json.util.JsonObjectFlattener.FlattenMode;
 import datawave.query.exceptions.FullTableScansDisallowedException;
@@ -13,27 +35,6 @@ import datawave.query.testframework.FlattenDataType;
 import datawave.query.testframework.FlattenDataType.FlattenBaseFields;
 import datawave.query.testframework.RawDataManager;
 import datawave.query.testframework.RawMetaData;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
-import static datawave.query.testframework.RawDataManager.AND_OP;
-import static datawave.query.testframework.RawDataManager.EQ_OP;
-import static datawave.query.testframework.RawDataManager.GT_OP;
-import static datawave.query.testframework.RawDataManager.LT_OP;
-import static datawave.query.testframework.RawDataManager.OR_OP;
 
 /**
  * Test cases for flatten mode {@link FlattenMode@NORMAL}.

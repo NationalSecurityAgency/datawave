@@ -6,6 +6,17 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.Combiner;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.WritableUtils;
+import org.apache.hadoop.mapreduce.TaskInputOutputContext;
+import org.apache.hadoop.mapreduce.TaskType;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Iterators;
+
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.mapreduce.job.IngestJob;
@@ -14,17 +25,6 @@ import datawave.ingest.mapreduce.job.writer.ContextWriter;
 import datawave.ingest.mapreduce.job.writer.LiveContextWriter;
 import datawave.ingest.metric.IngestOutput;
 import datawave.ingest.table.aggregator.PropogatingCombiner;
-
-import org.apache.accumulo.core.data.Mutation;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.Combiner;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.WritableUtils;
-
-import com.google.common.collect.Iterators;
-import org.apache.hadoop.mapreduce.TaskInputOutputContext;
-import org.apache.hadoop.mapreduce.TaskType;
-import org.apache.log4j.Logger;
 
 @SuppressWarnings("deprecation")
 public class BulkIngestKeyAggregatingReducer<K2,V2> extends AggregatingReducer<BulkIngestKey,Value,K2,V2> {

@@ -1,20 +1,18 @@
 package datawave.ingest.wikipedia;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
-import datawave.data.hash.UID;
-import datawave.ingest.data.RawDataErrorNames;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.input.reader.AggregatingRecordReader;
-import datawave.ingest.input.reader.EventInitializer;
-import datawave.ingest.input.reader.KeyReader;
-import datawave.ingest.input.reader.LineReader;
-import datawave.ingest.input.reader.ReaderInitializer;
-import datawave.ingest.input.reader.ValueReader;
-import datawave.ingest.input.reader.event.EventFixer;
-import datawave.util.time.DateHelper;
+import static datawave.ingest.input.reader.LineReader.Properties.LONGLINE_NEWLINE_INCLUDED;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configurable;
@@ -31,17 +29,22 @@ import org.apache.lucene.analysis.tokenattributes.TypeAttribute;
 import org.apache.lucene.analysis.wikipedia.WikipediaTokenizer;
 import org.xml.sax.InputSource;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
-import java.io.StringReader;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
 
-import static datawave.ingest.input.reader.LineReader.Properties.LONGLINE_NEWLINE_INCLUDED;
+import datawave.data.hash.UID;
+import datawave.ingest.data.RawDataErrorNames;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.input.reader.AggregatingRecordReader;
+import datawave.ingest.input.reader.EventInitializer;
+import datawave.ingest.input.reader.KeyReader;
+import datawave.ingest.input.reader.LineReader;
+import datawave.ingest.input.reader.ReaderInitializer;
+import datawave.ingest.input.reader.ValueReader;
+import datawave.ingest.input.reader.event.EventFixer;
+import datawave.util.time.DateHelper;
 
 public class WikipediaRecordReader extends AggregatingRecordReader {
 

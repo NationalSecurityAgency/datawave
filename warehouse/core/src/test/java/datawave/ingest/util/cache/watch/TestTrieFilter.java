@@ -2,10 +2,10 @@ package datawave.ingest.util.cache.watch;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 import datawave.iterators.filter.TokenizingFilterBase;
 import datawave.iterators.filter.ageoff.FilterOptions;
-import org.apache.accumulo.core.iterators.IteratorEnvironment;
 
 /**
  * Class to assist in the testing of TokenizingFilters

@@ -6,17 +6,17 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
-import datawave.data.normalizer.LcNoDiacriticsNormalizer;
-import datawave.query.jexl.DatawaveJexlContext;
-import datawave.query.collections.FunctionalSet;
-import datawave.util.StringUtils;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.hadoop.io.WritableUtils;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+
+import datawave.data.normalizer.LcNoDiacriticsNormalizer;
+import datawave.query.collections.FunctionalSet;
+import datawave.query.jexl.DatawaveJexlContext;
+import datawave.util.StringUtils;
 
 public class DocumentKey extends Attribute<DocumentKey> implements Serializable {
     private static final long serialVersionUID = 1L;

@@ -5,16 +5,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 
+import org.apache.log4j.Logger;
+
+import com.google.common.cache.CacheLoader;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListenableFutureTask;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.log4j.Logger;
-
-import com.google.common.cache.CacheLoader;
 
 /**
  * Description: Base Loader mechanism that allows us a way to reload the cache
@@ -164,8 +165,18 @@ public abstract class Loader<K,V> extends CacheLoader<K,V> implements Runnable {
 
     }
 
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        Loader<?,?> loader = (Loader<?,?>) o;
+        return childHash == loader.childHash && lazy == loader.lazy && Objects.equals(entryCache, loader.entryCache)
+                        && Objects.equals(executor, loader.executor) && Objects.equals(children, loader.children);
+    }
+
     @Override
     public int hashCode() {
-        return System.identityHashCode(this) + childHash;
+        return Objects.hash(entryCache, executor, children, childHash, lazy);
     }
 }

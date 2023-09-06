@@ -1,11 +1,17 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
-import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
-import datawave.util.StringUtils;
-import datawave.util.time.DateHelper;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.TreeMap;
+
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
@@ -23,17 +29,12 @@ import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeMap;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.shard.ShardIdFactory;
+import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
+import datawave.util.StringUtils;
+import datawave.util.time.DateHelper;
 
 /**
  * Extracted from IngestJob
@@ -237,7 +238,7 @@ public class ShardedTableMapFile {
             }
 
             // Ensure that we either computed, or were given, a valid path to the shard mappings
-            if (!shardedMapFile.getFileSystem(conf).exists(shardedMapFile)) {
+            if (null == shardedMapFile || !shardedMapFile.getFileSystem(conf).exists(shardedMapFile)) {
                 log.fatal("Could not find the supplied shard map file: " + shardedMapFile);
                 return null;
             } else {

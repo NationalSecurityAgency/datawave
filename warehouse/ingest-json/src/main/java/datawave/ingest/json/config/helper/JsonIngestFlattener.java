@@ -1,19 +1,5 @@
 package datawave.ingest.json.config.helper;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import datawave.ingest.data.config.DataTypeHelper;
-import datawave.ingest.json.util.JsonObjectFlattener;
-import datawave.ingest.json.util.JsonObjectFlattenerImpl;
-import org.apache.commons.collections4.IteratorUtils;
-import org.apache.hadoop.conf.Configuration;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -24,6 +10,22 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.commons.collections4.IteratorUtils;
+import org.apache.hadoop.conf.Configuration;
+
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.TreeMultimap;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+
+import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.json.util.JsonObjectFlattener;
+import datawave.ingest.json.util.JsonObjectFlattenerImpl;
 
 /**
  * <p>

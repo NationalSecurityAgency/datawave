@@ -4,14 +4,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import datawave.edge.protobuf.EdgeData;
-import datawave.edge.protobuf.EdgeData.EdgeValue;
-
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.user.SummingArrayCombiner.VarLongArrayEncoder;
 import org.apache.log4j.Logger;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+
+import datawave.edge.protobuf.EdgeData;
+import datawave.edge.protobuf.EdgeData.EdgeValue;
 
 /**
  * Use for STATS edge value encoding/decoding only. Otherwise use the EdgeValue class.

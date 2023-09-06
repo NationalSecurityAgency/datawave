@@ -1,5 +1,29 @@
 package datawave.query.iterator.logic;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.util.AbstractMap;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Range;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
+import org.apache.commons.jexl2.parser.ASTJexlScript;
+import org.apache.commons.jexl2.parser.ParseException;
+import org.junit.Before;
+import org.junit.Test;
+
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.query.Constants;
 import datawave.query.attributes.Document;
@@ -14,29 +38,6 @@ import datawave.query.predicate.TLDEventDataFilter;
 import datawave.query.predicate.TimeFilter;
 import datawave.query.tld.TLDTermFrequencyAggregator;
 import datawave.query.util.TypeMetadata;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Range;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.ParseException;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.util.AbstractMap;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class TermFrequencyIndexIteratorTest {
 
@@ -81,7 +82,7 @@ public class TermFrequencyIndexIteratorTest {
     public void testEmptyRange() throws Exception {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "biz"), true, getFiKey("row", "type1", "123.345.456", "FOO", "bzz"), true);
         TermFrequencyAggregator aggregator = new TermFrequencyAggregator(null, null);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -93,7 +94,7 @@ public class TermFrequencyIndexIteratorTest {
     public void testScanMinorRange() throws Exception {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "baz"), true, getFiKey("row", "type1", "123.345.456", "FOO", "baz"), true);
         TermFrequencyAggregator aggregator = new TermFrequencyAggregator(null, null);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -112,7 +113,7 @@ public class TermFrequencyIndexIteratorTest {
     public void testScanMinorRangeTLD() throws Exception {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "baz"), true, getFiKey("row", "type1", "123.345.456", "FOO", "baz"), true);
         TermFrequencyAggregator aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -130,7 +131,7 @@ public class TermFrequencyIndexIteratorTest {
     @Test
     public void testScanPartialRanges() throws Exception {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "bar"), false);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -149,7 +150,7 @@ public class TermFrequencyIndexIteratorTest {
     public void testScanPartialRangesTLD() throws Exception {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), false, getFiKey("row", "type1", "123.345.456.2", "FOO", "bar"), false);
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -168,7 +169,7 @@ public class TermFrequencyIndexIteratorTest {
     public void testScanFullRange() throws IOException {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), true, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), true);
 
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -219,7 +220,7 @@ public class TermFrequencyIndexIteratorTest {
         Range r = new Range(getFiKey("row", "type1", "123.345.456", "FOO", "alf"), true, getFiKey("row", "type1", "123.345.456.2", "FOO", "buz"), true);
 
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -251,7 +252,7 @@ public class TermFrequencyIndexIteratorTest {
         filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
                         fieldsToKeep);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -264,7 +265,7 @@ public class TermFrequencyIndexIteratorTest {
         filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
                         fieldsToKeep);
         aggregator = new TermFrequencyAggregator(fieldsToKeep, filter);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -318,7 +319,7 @@ public class TermFrequencyIndexIteratorTest {
         filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), typeMetadata, null, null, -1, -1, Collections.emptyMap(), null, fieldsToKeep);
 
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);
@@ -346,7 +347,7 @@ public class TermFrequencyIndexIteratorTest {
         filter = new EventDataQueryExpressionFilter(JexlASTHelper.parseJexlQuery("FOO=='bar' || FOO=='baz' || FOO=='buf' || FOO=='arm'"), typeMetadata,
                         fieldsToKeep);
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
-        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, null, aggregator);
+        TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);
 
         // jump to the first doc
         iterator.seek(null, null, true);

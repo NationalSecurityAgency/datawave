@@ -2,14 +2,14 @@ package datawave.query.iterator;
 
 import java.util.Comparator;
 
-import datawave.query.attributes.Document;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 
 import com.google.common.collect.TreeMultimap;
+
+import datawave.query.attributes.Document;
 
 /**
  * Provides utility methods for text matching and multimaps that need to be referenced by the iterators.

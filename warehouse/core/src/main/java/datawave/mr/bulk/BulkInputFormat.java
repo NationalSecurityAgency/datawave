@@ -19,16 +19,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.UUID;
 
-import datawave.accumulo.inmemory.InMemoryAccumuloClient;
-import datawave.accumulo.inmemory.InMemoryInstance;
-import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.mr.bulk.split.DefaultLocationStrategy;
-import datawave.mr.bulk.split.DefaultSplitStrategy;
-import datawave.mr.bulk.split.LocationStrategy;
-import datawave.mr.bulk.split.RangeSplit;
-import datawave.mr.bulk.split.SplitStrategy;
-
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -43,11 +33,11 @@ import org.apache.accumulo.core.client.TableDeletedException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.TableOfflineException;
 import org.apache.accumulo.core.client.ZooKeeperInstance;
+import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.clientImpl.ClientConfConverter;
 import org.apache.accumulo.core.clientImpl.ClientContext;
 import org.apache.accumulo.core.clientImpl.ClientInfo;
 import org.apache.accumulo.core.clientImpl.TabletLocator;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -62,13 +52,12 @@ import org.apache.accumulo.core.metadata.MetadataTable;
 import org.apache.accumulo.core.metadata.schema.MetadataSchema;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.core.security.TablePermission;
-import datawave.common.util.ArgumentChecker;
 import org.apache.accumulo.core.singletons.SingletonReservation;
 import org.apache.accumulo.core.util.Pair;
 import org.apache.accumulo.core.util.TextUtil;
-import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.accumulo.core.util.UtilWaitThread;
 import org.apache.accumulo.core.util.format.DefaultFormatter;
+import org.apache.accumulo.core.util.threads.Threads;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
@@ -89,6 +78,17 @@ import org.apache.log4j.Logger;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+
+import datawave.accumulo.inmemory.InMemoryAccumuloClient;
+import datawave.accumulo.inmemory.InMemoryInstance;
+import datawave.accumulo.inmemory.impl.InMemoryTabletLocator;
+import datawave.common.util.ArgumentChecker;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.mr.bulk.split.DefaultLocationStrategy;
+import datawave.mr.bulk.split.DefaultSplitStrategy;
+import datawave.mr.bulk.split.LocationStrategy;
+import datawave.mr.bulk.split.RangeSplit;
+import datawave.mr.bulk.split.SplitStrategy;
 
 public class BulkInputFormat extends InputFormat<Key,Value> {
 
@@ -1112,11 +1112,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
                 while (binnedRanges == null) {
                     // Some tablets were still online, try again
-                    UtilWaitThread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                    UtilWaitThread.sleep(100L + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
                     binnedRanges = binOfflineTable(job, tableName, ranges);
                 }
             } else {
-
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     TableId tableId = null;
                     tl = getTabletLocator(job.getConfiguration());

@@ -1,42 +1,5 @@
 package datawave.query.function;
 
-import com.google.common.collect.Sets;
-import com.google.common.io.Files;
-import datawave.configuration.spring.SpringBean;
-import datawave.helpers.PrintUtility;
-import datawave.ingest.data.TypeRegistry;
-import datawave.query.QueryTestTableHelper;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.Document;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.query.tables.ShardQueryLogic;
-import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
-import datawave.query.util.LimitFieldsTestingIngest;
-import datawave.util.TableName;
-import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.log4j.Logger;
-import org.jboss.arquillian.container.test.api.Deployment;
-import org.jboss.arquillian.junit.Arquillian;
-import org.jboss.shrinkwrap.api.ShrinkWrap;
-import org.jboss.shrinkwrap.api.asset.StringAsset;
-import org.jboss.shrinkwrap.api.spec.JavaArchive;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -56,6 +19,47 @@ import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.log4j.Logger;
+import org.jboss.arquillian.container.test.api.Deployment;
+import org.jboss.arquillian.junit.Arquillian;
+import org.jboss.shrinkwrap.api.ShrinkWrap;
+import org.jboss.shrinkwrap.api.asset.StringAsset;
+import org.jboss.shrinkwrap.api.spec.JavaArchive;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import com.google.common.collect.Sets;
+import com.google.common.io.Files;
+
+import datawave.configuration.spring.SpringBean;
+import datawave.data.type.DateType;
+import datawave.helpers.PrintUtility;
+import datawave.ingest.data.TypeRegistry;
+import datawave.query.QueryTestTableHelper;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
+import datawave.query.attributes.Document;
+import datawave.query.function.deserializer.KryoDocumentDeserializer;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.tables.ShardQueryLogic;
+import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
+import datawave.query.util.LimitFieldsTestingIngest;
+import datawave.util.TableName;
+import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -125,6 +129,9 @@ public abstract class HitsAreAlwaysIncludedTest {
     protected KryoDocumentDeserializer deserializer;
 
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+
+    // under certain conditions a Date-normalized field value is returned without normalization
+    private final Set<String> dateFields = Sets.newHashSet("FOO_1_BAR_1.FOO.0", "FOO_1_BAR_1");
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -234,6 +241,15 @@ public abstract class HitsAreAlwaysIncludedTest {
                         log.debug("removed " + toFind);
                     } else if (toFind.contains(LimitFields.ORIGINAL_COUNT_SUFFIX)) {
                         log.debug("Ignoring original count field " + toFind);
+                    } else if (dateFields.contains(dictionaryEntry.getKey())) {
+                        // rare case where normalization changed the returned value of a date type
+                        // for example:
+                        // FOO_1_BAR_1.FOO.0 :: 2021-03-24T16:00:00.000Z DateType
+                        // FOO_1_BAR_1.FOO.0 :: Wed Mar 24 12:00:00 EDT 2021 NoOpType
+                        //
+                        DateType dateType = new DateType(dictionaryEntry.getValue().getData().toString());
+                        toFind = dictionaryEntry.getKey() + ":" + dateType.getNormalizedValue();
+                        goodResults.remove(toFind);
                     } else {
                         extraValues.add('"' + toFind + '"');
                     }

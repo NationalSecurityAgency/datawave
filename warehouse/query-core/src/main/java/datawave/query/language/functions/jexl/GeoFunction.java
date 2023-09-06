@@ -3,9 +3,9 @@ package datawave.query.language.functions.jexl;
 import java.util.ArrayList;
 import java.util.Set;
 
-import datawave.query.language.functions.QueryFunction;
-
 import com.google.common.collect.Sets;
+
+import datawave.query.language.functions.QueryFunction;
 
 public class GeoFunction extends JexlQueryFunction {
     private static final Set<String> COMMANDS = Sets.newHashSet("bounding_box", "circle");

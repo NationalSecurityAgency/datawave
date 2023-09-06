@@ -1,12 +1,11 @@
 package datawave.ingest.nyctlc;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.CSVHelper;
-import datawave.ingest.data.config.ConfigurationHelper;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.CSVIngestHelper;
+import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
+import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
+import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
+
+import java.util.Collection;
+
 import org.apache.hadoop.conf.Configuration;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
@@ -14,11 +13,14 @@ import org.locationtech.jts.util.GeometricShapeFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
-import static datawave.ingest.data.config.CSVHelper.DATA_HEADER_ENABLED;
-import static datawave.ingest.data.config.CSVHelper.DATA_SEP;
-import static datawave.ingest.data.config.CSVHelper.PROCESS_EXTRA_FIELDS;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.CSVHelper;
+import datawave.ingest.data.config.ConfigurationHelper;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.CSVIngestHelper;
 
 /**
  * This is a specialized version of the CSV Ingest Helper intended to be used with the NYC Taxi &amp; Limousine Commission dataset. This class is responsible
@@ -58,6 +60,14 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
         return new NYCTLCHelper();
     }
 
+    private String getFirstEventFieldValue(Collection<NormalizedContentInterface> collection) {
+        if (collection.stream().findFirst().isPresent()) {
+            return collection.stream().findFirst().get().getEventFieldValue();
+        } else {
+            return null;
+        }
+    }
+
     @Override
     public Multimap<String,NormalizedContentInterface> getEventFields(RawRecordContainer event) {
         final Multimap<String,NormalizedContentInterface> eventFields = super.getEventFields(event);
@@ -70,8 +80,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
             Collection<NormalizedContentInterface> latNci = eventFields.get(PICKUP_LATITUDE);
             Collection<NormalizedContentInterface> lonNci = eventFields.get(PICKUP_LONGITUDE);
             if (latNci.size() == 1 && lonNci.size() == 1) {
-                pickupLat = latNci.stream().findAny().get().getEventFieldValue();
-                pickupLon = lonNci.stream().findAny().get().getEventFieldValue();
+                pickupLat = getFirstEventFieldValue(latNci);
+                pickupLon = getFirstEventFieldValue(lonNci);
             } else
                 log.warn("Did not expect multiple pickup lat/lon pairs in the event.");
         } else
@@ -81,8 +91,8 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
             Collection<NormalizedContentInterface> latNci = eventFields.get(DROPOFF_LATITUDE);
             Collection<NormalizedContentInterface> lonNci = eventFields.get(DROPOFF_LONGITUDE);
             if (latNci.size() == 1 && lonNci.size() == 1) {
-                dropoffLat = latNci.stream().findAny().get().getEventFieldValue();
-                dropoffLon = lonNci.stream().findAny().get().getEventFieldValue();
+                dropoffLat = getFirstEventFieldValue(latNci);
+                dropoffLon = getFirstEventFieldValue(lonNci);
             } else
                 log.warn("Did not expect multiple dropoff lat/lon pairs in the event.");
         } else
@@ -139,7 +149,7 @@ public class NYCTLCIngestHelper extends CSVIngestHelper {
         if (eventFields.containsKey("TOTAL_AMOUNT")) {
             Collection<NormalizedContentInterface> totalAmountNci = eventFields.get(TOTAL_AMOUNT);
             if (totalAmountNci.size() == 1) {
-                derivedFields.put(TOTAL_AMOUNT_INDEXED, totalAmountNci.stream().findAny().get().getEventFieldValue());
+                derivedFields.put(TOTAL_AMOUNT_INDEXED, getFirstEventFieldValue(totalAmountNci));
             } else
                 log.warn("Did not expect multiple TOTAL_AMOUNT values in the event.");
         }

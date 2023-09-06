@@ -1,12 +1,9 @@
 package datawave.query.predicate;
 
-import com.google.common.collect.Maps;
-import datawave.query.data.parsers.DatawaveKey;
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
-import datawave.query.util.TypeMetadata;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
@@ -14,9 +11,14 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.log4j.Logger;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.Maps;
+
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.data.parsers.DatawaveKey;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
+import datawave.query.util.TypeMetadata;
 
 /**
  * This class is used to filter out fields that are required for evaluation by apply the query expressions to the field values on the fly. This filter will

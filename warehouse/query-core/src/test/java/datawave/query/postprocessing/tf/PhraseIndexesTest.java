@@ -1,13 +1,14 @@
 package datawave.query.postprocessing.tf;
 
-import datawave.ingest.protobuf.TermWeight;
-import datawave.ingest.protobuf.TermWeightPosition;
-import org.javatuples.Triplet;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+
+import org.javatuples.Triplet;
+import org.junit.Test;
+
+import datawave.ingest.protobuf.TermWeight;
+import datawave.ingest.protobuf.TermWeightPosition;
 
 public class PhraseIndexesTest {
 

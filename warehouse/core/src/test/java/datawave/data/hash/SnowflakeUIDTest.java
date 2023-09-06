@@ -1,10 +1,10 @@
 package datawave.data.hash;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -61,7 +61,7 @@ public class SnowflakeUIDTest {
         assertTrue(uid.getProcessId() < 0);
         assertTrue(uid.getThreadId() < 0);
         assertTrue(uid.getTimestamp() < 0);
-        assertNotEquals(false, uid.hashCode());
+        assertNotEquals(0, uid.hashCode());
         assertEquals(SnowflakeUID.DEFAULT_RADIX, uid.getRadix());
         assertEquals("null", uid.getShardedPortion());
 

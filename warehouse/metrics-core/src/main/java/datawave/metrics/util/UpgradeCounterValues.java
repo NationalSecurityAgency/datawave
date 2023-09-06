@@ -1,8 +1,11 @@
 package datawave.metrics.util;
 
-import com.google.common.io.ByteArrayDataInput;
-import com.google.common.io.ByteArrayDataOutput;
-import com.google.common.io.ByteStreams;
+import static java.util.Map.Entry;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.accumulo.core.client.Accumulo;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.AccumuloException;
@@ -16,8 +19,8 @@ import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -26,11 +29,9 @@ import org.apache.hadoop.io.WritableUtils;
 import org.apache.hadoop.mapreduce.CounterGroup;
 import org.apache.hadoop.mapreduce.Counters;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Map.Entry;
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteArrayDataOutput;
+import com.google.common.io.ByteStreams;
 
 /**
  * Upgrades the serialized counters in the values of the supplied table from Hadoop 0/1.x wire format to Hadoop 2.x wire format. This class has no real way to
@@ -44,7 +45,7 @@ public class UpgradeCounterValues {
     private String instanceName, zookeepers, username, password, tableName;
     private int bsThreads = 10;
     private int bwThreads = 10;
-    private long bwMemory = 10 * 1048576;
+    private long bwMemory = 10 * 1048576L;
     private ArrayList<Range> ranges;
 
     public UpgradeCounterValues() {

@@ -1,8 +1,10 @@
 package datawave.query.util.sortedset;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -12,14 +14,12 @@ import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
-import datawave.query.util.sortedset.MultiSetBackedSortedSet;
 import datawave.query.util.sortedset.ByteArrayComparator;
+import datawave.query.util.sortedset.MultiSetBackedSortedSet;
 
 public class MultiSetBackedSortedSetTest {
     private byte[][] data = null;
@@ -361,12 +361,14 @@ public class MultiSetBackedSortedSetTest {
         // verify order
         assertFalse(subSet.isEmpty());
         assertArrayEquals(data[sortedOrder[start]], subSet.iterator().next());
+        assertArrayEquals(data[sortedOrder[start]], subSet.first());
         int index = start;
         for (byte[] value : subSet) {
             assertArrayEquals(data[sortedOrder[index++]], value);
         }
         ArrayList<byte[]> list = new ArrayList<>(subSet);
         assertArrayEquals(data[sortedOrder[end - 1]], list.get(list.size() - 1));
+        assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
         subSet = set.headSet(data[sortedOrder[end]]);
 

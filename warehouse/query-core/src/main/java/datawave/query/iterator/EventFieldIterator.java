@@ -1,17 +1,18 @@
 package datawave.query.iterator;
 
-import datawave.query.attributes.AttributeFactory;
-import datawave.query.attributes.Document;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.functions.IdentityAggregator;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
+import datawave.query.attributes.AttributeFactory;
+import datawave.query.attributes.Document;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.functions.IdentityAggregator;
 
 /**
  * Iterate over a document range aggregating fields in their normalized form.

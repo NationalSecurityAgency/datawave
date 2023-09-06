@@ -1,14 +1,18 @@
 package datawave.query;
 
-import datawave.query.iterator.QueryIterator;
-import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
-import datawave.query.testframework.AbstractFunctionalQuery;
-import datawave.query.testframework.AccumuloSetup;
-import datawave.query.testframework.CitiesDataType;
-import datawave.query.testframework.DataTypeHadoopConfig;
-import datawave.query.testframework.FieldConfig;
-import datawave.query.testframework.FileType;
-import datawave.query.testframework.GenericCityFields;
+import static datawave.query.iterator.QueryOptions.SORTED_UIDS;
+import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
+import static datawave.query.testframework.RawDataManager.RE_OP;
+
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -23,18 +27,15 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TimeZone;
-
-import static datawave.query.iterator.QueryOptions.SORTED_UIDS;
-import static datawave.query.testframework.RawDataManager.JEXL_AND_OP;
-import static datawave.query.testframework.RawDataManager.RE_OP;
+import datawave.query.iterator.QueryIterator;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.testframework.AbstractFunctionalQuery;
+import datawave.query.testframework.AccumuloSetup;
+import datawave.query.testframework.CitiesDataType;
+import datawave.query.testframework.DataTypeHadoopConfig;
+import datawave.query.testframework.FieldConfig;
+import datawave.query.testframework.FileType;
+import datawave.query.testframework.GenericCityFields;
 
 public class IvaratorYieldingTest extends AbstractFunctionalQuery {
 

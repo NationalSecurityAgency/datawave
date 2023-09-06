@@ -3,14 +3,14 @@ package datawave.query.postprocessing.tf;
 import java.util.Collections;
 import java.util.Map;
 
+import org.apache.accumulo.core.data.Key;
+
+import com.google.common.base.Function;
+
 import datawave.query.attributes.Document;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 import datawave.query.util.Tuples;
-
-import org.apache.accumulo.core.data.Key;
-
-import com.google.common.base.Function;
 
 public class EmptyTermFrequencyFunction implements Function<Tuple2<Key,Document>,Tuple3<Key,Document,Map<String,Object>>> {
 

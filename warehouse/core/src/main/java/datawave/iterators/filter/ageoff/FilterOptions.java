@@ -3,10 +3,10 @@ package datawave.iterators.filter.ageoff;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.google.common.base.Objects;
+
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.AgeOffTtlUnits;
-
-import com.google.common.base.Objects;
 
 /**
  * Description: Identifies all options for filter rules

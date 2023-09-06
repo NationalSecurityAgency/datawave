@@ -6,16 +6,16 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.metrics.keys.IngestEntryKey;
-import datawave.metrics.keys.InvalidKeyException;
-import datawave.metrics.util.WritableUtil;
-
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.Filter;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.log4j.Logger;
+
+import datawave.metrics.keys.IngestEntryKey;
+import datawave.metrics.keys.InvalidKeyException;
+import datawave.metrics.util.WritableUtil;
 
 // column family filter
 public class DataTypeFilter extends Filter {

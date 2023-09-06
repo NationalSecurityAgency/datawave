@@ -16,13 +16,9 @@ package datawave.query.language.builder.jexl;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-
-import datawave.query.language.parser.jexl.JexlBooleanNode;
-import datawave.query.language.parser.jexl.JexlNode;
 
 import org.apache.lucene.queryparser.flexible.core.QueryNodeException;
 import org.apache.lucene.queryparser.flexible.core.builders.QueryBuilder;
@@ -37,6 +33,9 @@ import org.apache.lucene.queryparser.flexible.messages.MessageImpl;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
+
+import datawave.query.language.parser.jexl.JexlBooleanNode;
+import datawave.query.language.parser.jexl.JexlNode;
 
 /**
  * Builds a {@link BooleanQuery} object from a {@link BooleanQueryNode} object. Every children in the {@link BooleanQueryNode} object must be already tagged

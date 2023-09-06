@@ -1,6 +1,14 @@
 package datawave.iterators;
 
-import datawave.edge.util.ExtendedHyperLogLogPlus;
+import static datawave.edge.util.EdgeKey.EDGE_FORMAT.STATS;
+import static datawave.edge.util.EdgeKey.STATS_TYPE.LINKS;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.PartialKey;
@@ -16,14 +24,7 @@ import org.apache.hadoop.io.WritableComparator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.NoSuchElementException;
-
-import static datawave.edge.util.EdgeKey.EDGE_FORMAT.STATS;
-import static datawave.edge.util.EdgeKey.STATS_TYPE.LINKS;
+import datawave.edge.util.ExtendedHyperLogLogPlus;
 
 public class StatsLinksEdgeCombiner extends WrappingIterator implements OptionDescriber {
     private static final Logger LOG = LoggerFactory.getLogger(StatsLinksEdgeCombiner.class);

@@ -1,15 +1,15 @@
 package datawave.webservice.query;
 
+import static org.junit.Assert.assertEquals;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.apache.commons.lang.time.DateUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
-
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import static org.junit.Assert.assertEquals;
 
 public class TestQueryParameters {
 

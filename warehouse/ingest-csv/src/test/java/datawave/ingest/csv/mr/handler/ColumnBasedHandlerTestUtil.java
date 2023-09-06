@@ -9,19 +9,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import datawave.ingest.config.RawRecordContainerImpl;
-import datawave.ingest.data.RawRecordContainer;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.data.config.ingest.CompositeIngest;
-import datawave.ingest.data.config.ingest.VirtualIngest;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
-import datawave.ingest.mapreduce.job.BulkIngestKey;
-import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
-import datawave.ingest.test.StandaloneStatusReporter;
-import datawave.ingest.test.StandaloneTaskAttemptContext;
-
-import datawave.util.TableName;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Value;
 import org.apache.hadoop.fs.Path;
@@ -35,6 +22,19 @@ import org.junit.Assert;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+
+import datawave.ingest.config.RawRecordContainerImpl;
+import datawave.ingest.data.RawRecordContainer;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.data.config.ingest.CompositeIngest;
+import datawave.ingest.data.config.ingest.VirtualIngest;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.ingest.mapreduce.job.BulkIngestKey;
+import datawave.ingest.mapreduce.job.writer.AbstractContextWriter;
+import datawave.ingest.test.StandaloneStatusReporter;
+import datawave.ingest.test.StandaloneTaskAttemptContext;
+import datawave.util.TableName;
 
 /**
  * Utility Class for common static methods used in ColumnBasedHandler tests

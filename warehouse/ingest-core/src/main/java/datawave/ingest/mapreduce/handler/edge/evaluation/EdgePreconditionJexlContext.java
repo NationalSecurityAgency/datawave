@@ -1,21 +1,23 @@
 package datawave.ingest.mapreduce.handler.edge.evaluation;
 
-import com.google.common.collect.Multimap;
-import datawave.attribute.EventFieldValueTuple;
-import datawave.ingest.data.config.NormalizedContentInterface;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
-import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
-import datawave.ingest.mapreduce.handler.fact.functions.MultimapContext;
-import org.apache.commons.jexl2.JexlEngine;
-import org.apache.commons.jexl2.Script;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.jexl2.JexlEngine;
+import org.apache.commons.jexl2.Script;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Multimap;
+
+import datawave.attribute.EventFieldValueTuple;
+import datawave.ingest.data.config.NormalizedContentInterface;
+import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinition;
+import datawave.ingest.mapreduce.handler.edge.define.EdgeDefinitionConfigurationHelper;
+import datawave.ingest.mapreduce.handler.fact.functions.MultimapContext;
 
 public class EdgePreconditionJexlContext extends MultimapContext {
 

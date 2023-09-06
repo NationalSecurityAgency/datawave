@@ -1,10 +1,12 @@
 package datawave.query.function;
 
-import datawave.query.attributes.Document;
-import org.apache.accumulo.core.data.Key;
+import java.util.Map;
 
 import javax.annotation.Nullable;
-import java.util.Map;
+
+import org.apache.accumulo.core.data.Key;
+
+import datawave.query.attributes.Document;
 
 /**
  *

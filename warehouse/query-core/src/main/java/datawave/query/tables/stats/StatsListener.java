@@ -2,10 +2,10 @@ package datawave.query.tables.stats;
 
 import java.util.concurrent.ExecutorService;
 
-import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-
 import com.google.common.util.concurrent.Service;
 import com.google.common.util.concurrent.Service.State;
+
+import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 
 public class StatsListener extends Service.Listener {
 

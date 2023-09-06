@@ -1,14 +1,17 @@
 package datawave.webservice.query.configuration;
 
-import com.google.common.collect.Sets;
-import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.EasyRoleManager;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.logic.RoleManager;
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
@@ -19,18 +22,16 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import datawave.webservice.common.audit.Auditor;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.EasyRoleManager;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.logic.RoleManager;
 
 @RunWith(PowerMockRunner.class)
 public class TestBaseQueryLogic {
@@ -123,7 +124,7 @@ public class TestBaseQueryLogic {
         expect(query.getDnList()).andReturn(dns);
         expect(query.getDnList()).andReturn(null);
         expect(query.getDnList()).andReturn(Collections.emptyList());
-        expect(query.findParameter("systemFrom")).andReturn(null).anyTimes();
+        expect(query.getSystemFrom()).andReturn(null).anyTimes();
         PowerMock.replayAll();
         for (long limit : limits) {
             assertEquals(limit, logic.getResultLimit(query));
@@ -141,9 +142,9 @@ public class TestBaseQueryLogic {
      */
     public void assertGetResultsLimitsSystemFrom(BaseQueryLogic<Object> logic, long... limits) {
         PowerMock.resetAll();
-        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", "hoplark"));
-        expect(query.findParameter("systemFrom")).andReturn(null);
-        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", ""));
+        expect(query.getSystemFrom()).andReturn("hoplark");
+        expect(query.getSystemFrom()).andReturn(null);
+        expect(query.getSystemFrom()).andReturn("");
         expect(query.getDnList()).andReturn(null).anyTimes();
         PowerMock.replayAll();
         for (long limit : limits) {
@@ -166,15 +167,15 @@ public class TestBaseQueryLogic {
 
         // first call, populated dn list and populated system from
         expect(query.getDnList()).andReturn(dns);
-        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", "hoplark"));
+        expect(query.getSystemFrom()).andReturn("hoplark");
 
         // second call, populated dn list and empty system from
         expect(query.getDnList()).andReturn(dns);
-        expect(query.findParameter("systemFrom")).andReturn(null);
+        expect(query.getSystemFrom()).andReturn(null);
 
         // third call, null dn list and populated system from
         expect(query.getDnList()).andReturn(null);
-        expect(query.findParameter("systemFrom")).andReturn(new QueryImpl.Parameter("systemFrom", "hoplark"));
+        expect(query.getSystemFrom()).andReturn("hoplark");
 
         PowerMock.replayAll();
         for (long limit : limits) {

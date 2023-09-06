@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.ingest.table.aggregator.CombinerConfiguration;
-
 import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -26,6 +24,8 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.powermock.api.easymock.PowerMock;
+
+import datawave.ingest.table.aggregator.CombinerConfiguration;
 
 @SuppressWarnings("deprecation")
 public class AbstractTableConfigHelperTest {

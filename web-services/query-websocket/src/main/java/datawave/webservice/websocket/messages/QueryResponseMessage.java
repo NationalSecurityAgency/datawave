@@ -1,6 +1,7 @@
 package datawave.webservice.websocket.messages;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import datawave.webservice.result.BaseResponse;
 
 /**

@@ -1,8 +1,8 @@
 package datawave.ingest.mapreduce.handler.edge.define;
 
-import datawave.ingest.data.config.NormalizedContentInterface;
-
 import java.util.Map;
+
+import datawave.ingest.data.config.NormalizedContentInterface;
 
 /**
  * Combines a VertexDefinition with value obtained from a {@link datawave.ingest.data.config.NormalizedContentInterface}.

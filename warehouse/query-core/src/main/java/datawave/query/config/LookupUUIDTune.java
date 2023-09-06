@@ -7,19 +7,18 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+
 import datawave.query.Constants;
 import datawave.query.language.parser.QueryParser;
 import datawave.query.planner.DefaultQueryPlanner;
 import datawave.query.planner.QueryPlanner;
-import datawave.query.planner.SeekingQueryPlanner;
 import datawave.query.planner.rules.NodeTransformRule;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.tld.TLDQueryIterator;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
-
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
 
 public class LookupUUIDTune implements Profile {
 
@@ -29,8 +28,6 @@ public class LookupUUIDTune implements Profile {
     protected boolean reduceResponse = false;
     protected boolean enablePreload = false;
     protected boolean speculativeScanning = false;
-    protected int maxFieldHitsBeforeSeek = -1;
-    protected int maxKeysBeforeSeek = -1;
     // lookup uuid profiles can override seeking configs for field index and event keys
     protected int fiFieldSeek = -1;
     protected int fiNextSeek = -1;
@@ -75,12 +72,11 @@ public class LookupUUIDTune implements Profile {
             if (reduceResponse) {
                 rsq.setParseTldUids(true);
 
-                // setup SeekingQueryPlanner in case the queryIterator requires it
-                SeekingQueryPlanner planner = new SeekingQueryPlanner();
-                planner.setMaxFieldHitsBeforeSeek(maxFieldHitsBeforeSeek);
-                planner.setMaxKeysBeforeSeek(maxKeysBeforeSeek);
-
-                rsq.setQueryPlanner(planner);
+                // pass through seek options
+                rsq.setFiFieldSeek(fiFieldSeek);
+                rsq.setFiNextSeek(fiNextSeek);
+                rsq.setEventFieldSeek(eventFieldSeek);
+                rsq.setEventNextSeek(eventNextSeek);
 
                 if (maxPageSize != -1) {
                     rsq.setMaxPageSize(maxPageSize);
@@ -203,22 +199,6 @@ public class LookupUUIDTune implements Profile {
 
     public boolean getReduceResponse() {
         return reduceResponse;
-    }
-
-    public void setMaxFieldHitsBeforeSeek(int maxFieldHitsBeforeSeek) {
-        this.maxFieldHitsBeforeSeek = maxFieldHitsBeforeSeek;
-    }
-
-    public int getMaxFieldHitsBeforeSeek() {
-        return maxFieldHitsBeforeSeek;
-    }
-
-    public void setMaxKeysBeforeSeek(int maxKeysBeforeSeek) {
-        this.maxKeysBeforeSeek = maxKeysBeforeSeek;
-    }
-
-    public int getMaxKeysBeforeSeek() {
-        return maxKeysBeforeSeek;
     }
 
     public int getFiFieldSeek() {

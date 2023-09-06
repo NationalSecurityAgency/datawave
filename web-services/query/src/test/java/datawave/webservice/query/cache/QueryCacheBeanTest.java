@@ -1,10 +1,16 @@
 package datawave.webservice.query.cache;
 
-import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.webservice.common.connection.AccumuloConnectionFactory;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.runner.RunningQuery;
+import static org.easymock.EasyMock.expect;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.powermock.reflect.Whitebox.setInternalState;
+
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.UUID;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.util.Pair;
@@ -14,17 +20,11 @@ import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.UUID;
-
-import static org.easymock.EasyMock.expect;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.powermock.reflect.Whitebox.setInternalState;
+import datawave.microservice.querymetric.QueryMetricFactoryImpl;
+import datawave.webservice.common.connection.AccumuloConnectionFactory;
+import datawave.webservice.query.QueryImpl;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.runner.RunningQuery;
 
 @RunWith(PowerMockRunner.class)
 public class QueryCacheBeanTest {

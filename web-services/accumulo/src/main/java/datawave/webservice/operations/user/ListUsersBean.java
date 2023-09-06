@@ -1,8 +1,5 @@
 package datawave.webservice.operations.user;
 
-import datawave.webservice.operations.remote.RemoteAdminService;
-import datawave.webservice.response.ListUsersResponse;
-
 import javax.annotation.security.DeclareRoles;
 import javax.annotation.security.RolesAllowed;
 import javax.ejb.LocalBean;
@@ -15,6 +12,9 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+
+import datawave.webservice.operations.remote.RemoteAdminService;
+import datawave.webservice.response.ListUsersResponse;
 
 @Path("/Accumulo")
 @RolesAllowed({"InternalUser", "Administrator"})
