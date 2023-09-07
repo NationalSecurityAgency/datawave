@@ -157,6 +157,7 @@ import datawave.query.util.DateIndexHelper;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryStopwatch;
 import datawave.query.util.Tuple2;
+import datawave.query.util.TypeMetadata;
 import datawave.util.time.TraceStopwatch;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 import datawave.webservice.query.Query;
@@ -321,7 +322,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         queryIteratorClazz = other.queryIteratorClazz;
         setMetadataHelper(other.getMetadataHelper());
         setDateIndexHelper(other.getDateIndexHelper());
-        setCompressOptionMappings(other.compressMappings);
+        setCompressOptionMappings(other.getCompressOptionMappings());
         buildQueryModel = other.buildQueryModel;
         preloadOptions = other.preloadOptions;
         rangeStreamClass = other.rangeStreamClass;
@@ -373,6 +374,8 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     @Override
     public CloseableIterable<QueryData> process(GenericQueryConfiguration genericConfig, String query, Query settings, ScannerFactory scannerFactory)
                     throws DatawaveQueryException {
+        visitorManager.setDebugEnabled(log.isDebugEnabled());
+
         if (!(genericConfig instanceof ShardQueryConfiguration)) {
             throw new ClassCastException("Config object must be an instance of ShardQueryConfiguration");
         }
@@ -533,7 +536,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
-        configureTypeMappings(config, cfg, metadataHelper, compressMappings);
+        configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
     }
 
     /**
@@ -2095,7 +2098,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
             addOption(cfg, QueryOptions.SORTED_UIDS, Boolean.toString(config.isSortedUIDs()), false);
 
-            configureTypeMappings(config, cfg, metadataHelper, compressMappings);
+            configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
             configureAdditionalOptions(config, cfg);
 
             loadFields(cfg, config, isPreload);
@@ -2264,7 +2267,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
     public static void configureTypeMappings(ShardQueryConfiguration config, IteratorSetting cfg, MetadataHelper metadataHelper, boolean compressMappings)
                     throws DatawaveQueryException {
         try {
-            addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.valueOf(compressMappings).toString(), false);
+            addOption(cfg, QueryOptions.QUERY_MAPPING_COMPRESS, Boolean.toString(compressMappings), false);
 
             // now lets filter the query field datatypes to those that are not
             // indexed
@@ -2272,16 +2275,27 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             nonIndexedQueryFieldsDatatypes.keySet().removeAll(config.getIndexedFields());
 
             String nonIndexedTypes = QueryOptions.buildFieldNormalizerString(nonIndexedQueryFieldsDatatypes);
-            String typeMetadataString = metadataHelper.getTypeMetadata(config.getDatatypeFilter()).toString();
             String requiredAuthsString = metadataHelper.getUsersMetadataAuthorizationSubset();
+
+            TypeMetadata typeMetadata = metadataHelper.getTypeMetadata(config.getDatatypeFilter());
+
+            if (config.getReduceTypeMetadata()) {
+                Set<String> fieldsToRetain = ReduceFields.getQueryFields(config.getQueryTree());
+                typeMetadata = typeMetadata.reduce(fieldsToRetain);
+            }
+
+            String serializedTypeMetadata = typeMetadata.toString();
 
             if (compressMappings) {
                 nonIndexedTypes = QueryOptions.compressOption(nonIndexedTypes, QueryOptions.UTF8);
-                typeMetadataString = QueryOptions.compressOption(typeMetadataString, QueryOptions.UTF8);
                 requiredAuthsString = QueryOptions.compressOption(requiredAuthsString, QueryOptions.UTF8);
+                if (!config.getReduceTypeMetadataPerShard()) {
+                    // if we're reducing later, don't compress the type metadata
+                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                }
             }
             addOption(cfg, QueryOptions.NON_INDEXED_DATATYPES, nonIndexedTypes, false);
-            addOption(cfg, QueryOptions.TYPE_METADATA, typeMetadataString, false);
+            addOption(cfg, QueryOptions.TYPE_METADATA, serializedTypeMetadata, false);
             addOption(cfg, QueryOptions.TYPE_METADATA_AUTHS, requiredAuthsString, false);
             addOption(cfg, QueryOptions.METADATA_TABLE_NAME, config.getMetadataTableName(), false);
 
@@ -2289,7 +2303,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             QueryException qe = new QueryException(DatawaveErrorCode.TYPE_MAPPING_CONFIG_ERROR, e);
             throw new DatawaveQueryException(qe);
         }
-
     }
 
     public static void addOption(IteratorSetting cfg, String option, String value, boolean allowBlankValue) {

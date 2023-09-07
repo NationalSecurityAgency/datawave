@@ -248,6 +248,7 @@ public abstract class LenientFieldsTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
+        extraParameters.put("lenient.fields", "ETA,AGE,MAGIC,NOME,NAME,NAM,AG");
 
         if (log.isDebugEnabled()) {
             log.debug("testLenientFields");
@@ -260,10 +261,10 @@ public abstract class LenientFieldsTest {
                 "NAM == 'abc40'",
         };
         String[] expectedPlans = {
-                "((_Eval_ = true) && ((AGE > 'abc10') || (ETA > 'abc10')))",
+                "(((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'ETA > \\'abc10\\''))) || ((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'AGE > \\'abc10\\''))))",
                 "(ETA == '+bE4' || AGE == '+bE4')",
                 "(MAGIC > '+bE4' || NOME > '40' || NAME > '40')",
-                "(NAME == 'abc40' || NOME == 'abc40' || ((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and lenient') && (_Query_ = 'MAGIC == \\'abc40\\''))))",
+                "(NAME == 'abc40' || NOME == 'abc40' || ((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'MAGIC == \\'abc40\\''))))",
         };
         @SuppressWarnings("unchecked")
         List<String>[] expectedLists = new List[] {

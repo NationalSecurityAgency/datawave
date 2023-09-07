@@ -102,6 +102,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean enforceUniqueTermsWithinExpressions = false;
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
+    private boolean reduceTypeMetadata = false;
+    private boolean reduceTypeMetadataPerShard = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -474,6 +476,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
         this.setReduceQueryFields(other.getReduceQueryFields());
+        this.setReduceTypeMetadata(other.getReduceTypeMetadata());
+        this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
         this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
@@ -2028,6 +2032,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setReduceQueryFields(boolean reduceQueryFields) {
         this.reduceQueryFields = reduceQueryFields;
+    }
+
+    public boolean getReduceTypeMetadata() {
+        return reduceTypeMetadata;
+    }
+
+    public void setReduceTypeMetadata(boolean reduceTypeMetadata) {
+        this.reduceTypeMetadata = reduceTypeMetadata;
+    }
+
+    public boolean getReduceTypeMetadataPerShard() {
+        return reduceTypeMetadataPerShard;
+    }
+
+    public void setReduceTypeMetadataPerShard(boolean reduceTypeMetadataPerShard) {
+        this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
     }
 
     public boolean getSequentialScheduler() {

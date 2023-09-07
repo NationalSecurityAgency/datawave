@@ -45,20 +45,21 @@ public class LoadModelFromXml {
 
         QueryModel model = new QueryModel();
         for (FieldMapping mapping : xmlModel.getFields()) {
-            switch (mapping.getDirection()) {
-                case FORWARD:
-                    if (mapping.isLenientMarker()) {
-                        model.addLenientForwardMappings(mapping.getModelFieldName());
-                    } else {
+            if (mapping.isFieldMapping()) {
+                switch (mapping.getDirection()) {
+                    case FORWARD:
                         model.addTermToModel(mapping.getModelFieldName(), mapping.getFieldName());
-                    }
-                    break;
-                case REVERSE:
-                    model.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
-                    break;
-                default:
-                    log.error("Unknown direction: " + mapping.getDirection());
+                        break;
+                    case REVERSE:
+                        model.addTermToReverseModel(mapping.getFieldName(), mapping.getModelFieldName());
+                        break;
+                    default:
+                        log.error("Unknown direction: " + mapping.getDirection());
+                }
+            } else {
+                model.setModelFieldAttributes(mapping.getModelFieldName(), mapping.getAttributes());
             }
+
         }
 
         if (model.getForwardQueryMapping().isEmpty() && model.getReverseQueryMapping().isEmpty()) {
