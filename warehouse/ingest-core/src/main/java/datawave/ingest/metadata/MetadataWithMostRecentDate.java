@@ -11,7 +11,7 @@ import com.google.common.base.Objects;
 public class MetadataWithMostRecentDate {
     public static final String IGNORED_NORMALIZER_CLASS = null;
     private final Text columnFamily;
-    private Map<String,MostRecentEventDateAndKeyComponents> mostRecentDates = new HashMap<>();
+    private Map<String,Components> mostRecentDates = new HashMap<>();
 
     public MetadataWithMostRecentDate(Text columnFamily) {
         this.columnFamily = columnFamily;
@@ -27,15 +27,15 @@ public class MetadataWithMostRecentDate {
 
     public void createOrUpdate(String fieldName, String dataTypeOutputName, String normalizerClassName, long eventDate) {
         String identifier = createKey(fieldName, dataTypeOutputName, normalizerClassName);
-        MostRecentEventDateAndKeyComponents value = mostRecentDates.get(identifier);
+        Components value = mostRecentDates.get(identifier);
         if (null == value) {
-            mostRecentDates.put(identifier, new MostRecentEventDateAndKeyComponents(fieldName, dataTypeOutputName, normalizerClassName, eventDate));
+            mostRecentDates.put(identifier, new Components(fieldName, dataTypeOutputName, normalizerClassName, eventDate));
         } else if (eventDate > value.getMostRecentDate()) {
             value.setMostRecentDate(eventDate);
         }
     }
 
-    public Collection<MostRecentEventDateAndKeyComponents> entries() {
+    public Collection<Components> entries() {
         return mostRecentDates.values();
     }
 
@@ -47,13 +47,13 @@ public class MetadataWithMostRecentDate {
         return columnFamily;
     }
 
-    class MostRecentEventDateAndKeyComponents {
+    static class Components {
         private final String fieldName;
         private final String dataTypeOutputName;
         private final String normalizerClassName;
         private long mostRecentDate;
 
-        public MostRecentEventDateAndKeyComponents(String fieldName, String dataTypeOutputName, String normalizerClassName, long eventDate) {
+        public Components(String fieldName, String dataTypeOutputName, String normalizerClassName, long eventDate) {
             this.fieldName = fieldName;
             this.dataTypeOutputName = dataTypeOutputName;
             this.normalizerClassName = normalizerClassName;
@@ -89,10 +89,10 @@ public class MetadataWithMostRecentDate {
 
         @Override
         public boolean equals(Object o) {
-            if (!(o instanceof MostRecentEventDateAndKeyComponents)) {
+            if (!(o instanceof Components)) {
                 return false;
             }
-            MostRecentEventDateAndKeyComponents other = (MostRecentEventDateAndKeyComponents) o;
+            Components other = (Components) o;
             return Objects.equal(dataTypeOutputName, other.dataTypeOutputName) && Objects.equal(fieldName, other.fieldName)
                             && Objects.equal(normalizerClassName, other.normalizerClassName) && this.mostRecentDate == other.mostRecentDate;
         }

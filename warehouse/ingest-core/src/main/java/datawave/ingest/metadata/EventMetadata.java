@@ -89,19 +89,21 @@ import datawave.util.time.DateHelper;
  */
 public class EventMetadata implements RawRecordMetadata {
 
-    private MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
-    private MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CISEP);
-    private MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
-    private MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
-
     private static final Logger log = getLogger(EventMetadata.class);
     private final Text metadataTableName;
     private final Text loadDatesTableName;
+
+    private final MetadataWithMostRecentDate compositeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CI);
+    private final MetadataWithMostRecentDate compositeSeparators = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_CISEP);
+    private final MetadataWithMostRecentDate dataTypeFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_T);
+    private final MetadataWithMostRecentDate normalizedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_N);
+
     // stores field name, data type, and most recent event date
     private final MetadataWithMostRecentDate eventFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_E);
-    private final MetadataWithMostRecentDate indexedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_I);
-    private final MetadataWithMostRecentDate reverseIndexedFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_RI);
+    private final MetadataWithEventDate indexedFieldsInfo = new MetadataWithEventDate(ColumnFamilyConstants.COLF_I);
+    private final MetadataWithEventDate reverseIndexedFieldsInfo = new MetadataWithEventDate(ColumnFamilyConstants.COLF_RI);
     private final MetadataWithMostRecentDate termFrequencyFieldsInfo = new MetadataWithMostRecentDate(ColumnFamilyConstants.COLF_TF);
+
     // stores counts
     private final MetadataCounterGroup frequencyCounts = new MetadataCounterGroup(ColumnFamilyConstants.COLF_F); // by event date
     private final MetadataCounterGroup indexedFieldsLoadDateCounts;
@@ -300,6 +302,17 @@ public class EventMetadata implements RawRecordMetadata {
         }
     }
 
+    protected void update(RawRecordContainer event, Collection<NormalizedContentInterface> norms, String tokenDesignator, long countDelta, String loadDate,
+                    MetadataWithEventDate metadata, MetadataCounterGroup counts) {
+        for (NormalizedContentInterface norm : norms) {
+            String field = norm.getIndexedFieldName() + tokenDesignator;
+            metadata.put(field, event.getDataType().outputName(), event.getDate());
+            if (null != loadDate) {
+                updateLoadDateCounters(counts, event, field, countDelta, loadDate);
+            }
+        }
+    }
+
     protected void updateMetadata(MetadataWithMostRecentDate metadataInfo, @SuppressWarnings("UnusedParameters") IngestHelperInterface helper,
                     RawRecordContainer event, Multimap<String,NormalizedContentInterface> fields, String fieldName) {
         // will ignore the update load counters because it's null
@@ -400,7 +413,7 @@ public class EventMetadata implements RawRecordMetadata {
 
     protected void addToLoadDates(Multimap<BulkIngestKey,Value> results, MetadataCounterGroup countsGroup) {
         if (loadDatesTableName != null) {
-            for (MetadataCounterGroup.CountAndKeyComponents entry : countsGroup.getEntries()) {
+            for (MetadataCounterGroup.Components entry : countsGroup.getEntries()) {
                 Long count = entry.getCount();
                 Key k = new Key(new Text(entry.getRowId()), countsGroup.getColumnFamily(), new Text(entry.getDate() + DELIMITER + entry.getDataType()));
 
@@ -411,7 +424,7 @@ public class EventMetadata implements RawRecordMetadata {
 
     protected void addFrequenciesToMetadata(Multimap<BulkIngestKey,Value> results) {
         if (frequency) {
-            for (MetadataCounterGroup.CountAndKeyComponents entry : frequencyCounts.getEntries()) {
+            for (MetadataCounterGroup.Components entry : frequencyCounts.getEntries()) {
                 Long count = entry.getCount();
                 Key k = new Key(new Text(entry.getRowId()), frequencyCounts.getColumnFamily(), new Text(entry.getDataType() + DELIMITER + entry.getDate()),
                                 DateHelper.parse(entry.getDate()).getTime());
@@ -426,7 +439,7 @@ public class EventMetadata implements RawRecordMetadata {
     }
 
     protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithMostRecentDate mostRecentDates) {
-        for (MetadataWithMostRecentDate.MostRecentEventDateAndKeyComponents entry : mostRecentDates.entries()) {
+        for (MetadataWithMostRecentDate.Components entry : mostRecentDates.entries()) {
             long mostRecentDate = entry.getMostRecentDate();
             Text fieldName = new Text(entry.getFieldName());
             Text colq = new Text(entry.getDataType());
@@ -436,6 +449,17 @@ public class EventMetadata implements RawRecordMetadata {
             Key k = new Key(fieldName, mostRecentDates.getColumnFamily(), colq, mostRecentDate);
             BulkIngestKey bk = new BulkIngestKey(metadataTableName, k);
             results.put(bk, DataTypeHandler.NULL_VALUE);
+        }
+    }
+
+    protected void addIndexedFieldToMetadata(Multimap<BulkIngestKey,Value> results, MetadataWithEventDate metadata) {
+        for (MetadataWithEventDate.Components entry : metadata.getEntries()) {
+            Text fieldName = new Text(entry.getFieldName());
+            String eventDate = DateHelper.format(entry.getDate());
+            Text colq = new Text(entry.getDataType() + DELIMITER + eventDate);
+            Key key = new Key(fieldName, metadata.getColumnFamily(), colq, entry.getDate());
+            BulkIngestKey ingestKey = new BulkIngestKey(metadataTableName, key);
+            results.put(ingestKey, DataTypeHandler.NULL_VALUE);
         }
     }
 
