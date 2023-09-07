@@ -195,7 +195,9 @@ public class AuthorizationsUtil {
 
         // validate that the query user is actually a subset of the primary user
         if (!primaryUser.getAuths().containsAll(queryUser.getAuths())) {
-            throw new IllegalArgumentException("System Error.  Unexpected authorization mismatch.  Please try again.");
+            Set<String> auths = new HashSet<>(queryUser.getAuths());
+            auths.removeAll(primaryUser.getAuths());
+            throw new IllegalArgumentException("System Error.  Overall primary user missing auths " + auths + ".  Please try again.");
         }
 
         // validate that the requestedAuths do not include anything outside of the principal's auths
