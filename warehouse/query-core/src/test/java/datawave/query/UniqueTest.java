@@ -1,5 +1,6 @@
 package datawave.query;
 
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -152,6 +153,10 @@ public abstract class UniqueTest {
         TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
         logic.setFullTableScanEnabled(true);
+        // setup the hadoop configuration
+        URL hadoopConfig = this.getClass().getResource("/testhadoop.config");
+        logic.setHdfsSiteConfigURLs(hadoopConfig.toExternalForm());
+
         deserializer = new KryoDocumentDeserializer();
     }
 
