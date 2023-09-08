@@ -1137,13 +1137,13 @@ public class CachedResultsBean {
             List<String> columns = new ArrayList<>();
             Integer numRows = null;
             try (Connection con = ds.getConnection(); Statement s = con.createStatement()) {
-                try (ResultSet rs = s.executeQuery("select count(*) from " + view)) {
+                try (ResultSet rs = s.executeQuery(String.format("select count(*) from %s", view))) {
                     if (rs.next()) {
                         numRows = rs.getInt(1);
                     }
                 }
 
-                try (ResultSet rs = s.executeQuery("show columns from " + view)) {
+                try (ResultSet rs = s.executeQuery(String.format("show columns from %s", view))) {
                     Set<String> fixedColumns = CacheableQueryRow.getFixedColumnSet();
                     while (rs.next()) {
                         String column = rs.getString(1);
