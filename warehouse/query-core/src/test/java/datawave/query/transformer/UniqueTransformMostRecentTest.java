@@ -14,6 +14,7 @@ import org.junit.rules.TemporaryFolder;
 import datawave.query.attributes.UniqueGranularity;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.query.util.sortedset.FileSortedSet;
 import datawave.webservice.query.QueryImpl;
 
 public class UniqueTransformMostRecentTest extends UniqueTransformTest {
@@ -44,7 +45,21 @@ public class UniqueTransformMostRecentTest extends UniqueTransformTest {
     @Override
     protected UniqueTransform getUniqueTransform() {
         try {
-            return new UniqueTransform.Builder(uniqueFields).withLogic(logic).build();
+            // @formatter:off
+            return new UniqueTransform.Builder()
+                    .withUniqueFields(uniqueFields)
+                    .withBufferPersistThreshold(logic.getUniqueCacheBufferSize())
+                    .withIvaratorCacheDirConfigs(logic.getIvaratorCacheDirConfigs())
+                    .withHdfsSiteConfigURLs(logic.getHdfsSiteConfigURLs())
+                    .withSubDirectory(logic.getConfig().getQuery().getId().toString())
+                    .withMaxOpenFiles(logic.getIvaratorMaxOpenFiles())
+                    .withNumRetries(logic.getIvaratorNumRetries())
+                    .withPersistOptions(new FileSortedSet.PersistOptions(
+                            logic.isIvaratorPersistVerify(),
+                            logic.isIvaratorPersistVerify(),
+                            logic.getIvaratorPersistVerifyCount()))
+                    .build();
+            // @formatter:on
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -74,18 +74,21 @@ public class BufferedFileBackedSortedSet<E> implements RewritableSortedSet<E> {
             return self();
         }
 
-        public B withSetFactory(FileSortedSet.FileSortedSetFactory<E> setFactory) {
-            this.setFactory = setFactory;
+        @SuppressWarnings("unchecked")
+        public B withSetFactory(FileSortedSet.FileSortedSetFactory<?> setFactory) {
+            this.setFactory = (FileSortedSet.FileSortedSetFactory<E>) setFactory;
             return self();
         }
 
-        public B withComparator(Comparator<E> comparator) {
-            this.comparator = comparator;
+        @SuppressWarnings("unchecked")
+        public B withComparator(Comparator<?> comparator) {
+            this.comparator = (Comparator<E>) comparator;
             return self();
         }
 
-        public B withRewriteStrategy(RewriteStrategy<E> rewriteStrategy) {
-            this.rewriteStrategy = rewriteStrategy;
+        @SuppressWarnings("unchecked")
+        public B withRewriteStrategy(RewriteStrategy<?> rewriteStrategy) {
+            this.rewriteStrategy = (RewriteStrategy<E>) rewriteStrategy;
             return self();
         }
 
@@ -104,12 +107,16 @@ public class BufferedFileBackedSortedSet<E> implements RewritableSortedSet<E> {
             return self();
         }
 
-        public BufferedFileBackedSortedSet<E> build() throws Exception {
+        public BufferedFileBackedSortedSet<?> build() throws Exception {
             return new BufferedFileBackedSortedSet<>(this);
         }
     }
 
-    public BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
+    public static BufferedFileBackedSortedSet.Builder<?,?> builder() {
+        return new BufferedFileBackedSortedSet.Builder<>();
+    }
+
+    protected BufferedFileBackedSortedSet(BufferedFileBackedSortedSet<E> other) {
         this.comparator = other.comparator;
         this.rewriteStrategy = other.rewriteStrategy;
         this.handlerFactories = new ArrayList<>(other.handlerFactories);

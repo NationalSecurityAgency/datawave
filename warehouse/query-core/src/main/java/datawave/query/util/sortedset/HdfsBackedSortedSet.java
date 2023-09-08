@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.hadoop.fs.FileStatus;
@@ -32,38 +31,9 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> {
         }
 
         @Override
-        public B withMaxOpenFiles(int maxOpenFiles) {
-            return super.withMaxOpenFiles(maxOpenFiles);
-        }
-
-        @Override
-        public B withSetFactory(FileSortedSet.FileSortedSetFactory<E> setFactory) {
-            return super.withSetFactory(setFactory);
-        }
-
-        @Override
-        public B withComparator(Comparator<E> comparator) {
-            return super.withComparator(comparator);
-        }
-
-        @Override
-        public B withRewriteStrategy(RewriteStrategy<E> rewriteStrategy) {
-            return super.withRewriteStrategy(rewriteStrategy);
-        }
-
-        @Override
-        public B withNumRetries(int numRetries) {
-            return super.withNumRetries(numRetries);
-        }
-
-        @Override
-        public B withHandlerFactories(List<SortedSetFileHandlerFactory> handlerFactories) {
-            return super.withHandlerFactories(handlerFactories);
-        }
-
-        @Override
-        public B withBufferPersistThreshold(int bufferPersistThreshold) {
-            return super.withBufferPersistThreshold(bufferPersistThreshold);
+        @SuppressWarnings("unchecked")
+        protected B self() {
+            return (B) this;
         }
 
         public B withIvaratorCacheDirs(List<IvaratorCacheDir> ivaratorCacheDirs) {
@@ -81,14 +51,16 @@ public class HdfsBackedSortedSet<E> extends BufferedFileBackedSortedSet<E> {
             return self();
         }
 
-        @SuppressWarnings("unchecked")
-        public HdfsBackedSortedSet<E> build() throws IOException {
+        public HdfsBackedSortedSet<?> build() throws IOException {
             return new HdfsBackedSortedSet<>(this);
         }
-
     }
 
-    public HdfsBackedSortedSet(HdfsBackedSortedSet<E> other) {
+    public static HdfsBackedSortedSet.Builder<?,?> builder() {
+        return new HdfsBackedSortedSet.Builder<>();
+    }
+
+    protected HdfsBackedSortedSet(HdfsBackedSortedSet<E> other) {
         super(other);
     }
 
