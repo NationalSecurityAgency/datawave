@@ -364,7 +364,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int groupFieldsBatchSize;
     private boolean accrueStats = false;
     private Set<String> groupFields = new HashSet<>(0);
-    private final UniqueFields uniqueFields = new UniqueFields();
+    private UniqueFields uniqueFields = new UniqueFields();
     private boolean mostRecentUnique = false;
     private boolean cacheModel = false;
     /**
@@ -1700,8 +1700,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields.set(uniqueFields);
-        this.uniqueFields.deconstructIdentifierFields();
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public boolean isHitList() {

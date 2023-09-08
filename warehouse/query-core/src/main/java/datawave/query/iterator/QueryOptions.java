@@ -293,7 +293,7 @@ public class QueryOptions implements OptionDescriber {
 
     protected Set<String> groupFields = Sets.newHashSet();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
-    protected final UniqueFields uniqueFields = new UniqueFields();
+    protected UniqueFields uniqueFields = new UniqueFields();
     protected int uniqueCacheBufferSize = 100;
 
     protected Set<String> hitsOnlySet = new HashSet<>();
@@ -1045,7 +1045,7 @@ public class QueryOptions implements OptionDescriber {
     }
 
     public void setUniqueFields(UniqueFields uniqueFields) {
-        this.uniqueFields.set(uniqueFields);
+        this.uniqueFields = uniqueFields.clone();
     }
 
     public Set<String> getHitsOnlySet() {

@@ -407,8 +407,6 @@ public class UniqueFieldsTest {
         uniqueFields.put("$FIELDB", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
         uniqueFields.put("FIELDC", UniqueGranularity.TRUNCATE_TEMPORAL_TO_HOUR);
 
-        uniqueFields.deconstructIdentifierFields();
-
         SortedSet<String> actual = Sets.newTreeSet(uniqueFields.getFields());
 
         assertEquals(expected, actual);

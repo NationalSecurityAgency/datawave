@@ -54,14 +54,13 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
     private static final Logger log = Logger.getLogger(UniqueTransform.class);
 
     private BloomFilter<byte[]> bloom;
-    private final UniqueFields uniqueFields = new UniqueFields();
+    private UniqueFields uniqueFields = new UniqueFields();
     private Multimap<String,String> modelMapping;
     private HdfsBackedSortedSet<Entry<byte[],Document>> set;
     private Iterator<Entry<byte[],Document>> setIterator;
 
     private UniqueTransform(UniqueFields uniqueFields) {
-        this.uniqueFields.set(uniqueFields);
-        this.uniqueFields.deconstructIdentifierFields();
+        this.uniqueFields = uniqueFields.clone();
         this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
         if (log.isTraceEnabled()) {
             log.trace("unique fields: " + this.uniqueFields.getFields());
@@ -77,12 +76,9 @@ public class UniqueTransform extends DocumentTransform.DefaultDocumentTransform 
      *            The query model
      */
     public void updateConfig(UniqueFields uniqueFields, QueryModel model) {
-        UniqueFields fields = new UniqueFields();
-        fields.set(uniqueFields);
-        fields.deconstructIdentifierFields();
         // only reset the bloom filter if changing the field set
-        if (!this.uniqueFields.equals(fields)) {
-            this.uniqueFields.set(fields);
+        if (!this.uniqueFields.equals(uniqueFields)) {
+            this.uniqueFields = uniqueFields.clone();
             log.info("Resetting unique fields on the unique transform");
             this.bloom = BloomFilter.create(new ByteFunnel(), 500000, 1e-15);
             if (log.isTraceEnabled()) {

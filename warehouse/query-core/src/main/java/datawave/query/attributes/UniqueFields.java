@@ -12,6 +12,7 @@ import org.apache.commons.lang.StringUtils;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.SortedSetMultimap;
 import com.google.common.collect.TreeMultimap;
@@ -25,9 +26,9 @@ import datawave.query.jexl.JexlASTHelper;
  * captured as a parameter string using {@link UniqueFields#toString()}, and transformed back into a {@link UniqueFields} instance via
  * {@link UniqueFields#from(String)}.
  */
-public class UniqueFields implements Serializable {
+public class UniqueFields implements Serializable, Cloneable {
 
-    private final Multimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
+    private final SortedSetMultimap<String,UniqueGranularity> fieldMap = TreeMultimap.create();
     private boolean mostRecent = false;
 
     /**
@@ -129,19 +130,16 @@ public class UniqueFields implements Serializable {
     }
 
     /**
-     * Return a copy of the given {@link UniqueFields}.
+     * Return a close of this class
      *
-     * @param other
-     *            the other instance to copy
      * @return the copy
      */
-    public static UniqueFields copyOf(UniqueFields other) {
-        if (other == null) {
-            return null;
-        }
-        UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.fieldMap.putAll(other.fieldMap);
-        return uniqueFields;
+    @Override
+    public UniqueFields clone() {
+        UniqueFields newFields = new UniqueFields();
+        newFields.fieldMap.putAll(this.fieldMap);
+        newFields.mostRecent = this.mostRecent;
+        return newFields;
     }
 
     public UniqueFields() {}
@@ -159,20 +157,9 @@ public class UniqueFields implements Serializable {
     /**
      * Clear out the field map
      */
-    public void clear() {
+    public UniqueFields clear() {
         this.fieldMap.clear();
-    }
-
-    /**
-     * Set the fields base on another fields instance.
-     *
-     * @param fields
-     */
-    public void set(UniqueFields fields) {
-        if (fields != this) {
-            set(fields.fieldMap);
-            setMostRecent(fields.mostRecent);
-        }
+        return this;
     }
 
     /**
@@ -180,9 +167,8 @@ public class UniqueFields implements Serializable {
      *
      * @param fields
      */
-    public void set(Multimap<String,UniqueGranularity> fields) {
-        clear();
-        putAll(fields);
+    public UniqueFields set(Multimap<String,UniqueGranularity> fields) {
+        return clear().putAll(fields);
     }
 
     /**
@@ -193,8 +179,9 @@ public class UniqueFields implements Serializable {
      * @param uniqueGranularity
      *            the granularity
      */
-    public void put(String field, UniqueGranularity uniqueGranularity) {
-        fieldMap.put(field, uniqueGranularity);
+    public UniqueFields put(String field, UniqueGranularity uniqueGranularity) {
+        fieldMap.put(JexlASTHelper.deconstructIdentifier(field), uniqueGranularity);
+        return this;
     }
 
     /**
@@ -203,10 +190,13 @@ public class UniqueFields implements Serializable {
      * @param fieldMap
      *            the field map to add entries from
      */
-    public void putAll(Multimap<String,UniqueGranularity> fieldMap) {
+    public UniqueFields putAll(Multimap<String,UniqueGranularity> fieldMap) {
         if (fieldMap != null) {
-            this.fieldMap.putAll(fieldMap);
+            for (String field : fieldMap.keySet()) {
+                this.fieldMap.putAll(JexlASTHelper.deconstructIdentifier(field), fieldMap.get(field));
+            }
         }
+        return this;
     }
 
     /**
@@ -225,22 +215,6 @@ public class UniqueFields implements Serializable {
      */
     public Multimap<String,UniqueGranularity> getFieldMap() {
         return TreeMultimap.create(fieldMap);
-    }
-
-    /**
-     * Replace any identifier fields with their deconstructed version.
-     */
-    public void deconstructIdentifierFields() {
-        Multimap<String,UniqueGranularity> newFieldMap = TreeMultimap.create();
-        for (String field : fieldMap.keySet()) {
-            String newField = JexlASTHelper.deconstructIdentifier(field);
-            if (newField.equals(field)) {
-                newFieldMap.putAll(field, fieldMap.get(field));
-            } else {
-                newFieldMap.putAll(newField, fieldMap.get(field));
-            }
-        }
-        set(newFieldMap);
     }
 
     /**
@@ -345,8 +319,9 @@ public class UniqueFields implements Serializable {
         return mostRecent;
     }
 
-    public void setMostRecent(boolean mostRecent) {
+    public UniqueFields setMostRecent(boolean mostRecent) {
         this.mostRecent = mostRecent;
+        return this;
     }
 
     @Override
