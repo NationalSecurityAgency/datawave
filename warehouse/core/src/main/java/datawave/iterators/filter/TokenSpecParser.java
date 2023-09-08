@@ -142,7 +142,9 @@ public abstract class TokenSpecParser<B extends TokenSpecParser> {
          */
         protected String expect(ParseTokenType type) {
             ParseToken next = peek();
-            if (next == null || next.type != type) {
+            if (next == null) {
+                throw error("Found null for " + type, -1);
+            } else if (next.type != type) {
                 throw error("Expected a " + type, next.offset);
             }
             nextTokenPos++;

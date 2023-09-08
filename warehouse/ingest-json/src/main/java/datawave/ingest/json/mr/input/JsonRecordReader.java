@@ -78,7 +78,7 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
     protected JsonObjectFlattener jsonFlattener = null;
 
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
         reader.close();
         countingInputStream.close();
     }
