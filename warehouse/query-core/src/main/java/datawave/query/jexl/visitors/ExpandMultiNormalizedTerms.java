@@ -4,6 +4,7 @@ import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -35,6 +36,8 @@ import com.google.common.collect.Sets;
 
 import datawave.data.normalizer.IpAddressNormalizer;
 import datawave.data.type.IpAddressType;
+import datawave.data.type.ListType;
+import datawave.data.type.OneToManyNormalizerType;
 import datawave.data.type.Type;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
@@ -306,14 +309,33 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
-                            String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
-                                            : normalizer.normalize(term));
-                            if (!normalizedTerms.contains(normTerm)) {
-                                if (log.isDebugEnabled()) {
-                                    log.debug("normalizedTerm = " + normTerm);
+                            if (normalizer instanceof ListType) {
+                                List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
+                                if (normTerms.size() == 1) {
+                                    String normTerm = normTerms.iterator().next();
+                                    normalizedTerms.add(normTerm);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                } else {
+                                    List<JexlNode> normalizedOneToManyNodes = Lists.newArrayList();
+                                    Iterator<String> iter = normTerms.iterator();
+                                    while (iter.hasNext()) {
+                                        normalizedOneToManyNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, iter.next()));
+                                    }
+
+                                    JexlNode oneToManyNode = JexlNodeFactory.createAndNode(normalizedOneToManyNodes);
+                                    normalizedNodes.add(oneToManyNode);
                                 }
-                                normalizedTerms.add(normTerm);
-                                normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+
+                            } else {
+                                String normTerm = ((node instanceof ASTNRNode || node instanceof ASTERNode) ? normalizer.normalizeRegex(term)
+                                                : normalizer.normalize(term));
+                                if (!normalizedTerms.contains(normTerm)) {
+                                    if (log.isDebugEnabled()) {
+                                        log.debug("normalizedTerm = " + normTerm);
+                                    }
+                                    normalizedTerms.add(normTerm);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, normTerm));
+                                }
                             }
                         } catch (IpAddressNormalizer.Exception ipex) {
                             if (!(node instanceof ASTNRNode || node instanceof ASTERNode)) {
