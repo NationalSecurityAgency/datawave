@@ -19,8 +19,6 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
-import com.google.common.base.Predicate;
-import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 
 import datawave.query.attributes.Document;
@@ -63,7 +61,6 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
     protected PreNormalizedAttributeFactory attributeFactory;
     protected Document document;
     protected boolean buildDocument;
-    protected Predicate<Key> datatypeFilter;
     protected final FieldIndexAggregator aggregation;
     protected TimeFilter timeFilter;
 
@@ -94,24 +91,22 @@ public class TermFrequencyIndexIterator implements SortedKeyValueIterator<Key,Va
      *            a timefilter
      */
     public TermFrequencyIndexIterator(Key fiStartKey, Key fiEndKey, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter) {
-        this(fiStartKey, fiEndKey, source, timeFilter, null, false, Predicates.<Key> alwaysTrue(), new TermFrequencyAggregator(null, null));
+        this(fiStartKey, fiEndKey, source, timeFilter, null, false, new TermFrequencyAggregator(null, null));
     }
 
     public TermFrequencyIndexIterator(Key fiStartKey, Key fiEndKey, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-        this(fiStartKey, true, fiEndKey, false, source, timeFilter, typeMetadata, buildDocument, datatypeFilter, aggregator);
+                    boolean buildDocument, FieldIndexAggregator aggregator) {
+        this(fiStartKey, true, fiEndKey, false, source, timeFilter, typeMetadata, buildDocument, aggregator);
     }
 
     public TermFrequencyIndexIterator(Range fiRange, SortedKeyValueIterator<Key,Value> source, TimeFilter timeFilter, TypeMetadata typeMetadata,
-                    boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
+                    boolean buildDocument, FieldIndexAggregator aggregator) {
         this(fiRange.getStartKey(), fiRange.isStartKeyInclusive(), fiRange.getEndKey(), fiRange.isEndKeyInclusive(), source, timeFilter, typeMetadata,
-                        buildDocument, datatypeFilter, aggregator);
+                        buildDocument, aggregator);
     }
 
     public TermFrequencyIndexIterator(Key fiStartKey, boolean startInclusive, Key fiEndKey, boolean endInclusive, SortedKeyValueIterator<Key,Value> source,
-                    TimeFilter timeFilter, TypeMetadata typeMetadata, boolean buildDocument, Predicate<Key> datatypeFilter, FieldIndexAggregator aggregator) {
-
-        this.datatypeFilter = datatypeFilter;
+                    TimeFilter timeFilter, TypeMetadata typeMetadata, boolean buildDocument, FieldIndexAggregator aggregator) {
 
         this.source = source;
         this.timeFilter = timeFilter;
