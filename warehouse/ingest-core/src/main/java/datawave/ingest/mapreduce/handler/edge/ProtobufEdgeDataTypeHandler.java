@@ -120,7 +120,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
     public static final String TRIM_FIELD_GROUP = ".trim.field.group";
     protected boolean trimFieldGroup = false;
 
-    protected static final long ONE_DAY = 1000 * 60 * 60 * 24;
+    protected static final long ONE_DAY = 1000 * 60 * 60 * 24L;
     private static final Now now = Now.getInstance();
 
     private Map<String,Map<String,String>> edgeTypeLookup = new HashMap<>();
@@ -634,11 +634,12 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
             String sinkGroup = getEdgeDefGroup(edgeDef.getSinkFieldName());
 
             // leave the old logic alone
+            boolean sourceGroupEqualsSinkGroup = sourceGroup.equals(sinkGroup) && !sourceGroup.equals(NO_GROUP);
             if (!edgeDef.hasJexlPrecondition() || !edgeDef.isGroupAware()
                             || !(matchingGroups.containsKey(sourceGroup) || matchingGroups.containsKey(sinkGroup))) {
 
                 // If within the same group, then within each subgroup that are in common for both the sink and source
-                if (sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP)) {
+                if (sourceGroupEqualsSinkGroup) {
                     Set<String> commonKeys = mSource.keySet();
                     commonKeys.retainAll(mSink.keySet());
                     /**
@@ -696,7 +697,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 }
 
             } else {
-                if (sourceGroup.equals(sinkGroup) && (sourceGroup != NO_GROUP)) {
+                if (sourceGroupEqualsSinkGroup) {
                     Set<String> commonKeys = matchingGroups.get(sourceGroup);
                     for (String subGroup : commonKeys) {
                         for (NormalizedContentInterface ifaceSource : mSource.get(subGroup)) {
@@ -846,7 +847,7 @@ public class ProtobufEdgeDataTypeHandler<KEYIN,KEYOUT,VALUEOUT> implements Exten
                 Collection<NormalizedContentInterface> ifaceEnrichs = normalizedFields.get(edgeDef.getEnrichmentField());
                 if (null != ifaceEnrichs && !ifaceEnrichs.isEmpty()) {
                     String enrichGroup = getEdgeDefGroup(edgeDef.getEnrichmentField());
-                    if (enrichGroup != NO_GROUP) {
+                    if (!enrichGroup.equals(NO_GROUP)) {
                         if (enrichGroup.equals(sourceGroup)) {
                             ifaceEnrichs = depthFirstList.get(edgeDef.getEnrichmentField()).get(sourceSubGroup);
                         } else if (enrichGroup.equals(sinkGroup)) {

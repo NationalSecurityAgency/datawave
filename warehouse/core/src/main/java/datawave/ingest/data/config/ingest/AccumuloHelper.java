@@ -78,4 +78,20 @@ public class AccumuloHelper {
     public static void setZooKeepers(Configuration conf, String zooKeepers) {
         conf.set(ZOOKEEPERS, zooKeepers);
     }
+
+    public static String getUsername(Configuration conf) {
+        return conf.get(USERNAME);
+    }
+
+    public static byte[] getPassword(Configuration conf) {
+        return Base64.decodeBase64(ConfigurationHelper.isNull(conf, PASSWORD, String.class).getBytes());
+    }
+
+    public static String getInstanceName(Configuration conf) {
+        return conf.get(INSTANCE_NAME);
+    }
+
+    public static String getZooKeepers(Configuration conf) {
+        return conf.get(ZOOKEEPERS);
+    }
 }

@@ -101,6 +101,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean enforceUniqueTermsWithinExpressions = false;
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
+    private boolean reduceTypeMetadata = false;
+    private boolean reduceTypeMetadataPerShard = false;
     private boolean sequentialScheduler = false;
     private boolean collectTimingDetails = false;
     private boolean logTimingDetails = false;
@@ -435,6 +437,12 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int tfAggregationThresholdMs = -1;
 
     /**
+     * Flag to control query option pruning in the visitor function. Queries that see significant or varied pruning via the RangeStream may see a benefit from
+     * pruning options on a per-tablet basis. If a class of query is not expected to change infrequently, leave this toggled off.
+     */
+    private boolean pruneQueryOptions = false;
+
+    /**
      * Default constructor
      */
     public ShardQueryConfiguration() {
@@ -465,6 +473,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
         this.setReduceQueryFields(other.getReduceQueryFields());
+        this.setReduceTypeMetadata(other.getReduceTypeMetadata());
+        this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
         this.setParseTldUids(other.getParseTldUids());
         this.setSequentialScheduler(other.getSequentialScheduler());
         this.setCollectTimingDetails(other.getCollectTimingDetails());
@@ -635,6 +645,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setLazySetMechanismEnabled(other.isLazySetMechanismEnabled());
         this.setDocAggregationThresholdMs(other.getDocAggregationThresholdMs());
         this.setTfAggregationThresholdMs(other.getTfAggregationThresholdMs());
+        this.setPruneQueryOptions(other.getPruneQueryOptions());
     }
 
     /**
@@ -2032,6 +2043,22 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.reduceQueryFields = reduceQueryFields;
     }
 
+    public boolean getReduceTypeMetadata() {
+        return reduceTypeMetadata;
+    }
+
+    public void setReduceTypeMetadata(boolean reduceTypeMetadata) {
+        this.reduceTypeMetadata = reduceTypeMetadata;
+    }
+
+    public boolean getReduceTypeMetadataPerShard() {
+        return reduceTypeMetadataPerShard;
+    }
+
+    public void setReduceTypeMetadataPerShard(boolean reduceTypeMetadataPerShard) {
+        this.reduceTypeMetadataPerShard = reduceTypeMetadataPerShard;
+    }
+
     public boolean getSequentialScheduler() {
         return sequentialScheduler;
     }
@@ -2448,5 +2475,13 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         this.tfAggregationThresholdMs = tfAggregationThresholdMs;
+    }
+
+    public boolean getPruneQueryOptions() {
+        return pruneQueryOptions;
+    }
+
+    public void setPruneQueryOptions(boolean pruneQueryOptions) {
+        this.pruneQueryOptions = pruneQueryOptions;
     }
 }
