@@ -60,19 +60,14 @@ public class FlagMakerConfigUtilityTest {
         assertEquals("file://target", baseLineFlagMakerConfig.getHdfs());
         assertEquals("target/test", baseLineFlagMakerConfig.getDatawaveHome());
         assertEquals(22222, baseLineFlagMakerConfig.getSocketPort());
-        assertEquals(300000, baseLineFlagMakerConfig.getTimeoutMilliSecs()); // unspecified
-                                                                             // in
-                                                                             // the
-                                                                             // file
-        assertEquals(15000, baseLineFlagMakerConfig.getSleepMilliSecs()); // unspecified
-                                                                          // in
-                                                                          // the
-                                                                          // file
-        assertEquals(Integer.MIN_VALUE, baseLineFlagMakerConfig.getFlagCountThreshold()); // unspecified
-                                                                                          // in the
-                                                                                          // file
-        assertEquals(Integer.MAX_VALUE, baseLineFlagMakerConfig.getMaxFileLength()); // unspecified in
-                                                                                     // the file
+        // unspecified in the file
+        assertEquals(300000, baseLineFlagMakerConfig.getTimeoutMilliSecs());
+        // unspecified in the file
+        assertEquals(15000, baseLineFlagMakerConfig.getSleepMilliSecs());
+        // unspecified in the file
+        assertEquals(Integer.MIN_VALUE, baseLineFlagMakerConfig.getFlagCountThreshold());
+        // unspecified in the file
+        assertEquals(Integer.MAX_VALUE, baseLineFlagMakerConfig.getMaxFileLength());
         assertTrue(baseLineFlagMakerConfig.isSetFlagFileTimestamp());
         assertEquals(1, baseLineFlagMakerConfig.getMaxHdfsThreads());
         assertEquals(2, baseLineFlagMakerConfig.getDirectoryCacheSize());
@@ -117,8 +112,7 @@ public class FlagMakerConfigUtilityTest {
         // verify override
         assertEquals(overrideValue, flagMakerConfig.getFlagFileDirectory());
 
-        // verify FlagMakerConfig matches baseline except for the single
-        // override
+        // verify FlagMakerConfig matches baseline except for the single override
         baseLineFlagMakerConfig.setFlagFileDirectory(overrideValue);
         assertEquals(baseLineFlagMakerConfig, flagMakerConfig);
     }
@@ -133,8 +127,7 @@ public class FlagMakerConfigUtilityTest {
         // verify override
         assertEquals(overrideValue, flagMakerConfig.getBaseHDFSDir());
 
-        // verify FlagMakerConfig matches baseline except for the single
-        // override
+        // verify FlagMakerConfig matches baseline except for the single override
         baseLineFlagMakerConfig.setBaseHDFSDir(overrideValue);
         assertEquals(baseLineFlagMakerConfig, flagMakerConfig);
     }
@@ -149,8 +142,7 @@ public class FlagMakerConfigUtilityTest {
         // verify override
         assertEquals(overrideValue, flagMakerConfig.getFlagMakerClass());
 
-        // verify FlagMakerConfig matches baseline except for the single
-        // override
+        // verify FlagMakerConfig matches baseline except for the single override
         baseLineFlagMakerConfig.setFlagMakerClass(overrideValue);
         assertEquals(baseLineFlagMakerConfig, flagMakerConfig);
     }
@@ -165,8 +157,7 @@ public class FlagMakerConfigUtilityTest {
         // verify override
         assertEquals(overrideValue, flagMakerConfig.getFlagMetricsDirectory());
 
-        // verify FlagMakerConfig matches baseline except for the single
-        // override
+        // verify FlagMakerConfig matches baseline except for the single override
         baseLineFlagMakerConfig.setFlagMetricsDirectory(overrideValue);
         assertEquals(baseLineFlagMakerConfig, flagMakerConfig);
     }
@@ -182,8 +173,7 @@ public class FlagMakerConfigUtilityTest {
         // verify override
         assertEquals(overrideValue, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
 
-        // verify FlagMakerConfig matches baseline except for the single
-        // override
+        // verify FlagMakerConfig matches baseline except for the single override
         baseLineFlagMakerConfig.getDefaultCfg().setExtraIngestArgs(overrideValue);
         assertEquals(overrideValue, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
         baseLineFlagMakerConfig.getFlagConfigs().get(0).setExtraIngestArgs(overrideValue);
@@ -200,15 +190,15 @@ public class FlagMakerConfigUtilityTest {
         String overrideExtraArgs = "-fastMode -topSpeed=MAX";
 
         // @formatter:off
-		FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility
-				.parseArgs(new String[]{"-flagConfig", TEST_CONFIG,
-						"-flagFileDirectoryOverride",
-						flagFileDirectoryOverride, "-baseHDFSDirOverride",
-						"testDir/BulkIngest/", "-flagMakerClass",
-						overrideClass, "-flagMetricsDirectory",
-						overrideMetricsDirectory, "-extraIngestArgsOverride",
-						overrideExtraArgs});
-		// @formatter:on
+        FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility
+                .parseArgs(new String[]{
+                        "-flagConfig", TEST_CONFIG,
+                        "-flagFileDirectoryOverride", flagFileDirectoryOverride,
+                        "-baseHDFSDirOverride", "testDir/BulkIngest/",
+                        "-flagMakerClass", overrideClass,
+                        "-flagMetricsDirectory", overrideMetricsDirectory,
+                        "-extraIngestArgsOverride", overrideExtraArgs});
+        // @formatter:on
 
         // verify overrides
         assertEquals(flagFileDirectoryOverride, flagMakerConfig.getFlagFileDirectory());
