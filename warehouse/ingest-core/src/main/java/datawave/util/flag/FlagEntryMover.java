@@ -81,10 +81,10 @@ public class FlagEntryMover extends SimpleMover {
 
         if (resolved) {
             // rename tracked locations
-            log.warn("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri().toString());
+            log.info("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri().toString());
             this.entry.renameTrackedLocations();
         } else {
-            log.warn("discarding duplicate ingest file ({}) duplicate ({})", src.toUri().toString(), dest.toUri().toString());
+            log.info("discarding duplicate ingest file ({}) duplicate ({})", src.toUri().toString(), dest.toUri().toString());
             if (!fs.delete(src, false)) {
                 log.error("unable to delete duplicate ingest file ({})", src.toUri().toString());
             }

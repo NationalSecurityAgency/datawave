@@ -4,6 +4,7 @@
  */
 package datawave.util.flag.processor;
 
+import java.io.IOException;
 import java.util.Collection;
 
 import datawave.util.flag.InputFile;
@@ -19,7 +20,7 @@ public interface FlagDistributor {
      * @param flagDataTypeConfig
      *            configuration for this flag file datatype
      */
-    void loadFiles(FlagDataTypeConfig flagDataTypeConfig);
+    void loadFiles(FlagDataTypeConfig flagDataTypeConfig) throws IOException;
 
     /**
      * Determines if a flag file should be created. When called with true, the number of queued files should be greater than or equal to the number of maximum
