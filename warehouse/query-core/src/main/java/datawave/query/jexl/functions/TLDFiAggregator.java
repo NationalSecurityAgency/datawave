@@ -1,6 +1,7 @@
 package datawave.query.jexl.functions;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
@@ -24,12 +25,6 @@ public class TLDFiAggregator extends FiAggregator {
     public TLDFiAggregator() {
         // empty constructor
     }
-
-    // apply(SortedKeyValueIterator<Key,Value> itr)
-    // this path is handled by overriding sameUid()
-
-    // apply(SortedKeyValueIterator<Key,Value> iter, Range range, Collection<ByteSequence> cfs, boolean includeColumnFamilies)
-    // this path is handled by overriding getSeekRange()
 
     @Override
     public Key apply(SortedKeyValueIterator<Key,Value> itr, Document d, AttributeFactory af) throws IOException {
@@ -82,11 +77,29 @@ public class TLDFiAggregator extends FiAggregator {
         return new Key(row, cf, cq, parser.getKey().getColumnVisibility(), parser.getKey().getTimestamp());
     }
 
+    /**
+     * This override handles the path in {@link FiAggregator#apply(SortedKeyValueIterator)}
+     *
+     * @param parser
+     *            a key parser
+     * @param other
+     *            a different key parser
+     * @return true if the two uids are considered equivalent
+     */
     @Override
     protected boolean sameUid(KeyParser parser, KeyParser other) {
         return parser.getRootUid().equals(other.getRootUid());
     }
 
+    /**
+     * Builds a seek range for the next TLD. This method handles the path at {@link FiAggregator#apply(SortedKeyValueIterator, Range, Collection, boolean)}
+     *
+     * @param parser
+     *            a field index key parser
+     * @param range
+     *            a seek range
+     * @return a seek range built for the next TLD
+     */
     @Override
     protected Range getSeekRange(FieldIndexKey parser, Range range) {
         Key k = parser.getKey();
