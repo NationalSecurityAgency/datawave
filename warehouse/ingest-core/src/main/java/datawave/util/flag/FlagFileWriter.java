@@ -1,18 +1,5 @@
 package datawave.util.flag;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.collect.Lists;
-import datawave.metrics.util.flag.FlagFile;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.config.FlagMakerConfigUtility;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -32,6 +19,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
+
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Lists;
+
+import datawave.metrics.util.flag.FlagFile;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.config.FlagMakerConfigUtility;
 
 //@formatter:off
 /**

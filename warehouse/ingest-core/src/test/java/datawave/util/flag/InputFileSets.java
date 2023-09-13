@@ -1,12 +1,13 @@
 package datawave.util.flag;
 
-import com.google.common.collect.Sets;
-import org.apache.hadoop.fs.Path;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.hadoop.fs.Path;
+
+import com.google.common.collect.Sets;
 
 public class InputFileSets {
     static final HashSet<InputFile> EMPTY_FILES = new HashSet<InputFile>();
@@ -25,8 +26,8 @@ public class InputFileSets {
         return result;
     }
 
-    static InputFile createInputFile(String b) {
-        return new InputFile("d", new Path(b), 0, 0, 0, "b");
+    static InputFile createInputFile(String pathStr) {
+        return new InputFile("d", new Path(pathStr), 0, 0, 0, "b");
     }
 
     static HashSet<InputFile> withNewBaseDir(Set<InputFile> inputSet, String baseDir) {

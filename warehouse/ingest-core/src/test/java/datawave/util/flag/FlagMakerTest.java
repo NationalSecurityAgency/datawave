@@ -1,7 +1,14 @@
 package datawave.util.flag;
 
-import com.google.common.io.Files;
-import datawave.util.flag.config.FlagDataTypeConfig;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -11,14 +18,9 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.util.HashMap;
-import java.util.Map;
+import com.google.common.io.Files;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.util.flag.config.FlagDataTypeConfig;
 
 /**
  * See related test classes: FlagMakerSizingTest, verifies logic related to sizing of flag files based on various configurations FlagMakerTimestampTest,

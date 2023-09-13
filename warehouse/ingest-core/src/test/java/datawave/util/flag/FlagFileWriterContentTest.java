@@ -1,20 +1,21 @@
 package datawave.util.flag;
 
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TestName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TestName;
+
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
 
 public class FlagFileWriterContentTest {
 

@@ -1,15 +1,16 @@
 package datawave.util.flag.config;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
-import javax.xml.bind.JAXBException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
+import javax.xml.bind.JAXBException;
+
+import org.junit.Test;
 
 public class FlagDataTypeConfigTest {
     @Test

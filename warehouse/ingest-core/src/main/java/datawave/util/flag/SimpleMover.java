@@ -5,12 +5,12 @@ import java.util.concurrent.Callable;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
 
 import datawave.util.flag.InputFile.TrackedDir;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Moves an entry to it's next targeted location. Updates current location and move status upon completion.

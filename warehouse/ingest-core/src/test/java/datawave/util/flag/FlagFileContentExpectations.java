@@ -1,7 +1,8 @@
 package datawave.util.flag;
 
-import com.google.common.io.Files;
-import org.junit.Assert;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,9 +12,9 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import org.junit.Assert;
+
+import com.google.common.io.Files;
 
 /**
  * Defines expectations for the contents of a flag file, e.g. contains a file marker and asserts those expectations are met for a given file.

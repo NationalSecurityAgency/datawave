@@ -1,11 +1,11 @@
 package datawave.util.flag;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Iterator;
-import java.util.NoSuchElementException;
 
 /**
  * Wraps an Iterator of LocatedFileStatus items, converting them into InputFile objects

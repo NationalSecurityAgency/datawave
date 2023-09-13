@@ -1,13 +1,14 @@
 package datawave.util.flag;
 
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.processor.SizeValidator;
+import java.util.Collection;
+
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.processor.SizeValidator;
 
 /**
  * Extracted from FlagMaker.java. Validates that the flag file contents will not exceed the configured maximum length and also that the expected number of flag

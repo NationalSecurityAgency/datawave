@@ -1,6 +1,17 @@
 package datawave.util.flag.config;
 
-import datawave.util.flag.FlagFileTestSetup;
+import static datawave.util.flag.FlagMakerTest.CONFIG_BASE_HDFS_DIR;
+import static datawave.util.flag.config.FlagMakerConfigUtility.SAMPLE_FILE_NAME;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.FileReader;
+import java.nio.file.Files;
+import java.util.List;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.junit.Assert;
 import org.junit.Before;
@@ -10,17 +21,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileReader;
-import java.nio.file.Files;
-import java.util.List;
-
-import static datawave.util.flag.FlagMakerTest.CONFIG_BASE_HDFS_DIR;
-import static datawave.util.flag.config.FlagMakerConfigUtility.SAMPLE_FILE_NAME;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import datawave.util.flag.FlagFileTestSetup;
 
 public class FlagMakerConfigUtilityTest {
     private static final Logger LOG = LoggerFactory.getLogger(FlagMakerConfigUtilityTest.class);

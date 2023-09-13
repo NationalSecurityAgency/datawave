@@ -1,5 +1,8 @@
 package datawave.util.flag;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
@@ -10,19 +13,16 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 
-import datawave.util.StringUtils;
-import datawave.util.flag.config.FlagMakerConfigUtility;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import datawave.util.StringUtils;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.config.FlagMakerConfigUtility;
 
 /**
  * Simplifies the loading of a sample flag maker configuration file as well as the generation of test files that align with the configuration.

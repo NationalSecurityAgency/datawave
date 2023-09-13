@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
-import datawave.util.flag.config.FlagMakerConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -19,6 +18,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import datawave.util.flag.InputFile.TrackedDir;
+import datawave.util.flag.config.FlagMakerConfig;
 
 /**
  *
@@ -84,7 +84,7 @@ public class SimpleMoverTest {
 
         InputFile result = instance.call();
         assertFalse("should not have moved due to collision", result.isMoved());
-        assertEquals(result.getCurrentDir(), result.getFlagged());
+        assertEquals(result.getCurrentDir(), result.getPath());
     }
 
 }

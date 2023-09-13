@@ -7,10 +7,10 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.Cache;
-import org.slf4j.LoggerFactory;
-import org.slf4j.Logger;
 
 import datawave.util.flag.InputFile.TrackedDir;
 
@@ -81,12 +81,12 @@ public class FlagEntryMover extends SimpleMover {
 
         if (resolved) {
             // rename tracked locations
-            log.info("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri().toString());
+            log.warn("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri());
             this.entry.renameTrackedLocations();
         } else {
-            log.info("discarding duplicate ingest file ({}) duplicate ({})", src.toUri().toString(), dest.toUri().toString());
+            log.warn("discarding duplicate ingest file ({}) duplicate ({})", src.toUri(), dest.toUri());
             if (!fs.delete(src, false)) {
-                log.error("unable to delete duplicate ingest file ({})", src.toUri().toString());
+                log.error("unable to delete duplicate ingest file ({})", src.toUri());
             }
         }
 

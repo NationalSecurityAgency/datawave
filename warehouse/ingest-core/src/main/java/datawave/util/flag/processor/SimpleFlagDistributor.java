@@ -14,14 +14,6 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import com.google.common.annotations.VisibleForTesting;
-import datawave.util.FilteringIterator;
-import datawave.util.FullPathGlobFilter;
-import datawave.util.flag.InputFile;
-import datawave.util.flag.InputFileCreatingIterator;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.config.FlagMakerConfigUtility;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -29,6 +21,16 @@ import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.fs.RemoteIterator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import datawave.util.FilteringIterator;
+import datawave.util.FullPathGlobFilter;
+import datawave.util.flag.InputFile;
+import datawave.util.flag.InputFileCreatingIterator;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.config.FlagMakerConfigUtility;
 
 /**
  * Uses provided inputFileSource to retrieve up to FlagDataTypeConfig.maxFlags input files at a time. No groupings, just returns files that are pending in no

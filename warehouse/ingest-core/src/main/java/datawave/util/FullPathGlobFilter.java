@@ -1,8 +1,5 @@
 package datawave.util;
 
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
-
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.PathMatcher;
@@ -11,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
 /**
  * Similar to GlobFilter, except FullPathGlobFilter is expected to compare the entire path in one filter. GlobFilter checks the path's name only and would

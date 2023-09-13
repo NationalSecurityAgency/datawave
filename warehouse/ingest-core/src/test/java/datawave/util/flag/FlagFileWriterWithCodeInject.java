@@ -1,7 +1,6 @@
 package datawave.util.flag;
 
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,7 +12,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.junit.Assert.fail;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
 
 /**
  *

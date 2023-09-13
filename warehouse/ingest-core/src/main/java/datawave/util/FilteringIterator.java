@@ -1,12 +1,12 @@
 package datawave.util;
 
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.PathFilter;
-import org.apache.hadoop.fs.RemoteIterator;
-
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.fs.RemoteIterator;
 
 /**
  * Wraps a RemoteIterator, returning only those FileStatus items that pass the provided PathFilter

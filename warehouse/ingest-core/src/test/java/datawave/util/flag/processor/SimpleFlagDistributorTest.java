@@ -1,9 +1,12 @@
 package datawave.util.flag.processor;
 
-import datawave.util.flag.FlagFileTestSetup;
-import datawave.util.flag.FlagMakerTest;
-import datawave.util.flag.InputFile;
-import datawave.util.flag.config.FlagDataTypeConfig;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.Collection;
+
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
 import org.junit.Before;
@@ -13,12 +16,10 @@ import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.Collection;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.util.flag.FlagFileTestSetup;
+import datawave.util.flag.FlagMakerTest;
+import datawave.util.flag.InputFile;
+import datawave.util.flag.config.FlagDataTypeConfig;
 
 /**
  * Also see SimpleFlagDistributorFileMatchingTest which is focused on the pattern matching

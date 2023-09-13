@@ -1,6 +1,20 @@
 package datawave.util.flag.processor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Collection;
+import java.util.List;
+
+import org.apache.hadoop.conf.Configuration;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.google.common.base.Preconditions;
+
 import datawave.util.flag.FlagFileTestSetup;
 import datawave.util.flag.FlagMakerTest;
 import datawave.util.flag.InMemoryStubFileSystem;
@@ -8,18 +22,6 @@ import datawave.util.flag.InputFile;
 import datawave.util.flag.SizeValidatorImpl;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
-import org.apache.hadoop.conf.Configuration;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Collection;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public class SimpleFlagDistributorFileMatchingTest {
     private static final String BASE_DIRECTORY = FlagMakerTest.CONFIG_BASE_HDFS_DIR + "foo";

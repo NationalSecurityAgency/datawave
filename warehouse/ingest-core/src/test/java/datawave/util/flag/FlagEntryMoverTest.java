@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
-import datawave.util.flag.config.FlagMakerConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -19,10 +18,12 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import org.junit.rules.TestName;
+
+import datawave.util.flag.config.FlagMakerConfig;
 
 public class FlagEntryMoverTest {
 

@@ -1,18 +1,5 @@
 package datawave.util.flag;
 
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.config.FlagMakerConfigUtility;
-import datawave.util.flag.processor.FlagDistributor;
-import datawave.util.flag.processor.SizeValidator;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.mutable.MutableInt;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.mapred.JobConf;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -28,6 +15,20 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
 import java.util.Observable;
 import java.util.Observer;
+
+import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.lang.mutable.MutableInt;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.mapred.JobConf;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.config.FlagMakerConfigUtility;
+import datawave.util.flag.processor.FlagDistributor;
+import datawave.util.flag.processor.SizeValidator;
 
 /**
  * Watches input file directories to create flag files. Flag files serve as a set of instructions for starting an ingest job, containing a command and a list of

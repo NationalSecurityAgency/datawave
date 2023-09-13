@@ -8,11 +8,12 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import datawave.util.flag.processor.DateUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import datawave.util.flag.processor.DateUtils;
 
 /**
  * Wrapper for input file meta data

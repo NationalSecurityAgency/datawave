@@ -1,17 +1,13 @@
 package datawave.util.flag;
 
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.config.FlagMakerConfigUtility;
-import datawave.util.flag.processor.FlagDistributor;
-import datawave.util.flag.processor.SizeValidator;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.rules.TemporaryFolder;
+import static datawave.util.flag.config.FlagMakerConfigUtilityTest.TEST_CONFIG;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-import javax.xml.bind.JAXBException;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
@@ -20,13 +16,19 @@ import java.io.StringReader;
 import java.nio.file.Files;
 import java.util.Collection;
 
-import static datawave.util.flag.config.FlagMakerConfigUtilityTest.TEST_CONFIG;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import javax.xml.bind.JAXBException;
+
+import org.junit.Assert;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.junit.rules.TemporaryFolder;
+
+import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
+import datawave.util.flag.config.FlagMakerConfigUtility;
+import datawave.util.flag.processor.FlagDistributor;
+import datawave.util.flag.processor.SizeValidator;
 
 public class FlagMakerConfigTest {
 
