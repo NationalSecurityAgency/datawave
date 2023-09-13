@@ -16,11 +16,11 @@ public class FlagDataTypeConfigTest {
     @Test
     public void deserializeWithFewDefaults() throws IOException {
         // @formatter:off
-		String content = "<defaultCfg>\n" + "    <maxFlags>10</maxFlags>\n"
-				+ "    <reducers>10</reducers>\n"
-				+ "    <script>bin/ingest/bulk-ingest.sh</script>\n"
-				+ "</defaultCfg>\n";
-		// @formatter:on
+        String content = "<defaultCfg>\n" + "    <maxFlags>10</maxFlags>\n"
+                + "    <reducers>10</reducers>\n"
+                + "    <script>bin/ingest/bulk-ingest.sh</script>\n"
+                + "</defaultCfg>\n";
+        // @formatter:on
 
         FlagDataTypeConfig flagDataTypeConfig = FlagMakerConfigUtility.getXmlObject(FlagDataTypeConfig.class, new StringReader(content));
 
@@ -62,17 +62,17 @@ public class FlagDataTypeConfigTest {
         assertFalse("Unexpected contents: " + serializedDataTypeConfig, serializedDataTypeConfig.contains("<last>"));
 
         // @formatter:off
-		String expectedContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-				+ "<flagDataTypeConfig>\n"
-				+ "    <distributionArgs>none</distributionArgs>\n"
-				+ "    <flagCountThreshold>-2147483648</flagCountThreshold>\n"
-				+ "    <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>\n"
-				+ "    <lifo>false</lifo>\n"
-				+ "    <maxFlags>0</maxFlags>\n"
-				+ "    <reducers>0</reducers>\n"
-				+ "    <timeoutMilliSecs>-2147483648</timeoutMilliSecs>\n"
-				+ "</flagDataTypeConfig>\n";
-		// @formatter:on
+        String expectedContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+                + "<flagDataTypeConfig>\n"
+                + "    <distributionArgs>none</distributionArgs>\n"
+                + "    <flagCountThreshold>-2147483648</flagCountThreshold>\n"
+                + "    <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>\n"
+                + "    <lifo>false</lifo>\n"
+                + "    <maxFlags>0</maxFlags>\n"
+                + "    <reducers>0</reducers>\n"
+                + "    <timeoutMilliSecs>-2147483648</timeoutMilliSecs>\n"
+                + "</flagDataTypeConfig>\n";
+        // @formatter:on
         assertEquals("Unexpected contents: " + serializedDataTypeConfig, expectedContent, serializedDataTypeConfig);
     }
 

@@ -92,8 +92,10 @@ public class SimpleFlagDistributorTest {
         flagMakerTestSetup.withFilesPerDay(6).withNumDays(1).createTestFiles();
 
         // verify test setup created files
-        Path pathPattern = new Path(flagMakerTestSetup.fs.getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*/*"));
-        assertEquals(6, flagMakerTestSetup.fs.globStatus(pathPattern).length);
+        Path pathPatternFolderOne = new Path(flagMakerTestSetup.fs.getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*/*"));
+        assertEquals(6, flagMakerTestSetup.fs.globStatus(pathPatternFolderOne).length);
+        Path pathPatternFolderTwo = new Path(flagMakerTestSetup.fs.getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(1) + "/*/*/*/*"));
+        assertEquals(6, flagMakerTestSetup.fs.globStatus(pathPatternFolderTwo).length);
 
         // verify that nothing is loaded (mismatching file names are ignored)
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
