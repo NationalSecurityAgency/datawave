@@ -35,35 +35,35 @@ import java.util.Observer;
  */
 public class FlagMaker implements Runnable, Observer {
     private static final Logger LOG = LoggerFactory.getLogger(FlagMaker.class);
-    
+
     private final FlagMakerConfig fmc;
     final FlagDistributor fd;
     private final FileSystem fs;
     private final SizeValidator sizeValidator;
     private volatile boolean running = true;
     private FlagSocket flagSocket;
-    
+
     protected JobConf config;
     final FlagFileWriter flagFileWriter;// todo make private again
-    
+
     public FlagMaker(FlagMakerConfig flagMakerConfig) throws IOException {
         this.fmc = flagMakerConfig;
         LOG.info("Flag Maker Config (pre-validate):{}", this.fmc.toString());
-        
+
         this.config = new JobConf(new Configuration());
-        
+
         this.fmc.validate();
         LOG.info("Flag Maker Config (post-validate):{}", this.fmc.toString());
-        
+
         this.fd = createFlagDistributor(this.fmc);
         this.sizeValidator = new SizeValidatorImpl(this.config, fmc);
         this.flagFileWriter = new FlagFileWriter(fmc);
         this.fs = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
     }
-    
+
     public static void main(String... args) throws Exception {
         FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility.parseArgs(args);
-        
+
         boolean shutdown = false;
         for (String arg : args) {
             if ("-shutdown".equals(arg)) {
@@ -71,12 +71,12 @@ public class FlagMaker implements Runnable, Observer {
                 break;
             }
         }
-        
+
         if (shutdown) {
             shutdown(flagMakerConfig.getSocketPort());
             System.exit(0);
         }
-        
+
         try {
             FlagMaker m = createFlagMaker(flagMakerConfig);
             m.run();
@@ -85,9 +85,9 @@ public class FlagMaker implements Runnable, Observer {
             printUsage(System.out);
             System.exit(1);
         }
-        
+
     }
-    
+
     private static FlagMaker createFlagMaker(FlagMakerConfig fc) {
         try {
             Class<? extends FlagMaker> c = Class.forName(fc.getFlagMakerClass()).asSubclass(FlagMaker.class);
@@ -99,7 +99,7 @@ public class FlagMaker implements Runnable, Observer {
             throw new RuntimeException("Failed to instantiate FlagMaker of type " + fc.getFlagMakerClass(), e);
         }
     }
-    
+
     private static FlagDistributor createFlagDistributor(FlagMakerConfig fc) {
         String flagDistributorClassName = fc.getFlagDistributorClass();
         try {
@@ -112,14 +112,14 @@ public class FlagMaker implements Runnable, Observer {
             throw new RuntimeException("Failed to instantiate FlagDistributor of type " + flagDistributorClassName, e);
         }
     }
-    
+
     private static void shutdown(int port) throws IOException {
         try (Socket s = new Socket("localhost", port); PrintWriter pw = new PrintWriter(s.getOutputStream(), true)) {
             pw.write("shutdown");
             pw.flush();
         }
     }
-    
+
     private static void printUsage(PrintStream out) {
         out.println("To run the Flag Maker: ");
         out.println("datawave.ingest.flag.FlagMaker -flagConfig [path to xml config]");
@@ -129,7 +129,7 @@ public class FlagMaker implements Runnable, Observer {
         out.println("\t\t-extraIngestArgsOverride [extra ingest args]\tDescription: overrides extraIngestArgs value in xml config");
         out.println("\t\t-flagFileDirectoryOverride [local path]\tDescription: overrides flagFileDirectory value in xml config");
     }
-    
+
     @Override
     public void run() {
         LOG.trace("{} run() starting", this.getClass().getSimpleName());
@@ -150,14 +150,14 @@ public class FlagMaker implements Runnable, Observer {
         }
         LOG.trace("{} Exiting.", this.getClass().getSimpleName());
     }
-    
+
     /**
      * @throws IOException
      *             unable to load files for distributor
      */
     protected void processFlags() throws IOException {
         LOG.trace("Querying for files on {}", fs.getUri().toString());
-        
+
         for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
             loadFilesForDistributor(fc);
             // todo - test what will happen if we load files for one directory, then add another source,
@@ -165,16 +165,16 @@ public class FlagMaker implements Runnable, Observer {
             while (fd.hasNext(shouldOnlyCreateFullFlags(fc)) && running) {
                 Collection<InputFile> inFiles = fd.next(this.sizeValidator);
                 if (null == inFiles || inFiles.isEmpty()) {
-                    throw new IllegalStateException(fd.getClass().getName()
-                                    + " has input files but returned zero candidates for flagging. Please validate configuration");
+                    throw new IllegalStateException(
+                                    fd.getClass().getName() + " has input files but returned zero candidates for flagging. Please validate configuration");
                 }
-                
+
                 flagFileWriter.writeFlagFile(fc, inFiles);
             }
-            
+
         }
     }
-    
+
     /**
      * Adds all input files for the data type to the {@link FlagDistributor}.
      *
@@ -186,11 +186,11 @@ public class FlagMaker implements Runnable, Observer {
     void loadFilesForDistributor(FlagDataTypeConfig fc) throws IOException {
         fd.loadFiles(fc);
     }
-    
+
     private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {
         return !hasTimeoutOccurred(fc) || isBacklogExcessive(fc);
     }
-    
+
     private boolean isBacklogExcessive(FlagDataTypeConfig fc) {
         if (fc.getFlagCountThreshold() == FlagMakerConfig.UNSET) {
             LOG.trace("Not evaluating flag file backlog.  getFlagCountThreshold = {}", FlagMakerConfig.UNSET);
@@ -203,7 +203,7 @@ public class FlagMaker implements Runnable, Observer {
         }
         return false;
     }
-    
+
     private boolean hasTimeoutOccurred(FlagDataTypeConfig fc) {
         long now = System.currentTimeMillis();
         // fc.getLast indicates when the flag file creation timeout will occur
@@ -213,10 +213,10 @@ public class FlagMaker implements Runnable, Observer {
         }
         return hasTimeoutOccurred;
     }
-    
+
     /**
      * Determine the number of unprocessed flag files in the flag directory
-     * 
+     *
      * @param fc
      *            configuration for datatype
      * @return the flag found for this ingest pool
@@ -225,7 +225,7 @@ public class FlagMaker implements Runnable, Observer {
         final MutableInt fileCounter = new MutableInt(0);
         final FileFilter fileFilter = new WildcardFileFilter("*_" + fc.getIngestPool() + "_" + fc.getDataName() + "_*.flag");
         final FileVisitor<java.nio.file.Path> visitor = new SimpleFileVisitor<java.nio.file.Path>() {
-            
+
             @Override
             public FileVisitResult visitFile(java.nio.file.Path path, BasicFileAttributes attrs) throws IOException {
                 if (fileFilter.accept(path.toFile())) {
@@ -243,7 +243,7 @@ public class FlagMaker implements Runnable, Observer {
         }
         return fileCounter.intValue();
     }
-    
+
     @Override
     public void update(Observable o, Object arg) {
         if (flagSocket != o || arg == null) {
@@ -264,7 +264,7 @@ public class FlagMaker implements Runnable, Observer {
             }
         }
     }
-    
+
     private void startSocket() {
         try {
             flagSocket = new FlagSocket(fmc.getSocketPort());

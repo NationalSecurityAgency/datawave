@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class FlagSocket extends Observable implements Runnable, Observer {
-    
+
     private static final Logger log = LoggerFactory.getLogger(FlagSocket.class);
     private final ServerSocket serverSocket;
     private volatile boolean running = true;

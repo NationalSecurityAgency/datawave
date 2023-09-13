@@ -89,8 +89,8 @@ public class InputFile implements Comparable<InputFile> {
     }
 
     InputFile(String folder, FileStatus status, String baseDir, boolean useFolderTimestamp) {
-        this(folder, status.getPath(), status.getBlockSize(), status.getLen(), createTimestamp(status.getPath(), status.getModificationTime(),
-                        useFolderTimestamp), baseDir);
+        this(folder, status.getPath(), status.getBlockSize(), status.getLen(),
+                        createTimestamp(status.getPath(), status.getModificationTime(), useFolderTimestamp), baseDir);
     }
 
     public long getTimestamp() {
