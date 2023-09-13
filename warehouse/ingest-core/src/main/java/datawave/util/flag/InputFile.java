@@ -4,15 +4,15 @@ import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import datawave.util.flag.processor.DateUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import datawave.util.flag.processor.DateUtils;
 
 /**
  * Wrapper for input file meta data
@@ -89,8 +89,8 @@ public class InputFile implements Comparable<InputFile> {
     }
 
     InputFile(String folder, FileStatus status, String baseDir, boolean useFolderTimestamp) {
-        this(folder, status.getPath(), status.getBlockSize(), status.getLen(),
-                        createTimestamp(status.getPath(), status.getModificationTime(), useFolderTimestamp), baseDir);
+        this(folder, status.getPath(), status.getBlockSize(), status.getLen(), createTimestamp(status.getPath(), status.getModificationTime(),
+                        useFolderTimestamp), baseDir);
     }
 
     public long getTimestamp() {
@@ -137,6 +137,9 @@ public class InputFile implements Comparable<InputFile> {
         return folder;
     }
 
+    /**
+     * @return the number of blocks the filesize is expected to use
+     */
     public int getMaps() {
         double maps = (blocksize == 0 ? 1 : (double) filesize / blocksize);
         return (int) Math.ceil(maps);
@@ -233,7 +236,7 @@ public class InputFile implements Comparable<InputFile> {
         if (this.filesize != other.filesize) {
             return false;
         }
-        if (this.path != other.path && (this.path == null || !this.path.equals(other.path))) {
+        if (!Objects.equals(this.path, other.path)) {
             return false;
         }
         return true;
@@ -366,7 +369,7 @@ public class InputFile implements Comparable<InputFile> {
         try {
             return useFolderTimestamp ? DateUtils.getFolderTimestamp(path.toString()) : fileTimestamp;
         } catch (Exception e) {
-            log.warn("Path does not contain yyyy/mm/dd...using file timestamp for " + path);
+            log.warn("Path does not contain yyyy/mm/dd...using file timestamp for {}", path);
             return fileTimestamp;
         }
     }
