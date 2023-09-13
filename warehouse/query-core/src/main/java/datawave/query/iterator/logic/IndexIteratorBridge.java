@@ -41,7 +41,7 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     private String field;
 
     private JexlNode node;
-    private boolean indexOnly;
+    private boolean nonEventField;
 
     /**
      * track the last Key returned for move purposes
@@ -205,12 +205,12 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
     }
 
     @Override
-    public boolean isIndexOnly() {
-        return indexOnly;
+    public boolean isNonEventField() {
+        return nonEventField;
     }
 
-    public void setIndexOnly(boolean indexOnly) {
-        this.indexOnly = indexOnly;
+    public void setNonEventField(boolean nonEventField) {
+        this.nonEventField = nonEventField;
     }
 
     @Override

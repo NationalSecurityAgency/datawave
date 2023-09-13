@@ -60,7 +60,7 @@ class IndexIteratorBridgeTest {
             IndexIteratorTest.assertTopKey(tk, uid);
 
             Document d = itr.document();
-            if (itr.isIndexOnly()) {
+            if (itr.isNonEventField()) {
                 IndexIteratorTest.assertDocumentField(field, d);
                 IndexIteratorTest.assertDocumentUid(uid, d);
             } else {
@@ -101,7 +101,8 @@ class IndexIteratorBridgeTest {
         JexlNode node = JexlNodeFactory.buildEQNode(field, "value");
         IndexIteratorBridge bridge = new IndexIteratorBridge(indexIterator, node, field);
         if (buildDocument) {
-            bridge.setIndexOnly(true);
+            // building documents for index only fields, must set the non-event field flag
+            bridge.setNonEventField(true);
         }
         return bridge;
     }

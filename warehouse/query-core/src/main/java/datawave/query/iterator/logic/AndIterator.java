@@ -261,11 +261,11 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                         try {
                             ((SeekableIterator) itr).seek(range, columnFamilies, inclusive);
                         } catch (Exception e2) {
-                            if (itr.isIndexOnly()) {
-                                // dropping an index only term from the query means that the accuracy of the query
+                            if (itr.isNonEventField()) {
+                                // dropping a non-event term from the query means that the accuracy of the query
                                 // cannot be guaranteed. Thus, a fatal exception.
-                                log.error("Lookup of index-only field failed, failing query");
-                                throw new DatawaveFatalQueryException("Lookup of index only term failed", e2);
+                                log.error("Lookup of a non-event field failed, failing query");
+                                throw new DatawaveFatalQueryException("Lookup of non-event field failed", e2);
                             }
                             // otherwise we can safely drop this term from the intersection as the field will get re-introduced
                             // to the context when the event is aggregated
@@ -397,10 +397,10 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
                 }
             } catch (Exception e) {
                 seenException = true;
-                if (itr.isIndexOnly()) {
-                    // dropping an index only term from the query means that the accuracy of the query
+                if (itr.isNonEventField()) {
+                    // dropping a non-event term from the query means that the accuracy of the query
                     // cannot be guaranteed. Thus, a fatal exception.
-                    throw new DatawaveFatalQueryException("Lookup of index only term failed", e);
+                    throw new DatawaveFatalQueryException("Lookup of non-event term failed", e);
                 } else {
                     log.warn("Lookup of event field failed, precision of query reduced.");
                 }
@@ -555,17 +555,25 @@ public class AndIterator<T extends Comparable<T>> implements NestedIterator<T>, 
     }
 
     @Override
-    public boolean isIndexOnly() {
-        for (NestedIterator<T> include : includeHeads.values()) {
-            if (include.isIndexOnly()) {
+    public boolean isNonEventField() {
+        for (NestedIterator<T> itr : includes) {
+            if (itr.isNonEventField()) {
                 return true;
             }
         }
-        if (contextIncludeHeads != null) {
-            for (NestedIterator<T> contextExclude : contextIncludeHeads.values()) {
-                if (contextExclude.isIndexOnly()) {
-                    return true;
-                }
+        for (NestedIterator<T> itr : contextIncludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+        for (NestedIterator<T> itr : excludes) {
+            if (itr.isNonEventField()) {
+                return true;
+            }
+        }
+        for (NestedIterator<T> itr : contextExcludes) {
+            if (itr.isNonEventField()) {
+                return true;
             }
         }
         return false;

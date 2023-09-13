@@ -104,7 +104,7 @@ public class EventFieldIterator implements NestedIterator<Key> {
     }
 
     @Override
-    public boolean isIndexOnly() {
+    public boolean isNonEventField() {
         return false;
     }
 

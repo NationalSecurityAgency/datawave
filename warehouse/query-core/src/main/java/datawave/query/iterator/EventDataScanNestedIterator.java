@@ -199,12 +199,12 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
     }
 
     /**
-     * By definition this iterator is not for an index only field
+     * By definition this iterator only scans event keys
      *
      * @return false
      */
     @Override
-    public boolean isIndexOnly() {
+    public boolean isNonEventField() {
         return false;
     }
 }

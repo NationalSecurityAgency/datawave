@@ -81,8 +81,8 @@ public interface NestedIterator<T> extends Iterator<T> {
     /**
      * This information is required for safely dropping terms from an intersection in the AndIterator
      *
-     * @return true if the field is index only
+     * @return true if the field is non-event
      */
-    boolean isIndexOnly();
+    boolean isNonEventField();
 
 }

@@ -85,7 +85,7 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
     }
 
     @Override
-    public boolean isIndexOnly() {
+    public boolean isNonEventField() {
         return false;
     }
 

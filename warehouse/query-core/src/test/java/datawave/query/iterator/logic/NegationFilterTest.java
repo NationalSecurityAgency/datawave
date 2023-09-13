@@ -180,7 +180,7 @@ public class NegationFilterTest {
 
         // this iterator shouldn't need to use the index only flag
         @Override
-        public boolean isIndexOnly() {
+        public boolean isNonEventField() {
             return false;
         }
     }

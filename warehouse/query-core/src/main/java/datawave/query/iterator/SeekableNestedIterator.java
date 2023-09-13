@@ -93,7 +93,7 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     }
 
     @Override
-    public boolean isIndexOnly() {
-        return source.isIndexOnly();
+    public boolean isNonEventField() {
+        return source.isNonEventField();
     }
 }
