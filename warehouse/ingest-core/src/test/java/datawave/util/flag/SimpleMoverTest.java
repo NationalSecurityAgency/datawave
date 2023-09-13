@@ -1,18 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package datawave.util.flag;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
+import datawave.util.flag.config.FlagMakerConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,18 +23,27 @@ import datawave.util.flag.InputFile.TrackedDir;
 /**
  *
  */
-public class SimpleMoverTest extends AbstractFlagConfig {
+public class SimpleMoverTest {
+    private FlagFileTestSetup testFileGenerator;
 
-    private static Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES).concurrencyLevel(10)
-                    .build();
+    private static final Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES)
+                    .concurrencyLevel(10).build();
+    private FlagMakerConfig fmc;
 
     @Before
     public void before() throws Exception {
-        this.fmc = getDefaultFMC();
+        testFileGenerator = new FlagFileTestSetup();
+        testFileGenerator.withTestFlagMakerConfig();
+        this.fmc = testFileGenerator.fmc;
         this.fmc.setBaseHDFSDir(this.fmc.getBaseHDFSDir().replace("target", "target/SimpleMoverTest"));
 
         // cleanup flagging and flagged directories
-        cleanTestDirs();
+        testFileGenerator.withConfig(fmc);
+    }
+
+    @After
+    public void cleanup() throws IOException {
+        testFileGenerator.deleteTestDirectories();
     }
 
     /**
@@ -46,13 +54,14 @@ public class SimpleMoverTest extends AbstractFlagConfig {
 
         FileSystem fs = FileSystem.getLocal(new Configuration());
 
-        Path file = getTestFile(fs);
+        testFileGenerator.withConfig(fmc).createTestFiles();
+        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
         InputFile inFile = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
 
         SimpleMover instance = new SimpleMover(directoryCache, inFile, TrackedDir.FLAGGED_DIR, fs);
         InputFile result = instance.call();
         assertTrue("Should have moved to flagged", result.isMoved());
-        assertTrue(result.getCurrentDir().equals(result.getFlagged()));
+        assertEquals(result.getCurrentDir(), result.getFlagged());
     }
 
     /**
@@ -63,7 +72,8 @@ public class SimpleMoverTest extends AbstractFlagConfig {
 
         FileSystem fs = FileSystem.getLocal(new Configuration());
 
-        Path file = getTestFile(fs);
+        testFileGenerator.withConfig(fmc).createTestFiles();
+        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
 
         // copy to the move will fail
@@ -74,7 +84,7 @@ public class SimpleMoverTest extends AbstractFlagConfig {
 
         InputFile result = instance.call();
         assertFalse("should not have moved due to collision", result.isMoved());
-        assertTrue(result.getCurrentDir().equals(result.getPath()));
+        assertEquals(result.getCurrentDir(), result.getFlagged());
     }
 
 }

@@ -1,5 +1,6 @@
 package datawave.util.flag;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
@@ -9,34 +10,46 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.TimeUnit;
 
+import datawave.util.flag.config.FlagMakerConfig;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import org.junit.rules.TestName;
 
-/**
- *
- */
-public class FlagEntryMoverTest extends AbstractFlagConfig {
+public class FlagEntryMoverTest {
 
     private static final Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES)
                     .concurrencyLevel(10).build();
     private FileSystem fs;
+    private FlagMakerConfig fmc;
+    private FlagFileTestSetup testFileGenerator;
 
     public FlagEntryMoverTest() {}
 
+    @Rule
+    public TestName testName = new TestName();
+
     @Before
     public void before() throws Exception {
-        fmc = getDefaultFMC();
-        fmc.setBaseHDFSDir(fmc.getBaseHDFSDir().replace("target", "target/FlagEntryMoverTest"));
+        testFileGenerator = new FlagFileTestSetup();
+        testFileGenerator.withTestFlagMakerConfig().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        fmc = testFileGenerator.fmc;
+        // fmc.setBaseHDFSDir(fmc.getBaseHDFSDir().replace("target",
+        // "target/FlagEntryMoverTest"));
         fs = FileSystem.getLocal(new Configuration());
+    }
 
-        cleanTestDirs();
+    @After
+    public void cleanup() throws IOException {
+        testFileGenerator.deleteTestDirectories();
     }
 
     @Test
@@ -55,10 +68,11 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
     @Test
     public void testCall() throws Exception {
 
-        Path file = getTestFile(fs);
+        testFileGenerator.createTestFiles();
+        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        createTrackedDirs(fs, entry);
+        FlagFileTestHelper.createTrackedDirs(testFileGenerator.fs, entry);
 
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         InputFile result = instance.call();
@@ -73,10 +87,11 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
     @Test
     public void testConflict() throws Exception {
 
-        Path file = getTestFile(fs);
+        testFileGenerator.createTestFiles();
+        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        createTrackedDirs(fs, entry);
+        FlagFileTestHelper.createTrackedDirs(testFileGenerator.fs, entry);
 
         fs.copyFromLocalFile(file, entry.getFlagging());
 
@@ -93,9 +108,11 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
     @Test
     public void testConflictMove() throws Exception {
 
-        Path file = getTestFile(fs);
+        testFileGenerator.createTestFiles();
+        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
+
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        createTrackedDirs(fs, entry);
+        FlagFileTestHelper.createTrackedDirs(testFileGenerator.fs, entry);
 
         // create conflict file with different checksum
         final Path loadFile = entry.getLoaded();
@@ -107,7 +124,7 @@ public class FlagEntryMoverTest extends AbstractFlagConfig {
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         final InputFile result = instance.call();
         assertTrue(result.isMoved());
-        assertTrue(entry.equals(result));
+        assertEquals(entry, result);
         // current path should match flagging
         assertNotEquals(result.getPath(), result.getCurrentDir());
         Assert.assertEquals(entry.getFlagging(), result.getCurrentDir());

@@ -7,9 +7,10 @@ import java.security.NoSuchAlgorithmException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.log4j.Logger;
 
 import com.google.common.cache.Cache;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 
 import datawave.util.flag.InputFile.TrackedDir;
 
@@ -18,8 +19,8 @@ import datawave.util.flag.InputFile.TrackedDir;
  */
 public class FlagEntryMover extends SimpleMover {
 
-    private static final Logger log = Logger.getLogger(FlagEntryMover.class);
-    private static final int CHKSUM_MAX = 10 * 1024 * 1000; // 10M
+    private static final Logger log = LoggerFactory.getLogger(FlagEntryMover.class);
+    private static final int CHECKSUM_MAX = 10 * 1024 * 1000; // 10M
 
     public FlagEntryMover(Cache<Path,Path> directoryCache, FileSystem fs, InputFile entry) {
         super(directoryCache, entry, TrackedDir.FLAGGING_DIR, fs);
@@ -80,12 +81,12 @@ public class FlagEntryMover extends SimpleMover {
 
         if (resolved) {
             // rename tracked locations
-            log.warn("duplicate ingest file name with different payload(" + src.toUri().toString() + ") - appending timestamp to destination file name");
+            log.warn("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri().toString());
             this.entry.renameTrackedLocations();
         } else {
-            log.warn("discarding duplicate ingest file (" + src.toUri().toString() + ") duplicate (" + dest.toUri().toString() + ")");
+            log.warn("discarding duplicate ingest file ({}) duplicate ({})", src.toUri().toString(), dest.toUri().toString());
             if (!fs.delete(src, false)) {
-                log.error("unable to delete duplicate ingest file (" + src.toUri().toString() + ")");
+                log.error("unable to delete duplicate ingest file ({})", src.toUri().toString());
             }
         }
 
@@ -105,18 +106,18 @@ public class FlagEntryMover extends SimpleMover {
         try (final InputStream is = this.fs.open(file)) {
             byte[] buf = new byte[8096];
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            int len = 0;
+            int len;
             long totalLen = 0;
-            // use CHKSUM_MAX as limit for checksum
-            while (-1 != (len = is.read(buf)) && CHKSUM_MAX > totalLen) {
+            // use CHECKSUM_MAX as limit for checksum
+            while (-1 != (len = is.read(buf)) && CHECKSUM_MAX > totalLen) {
                 digest.update(buf, 0, len);
                 totalLen += len;
             }
 
             byte[] mdBytes = digest.digest();
             final StringBuilder sb = new StringBuilder();
-            for (int n = 0; n < mdBytes.length; n++) {
-                sb.append(Integer.toString((mdBytes[n] & 0xff) + 0x100, 16).substring(1));
+            for (byte mdByte : mdBytes) {
+                sb.append(Integer.toString((mdByte & 0xff) + 0x100, 16).substring(1));
             }
 
             return sb.toString();

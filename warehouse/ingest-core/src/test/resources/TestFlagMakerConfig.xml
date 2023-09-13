@@ -4,7 +4,7 @@
     <flagCfg>
         <dataName>foo</dataName>
         <!-- only needed for testing date type distributors -->
-        <distributionArgs>day</distributionArgs>
+        <distributionArgs>none</distributionArgs>
         <!-- only relative paths for testing -->
         <folder>foo,bar</folder>
         <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>
@@ -15,10 +15,9 @@
         <!-- currently only require a few of the params for the default config -->
         <maxFlags>10</maxFlags>
         <reducers>10</reducers>
-        <script>bin/ingest/one-hr-ingest.sh</script>
+        <script>bin/ingest/bulk-ingest.sh</script>
     </defaultCfg>
     <baseHDFSDir>target/test/BulkIngest</baseHDFSDir>
-    <distributorType>simple</distributorType>
     <!-- No dot "." files -->
     <filePattern>2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
     <filePattern>2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>

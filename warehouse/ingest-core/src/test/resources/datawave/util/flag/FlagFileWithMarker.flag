@@ -1,0 +1,12 @@
+target/test/bin/ingest/bulk-ingest.sh ${JOB_FILE} 10 -inputFormat datawave.ingest.input.reader.event.EventSequenceFileInputFormat -inputFileLists -inputFileListMarker XXXX--test-marker--XXXX 
+XXXX--test-marker--XXXX
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000000
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000001
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000002
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000003
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000004
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000005
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000006
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000007
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000008
+target/test/BulkIngest/flagged/01/2013/01/01/00000000-0000-0000-0000-000000000009

@@ -23,8 +23,8 @@ class IngestWorker implements Callable<Void> {
         final IngestConfig cfg = IngestConfig.getInstance();
         final FileSystem fs = cfg.getHdfs();
         final Path dst = new Path(cfg.getHdfsIngestDir());
-        final long endTime = cfg.getDurtion() + System.currentTimeMillis();
-        logger.info("starting task thread(" + Thread.currentThread().getId() + ") duration(" + cfg.getDurtion() + ")ms");
+        final long endTime = cfg.getDuration() + System.currentTimeMillis();
+        logger.info("starting task thread(" + Thread.currentThread().getId() + ") duration(" + cfg.getDuration() + ")ms");
         while (endTime >= System.currentTimeMillis()) {
             final List<Path> moveFiles = cfg.getRandomIngestFiles();
             Path[] srcFiles = new Path[moveFiles.size()];

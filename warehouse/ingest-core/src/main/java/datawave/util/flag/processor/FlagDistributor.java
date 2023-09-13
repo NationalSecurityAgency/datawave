@@ -14,24 +14,12 @@ import datawave.util.flag.config.FlagDataTypeConfig;
  */
 public interface FlagDistributor {
     /**
-     * Allows for the setup/configuration of the FlagDistributor. Anything that needs to be configured for a particular data type must be contained within the
-     * FlagDataTypeConfig. This call to this method should reset any saved state within this distributor.
+     * Configures FlagDistributor for a particular datatype. Resets any saved state within this distributor.
      *
-     * @param fdtc
-     *            a flag data type config
+     * @param flagDataTypeConfig
+     *            configuration for this flag file datatype
      */
-    void setup(FlagDataTypeConfig fdtc);
-
-    /**
-     * When pending files are discovered, they should be queued
-     *
-     * @param inputFile
-     *            an input file
-     * @return true/false based on if files are added
-     * @throws UnusableFileException
-     *             if the file is unusable
-     */
-    boolean addInputFile(InputFile inputFile) throws UnusableFileException;
+    void loadFiles(FlagDataTypeConfig flagDataTypeConfig);
 
     /**
      * Determines if a flag file should be created. When called with true, the number of queued files should be greater than or equal to the number of maximum

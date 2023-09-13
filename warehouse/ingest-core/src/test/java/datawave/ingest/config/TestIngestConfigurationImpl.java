@@ -12,6 +12,8 @@ import datawave.ingest.data.config.MaskedFieldHelper;
 import datawave.ingest.metadata.EventMetadata;
 import datawave.ingest.metadata.RawRecordMetadata;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * An implementation of {@link IngestConfiguration} used only for tests in this package. This is needed since the version in ingest-core-configuration can't be
  * added as a dependency as that would cause a circular dependency chain.
@@ -34,7 +36,7 @@ public class TestIngestConfigurationImpl implements IngestConfiguration {
 
     @Override
     public MimeDecoder createMimeDecoder() {
-        return b -> MimeUtility.decodeText(new String(b, "iso-8859-1")).getBytes();
+        return b -> MimeUtility.decodeText(new String(b, StandardCharsets.ISO_8859_1)).getBytes();
     }
 
     @Override

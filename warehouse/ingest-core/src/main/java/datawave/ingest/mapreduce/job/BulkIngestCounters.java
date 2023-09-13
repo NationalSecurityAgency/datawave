@@ -1,6 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -131,11 +132,7 @@ public class BulkIngestCounters {
         private static byte[] FI_CF = null;
 
         static {
-            try {
-                FI_CF = "fi\0".getBytes("UTF-8");
-            } catch (UnsupportedEncodingException e) {
-                throw new IllegalStateException("UTF-8 encoding unknown", e);
-            }
+            FI_CF = "fi\0".getBytes(StandardCharsets.UTF_8);
         }
 
         public ShardedTableCounter(String tableName, boolean isDelete) {

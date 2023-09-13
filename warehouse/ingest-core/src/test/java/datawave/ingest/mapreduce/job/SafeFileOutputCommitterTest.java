@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -794,7 +795,7 @@ public class SafeFileOutputCommitterTest {
         String contents = null;
         try {
             in.read(buf, 0, len);
-            contents = new String(buf, "UTF-8");
+            contents = new String(buf, StandardCharsets.UTF_8);
         } finally {
             in.close();
         }

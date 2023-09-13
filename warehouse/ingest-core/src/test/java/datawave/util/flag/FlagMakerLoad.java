@@ -73,7 +73,7 @@ public class FlagMakerLoad {
             logger.info("waiting for workers to complete");
             for (final Future<Void> worker : workers) {
                 try {
-                    Void fut = worker.get();
+                    worker.get();
                 } catch (ExecutionException | InterruptedException e) {
                     logger.error("task failure", e);
                 }

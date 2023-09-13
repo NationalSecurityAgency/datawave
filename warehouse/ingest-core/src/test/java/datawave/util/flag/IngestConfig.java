@@ -52,7 +52,7 @@ class IngestConfig {
     private int maxInterval;
 
     // transient data
-    private transient List<Path> ingestPaths = new ArrayList<>();
+    private final transient List<Path> ingestPaths = new ArrayList<>();
     private transient FileSystem fs;
 
     /**
@@ -60,7 +60,6 @@ class IngestConfig {
      *
      * @param fName
      *            configuration file name
-     * @return populated configuration data
      * @throws IOException
      *             error reading file
      */
@@ -109,7 +108,7 @@ class IngestConfig {
      *
      * @return duration of test in milliseconds
      */
-    int getDurtion() {
+    int getDuration() {
         return this.duration * 1000 * 60;
     }
 
@@ -155,9 +154,8 @@ class IngestConfig {
     }
 
     /**
-     * Creates a {@link FileSystem} object based upon the hdfs configuration property.
+     * Creates a {@link FileSystem} object based upon the hdfs configuration property. Sets this to the newly created object.
      *
-     * @return populated FileSystem object
      * @throws IOException
      *             error creating Hadoop FileSystem object
      */
@@ -174,9 +172,8 @@ class IngestConfig {
     private void loadIngestFiles() {
         final File srcDir = new File(this.sourceDir);
         final File[] srcFiles = srcDir.listFiles();
-        final Set<String> names = new HashSet<>();
+        assert srcFiles != null;
         for (final File src : srcFiles) {
-            names.add(src.toURI().toString());
             final Path path = new Path(src.toURI());
             this.ingestPaths.add(path);
         }
@@ -215,7 +212,7 @@ class IngestConfig {
             valid = false;
         }
         if (0 >= this.maxInterval) {
-            logger.error("invalid mmaxInterval({})", this.maxInterval);
+            logger.error("invalid maxInterval({})", this.maxInterval);
             valid = false;
         }
         if (this.minInterval > this.maxInterval) {

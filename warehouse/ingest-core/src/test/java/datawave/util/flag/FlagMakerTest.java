@@ -1,532 +1,271 @@
 package datawave.util.flag;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import javax.xml.bind.JAXBException;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.math.LongRange;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.mapred.JobConf;
+import com.google.common.io.Files;
+import datawave.util.flag.config.FlagDataTypeConfig;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.util.flag.config.ConfigUtil;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import datawave.util.flag.config.FlagMakerConfig;
-import datawave.util.flag.processor.DateUtils;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
- *
+ * See related test classes: FlagMakerSizingTest, verifies logic related to sizing of flag files based on various configurations FlagMakerTimestampTest,
+ * verifies logic related to the timestamp used for flag files based on configuration
  */
-public class FlagMakerTest extends AbstractFlagConfig {
+public class FlagMakerTest {
+    public static final String CONFIG_BASE_HDFS_DIR = "target/test/BulkIngest/"; // trailing
+                                                                                 // slash
+                                                                                 // added
+                                                                                 // by
+                                                                                 // validate()
 
-    private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
-    private static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
-    private static final String FLAG_DIR = "target/test/flags";
+    private static final Logger LOG = LoggerFactory.getLogger(FlagMakerTest.class);
     private static final int COUNTER_LIMIT = 102;
-    private static final String CONFIG_BASE_HDFS_DIR = "target/test/BulkIngest";
-    private static final String CONFIG_FLAG_FILE_DIR = "target/test/flags";
-    private static final Object CONFIG_EXTRA_INGEST_ARGS = null;
+    private static final int NUM_INPUT_FILES = 80;
 
-    // private FlagMakerConfig fmc;
+    private FlagFileTestSetup flagMakerTestSetup;
+
+    @Rule
+    public TestName testName = new TestName();
 
     @Before
     public void setUp() throws Exception {
-        fmc = ConfigUtil.getXmlObject(FlagMakerConfig.class, TEST_CONFIG);
-        File f = new File(fmc.getBaseHDFSDir());
-        if (f.exists()) {
-            // commons io has recursive delete.
-            FileUtils.deleteDirectory(f);
+        LOG.error("testName: " + testName.getMethodName());
+
+        flagMakerTestSetup = new FlagFileTestSetup();
+        flagMakerTestSetup.withTestNameForDirectories("FlagMakerTest_" + testName.getMethodName());
+        flagMakerTestSetup.withTestFlagMakerConfig();
+        // create 20 files per day (2) per directory (2) = 20 * 2 * 2 = 80
+        flagMakerTestSetup.withFilesPerDay(20).withNumDays(2).createTestFiles();
+
+        FlagDataTypeConfig flagDataTypeConfig = flagMakerTestSetup.fmc.getFlagConfigs().get(0);
+        // by setting the timeout to -1, the FlagMaker will use whatever files
+        // it has without waiting to create a full sized file
+        flagDataTypeConfig.setTimeoutMilliSecs(-1); // timeout will have always
+                                                    // occurred
+
+        // verify test assumptions
+        for (FlagDataTypeConfig flagConfig : flagMakerTestSetup.fmc.getFlagConfigs()) {
+            assertEquals(10, flagConfig.getMaxFlags());
         }
-        f.mkdirs();
+        int numberOfGeneratedInputFiles = FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerTestSetup.fmc).size();
+        assertEquals("Test setup failed to create necessary input files (across directories foo and bar)", NUM_INPUT_FILES, numberOfGeneratedInputFiles);
     }
 
-    private File setUpFlagDir() throws Exception {
-        File f = new File(FLAG_DIR);
-        if (f.exists())
-            FileUtils.deleteDirectory(f);
-        f.mkdirs();
-        return f;
+    @After
+    public void cleanup() throws IOException {
+        flagMakerTestSetup.deleteTestDirectories();
     }
 
-    /**
-     * Test successful creation of local HDFS.
-     */
-    @Test
-    public void testGetHadoopFS() throws Exception {
-        log.info("-----  testGetHadoopFS  -----");
-        File fdir = new File(FLAG_DIR);
-        if (fdir.exists())
-            fdir.delete();
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        FileSystem result = instance.getHadoopFS();
-        result.mkdirs(new Path(FLAG_DIR));
-        assertTrue(fdir.exists() && fdir.isDirectory());
-
-    }
-
-    @Test
-    public void testFlagMakerConfigArg() throws JAXBException, IOException {
-        log.info("-----  testFlagMakerConfigArg  -----");
-        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG});
-        assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
-        assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
-        assertEquals(CONFIG_EXTRA_INGEST_ARGS, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
-        assertEquals(2, flagMakerConfig.getFilePatterns().size());
-        assertTrue(flagMakerConfig.getFilePatterns().contains("2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]"));
-        assertTrue(flagMakerConfig.getFilePatterns().contains("2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]"));
-    }
-
-    @Test
-    public void testFlagMakerConfigWithFlagFileDirectoryOverride() throws JAXBException, IOException {
-        log.info("-----  testFlagMakerConfigWithFlagFileDirectoryOverride  -----");
-        final String overrideValue = "/srv/data/somewhere/else/";
-        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-flagFileDirectoryOverride", overrideValue});
-        assertEquals(overrideValue, flagMakerConfig.getFlagFileDirectory());
-        assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
-        assertEquals(CONFIG_EXTRA_INGEST_ARGS, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
-    }
-
-    @Test
-    public void testFlagMakerConfigWithHdfsOverride() throws JAXBException, IOException {
-        log.info("-----  testFlagMakerConfigWithHdfsOverride  -----");
-        String overrideValue = "testDir/BulkIngest";
-        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-baseHDFSDirOverride", overrideValue});
-        assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
-        assertEquals(overrideValue, flagMakerConfig.getBaseHDFSDir());
-        assertEquals(CONFIG_EXTRA_INGEST_ARGS, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
-    }
-
-    @Test
-    public void testFlagMakerConfigWithExtraArgsOverride() throws JAXBException, IOException {
-        log.info("-----  testFlagMakerConfigWithExtraArgsOverride  -----");
-        final String overrideValue = "-fastMode -topSpeed=MAX";
-        FlagMakerConfig flagMakerConfig = FlagMaker.getFlagMakerConfig(new String[] {"-flagConfig", TEST_CONFIG, "-extraIngestArgsOverride", overrideValue});
-        assertEquals(CONFIG_FLAG_FILE_DIR, flagMakerConfig.getFlagFileDirectory());
-        assertEquals(CONFIG_BASE_HDFS_DIR, flagMakerConfig.getBaseHDFSDir());
-        assertEquals(overrideValue, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
-    }
-
-    /**
-     * Test of processFlags method, of class FlagMaker.
-     */
     @Test
     public void testProcessFlags() throws Exception {
-        log.info("-----  testProcessFlags  -----");
-        File f = setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
+        // 80 input files / 10 input files per flag = 8 flags
+        int expectedNumberOfFlagFiles = 8;
 
-        // ensure the flag files endings
-        int flagCnt = 0;
-        int cleanCnt = 0;
-        for (File file : f.listFiles()) {
-            if (file.getName().endsWith(".cleanup")) {
-                cleanCnt++;
-            } else if (file.getName().endsWith(".flag")) {
-                flagCnt++;
-            }
-        }
-        assertEquals(2, flagCnt);
-        // no longer have cleanup files
-        assertEquals(0, cleanCnt);
-    }
+        FlagMaker flagMaker = new FlagMaker(this.flagMakerTestSetup.fmc);
+        flagMaker.processFlags();
 
-    /**
-     * Test of time stamps of the flag files
-     */
-    @Test
-    public void testFlagFileTimeStamps() throws Exception {
-        log.info("-----  testFlagFileTimeStamps  -----");
-        File f = setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
-        fmc.setSetFlagFileTimestamp(true);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
-        // ensure the flag files have appropriate dates
-        for (File file : f.listFiles()) {
-            if (file.getName().endsWith(".flag")) {
-                assertTrue(range.containsLong(file.lastModified()));
-            }
-        }
-    }
+        File[] flagFiles = FlagFileTestHelper.listFlagFiles(this.flagMakerTestSetup.fmc);
+        assertEquals("Unexpected number of flag files: " + FlagFileTestHelper.logFiles(flagFiles), expectedNumberOfFlagFiles, flagFiles.length);
 
-    /**
-     * Test not setting the time stamps of the flag files
-     */
-    @Test
-    public void testUnsetFlagFileTimeStamps() throws Exception {
-        log.info("-----  testUnsetFlagFileTimeStamps  -----");
-        File f = setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
-        fmc.setSetFlagFileTimestamp(false);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
-
-        // ensure the flag files have appropriate dates
-        for (File file : f.listFiles()) {
-            if (file.getName().endsWith(".flag")) {
-                assertFalse(range.containsLong(file.lastModified()));
-            }
-        }
-    }
-
-    /**
-     * Test of time stamps of the flag files using folders instead of file timestamps
-     */
-    @Test
-    public void testFolderTimeStamps() throws Exception {
-        log.info("-----  testFolderTimeStamps  -----");
-        File f = setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5, true);
-        fmc.setSetFlagFileTimestamp(true);
-        fmc.setUseFolderTimestamp(true);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
-
-        // ensure the flag files have appropriate dates
-        for (File file : f.listFiles()) {
-            if (file.getName().endsWith(".flag")) {
-                assertTrue(range.containsLong(file.lastModified()));
-            }
+        for (File file : flagFiles) {
+            String fileName = file.getName();
+            assertTrue("Unexpected file ending for " + fileName, fileName.endsWith(".flag"));
         }
     }
 
     @Test
     public void testCounterLimitExceeded() throws Exception {
-        log.info("-----  testCounterLimitExceeded  -----");
         int expectedMax = (COUNTER_LIMIT - 2) / 2;
-        File f = setUpFlagDir();
+
+        // set the max flags to something larger than the expected limit based
+        // on the counters
         // two days, expectedMax + 20 files each day
-        LongRange range = createTestFiles(2, expectedMax + 20, true);
-        int total = 2 * 2 * (expectedMax + 20);
-        fmc.setSetFlagFileTimestamp(true);
-        fmc.setUseFolderTimestamp(true);
-        // set the max flags to something larger than the expected limit based on the counters
-        fmc.getDefaultCfg().setMaxFlags(expectedMax + 15);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
-        // ensure the flag files have appropriate sizes
-        int a = f.listFiles().length;
-        int expectedFlagCount = 0;
-        for (File file : f.listFiles()) {
-            if (file.getName().endsWith("+" + expectedMax + ".flag")) {
-                expectedFlagCount++;
-            }
+        flagMakerTestSetup.withTestFlagMakerConfig();
+        flagMakerTestSetup.withMaxFlags(expectedMax + 15);
+        flagMakerTestSetup.withFilesPerDay(expectedMax + 20).withNumDays(2).createTestFiles();
+        int totalCreatedFiles = 2 * 2 * (expectedMax + 20);
+
+        // Configure FlagMaker to look for created files
+        FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.fmc);
+        flagMaker.config.set("mapreduce.job.counters.max", Integer.toString(COUNTER_LIMIT));
+        flagMaker.processFlags();
+
+        // Inspect resultant flag files, counter the number sized to exactly
+        // "expectedMax"
+        File[] files = FlagFileTestHelper.listFlagFiles(this.flagMakerTestSetup.fmc);
+        assertEquals("Unexpected number of files: " + FlagFileTestHelper.logFiles(files), (totalCreatedFiles / expectedMax), files.length);
+        for (File file : files) {
+            String fileName = file.getName();
+            assertTrue("Unexpected number of input files in flag file name: " + fileName, fileName.endsWith("+" + expectedMax + ".flag"));
         }
-        assertEquals("Unexpected number of flag files with size " + expectedMax, (total / expectedMax), expectedFlagCount);
+    }
+
+    private void createFlagsWithSizeConstraint(int desiredInputFilesPerFlag) throws IOException {
+        int expectedFlagFileLength = getExpectedFlagFileLength(desiredInputFilesPerFlag);
+
+        // Set the maximum flag file length to hold no more than the expected
+        // size of a flag file containing 5 input files
+        flagMakerTestSetup.fmc.setMaxFileLength(expectedFlagFileLength + 1); // one
+                                                                             // character
+                                                                             // larger
+
+        // flagMakerTestSetup.fmc.setFlagCountThreshold(-1); // ensure flag
+        // maker doesn't wait to create additional flag files
+        // ensure max flags is not a limiting factor by making it larger
+        FlagDataTypeConfig flagDataTypeConfig = flagMakerTestSetup.fmc.getFlagConfigs().get(0);
+        flagDataTypeConfig.setMaxFlags(desiredInputFilesPerFlag + 1);
+
+        // set counter limit very high to eliminate this constraint
+
+        // FlagDataTypeConfig flagDataTypeConfig =
+        // flagMakerTestSetup.fmc.getFlagConfigs().get(0);
+        // flagDataTypeConfig.setFlagCountThreshold(Integer.MIN_VALUE + 1); //
+        // setting this low will cause the FlagMaker to try to create full flag
+        // files
+        // flagDataTypeConfig.setTimeoutMilliSecs(Integer.MAX_VALUE); // setting
+        // this high will cause the FlagMaker to wait until the max flags are
+        // reached
+
+        FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.fmc);
+        flagMaker.config.set("mapreduce.job.counters.max", Integer.toString(Integer.MAX_VALUE));
+        flagMaker.processFlags();
+    }
+
+    @Test
+    public void verifyForVerySmallThreshold() throws Exception {
+        int desiredInputFilesPerFlag = 1;
+
+        createFlagsWithSizeConstraint(desiredInputFilesPerFlag);
+
+        verifyNumberOfFlagFiles(desiredInputFilesPerFlag);
+        verifyFlagFileLengths(desiredInputFilesPerFlag);
+    }
+
+    @Test
+    public void verifyForModerateThreshold() throws Exception {
+        int desiredInputFilesPerFlag = 5;
+
+        createFlagsWithSizeConstraint(desiredInputFilesPerFlag);
+
+        verifyNumberOfFlagFiles(desiredInputFilesPerFlag);
+        verifyFlagFileLengths(desiredInputFilesPerFlag);
+    }
+
+    @Test
+    public void verifyForNonDivisibleNumber() throws Exception {
+        // 80 / 6 will result in a remainder of two input files
+        int desiredInputFilesPerFlag = 6;
+
+        createFlagsWithSizeConstraint(desiredInputFilesPerFlag);
+
+        verifyNumberOfFlagFiles(desiredInputFilesPerFlag);
+        verifyFlagFileLengths(desiredInputFilesPerFlag);
+    }
+
+    @Test
+    public void verifyForLargeThreshold() throws Exception {
+        int desiredInputFilesPerFlag = 80;
+
+        createFlagsWithSizeConstraint(desiredInputFilesPerFlag);
+
+        verifyNumberOfFlagFiles(desiredInputFilesPerFlag);
+        verifyFlagFileLengths(desiredInputFilesPerFlag);
+    }
+
+    private void verifyNumberOfFlagFiles(int desiredInputFilesPerFlag) {
+        int expectedNumberOfFullFlags = (NUM_INPUT_FILES / desiredInputFilesPerFlag);
+        int sizeOfRemainder = NUM_INPUT_FILES - (expectedNumberOfFullFlags * desiredInputFilesPerFlag);
+
+        Map<Integer,Integer> flagFileSizeToNumberFound = countFlagFilesBySize();
+        Map<Integer,Integer> expectedCounts = new HashMap<>();
+        expectedCounts.put(desiredInputFilesPerFlag, expectedNumberOfFullFlags);
+        if (sizeOfRemainder > 0) {
+            expectedCounts.put(sizeOfRemainder, 1); // expect one flag file for
+                                                    // the remaining input files
+        }
+        assertEquals(getDebuggingMessage(flagFileSizeToNumberFound), expectedCounts, flagFileSizeToNumberFound);
+    }
+
+    private String getDebuggingMessage(Map<Integer,Integer> flagFileSizeToNumberFound) {
+        return "{flag file size = number found} " + flagFileSizeToNumberFound.toString() + "\n"
+                        + FlagFileTestHelper.logFiles(FlagFileTestHelper.listFlagFiles(this.flagMakerTestSetup.fmc));
     }
 
     /**
-     * Test of the flag count exceeded mechanism
+     * Retrieves the list of flag files created for this test. Produces a count of flag files by size. The map's key is the number of input files per flag (flag
+     * file size). The map's value is the number of flag files of that size.
      */
-    @Test
-    public void testFlagCountExceeded() throws Exception {
-        log.info("-----  testFlagCountExceeded  -----");
-        File f = setUpFlagDir();
+    private Map<Integer,Integer> countFlagFilesBySize() {
+        Map<Integer,Integer> flagFileSizeToNumberFound = new HashMap<>();
 
-        fmc.setTimeoutMilliSecs(0);
+        File[] flagFiles = FlagFileTestHelper.listFlagFiles(flagMakerTestSetup.fmc);
+        assertTrue("Expected one or more flag files", flagFiles.length > 0);
 
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
+        for (File flagFile : flagFiles) {
+            String flagFileName = flagFile.getName();
 
-        // should have made 2 flag files
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+            // extract number of input files from flag file name
+            int indexOfLastPlus = flagFileName.lastIndexOf("+");
+            int indexOfDotAfterPlus = flagFileName.indexOf('.', indexOfLastPlus);
+            int numberOfInputFiles = Integer.parseInt(flagFileName.substring(indexOfLastPlus + 1, indexOfDotAfterPlus));
 
-        fmc.setFlagCountThreshold(2);
-        for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
-            fc.setFlagCountThreshold(2);
-        }
-        range = createTestFiles(2, 2);
-
-        for (int i = 0; i < 10; i++) {
-            instance.processFlags();
-
-            // should have not make anymore flag files despite timeout of 0 ms
-            assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
+            // increment counts
+            flagFileSizeToNumberFound.putIfAbsent(numberOfInputFiles, 0);
+            flagFileSizeToNumberFound.put(numberOfInputFiles, (flagFileSizeToNumberFound.get(numberOfInputFiles) + 1));
         }
 
-        range = createTestFiles(2, 1);
-        instance.processFlags();
-
-        // should have made one more flag file
-        assertEquals("Incorrect files.  Expected 3 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 3, f.listFiles().length);
+        return flagFileSizeToNumberFound;
     }
 
-    @Test
-    public void testMaxFileLength() throws Exception {
-        log.info("-----  testMaxFileLength  -----");
-        File f = setUpFlagDir();
-        // two days, expectedMax + 20 files each day
-        LongRange range = createTestFiles(2, 20, true);
-        int total = 2 * 2 * 20;
-        fmc.setSetFlagFileTimestamp(true);
-        fmc.setUseFolderTimestamp(true);
-        // baselen is all of the other stuff
-        int baselen = "target/test/bin/ingest/one-hr-ingest.sh 10 -inputFormat datawave.ingest.input.reader.csvdata.WrappedCSVFileInputFormat".length();
-        // filelen is the length of one file
-        int filelen = "target/test/BulkIngest/flagged/bar/2013/01/01/5a2078da-1569-4cb9-bd50-f95fc53934e7".length();
-        // set a maxfilelength to hold no more than 5 input files in the list
-        int flaglen = baselen - 1 + filelen * 5;
-        // add 20 characters just in case this is not exact
-        fmc.setMaxFileLength(flaglen + 20);
-        // set the max flags something larger
-        fmc.getDefaultCfg().setMaxFlags(20);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
-        // ensure the flag files have the appropriate size
-        int a = f.listFiles().length;
-        int expectedFlagCount = 0;
-        for (File file : f.listFiles()) {
-            if (file.getName().endsWith("+" + 5 + ".flag")) {
-                expectedFlagCount++;
+    private void verifyFlagFileLengths(int desiredInputFilesPerFlag) throws IOException {
+        int expectedFlagFileLength = getExpectedFlagFileLength(desiredInputFilesPerFlag);
+
+        File[] flagFiles = FlagFileTestHelper.listFlagFiles(flagMakerTestSetup.fmc);
+        assertTrue("Expected one or more flag files", flagFiles.length > 0);
+
+        for (File flagFile : flagFiles) {
+            int flagFileLength = Files.toString(flagFile, Charset.defaultCharset()).length();
+            if (flagFile != flagFiles[flagFiles.length - 1]) { // ignore the
+                                                               // last file
+                                                               // because it
+                                                               // may be a
+                                                               // partial file
+                                                               // with the
+                                                               // remaining
+                                                               // input files
+                Assert.assertEquals(FlagFileTestHelper.logFileContents(flagFile), expectedFlagFileLength, flagFileLength);
             }
         }
-        // Expect up to total/5 files, however as soon as we have less than maxFlags (i.e. 20) files left we leave the loop.
-        // Reason being that maxFlags dictates how many files must be available to create a flag file unless the timeout is reached.
-        // In this case the timeout is not reached so we stop before processing all of the files.
-        assertEquals("Unexpected number of flag files with size 5", (total / 5) - (19 / 5), expectedFlagCount);
     }
 
-    /**
-     * Test of processFlags method flag file order, of class FlagMaker.
-     */
-    @Test
-    public void testProcessFlagsOrder() throws Exception {
-        log.info("-----  testProcessFlagsOrder  -----");
-        setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        createTestFiles(2, 5);
-        final List<Collection<InputFile>> flagFileLists = new ArrayList<>();
-        FlagMaker instance = new TestWrappedFlagMaker(fmc) {
-            @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
-                flagFileLists.add(inFiles);
-            }
-        };
-        instance.processFlags();
-        // should have made 2 flag files
-        assertEquals(2, flagFileLists.size());
-        long lastTime = 0;
-        for (Collection<InputFile> flagFileList : flagFileLists) {
-            long nextTime = 0;
-            for (InputFile file : flagFileList) {
-                assertTrue("Found file out of expected order", file.getTimestamp() > lastTime);
-                nextTime = Math.max(nextTime, file.getTimestamp());
-            }
-            lastTime = nextTime;
-        }
-    }
+    private int getExpectedFlagFileLength(int NUM_INPUT_FILES_PER_FLAG) {
+        String expectedInputFileLength = this.flagMakerTestSetup.fmc.getBaseHDFSDir() + "flagged/bar/2013/01/01/5a2078da-1569-4cb9-bd50-f95fc53934e7";
 
-    /**
-     * Test of processFlags method flag file LIFO order, of class FlagMaker.
-     */
-    @Test
-    public void testProcessFlagsOrderLifo() throws Exception {
-        log.info("-----  testProcessFlagsOrderLifo  -----");
-        setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        createTestFiles(2, 5);
-        final List<Collection<InputFile>> flagFileLists = new ArrayList<>();
-        fmc.getFlagConfigs().get(0).setLifo(true);
-        FlagMaker instance = new TestWrappedFlagMaker(fmc) {
-            @Override
-            void writeFlagFile(FlagDataTypeConfig fc, Collection<InputFile> inFiles) throws IOException {
-                flagFileLists.add(inFiles);
-            }
-        };
-        instance.processFlags();
-        // should have made 2 flag files
-        assertEquals("Incorrect file lists: " + flagFileLists, 2, flagFileLists.size());
-        long lastTime = Long.MAX_VALUE;
-        for (Collection<InputFile> flagFileList : flagFileLists) {
-            long nextTime = Long.MAX_VALUE;
-            for (InputFile file : flagFileList) {
-                assertTrue("Found file out of expected order", file.getTimestamp() < lastTime);
-                nextTime = Math.min(nextTime, file.getTimestamp());
-            }
-            lastTime = nextTime;
-        }
-    }
-
-    /**
-     * Test with Slice distributor
-     */
-    @Test
-    public void testDateFolderDistributor() throws Exception {
-        log.info("-----  testDateFolderDistributor  -----");
-        File f = setUpFlagDir();
-        // 5 days, 5 files each day, two folders in fmc = 50 flags
-        createTestFiles(5, 5);
-        createBogusTestFiles(5, 5);
-        createCopyingTestFiles(5, 5);
-        fmc.setDistributorType("folderdate");
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
-        File[] flags = f.listFiles(pathname -> pathname.toString().endsWith("flag"));
-        assertEquals("Incorrect number of flags: " + Arrays.toString(flags), 5, flags.length);
-        HashSet<Long> buckets = new HashSet<>();
-        DateUtils du = new DateUtils();
-        for (File file : flags) {
-            try (BufferedReader r = new BufferedReader(new FileReader(file))) {
-                String[] files = r.readLine().split(" ")[1].split(",");
-
-                // 10 inputs per flag file
-                assertEquals("Incorrect number of files: " + Arrays.toString(files), 10, files.length);
-                Map<String,Integer> folderCounts = new HashMap<>();
-                Map<String,Integer> dateCounts = new HashMap<>();
-                for (String string : files) {
-                    assertTrue(string.startsWith("target/test/BulkIngest/flagged"));
-                    // pull off the sub folder
-                    String folder = string.substring(31, 34);
-                    folderCounts.put(folder, (folderCounts.containsKey(folder) ? folderCounts.get(folder) : 0) + 1);
-                    String date = string.substring(35, 45);
-                    dateCounts.put(date, (dateCounts.containsKey(date) ? dateCounts.get(date) : 0) + 1);
-                    buckets.add(DateUtils.getBucket("day", string));
-                }
-                assertEquals(2, folderCounts.size());
-                for (String folder : folderCounts.keySet()) {
-                    assertEquals(5, folderCounts.get(folder).intValue());
-                }
-                assertEquals(5, dateCounts.size());
-                for (String date : dateCounts.keySet()) {
-                    assertEquals(2, dateCounts.get(date).intValue());
-                }
-                // 2 from each folder for each day
-                assertEquals("Incorrect number of buckets: " + buckets, 5, buckets.size());
-                buckets.clear();
-            }
-        }
-
-    }
-
-    // ======================================
-    // file list marker tests
-
-    private static final String FLAG_MARKER = "XXXX--test-marker--XXXX";
-    private static final String INVALID_MARKER = "xxxx  invalid-marker  xxxx";
-    // this needs to be in sync
-    private static final String FLAG_PRE = " ${JOB_FILE} 10 -inputFormat datawave.ingest.input.reader.event.EventSequenceFileInputFormat -inputFileLists -inputFileListMarker "
-                    + FLAG_MARKER + " \n" + FLAG_MARKER;
-
-    @Test
-    public void testFlagFileMarkerError() throws Exception {
-        log.info("-----  testFlagFileMarkerError  -----");
-        File f = setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
-        fmc.setSetFlagFileTimestamp(true);
-        List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
-        FlagDataTypeConfig cfg = cfgs.get(0);
-        cfg.setFileListMarker(INVALID_MARKER);
-        try {
-            FlagMaker instance = new TestWrappedFlagMaker(fmc);
-            Assert.fail("invalid marker expected");
-        } catch (IllegalArgumentException ie) {
-            // expected
-        }
-    }
-
-    @Test
-    public void testFlagFileMarker() throws Exception {
-        log.info("-----  testFlagFileMarker  -----");
-        File f = setUpFlagDir();
-        // two days, 5 files each day, two folders in fmc = 20 flags
-        LongRange range = createTestFiles(2, 5);
-        // fmc.setSetFlagFileTimestamp(true);
-        List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
-        FlagDataTypeConfig cfg = cfgs.get(0);
-        cfg.setFileListMarker("XXXX--test-marker--XXXX");
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        instance.processFlags();
-        // ensure the flag files have appropriate dates
-        for (File file : f.listFiles()) {
-            if (file.getName().endsWith(".flag")) {
-                assertTrue(range.containsLong(file.lastModified()));
-            }
-        }
-        assertEquals("Incorrect files.  Expected 2 but got " + f.listFiles().length + ": " + Arrays.toString(f.listFiles()), 2, f.listFiles().length);
-    }
-
-    /**
-     * Tests the flag file output when the file list marker is set.
-     *
-     * @throws Exception
-     *             test error condition
-     */
-    @Test
-    public void testFlagFileWriter() throws Exception {
-        log.info("-----  testFlagFileWriter  -----");
-        File f = setUpFlagDir();
-
-        FlagMaker instance = new TestWrappedFlagMaker(fmc);
-        FlagDataTypeConfig fc = fmc.getFlagConfigs().get(0);
-        createTestFiles(1, 5);
-        instance.fd.setup(fc);
-        instance.loadFilesForDistributor(fc, instance.getHadoopFS());
-        Collection<InputFile> inFiles = instance.fd.next(instance);
-        List<FlagDataTypeConfig> cfgs = fmc.getFlagConfigs();
-        FlagDataTypeConfig cfg = cfgs.get(0);
-        cfg.setFileListMarker(FLAG_MARKER);
-
-        assertTrue("Should be 10 InputFiles", inFiles != null && inFiles.size() == 10);
-        FlagMetrics metrics = new FlagMetrics(instance.getHadoopFS(), fc.isCollectMetrics());
-        File flag = instance.write(inFiles, fc, FLAG_DIR + "/testflagwriter", metrics);
-        flag.deleteOnExit();
-        String b;
-        try (BufferedReader br = new BufferedReader(new FileReader(flag))) {
-            b = br.lines().collect(Collectors.joining("\n"));
-        }
-
-        StringBuilder expected = new StringBuilder(fmc.getDatawaveHome());
-        expected.append(File.separatorChar).append(fc.getScript()).append(FLAG_PRE);
-        for (InputFile inFile : inFiles) {
-            expected.append('\n').append(inFile.getFlagged().toUri());
-        }
-
-        Assert.assertEquals(expected.length(), b.length());
-        for (int n = 0; n < b.length(); n++) {
-            Assert.assertEquals("flag file char mismatch at char #" + n, expected.charAt(n), b.charAt(n));
-        }
-    }
-
-    static class TestWrappedFlagMaker extends FlagMaker {
-        TestWrappedFlagMaker(FlagMakerConfig fmc) {
-            super(fmc);
-            Configuration conf = new Configuration();
-            conf.set("mapreduce.job.counters.max", Integer.toString(COUNTER_LIMIT));
-            this.config = new JobConf(conf);
-        }
+        // note flag file length is a function of the number of input files per
+        // flag
+        int expectedFlagFileLength = "target/test/bin/ingest/bulk-ingest.sh".length(); // datawave home + script
+        expectedFlagFileLength += " 10 -inputFormat datawave.ingest.input.reader.event.EventSequenceFileInputFormat".length(); // script arguments
+        expectedFlagFileLength += NUM_INPUT_FILES_PER_FLAG; // space or comma
+                                                            // for each file
+        expectedFlagFileLength += (expectedInputFileLength.length() * NUM_INPUT_FILES_PER_FLAG); // names
+                                                                                                 // of
+                                                                                                 // the
+                                                                                                 // files
+        expectedFlagFileLength += 1; // space at the end of the arguments
+        expectedFlagFileLength += 1; // new line
+        return expectedFlagFileLength;
     }
 }

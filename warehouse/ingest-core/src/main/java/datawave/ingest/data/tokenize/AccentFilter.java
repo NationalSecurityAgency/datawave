@@ -43,7 +43,7 @@ public class AccentFilter extends TokenFilter {
     }
 
     /**
-     * Return the token with accents/diactirics/vowelization stripped off
+     * Return the token with accents/diacritics/vowelization stripped off
      *
      * @param token
      *            the token to strip

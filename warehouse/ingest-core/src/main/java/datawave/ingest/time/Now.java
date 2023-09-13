@@ -67,7 +67,7 @@ public class Now {
     @Override
     public boolean equals(Object o2) {
         if (o2 instanceof Now) {
-            return timer == ((Now) o2).timer && now == ((Now) o2).now;
+            return timer == ((Now) o2).timer && Objects.equals(now, ((Now) o2).now);
         }
         return false;
     }

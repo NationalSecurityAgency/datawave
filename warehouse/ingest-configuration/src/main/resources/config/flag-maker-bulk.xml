@@ -42,7 +42,6 @@
     <sleepMilliSecs>5000</sleepMilliSecs>
     <timeoutMilliSecs>${BULK_FLAG_TIMEOUT_MS}</timeoutMilliSecs>
     <baseHDFSDir>${HDFS_BASE_DIR}</baseHDFSDir>
-    <distributorType>simple</distributorType>
     <!-- No dot "." files, and no files ending with punctuation, etc -->
     <filePattern>[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>
     <hdfs>${INGEST_HDFS_NAME_NODE}</hdfs>
