@@ -102,7 +102,7 @@
     </build>
     <profiles>
         <profile>
-            <id>base-rest-responses-submodule</id>
+            <id>submodule-base-rest-responses</id>
             <activation>
                 <file>
                     <exists>base-rest-responses/pom.xml</exists>
@@ -113,7 +113,7 @@
             </modules>
         </profile>
         <profile>
-            <id>in-memory-accumulo-submodule</id>
+            <id>submodule-in-memory-accumulo</id>
             <activation>
                 <file>
                     <exists>in-memory-accumulo/pom.xml</exists>
@@ -124,7 +124,7 @@
             </modules>
         </profile>
         <profile>
-            <id>metrics-reporter-submodule</id>
+            <id>submodule-metrics-reporter</id>
             <activation>
                 <file>
                     <exists>metrics-reporter/pom.xml</exists>
