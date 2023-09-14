@@ -68,6 +68,9 @@ jobs:
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+    - name: Analyze Dependencies
+      run: | 
+        mvn -V -B -e -ntp "-Dstyle.color=always" dependency:analyze package -DskipTests=true
 
   quickstart-build-and-test:
     runs-on: ubuntu-latest
@@ -118,4 +121,3 @@ jobs:
     #     docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
     #     docker images
     #     docker push ${REMOTE_IMAGE_NAME}:${TAG}
-
