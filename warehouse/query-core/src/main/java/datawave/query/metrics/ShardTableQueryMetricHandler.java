@@ -525,71 +525,54 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return JexlFormattedStringBuildingVisitor.formatMetrics(queryMetrics);
     }
 
+    private QueryImpl setupQuery(String user, String queryId, DatawavePrincipal datawavePrincipal, String blacklistedFields) {
+        Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
+        Date end = new Date();
+        Date begin = DateUtils.setYears(end, 2000);
+
+        QueryImpl query = new QueryImpl();
+        query.setBeginDate(begin);
+        query.setEndDate(end);
+        query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
+        // QueryMetricQueryLogic now enforces that you must be a QueryMetricsAdministrator to query metrics that do not belong to you
+        query.setQuery("QUERY_ID == '" + queryId + "'");
+        query.setQueryName(QUERY_METRICS_LOGIC_NAME);
+        query.setColumnVisibility(visibilityString);
+        query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
+        query.setExpirationDate(DateUtils.addDays(new Date(), 1));
+        query.setPagesize(1000);
+        query.setUserDN(datawavePrincipal.getShortName());
+        query.setOwner(datawavePrincipal.getShortName());
+        query.setId(UUID.randomUUID());
+        query.addParameter(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
+        query.addParameter(QueryParameters.BLACKLISTED_FIELDS, blacklistedFields);
+
+        return query;
+    }
+
     @Override
     public QueryMetricsDetailListResponse query(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsDetailListResponse response = new QueryMetricsDetailListResponse();
-
         try {
             enableLogs(false);
-
-            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            Date end = new Date();
-            Date begin = DateUtils.setYears(end, 2000);
-
-            QueryImpl query = new QueryImpl();
-            query.setBeginDate(begin);
-            query.setEndDate(end);
-            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            // QueryMetricQueryLogic now enforces that you must be a QueryMetricsAdministrator to query metrics that do not belong to you
-            query.setQuery("QUERY_ID == '" + queryId + "'");
-            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
-            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
-            query.setPagesize(1000);
-            query.setUserDN(datawavePrincipal.getShortName());
-            query.setOwner(datawavePrincipal.getShortName());
-            query.setId(UUID.randomUUID());
-            query.addParameter(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
-            query.addParameter(QueryParameters.BLACKLISTED_FIELDS, "SUBPLAN");
+            QueryImpl query = setupQuery(user, queryId, datawavePrincipal, "SUBPLAN");
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
 
             response.setResult(queryMetrics);
 
             response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
+
         } finally {
             enableLogs(true);
         }
-
         return response;
     }
 
     public QueryMetricsSubplanResponse subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
         QueryMetricsSubplanResponse response = new QueryMetricsSubplanResponse();
-
         try {
             enableLogs(false);
-
-            Collection<? extends Collection<String>> authorizations = datawavePrincipal.getAuthorizations();
-            Date end = new Date();
-            Date begin = DateUtils.setYears(end, 2000);
-
-            QueryImpl query = new QueryImpl();
-            query.setBeginDate(begin);
-            query.setEndDate(end);
-            query.setQueryLogicName(QUERY_METRICS_LOGIC_NAME);
-            // QueryMetricQueryLogic now enforces that you must be a QueryMetricsAdministrator to query metrics that do not belong to you
-            query.setQuery("QUERY_ID == '" + queryId + "'");
-            query.setQueryName(QUERY_METRICS_LOGIC_NAME);
-            query.setColumnVisibility(visibilityString);
-            query.setQueryAuthorizations(AuthorizationsUtil.buildAuthorizationString(authorizations));
-            query.setExpirationDate(DateUtils.addDays(new Date(), 1));
-            query.setPagesize(1000);
-            query.setUserDN(datawavePrincipal.getShortName());
-            query.setOwner(datawavePrincipal.getShortName());
-            query.setId(UUID.randomUUID());
-            query.addParameter(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true");
-            query.addParameter(QueryParameters.BLACKLISTED_FIELDS, "PAGE_METRICS");
+            QueryImpl query = setupQuery(user, queryId, datawavePrincipal, "PAGE_METRICS");
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
 
             response.setResult(queryMetrics);
@@ -599,7 +582,6 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         } finally {
             enableLogs(true);
         }
-
         return response;
     }
 
