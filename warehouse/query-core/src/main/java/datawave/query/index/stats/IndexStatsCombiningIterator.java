@@ -64,7 +64,11 @@ public class IndexStatsCombiningIterator implements SortedKeyValueIterator<Key,V
                     break;
                 }
             }
-            weight.set(((double) sumUnique) / ((double) sumCount));
+            double weightDouble = 0d;
+            if (sumCount > 0) {
+                weightDouble = ((double) sumUnique) / ((double) sumCount);
+            }
+            weight.set(weightDouble);
             tk = new Key(workingRow);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             weight.write(new DataOutputStream(baos));

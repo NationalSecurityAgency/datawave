@@ -950,7 +950,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
                 TermFrequencyConfig tfConfig = new TermFrequencyConfig();
                 tfConfig.setScript(getScript(documentSource));
-                tfConfig.setIterEnv(myEnvironment);
                 tfConfig.setSource(sourceDeepCopy.deepCopy(myEnvironment));
                 tfConfig.setContentExpansionFields(getContentExpansionFields());
                 tfConfig.setTfFields(getTermFrequencyFields());

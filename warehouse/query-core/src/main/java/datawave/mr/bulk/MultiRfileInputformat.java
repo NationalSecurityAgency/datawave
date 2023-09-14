@@ -59,7 +59,7 @@ public class MultiRfileInputformat extends RFileInputFormat {
     private static final String HDFS_BASE = "hdfs://";
     private static final String ACCUMULO_BASE_PATH = "/accumulo";
 
-    private static final String FS_DEFAULT_NAME = "fs.default.name";
+    private static final String FS_DEFAULT_NAME = "fs.defaultFS";
     private static final Logger log = Logger.getLogger(MultiRfileInputformat.class);
     public static final String tableStr = Path.SEPARATOR + "tables" + Path.SEPARATOR;
 

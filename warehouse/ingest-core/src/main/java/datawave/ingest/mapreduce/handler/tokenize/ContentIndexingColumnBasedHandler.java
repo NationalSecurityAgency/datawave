@@ -376,9 +376,10 @@ public abstract class ContentIndexingColumnBasedHandler<KEYIN> extends AbstractC
             tokenizerTimeWarned = false;
 
             while (true) {
-                if (heartBeatCount != HeartBeatThread.counter) {
-                    tokenizerBeats += HeartBeatThread.counter - heartBeatCount;
-                    heartBeatCount = HeartBeatThread.counter;
+                int currentHeartBeatCount = HeartBeatThread.counter;
+                if (heartBeatCount != currentHeartBeatCount) {
+                    tokenizerBeats += currentHeartBeatCount - heartBeatCount;
+                    heartBeatCount = currentHeartBeatCount;
 
                     // warn once on exceeding the warn threshold
                     long elapsedEstimateMsec = tokenizerBeats * HeartBeatThread.INTERVAL;

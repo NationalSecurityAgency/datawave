@@ -8,7 +8,6 @@ import static datawave.query.jexl.functions.ContentFunctions.CONTENT_SCORED_PHRA
 import static datawave.query.jexl.functions.ContentFunctions.CONTENT_WITHIN_FUNCTION_NAME;
 
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,7 +38,6 @@ import com.google.common.collect.TreeMultimap;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.core.iterators.TermFrequencyIterator;
-import datawave.data.type.NoOpType;
 import datawave.data.type.Type;
 import datawave.ingest.protobuf.TermWeight;
 import datawave.ingest.protobuf.TermWeightPosition;
@@ -65,20 +63,18 @@ public class TermOffsetPopulator {
         phraseFunctions = Collections.unmodifiableSet(_phraseFunctions);
     }
 
-    private Multimap<String,String> termFrequencyFieldValues;
-    private EventDataQueryFilter evaluationFilter;
-    private SortedKeyValueIterator<Key,Value> source;
-    private Document document;
-    private Set<String> contentExpansionFields;
+    private final Multimap<String,String> termFrequencyFieldValues;
+    private final EventDataQueryFilter evaluationFilter;
+    private final SortedKeyValueIterator<Key,Value> source;
+    private final Set<String> contentExpansionFields;
 
-    private final TermFrequencyConfig config;
+    private Document document;
 
     public TermOffsetPopulator(Multimap<String,String> termFrequencyFieldValues, TermFrequencyConfig config) {
         this.termFrequencyFieldValues = termFrequencyFieldValues;
-        this.config = config;
-        this.contentExpansionFields = this.config.getContentExpansionFields();
-        this.source = this.config.getSource();
-        this.evaluationFilter = this.config.getEvaluationFilter();
+        this.contentExpansionFields = config.getContentExpansionFields();
+        this.source = config.getSource();
+        this.evaluationFilter = config.getEvaluationFilter();
     }
 
     public Document document() {
@@ -90,16 +86,20 @@ public class TermOffsetPopulator {
     }
 
     protected Range getRange(Set<Key> keys) {
+
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("cannot build a term frequency aggregation range from an empty set of document keys");
+        }
+
         // building a range from the beginning of the term frequencies for the first datatype\0uid
         // to the end of the term frequencies for the last datatype\0uid
         List<String> dataTypeUids = new ArrayList<>();
-        Text row = null;
         for (Key key : keys) {
-            row = key.getRow();
             dataTypeUids.add(key.getColumnFamily().toString());
         }
         Collections.sort(dataTypeUids);
 
+        Text row = keys.iterator().next().getRow();
         Key startKey = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(0)));
         Key endKey = new Key(row, TERM_FREQUENCY_COLUMN_FAMILY, new Text(dataTypeUids.get(dataTypeUids.size() - 1) + '\1'));
         return new Range(startKey, true, endKey, true);
@@ -244,7 +244,9 @@ public class TermOffsetPopulator {
     }
 
     /**
-     * Get the list of content function fields to normalized values
+     * @deprecated because the term frequency values are already normalized in the query
+     *             <p>
+     *             Get the list of content function fields to normalized values
      *
      * @param contentExpansionFields
      *            set of content expansion fields
@@ -254,11 +256,24 @@ public class TermOffsetPopulator {
      *            map of functions
      * @return list of content function fields to normalized values
      */
+    @Deprecated(since = "5.9.0", forRemoval = true)
     public static Multimap<String,String> getContentFieldValues(Set<String> contentExpansionFields, Multimap<String,Class<? extends Type<?>>> dataTypes,
                     Multimap<String,Function> functions) {
+        return getContentFieldValues(contentExpansionFields, functions);
+    }
+
+    /**
+     * Get the fields and values from the content functions
+     *
+     * @param contentExpansionFields
+     *            the set of content expansion fields. used for an unfielded content function
+     * @param functions
+     *            a mapping of fields to content functions
+     * @return a multimap of content function fields and values
+     */
+    public static Multimap<String,String> getContentFieldValues(Set<String> contentExpansionFields, Multimap<String,Function> functions) {
 
         Multimap<String,String> contentFieldValues = HashMultimap.create();
-        Map<Class<? extends Type<?>>,Type<?>> dataTypeCacheMap = Maps.newHashMap();
 
         for (Entry<String,Function> namespacedF : functions.entries()) {
             // Get the function arguments
@@ -267,7 +282,7 @@ public class TermOffsetPopulator {
                 args = new ContentFunctionArguments(namespacedF.getValue());
             } catch (ParseException e) {
                 log.warn("Could not parse the content function", e);
-                return null;
+                return HashMultimap.create();
             }
 
             // We can't construct a phrase with less than 2 terms
@@ -275,7 +290,7 @@ public class TermOffsetPopulator {
                 if (log.isTraceEnabled()) {
                     log.trace("Received less than two terms. terms: " + args.terms());
                 }
-                return null;
+                return HashMultimap.create();
             }
 
             Set<String> zones = new HashSet<>();
@@ -286,69 +301,22 @@ public class TermOffsetPopulator {
             }
 
             // Add the terms/zones to the map of fields to look up
-            for (String term : args.terms()) {
-                for (String zone : zones) {
-                    contentFieldValues.putAll(zone, getNormalizedTerms(term, zone, dataTypes, dataTypeCacheMap));
-                }
+            for (String zone : zones) {
+                contentFieldValues.putAll(zone, args.terms());
             }
         }
 
         return contentFieldValues;
     }
 
-    private static Set<String> getNormalizedTerms(String originalTerm, String zone, Multimap<String,Class<? extends Type<?>>> dataTypes,
-                    Map<Class<? extends Type<?>>,Type<?>> dataTypeCacheMap) {
-
-        Set<String> normalizedTerms = new HashSet<>();
-
-        Collection<Class<? extends Type<?>>> dataTypesForZone = dataTypes.get(zone);
-        if (dataTypesForZone.isEmpty()) {
-            dataTypesForZone = Collections.singleton(NoOpType.class);
-        }
-
-        // Get the dataType version of the term for each dataType set up on
-        // the zone (field)
-        for (Class<? extends Type<?>> dataTypeClass : dataTypesForZone) {
-            Type<?> dataTypeInstance = null;
-
-            // Get an instance of the dataType
-            if (dataTypeCacheMap.containsKey(dataTypeClass) && dataTypeCacheMap.get(dataTypeClass) != null) {
-                dataTypeInstance = dataTypeCacheMap.get(dataTypeClass);
-            } else {
-                // If we don't have an instance of the dataType, make one and put it
-                // in the cache
-                try {
-                    dataTypeInstance = dataTypeClass.getDeclaredConstructor().newInstance();
-                } catch (InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-                    log.error("Could not instantiate dataType class: " + dataTypeClass);
-                    continue;
-                } catch (IllegalAccessException e) {
-                    log.error("IllegalAccessException when trying to create dataType: " + dataTypeClass);
-                    continue;
-                }
-
-                dataTypeCacheMap.put(dataTypeClass, dataTypeInstance);
-            }
-
-            // Add the normalized term to the list
-            try {
-                normalizedTerms.add(dataTypeInstance.normalize(originalTerm));
-            } catch (Exception e) {
-                log.error("Unable to normalize " + zone + " = " + originalTerm + " using " + dataTypeClass + ", using original value");
-                normalizedTerms.add(originalTerm);
-            }
-        }
-
-        // Return the list of terms
-        return normalizedTerms;
-    }
-
     /**
-     * A method to get the list of fields and values for which term frequencies need to be gathered. ASSUMPTION: The query planner (@see DefaultQueryPlanner)
-     * has: 1) expanded the content functions into the query 2) the values in the query have already been normalized appropriately 3) the query has been reduced
-     * to those values actually in the index The query is scraped for content functions from which a list of zones to normalized values is determined (the
-     * contentExpansionFields are used for unfielded content functions). The list of fields to values as a subset of the term frequency fields is gathered. The
-     * intersection of those two sets are returned.
+     * @deprecated because the datatype normalization is no longer required
+     *             <p>
+     *             A method to get the list of fields and values for which term frequencies need to be gathered. ASSUMPTION: The query planner (@see
+     *             DefaultQueryPlanner) has: 1) expanded the content functions into the query 2) the values in the query have already been normalized
+     *             appropriately 3) the query has been reduced to those values actually in the index The query is scraped for content functions from which a
+     *             list of zones to normalized values is determined (the contentExpansionFields are used for unfielded content functions). The list of fields to
+     *             values as a subset of the term frequency fields is gathered. The intersection of those two sets are returned.
      *
      * @param dataTypes
      *            map of datatypes
@@ -360,9 +328,14 @@ public class TermOffsetPopulator {
      *            set of term frequency fields
      * @return list of fields and values for which term frequencies need to be gathered
      */
+    @Deprecated(since = "5.9.0", forRemoval = true)
     public static Multimap<String,String> getTermFrequencyFieldValues(ASTJexlScript query, Set<String> contentExpansionFields, Set<String> termFrequencyFields,
                     Multimap<String,Class<? extends Type<?>>> dataTypes) {
+        return getTermFrequencyFieldValues(query, contentExpansionFields, termFrequencyFields);
+    }
 
+    public static Multimap<String,String> getTermFrequencyFieldValues(ASTJexlScript query, Set<String> contentExpansionFields,
+                    Set<String> termFrequencyFields) {
         Multimap<String,Function> functions = TermOffsetPopulator.getContentFunctions(query);
 
         if (!functions.isEmpty()) {
@@ -372,16 +345,34 @@ public class TermOffsetPopulator {
                 if (contentExpansionFields == null || contentExpansionFields.isEmpty()) {
                     contentExpansionFields = termFrequencyFields;
                 }
-                return getTermFrequencyFieldValues(functions, contentExpansionFields, queryFieldValues, dataTypes);
+                return getTermFrequencyFieldValues(functions, contentExpansionFields, queryFieldValues);
             }
         }
         return HashMultimap.create();
     }
 
+    /**
+     * @deprecated in 5.9.0 because the datatypes multimap is not necessary for term frequency aggregation
+     * @param functions
+     *            a multimap of functions
+     * @param contentExpansionFields
+     *            the content expansion fields
+     * @param queryFieldValues
+     *            the query field values
+     * @param dataTypes
+     *            a multimap of datatypes
+     * @return term frequency fields and values
+     */
+    @Deprecated(since = "5.9.0", forRemoval = true)
     public static Multimap<String,String> getTermFrequencyFieldValues(Multimap<String,Function> functions, Set<String> contentExpansionFields,
                     Multimap<String,String> queryFieldValues, Multimap<String,Class<? extends Type<?>>> dataTypes) {
+        return getTermFrequencyFieldValues(functions, contentExpansionFields, queryFieldValues);
+    }
+
+    public static Multimap<String,String> getTermFrequencyFieldValues(Multimap<String,Function> functions, Set<String> contentExpansionFields,
+                    Multimap<String,String> queryFieldValues) {
         // get the intersection of the content expansion fields (or term frequency fields) and those that are in the content functions
-        Multimap<String,String> contentFieldValues = getContentFieldValues(contentExpansionFields, dataTypes, functions);
+        Multimap<String,String> contentFieldValues = getContentFieldValues(contentExpansionFields, functions);
 
         // now get the intersection of the content function values and those literals in the query:
         Multimap<String,String> termFrequencyFieldValues = HashMultimap.create();

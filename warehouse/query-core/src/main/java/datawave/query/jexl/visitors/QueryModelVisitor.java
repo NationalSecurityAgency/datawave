@@ -29,6 +29,7 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.ASTSizeMethod;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.JexlNodes;
+import org.apache.commons.jexl2.parser.LenientExpression;
 import org.apache.commons.jexl2.parser.Node;
 import org.apache.commons.jexl2.parser.ParserTreeConstants;
 import org.apache.commons.jexl2.parser.StrictExpression;
@@ -319,6 +320,15 @@ public class QueryModelVisitor extends RebuildingVisitor {
             List<JexlNode> expressions = new ArrayList<>();
             for (List<String> fieldPair : fieldPairs) {
                 boolean strict = isStrict(fieldPair.get(0)) || isStrict(fieldPair.get(1));
+                boolean lenient = isLenient(fieldPair.get(0)) || isLenient(fieldPair.get(1));
+
+                // if somehow this expression is marked as lenient and strict, then default to old behaviour
+                if (strict && lenient) {
+                    log.warn("Field pair " + fieldPair + " is marked as both strict and lenient.  Applying neither.");
+                    strict = false;
+                    lenient = false;
+                }
+
                 Set<JexlNode> leftSet = left.get(fieldPair.get(0));
                 Set<JexlNode> rightSet = right.get(fieldPair.get(1));
                 product.addAll(Sets.cartesianProduct(leftSet, rightSet));
@@ -342,6 +352,8 @@ public class QueryModelVisitor extends RebuildingVisitor {
                     }
                     if (strict) {
                         expanded = StrictExpression.create(expanded);
+                    } else if (lenient) {
+                        expanded = LenientExpression.create(expanded);
                     }
 
                 }
@@ -491,11 +503,11 @@ public class QueryModelVisitor extends RebuildingVisitor {
     }
 
     /**
-     * Model mappings are lenient by default
+     * Determine if field marked as lenient
      *
      * @param field
      *            The field to test
-     * @return true if not explicitly marked as being strict.
+     * @return true if explicitly marked as lenient
      */
     public boolean isLenient(String field) {
         // user specifications will override the model settings
@@ -505,7 +517,6 @@ public class QueryModelVisitor extends RebuildingVisitor {
             if (userLenient && userStrict) {
                 throw new IllegalArgumentException("Cannot specify the same field as being strict and lenient");
             }
-            return !userStrict;
         }
 
         // determine what the model is treating this as
@@ -515,22 +526,40 @@ public class QueryModelVisitor extends RebuildingVisitor {
             if (modelLenient && modelStrict) {
                 throw new IllegalStateException("The model cannot have both a strict and lenient marker for the same field");
             }
-            return !modelStrict;
         }
 
-        // lenient by default
-        return true;
+        // lenient if explicitly marked as lenient
+        return userLenient || (modelLenient && !userStrict);
     }
 
     /**
-     * Strict if not lenient
+     * Determine if field marked as strict
      *
      * @param field
      *            The field to test
-     * @return true if not lenient
+     * @return true if explicitly marked as strict
      */
     public boolean isStrict(String field) {
-        return !isLenient(field);
+        // user specifications will override the model settings
+        boolean userLenient = lenientFields.contains(field);
+        boolean userStrict = strictFields.contains(field);
+        if (userLenient || userStrict) {
+            if (userLenient && userStrict) {
+                throw new IllegalArgumentException("Cannot specify the same field as being strict and lenient");
+            }
+        }
+
+        // determine what the model is treating this as
+        boolean modelLenient = queryModel.getModelFieldAttributes(field).contains(QueryModel.LENIENT);
+        boolean modelStrict = queryModel.getModelFieldAttributes(field).contains(QueryModel.STRICT);
+        if (modelLenient || modelStrict) {
+            if (modelLenient && modelStrict) {
+                throw new IllegalStateException("The model cannot have both a strict and lenient marker for the same field");
+            }
+        }
+
+        // strict if explicitly marked as strict
+        return userStrict || (modelStrict && !userLenient);
     }
 
     /**

@@ -247,6 +247,7 @@ public abstract class LenientFieldsTest {
         Map<String,String> extraParameters = new HashMap<>();
         extraParameters.put("include.grouping.context", "true");
         extraParameters.put("hit.list", "true");
+        extraParameters.put("lenient.fields", "ETA,AGE,MAGIC,NOME,NAME,NAM,AG");
 
         if (log.isDebugEnabled()) {
             log.debug("testLenientFields");

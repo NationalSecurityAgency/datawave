@@ -238,7 +238,7 @@ public class ShardedTableMapFile {
             }
 
             // Ensure that we either computed, or were given, a valid path to the shard mappings
-            if (!shardedMapFile.getFileSystem(conf).exists(shardedMapFile)) {
+            if (null == shardedMapFile || !shardedMapFile.getFileSystem(conf).exists(shardedMapFile)) {
                 log.fatal("Could not find the supplied shard map file: " + shardedMapFile);
                 return null;
             } else {

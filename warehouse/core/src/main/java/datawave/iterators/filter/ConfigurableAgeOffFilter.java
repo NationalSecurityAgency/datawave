@@ -113,7 +113,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     protected static long UPDATE_INTERVAL_MS = DEFAULT_UPDATE_INTERVAL_MS;
 
     public static final String EXPIRATION_INTERVAL_MS_PROP = "tserver.datawave.ageoff.cache.expiration.interval.ms";
-    protected static final long DEFAULT_EXPIRATION_INTERVAL_MS = 60 * 60 * 1000; // default 1 hour
+    protected static final long DEFAULT_EXPIRATION_INTERVAL_MS = 60 * 60 * 1000L; // default 1 hour
     protected static long EXPIRATION_INTERVAL_MS = DEFAULT_EXPIRATION_INTERVAL_MS;
 
     /**

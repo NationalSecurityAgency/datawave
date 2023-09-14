@@ -66,6 +66,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertFalse(config.getCollapseUids());
         Assert.assertFalse(config.getParseTldUids());
         Assert.assertFalse(config.getReduceQueryFields());
+        Assert.assertFalse(config.getReduceTypeMetadata());
+        Assert.assertFalse(config.getReduceTypeMetadataPerShard());
         Assert.assertFalse(config.getSequentialScheduler());
         Assert.assertFalse(config.getCollectTimingDetails());
         Assert.assertFalse(config.getLogTimingDetails());
@@ -309,6 +311,8 @@ public class ShardQueryConfigurationTest {
         other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
         other.setAccumuloPassword("ChangeIt");
         other.setReduceQueryFields(true);
+        other.setReduceTypeMetadata(true);
+        other.setReduceTypeMetadataPerShard(true);
         other.setDocAggregationThresholdMs(15000);
         other.setTfAggregationThresholdMs(10000);
         // seeks
@@ -405,6 +409,8 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
         Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
         Assert.assertTrue(config.getReduceQueryFields());
+        Assert.assertTrue(config.getReduceTypeMetadata());
+        Assert.assertTrue(config.getReduceTypeMetadataPerShard());
 
         // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
         QueryImpl expectedQuery = new QueryImpl();
@@ -537,7 +543,7 @@ public class ShardQueryConfigurationTest {
      */
     @Test
     public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 193;
+        int expectedObjectCount = 195;
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
         ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(mapper.writeValueAsString(config));

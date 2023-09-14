@@ -62,6 +62,8 @@ public class BulkIngestMapFileLoaderTest {
 
     private List<String> systemProperties;
 
+    private Configuration conf = new Configuration();
+
     @Rule
     public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
@@ -324,36 +326,28 @@ public class BulkIngestMapFileLoaderTest {
 
     }
 
-    protected ByteArrayInputStream createMockInputStream() throws IOException {
-
+    protected ByteArrayInputStream createMockInputStream() {
         return createMockInputStream(null);
     }
 
-    protected ByteArrayInputStream createMockInputStream(String[] additionalEntries) throws IOException {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos));
-
-        for (int index = 0; index < 3; index++) {
-
-            bw.write(String.format("/flagged/file%d\n", index));
-        }
-
-        if (null != additionalEntries) {
-
-            for (String entries : additionalEntries) {
-
-                bw.write(entries);
-            }
-        }
-
-        bw.close();
-        baos.close();
-
-        return new ByteArrayInputStream(baos.toByteArray());
+    protected ByteArrayInputStream createMockInputStream(String[] additionalEntries) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos))) {
+                for (int index = 0; index < 3; index++) {
+                    bw.write(String.format("/flagged/file%d\n", index));
+                }
+                if (null != additionalEntries) {
+                    for (String entries : additionalEntries) {
+                        bw.write(entries);
+                    }
+                }
+            } catch (IOException ex) {}
+            return new ByteArrayInputStream(baos.toByteArray());
+        } catch (IOException e) {}
+        return null;
     }
 
-    protected FileStatus createMockFileStatus() throws Exception {
+    protected FileStatus createMockFileStatus() {
 
         FileStatus mocked = PowerMock.createMock(FileStatus.class);
         PowerMock.replay(mocked);
@@ -1504,24 +1498,19 @@ public class BulkIngestMapFileLoaderTest {
         }
     }
 
-    @Test
-    public void testCtors() {
-
-        BulkIngestMapFileLoaderTest.logger.info("testCtors called...");
-
+    private BulkIngestMapFileLoader createBulkIngestFileMapLoader(URL url) {
         try {
-            URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
+            URI uri = url.toURI();
 
             String workDir = ".";
             String jobDirPattern = "jobs/";
             String instanceName = "localhost";
             String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
+            URI seqFileHdfs = uri;
+            URI srcHdfs = uri;
+            URI destHdfs = uri;
             String jobtracker = "localhost";
             Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
 
             BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
                             seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
@@ -1531,11 +1520,35 @@ public class BulkIngestMapFileLoaderTest {
             uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"), seqFileHdfs, srcHdfs,
                             destHdfs, jobtracker, tablePriorities, conf, 0);
 
+            return uut;
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }
+
+    private Path createNewPath(URL url) {
+        try {
+            return new Path(url.toString());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    @Test
+    public void testCtors() {
+
+        BulkIngestMapFileLoaderTest.logger.info("testCtors called...");
+
+        try {
+            URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
+
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
+
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
-        } catch (URISyntaxException e) {
+            uut = createBulkIngestFileMapLoader(url);
 
-            Assert.fail("Class#getResource failed to return a valid URI");
+            Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
         } finally {
 
@@ -1554,19 +1567,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -1575,7 +1576,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path mapFilesDir = new Path(url.toString());
+            Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
 
@@ -1587,13 +1588,6 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(calls, "FileSystem#rename("));
             Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete",
                             processOutputContains(calls, "FileSystem#delete("));
-
-        } catch (AssertionError ae) {
-
-            // Ignore any assertion failed...
-        } catch (URISyntaxException e) {
-
-            Assert.fail("Class#getResource failed to return a valid URI");
 
         } catch (IOException ioe) {
 
@@ -1624,19 +1618,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -1645,15 +1627,11 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path mapFilesDir = new Path(url.toString());
+            Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
 
             Assert.fail();
-
-        } catch (URISyntaxException e) {
-
-            Assert.fail("Class#getResource failed to return a valid URI");
 
         } catch (IOException ioe) {
 
@@ -1684,19 +1662,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -1705,15 +1671,11 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path mapFilesDir = new Path(url.toString());
+            Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
 
             Assert.fail();
-
-        } catch (URISyntaxException e) {
-
-            Assert.fail("Class#getResource failed to return a valid URI");
 
         } catch (IOException ioe) {
 
@@ -1745,19 +1707,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/all-splits.txt");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -1766,15 +1716,11 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path mapFilesDir = new Path(url.toString());
+            Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
 
             Assert.fail();
-
-        } catch (URISyntaxException e) {
-
-            Assert.fail("Class#getResource failed to return a valid URI");
 
         } catch (IOException ioe) {
 
@@ -1806,19 +1752,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -1827,7 +1761,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path mapFilesDir = new Path(url.toString());
+            Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
 
@@ -1839,10 +1773,6 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(uutLogEntries, "Unable to rename map files directory "));
             Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#delete",
                             processOutputContains(uutLogEntries, "Unable to create job.failed file in "));
-
-        } catch (URISyntaxException e) {
-
-            Assert.fail("Class#getResource failed to return a valid URI");
 
         } catch (IOException ioe) {
 
@@ -1874,19 +1804,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -1895,7 +1813,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path mapFilesDir = new Path(url.toString());
+            Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
 
@@ -1905,9 +1823,6 @@ public class BulkIngestMapFileLoaderTest {
                             processOutputContains(uutLogEntries, "There were failures bringing map files online."));
             Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#rename",
                             processOutputContains(uutLogEntries, "Unable to rename map files directory "));
-        } catch (URISyntaxException e) {
-
-            Assert.fail("Class#getResource failed to return a valid URI");
 
         } catch (IOException ioe) {
 
@@ -1939,19 +1854,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -1960,7 +1863,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path mapFilesDir = new Path(url.toString());
+            Path mapFilesDir = createNewPath(url);
 
             uut.cleanUpJobDirectory(mapFilesDir);
 
@@ -1968,10 +1871,6 @@ public class BulkIngestMapFileLoaderTest {
 
             Assert.assertTrue("BulkIngestMapFileLoader#cleanUpJobDirectory failed to call FileSystem#mkdirs",
                             processOutputContains(uutLogEntries, "There were failures bringing map files online."));
-        } catch (URISyntaxException e) {
-
-            Assert.fail("Class#getResource failed to return a valid URI");
-
         } catch (IOException ioe) {
 
             String msg = ioe.getMessage();
@@ -2002,19 +1901,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -2030,7 +1917,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
@@ -2061,29 +1948,16 @@ public class BulkIngestMapFileLoaderTest {
         BulkIngestMapFileLoaderTest.logger.info("testTakeOwnershipJobDirectoryFailedOwnershipExchangeLoading called...");
 
         try {
-
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
-            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2091,7 +1965,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
@@ -2127,26 +2001,14 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
+            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.COMPLETE_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2154,7 +2016,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
@@ -2190,24 +2052,12 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.TRUE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2215,7 +2065,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
@@ -2251,25 +2101,13 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2277,7 +2115,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
@@ -2313,25 +2151,13 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2339,7 +2165,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
@@ -2373,25 +2199,13 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> existsResults = new HashMap<>();
 
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             existsResults.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2399,7 +2213,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.takeOwnershipJobDirectory(jobDirectory);
 
@@ -2435,19 +2249,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -2456,7 +2258,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.markJobDirectoryFailed(url.toURI(), jobDirectory);
 
@@ -2490,19 +2292,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -2511,7 +2301,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.markJobDirectoryFailed(url.toURI(), jobDirectory);
 
@@ -2540,19 +2330,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -2561,7 +2339,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.markJobDirectoryFailed(url.toURI(), jobDirectory);
 
@@ -2588,19 +2366,7 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
@@ -2609,7 +2375,7 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
             boolean results = uut.markJobDirectoryFailed(url.toURI(), jobDirectory);
 
@@ -2638,27 +2404,15 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> exists = new HashMap<>();
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
 
             exists.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
@@ -2666,9 +2420,9 @@ public class BulkIngestMapFileLoaderTest {
 
             Whitebox.invokeMethod(FileSystem.class, "addFileSystemForTesting", BulkIngestMapFileLoaderTest.FILE_SYSTEM_URI, conf, fs);
 
-            Path jobDirectory = new Path(url.toString());
+            Path jobDirectory = createNewPath(url);
 
-            boolean results = uut.markDirectoryForCleanup(jobDirectory, srcHdfs);
+            boolean results = uut.markDirectoryForCleanup(jobDirectory, url.toURI());
 
             Assert.assertTrue("BulkIngestMapFileLoader#markDirectoryForCleanup failed to return true as expected.", results);
         } finally {
@@ -2686,31 +2440,19 @@ public class BulkIngestMapFileLoaderTest {
 
             URL url = BulkIngestMapFileLoaderTest.class.getResource("/datawave/ingest/mapreduce/job/");
 
-            String workDir = ".";
-            String jobDirPattern = "jobs/";
-            String instanceName = "localhost";
-            String zooKeepers = "localhost";
-            URI seqFileHdfs = url.toURI();
-            URI srcHdfs = url.toURI();
-            URI destHdfs = url.toURI();
-            String jobtracker = "localhost";
-            Map<String,Integer> tablePriorities = new HashMap<>();
-            Configuration conf = new Configuration();
-
             FileSystem mfs = FileSystem.get(conf);
 
             mfs.create(new Path(url.toString() + "/job.cleanup"));
 
-            BulkIngestMapFileLoader uut = new BulkIngestMapFileLoader(workDir, jobDirPattern, instanceName, zooKeepers, "user", new PasswordToken("pass"),
-                            seqFileHdfs, srcHdfs, destHdfs, jobtracker, tablePriorities, conf, 0);
+            BulkIngestMapFileLoader uut = createBulkIngestFileMapLoader(url);
 
             Assert.assertNotNull("BulkIngestMapFileLoader constructor failed to create an instance.", uut);
 
             Map<String,Boolean> exists = new HashMap<>();
-            String filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
+            String filePath = String.format("%s%s", url, BulkIngestMapFileLoader.CLEANUP_FILE_MARKER);
 
             exists.put(filePath, Boolean.TRUE);
-            filePath = String.format("%s%s", url.toString(), BulkIngestMapFileLoader.LOADING_FILE_MARKER);
+            filePath = String.format("%s%s", url, BulkIngestMapFileLoader.LOADING_FILE_MARKER);
             exists.put(filePath, Boolean.FALSE);
 
             BulkIngestMapFileLoaderTest.WrappedLocalFileSystem fs = new BulkIngestMapFileLoaderTest.WrappedLocalFileSystem(createMockInputStream(),
