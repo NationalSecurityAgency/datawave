@@ -1205,7 +1205,10 @@ public class QueryOptions implements OptionDescriber {
         // If we don't have a query, make sure it's because
         // we don't aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
-            this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
+            setDisableEvaluation(true);
+
+        } else {
+            setDisableEvaluation(false);
         }
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
@@ -1273,7 +1276,9 @@ public class QueryOptions implements OptionDescriber {
 
         // Boolean: should each attribute maintain a ColumnVisibility.
         if (options.containsKey(REDUCED_RESPONSE)) {
-            setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
+            setReducedResponse(true);
+        } else {
+            setReducedResponse(false);
         }
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
@@ -1643,7 +1648,9 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(SORTED_UIDS)) {
-            this.sortedUIDs = Boolean.parseBoolean(options.get(SORTED_UIDS));
+            setSortedUIDs(true);
+        } else {
+            setSortedUIDs(false);
         }
 
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
