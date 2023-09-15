@@ -263,6 +263,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private String limitFieldsField = null;
     private boolean hitList = false;
     private boolean dateIndexTimeTravel = false;
+    private boolean ignoreNonExistentFields = false;
     // Cap (or fail if failOutsideValidDateRange) the begin date with this value (subtracted from Now). 0 or less disables this feature.
     private long beginDateCap = -1;
     private boolean failOutsideValidDateRange = true;
@@ -504,6 +505,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexTableName(other.getIndexTableName());
         this.setReverseIndexTableName(other.getReverseIndexTableName());
         this.setMetadataTableName(other.getMetadataTableName());
+        this.setIgnoreExistentFields(other.getIgnoreExistentFields());
         this.setDateIndexTableName(other.getDateIndexTableName());
         this.setIndexStatsTableName(other.getIndexStatsTableName());
         this.setDefaultDateTypeName(other.getDefaultDateTypeName());
@@ -1625,6 +1627,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setDateIndexTimeTravel(boolean dateIndexTimeTravel) {
         this.dateIndexTimeTravel = dateIndexTimeTravel;
+    }
+
+    public boolean getIgnoreExistentFields() {
+        return ignoreNonExistentFields;
+    }
+
+    public void setIgnoreExistentFields(boolean ignoreNonExistentFields) {
+        this.ignoreNonExistentFields = ignoreNonExistentFields;
     }
 
     public long getBeginDateCap() {
