@@ -45,15 +45,17 @@ services:
       test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
 
   consul:
-    image: consul:1.9.8
+    image: consul:1.15.4
     hostname: localhost
     environment:
-      - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true, "verify_server_hostname": false}'
+      - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
       - CONSUL_BIND_INTERFACE=eth0
     # defined as host:container
     ports:
       - "8400"
       - "8500:8500"
+      - "8501:8501"
+      - "8503:8503"
       - "53"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
@@ -61,7 +63,7 @@ services:
       - demo
 
   rabbitmq:
-    image: rabbitmq:3.8.25-alpine
+    image: rabbitmq:3.12.4-alpine
     volumes:
       - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
       - ./logs:/logs
