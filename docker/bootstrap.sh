@@ -1,6 +1,9 @@
 echo "Creating .env file..."
 echo
 
+# Ensure that permissions are set correctly for the config files
+chomd -R 755 config pki rabbitmq-config
+
 DW_HOSTNAME=$(hostname)
 DW_HOSTNAME=${DW_HOSTNAME%%.*}
 DW_HOST_FQDN=$(hostname -f)
