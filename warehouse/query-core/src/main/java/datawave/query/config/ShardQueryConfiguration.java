@@ -344,6 +344,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean ivaratorPersistVerify = true;
     private int ivaratorPersistVerifyCount = 100;
     private int maxIvaratorSources = 33;
+    private long maxIvaratorSourceWait = 1000L * 60 * 30;
     private long maxIvaratorResults = -1;
     private int maxEvaluationPipelines = 25;
     private int maxPipelineCachedResults = 25;
@@ -611,6 +612,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIvaratorPersistVerify(other.isIvaratorPersistVerify());
         this.setIvaratorPersistVerifyCount(other.getIvaratorPersistVerifyCount());
         this.setMaxIvaratorSources(other.getMaxIvaratorSources());
+        this.setMaxIvaratorSourceWait(other.getMaxIvaratorSourceWait());
         this.setMaxIvaratorResults(other.getMaxIvaratorResults());
         this.setMaxEvaluationPipelines(other.getMaxEvaluationPipelines());
         this.setMaxPipelineCachedResults(other.getMaxPipelineCachedResults());
@@ -1418,6 +1420,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setMaxIvaratorSources(int maxIvaratorSources) {
         this.maxIvaratorSources = maxIvaratorSources;
+    }
+
+    public long getMaxIvaratorSourceWait() {
+        return maxIvaratorSourceWait;
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        this.maxIvaratorSourceWait = maxIvaratorSourceWait;
     }
 
     public long getMaxIvaratorResults() {

@@ -15,6 +15,7 @@ import java.util.function.Predicate;
 import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
