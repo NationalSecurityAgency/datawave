@@ -12,7 +12,7 @@
     <modules />
     <profiles>
         <profile>
-            <id>accumulo-submodule</id>
+            <id>submodule-service-accumulo</id>
             <activation>
                 <file>
                     <exists>accumulo/pom.xml</exists>
@@ -23,7 +23,7 @@
             </modules>
         </profile>
         <profile>
-            <id>audit-submodule</id>
+            <id>submodule-service-audit</id>
             <activation>
                 <file>
                     <exists>audit/pom.xml</exists>
@@ -34,7 +34,7 @@
             </modules>
         </profile>
         <profile>
-            <id>authorization-submodule</id>
+            <id>submodule-service-authorization</id>
             <activation>
                 <file>
                     <exists>authorization/pom.xml</exists>
@@ -45,7 +45,7 @@
             </modules>
         </profile>
         <profile>
-            <id>config-submodule</id>
+            <id>submodule-service-config</id>
             <activation>
                 <file>
                     <exists>config/pom.xml</exists>
@@ -56,7 +56,7 @@
             </modules>
         </profile>
         <profile>
-            <id>dictionary-submodule</id>
+            <id>submodule-service-dictionary</id>
             <activation>
                 <file>
                     <exists>dictionary/pom.xml</exists>
@@ -67,7 +67,7 @@
             </modules>
         </profile>
         <profile>
-            <id>hazelcast-submodule</id>
+            <id>submodule-service-hazelcast</id>
             <activation>
                 <file>
                     <exists>hazelcast/pom.xml</exists>
@@ -78,7 +78,7 @@
             </modules>
         </profile>
         <profile>
-            <id>query-metric-submodule</id>
+            <id>submodule-service-query-metric</id>
             <activation>
                 <file>
                     <exists>query-metric/pom.xml</exists>
