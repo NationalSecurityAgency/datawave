@@ -1,7 +1,5 @@
 package datawave.query.transformer;
 
-import static datawave.query.tables.SSDeepSimilarityQueryLogic.SSDEEP_QUERY_MAP_PARAM;
-
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +16,6 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.marking.MarkingFunctions;
-import datawave.query.tables.SSDeepSimilarityQueryLogic;
 import datawave.query.util.ssdeep.ChunkSizeEncoding;
 import datawave.query.util.ssdeep.IntegerEncoding;
 import datawave.query.util.ssdeep.NGramScoreTuple;
@@ -37,7 +34,7 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTransformer.class);
 
-    /** The number of characters in the bucket encoding alphapet */
+    /** The number of characters in the bucket encoding alphabet */
     public static final int BUCKET_ENCODING_BASE = 32;
     /** The length of the bucket encoding we will perform */
     public static final int BUCKET_ENCODING_LENGTH = 2;
@@ -49,7 +46,7 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     final ChunkSizeEncoding chunkSizeEncoding;
 
-    /** Used to encode buckets as characters which are prepended to the ranges used to retireve ngram tuples */
+    /** Used to encode buckets as characters which are prepended to the ranges used to retrieve ngram tuples */
     final IntegerEncoding bucketEncoder;
 
     /**
@@ -75,12 +72,6 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
         this.chunkStart = bucketEncoder.getLength();
         this.chunkEnd = chunkStart + chunkSizeEncoding.getLength();
-
-        // TODO: unpack queryMap from optionalParametersMap.
-        Map<String,List<String>> optionalQueryParameters = query.getOptionalQueryParameters();
-        List<String> queryMapList = optionalQueryParameters.get(SSDEEP_QUERY_MAP_PARAM);
-        Multimap<NGramTuple,SSDeepHash> queryMap = SSDeepSimilarityQueryLogic.decodeQueryMapList(queryMapList);
-        this.setQueryMap(queryMap);
     }
 
     @Override
@@ -176,7 +167,7 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
      *            a map of ngrams to the query ssdeep hashes from which they originate.
      * @param chunkPostings
      *            a map of matching ssdeep hashes liked to the ngram tuple that was matched.
-     * @return a map of sdeep hashes to score tuples.
+     * @return a map of ssdeep hashes to score tuples.
      */
     protected Multimap<SSDeepHash,NGramScoreTuple> scoreQuery(Multimap<NGramTuple,SSDeepHash> queryMap, Multimap<SSDeepHash,NGramTuple> chunkPostings) {
         // score based on chunk match count

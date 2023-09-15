@@ -1,8 +1,6 @@
 package datawave.query.tables;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -13,7 +11,6 @@ import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.ScannerBase;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
@@ -24,7 +21,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
 
 import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.query.transformer.SSDeepSimilarityQueryTransformer;
@@ -44,9 +40,6 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryLogic.class);
 
-    /** Used to store the map of ssdeep chnuks mapped to the original ssdeep hash in the Query's optional parameters map */
-    public static final String SSDEEP_QUERY_MAP_PARAM = "ssdeepQueryMap";
-
     int indexBuckets = 32;
 
     int queryThreads = 100;
@@ -57,10 +50,12 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
     int bucketEncodingLength = 2;
 
-    /** Used to encode buckets as characters which are prepended to the ranges used to retireve ngram tuples */
+    /** Used to encode buckets as characters which are prepended to the ranges used to retrieve ngram tuples */
     private IntegerEncoding bucketEncoder;
     /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
     private ChunkSizeEncoding chunkSizeEncoding;
+
+    SSDeepSimilarityQueryTransformer transformer;
 
     ScannerFactory scannerFactory;
 
@@ -78,6 +73,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
         this.maxRepeatedCharacters = ssDeepSimilarityTable.maxRepeatedCharacters;
         this.queryThreads = ssDeepSimilarityTable.queryThreads;
         this.indexBuckets = ssDeepSimilarityTable.indexBuckets;
+        this.transformer = ssDeepSimilarityTable.transformer;
     }
 
     @Override
@@ -177,9 +173,8 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
             settings.setOptionalQueryParameters(optionalQueryParameters);
         }
 
-        // TODO: update optionalQueryParameters map with contents of queryMap;
-        List<String> queryMapList = encodeQueryMap(queryMap);
-        optionalQueryParameters.put(SSDEEP_QUERY_MAP_PARAM, queryMapList);
+        transformer = new SSDeepSimilarityQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
+        transformer.setQueryMap(queryMap);
     }
 
     @Override
@@ -194,8 +189,6 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
-        // transformer.setQueryMap(settings.getQueryMap());
         return transformer;
     }
 
@@ -252,68 +245,5 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
     public void setBucketEncodingLength(int bucketEncodingLength) {
         this.bucketEncodingLength = bucketEncodingLength;
-    }
-
-    /**
-     * Parse a List of encoded query map entries back into the original query map
-     *
-     * @param queryMapList
-     *            the encoded query map in list form
-     * @return the decoded query map.
-     */
-    public static Multimap<NGramTuple,SSDeepHash> decodeQueryMapList(List<String> queryMapList) {
-        Multimap<NGramTuple,SSDeepHash> queryMap = TreeMultimap.create();
-
-        for (String e : queryMapList) {
-            int pos = e.indexOf("##");
-            if (pos > 0) {
-                String tupleString = e.substring(0, pos);
-                // TODO catch parse failure
-                NGramTuple tuple = NGramTuple.parse(tupleString);
-
-                int currentPos = pos + 2;
-                while (currentPos > pos && currentPos < e.length()) {
-                    int nextPos = e.indexOf("%%", currentPos);
-                    if (nextPos > currentPos) {
-                        String ssdeepString = e.substring(currentPos, nextPos);
-                        // TODO catch parse failure
-                        SSDeepHash hash = SSDeepHash.parse(ssdeepString);
-                        queryMap.put(tuple, hash);
-                        currentPos = nextPos + 2;
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                throw new IllegalStateException("Could not parse ssdeep queryMap from parameter list entry: " + e);
-            }
-        }
-
-        log.info("Decoded ssdeep query map of size " + queryMap.size() + " from parameter list of length " + queryMapList.size());
-        return queryMap;
-    }
-
-    /**
-     * Encode the query map into a list of strings, each item in the list corresponds to an entry in the query map
-     *
-     * @param queryMap
-     *            the query map to encode
-     * @return the encoded query map represented as a list of strings
-     */
-    public static List<String> encodeQueryMap(Multimap<NGramTuple,SSDeepHash> queryMap) {
-        final List<String> queryMapList = new ArrayList<>();
-        for (Map.Entry<NGramTuple,Collection<SSDeepHash>> e : queryMap.asMap().entrySet()) {
-            final StringBuilder b = new StringBuilder();
-            final NGramTuple t = e.getKey();
-            b.append(t.toString()).append("##");
-
-            final Collection<SSDeepHash> ss = e.getValue();
-            for (SSDeepHash s : ss) {
-                b.append(s.toString()).append("%%");
-            }
-            queryMapList.add(b.toString());
-        }
-        log.info("Encoded ssdeep query map of size " + queryMap.size() + " into parameter list of length " + queryMapList.size());
-        return queryMapList;
     }
 }

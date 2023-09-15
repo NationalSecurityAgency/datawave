@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.api.easymock.PowerMock;
 import org.powermock.api.easymock.annotation.Mock;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.google.common.collect.Multimap;
@@ -31,6 +32,7 @@ import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.result.DefaultEventQueryResponse;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"javax.management.*", "javax.xml.*"})
 public class SSDeepSimilarityQueryTransformerTest {
     private SSDeepSimilarityQueryTransformer transformer;
 
@@ -48,16 +50,7 @@ public class SSDeepSimilarityQueryTransformerTest {
     String ssdeepString = "3:yionv//thPkKlDtn/rXScG2/uDlhl2UE9FQEul/lldDpZflsup:6v/lhPkKlDtt/6TIPFQEqRDpZ+up";
 
     public void basicExpects(Key k) {
-        NGramTuple tuple = new NGramTuple(chunkSize, chunk);
-        SSDeepHash hash = SSDeepHash.parse(ssdeepString);
-        Multimap<NGramTuple,SSDeepHash> queryMap = TreeMultimap.create();
-        queryMap.put(tuple, hash);
-        List<String> encodedQueryMap = SSDeepSimilarityQueryLogic.encodeQueryMap(queryMap);
-        Map<String,List<String>> optionalParameters = new HashMap<>();
-        optionalParameters.put(SSDeepSimilarityQueryLogic.SSDEEP_QUERY_MAP_PARAM, encodedQueryMap);
-
         EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
-        EasyMock.expect(mockQuery.getOptionalQueryParameters()).andReturn(optionalParameters);
         EasyMock.expect(mockResponseFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
         EasyMock.expect(mockResponseFactory.getEvent()).andReturn(new DefaultEvent()).times(1);
         EasyMock.expect(mockResponseFactory.getField()).andReturn(new DefaultField()).times(4);
