@@ -1283,10 +1283,14 @@ public class QueryOptions implements OptionDescriber {
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
             setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
+        } else {
+            setFullTableScanOnly(false);
         }
 
         if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
             setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
+        } else {
+            setTrackSizes(true);
         }
 
         if (options.containsKey(PROJECTION_FIELDS)) {
@@ -1326,7 +1330,9 @@ public class QueryOptions implements OptionDescriber {
         this.mustUseFieldIndex = false;
 
         if (options.containsKey(FILTER_MASKED_VALUES)) {
-            this.filterMaskedValues = Boolean.parseBoolean(options.get(FILTER_MASKED_VALUES));
+            this.filterMaskedValues = true;
+        } else {
+            this.filterMaskedValues = false;
         }
 
         if (options.containsKey(INCLUDE_DATATYPE)) {
@@ -1341,7 +1347,9 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
-            this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
+            this.collectTimingDetails = false;
+        } else {
+            this.collectTimingDetails = true;
         }
 
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
@@ -1448,7 +1456,9 @@ public class QueryOptions implements OptionDescriber {
         this.timeFilter = new TimeFilter(startTime, endTime);
 
         if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
-            this.setIncludeGroupingContext(Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT)));
+            this.setIncludeGroupingContext(true);
+        } else {
+            this.setIncludeGroupingContext(false);
         }
 
         if (options.containsKey(DOCUMENT_PERMUTATION_CLASSES)) {
@@ -1542,7 +1552,9 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(ALLOW_FIELD_INDEX_EVALUATION)) {
-            this.setAllowFieldIndexEvaluation(Boolean.parseBoolean(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
+            this.setAllowFieldIndexEvaluation(true);
+        } else {
+            this.setAllowFieldIndexEvaluation(false);
         }
 
         if (options.containsKey(ALLOW_TERM_FREQUENCY_LOOKUP)) {
@@ -1622,7 +1634,9 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
-            this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
+            this.setCompressResults(false);
+        } else {
+            this.setCompressResults(true);
         }
 
         if (options.containsKey(MAX_EVALUATION_PIPELINES)) {

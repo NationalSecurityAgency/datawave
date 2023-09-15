@@ -531,8 +531,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         addOption(cfg, QueryOptions.TERM_FREQUENCIES_REQUIRED, Boolean.toString(config.isTermFrequenciesRequired()), false);
         addOption(cfg, QueryOptions.QUERY, newQueryString, false);
         addOption(cfg, QueryOptions.QUERY_ID, config.getQuery().getId().toString(), false);
-        addOption(cfg, QueryOptions.FULL_TABLE_SCAN_ONLY, Boolean.toString(isFullTable), false);
-        addOption(cfg, QueryOptions.TRACK_SIZES, Boolean.toString(config.isTrackSizes()), false);
         addOption(cfg, QueryOptions.ACTIVE_QUERY_LOG_NAME, config.getActiveQueryLogName(), false);
         // Set the start and end dates
         configureTypeMappings(config, cfg, metadataHelper, getCompressOptionMappings());
@@ -2057,9 +2055,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             if (sourceLimit > 0) {
                 addOption(cfg, QueryOptions.LIMIT_SOURCES, Long.toString(sourceLimit), false);
             }
-            if (config.getCollectTimingDetails()) {
-                addOption(cfg, QueryOptions.COLLECT_TIMING_DETAILS, Boolean.toString(true), false);
-            }
             if (config.getSendTimingToStatsd()) {
                 addOption(cfg, QueryOptions.STATSD_HOST_COLON_PORT, config.getStatsdHost() + ':' + Integer.toString(config.getStatsdPort()), false);
                 addOption(cfg, QueryOptions.STATSD_MAX_QUEUE_SIZE, Integer.toString(config.getStatsdMaxQueueSize()), false);
@@ -2392,9 +2387,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             addOption(cfg, QueryOptions.IGNORE_COLUMN_FAMILIES, QueryOptions.buildIgnoredColumnFamiliesString(Sets.newHashSet("d", "tf")), false);
         }
 
-        // Include the option to filter masked values
-        addOption(cfg, QueryOptions.FILTER_MASKED_VALUES, Boolean.toString(config.getFilterMaskedValues()), false);
-
         // Include the EVENT_DATATYPE as a field
         if (config.getIncludeDataTypeAsField()) {
             addOption(cfg, QueryOptions.INCLUDE_DATATYPE, Boolean.toString(true), false);
@@ -2430,13 +2422,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 sep = ",";
             }
             addOption(cfg, QueryOptions.DOCUMENT_PERMUTATION_CLASSES, docPermutationConfig.toString(), false);
-        }
-
-        // if groupby function is used, force include.grouping.context to be true
-        if (config.getGroupFields() != null && !config.getGroupFields().isEmpty()) {
-            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(true), false);
-        } else {
-            addOption(cfg, QueryOptions.INCLUDE_GROUPING_CONTEXT, Boolean.toString(config.getIncludeGroupingContext()), false);
         }
 
         addOption(cfg, QueryOptions.DISABLE_DOCUMENTS_WITHOUT_EVENTS, Boolean.toString(config.isDisableIndexOnlyDocuments()), false);
