@@ -60,15 +60,17 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
     final int chunkEnd;
 
     /** Tracks which ssdeep hashes each of the ngrams originated from */
-    Multimap<NGramTuple,SSDeepHash> queryMap;
+    final Multimap<NGramTuple,SSDeepHash> queryMap;
 
-    public SSDeepSimilarityQueryTransformer(Query query, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    public SSDeepSimilarityQueryTransformer(Query query, Multimap<NGramTuple,SSDeepHash> queryMap, IntegerEncoding bucketEncoder,
+                    ChunkSizeEncoding chunkSizeEncoding, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
+        this.queryMap = queryMap;
         this.responseObjectFactory = responseObjectFactory;
 
-        this.bucketEncoder = new IntegerEncoding(BUCKET_ENCODING_BASE, BUCKET_ENCODING_LENGTH);
-        this.chunkSizeEncoding = new ChunkSizeEncoding();
+        this.bucketEncoder = bucketEncoder;
+        this.chunkSizeEncoding = chunkSizeEncoding;
 
         this.chunkStart = bucketEncoder.getLength();
         this.chunkEnd = chunkStart + chunkSizeEncoding.getLength();
@@ -197,9 +199,5 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
     public Multimap<NGramTuple,SSDeepHash> getQueryMap() {
         return queryMap;
-    }
-
-    public void setQueryMap(Multimap<NGramTuple,SSDeepHash> queryMap) {
-        this.queryMap = queryMap;
     }
 }

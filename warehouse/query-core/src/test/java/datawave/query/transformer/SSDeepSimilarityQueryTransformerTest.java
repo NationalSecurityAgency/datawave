@@ -22,6 +22,8 @@ import com.google.common.collect.TreeMultimap;
 
 import datawave.marking.MarkingFunctions;
 import datawave.query.tables.SSDeepSimilarityQueryLogic;
+import datawave.query.util.ssdeep.ChunkSizeEncoding;
+import datawave.query.util.ssdeep.IntegerEncoding;
 import datawave.query.util.ssdeep.NGramTuple;
 import datawave.query.util.ssdeep.SSDeepHash;
 import datawave.webservice.query.Query;
@@ -34,8 +36,6 @@ import datawave.webservice.result.DefaultEventQueryResponse;
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.management.*", "javax.xml.*"})
 public class SSDeepSimilarityQueryTransformerTest {
-    private SSDeepSimilarityQueryTransformer transformer;
-
     @Mock
     private Query mockQuery;
 
@@ -58,6 +58,13 @@ public class SSDeepSimilarityQueryTransformerTest {
 
     @Test
     public void transformTest() {
+        int bucketEncodingBase = 32;
+        int bucketEncodingLength = 2;
+
+        IntegerEncoding bucketEncoder = new IntegerEncoding(bucketEncodingBase, bucketEncodingLength);
+        ;
+        ChunkSizeEncoding chunkSizeEncoding = new ChunkSizeEncoding();
+
         NGramTuple tuple = new NGramTuple(chunkSize, chunk);
         SSDeepHash hash = SSDeepHash.parse(ssdeepString);
 
@@ -72,8 +79,8 @@ public class SSDeepSimilarityQueryTransformerTest {
 
         PowerMock.replayAll();
 
-        transformer = new SSDeepSimilarityQueryTransformer(mockQuery, mockMarkingFunctions, mockResponseFactory);
-        transformer.setQueryMap(queryMap);
+        SSDeepSimilarityQueryTransformer transformer = new SSDeepSimilarityQueryTransformer(mockQuery, queryMap, bucketEncoder, chunkSizeEncoding,
+                        mockMarkingFunctions, mockResponseFactory);
         Map.Entry<SSDeepHash,NGramTuple> transformedTuple = transformer.transform(entry);
         List<Object> resultList = new ArrayList<>();
         resultList.add(transformedTuple);

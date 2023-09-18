@@ -2,8 +2,6 @@ package datawave.query.tables;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -40,22 +38,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryLogic.class);
 
-    int indexBuckets = 32;
-
-    int queryThreads = 100;
-
-    int maxRepeatedCharacters = 3;
-
-    int bucketEncodingBase = 32;
-
-    int bucketEncodingLength = 2;
-
-    /** Used to encode buckets as characters which are prepended to the ranges used to retrieve ngram tuples */
-    private IntegerEncoding bucketEncoder;
-    /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
-    private ChunkSizeEncoding chunkSizeEncoding;
-
-    SSDeepSimilarityQueryTransformer transformer;
+    private SSDeepSimilarityQueryConfiguration config;
 
     ScannerFactory scannerFactory;
 
@@ -65,42 +48,25 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
     public SSDeepSimilarityQueryLogic(final SSDeepSimilarityQueryLogic ssDeepSimilarityTable) {
         super(ssDeepSimilarityTable);
+        this.config = ssDeepSimilarityTable.config;
         this.scannerFactory = ssDeepSimilarityTable.scannerFactory;
-        this.bucketEncoder = ssDeepSimilarityTable.bucketEncoder;
-        this.chunkSizeEncoding = ssDeepSimilarityTable.chunkSizeEncoding;
-        this.bucketEncodingLength = ssDeepSimilarityTable.bucketEncodingLength;
-        this.bucketEncodingBase = ssDeepSimilarityTable.bucketEncodingBase;
-        this.maxRepeatedCharacters = ssDeepSimilarityTable.maxRepeatedCharacters;
-        this.queryThreads = ssDeepSimilarityTable.queryThreads;
-        this.indexBuckets = ssDeepSimilarityTable.indexBuckets;
-        this.transformer = ssDeepSimilarityTable.transformer;
     }
 
     @Override
-    public void close() {
-        super.close();
-        final ScannerFactory factory = this.scannerFactory;
-        if (null == factory) {
-            log.debug("ScannerFactory is null; not closing it.");
-        } else {
-            int nClosed = 0;
-            factory.lockdown();
-            for (final ScannerBase bs : factory.currentScanners()) {
-                factory.close(bs);
-                ++nClosed;
-            }
-            if (log.isDebugEnabled())
-                log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
+    public SSDeepSimilarityQueryConfiguration getConfig() {
+        if (config == null) {
+            config = SSDeepSimilarityQueryConfiguration.create();
         }
+        return config;
     }
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient accumuloClient, Query settings, Set<Authorizations> auths) throws Exception {
-        final SSDeepSimilarityQueryConfiguration config = new SSDeepSimilarityQueryConfiguration(this, settings);
-        this.scannerFactory = new ScannerFactory(accumuloClient);
-        this.bucketEncoder = new IntegerEncoding(bucketEncodingBase, bucketEncodingLength);
-        this.chunkSizeEncoding = new ChunkSizeEncoding();
+        final SSDeepSimilarityQueryConfiguration config = getConfig();
 
+        this.scannerFactory = new ScannerFactory(accumuloClient);
+
+        config.setQuery(settings);
         config.setClient(accumuloClient);
         config.setAuthorizations(auths);
         setupRanges(settings, config);
@@ -113,10 +79,10 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
             throw new QueryException("Did not receive a SSDeepSimilarityQueryConfiguration instance!!");
         }
 
-        final SSDeepSimilarityQueryConfiguration config = (SSDeepSimilarityQueryConfiguration) genericConfig;
+        this.config = (SSDeepSimilarityQueryConfiguration) genericConfig;
 
         try {
-            final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), this.queryThreads,
+            final BatchScanner scanner = this.scannerFactory.newScanner(config.getTableName(), config.getAuthorizations(), config.getQueryThreads(),
                             config.getQuery());
             scanner.setRanges(config.getRanges());
             this.iterator = scanner.iterator();
@@ -145,12 +111,19 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
         final NGramGenerator nGramEngine = new NGramGenerator(7);
         log.info("Pre-processing " + queries.size() + " SSDeepHash queries");
-        if (this.maxRepeatedCharacters > 0) {
+        final int maxRepeatedCharacters = config.getMaxRepeatedCharacters();
+        if (maxRepeatedCharacters > 0) {
             log.info("Normalizing SSDeepHashes to remove long runs of consecutive characters");
             queries = queries.stream().map(h -> h.normalize(maxRepeatedCharacters)).collect(Collectors.toSet());
         }
+
         final Multimap<NGramTuple,SSDeepHash> queryMap = nGramEngine.preprocessQueries(queries);
         final Set<Range> ranges = new TreeSet<>();
+
+        final ChunkSizeEncoding chunkSizeEncoding = config.getChunkSizeEncoder();
+        final IntegerEncoding bucketEncoder = config.getBucketEncoder();
+        final int indexBuckets = config.getIndexBuckets();
+
         for (NGramTuple ct : queryMap.keys()) {
             final String sizeAndChunk = chunkSizeEncoding.encode(ct.getChunkSize()) + ct.getChunk();
             for (int i = 0; i < indexBuckets; i++) {
@@ -166,20 +139,29 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
         }
         config.setRanges(ranges);
         config.setQueryMap(queryMap);
-
-        Map<String,List<String>> optionalQueryParameters = settings.getOptionalQueryParameters();
-        if (optionalQueryParameters == null) {
-            optionalQueryParameters = new HashMap<>();
-            settings.setOptionalQueryParameters(optionalQueryParameters);
-        }
-
-        transformer = new SSDeepSimilarityQueryTransformer(settings, this.markingFunctions, this.responseObjectFactory);
-        transformer.setQueryMap(queryMap);
     }
 
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new SSDeepSimilarityQueryLogic(this);
+    }
+
+    @Override
+    public void close() {
+        super.close();
+        final ScannerFactory factory = this.scannerFactory;
+        if (null == factory) {
+            log.debug("ScannerFactory is null; not closing it.");
+        } else {
+            int nClosed = 0;
+            factory.lockdown();
+            for (final ScannerBase bs : factory.currentScanners()) {
+                factory.close(bs);
+                ++nClosed;
+            }
+            if (log.isDebugEnabled())
+                log.debug("Cleaned up " + nClosed + " batch scanners associated with this query logic.");
+        }
     }
 
     @Override
@@ -189,7 +171,9 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
 
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
-        return transformer;
+        final SSDeepSimilarityQueryConfiguration config = getConfig();
+        return new SSDeepSimilarityQueryTransformer(settings, config.getQueryMap(), config.getBucketEncoder(), config.getChunkSizeEncoder(),
+                        this.markingFunctions, this.responseObjectFactory);
     }
 
     @Override
@@ -205,45 +189,5 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
-    }
-
-    public int getIndexBuckets() {
-        return indexBuckets;
-    }
-
-    public void setIndexBuckets(int indexBuckets) {
-        this.indexBuckets = indexBuckets;
-    }
-
-    public int getQueryThreads() {
-        return queryThreads;
-    }
-
-    public void setQueryThreads(int queryThreads) {
-        this.queryThreads = queryThreads;
-    }
-
-    public int getMaxRepeatedCharacters() {
-        return maxRepeatedCharacters;
-    }
-
-    public void setMaxRepeatedCharacters(int maxRepeatedCharacters) {
-        this.maxRepeatedCharacters = maxRepeatedCharacters;
-    }
-
-    public int getBucketEncodingBase() {
-        return bucketEncodingBase;
-    }
-
-    public void setBucketEncodingBase(int bucketEncodingBase) {
-        this.bucketEncodingBase = bucketEncodingBase;
-    }
-
-    public int getBucketEncodingLength() {
-        return bucketEncodingLength;
-    }
-
-    public void setBucketEncodingLength(int bucketEncodingLength) {
-        this.bucketEncodingLength = bucketEncodingLength;
     }
 }

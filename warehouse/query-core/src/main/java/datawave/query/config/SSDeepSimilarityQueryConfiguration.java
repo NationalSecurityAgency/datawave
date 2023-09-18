@@ -6,13 +6,31 @@ import org.apache.accumulo.core.data.Range;
 
 import com.google.common.collect.Multimap;
 
+import datawave.query.util.ssdeep.ChunkSizeEncoding;
+import datawave.query.util.ssdeep.IntegerEncoding;
 import datawave.query.util.ssdeep.NGramTuple;
 import datawave.query.util.ssdeep.SSDeepHash;
 import datawave.webservice.query.Query;
+import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 import datawave.webservice.query.logic.BaseQueryLogic;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
+
+    int indexBuckets = 32;
+
+    int queryThreads = 100;
+
+    int maxRepeatedCharacters = 3;
+
+    int bucketEncodingBase = 32;
+
+    int bucketEncodingLength = 2;
+
+    /** Used to encode buckets as characters which are prepended to the ranges used to retrieve ngram tuples */
+    private IntegerEncoding bucketEncoder;
+    /** Used to encode the chunk size as a character which is included in the ranges used to retrieve ngram tuples */
+    private ChunkSizeEncoding chunkSizeEncoder;
 
     private Query query;
 
@@ -20,9 +38,19 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     private Multimap<NGramTuple,SSDeepHash> queryMap;
 
-    public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic, Query query) {
+    public SSDeepSimilarityQueryConfiguration() {
+        super();
+        query = new QueryImpl();
+        bucketEncoder = new IntegerEncoding(bucketEncodingBase, bucketEncodingLength);
+        chunkSizeEncoder = new ChunkSizeEncoding();
+    }
+
+    public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
         super(configuredLogic);
-        setQuery(query);
+    }
+
+    public static SSDeepSimilarityQueryConfiguration create() {
+        return new SSDeepSimilarityQueryConfiguration();
     }
 
     public Query getQuery() {
@@ -47,5 +75,53 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public void setQueryMap(Multimap<NGramTuple,SSDeepHash> queryMap) {
         this.queryMap = queryMap;
+    }
+
+    public int getIndexBuckets() {
+        return indexBuckets;
+    }
+
+    public void setIndexBuckets(int indexBuckets) {
+        this.indexBuckets = indexBuckets;
+    }
+
+    public int getQueryThreads() {
+        return queryThreads;
+    }
+
+    public void setQueryThreads(int queryThreads) {
+        this.queryThreads = queryThreads;
+    }
+
+    public int getMaxRepeatedCharacters() {
+        return maxRepeatedCharacters;
+    }
+
+    public void setMaxRepeatedCharacters(int maxRepeatedCharacters) {
+        this.maxRepeatedCharacters = maxRepeatedCharacters;
+    }
+
+    public int getBucketEncodingBase() {
+        return bucketEncodingBase;
+    }
+
+    public void setBucketEncodingBase(int bucketEncodingBase) {
+        this.bucketEncodingBase = bucketEncodingBase;
+    }
+
+    public int getBucketEncodingLength() {
+        return bucketEncodingLength;
+    }
+
+    public void setBucketEncodingLength(int bucketEncodingLength) {
+        this.bucketEncodingLength = bucketEncodingLength;
+    }
+
+    public IntegerEncoding getBucketEncoder() {
+        return bucketEncoder;
+    }
+
+    public ChunkSizeEncoding getChunkSizeEncoder() {
+        return chunkSizeEncoder;
     }
 }
