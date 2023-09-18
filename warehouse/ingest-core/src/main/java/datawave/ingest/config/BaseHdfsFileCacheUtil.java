@@ -67,7 +67,7 @@ public abstract class BaseHdfsFileCacheUtil {
         } catch (IOException e) {
             cleanup(fs, tempFile);
 
-            log.error("Unable to update cache file " + cacheFilePath + " " + e.getMessage());
+            log.error("Unable to update cache file " + cacheFilePath + ". " + e.getMessage());
         }
 
     }
