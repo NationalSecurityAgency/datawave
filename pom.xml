@@ -64,7 +64,7 @@
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>3.0-SNAPSHOT</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0-SNAPSHOT</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -83,19 +83,19 @@
         <version.log4j2>2.17.2</version.log4j2>
         <version.lucene>7.5.0</version.lucene>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
-        <version.microservice.accumulo-api>3.0-SNAPSHOT</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>3.0-SNAPSHOT</version.microservice.accumulo-utils>
-        <version.microservice.audit-api>3.0-SNAPSHOT</version.microservice.audit-api>
-        <version.microservice.authorization-api>3.0-SNAPSHOT</version.microservice.authorization-api>
-        <version.microservice.base-rest-responses>3.0-SNAPSHOT</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>2.0-SNAPSHOT</version.microservice.common-utils>
-        <version.microservice.dictionary-api>3.0-SNAPSHOT</version.microservice.dictionary-api>
+        <version.microservice.accumulo-api>4.0-SNAPSHOT</version.microservice.accumulo-api>
+        <version.microservice.accumulo-utils>4.0-SNAPSHOT</version.microservice.accumulo-utils>
+        <version.microservice.audit-api>4.0-SNAPSHOT</version.microservice.audit-api>
+        <version.microservice.authorization-api>4.0-SNAPSHOT</version.microservice.authorization-api>
+        <version.microservice.base-rest-responses>4.0-SNAPSHOT</version.microservice.base-rest-responses>
+        <version.microservice.common-utils>3.0-SNAPSHOT</version.microservice.common-utils>
+        <version.microservice.dictionary-api>4.0-SNAPSHOT</version.microservice.dictionary-api>
         <version.microservice.mapreduce-query-api>1.0-SNAPSHOT</version.microservice.mapreduce-query-api>
-        <version.microservice.metadata-utils>3.0-SNAPSHOT</version.microservice.metadata-utils>
-        <version.microservice.metrics-reporter>2.0-SNAPSHOT</version.microservice.metrics-reporter>
+        <version.microservice.metadata-utils>4.0-SNAPSHOT</version.microservice.metadata-utils>
+        <version.microservice.metrics-reporter>3.0-SNAPSHOT</version.microservice.metrics-reporter>
         <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
-        <version.microservice.query-metric-api>3.0-SNAPSHOT</version.microservice.query-metric-api>
-        <version.microservice.type-utils>2.0-SNAPSHOT</version.microservice.type-utils>
+        <version.microservice.query-metric-api>4.0-SNAPSHOT</version.microservice.query-metric-api>
+        <version.microservice.type-utils>3.0-SNAPSHOT</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.16</version.mysql-connector>
