@@ -13,14 +13,13 @@ import org.apache.hadoop.fs.RemoteIterator;
  *
  * @param <T>
  */
-// todo - add tests
 public class FilteringIterator<T extends FileStatus> implements Iterator<T> {
     private final RemoteIterator<T> delegateIterator;
     private final PathFilter filter;
     private T matchingFileStatus = null;
 
-    public FilteringIterator(RemoteIterator<T> fileIterator, PathFilter filter) {
-        this.delegateIterator = fileIterator;
+    public FilteringIterator(RemoteIterator<T> sourceIterator, PathFilter filter) {
+        this.delegateIterator = sourceIterator;
         this.filter = filter;
     }
 
@@ -52,8 +51,9 @@ public class FilteringIterator<T extends FileStatus> implements Iterator<T> {
         try {
             while (null == this.matchingFileStatus && this.delegateIterator.hasNext()) {
                 T candidate = delegateIterator.next();
-
-                if (filter.accept(candidate.getPath())) {
+                if (candidate == null) {
+                    this.matchingFileStatus = null;
+                } else if (filter.accept(candidate.getPath())) {
                     this.matchingFileStatus = candidate;
                 }
             }
