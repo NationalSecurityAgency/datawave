@@ -30,8 +30,71 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 
 /**
- * Provides functionality needed to group documents and aggregate field values within identified groups (regardless if done server or
+ * This class provides the primary functionality needed to group documents and aggregate field values within identified groups (regardless if done server or
  * client-side).
+ * <P>
+ * <P>
+ * <strong>Grouping</strong>
+ * <P>
+ * Grouping fields across documents will result in groupings of distinct value groupings for each specified field to group, as well as the total number of times
+ * each particular grouping combination was seen. Fields to group by can be specified by the following options:
+ * <ul>
+ * <li>The LUCENE function {@code #GROUPBY()}.</li>
+ * <li>The JEXL function {@code f:groupby()}.</li>
+ * <li>The query parameter {@code group.fields}.</li>
+ * </ul>
+ * Only groupings that consist of a value from each specified field to group by will be counted as a valid grouping. If three fields were specified, e.g.
+ * {@code #GROUPBY(NAME,AGE,JOB)}, each valid grouping will contain three values, a NAME value, an AGE value, and a JOB value. Any grouping combinations that
+ * do not have one of each field will be discarded. Values are grouped together based on the format of each document entry's key, which may have one of the
+ * following formats:
+ * <ul>
+ * <li>{@code <FIELD>}</li>
+ * <li>{@code <FIELD>.<INSTANCE>}</li>
+ * <li>{@code <FIELD>.<CONTEXT>...<INSTANCE>}</li>
+ * </ul>
+ * Values of fields with the same context and instance are considered direct one-to-one grouping matches, and will be placed within the same groupings. Direct
+ * matches cannot be determined for values of fields that do not have a context, and as such they will be combined with each possible grouping, effectively a
+ * cartesian product. Direct matches are prioritized and found first before indirect matches are combined with them.
+ * <P>
+ * <P>
+ * <strong>Aggregation</strong>
+ * <P>
+ * Once all valid groupings have been identified and counted, aggregation can be performed on the values of any specified fields for each grouping. The
+ * aggregation fields can differ from the group-by fields. The following aggregation operations are supported:
+ * <P>
+ * <P>
+ * <strong>SUM</strong>: Sum up all the values for specified fields across groupings. This operation is limited to fields with numerical values. Fields may be
+ * specified via:
+ * <ul>
+ * <li>The LUCENE function {@code #SUM()}.</li>
+ * <li>The JEXL function {@code f:sum()}.</li>
+ * <li>The query parameter {@code sum.fields}.</li>
+ * </ul>
+ * <strong>MAX</strong>: Find the max values for specified fields across groupings. Fields may be specified via:
+ * <ul>
+ * <li>The LUCENE function {@code #MAX()}.</li>
+ * <li>The JEXL function {@code f:max()}.</li>
+ * <li>The query parameter {@code max.fields}.</li>
+ * </ul>
+ * <strong>MIN</strong>: Find the min values for specified fields across groupings. Fields may be specified via:
+ * <ul>
+ * <li>The LUCENE function {@code #MIN()}.</li>
+ * <li>The JEXL function {@code f:min()}.</li>
+ * <li>The query parameter {@code min.fields}.</li>
+ * </ul>
+ * <strong>COUNT</strong>: Count the number of times values were seen for specified fields across groupings. Fields may be specified via:
+ * <ul>
+ * <li>The LUCENE function {@code #COUNT()}.</li>
+ * <li>The JEXL function {@code f:count()}.</li>
+ * <li>The query parameter {@code count.fields}.</li>
+ * </ul>
+ * <strong>AVERAGE</strong>: Find the average of all values for specified fields across groupings. This operation is limited to fields with numerical values.
+ * Fields may be specified via:
+ * <ul>
+ * <li>The LUCENE function {@code #AVERAGE()}.</li>
+ * <li>The JEXL function {@code f:average()}.</li>
+ * <li>The query parameter {@code average.fields}.</li>
+ * </ul>
  */
 public class DocumentGrouper {
 
