@@ -6,6 +6,7 @@ import java.util.Set;
 import org.assertj.core.api.AbstractAssert;
 import org.assertj.core.util.Sets;
 
+import datawave.query.common.grouping.Grouping;
 import datawave.query.common.grouping.GroupingAttribute;
 import datawave.query.common.grouping.Groups;
 
@@ -29,13 +30,13 @@ public class GroupsAssert extends AbstractAssert<GroupsAssert,Groups> {
 
     public GroupAssert assertGroup(GroupingAttribute<?>... keyElements) {
         isNotNull();
-        Set<GroupingAttribute<?>> key = Sets.newHashSet();
-        key.addAll(Arrays.asList(keyElements));
-        return GroupAssert.assertThat(actual.getGroup(key));
+        Grouping grouping = new Grouping();
+        grouping.addAll(Arrays.asList(keyElements));
+        return GroupAssert.assertThat(actual.getGroup(grouping));
     }
 
-    public GroupAssert assertGroup(Set<GroupingAttribute<?>> key) {
+    public GroupAssert assertGroup(Grouping grouping) {
         isNotNull();
-        return GroupAssert.assertThat(actual.getGroup(key));
+        return GroupAssert.assertThat(actual.getGroup(grouping));
     }
 }

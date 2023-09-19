@@ -30,7 +30,8 @@ import datawave.query.attributes.Document;
 import datawave.query.attributes.TypeAttribute;
 
 /**
- * Provides functionality needed to group documents and aggregate field values within identified groups (regardless if done server or client-side).
+ * Provides functionality needed to group documents and aggregate field values within identified groups (regardless if done server or
+ * client-side).
  */
 public class DocumentGrouper {
 
@@ -70,7 +71,7 @@ public class DocumentGrouper {
     private final Groups currentGroups = new Groups();
     private final FieldIndex groupFieldsIndex = new FieldIndex();
     private final FieldIndex aggregateFieldsIndex = new FieldIndex();
-    private final Multimap<Pair<String,String>,Set<GroupingAttribute<?>>> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
+    private final Multimap<Pair<String,String>,Grouping> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
     private final int requiredGroupSize;
 
     private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupFields groupFields, Groups groups) {
@@ -109,7 +110,7 @@ public class DocumentGrouper {
             }
 
             // Merge the groups and aggregations we found in this particular group-by operation into the groups passed by the user. The separation is required
-            // to ensure that all any grouping and aggregation done in this session was applied only to the current document.
+            // to ensure that any grouping and aggregation done in this session was applied only to the current document.
             this.groups.mergeAll(currentGroups);
         }
     }
@@ -138,7 +139,7 @@ public class DocumentGrouper {
         // For each distinct grouping, parse and write the grouping information to the current groups.
         for (String instance : idToFields.keySet()) {
             // The distinct grouping.
-            Set<GroupingAttribute<?>> groupingAttributes = new HashSet<>();
+            Grouping grouping = new Grouping();
             // The aggregated values.
             FieldAggregator fieldAggregator = new FieldAggregator();
             // The total times the grouping was seen.
@@ -182,11 +183,11 @@ public class DocumentGrouper {
                     Attribute<?> attribute = field.getAttribute();
                     GroupingAttribute<?> newAttribute = new GroupingAttribute<>((Type<?>) attribute.getData(), new Key(field.getBase()), true);
                     newAttribute.setColumnVisibility(attribute.getColumnVisibility());
-                    groupingAttributes.add(newAttribute);
+                    grouping.add(newAttribute);
                 }
             }
             // Create a new group and merge it into the existing groups.
-            Group group = new Group(groupingAttributes, count);
+            Group group = new Group(grouping, count);
             group.setFieldAggregator(fieldAggregator);
             group.addDocumentVisibility(document.getColumnVisibility());
             groups.mergeOrPutGroup(group);
@@ -249,7 +250,7 @@ public class DocumentGrouper {
             }
         }
 
-        // Only track groupings that have one event from each target group field, e.g. groupings with the required group size.
+        // Only track groupings that have one event from each target group field, i.e. groupings with the required group size.
         groupings.stream().filter(grouping -> grouping.size() == requiredGroupSize).forEach(this::trackGroup);
     }
 
@@ -396,7 +397,7 @@ public class DocumentGrouper {
         // The grouping context-instance pairs seen for all grouping keys generated in this method.
         Set<Pair<String,String>> groupingContextAndInstances = new HashSet<>();
         // The set of 'keys' that are used to identify individual distinct groupings.
-        List<Set<GroupingAttribute<?>>> groupedAttributes = new ArrayList<>();
+        List<Grouping> groupings = new ArrayList<>();
         // It is possible for a field event in a grouping combination to have a multi-value attribute. If this occurs, we must once again create cartesian
         // products between all the values of the attribute of each field.
         for (Field field : groupedFields) {
@@ -405,33 +406,33 @@ public class DocumentGrouper {
                 groupingContextAndInstances.add(Pair.with(field.getGroupingContext(), field.getInstance()));
             }
             // If we have no grouping keys yet, create keys consisting of each value of the current field.
-            if (groupedAttributes.isEmpty()) {
+            if (groupings.isEmpty()) {
                 for (Attribute<?> attribute : field.getAttributes()) {
                     GroupingAttribute<?> copy = createCopyWithKey(attribute, field.getBase());
-                    groupedAttributes.add(Sets.newHashSet(copy));
+                    groupings.add(new Grouping(copy));
                 }
             } else {
                 // Otherwise, create the cartesian product between the current field's value and each existing key.
-                List<Set<GroupingAttribute<?>>> newAttributes = new ArrayList<>();
+                List<Grouping> newGroupings = new ArrayList<>();
                 for (Attribute<?> attribute : field.getAttributes()) {
                     GroupingAttribute<?> copy = createCopyWithKey(attribute, field.getBase());
-                    for (Set<GroupingAttribute<?>> attributes : groupedAttributes) {
-                        Set<GroupingAttribute<?>> setCopy = new HashSet<>(attributes);
-                        setCopy.add(copy);
-                        newAttributes.add(setCopy);
+                    for (Grouping grouping : groupings) {
+                        Grouping groupingCopy = new Grouping(grouping);
+                        groupingCopy.add(copy);
+                        newGroupings.add(groupingCopy);
                     }
                 }
-                groupedAttributes = newAttributes;
+                groupings = newGroupings;
             }
         }
 
         // Track which grouping context-instance pairs we have seen for each grouping key.
         for (Pair<String,String> groupingContextAndInstance : groupingContextAndInstances) {
-            this.groupingContextAndInstancesSeenForGroups.putAll(groupingContextAndInstance, groupedAttributes);
+            this.groupingContextAndInstancesSeenForGroups.putAll(groupingContextAndInstance, groupings);
         }
 
         // Now we can create/update groups in currentGroups for each grouping key.
-        for (Set<GroupingAttribute<?>> grouping : groupedAttributes) {
+        for (Grouping grouping : groupings) {
             Group group = currentGroups.getGroup(grouping);
             // Create a group for the grouping if one does not already exist.
             if (group == null) {
@@ -474,8 +475,8 @@ public class DocumentGrouper {
                 // If we have any direct matches, then only aggregate the direct matches into the groups where we saw a direct match.
                 if (!directMatches.isEmpty()) {
                     for (Pair<String,String> directMatch : directMatches) {
-                        for (Set<GroupingAttribute<?>> groupKey : this.groupingContextAndInstancesSeenForGroups.get(directMatch)) {
-                            Group group = currentGroups.getGroup(groupKey);
+                        for (Grouping grouping : this.groupingContextAndInstancesSeenForGroups.get(directMatch)) {
+                            Group group = currentGroups.getGroup(grouping);
                             Collection<Field> fields = groupingContextAndInstanceToFields.get(directMatch);
                             group.aggregateAll(fields);
                         }

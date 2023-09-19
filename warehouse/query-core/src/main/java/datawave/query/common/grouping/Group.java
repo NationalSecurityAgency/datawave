@@ -9,7 +9,6 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 /**
  * Represents a grouping of values for fields specified via the #GROUP_BY functionality, with information about the total number of times the grouping was seen,
@@ -20,7 +19,7 @@ public class Group {
     /**
      * The distinct set of values that represent this grouping.
      */
-    private final Set<GroupingAttribute<?>> attributes;
+    private final ImmutableGrouping grouping;
 
     /**
      * The different column visibilities seen for each attribute that makes up the grouping.
@@ -42,13 +41,13 @@ public class Group {
      */
     private FieldAggregator fieldAggregator = new FieldAggregator();
 
-    public Group(Collection<GroupingAttribute<?>> attributes) {
-        this(attributes, 0);
+    public Group(Grouping grouping) {
+        this(grouping, 0);
     }
 
-    public Group(Collection<GroupingAttribute<?>> attributes, int count) {
-        this.attributes = Sets.newHashSet(attributes);
-        addAttributeVisibilities(this.attributes);
+    public Group(Grouping grouping, int count) {
+        this.grouping = new ImmutableGrouping(grouping);
+        addAttributeVisibilities(this.grouping);
         this.count = count;
     }
 
@@ -57,18 +56,18 @@ public class Group {
      *
      * @return the grouping
      */
-    public Set<GroupingAttribute<?>> getAttributes() {
-        return attributes;
+    public Grouping getGrouping() {
+        return grouping;
     }
 
     /**
      * Add the column visibilities from each of the given attributes to the set of attribute visibilities for this group.
      *
-     * @param attributes
+     * @param grouping
      *            the attributes to add visibilities from
      */
-    public void addAttributeVisibilities(Set<GroupingAttribute<?>> attributes) {
-        for (GroupingAttribute<?> attribute : attributes) {
+    public void addAttributeVisibilities(Grouping grouping) {
+        for (GroupingAttribute<?> attribute : grouping) {
             attributeVisibilities.put(attribute, attribute.getColumnVisibility());
         }
     }
@@ -159,7 +158,7 @@ public class Group {
 
     @Override
     public String toString() {
-        return new ToStringBuilder(this).append("attributes", attributes).append("attributeVisibilities", attributeVisibilities)
+        return new ToStringBuilder(this).append("attributes", grouping).append("attributeVisibilities", attributeVisibilities)
                         .append("documentVisibilities", documentVisibilities).append("count", count).append("aggregatedFields", fieldAggregator).toString();
     }
 }

@@ -79,7 +79,7 @@ public class GroupingUtils {
         document.setColumnVisibility(combineVisibilities(group.getDocumentVisibilities(), markingFunctions, true));
 
         // Add each of the grouping attributes to the document.
-        for (GroupingAttribute<?> attribute : group.getAttributes()) {
+        for (GroupingAttribute<?> attribute : group.getGrouping()) {
             // Update the visibility to the combined visibilities of each visibility seen for this attribute in a grouping.
             attribute.setColumnVisibility(combineVisibilities(group.getVisibilitiesForAttribute(attribute), markingFunctions, false));
             document.put(attribute.getMetadata().getRow().toString(), attribute);

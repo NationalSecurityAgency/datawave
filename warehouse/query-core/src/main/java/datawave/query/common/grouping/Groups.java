@@ -3,7 +3,6 @@ package datawave.query.common.grouping;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents a set of groups found during a #GROUP_BY operation.
@@ -13,7 +12,7 @@ public class Groups {
     /**
      * A map of distinct grouping values to their groups.
      */
-    private final Map<Set<GroupingAttribute<?>>,Group> groups = new HashMap<>();
+    private final Map<Grouping,Group> groups = new HashMap<>();
 
     /**
      * Returns the collection of {@link Group} in this {@link Groups}.
@@ -35,7 +34,7 @@ public class Groups {
      *            the grouping values
      * @return true if this {@link Groups} contains a {@link Group} for the given grouping values, or false otherwise
      */
-    public boolean containsGroup(Set<GroupingAttribute<?>> attributes) {
+    public boolean containsGroup(Grouping attributes) {
         return groups.containsKey(attributes);
     }
 
@@ -46,7 +45,7 @@ public class Groups {
      *            the grouping values
      * @return the {@link Group}
      */
-    public Group getGroup(Set<GroupingAttribute<?>> attributes) {
+    public Group getGroup(Grouping attributes) {
         return groups.get(attributes);
     }
 
@@ -57,7 +56,7 @@ public class Groups {
      *            the group to put
      */
     public void putGroup(Group group) {
-        this.groups.put(group.getAttributes(), group);
+        this.groups.put(group.getGrouping(), group);
     }
 
     /**
@@ -68,8 +67,8 @@ public class Groups {
      *            the group to merge or put
      */
     public void mergeOrPutGroup(Group group) {
-        if (containsGroup(group.getAttributes())) {
-            Group existing = getGroup(group.getAttributes());
+        if (containsGroup(group.getGrouping())) {
+            Group existing = getGroup(group.getGrouping());
             existing.merge(group);
         } else {
             putGroup(group);
