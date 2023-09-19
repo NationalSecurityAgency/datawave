@@ -44,8 +44,8 @@ import datawave.query.attributes.TypeAttribute;
  * <li>The query parameter {@code group.fields}.</li>
  * </ul>
  * Only groupings that consist of a value from each specified field to group by will be counted as a valid grouping. If three fields were specified, e.g.
- * {@code #GROUPBY(NAME,AGE,JOB)}, each valid grouping will contain three values, a NAME value, an AGE value, and a JOB value. Any grouping combinations that
- * do not have one of each field will be discarded. Values are grouped together based on the format of each document entry's key, which may have one of the
+ * {@code #GROUPBY(NAME,AGE,JOB)}, each valid grouping will contain three values, a NAME value, an AGE value, and a JOB value. Any grouping combinations that do
+ * not have one of each field will be discarded. Values are grouped together based on the format of each document entry's key, which may have one of the
  * following formats:
  * <ul>
  * <li>{@code <FIELD>}</li>
