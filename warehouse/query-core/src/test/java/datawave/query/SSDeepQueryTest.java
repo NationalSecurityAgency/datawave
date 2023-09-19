@@ -11,11 +11,9 @@ import java.util.stream.Stream;
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchWriter;
 import org.apache.accumulo.core.client.BatchWriterConfig;
-import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.client.Scanner;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.client.security.tokens.PasswordToken;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
 import org.apache.accumulo.core.data.Value;
@@ -116,17 +114,17 @@ public class SSDeepQueryTest {
         InMemoryInstance i = new InMemoryInstance("ssdeepTestInstance");
         accumuloClient = new InMemoryAccumuloClient("root", i);
 
-        /** create the table */
+        /* create the table */
         TableOperations tops = accumuloClient.tableOperations();
         if (tops.exists(tableName)) {
             tops.delete(tableName);
         }
         tops.create(tableName);
 
-        /** add ssdeep data to the table */
+        /* add ssdeep data to the table */
         indexSSDeepTestData(accumuloClient);
 
-        /** dump the table */
+        /* dump the table */
         logSSDeepTestData(tableName);
     }
 
@@ -149,7 +147,7 @@ public class SSDeepQueryTest {
         this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
 
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
-        DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(this.auths.toString().split(",")), null, null, -1L);
+        DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
         this.principal = new DatawavePrincipal(Collections.singleton(user));
     }
 

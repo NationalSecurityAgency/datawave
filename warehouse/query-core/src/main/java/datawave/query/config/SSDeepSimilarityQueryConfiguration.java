@@ -41,8 +41,6 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
     public SSDeepSimilarityQueryConfiguration() {
         super();
         query = new QueryImpl();
-        bucketEncoder = new IntegerEncoding(bucketEncodingBase, bucketEncodingLength);
-        chunkSizeEncoder = new ChunkSizeEncoding();
     }
 
     public SSDeepSimilarityQueryConfiguration(BaseQueryLogic<?> configuredLogic) {
@@ -115,13 +113,5 @@ public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguratio
 
     public void setBucketEncodingLength(int bucketEncodingLength) {
         this.bucketEncodingLength = bucketEncodingLength;
-    }
-
-    public IntegerEncoding getBucketEncoder() {
-        return bucketEncoder;
-    }
-
-    public ChunkSizeEncoding getChunkSizeEncoder() {
-        return chunkSizeEncoder;
     }
 }

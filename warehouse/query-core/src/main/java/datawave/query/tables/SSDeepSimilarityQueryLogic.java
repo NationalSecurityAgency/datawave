@@ -120,12 +120,13 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
         final Multimap<NGramTuple,SSDeepHash> queryMap = nGramEngine.preprocessQueries(queries);
         final Set<Range> ranges = new TreeSet<>();
 
-        final ChunkSizeEncoding chunkSizeEncoding = config.getChunkSizeEncoder();
-        final IntegerEncoding bucketEncoder = config.getBucketEncoder();
+        final IntegerEncoding bucketEncoder = new IntegerEncoding(config.getBucketEncodingBase(), config.getBucketEncodingLength());
+        final ChunkSizeEncoding chunkSizeEncoder = new ChunkSizeEncoding();
+
         final int indexBuckets = config.getIndexBuckets();
 
         for (NGramTuple ct : queryMap.keys()) {
-            final String sizeAndChunk = chunkSizeEncoding.encode(ct.getChunkSize()) + ct.getChunk();
+            final String sizeAndChunk = chunkSizeEncoder.encode(ct.getChunkSize()) + ct.getChunk();
             for (int i = 0; i < indexBuckets; i++) {
                 final String bucketedSizeAndChunk = bucketEncoder.encode(i) + sizeAndChunk;
                 ranges.add(Range.exact(new Text(bucketedSizeAndChunk)));
@@ -172,8 +173,7 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
     @Override
     public QueryLogicTransformer getTransformer(Query settings) {
         final SSDeepSimilarityQueryConfiguration config = getConfig();
-        return new SSDeepSimilarityQueryTransformer(settings, config.getQueryMap(), config.getBucketEncoder(), config.getChunkSizeEncoder(),
-                        this.markingFunctions, this.responseObjectFactory);
+        return new SSDeepSimilarityQueryTransformer(settings, config, this.markingFunctions, this.responseObjectFactory);
     }
 
     @Override
@@ -189,5 +189,25 @@ public class SSDeepSimilarityQueryLogic extends BaseQueryLogic<Map.Entry<Key,Val
     @Override
     public Set<String> getExampleQueries() {
         return Collections.emptySet();
+    }
+
+    public void setIndexBuckets(int indexBuckets) {
+        getConfig().setIndexBuckets(indexBuckets);
+    }
+
+    public void setQueryThreads(int queryThreads) {
+        getConfig().setQueryThreads(queryThreads);
+    }
+
+    public void setMaxRepeatedCharacters(int maxRepeatedCharacters) {
+        getConfig().setMaxRepeatedCharacters(maxRepeatedCharacters);
+    }
+
+    public void setBucketEncodingBase(int bucketEncodingBase) {
+        getConfig().setBucketEncodingBase(bucketEncodingBase);
+    }
+
+    public void setBucketEncodingLength(int bucketEncodingLength) {
+        getConfig().setBucketEncodingLength(bucketEncodingLength);
     }
 }

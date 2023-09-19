@@ -16,6 +16,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.TreeMultimap;
 
 import datawave.marking.MarkingFunctions;
+import datawave.query.config.SSDeepSimilarityQueryConfiguration;
 import datawave.query.util.ssdeep.ChunkSizeEncoding;
 import datawave.query.util.ssdeep.IntegerEncoding;
 import datawave.query.util.ssdeep.NGramScoreTuple;
@@ -62,15 +63,15 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
     /** Tracks which ssdeep hashes each of the ngrams originated from */
     final Multimap<NGramTuple,SSDeepHash> queryMap;
 
-    public SSDeepSimilarityQueryTransformer(Query query, Multimap<NGramTuple,SSDeepHash> queryMap, IntegerEncoding bucketEncoder,
-                    ChunkSizeEncoding chunkSizeEncoding, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
+    public SSDeepSimilarityQueryTransformer(Query query, SSDeepSimilarityQueryConfiguration config, MarkingFunctions markingFunctions,
+                    ResponseObjectFactory responseObjectFactory) {
         super(markingFunctions);
         this.auths = new Authorizations(query.getQueryAuthorizations().split(","));
-        this.queryMap = queryMap;
+        this.queryMap = config.getQueryMap();
         this.responseObjectFactory = responseObjectFactory;
 
-        this.bucketEncoder = bucketEncoder;
-        this.chunkSizeEncoding = chunkSizeEncoding;
+        this.bucketEncoder = new IntegerEncoding(config.getBucketEncodingBase(), config.getBucketEncodingLength());
+        this.chunkSizeEncoding = new ChunkSizeEncoding();
 
         this.chunkStart = bucketEncoder.getLength();
         this.chunkEnd = chunkStart + chunkSizeEncoding.getLength();
