@@ -92,7 +92,6 @@
         <version.jetty>6.1.26</version.jetty>
         <version.jgroups>4.0.19.Final</version.jgroups>
         <version.jjwt>0.11.2</version.jjwt>
-        <version.jline>2.12</version.jline>
         <version.jts>1.19.0</version.jts>
         <version.junit>4.13.2</version.junit>
         <version.junit.jupiter>5.5.2</version.junit.jupiter>
