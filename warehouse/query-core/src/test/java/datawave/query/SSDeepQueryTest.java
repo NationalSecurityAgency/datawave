@@ -2,9 +2,14 @@ package datawave.query;
 
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -45,8 +50,11 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.webservice.common.connection.AccumuloConnectionFactory;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.DefaultResponseObjectFactory;
+import datawave.webservice.query.result.event.EventBase;
+import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
+import it.unimi.dsi.fastutil.Hash;
 
 public class SSDeepQueryTest {
 
@@ -154,11 +162,30 @@ public class SSDeepQueryTest {
     @Test
     public void testSingleQuery() throws Exception {
         String query = "CHECKSUM_SSDEEP:" + TEST_SSDEEPS[2];
-        runSSDeepQuery(query);
-        Assert.assertTrue(true);
+        EventQueryResponseBase response = runSSDeepQuery(query);
+        List<EventBase> events = response.getEvents();
+        int eventCount = events.size();
+
+        Map<String,String> observedFields = new HashMap<>();
+        if (eventCount > 0) {
+            for (EventBase e : events) {
+                List<FieldBase> fields = e.getFields();
+                for (FieldBase f : fields) {
+                    observedFields.put(f.getName(), f.getValueString());
+                }
+            }
+        }
+
+        Assert.assertFalse("Observed fields was unexpectedly empty", observedFields.isEmpty());
+        Assert.assertEquals("65.0", observedFields.remove("MATCH_SCORE"));
+        Assert.assertEquals("1", observedFields.remove("MATCH_RANK"));
+        Assert.assertEquals("3072:02irbxzGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:02MKlWQ7Sg3d4bO968rm7JO", observedFields.remove("QUERY_SSDEEP"));
+        Assert.assertEquals("3072:02irbxzGAFYDMxud7fKg3dXVmbOn5u46Kjnz/G8VYrs123D6pIJLIOSP:02MKlWQ7Sg3d4bO968rm7JO", observedFields.remove("MATCHING_SSDEEP"));
+        Assert.assertTrue("Observed unexpected field(s): " + observedFields, observedFields.isEmpty());
+        Assert.assertEquals(1, eventCount);
     }
 
-    public void runSSDeepQuery(String query) throws Exception {
+    public EventQueryResponseBase runSSDeepQuery(String query) throws Exception {
         QueryImpl q = new QueryImpl();
         q.setQuery(query);
         q.setId(UUID.randomUUID());
@@ -171,6 +198,6 @@ public class SSDeepQueryTest {
         SSDeepSimilarityQueryTransformer transformer = (SSDeepSimilarityQueryTransformer) transformIterator.getTransformer();
         EventQueryResponseBase response = (EventQueryResponseBase) transformer.createResponse(runner.next());
 
-        System.out.println(response);
+        return response;
     }
 }

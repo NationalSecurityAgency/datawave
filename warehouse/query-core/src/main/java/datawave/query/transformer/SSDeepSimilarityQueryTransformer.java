@@ -152,7 +152,7 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
         final NGramTuple c = new NGramTuple(chunkSize, ngram);
 
         // extract the matching ssdeep hash from the column qualifier
-        final String s = input.getKey().getColumnQualifier().toString();
+        final String s = k.getColumnQualifier().toString();
         try {
             final SSDeepHash h = SSDeepHash.parse(s);
             return new AbstractMap.SimpleImmutableEntry<>(h, c);
