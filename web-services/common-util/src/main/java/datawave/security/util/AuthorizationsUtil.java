@@ -197,7 +197,7 @@ public class AuthorizationsUtil {
         if (!primaryUser.getAuths().containsAll(queryUser.getAuths())) {
             Set<String> auths = new HashSet<>(queryUser.getAuths());
             auths.removeAll(primaryUser.getAuths());
-            throw new IllegalArgumentException("System Error.  Overall primary user missing auths " + auths + ".  Please try again.");
+            throw new IllegalArgumentException("System Error. Overall primary user missing auths " + auths + ". Please try again.");
         }
 
         // validate that the requestedAuths do not include anything outside of the principal's auths
