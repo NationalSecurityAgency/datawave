@@ -688,6 +688,17 @@ public class TableConfigurationUtil {
         } else {
             for (String table : tables) {
                 Map<String,String> tableConfig = TableConfigCache.getCurrentCache(conf).getTableProperties(table);
+
+                if (isUsingFileCache() && (null == tableConfig || tableConfig.isEmpty())) {
+                    // we've read from the config file and do not have properties for a requested table. Retry from accumulo.
+                    conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "false");
+                    setupTableConfigurationsCache(conf);
+                    tableConfig = TableConfigCache.getCurrentCache(conf).getTableProperties(table);
+                    if (null == tableConfig || tableConfig.isEmpty()) {
+                        throw new IOException("Requested output table, " + table + ", properties could not be found in cache or accumulo.");
+                    }
+                }
+
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ObjectOutputStream oos = new ObjectOutputStream(baos);
                 oos.writeObject(tableConfig);
