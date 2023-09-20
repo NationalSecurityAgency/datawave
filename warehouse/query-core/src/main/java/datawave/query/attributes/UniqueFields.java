@@ -130,7 +130,7 @@ public class UniqueFields implements Serializable, Cloneable {
     }
 
     /**
-     * Return a close of this class
+     * Return a clone of this class
      *
      * @return the copy
      */
