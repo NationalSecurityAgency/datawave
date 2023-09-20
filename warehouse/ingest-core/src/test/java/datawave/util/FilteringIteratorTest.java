@@ -1,12 +1,8 @@
 package datawave.util;
 
-import datawave.util.flag.InMemoryStubFileSystem;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
-import org.apache.hadoop.fs.RemoteIterator;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -15,7 +11,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static org.junit.Assert.*;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
+import org.apache.hadoop.fs.RemoteIterator;
+import org.junit.Before;
+import org.junit.Test;
+
+import datawave.util.flag.InMemoryStubFileSystem;
 
 public class FilteringIteratorTest {
     private static final FileStatus FILE_STATUS_ONE = createFileStatusObject("One");
@@ -34,7 +37,7 @@ public class FilteringIteratorTest {
     public void before() {
         sourceIteratorWithData = new TestRemoteIterator(TEST_DATA.iterator());
         sourceIteratorWithNoData = new TestRemoteIterator(Collections.emptyIterator());
-        sourceIteratorWithBadData = new TestRemoteIterator(Collections.singletonList((FileStatus)null).iterator());
+        sourceIteratorWithBadData = new TestRemoteIterator(Collections.singletonList((FileStatus) null).iterator());
     }
 
     @Test
@@ -80,7 +83,7 @@ public class FilteringIteratorTest {
         filteringIterator.next();
     }
 
-    @Test(expected=RuntimeException.class)
+    @Test(expected = RuntimeException.class)
     public void testIOExceptionHandling() {
         RemoteIterator<FileStatus> exceptionThrowingRemoteIterator = new RemoteIterator<>() {
             @Override

@@ -28,7 +28,9 @@ public class FullPathGlobFilter implements PathFilter {
     void init(Collection<String> filePatterns) throws IOException {
         try {
             for (String filePattern : filePatterns) {
-                pathMatchers.add(FileSystems.getDefault().getPathMatcher("glob:" + new Path(filePattern).toUri().getPath()));
+                String pathAsString = new Path(filePattern).toUri().getPath();
+                PathMatcher pathMatcher = FileSystems.getDefault().getPathMatcher("glob:" + pathAsString);
+                pathMatchers.add(pathMatcher);
             }
         } catch (PatternSyntaxException e) {
             // Existing code expects IOException
@@ -39,8 +41,10 @@ public class FullPathGlobFilter implements PathFilter {
 
     @Override
     public boolean accept(Path path) {
+        assert path != null;
         for (PathMatcher matcher : pathMatchers) {
-            if (matcher.matches(Paths.get(path.toUri().getPath()))) {
+            String pathAsString = path.toUri().getPath();
+            if (matcher.matches(Paths.get(pathAsString))) {
                 return true;
             }
         }
