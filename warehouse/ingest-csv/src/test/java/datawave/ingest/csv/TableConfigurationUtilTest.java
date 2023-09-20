@@ -2,6 +2,7 @@ package datawave.ingest.csv;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +53,7 @@ public class TableConfigurationUtilTest {
     }
 
     @Before
-    public void setup() throws IOException {
+    public void setup() throws IOException, NoSuchFieldException, IllegalAccessException {
         TypeRegistry.reset();
         conf = new Configuration();
         conf.addResource(ClassLoader.getSystemResource("config/ingest/all-config.xml"));
@@ -70,6 +71,10 @@ public class TableConfigurationUtilTest {
                         "table.file.compress.*,table.file.blocksize,table.file.replication,table.iterator.minc.*,table.group.*,crypto.*");
 
         conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, tempCacheFile.getAbsolutePath());
+
+        Field cache = TableConfigCache.class.getDeclaredField("cache");
+        cache.setAccessible(true);
+        cache.set(null, null);
 
     }
 
@@ -93,6 +98,8 @@ public class TableConfigurationUtilTest {
     public void testCacheFile() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
 
         conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "true");
+        File tempCacheFile = File.createTempFile("tempCache1", null);
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, tempCacheFile.getAbsolutePath());
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
         TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
@@ -107,6 +114,7 @@ public class TableConfigurationUtilTest {
         validateTCU(tcu, conf);
 
         Assert.assertTrue(tcu.isUsingFileCache());
+        tempCacheFile.delete();
     }
 
     @Test
@@ -161,7 +169,7 @@ public class TableConfigurationUtilTest {
     }
 
     @Test(expected = IOException.class)
-    public void testOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
+    public void testDeserializeOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
         conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "false");
 
         TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
@@ -173,6 +181,27 @@ public class TableConfigurationUtilTest {
         tcu.addOutputTables("audit", conf);
 
         tcu.deserializeTableConfigs(conf);
+
+    }
+
+    @Test(expected = IOException.class)
+    public void testOutputTableNotInCache() throws AccumuloSecurityException, AccumuloException, TableNotFoundException, IOException {
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "true");
+        File tempCacheFile = File.createTempFile("tempCache2", null);
+        conf.set(TableConfigCache.ACCUMULO_CONFIG_CACHE_PATH_PROPERTY, tempCacheFile.getAbsolutePath());
+
+        TableConfigurationUtil tcu = new TableConfigurationUtil(conf);
+        TableConfigurationUtil.registerTableNamesFromConfigFiles(conf);
+        tcu.configureTables(conf);
+
+        tcu.updateCacheFile();
+
+        tcu.addOutputTables("nonexistent_table", conf);
+        try {
+            tcu.serializeTableConfgurationIntoConf(conf);
+        } finally {
+            tempCacheFile.delete();
+        }
 
     }
 
