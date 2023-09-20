@@ -627,14 +627,18 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
     public E first() {
         if (persisted) {
             try (SortedSetInputStream<E> stream = getBoundedFileHandler().getInputStream(getStart(), getEnd())) {
-                return stream.readObject();
+                E object = stream.readObject();
+                if (object == null) {
+                    throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR));
+                } else {
+                    return object;
+                }
             } catch (Exception e) {
                 throw new IllegalStateException(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR, e));
             }
         } else {
             return super.first();
         }
-        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_FIRST_ELEMENT_ERROR));
     }
 
     @Override
@@ -656,13 +660,11 @@ public abstract class FileSortedSet<E> extends RewritableSortedSetImpl<E> implem
             if (gotLast) {
                 return last;
             } else {
-                QueryException qe = new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR);
-                throw (NoSuchElementException) (new NoSuchElementException().initCause(qe));
+                throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR));
             }
         } else {
             return super.last();
         }
-        throw (NoSuchElementException) new NoSuchElementException().initCause(new QueryException(DatawaveErrorCode.FETCH_LAST_ELEMENT_ERROR));
     }
 
     @Override
