@@ -69,6 +69,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     public static final Text ANY_FINAME = new Text("fi\0" + Constants.ANY_FIELD);
     public static final Text FI_START = new Text("fi\0");
     public static final Text FI_END = new Text("fi\0~");
+    public static final Random RANDOM = new Random();
 
     public abstract static class Builder<B extends Builder<B>> {
         private String queryId;
@@ -1449,7 +1450,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
         // cancelled check interval is 1 minute
         public static final int CANCELLED_CHECK_INTERVAL = 1000 * 60;
-        private volatile long lastCancelledCheck = System.currentTimeMillis() - new Random().nextInt(CANCELLED_CHECK_INTERVAL);
+        private volatile long lastCancelledCheck = System.currentTimeMillis() - RANDOM.nextInt(CANCELLED_CHECK_INTERVAL);
         private volatile boolean cancelled = false;
 
         private final int bufferSize = 128;

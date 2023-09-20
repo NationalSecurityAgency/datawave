@@ -80,14 +80,14 @@ public class WikipediaPageExtractor {
             if (xmlr.hasName()) {
                 currentName = xmlr.getName();
             }
-            if (xmlr.isStartElement() && tags.containsKey(currentName)) {
+            if (null != currentName && xmlr.isStartElement() && tags.containsKey(currentName)) {
                 if (!inRevision || (!currentName.equals(revisionName) && !currentName.equals(idName))) {
                     current = tags.get(currentName);
                     current.setLength(0);
                 }
-            } else if (xmlr.isStartElement() && currentName.equals(revisionName)) {
+            } else if (null != currentName && xmlr.isStartElement() && currentName.equals(revisionName)) {
                 inRevision = true;
-            } else if (xmlr.isEndElement() && currentName.equals(revisionName)) {
+            } else if (null != currentName && xmlr.isEndElement() && currentName.equals(revisionName)) {
                 inRevision = false;
             } else if (xmlr.isEndElement() && current != null) {
                 if (textName.equals(currentName)) {
