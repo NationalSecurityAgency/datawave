@@ -37,6 +37,8 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-maven-format-
           ${{ runner.os }}-maven-
+        maven-version: 3.8.7
+        cache: 'maven'
     - name: Format code
       run: |
         mvn -V -B -e clean formatter:format sortpom:sort -Pautoformat
@@ -62,6 +64,8 @@ jobs:
           ${{ runner.os }}-maven-build-
           ${{ runner.os }}-maven-format-
           ${{ runner.os }}-maven-
+        maven-version: 3.8.7
+        cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
         RUN_TESTS="mvn -V -B -e -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
@@ -79,6 +83,8 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.8.7
+        cache: 'maven'
     # Allow us to use the "--squash" option below
     - name: Turn on Docker experimental features and move Docker data root
       run: |
