@@ -54,8 +54,8 @@ public class MultiTableRRRangePartitionerTest {
         int resultFour = instance.calculateIndex(indexFour, numPartitions, tableName, cutPointArrayLength);
         assertEquals(result, resultTwo);
         assertEquals(result, expectedResult);
-        Assert.assertNotNull(resultThree);
-        Assert.assertNotNull(resultFour);
+        Assert.assertEquals(4, resultThree);
+        Assert.assertEquals(0, resultFour);
     }
 
     private static final String TABLE_NAME = "abc";

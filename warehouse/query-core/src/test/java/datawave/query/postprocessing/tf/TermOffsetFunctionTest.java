@@ -18,10 +18,10 @@ import datawave.query.jexl.JexlASTHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuple3;
 
-class TermOffsetFunctionTest {
+public class TermOffsetFunctionTest {
 
     @Test
-    void testApplyWithLogLogAggregationPruneToZero() throws Exception {
+    public void testApplyWithLogLogAggregationPruneToZero() throws Exception {
         TermFrequencyConfig config = new TermFrequencyConfig();
         config.setScript(JexlASTHelper.parseAndFlattenJexlQuery("content:phrase(FOO, termOffsetMap, 'bar', 'baz')"));
         DocumentKeysFunction docKeyFunction = new DocumentKeysFunction(config);

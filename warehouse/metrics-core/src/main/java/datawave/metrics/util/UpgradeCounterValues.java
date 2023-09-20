@@ -45,7 +45,7 @@ public class UpgradeCounterValues {
     private String instanceName, zookeepers, username, password, tableName;
     private int bsThreads = 10;
     private int bwThreads = 10;
-    private long bwMemory = 10 * 1048576;
+    private long bwMemory = 10 * 1048576L;
     private ArrayList<Range> ranges;
 
     public UpgradeCounterValues() {
