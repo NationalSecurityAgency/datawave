@@ -1937,8 +1937,12 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         getConfig().setMaxIvaratorSources(maxIvaratorSources);
     }
 
-    public long getMaxIvaratorResults() {
-        return getConfig().getMaxIvaratorResults();
+    public long getMaxIvaratorSourceWait() {
+        return getConfig().getMaxIvaratorSourceWait();
+    }
+
+    public void setMaxIvaratorSourceWait(long maxIvaratorSourceWait) {
+        getConfig().setMaxIvaratorSourceWait(maxIvaratorSourceWait);
     }
 
     public void setMaxIvaratorResults(long maxIvaratorResults) {
