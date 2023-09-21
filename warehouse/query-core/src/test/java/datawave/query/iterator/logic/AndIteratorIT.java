@@ -1,5 +1,6 @@
 package datawave.query.iterator.logic;
 
+import static datawave.query.iterator.logic.TestUtil.randomUids;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -8,6 +9,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -33,6 +35,8 @@ class AndIteratorIT {
     private final SortedSet<String> uidsB = new TreeSet<>(Arrays.asList("a", "c", "e", "g", "i"));
     // last three
     private final SortedSet<String> uidsC = new TreeSet<>(Arrays.asList("x", "y", "z"));
+
+    private static final Random rand = new Random();
 
     @Test
     void testIntersectionWithoutReduction() throws IOException {
@@ -212,9 +216,52 @@ class AndIteratorIT {
         assertThrows(DatawaveFatalQueryException.class, () -> driveIterator(itr, uids, indexOnlyFields, droppedFields));
     }
 
-    // 4) applyContextRequired -> contextExcludes is treated as a union TODO
+    @Test
+    void testIntersectionOfLowCardinalityIndexOnlyTerms() throws IOException {
+        int max = 100;
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 5);
+            SortedSet<String> uidsB = randomUids(100, 10);
+            SortedSet<String> uidsC = randomUids(100, 15);
+            driveIntersection(uidsA, uidsB, uidsC);
+        }
+    }
+
+    @Test
+    void testIntersectionOfHighCardinalityIndexOnlyTerms() throws IOException {
+        int max = 100;
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 50);
+            SortedSet<String> uidsB = randomUids(100, 75);
+            SortedSet<String> uidsC = randomUids(100, 85);
+            driveIntersection(uidsA, uidsB, uidsC);
+        }
+    }
+
+    @Test
+    void testIntersectionOfVariableCardinalityIndexOnlyTerms() throws IOException {
+        int max = 100;
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, rand.nextInt(100));
+            SortedSet<String> uidsB = randomUids(100, rand.nextInt(100));
+            SortedSet<String> uidsC = randomUids(100, rand.nextInt(100));
+            driveIntersection(uidsA, uidsB, uidsC);
+        }
+    }
 
     // === assert methods ===
+
+    private void driveIntersection(SortedSet<String> uidsA, SortedSet<String> uidsB, SortedSet<String> uidsC) throws IOException {
+        Set<NestedIterator<Key>> includes = new HashSet<>();
+        includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_A", uidsA, true));
+        includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_B", uidsB, true));
+        includes.add(IndexIteratorBridgeTest.createIndexIteratorBridge("FIELD_C", uidsC, true));
+        AndIterator<Key> andIterator = new AndIterator<>(includes);
+
+        SortedSet<String> uids = intersectUids(uidsA, uidsB, uidsC);
+
+        driveIterator(andIterator, uids);
+    }
 
     private void driveIterator(AndIterator itr, SortedSet<String> uids) throws IOException {
         driveIterator(itr, uids, Collections.emptySet(), Collections.emptySet());
