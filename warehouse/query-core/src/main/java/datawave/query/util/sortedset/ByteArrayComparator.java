@@ -11,7 +11,7 @@ public class ByteArrayComparator implements Comparator<byte[]> {
             minSize = term.length;
         int comparison = 0;
         for (int i = 0; i < minSize; i++) {
-            comparison = new Byte(data[i]).compareTo(term[i]);
+            comparison = Byte.valueOf(data[i]).compareTo(term[i]);
             if (comparison != 0)
                 break;
         }

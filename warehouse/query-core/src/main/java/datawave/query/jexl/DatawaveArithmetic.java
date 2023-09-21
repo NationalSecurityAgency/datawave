@@ -189,7 +189,7 @@ public abstract class DatawaveArithmetic extends JexlArithmetic {
         if (isFloatingPointNumber(left) || isFloatingPointNumber(right)) {
             double l = toDouble(left);
             double r = toDouble(right);
-            return new Double(l - r);
+            return Double.valueOf(l - r);
         }
 
         // if either are bigdecimal use that type

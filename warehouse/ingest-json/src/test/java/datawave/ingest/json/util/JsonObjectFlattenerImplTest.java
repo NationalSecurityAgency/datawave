@@ -63,8 +63,8 @@ public class JsonObjectFlattenerImplTest {
     public void testFlattenAndForceUpperCaseKeys() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").mapKeyValueNormalizer(toUpperCaseNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -80,8 +80,8 @@ public class JsonObjectFlattenerImplTest {
 
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").mapKeyValueNormalizer(toLowerCaseNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -99,8 +99,8 @@ public class JsonObjectFlattenerImplTest {
                         .mapKeyBlacklist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
                         .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -118,8 +118,8 @@ public class JsonObjectFlattenerImplTest {
                         .mapKeyWhitelist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2", "ROOTOBJECT.STRING2"))).pathDelimiter(".")
                         .mapKeyValueNormalizer(toUpperCaseNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -137,8 +137,8 @@ public class JsonObjectFlattenerImplTest {
                         .mapKeyBlacklist(new HashSet<>(Arrays.asList("ROOTOBJECT.NUMBER2"))).pathDelimiter(".").mapKeyValueNormalizer(toUpperCaseNormalizer)
                         .build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -151,8 +151,8 @@ public class JsonObjectFlattenerImplTest {
     public void testFlattenPreserveCaseIncludingPrefix() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter("_").mapKeyValueNormalizer(noOpNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -167,8 +167,8 @@ public class JsonObjectFlattenerImplTest {
     public void testFlattenModeSIMPLE() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().flattenMode(FlattenMode.SIMPLE).mapKeyValueNormalizer(noOpNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -188,8 +188,8 @@ public class JsonObjectFlattenerImplTest {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().flattenMode(FlattenMode.GROUPED).occurrenceInGroupDelimiter("#")
                         .mapKeyValueNormalizer(noOpNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -209,8 +209,8 @@ public class JsonObjectFlattenerImplTest {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().flattenMode(FlattenMode.GROUPED_AND_NORMAL).occurrenceInGroupDelimiter("_")
                         .pathDelimiter(".").mapKeyValueNormalizer(noOpNormalizer).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         Multimap<String,String> fieldMap = flattener.flatten(jsonElement.getAsJsonObject());
 
         // printJson(json);
@@ -237,8 +237,8 @@ public class JsonObjectFlattenerImplTest {
     public void testGroupingContextWithBadJson() throws Exception {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().flattenMode(FlattenMode.GROUPED).occurrenceInGroupDelimiter("#").build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         JsonObject job = jsonElement.getAsJsonObject();
         job.addProperty("illegal.key.format", "key name already has our path delimiter!");
 
@@ -255,8 +255,8 @@ public class JsonObjectFlattenerImplTest {
         JsonObjectFlattener flattener = new JsonObjectFlattenerImpl.Builder().pathDelimiter(".").occurrenceInGroupDelimiter(".")
                         .flattenMode(FlattenMode.GROUPED).build();
 
-        JsonParser parser = new JsonParser();
-        JsonElement jsonElement = parser.parse(json);
+        JsonElement jsonElement = JsonParser.parseString(json);
+
         JsonObject job = jsonElement.getAsJsonObject();
 
         try {

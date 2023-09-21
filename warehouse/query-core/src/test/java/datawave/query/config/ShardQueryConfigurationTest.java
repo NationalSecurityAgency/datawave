@@ -99,10 +99,10 @@ public class ShardQueryConfigurationTest {
         Assert.assertEquals(TableName.INDEX_STATS, config.getIndexStatsTableName());
         Assert.assertEquals("EVENT", config.getDefaultDateTypeName());
         Assert.assertTrue(config.isCleanupShardsAndDaysQueryHints());
-        Assert.assertEquals(new Integer(8), config.getNumQueryThreads());
-        Assert.assertEquals(new Integer(8), config.getNumIndexLookupThreads());
-        Assert.assertEquals(new Integer(8), config.getNumDateIndexThreads());
-        Assert.assertEquals(new Integer(-1), config.getMaxDocScanTimeout());
+        Assert.assertEquals(Integer.valueOf(8), config.getNumQueryThreads());
+        Assert.assertEquals(Integer.valueOf(8), config.getNumIndexLookupThreads());
+        Assert.assertEquals(Integer.valueOf(8), config.getNumDateIndexThreads());
+        Assert.assertEquals(Integer.valueOf(-1), config.getMaxDocScanTimeout());
         Assert.assertNotNull(config.getFstCount());
         Assert.assertEquals(0.99f, config.getCollapseDatePercentThreshold(), 0);
         Assert.assertTrue(config.getFullTableScanEnabled());

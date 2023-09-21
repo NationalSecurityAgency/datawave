@@ -133,7 +133,7 @@ public class Cardinality extends Attribute<Cardinality> {
             int result = WritableComparator.compareBytes(cvBytes, 0, cvBytes.length, otherCVBytes, 0, otherCVBytes.length);
 
             if (result == 0) {
-                result = new Long(this.getTimestamp()).compareTo(other.getTimestamp());
+                result = Long.compare(this.getTimestamp(), other.getTimestamp());
             }
 
             return result;

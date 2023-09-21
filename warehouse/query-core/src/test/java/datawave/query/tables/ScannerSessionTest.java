@@ -175,7 +175,7 @@ public class ScannerSessionTest {
             int row = Integer.parseInt(entry.getKey().getRow().toString());
             Integer rowCount = results.get(row);
             if (rowCount == null) {
-                rowCount = new Integer(0);
+                rowCount = 0;
             }
 
             rowCount = rowCount.intValue() + 1;
@@ -202,7 +202,7 @@ public class ScannerSessionTest {
         Assert.assertEquals(140000, count);
         Assert.assertEquals(14, results.keySet().size());
         for (Integer row : results.keySet()) {
-            Assert.assertEquals(new Integer(10000), results.get(row));
+            Assert.assertEquals(Integer.valueOf(10000), results.get(row));
         }
 
         ss.close();

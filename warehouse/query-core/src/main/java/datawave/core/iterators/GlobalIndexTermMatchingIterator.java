@@ -178,8 +178,7 @@ public class GlobalIndexTermMatchingIterator extends GlobalIndexTermMatchingFilt
              * note that boolean will ONLY return true if the value in the map is 'true' or 'TRUE'. we don't need the above conditional, but we are being
              * defensive.
              */
-            uniqueTermsOnly = new Boolean(options.get(UNIQUE_TERMS_IN_FIELD));
-
+            uniqueTermsOnly = Boolean.parseBoolean(options.get(UNIQUE_TERMS_IN_FIELD));
         }
         return valid;
     }

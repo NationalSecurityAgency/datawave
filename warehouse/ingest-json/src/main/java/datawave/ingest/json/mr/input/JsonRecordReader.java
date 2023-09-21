@@ -155,8 +155,8 @@ public class JsonRecordReader extends AbstractEventRecordReader<BytesWritable> {
     }
 
     protected void setupIterator(JsonReader reader) {
-        JsonParser parser = new JsonParser();
-        JsonElement root = parser.parse(reader);
+
+        JsonElement root = JsonParser.parseReader(reader);
 
         if (root.isJsonArray()) {
             // Currently positioned to read a set of objects
