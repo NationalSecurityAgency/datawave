@@ -761,15 +761,15 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     protected void findTop() throws IOException {
 
         this.topKey = null;
-        
+
         try {
             // we are done if cancelled
             if (this.setControl.isCancelledQuery()) {
                 return;
             }
-            
+
             while (this.topKey == null) {
-                
+
                 // if we have key values, then exhaust them first
                 if (this.keys != null) {
                     // only pass through keys that fall within the range
@@ -793,45 +793,45 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                         }
                     }
                 }
-                
+
                 if (this.topKey == null) {
                     // start the timing
                     startTiming();
-                    
+
                     // if the current key values has no more, then clear out this row's set
                     clearRowBasedHdfsBackedSet();
-                    
+
                     // if we do not have a current fi row to scan, then we are done.
                     if (this.fiRow == null) {
                         break;
                     }
-                    
+
                     // now get the keys. Get them all and sorted if needed, otherwise just get the next one.
                     if (sortedUIDs) {
                         fillSortedSets();
                     } else {
                         getNextUnsortedKey();
                     }
-                    
+
                     if (this.setControl.isCancelledQuery()) {
                         this.topKey = null;
                     }
-                    
+
                     if (isTimedOut()) {
                         log.error("Ivarator query timed out");
                         throw new IvaratorException("Ivarator query timed out");
                     }
-                    
+
                     if (this.setControl.isCancelledQuery()) {
                         log.debug("Ivarator query was cancelled");
                         throw new IterationInterruptedException("Ivarator query was cancelled");
                     }
-                    
+
                     // if we have any persisted data or we have scanned a significant number of keys, then persist it completely
                     if (this.set != null && (this.set.hasPersistedData() || (scanThreshold <= scannedKeys.get()))) {
                         forcePersistence();
                     }
-                    
+
                     if (this.keys == null) {
                         this.keys = new CachingIterator<>(this.threadSafeSet.iterator());
                     }
@@ -846,7 +846,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                         throw new IterationInterruptedException("Ivarator query was cancelled");
                     }
                 }
-                
+
             }
         } catch (Exception e) {
             log.error("Failed to complete ivarator", e);
@@ -1310,7 +1310,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
         }
     }
-    
+
     /**
      * This will setup the set for the specified range. This will attempt to reuse precomputed and persisted sets if we are allowed to.
      *
@@ -1336,7 +1336,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                     fs.delete(rowDir, true);
                 }
             }
-            
+
             this.set = new HdfsBackedSortedSet<>(null, hdfsBackedSetBufferSize, ivaratorCacheDirs, row, maxOpenFiles, numRetries, persistOptions,
                             new FileKeySortedSet.Factory());
             this.threadSafeSet = Collections.synchronizedSortedSet(this.set);
@@ -1597,7 +1597,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             boolean append = false;
             String reason = null;
             Exception exc = null;
-            
+
             while (!done && count <= numRetries && !isCancelledQuery()) {
                 count++;
                 try {

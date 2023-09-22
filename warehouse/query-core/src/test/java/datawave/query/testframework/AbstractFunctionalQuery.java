@@ -556,7 +556,7 @@ public abstract class AbstractFunctionalQuery implements QueryLogicTestHarness.T
     protected List<String> ivaratorConfig() throws IOException {
         return ivaratorConfig(1, false, true)[0];
     }
-    
+
     /**
      * Configures the Ivarator cache to use a single HDFS directory without cleanup.
      *
