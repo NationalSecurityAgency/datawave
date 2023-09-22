@@ -1,12 +1,13 @@
 package datawave.query.util;
 
-import com.google.common.collect.Sets;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+
+import com.google.common.collect.Sets;
+
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
 
 /**
  * This is a utility class used to ensure we are not overloading the JexlContext with unnecessary Attribute instances. In some cases, we will end up with a set

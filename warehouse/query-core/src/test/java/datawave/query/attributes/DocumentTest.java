@@ -1,17 +1,19 @@
 package datawave.query.attributes;
 
-import com.google.common.collect.Sets;
-import datawave.query.util.TypeMetadata;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashSet;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashSet;
+import com.google.common.collect.Sets;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import datawave.query.util.TypeMetadata;
 
 public class DocumentTest {
     private final Text row = new Text("20000101_12345");

@@ -1,12 +1,13 @@
 package datawave.query.util;
 
-import com.google.common.collect.Sets;
-import datawave.query.attributes.Attribute;
-import datawave.query.attributes.Attributes;
-import datawave.query.attributes.Content;
-import datawave.query.attributes.IpAddress;
-import datawave.query.attributes.PreNormalizedAttribute;
-import datawave.query.attributes.PreNormalizedAttributeFactory;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.hadoop.io.Text;
@@ -14,13 +15,14 @@ import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.HashSet;
-import java.util.Set;
+import com.google.common.collect.Sets;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.query.attributes.Attribute;
+import datawave.query.attributes.Attributes;
+import datawave.query.attributes.Content;
+import datawave.query.attributes.IpAddress;
+import datawave.query.attributes.PreNormalizedAttribute;
+import datawave.query.attributes.PreNormalizedAttributeFactory;
 
 public class AttributeComparatorTest {
     private final Text row = new Text("20000101_12345");
