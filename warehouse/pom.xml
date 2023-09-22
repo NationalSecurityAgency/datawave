@@ -248,12 +248,12 @@
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-api</artifactId>
-                <version>${version.hadoop-client}</version>
+                <version>${version.hadoop}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-runtime</artifactId>
-                <version>${version.hadoop-client}</version>
+                <version>${version.hadoop}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
