@@ -111,6 +111,7 @@ import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
+import datawave.query.predicate.Projection;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
@@ -1208,22 +1209,12 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected DocumentProjection getProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
-
         if (this.useWhiteListedFields) {
-            // make sure we include any fields being matched in the limit fields mechanism
-            if (!this.matchingFieldSets.isEmpty()) {
-                this.whiteListedFields.addAll(getMatchingFieldList());
-            }
-            projection.setIncludes(this.whiteListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.useWhiteListedFields,
+                            Projection.ProjectionType.INCLUDES);
         } else if (this.useBlackListedFields) {
-            // make sure we are not excluding any fields being matched in the limit fields mechanism
-            if (!this.matchingFieldSets.isEmpty()) {
-                this.blackListedFields.removeAll(getMatchingFieldList());
-            }
-            projection.setExcludes(this.blackListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), this.useBlackListedFields,
+                            Projection.ProjectionType.EXCLUDES);
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";
             log.error(msg);

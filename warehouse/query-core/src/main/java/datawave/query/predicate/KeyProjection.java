@@ -15,10 +15,15 @@ import datawave.query.jexl.JexlASTHelper;
  */
 public class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
 
-    protected Projection projection;
+    private Projection projection;
 
-    public KeyProjection() {
-        projection = new Projection();
+    @Deprecated
+    // public KeyProjection() {
+    // projection = new Projection();
+    // }
+
+    public KeyProjection(Set<String> projections, Projection.ProjectionType projectionType) {
+        projection = new Projection(projections, projectionType);
     }
 
     public KeyProjection(KeyProjection other) {

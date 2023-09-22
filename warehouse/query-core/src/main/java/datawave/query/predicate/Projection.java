@@ -3,6 +3,8 @@ package datawave.query.predicate;
 import java.util.Collections;
 import java.util.Set;
 
+import javax.annotation.Nonnull;
+
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import com.google.common.base.Predicate;
@@ -15,11 +17,24 @@ import datawave.query.jexl.JexlASTHelper;
  * <p>
  * This class is <b>not thread safe</b>
  */
-public class Projection implements Predicate<String> {
+public final class Projection implements Predicate<String> {
 
     private Set<String> includes = null;
     private Set<String> excludes = null;
     private boolean initialized = false;
+
+    private final Set<String> projections;
+    private final ProjectionType type;
+
+    public Projection(@Nonnull Set<String> items, @Nonnull ProjectionType type) {
+        this.type = type;
+        if (type == ProjectionType.INCLUDES) {
+            // do not make a copy of the incoming include fields. It could be a UniversalSet
+            this.projections = items;
+        } else {
+            this.projections = Sets.newHashSet(items);
+        }
+    }
 
     public void setIncludes(Set<String> includes) {
         if (this.initialized) {
@@ -84,5 +99,9 @@ public class Projection implements Predicate<String> {
 
     public String toString() {
         return new ToStringBuilder(this).append("includes", includes).append("excludes", excludes).toString();
+    }
+
+    public enum ProjectionType {
+        INCLUDES, EXCLUDES;
     }
 }
