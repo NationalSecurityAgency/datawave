@@ -7,8 +7,10 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.INDEX_HOLE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -21,7 +23,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
-import datawave.data.type.DateType;
 import datawave.data.type.IpAddressType;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.LcType;
@@ -593,7 +594,42 @@ public class ExpandMultiNormalizedTermsTest {
 
         // this tests for the successful normalization as a simple number can be normalized as a regex
         String original = "((" + LENIENT + " = true) && (FOO == 'ab32'))";
-        String expected = "((_Eval_ = true) && (FOO == 'ab32'))";
+        String expected = "(_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'FOO == \\'ab32\\''))";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testUnmarkedLenientWithAllFailedNormalization() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new PointType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setLenientFields(Collections.singleton("FOO"));
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "(FOO == 'ab32')";
+        String expected = "((_Drop_ = true) && ((_Reason_ = 'Normalizations failed and not strict') && (_Query_ = 'FOO == \\'ab32\\'')))";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testStrictWithAllFailedNormalization() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new NumberType(), new PointType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.setIndexOnlyFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "((" + STRICT + " = true) && (FOO == 'ab32'))";
+        String expected = "(_Eval_ = true) && (FOO == 'ab32')";
         expandTerms(original, expected);
     }
 
@@ -612,9 +648,31 @@ public class ExpandMultiNormalizedTermsTest {
         String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E') && (FOO !~ '\\Q+bE4.2\\E' && FOO !~ '42')";
         expandTerms(original, expected);
 
-        // in this case the numeric normalization fails, so we need to mark as evaluation only
+        // in this case the numeric normalization fails but others succeed (e.g. lcnodiacritics)
         original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
         expected = "((_Eval_ = true) && (FOO =~ '3.*2')) && ((_Eval_ = true) && (FOO !~ '3.*22'))";
+        expandTerms(original, expected);
+    }
+
+    @Test
+    public void testLenientFailedRegexNormalizersAndNRNodes() throws ParseException {
+        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
+        dataTypes.putAll("FOO", Sets.newHashSet(new LcNoDiacriticsType(), new LcType(), new NumberType()));
+
+        helper.setIndexedFields(dataTypes.keySet());
+        helper.addTermFrequencyFields(dataTypes.keySet());
+
+        config.setQueryFieldsDatatypes(dataTypes);
+        config.setLenientFields(Collections.singleton("FOO"));
+
+        // this tests for the successful normalization as a simple number can be normalized as a regex
+        String original = "FOO =~ '32' && FOO !~ '42'";
+        String expected = "(FOO =~ '32' || FOO =~ '\\Q+bE3.2\\E') && (FOO !~ '\\Q+bE4.2\\E' && FOO !~ '42')";
+        expandTerms(original, expected);
+
+        // in this case the numeric normalization fails but others succeed (e.g. lcnodiacritics)
+        original = "FOO =~ '3.*2' && FOO !~ '3.*22'";
+        expected = "FOO =~ '3.*2' && FOO !~ '3.*22'";
         expandTerms(original, expected);
     }
 

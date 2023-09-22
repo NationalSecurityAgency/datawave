@@ -4,7 +4,7 @@ import java.util.Set;
 
 import org.apache.accumulo.core.security.Authorizations;
 
-import datawave.webservice.query.QueryImpl;
+import datawave.microservice.query.QueryImpl;
 
 public class CheckpointableEdgeQueryTest extends EdgeQueryFunctionalTest {
 

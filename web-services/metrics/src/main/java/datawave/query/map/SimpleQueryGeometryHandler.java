@@ -18,13 +18,13 @@ import org.apache.log4j.Logger;
 import datawave.configuration.DatawaveEmbeddedProjectStageHolder;
 import datawave.core.common.logging.ThreadConfigurableLogger;
 import datawave.core.query.map.QueryGeometryHandler;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.GeoFeatureVisitor;
 import datawave.query.language.parser.ParseException;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
 import datawave.query.metrics.ShardTableQueryMetricHandler;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.map.QueryGeometry;
 import datawave.webservice.query.map.QueryGeometryResponse;
 

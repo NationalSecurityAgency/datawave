@@ -28,10 +28,10 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.remote.RemoteQueryLogic;
 import datawave.core.query.remote.RemoteQueryService;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.config.RemoteQueryConfiguration;
 import datawave.query.transformer.EventQueryTransformerSupport;
 import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -109,7 +109,7 @@ public class RemoteEventQueryLogic extends BaseQueryLogic<EventBase> implements 
 
     @Override
     public String getPlan(AccumuloClient connection, Query settings, Set<Authorizations> auths, boolean expandFields, boolean expandValues) throws Exception {
-        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), currentUser);
+        GenericResponse<String> planResponse = remoteQueryService.planQuery(getRemoteQueryLogic(), settings.toMap(), currentUser);
         return planResponse.getResult();
     }
 

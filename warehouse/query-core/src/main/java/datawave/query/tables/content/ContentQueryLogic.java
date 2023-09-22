@@ -30,13 +30,13 @@ import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.ingest.mapreduce.handler.ExtendedDataTypeHandler;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.ContentQueryConfiguration;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.transformer.ContentQueryTransformer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
 
 /**
@@ -61,8 +61,8 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
     private static final String ALL = "\u10FFFF";
 
     private int queryThreads = 100;
-    private ScannerFactory scannerFactory;
-    private String viewName = null;
+    ScannerFactory scannerFactory;
+    String viewName = null;
 
     private ContentQueryConfiguration config;
 
@@ -131,7 +131,7 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
 
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws Exception {
-        if (!genericConfig.getClass().getName().equals(ContentQueryConfiguration.class.getName())) {
+        if (!(genericConfig instanceof ContentQueryConfiguration)) {
             throw new QueryException("Did not receive a ContentQueryConfiguration instance!!");
         }
 
@@ -143,8 +143,8 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             scanner.setRanges(config.getRanges());
 
             if (null != this.viewName) {
-                final IteratorSetting cfg = new IteratorSetting(50, RegExFilter.class);
-                cfg.addOption(RegExFilter.COLQ_REGEX, this.viewName);
+                final IteratorSetting cfg = new IteratorSetting(50, this.viewName, RegExFilter.class);
+                RegExFilter.setRegexs(cfg, null, null, this.viewName, null, false, true);
                 scanner.addScanIterator(cfg);
             }
 
@@ -189,12 +189,17 @@ public class ContentQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implemen
             if (!term.isEmpty()) {
                 // Get the next value
                 int fieldSeparation = term.indexOf(':');
-                final String value;
+                final String valueIdentifier;
                 if (fieldSeparation > 0) {
-                    value = term.substring(fieldSeparation + 1);
+                    valueIdentifier = term.substring(fieldSeparation + 1);
                 } else {
-                    value = term;
+                    valueIdentifier = term;
                 }
+
+                // Remove the identifier if present - we won't use it here, but will extract them from the query
+                // later in the ContentQueryTransformer
+                int idSeparation = valueIdentifier.indexOf("!");
+                final String value = idSeparation > 0 ? valueIdentifier.substring(0, idSeparation) : valueIdentifier;
 
                 // Validate the value
                 final String[] parts = value.split("/");

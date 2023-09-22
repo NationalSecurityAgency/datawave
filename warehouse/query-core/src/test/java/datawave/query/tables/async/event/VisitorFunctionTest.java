@@ -23,6 +23,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.iterator.QueryIterator;
@@ -34,7 +35,6 @@ import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MockMetadataHelper;
 import datawave.util.TableName;
-import datawave.webservice.query.Query;
 
 public class VisitorFunctionTest extends EasyMockSupport {
     private VisitorFunction function;

@@ -11,9 +11,9 @@ import org.apache.accumulo.core.data.Range;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.tables.content.ContentQueryLogic;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 
 /**
  * Thin wrapper around GenericQueryConfiguration for use by the {@link ContentQueryLogic}

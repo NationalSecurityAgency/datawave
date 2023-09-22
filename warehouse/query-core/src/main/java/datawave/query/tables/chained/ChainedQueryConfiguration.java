@@ -1,7 +1,7 @@
 package datawave.query.tables.chained;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 
 public class ChainedQueryConfiguration extends GenericQueryConfiguration {
 

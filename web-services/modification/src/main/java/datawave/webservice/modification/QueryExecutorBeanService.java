@@ -1,14 +1,10 @@
 package datawave.webservice.modification;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.springframework.util.MultiValueMap;
-
 import datawave.modification.query.ModificationQueryService;
-import datawave.security.authorization.DatawaveUser;
-import datawave.webservice.common.audit.AuditParameterBuilder;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.query.runner.QueryExecutorBean;
 import datawave.webservice.query.util.MapUtils;
 import datawave.webservice.result.BaseQueryResponse;
@@ -39,7 +35,7 @@ public class QueryExecutorBeanService implements ModificationQueryService {
     public ModificationQueryServiceFactory getFactory() {
         return new ModificationQueryServiceFactory() {
             @Override
-            public ModificationQueryService createService(Collection<? extends DatawaveUser> proxiedUsers) {
+            public ModificationQueryService createService(ProxiedUserDetails userDetails) {
                 return QueryExecutorBeanService.this;
             }
         };

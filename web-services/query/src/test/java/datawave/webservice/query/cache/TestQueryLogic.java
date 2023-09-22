@@ -9,7 +9,7 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 
 public class TestQueryLogic extends BaseQueryLogic<Object> {
 

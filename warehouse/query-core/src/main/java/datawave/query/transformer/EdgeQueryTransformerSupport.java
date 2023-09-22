@@ -20,7 +20,7 @@ import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.util.EdgeValue;
 import datawave.marking.MarkingFunctions;
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.EdgeQueryResponseBase;

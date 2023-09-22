@@ -10,20 +10,16 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import javax.xml.bind.annotation.XmlTransient;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.security.Authorizations;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.google.common.collect.Iterators;
 
 import datawave.core.common.util.EnvProvider;
 import datawave.core.query.logic.BaseQueryLogic;
+import datawave.microservice.query.Query;
 import datawave.util.TableName;
-import datawave.webservice.query.Query;
 
 /**
  * <p>
@@ -36,7 +32,6 @@ import datawave.webservice.query.Query;
  * </p>
  *
  */
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public abstract class GenericQueryConfiguration implements Serializable {
     // is this execution expected to be checkpointable (changes how we allocate ranges to scanners)
     private boolean checkpointable = false;
@@ -66,7 +61,6 @@ public abstract class GenericQueryConfiguration implements Serializable {
 
     private Collection<QueryData> queries = Collections.emptyList();
 
-    @JsonIgnore
     private transient Iterator<QueryData> queriesIter = Collections.emptyIterator();
     protected boolean bypassAccumulo;
 
@@ -146,8 +140,6 @@ public abstract class GenericQueryConfiguration implements Serializable {
         this.checkpointable = checkpointable;
     }
 
-    @JsonIgnore
-    @XmlTransient
     public AccumuloClient getClient() {
         return client;
     }
@@ -186,7 +178,6 @@ public abstract class GenericQueryConfiguration implements Serializable {
         getAuthorizations();
     }
 
-    @JsonIgnore
     public Set<Authorizations> getAuthorizations() {
         if (authorizations == null && auths != null) {
             authorizations = Collections

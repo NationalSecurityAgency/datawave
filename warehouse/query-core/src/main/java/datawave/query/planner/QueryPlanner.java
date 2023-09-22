@@ -6,6 +6,7 @@ import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.CloseableIterable;
 import datawave.query.exceptions.DatawaveQueryException;
 import datawave.query.index.lookup.CreateUidsIterator;
@@ -13,7 +14,6 @@ import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.UidIntersector;
 import datawave.query.planner.pushdown.PushDownPlanner;
 import datawave.query.tables.ScannerFactory;
-import datawave.webservice.query.Query;
 
 public abstract class QueryPlanner implements PushDownPlanner {
 

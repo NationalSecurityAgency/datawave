@@ -16,10 +16,10 @@ import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 

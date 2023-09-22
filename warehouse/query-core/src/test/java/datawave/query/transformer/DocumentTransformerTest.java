@@ -21,13 +21,13 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.Numeric;
 import datawave.query.function.deserializer.KryoDocumentDeserializer;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.query.result.event.SimpleEvent;
 import datawave.webservice.query.result.event.SimpleField;

@@ -19,7 +19,6 @@ public class TermFrequencyConfig {
 
     private ASTJexlScript script;
     private SortedKeyValueIterator<Key,Value> source;
-    private IteratorEnvironment iterEnv;
     private Set<String> contentExpansionFields;
     private Set<String> tfFields;
     private TypeMetadata typeMetadata;
@@ -44,19 +43,6 @@ public class TermFrequencyConfig {
     // Return the source
     public SortedKeyValueIterator<Key,Value> getSource() {
         return this.source;
-    }
-
-    // Return a copy of the source
-    public SortedKeyValueIterator<Key,Value> getSourceDeepCopy() {
-        return source.deepCopy(iterEnv);
-    }
-
-    public IteratorEnvironment getIterEnv() {
-        return iterEnv;
-    }
-
-    public void setIterEnv(IteratorEnvironment iterEnv) {
-        this.iterEnv = iterEnv;
     }
 
     public Set<String> getContentExpansionFields() {

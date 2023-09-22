@@ -33,6 +33,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
 import datawave.core.iterators.filesystem.FileSystemCache;
+import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.InvalidQueryException;
@@ -51,12 +52,13 @@ import datawave.query.jexl.visitors.TermCountingVisitor;
 import datawave.query.jexl.visitors.TreeEqualityVisitor;
 import datawave.query.jexl.visitors.whindex.WhindexVisitor;
 import datawave.query.planner.DefaultQueryPlanner;
+import datawave.query.postprocessing.tf.TermOffsetPopulator;
 import datawave.query.tables.SessionOptions;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.util.MetadataHelper;
+import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.PreConditionFailedQueryException;
@@ -76,6 +78,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected Set<String> indexedFields;
     protected Set<String> indexOnlyFields;
     protected Set<String> nonEventFields;
+    protected Random random = new Random();
 
     // thread-safe cache where the key is the original query, and the value is the expanded query
     private Cache<String,String> queryCache;
@@ -305,6 +308,14 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                         reduceQueryFields(script, newIteratorSetting);
                     }
 
+                    if (config.getReduceTypeMetadataPerShard()) {
+                        reduceTypeMetadata(script, newIteratorSetting);
+                    }
+
+                    if (config.getPruneQueryOptions()) {
+                        pruneQueryOptions(script, newIteratorSetting);
+                    }
+
                     try {
                         queryCache.put(query, newQuery);
                     } catch (NullPointerException npe) {
@@ -424,6 +435,54 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         // might also look at COMPOSITE_FIELDS, EXCERPT_FIELDS, and GROUP_FIELDS
     }
 
+    /**
+     * Reduce the TypeMetadata object that is serialized
+     *
+     * @param script
+     *            the query
+     * @param newIteratorSetting
+     *            the iterator settings
+     */
+    private void reduceTypeMetadata(ASTJexlScript script, IteratorSetting newIteratorSetting) {
+
+        String serializedTypeMetadata = newIteratorSetting.removeOption(QueryOptions.TYPE_METADATA);
+        TypeMetadata typeMetadata = new TypeMetadata(serializedTypeMetadata);
+
+        Set<String> fieldsToRetain = ReduceFields.getQueryFields(script);
+        typeMetadata = typeMetadata.reduce(fieldsToRetain);
+
+        serializedTypeMetadata = typeMetadata.toString();
+
+        if (newIteratorSetting.getOptions().containsKey(QueryOptions.QUERY_MAPPING_COMPRESS)) {
+            boolean compress = Boolean.parseBoolean(newIteratorSetting.getOptions().get(QueryOptions.QUERY_MAPPING_COMPRESS));
+            if (compress) {
+                try {
+                    serializedTypeMetadata = QueryOptions.compressOption(serializedTypeMetadata, QueryOptions.UTF8);
+                } catch (IOException e) {
+                    throw new DatawaveFatalQueryException("Failed to compress type metadata in the VisitorFunction", e);
+                }
+            }
+        }
+
+        newIteratorSetting.addOption(QueryOptions.TYPE_METADATA, serializedTypeMetadata);
+    }
+
+    /**
+     * Certain query options may be pruned on a per-tablet basis
+     *
+     * @param script
+     *            the query
+     * @param settings
+     *            the iterator settings
+     */
+    protected void pruneQueryOptions(ASTJexlScript script, IteratorSetting settings) {
+
+        if (config.isTermFrequenciesRequired() && TermOffsetPopulator.getContentFunctions(script).isEmpty()) {
+            settings.removeOption(QueryOptions.EXCERPT_FIELDS);
+            settings.removeOption(QueryOptions.EXCERPT_ITERATOR);
+        }
+    }
+
     // push down large fielded lists. Assumes that the hdfs query cache uri and
     // site config urls are configured
     protected ASTJexlScript pushdownLargeFieldedLists(ShardQueryConfiguration config, ASTJexlScript queryTree) throws IOException {
@@ -513,7 +572,7 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
     protected URI getFstHdfsQueryCacheUri(ShardQueryConfiguration config, Query settings) {
         if (config.getIvaratorFstHdfsBaseURIs() != null && !config.getIvaratorFstHdfsBaseURIs().isEmpty()) {
             String[] choices = StringUtils.split(config.getIvaratorFstHdfsBaseURIs(), ',');
-            int index = new Random().nextInt(choices.length);
+            int index = random.nextInt(choices.length);
             Path path = new Path(choices[index], settings.getId().toString());
             return path.toUri();
         }

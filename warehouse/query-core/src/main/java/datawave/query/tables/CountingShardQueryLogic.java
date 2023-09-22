@@ -6,12 +6,12 @@ import org.apache.log4j.Logger;
 
 import datawave.core.iterators.ResultCountingIterator;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.scheduler.PushdownScheduler;
 import datawave.query.scheduler.Scheduler;
 import datawave.query.tables.shard.CountAggregatingIterator;
 import datawave.query.transformer.ShardQueryCountTableTransformer;
-import datawave.webservice.query.Query;
 
 /**
  * A simple extension of the basic ShardQueryTable which applies a counting iterator on top of the "normal" iterator stack.

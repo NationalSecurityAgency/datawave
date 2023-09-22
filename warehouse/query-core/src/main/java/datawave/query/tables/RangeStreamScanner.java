@@ -44,13 +44,13 @@ import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import datawave.core.query.configuration.Result;
+import datawave.microservice.query.Query;
 import datawave.mr.bulk.RfileScanner;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.index.lookup.IndexInfo;
 import datawave.query.index.lookup.IndexMatch;
 import datawave.query.index.lookup.ShardEquality;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
-import datawave.webservice.query.Query;
 
 /**
  * Purpose: Extends Scanner session so that we can modify how we build our subsequent ranges. Breaking this out cleans up the code. May require implementation

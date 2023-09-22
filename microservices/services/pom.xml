@@ -4,7 +4,7 @@
     <parent>
         <groupId>gov.nsa.datawave.microservice</groupId>
         <artifactId>datawave-microservice-build-parent</artifactId>
-        <version>5.9.0-SNAPSHOT</version>
+        <version>7.0.0-SNAPSHOT</version>
     </parent>
     <artifactId>datawave-microservice-service-build-parent</artifactId>
     <packaging>pom</packaging>
@@ -12,7 +12,7 @@
     <modules />
     <profiles>
         <profile>
-            <id>accumulo-submodule</id>
+            <id>submodule-service-accumulo</id>
             <activation>
                 <file>
                     <exists>accumulo/pom.xml</exists>
@@ -23,7 +23,7 @@
             </modules>
         </profile>
         <profile>
-            <id>audit-submodule</id>
+            <id>submodule-service-audit</id>
             <activation>
                 <file>
                     <exists>audit/pom.xml</exists>
@@ -34,7 +34,7 @@
             </modules>
         </profile>
         <profile>
-            <id>authorization-submodule</id>
+            <id>submodule-service-authorization</id>
             <activation>
                 <file>
                     <exists>authorization/pom.xml</exists>
@@ -45,7 +45,7 @@
             </modules>
         </profile>
         <profile>
-            <id>config-submodule</id>
+            <id>submodule-service-config</id>
             <activation>
                 <file>
                     <exists>config/pom.xml</exists>
@@ -56,7 +56,7 @@
             </modules>
         </profile>
         <profile>
-            <id>dictionary-submodule</id>
+            <id>submodule-service-dictionary</id>
             <activation>
                 <file>
                     <exists>dictionary/pom.xml</exists>
@@ -67,7 +67,7 @@
             </modules>
         </profile>
         <profile>
-            <id>hazelcast-submodule</id>
+            <id>submodule-service-hazelcast</id>
             <activation>
                 <file>
                     <exists>hazelcast/pom.xml</exists>
@@ -78,7 +78,7 @@
             </modules>
         </profile>
         <profile>
-            <id>mapreduce-query-submodule</id>
+            <id>submodule-service-mapreduce-query</id>
             <activation>
                 <file>
                     <exists>mapreduce-query/pom.xml</exists>
@@ -89,7 +89,7 @@
             </modules>
         </profile>
         <profile>
-            <id>modification-submodule</id>
+            <id>submodule-service-modification</id>
             <activation>
                 <file>
                     <exists>modification/pom.xml</exists>
@@ -100,7 +100,7 @@
             </modules>
         </profile>
         <profile>
-            <id>query-submodule</id>
+            <id>submodule-service-query</id>
             <activation>
                 <file>
                     <exists>query/pom.xml</exists>
@@ -111,7 +111,7 @@
             </modules>
         </profile>
         <profile>
-            <id>query-executor-submodule</id>
+            <id>submodule-service-query-executor</id>
             <activation>
                 <file>
                     <exists>query-executor/pom.xml</exists>
@@ -122,7 +122,7 @@
             </modules>
         </profile>
         <profile>
-            <id>query-metric-submodule</id>
+            <id>submodule-service-query-metric</id>
             <activation>
                 <file>
                     <exists>query-metric/pom.xml</exists>
@@ -133,7 +133,7 @@
             </modules>
         </profile>
         <profile>
-            <id>query-storage-submodule</id>
+            <id>submodule-service-query-storage</id>
             <activation>
                 <file>
                     <exists>query-storage/pom.xml</exists>

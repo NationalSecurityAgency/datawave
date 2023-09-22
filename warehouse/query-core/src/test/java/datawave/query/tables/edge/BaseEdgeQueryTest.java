@@ -41,8 +41,8 @@ import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicFactory;
 import datawave.data.normalizer.Normalizer;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.MockAccumuloRecordWriter;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
 
 /**

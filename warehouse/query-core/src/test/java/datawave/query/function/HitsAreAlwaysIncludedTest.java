@@ -44,8 +44,10 @@ import com.google.common.io.Files;
 
 import datawave.configuration.spring.SpringBean;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.data.type.DateType;
 import datawave.helpers.PrintUtility;
 import datawave.ingest.data.TypeRegistry;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Attributes;
@@ -58,7 +60,6 @@ import datawave.query.tables.edge.DefaultEdgeEventQueryLogic;
 import datawave.query.util.LimitFieldsTestingIngest;
 import datawave.util.TableName;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
-import datawave.webservice.query.QueryImpl;
 
 /**
  * Tests the limit.fields feature to ensure that hit terms are always included and that associated fields at the same grouping context are included along with
@@ -128,6 +129,9 @@ public abstract class HitsAreAlwaysIncludedTest {
     protected KryoDocumentDeserializer deserializer;
 
     private final DateFormat format = new SimpleDateFormat("yyyyMMdd");
+
+    // under certain conditions a Date-normalized field value is returned without normalization
+    private final Set<String> dateFields = Sets.newHashSet("FOO_1_BAR_1.FOO.0", "FOO_1_BAR_1");
 
     @Deployment
     public static JavaArchive createDeployment() throws Exception {
@@ -237,6 +241,15 @@ public abstract class HitsAreAlwaysIncludedTest {
                         log.debug("removed " + toFind);
                     } else if (toFind.contains(LimitFields.ORIGINAL_COUNT_SUFFIX)) {
                         log.debug("Ignoring original count field " + toFind);
+                    } else if (dateFields.contains(dictionaryEntry.getKey())) {
+                        // rare case where normalization changed the returned value of a date type
+                        // for example:
+                        // FOO_1_BAR_1.FOO.0 :: 2021-03-24T16:00:00.000Z DateType
+                        // FOO_1_BAR_1.FOO.0 :: Wed Mar 24 12:00:00 EDT 2021 NoOpType
+                        //
+                        DateType dateType = new DateType(dictionaryEntry.getValue().getData().toString());
+                        toFind = dictionaryEntry.getKey() + ":" + dateType.getNormalizedValue();
+                        goodResults.remove(toFind);
                     } else {
                         extraValues.add('"' + toFind + '"');
                     }

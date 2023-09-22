@@ -54,6 +54,7 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.Type;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.model.EdgeModelFieldsFactory;
+import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.config.EdgeQueryConfiguration;
@@ -76,7 +77,6 @@ import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.time.DateHelper;
-import datawave.webservice.query.Query;
 
 public class EdgeQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements CheckpointableQueryLogic {
     public static final String PRE_FILTER_DISABLE_KEYWORD = "__DISABLE_PREFILTER__";

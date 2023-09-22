@@ -50,12 +50,12 @@ import com.sun.net.httpserver.HttpServer;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.result.event.DefaultResponseObjectFactory;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.QueryParameters;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.util.DnUtils;
 import datawave.webservice.common.json.DefaultMapperDecorator;
 import datawave.webservice.common.remote.TestJSSESecurityDomain;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.remote.RemoteQueryServiceImpl;
 import datawave.webservice.query.result.event.DefaultEvent;
 import datawave.webservice.query.result.event.DefaultField;

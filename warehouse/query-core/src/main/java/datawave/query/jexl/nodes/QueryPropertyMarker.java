@@ -34,7 +34,8 @@ public class QueryPropertyMarker {
         EXCEEDED_TERM("_Term_", true, true),
         EXCEEDED_VALUE("_Value_", true, true),
         BOUNDED_RANGE("_Bounded_", false, false),
-        LENIENT("_Lenient_", false, false);
+        LENIENT("_Lenient_", false, false),
+        STRICT("_Strict_", false, false);
 
         private final String label;
         private final boolean ivarator;

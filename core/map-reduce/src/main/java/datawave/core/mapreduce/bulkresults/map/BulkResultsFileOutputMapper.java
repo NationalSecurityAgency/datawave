@@ -29,7 +29,7 @@ import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.mapreduce.bulkresults.map.SerializationFormat;
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 import datawave.webservice.result.BaseQueryResponse;
 import datawave.webservice.util.ProtostuffMessageBodyWriter;
 

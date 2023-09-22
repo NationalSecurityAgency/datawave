@@ -22,9 +22,9 @@ import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.common.audit.Auditor;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 
 public abstract class LookupQueryLogic<T> extends BaseQueryLogic<T> implements CheckpointableQueryLogic {

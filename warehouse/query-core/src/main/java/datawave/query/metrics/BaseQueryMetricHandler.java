@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.jexl3.JexlException;
 import org.apache.commons.jexl3.parser.ASTEQNode;
 import org.apache.commons.jexl3.parser.ASTJexlScript;
 import org.apache.commons.lang.time.DateUtils;
@@ -146,6 +147,8 @@ public abstract class BaseQueryMetricHandler<T extends BaseQueryMetric> implemen
                         }
                     }
                 }
+            } catch (JexlException e) {
+                log.error("populateMetricSelectors: Failure parsing query");
             } catch (Exception e) {
                 log.error("populateMetricSelectors: " + e.getMessage());
             }

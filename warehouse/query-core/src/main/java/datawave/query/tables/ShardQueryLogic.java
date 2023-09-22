@@ -52,6 +52,8 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.core.query.logic.WritesQueryMetrics;
 import datawave.data.type.Type;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl.Parameter;
 import datawave.query.CloseableIterable;
 import datawave.query.Constants;
 import datawave.query.DocumentSerialization;
@@ -93,8 +95,6 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.query.util.QueryStopwatch;
 import datawave.util.time.TraceStopwatch;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl.Parameter;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 
@@ -2211,6 +2211,22 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
         this.getConfig().setReduceQueryFields(reduceQueryFields);
     }
 
+    public boolean getReduceTypeMetadata() {
+        return getConfig().getReduceTypeMetadata();
+    }
+
+    public void setReduceTypeMetadata(boolean reduceTypeMetadata) {
+        getConfig().setReduceTypeMetadata(reduceTypeMetadata);
+    }
+
+    public boolean getReduceTypeMetadataPerShard() {
+        return getConfig().getReduceTypeMetadataPerShard();
+    }
+
+    public void setReduceTypeMetadataPerShard(boolean reduceTypeMetadataPerShard) {
+        getConfig().setReduceTypeMetadataPerShard(reduceTypeMetadataPerShard);
+    }
+
     public long getMaxIndexScanTimeMillis() {
         return getConfig().getMaxIndexScanTimeMillis();
     }
@@ -2659,5 +2675,13 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> implements
 
     public void setTfAggregationThresholdMs(int tfAggregationThresholdMs) {
         getConfig().setTfAggregationThresholdMs(tfAggregationThresholdMs);
+    }
+
+    public boolean getPruneQueryOptions() {
+        return getConfig().getPruneQueryOptions();
+    }
+
+    public void setPruneQueryOptions(boolean pruneQueryOptions) {
+        getConfig().setPruneQueryOptions(pruneQueryOptions);
     }
 }

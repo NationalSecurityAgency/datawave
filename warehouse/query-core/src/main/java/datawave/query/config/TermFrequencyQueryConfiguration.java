@@ -8,7 +8,7 @@ import org.apache.accumulo.core.data.Range;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 
 public class TermFrequencyQueryConfiguration extends GenericQueryConfiguration implements Serializable {
 

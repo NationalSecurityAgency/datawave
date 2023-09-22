@@ -122,7 +122,7 @@ public class ModificationBean {
                     @Required("request") ModificationRequestBase request) {
         try {
             DatawavePrincipal p = (DatawavePrincipal) ctx.getCallerPrincipal();
-            return getService().submit(p.getProxiedUsers(), modificationServiceName, request);
+            return getService().submit(p, modificationServiceName, request);
         } catch (DatawaveModificationException dme) {
             VoidResponse response = new VoidResponse();
             for (QueryException qe : dme.getExceptions()) {

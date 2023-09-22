@@ -21,6 +21,7 @@ import com.google.common.base.Preconditions;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.microservice.query.Query;
 import datawave.mr.bulk.BulkInputFormat;
 import datawave.mr.bulk.MultiRfileInputformat;
 import datawave.mr.bulk.RfileScanner;
@@ -28,7 +29,6 @@ import datawave.query.config.ShardQueryConfiguration;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.util.QueryScannerHelper;
 import datawave.webservice.common.connection.WrappedConnector;
-import datawave.webservice.query.Query;
 
 public class ScannerFactory {
 

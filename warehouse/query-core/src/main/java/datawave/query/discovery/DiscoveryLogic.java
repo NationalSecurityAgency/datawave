@@ -50,6 +50,7 @@ import com.google.common.collect.Sets;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
 import datawave.data.type.Type;
+import datawave.microservice.query.Query;
 import datawave.query.Constants;
 import datawave.query.QueryParameters;
 import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
@@ -65,7 +66,6 @@ import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardIndexQueryTable;
 import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 
 public class DiscoveryLogic extends ShardIndexQueryTable {

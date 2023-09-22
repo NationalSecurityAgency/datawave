@@ -33,10 +33,10 @@ import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogic;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.microservice.authorization.util.AuthorizationsUtil;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.Query;
 import datawave.webservice.result.BaseResponse;
 
 /**
@@ -215,7 +215,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         settings.setQueryAuthorizations(validQueryAuthorizations);
 
         // recalculate the runtime query authorizations (no need to pass in userService as we have already recalculated the principal)
-        return AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, currentUser, queryUser);
+        Set<Authorizations> downgradedAuths = AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, currentUser, queryUser);
+        if (log.isTraceEnabled()) {
+            log.trace("Principal auths for user " + currentUser.getPrimaryUser().getCommonName() + " are " + currentUser.getPrimaryUser().getAuths());
+            log.trace("Query principal auths for " + logic.getLogicName() + " are " + validAuths);
+            log.trace("Requested auths were " + requestedAuths + " of which the valid query auths are " + validQueryAuthorizations);
+            log.trace("Downgraded auths are " + downgradedAuths);
+        }
+        return downgradedAuths;
     }
 
     @Override

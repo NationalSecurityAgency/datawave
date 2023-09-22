@@ -5,7 +5,7 @@ import java.util.stream.Collectors;
 
 import org.apache.accumulo.core.security.Authorizations;
 
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 import datawave.webservice.query.predicate.ProxiedAuthorizationsPredicate;
 
 /**

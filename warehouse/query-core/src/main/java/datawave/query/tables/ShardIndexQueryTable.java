@@ -56,6 +56,8 @@ import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
 import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.Type;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
 import datawave.query.QueryParameters;
 import datawave.query.config.ShardIndexQueryConfiguration;
 import datawave.query.config.ShardQueryConfiguration;
@@ -77,8 +79,6 @@ import datawave.query.model.QueryModel;
 import datawave.query.util.MetadataHelper;
 import datawave.query.util.MetadataHelperFactory;
 import datawave.util.TableName;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.QueryException;
 
 /**

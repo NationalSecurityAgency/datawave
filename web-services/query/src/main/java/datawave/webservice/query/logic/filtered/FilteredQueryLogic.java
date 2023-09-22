@@ -9,7 +9,7 @@ import org.apache.accumulo.core.security.Authorizations;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.QueryLogic;
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 import datawave.webservice.query.logic.DelegatingQueryLogic;
 
 /**

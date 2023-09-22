@@ -24,6 +24,7 @@ import datawave.core.query.logic.QueryLogicTransformer;
 import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.Type;
 import datawave.edge.util.EdgeKeyUtil;
+import datawave.microservice.query.Query;
 import datawave.query.config.EdgeExtendedSummaryConfiguration;
 import datawave.query.iterator.filter.EdgeFilterIterator;
 import datawave.query.tables.ScannerFactory;
@@ -32,7 +33,6 @@ import datawave.query.tables.edge.contexts.VisitationContext;
 import datawave.query.transformer.EdgeQueryTransformer;
 import datawave.query.util.MetadataHelper;
 import datawave.util.StringUtils;
-import datawave.webservice.query.Query;
 
 public class DefaultExtendedEdgeQueryLogic extends EdgeQueryLogic {
 

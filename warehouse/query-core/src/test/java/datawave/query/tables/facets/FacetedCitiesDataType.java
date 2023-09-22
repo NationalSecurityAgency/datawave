@@ -9,7 +9,6 @@ import datawave.ingest.mapreduce.handler.shard.AbstractColumnBasedHandler;
 import datawave.query.QueryTestTableHelper;
 import datawave.query.testframework.CitiesDataType;
 import datawave.query.testframework.FieldConfig;
-import datawave.webservice.query.Query;
 
 public class FacetedCitiesDataType extends CitiesDataType {
 

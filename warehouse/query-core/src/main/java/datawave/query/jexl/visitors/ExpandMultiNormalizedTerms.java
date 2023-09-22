@@ -6,6 +6,7 @@ import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EVALUATIO
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_TERM;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.EXCEEDED_VALUE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -157,10 +158,15 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             return node;
         }
 
-        // if we found a lenient expression, then pass it through
+        // if we found a strict or lenient expression, then pass it through
+        boolean strict = false;
         boolean lenient = false;
         JexlNode originalSource = null;
-        if (marker.isType(LENIENT)) {
+        if (marker.isType(STRICT)) {
+            strict = true;
+            data = marker;
+            originalSource = copy(marker.getSource());
+        } else if (marker.isType(LENIENT)) {
             lenient = true;
             data = marker;
             originalSource = copy(marker.getSource());
@@ -174,13 +180,13 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             returnNode = (JexlNode) (super.visit(node, data));
         }
 
-        // if we had a lenient marker, then unwrap it and handle all dropped
-        if (lenient) {
+        // if we have a strict or lenient marker, then unwrap it and handle all dropped
+        if (strict || lenient) {
             QueryPropertyMarker.Instance newMarker = QueryPropertyMarker.findInstance(returnNode);
             returnNode = newMarker.getSource();
 
-            // now we need to check if everything was dropped in which case we return the original node source eval only
-            if (isAllDropped(returnNode)) {
+            // if everything was dropped and we are strict, then wrap the original node with eval only
+            if (strict && isAllDropped(returnNode)) {
                 returnNode = QueryPropertyMarker.create(originalSource, EVALUATION_ONLY);
             }
         }
@@ -285,8 +291,18 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
             final String fieldName = op.deconstructIdentifier();
             final Object literal = op.getLiteralValue();
 
-            boolean lenient = !config.getStrictFields().contains(fieldName) && (config.getLenientFields().contains(fieldName)
-                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LENIENT)));
+            // Determine whether this was explicitly marked as strict.
+            boolean strict = config.getStrictFields().contains(fieldName)
+                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(STRICT));
+            // Determine whether this was explicitly marked as lenient.
+            boolean lenient = config.getLenientFields().contains(fieldName)
+                            || (data instanceof QueryPropertyMarker.Instance && ((QueryPropertyMarker.Instance) data).isType(LENIENT));
+
+            if (strict && lenient) {
+                log.warn("Field " + fieldName + " marked both as strict and lenient.  Applying neither");
+                strict = false;
+                lenient = false;
+            }
 
             // Get all the indexed or normalized dataTypes for the field name
             Set<Type<?>> dataTypes = Sets.newHashSet(config.getQueryFieldsDatatypes().get(fieldName));
@@ -351,9 +367,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // determine if we are marking this term as dropped or evaluation only
                     boolean droppedExpression = false;
                     boolean evaluationOnly = false;
+                    boolean isRegex = (node instanceof ASTNRNode || node instanceof ASTERNode);
                     if (failedNormalization) {
-                        // if we are not being lenient then add the original term into the mix and make it eval only
-                        if (!lenient) {
+                        // if we are being strict then add the original term into the mix and make it eval only
+                        if (strict) {
                             if (!normalizedTerms.contains(term)) {
                                 normalizedTerms.add(term);
                                 normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
@@ -361,12 +378,23 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                             evaluationOnly = true;
                         }
                         // else if we are being lenient and we have no successful normalizations, then drop the original term
-                        else if (normalizedNodes.isEmpty()) {
-                            if (!normalizedTerms.contains(term)) {
+                        else if (lenient) {
+                            if (normalizedNodes.isEmpty()) {
                                 normalizedTerms.add(term);
                                 normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                droppedExpression = true;
                             }
-                            droppedExpression = true;
+                        }
+                        // else we use the original methodology which is to keep the original term
+                        // and push it down to evaluation only IFF a regex
+                        else {
+                            if (isRegex) {
+                                if (!normalizedTerms.contains(term)) {
+                                    normalizedTerms.add(term);
+                                    normalizedNodes.add(JexlNodeFactory.buildUntypedNode(node, fieldName, term));
+                                }
+                                evaluationOnly = true;
+                            }
                         }
                     }
 
@@ -390,9 +418,10 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     if (evaluationOnly) {
                         nodeToReturn = QueryPropertyMarker.create(nodeToReturn, EVALUATION_ONLY);
                     } else if (droppedExpression) {
-                        nodeToReturn = QueryPropertyMarker
-                                        .create(new DroppedExpression(JexlStringBuildingVisitor.buildQuery(nodeToReturn), "Normalizations failed and lenient")
-                                                        .getJexlNode(), DROPPED);
+                        nodeToReturn = QueryPropertyMarker.create(
+                                        new DroppedExpression(JexlStringBuildingVisitor.buildQuery(nodeToReturn), "Normalizations failed and not strict")
+                                                        .getJexlNode(),
+                                        DROPPED);
                     }
 
                 } catch (Exception e) {

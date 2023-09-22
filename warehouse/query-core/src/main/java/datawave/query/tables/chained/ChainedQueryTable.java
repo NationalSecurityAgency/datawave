@@ -11,8 +11,8 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.QueryLogic;
+import datawave.microservice.query.Query;
 import datawave.query.tables.chained.strategy.ChainStrategy;
-import datawave.webservice.query.Query;
 
 /**
  * <p>

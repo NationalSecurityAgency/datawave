@@ -361,12 +361,14 @@ public class MultiSetBackedSortedSetTest {
         // verify order
         assertFalse(subSet.isEmpty());
         assertArrayEquals(data[sortedOrder[start]], subSet.iterator().next());
+        assertArrayEquals(data[sortedOrder[start]], subSet.first());
         int index = start;
         for (byte[] value : subSet) {
             assertArrayEquals(data[sortedOrder[index++]], value);
         }
         ArrayList<byte[]> list = new ArrayList<>(subSet);
         assertArrayEquals(data[sortedOrder[end - 1]], list.get(list.size() - 1));
+        assertArrayEquals(data[sortedOrder[end - 1]], subSet.last());
 
         subSet = set.headSet(data[sortedOrder[end]]);
 

@@ -5,7 +5,7 @@ import javax.ws.rs.core.HttpHeaders;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import datawave.webservice.query.Query;
+import datawave.microservice.query.Query;
 
 /**
  * Abstract implementation of criteria used for UUID lookup queries

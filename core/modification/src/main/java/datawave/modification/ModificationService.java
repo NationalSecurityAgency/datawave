@@ -20,8 +20,8 @@ import datawave.modification.cache.ModificationCache;
 import datawave.modification.configuration.ModificationConfiguration;
 import datawave.modification.configuration.ModificationServiceConfiguration;
 import datawave.modification.query.ModificationQueryService;
-import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
+import datawave.security.authorization.ProxiedUserDetails;
 import datawave.webservice.modification.ModificationRequestBase;
 import datawave.webservice.query.exception.BadRequestQueryException;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -71,7 +71,7 @@ public class ModificationService {
     /**
      * Execute a Modification service with the given name and runtime parameters
      *
-     * @param proxiedUsers
+     * @param userDetails
      *            The proxied user list
      * @param modificationServiceName
      *            Name of the modification service configuration
@@ -79,16 +79,16 @@ public class ModificationService {
      *            object type specified in listConfigurations response.
      * @return datawave.webservice.result.VoidResponse
      */
-    public VoidResponse submit(Collection<? extends DatawaveUser> proxiedUsers, String modificationServiceName, ModificationRequestBase request) {
+    public VoidResponse submit(ProxiedUserDetails userDetails, String modificationServiceName, ModificationRequestBase request) {
         VoidResponse response = new VoidResponse();
 
         // Find out who/what called this method
-        DatawavePrincipal dp = new DatawavePrincipal(proxiedUsers);
-        DatawaveUser primaryUser = dp.getPrimaryUser();
+        DatawaveUser primaryUser = userDetails.getPrimaryUser();
         String userDn = primaryUser.getDn().subjectDN();
-        Collection<String> proxyServers = proxiedUsers.stream().map(u -> u.getDn().subjectDN()).collect(Collectors.toList());
+        Collection<String> proxyServers = userDetails.getProxiedUsers().stream().map(u -> u.getDn().subjectDN()).collect(Collectors.toList());
         Collection<String> userRoles = primaryUser.getRoles();
-        Set<Authorizations> cbAuths = proxiedUsers.stream().map(u -> new Authorizations(u.getAuths().toArray(new String[0]))).collect(Collectors.toSet());
+        Set<Authorizations> cbAuths = userDetails.getProxiedUsers().stream().map(u -> new Authorizations(u.getAuths().toArray(new String[0])))
+                        .collect(Collectors.toSet());
 
         AccumuloClient client = null;
         AccumuloConnectionFactory.Priority priority;
@@ -118,8 +118,8 @@ public class ModificationService {
             Map<String,String> trackingMap = connectionFactory.getTrackingMap(Thread.currentThread().getStackTrace());
             client = connectionFactory.getClient(userDn, proxyServers, modificationConfiguration.getPoolName(), priority, trackingMap);
             service.setQueryServiceFactory(queryServiceFactory);
-            log.info("Processing modification request from user=" + dp.getShortName() + ": \n" + request);
-            service.process(client, request, cache.getCachedMutableFieldList(), cbAuths, proxiedUsers);
+            log.info("Processing modification request from user=" + userDetails.getShortName() + ": \n" + request);
+            service.process(client, request, cache.getCachedMutableFieldList(), cbAuths, userDetails);
         } catch (DatawaveModificationException e) {
             throw e;
         } catch (Exception e) {

@@ -27,11 +27,11 @@ import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.common.util.concurrent.MoreExecutors;
 
 import datawave.core.query.configuration.Result;
+import datawave.microservice.query.Query;
 import datawave.query.tables.AccumuloResource.ResourceFactory;
 import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.tables.stats.ScanSessionStats.TIMERS;
 import datawave.query.tables.stats.StatsListener;
-import datawave.webservice.query.Query;
 import datawave.webservice.query.util.QueryUncaughtExceptionHandler;
 
 /**

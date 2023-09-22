@@ -8,7 +8,7 @@ services:
     profiles:
       - quickstart
     command: ["datawave-bootstrap.sh", "--accumulo"]
-    image: datawave/quickstart-compose:5.9.0-SNAPSHOT
+    image: datawave/quickstart-compose:7.0.0-SNAPSHOT
     environment:
       - DW_CONTAINER_HOST=quickstart
     ports:
@@ -45,15 +45,17 @@ services:
       test: ["CMD-SHELL", "! accumuloStatus | grep DW-WARN > /dev/null"]
 
   consul:
-    image: consul:1.9.8
+    image: consul:1.15.4
     hostname: localhost
     environment:
-      - 'CONSUL_LOCAL_CONFIG={"datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true, "verify_server_hostname": false}'
+      - 'CONSUL_LOCAL_CONFIG={"log_level": "trace", "datacenter": "demo_dc", "disable_update_check": true, "enable_agent_tls_for_checks": true, "addresses": {"https": "0.0.0.0"}, "ports": {"https": 8501, "grpc_tls": 8503}, "tls": {"defaults": {"key_file": "/etc/pki/testServer.key", "cert_file": "/etc/pki/testServer.crt", "ca_file": "/etc/pki/testCA.pem", "verify_outgoing": true}, "internal_rpc": {"verify_server_hostname": false}}}'
       - CONSUL_BIND_INTERFACE=eth0
     # defined as host:container
     ports:
       - "8400"
       - "8500:8500"
+      - "8501:8501"
+      - "8503:8503"
       - "53"
     volumes:
       - ${PKI_DIR:-./pki}:/etc/pki:ro
@@ -61,7 +63,7 @@ services:
       - demo
 
   rabbitmq:
-    image: rabbitmq:3.8.25-alpine
+    image: rabbitmq:3.12.4-alpine
     volumes:
       - ${RABBITMQ_CONFIG_DIR:-./rabbitmq-config}:/etc/rabbitmq
       - ./logs:/logs
@@ -84,11 +86,14 @@ services:
     networks:
       - demo
     environment:
-      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
       - ALLOW_PLAINTEXT_LISTENER=yes
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT
       - KAFKA_CFG_LISTENERS=CLIENT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
       - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://${DW_HOSTNAME}:9094
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
       - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=false
       - KAFKA_CFG_DELETE_TOPICS_ENABLE=true
@@ -115,7 +120,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: datawave/config-service:2.0-SNAPSHOT
+    image: datawave/config-service:3.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -139,7 +144,7 @@ services:
         condition: service_started
 
   cache:
-    image: datawave/hazelcast-service:3.0-SNAPSHOT
+    image: datawave/hazelcast-service:4.0-SNAPSHOT
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -167,7 +172,7 @@ services:
 
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
-    image: datawave/authorization-service:3.0-SNAPSHOT
+    image: datawave/authorization-service:4.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose
@@ -196,7 +201,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: datawave/accumulo-service:3.0-SNAPSHOT
+    image: datawave/accumulo-service:4.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -229,7 +234,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: datawave/audit-service:3.0-SNAPSHOT
+    image: datawave/audit-service:4.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -263,7 +268,7 @@ services:
 
   metrics:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","-jar","app.jar"]
-    image: datawave/query-metric-service:3.0-SNAPSHOT
+    image: datawave/query-metric-service:4.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -300,7 +305,7 @@ services:
     profiles:
       - dictionary
       - full
-    image: datawave/dictionary-service:3.0-SNAPSHOT
+    image: datawave/dictionary-service:4.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth

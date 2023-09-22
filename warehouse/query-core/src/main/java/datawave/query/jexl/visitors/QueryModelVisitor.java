@@ -2,6 +2,7 @@ package datawave.query.jexl.visitors;
 
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.BOUNDED_RANGE;
 import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.LENIENT;
+import static datawave.query.jexl.nodes.QueryPropertyMarker.MarkerType.STRICT;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -314,7 +315,16 @@ public class QueryModelVisitor extends RebuildingVisitor {
         if (!fieldPairs.isEmpty()) {
             List<JexlNode> expressions = new ArrayList<>();
             for (List<String> fieldPair : fieldPairs) {
+                boolean strict = isStrict(fieldPair.get(0)) || isStrict(fieldPair.get(1));
                 boolean lenient = isLenient(fieldPair.get(0)) || isLenient(fieldPair.get(1));
+
+                // if somehow this expression is marked as lenient and strict, then default to old behaviour
+                if (strict && lenient) {
+                    log.warn("Field pair " + fieldPair + " is marked as both strict and lenient.  Applying neither.");
+                    strict = false;
+                    lenient = false;
+                }
+
                 Set<JexlNode> leftSet = left.get(fieldPair.get(0));
                 Set<JexlNode> rightSet = right.get(fieldPair.get(1));
                 product.addAll(Sets.cartesianProduct(leftSet, rightSet));
@@ -327,13 +337,20 @@ public class QueryModelVisitor extends RebuildingVisitor {
                 product = product.stream().map(list -> list.stream().map(RebuildingVisitor::copy).collect(Collectors.toList())).collect(Collectors.toSet());
 
                 JexlNode expanded;
-                if (requiresAnd) {
-                    expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.AND_NODE, node, product);
+                List<JexlNode> nodes = createNodeTreeFromPairs(node, product);
+                if (nodes.size() == 1) {
+                    expanded = nodes.get(0);
                 } else {
-                    expanded = JexlNodeFactory.createNodeTreeFromPairs(ContainerType.OR_NODE, node, product);
-                }
-                if (lenient) {
-                    expanded = QueryPropertyMarker.create(expanded, LENIENT);
+                    if (requiresAnd) {
+                        expanded = JexlNodeFactory.createAndNode(nodes);
+                    } else {
+                        expanded = JexlNodeFactory.createOrNode(nodes);
+                    }
+                    if (strict) {
+                        expanded = QueryPropertyMarker.create(expanded, STRICT);
+                    } else if (lenient) {
+                        expanded = QueryPropertyMarker.create(expanded, LENIENT);
+                    }
                 }
                 if (log.isTraceEnabled())
                     log.trace("expanded:" + PrintingVisitor.formattedQueryString(expanded));
@@ -354,6 +371,41 @@ public class QueryModelVisitor extends RebuildingVisitor {
             log.trace("Not sure how we got here, but just returning the original:" + PrintingVisitor.formattedQueryString(node));
 
         return node;
+    }
+
+    /**
+     * Expands a binary node into multiple pairs.
+     *
+     * @param node
+     *            The node exemplar
+     * @param pairs
+     *            The node pairs
+     * @return A list of jexl nodes created from each pair
+     */
+    public List<JexlNode> createNodeTreeFromPairs(JexlNode node, Set<List<JexlNode>> pairs) {
+        if (1 == pairs.size()) {
+            List<JexlNode> pair = pairs.iterator().next();
+
+            if (2 != pair.size()) {
+                throw new UnsupportedOperationException("Cannot construct a node from a non-binary pair: " + pair);
+            }
+
+            return Collections.singletonList(JexlNodeFactory.buildUntypedBinaryNode(node, pair.get(0), pair.get(1)));
+        }
+
+        List<JexlNode> children = new ArrayList<>();
+        for (List<JexlNode> pair : pairs) {
+            if (2 != pair.size()) {
+                throw new UnsupportedOperationException("Cannot construct a node from a non-binary pair: " + pair);
+            }
+
+            JexlNode leftNode = pair.get(0);
+            JexlNode rightNode = pair.get(1);
+            JexlNode child = JexlNodeFactory.buildUntypedBinaryNode(node, leftNode, rightNode);
+            children.add(child);
+        }
+
+        return children;
     }
 
     protected SetMultimap<String,JexlNode> expandNodeFromModel(JexlNode seed) {
@@ -445,8 +497,64 @@ public class QueryModelVisitor extends RebuildingVisitor {
         this.strictFields.addAll(strictFields);
     }
 
+    /**
+     * Determine if field marked as lenient
+     *
+     * @param field
+     *            The field to test
+     * @return true if explicitly marked as lenient
+     */
     public boolean isLenient(String field) {
-        return !strictFields.contains(field) && (queryModel.isLenientForwardMapping(field) || lenientFields.contains(field));
+        // user specifications will override the model settings
+        boolean userLenient = lenientFields.contains(field);
+        boolean userStrict = strictFields.contains(field);
+        if (userLenient || userStrict) {
+            if (userLenient && userStrict) {
+                throw new IllegalArgumentException("Cannot specify the same field as being strict and lenient");
+            }
+        }
+
+        // determine what the model is treating this as
+        boolean modelLenient = queryModel.getModelFieldAttributes(field).contains(QueryModel.LENIENT);
+        boolean modelStrict = queryModel.getModelFieldAttributes(field).contains(QueryModel.STRICT);
+        if (modelLenient || modelStrict) {
+            if (modelLenient && modelStrict) {
+                throw new IllegalStateException("The model cannot have both a strict and lenient marker for the same field");
+            }
+        }
+
+        // lenient if explicitly marked as lenient
+        return userLenient || (modelLenient && !userStrict);
+    }
+
+    /**
+     * Determine if field marked as strict
+     *
+     * @param field
+     *            The field to test
+     * @return true if explicitly marked as strict
+     */
+    public boolean isStrict(String field) {
+        // user specifications will override the model settings
+        boolean userLenient = lenientFields.contains(field);
+        boolean userStrict = strictFields.contains(field);
+        if (userLenient || userStrict) {
+            if (userLenient && userStrict) {
+                throw new IllegalArgumentException("Cannot specify the same field as being strict and lenient");
+            }
+        }
+
+        // determine what the model is treating this as
+        boolean modelLenient = queryModel.getModelFieldAttributes(field).contains(QueryModel.LENIENT);
+        boolean modelStrict = queryModel.getModelFieldAttributes(field).contains(QueryModel.STRICT);
+        if (modelLenient || modelStrict) {
+            if (modelLenient && modelStrict) {
+                throw new IllegalStateException("The model cannot have both a strict and lenient marker for the same field");
+            }
+        }
+
+        // strict if explicitly marked as strict
+        return userStrict || (modelStrict && !userLenient);
     }
 
     /**

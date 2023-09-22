@@ -333,7 +333,7 @@ function closeQuery() {
 
    local curlcmd="/usr/bin/curl \
    --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-   --insecure --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA} --keepalive-time 180 " \
+   --insecure --cert ${DW_CURL_CERT} --key ${DW_CURL_KEY_RSA} --cacert ${DW_CURL_CA} --keepalive-time 180 \
    -X PUT ${DW_QUERY_URI}/${DW_QUERY_ID}/close"
 
    local response="$( eval "${curlcmd}" )"
@@ -368,7 +368,7 @@ function getNextPage() {
 
    local curlcmd="/usr/bin/curl \
    --silent --write-out 'HTTP_STATUS_CODE:%{http_code};TOTAL_TIME:%{time_total};CONTENT_TYPE:%{content_type}' \
-   --insecure --header 'Accept: application/json' ${DW_REQUEST_HEADERS} --cert "${DW_CURL_CERT}" --key "${DW_CURL_KEY_RSA}" --cacert "${DW_CURL_CA} --keepalive-time 180 " \
+   --insecure --header 'Accept: application/json' ${DW_REQUEST_HEADERS} --cert ${DW_CURL_CERT} --key ${DW_CURL_KEY_RSA} --cacert ${DW_CURL_CA} --keepalive-time 180 \
    -X GET ${DW_QUERY_URI}/${DW_QUERY_ID}/next"
 
    local response="$( eval "${curlcmd}" )"

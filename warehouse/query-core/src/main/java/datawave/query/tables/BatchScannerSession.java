@@ -46,11 +46,11 @@ import datawave.core.query.configuration.Result;
 import datawave.core.query.configuration.ResultContext;
 import datawave.core.query.logic.QueryCheckpoint;
 import datawave.core.query.logic.QueryKey;
+import datawave.microservice.query.Query;
 import datawave.query.tables.async.Scan;
 import datawave.query.tables.async.ScannerChunk;
 import datawave.query.tables.async.SessionArbiter;
 import datawave.query.tables.async.SpeculativeScan;
-import datawave.webservice.query.Query;
 
 /**
  *

@@ -15,9 +15,9 @@ import org.junit.Test;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import datawave.core.query.util.QueryUtil;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
-import datawave.webservice.query.QueryImpl.Parameter;
+import datawave.microservice.query.Query;
+import datawave.microservice.query.QueryImpl;
+import datawave.microservice.query.QueryImpl.Parameter;
 
 public class QueryUtilTest {
 

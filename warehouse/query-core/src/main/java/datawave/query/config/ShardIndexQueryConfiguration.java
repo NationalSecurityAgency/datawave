@@ -14,8 +14,8 @@ import com.google.common.collect.Multimap;
 
 import datawave.core.query.configuration.CheckpointableQueryConfiguration;
 import datawave.core.query.configuration.QueryData;
+import datawave.microservice.query.Query;
 import datawave.query.tables.ShardIndexQueryTable;
-import datawave.webservice.query.Query;
 
 public class ShardIndexQueryConfiguration extends ShardQueryConfiguration implements Serializable, CheckpointableQueryConfiguration {
     private static final long serialVersionUID = 7616552164239289739L;

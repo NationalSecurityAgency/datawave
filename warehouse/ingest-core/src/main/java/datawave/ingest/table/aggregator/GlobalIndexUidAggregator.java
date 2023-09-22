@@ -157,7 +157,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     // the count and removal UIDs will decrement it. Apply this logic on the existing
                     // information available (the list of UIDs and removal UIDs) for consistency.
                     seenIgnore = true;
-                    count = this.uids.size() - this.uidsToRemove.size();
+                    count = (long) this.uids.size() - this.uidsToRemove.size();
                     log.debug("Switch to seenIgnore is true. Skipping collections");
                 } else {
                     // Save a starting count in the event that we go over the max UID count while
@@ -172,7 +172,7 @@ public class GlobalIndexUidAggregator extends PropogatingCombiner {
                     //
                     // However, if the maximum is not exceeded, we want to track UIDs by name in the internal
                     // set because that will take care of de-duping any duplicate UIDs.
-                    long prevCount = uids.size() - uidsToRemove.size();
+                    long prevCount = (long) uids.size() - uidsToRemove.size();
 
                     boolean isUnderMaxThreshold = processRemovalUids(v) && processAddedUids(v);
                     if (!isUnderMaxThreshold) {

@@ -1111,11 +1111,10 @@ public class BulkInputFormat extends InputFormat<Key,Value> {
                 binnedRanges = binOfflineTable(job, tableName, ranges);
                 while (binnedRanges == null) {
                     // Some tablets were still online, try again
-                    UtilWaitThread.sleep(100 + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
+                    UtilWaitThread.sleep(100L + (int) (Math.random() * 100)); // sleep randomly between 100 and 200 ms
                     binnedRanges = binOfflineTable(job, tableName, ranges);
                 }
             } else {
-
                 try (AccumuloClient client = getClient(job.getConfiguration())) {
                     TableId tableId = null;
                     tl = getTabletLocator(job.getConfiguration());

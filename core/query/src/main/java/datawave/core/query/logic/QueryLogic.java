@@ -14,12 +14,11 @@ import datawave.core.common.connection.AccumuloConnectionFactory;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.security.authorization.ProxiedUserDetails;
 import datawave.security.authorization.UserOperations;
 import datawave.validation.ParameterValidator;
 import datawave.webservice.common.audit.Auditor.AuditType;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.exception.DatawaveErrorCode;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
@@ -409,11 +408,11 @@ public interface QueryLogic<T> extends Iterable<T>, Cloneable, ParameterValidato
         long maxResults = getMaxResults();
 
         Map<String,Long> systemFromLimits = getSystemFromResultLimits();
-        QueryImpl.Parameter systemFromParam = settings.findParameter("systemFrom");
+        String systemFromParam = settings.getSystemFrom();
         if (systemFromLimits != null && systemFromParam != null) {
             // this findParameter implementation never returns null, it will return a parameter with an empty string
             // as the value if the parameter is not present.
-            maxResults = systemFromLimits.getOrDefault(systemFromParam.getParameterValue(), maxResults);
+            maxResults = systemFromLimits.getOrDefault(systemFromParam, maxResults);
         }
 
         Map<String,Long> dnResultLimits = getDnResultLimits();

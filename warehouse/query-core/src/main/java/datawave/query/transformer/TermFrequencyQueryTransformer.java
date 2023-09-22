@@ -13,17 +13,14 @@ import org.apache.curator.shaded.com.google.common.collect.ImmutableList;
 import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogicTransformer;
 import datawave.marking.MarkingFunctions;
+import datawave.microservice.query.Query;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory;
 import datawave.query.table.parser.TermFrequencyKeyValueFactory.TermFrequencyKeyValue;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.result.event.DefaultEvent;
-import datawave.webservice.query.result.event.DefaultField;
 import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.Metadata;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
 import datawave.webservice.result.BaseQueryResponse;
-import datawave.webservice.result.DefaultEventQueryResponse;
 import datawave.webservice.result.EventQueryResponseBase;
 
 @SuppressWarnings("rawtypes")

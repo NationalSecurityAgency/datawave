@@ -12,6 +12,7 @@ import datawave.core.common.edgedictionary.EdgeDictionaryProvider;
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.edge.model.EdgeModelFields;
 import datawave.edge.model.EdgeModelFieldsFactory;
+import datawave.microservice.query.Query;
 import datawave.query.QueryParameters;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
@@ -20,7 +21,6 @@ import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
 import datawave.webservice.dictionary.edge.MetadataBase;
-import datawave.webservice.query.Query;
 
 /**
  * This Logic highjacks the Query string, and transforms it into a ShardQueryLogic query The query string is of the form:

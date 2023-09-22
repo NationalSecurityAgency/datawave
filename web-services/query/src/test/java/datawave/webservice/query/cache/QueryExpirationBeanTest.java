@@ -16,9 +16,9 @@ import org.powermock.reflect.Whitebox;
 import com.google.common.cache.Cache;
 
 import datawave.core.common.connection.AccumuloConnectionFactory;
+import datawave.microservice.query.QueryImpl;
 import datawave.microservice.query.config.QueryExpirationProperties;
 import datawave.microservice.querymetric.QueryMetricFactoryImpl;
-import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.runner.RunningQuery;
 
 @RunWith(PowerMockRunner.class)
