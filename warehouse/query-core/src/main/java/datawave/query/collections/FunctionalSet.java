@@ -24,10 +24,10 @@ public class FunctionalSet<T extends ValueTuple> implements Set<T> {
     private static final long serialVersionUID = 8759102050325550844L;
     protected Set<T> delegate;
     // allowed methods for composition. Nothing that mutates the collection is allowed, thus we have:
-    public static final Set<String> allowedMethods = Collections.unmodifiableSet(Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size",
-                    "equals", "hashCode", "getValueForGroup", "getGroupsForValue", "getValuesForGroups", "toString", "values", "min", "max", "lessThan",
-                    "greaterThan", "compareWith"));
-    
+    public static final Set<String> allowedMethods = Collections
+                    .unmodifiableSet(Sets.newHashSet("contains", "retainAll", "containsAll", "isEmpty", "size", "equals", "hashCode", "getValueForGroup",
+                                    "getGroupsForValue", "getValuesForGroups", "toString", "values", "min", "max", "lessThan", "greaterThan", "compareWith"));
+
     /**
      * The empty set (immutable). This set is serializable.
      *

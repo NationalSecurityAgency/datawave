@@ -39,137 +39,137 @@ public class EmptyDecorator implements JexlQueryDecorator {
     public void apply(StringBuilder sb, ASTAdditiveOperator node) {
         sb.append(node.image);
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTAndNode node, Collection<String> childStrings, boolean needNewLines) {
         sb.append(String.join(" && " + (needNewLines ? NEWLINE : ""), childStrings));
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTAssignment node, int i) {
         sb.append(" = ");
         if (i + 1 == node.jjtGetNumChildren())
             sb.setLength(sb.length() - " = ".length());
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTDivNode node) {
         sb.append(" / ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTEQNode node) {
         sb.append(" == ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTERNode node) {
         sb.append(" =~ ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTFalseNode node) {
         sb.append("false");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTFunctionNode node, int i) {
         ; // Nothing to do
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTGENode node) {
         sb.append(" >= ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTGTNode node) {
         sb.append(" > ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTIdentifier node) {
         // We want to remove the $ if present and only replace it when necessary
         String fieldName = JexlASTHelper.rebuildIdentifier(JexlASTHelper.deconstructIdentifier(node.image));
-        
+
         sb.append(fieldName);
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTLENode node) {
         sb.append(" <= ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTLTNode node) {
         sb.append(" < ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTMethodNode node, StringBuilder methodStringBuilder) {
         sb.append(methodStringBuilder);
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTModNode node) {
         sb.append(" % ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTMulNode node) {
         sb.append(" * ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTNENode node) {
         sb.append(" != ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTNotNode node) {
         sb.append("!");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTNRNode node) {
         sb.append(" !~ ");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTNullLiteral node) {
         sb.append("null");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTNumberLiteral node) {
         sb.append(node.image);
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTOrNode node, Collection<String> childStrings, boolean needNewLines) {
         sb.append(String.join(" || " + (needNewLines ? NEWLINE : ""), childStrings));
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTSizeMethod node) {
         sb.append(".size()");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTStringLiteral node, String literal) {
         sb.append(SINGLE_QUOTE).append(literal).append(SINGLE_QUOTE);
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTTrueNode node) {
         sb.append("true");
     }
-    
+
     @Override
     public void apply(StringBuilder sb, ASTUnaryMinusNode node) {
         sb.append("-");
     }
-    
+
     @Override
     public void removeFieldColoring(StringBuilder sb) {
         ; // Nothing to do

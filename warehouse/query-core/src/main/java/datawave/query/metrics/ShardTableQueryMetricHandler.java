@@ -36,6 +36,7 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.ColumnVisibility;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections4.map.LRUMap;
+import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.deltaspike.core.api.config.ConfigProperty;
@@ -554,11 +555,11 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             query.setId(UUID.randomUUID());
             query.setParameters(ImmutableMap.of(QueryOptions.INCLUDE_GROUPING_CONTEXT, "true"));
             List<QueryMetric> queryMetrics = getQueryMetrics(response, query, datawavePrincipal);
-            
+
             formatMetrics(queryMetrics);
-            
+
             response.setResult(queryMetrics);
-            
+
             response.setGeoQuery(queryMetrics.stream().anyMatch(SimpleQueryGeometryHandler::isGeoQuery));
         } finally {
             enableLogs(true);
@@ -566,12 +567,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
 
         return response;
     }
-    
+
     /**
      * Returns a new list of QueryMetrics which is identical to the given list except the query and query plan for each metric are formatted according to
      * {@link datawave.query.jexl.visitors.JexlStringBuildingVisitor#buildDecoratedQuery buildDecoratedQuery} with an
      * {@link datawave.query.jexl.visitors.HtmlDecorator HtmlDecorator}
-     * 
+     *
      * @param metrics
      */
     public static void formatMetrics(List<? extends BaseQueryMetric> metrics) {
@@ -588,7 +589,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     metric.setQuery(JexlStringBuildingVisitor.buildDecoratedQuery(queryNode, false, true, new HtmlDecorator()));
                 } catch (org.apache.commons.jexl2.parser.ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-                    
+
                     if (log.isTraceEnabled()) {
                         log.trace(PrintingVisitor.formattedQueryString(queryNode));
                     }
@@ -601,7 +602,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                     metric.setPlan(JexlStringBuildingVisitor.buildDecoratedQuery(planNode, false, true, new HtmlDecorator()));
                 } catch (org.apache.commons.jexl2.parser.ParseException e) {
                     log.error("Could not parse JEXL AST after performing transformations to run the query", e);
-                    
+
                     if (log.isTraceEnabled()) {
                         log.trace(PrintingVisitor.formattedQueryString(planNode));
                     }
@@ -609,12 +610,12 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             }
         }
     }
-    
+
     private static boolean isJexlQuery(Set<Parameter> params) {
         return params.stream().anyMatch(p -> p.getParameterName().equals("query.syntax") && p.getParameterValue().equals("JEXL"));
     }
-    
-    public QueryMetric toMetric(datawave.webservice.query.result.event.EventBase event) {
+
+    public BaseQueryMetric toMetric(datawave.webservice.query.result.event.EventBase event) {
         SimpleDateFormat sdf_date_time1 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time2 = new SimpleDateFormat("yyyyMMdd HHmmss");
         SimpleDateFormat sdf_date_time3 = new SimpleDateFormat("yyyyMMdd");
