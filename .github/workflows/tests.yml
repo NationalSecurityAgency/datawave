@@ -30,6 +30,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.8.7
         cache: 'maven'
     - name: Format code
       run: |
@@ -61,6 +62,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.8.7
         cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
@@ -79,6 +81,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.8.7
         cache: 'maven'
     # Allow us to use the "--squash" option below
     - name: Turn on Docker experimental features and move Docker data root
