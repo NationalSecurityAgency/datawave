@@ -84,11 +84,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
-        
+
         List<String> dirs = ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
     }
@@ -113,11 +113,11 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
-        
+
         List<String> dirs = ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 1);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
     }
@@ -143,29 +143,29 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String anyRegex = this.dataManager.convertAnyField(regex);
         String anyCity = this.dataManager.convertAnyField(city);
         String expect = anyRegex + AND_OP + anyCity;
-        
+
         List<String> dirs = ivaratorConfig();
-        
+
         this.logic.setMaxValueExpansionThreshold(10);
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
-        
+
         this.logic.setMaxValueExpansionThreshold(4);
         runTest(query, expect);
         // threshold should exist for each index
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         runTest(query, expect);
         // threshold should exist for each index
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 3);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
     }
@@ -191,23 +191,23 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         } catch (FullTableScansDisallowedException e) {
             // expected
         }
-        
+
         List<String> dirs = ivaratorConfig();
         runTest(query, expect);
         // city should have a threshold
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
         parsePlan(FILTER_EXCLUDE_REGEX, 1);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
-        
+
         this.logic.setMaxValueExpansionThreshold(2);
         dirs = ivaratorConfig();
         runTest(query, expect);
         // city,state, code should have all exceed threshold
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 3);
         parsePlan(FILTER_EXCLUDE_REGEX, 1);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
     }
@@ -218,29 +218,29 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String regexPhrase = RN_OP + "'b.*'";
         String fieldVal = EQ_OP + "'a-1'";
         String query = Constants.ANY_FIELD + regexPhrase + AND_OP + Constants.ANY_FIELD + fieldVal;
-        
+
         List<String> dirs = ivaratorConfig();
-        
+
         // '!~' operation is not processed correctly - see QueryJexl docs
         // this is a hack for the expected results
         String expect = CityField.CITY.name() + EQ_OP + "'city-a'";
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 0);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
-        
+
         this.logic.setMaxValueExpansionThreshold(4);
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 3);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
     }
@@ -271,15 +271,15 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         List<String> dirs = ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 2);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
-        
+
         this.logic.setMaxValueExpansionThreshold(1);
         dirs = ivaratorConfig();
         runTest(query, expect);
         parsePlan(VALUE_THRESHOLD_JEXL_NODE, 4);
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
     }
@@ -298,7 +298,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
 
         String anyRegex = this.dataManager.convertAnyField(regex);
         String expect = anyRegex;
-        
+
         List<String> dirs = ivaratorConfigWithoutCleanup();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
         this.logic.setCollapseUids(true);
@@ -308,10 +308,10 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         this.logic.setIvaratorCacheBufferSize(2);
 
         runTest(query, expect);
-        
+
         // verify that ivarator directories were not cleaned up
         assertTrue(countContents(dirs) >= 1);
-        
+
         // now get a new set of ivarator directories
         dirs = ivaratorConfig();
         // set the max ivarator results to 1
@@ -326,7 +326,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
                 fail("Unexpected exception: " + e.getMessage());
             }
         }
-        
+
         // verify that all ivarator directories were cleaned up
         assertEquals(0, countContents(dirs));
     }
@@ -355,7 +355,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         String anyRegex = this.dataManager.convertAnyField(regex);
         String anyCity = this.dataManager.convertAnyField(city);
         String expect = anyRegex + AND_OP + anyCity;
-        
+
         List<String> dirs = ivaratorConfigWithoutCleanup();
         // set collapseUids to ensure we have shard ranges such that ivarators will actually execute
         this.logic.setCollapseUids(true);
@@ -380,7 +380,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         // and verify that the ivarators indeed did not complete (i.e. failed)
         assertEquals(0, countComplete(dirs));
     }
-    
+
     private int countContents(List<String> dirs) throws Exception {
         int count = 0;
         for (String dir : dirs) {
@@ -389,7 +389,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         }
         return count;
     }
-    
+
     private int countComplete(List<String> dirs) throws Exception {
         int count = 0;
         for (String dir : dirs) {
@@ -402,7 +402,7 @@ public class MaxExpansionRegexQueryTest extends AbstractFunctionalQuery {
         }
         return count;
     }
-    
+
     private Collection<File> getLeaves(File file, boolean includeThisOne) {
         List<File> children = new ArrayList<>();
         File[] files = file.listFiles();
