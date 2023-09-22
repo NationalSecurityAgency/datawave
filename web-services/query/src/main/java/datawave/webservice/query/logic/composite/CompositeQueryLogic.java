@@ -1,26 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import com.google.common.base.Joiner;
-import datawave.audit.SelectorExtractor;
-import datawave.security.authorization.AuthorizationException;
-import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.util.AuthorizationsUtil;
-import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
-import datawave.security.authorization.UserOperations;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.cache.ResultsPage;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.logic.BaseQueryLogic;
-import datawave.webservice.query.logic.QueryLogic;
-import datawave.webservice.query.logic.QueryLogicTransformer;
-import datawave.webservice.result.BaseResponse;
-
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.security.Authorizations;
-import org.apache.commons.collections4.functors.NOPTransformer;
-import org.apache.commons.collections4.iterators.TransformIterator;
-import org.apache.log4j.Logger;
-
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +13,28 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
+
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.functors.NOPTransformer;
+import org.apache.commons.collections4.iterators.TransformIterator;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Joiner;
+
+import datawave.audit.SelectorExtractor;
+import datawave.security.authorization.AuthorizationException;
+import datawave.security.authorization.DatawavePrincipal;
+import datawave.security.authorization.UserOperations;
+import datawave.security.util.AuthorizationsUtil;
+import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.cache.ResultsPage;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.logic.BaseQueryLogic;
+import datawave.webservice.query.logic.QueryLogic;
+import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.result.BaseResponse;
 
 /**
  * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel and results are retrieved as they come
@@ -51,7 +52,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         private Query settings;
         private boolean started = false;
         private long maxResults;
-        
+
         public QueryLogicHolder(String logicName, QueryLogic<?> logic) {
             this.setDaemon(true);
             this.setLogicName(logicName);
@@ -74,38 +75,38 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         public void setLogic(QueryLogic<?> logic) {
             this.logic = logic;
         }
-        
+
         public GenericQueryConfiguration getConfig() {
             return config;
         }
-        
+
         public void setConfig(GenericQueryConfiguration config) {
             this.config = config;
         }
-        
+
         public void setTransformIterator(TransformIterator transformIterator) {
             this.transformIterator = transformIterator;
         }
-        
+
         public void setMaxResults(long maxResults) {
             this.maxResults = maxResults;
         }
-        
+
         public long getMaxResults() {
             return maxResults;
         }
-        
+
         public Query getSettings() {
             return settings;
         }
-        
+
         public void setSettings(Query settings) {
             this.settings = settings;
         }
-        
+
         public void run() {
             long resultCount = 0L;
-            
+
             log.trace("Starting thread: " + this.getName());
 
             if (!started) {
@@ -150,13 +151,13 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 log.trace("Finished thread: " + this.getName() + " with success = " + success);
             }
         }
-        
+
     }
-    
+
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
-    
+
     private Map<String,QueryLogic<?>> queryLogics = null;
-    
+
     // Specified whether all queries must succeed initialization
     private boolean allMustInitialize = false;
 
@@ -167,9 +168,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     private volatile CountDownLatch completionLatch = null;
     private Map<String,QueryLogicHolder> logicState = new HashMap<>();
     private volatile CompositeQueryLogicResults results = null;
-    
+
     public CompositeQueryLogic() {}
-    
+
     public CompositeQueryLogic(CompositeQueryLogic other) {
         super(other);
         if (other.queryLogics != null) {
@@ -185,7 +186,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         this.allMustInitialize = other.allMustInitialize;
     }
-    
+
     public Set<Authorizations> updateRuntimeAuthorizationsAndQueryAuths(QueryLogic<?> logic, Query settings) throws AuthorizationException {
         Set<String> requestedAuths = new HashSet<>(AuthorizationsUtil.splitAuths(settings.getQueryAuthorizations()));
 
@@ -210,7 +211,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         settings.setQueryAuthorizations(validQueryAuthorizations);
 
         // recalculate the runtime query authorizations (no need to pass in userService as we have already recalculated the principal)
-        return AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, queryPrincipal);
+        Set<Authorizations> downgradedAuths = AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, queryPrincipal);
+        if (log.isTraceEnabled()) {
+            log.trace("Principal auths for user " + principal.getPrimaryUser().getCommonName() + " are " + principal.getPrimaryUser().getAuths());
+            log.trace("Query principal auths for " + logic.getLogicName() + " are " + validAuths);
+            log.trace("Requested auths were " + requestedAuths + " of which the valid query auths are " + validQueryAuthorizations);
+            log.trace("Downgraded auths are " + downgradedAuths);
+        }
+        return downgradedAuths;
     }
 
     @Override
@@ -271,7 +279,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 log.debug("\tLogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getLogic().getTableName());
             }
         }
-        
+
         final String compositeQueryString = logicQueryStringBuilder.toString();
         return new GenericQueryConfiguration() {
             @Override
@@ -280,11 +288,11 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         };
     }
-    
+
     @Override
     public String getPlan(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations, boolean expandFields, boolean expandValues)
                     throws Exception {
-        
+
         StringBuilder plans = new StringBuilder();
         int count = 1;
         String separator = Integer.toString(count++) + ": ";
@@ -301,7 +309,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         return plans.toString();
     }
-    
+
     @Override
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
         for (QueryLogicHolder holder : logicState.values()) {
@@ -316,16 +324,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         startLatch.await();
         log.trace("All threads have started.");
     }
-    
+
     @Override
     public Priority getConnectionPriority() {
         return p;
     }
-    
+
     public void setConnectionPriority(String priority) {
         p = Priority.valueOf(priority);
     }
-    
+
     /**
      * Method used to check that the configuration is correct and to get the response class by QueryExecutorBean.listQueryLogic()
      */
@@ -351,24 +359,24 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         this.transformer = new CompositeQueryLogicTransformer(delegates);
         return this.transformer;
     }
-    
+
     @Override
     public Iterator<Object> iterator() {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         // The objects put into the pageQueue have already been transformed.
         // We will iterate over the pagequeue with the No-Op transformer
         return new TransformIterator(results.iterator(), NOPTransformer.nopTransformer());
     }
-    
+
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new CompositeQueryLogic(this);
     }
-    
+
     @Override
     public void close() {
         this.interrupted = true;
@@ -388,15 +396,15 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         if (null != results)
             results.clear();
     }
-    
+
     public Map<String,QueryLogic<?>> getQueryLogics() {
         return this.queryLogics;
     }
-    
+
     public void setQueryLogics(Map<String,QueryLogic<?>> queryLogics) {
         this.queryLogics = queryLogics;
     }
-    
+
     public UserOperations getUserOperations() {
         // if any of the underlying logics have a non-null user operations, then
         // we need to return an instance that combines auths across the underlying
@@ -433,7 +441,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         return (!this.queryLogics.isEmpty());
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> params = new TreeSet<>();
@@ -445,7 +453,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         return params;
     }
-    
+
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> params = new TreeSet<>();
@@ -456,7 +464,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         return params;
     }
-    
+
     @Override
     public Set<String> getExampleQueries() {
         Set<String> params = new TreeSet<>();

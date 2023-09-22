@@ -16,34 +16,34 @@ import datawave.query.search.WildcardFieldedTerm;
 public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
     private List<UUIDType> uuidTypes = new ArrayList<>();
     private LuceneQueryParser luceneParser = new LuceneQueryParser();
-    
+
     @Override
     public QueryNode parse(String query) throws ParseException {
         query = query.replaceAll("\\u0093", "\""); // replace open smart quote 147
         query = query.replaceAll("\\u0094", "\""); // replace close smart quote 148
-        
+
         QueryNode parsedQuery = null;
-        
+
         parsedQuery = luceneParser.parse(query);
         if (!validUUIDQuery(parsedQuery))
             throw new ParseException("Query: " + query + " not supported with the LuceneToJexlUUIDQueryParser");
-        
+
         return super.parse(query);
     }
-    
+
     public List<UUIDType> getUuidTypes() {
         return uuidTypes;
     }
-    
+
     public void setUuidTypes(List<UUIDType> uuidTypes) {
         this.uuidTypes = uuidTypes;
     }
-    
+
     private boolean validUUIDSelectorNode(QueryNode node) {
         SelectorNode selectorNode = (SelectorNode) node;
         FieldedTerm fieldedTerm = (FieldedTerm) selectorNode.getQuery();
         String field = fieldedTerm.getField();
-        
+
         UUIDType uuidType = null;
         for (UUIDType u : uuidTypes) {
             if (u.getFieldName().equals(field)) {
@@ -51,15 +51,15 @@ public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
                 break;
             }
         }
-        
+
         if (uuidType == null) {
             return false;
         }
-        
+
         if (fieldedTerm instanceof RangeFieldedTerm) {
             return false;
         }
-        
+
         if (fieldedTerm instanceof WildcardFieldedTerm) {
             int firstWildcard = WildcardFieldedTerm.getFirstWildcardIndex(fieldedTerm.getSelector());
             Integer wildcardAllowedAfter = uuidType.getAllowWildcardAfter();
@@ -69,7 +69,7 @@ public class LuceneToJexlUUIDQueryParser extends LuceneToJexlQueryParser {
         }
         return true;
     }
-    
+
     private boolean validUUIDQuery(QueryNode node) {
         if (node != null) {
             if (node.isLeaf()) {

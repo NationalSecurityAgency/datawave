@@ -1,33 +1,5 @@
 package datawave.ingest.mapreduce.job;
 
-import datawave.ingest.config.TableConfigCache;
-import datawave.ingest.data.Type;
-import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.filter.KeyValueFilter;
-import datawave.ingest.data.config.ingest.AccumuloHelper;
-import datawave.ingest.mapreduce.handler.DataTypeHandler;
-import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
-import datawave.ingest.table.config.ShardTableConfigHelper;
-import datawave.ingest.table.config.TableConfigHelper;
-import datawave.iterators.PropogatingIterator;
-import org.apache.accumulo.core.client.AccumuloClient;
-import org.apache.accumulo.core.client.AccumuloException;
-import org.apache.accumulo.core.client.IteratorSetting;
-import org.apache.accumulo.core.client.NamespaceExistsException;
-import org.apache.accumulo.core.client.TableExistsException;
-import org.apache.accumulo.core.client.AccumuloSecurityException;
-import org.apache.accumulo.core.client.TableNotFoundException;
-import org.apache.accumulo.core.client.admin.NamespaceOperations;
-import org.apache.accumulo.core.client.admin.TableOperations;
-import org.apache.accumulo.core.conf.Property;
-
-import org.apache.accumulo.core.iterators.Combiner;
-import org.apache.accumulo.core.iterators.IteratorUtil;
-
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.Text;
-import org.apache.log4j.Logger;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -47,12 +19,39 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.accumulo.core.client.AccumuloClient;
+import org.apache.accumulo.core.client.AccumuloException;
+import org.apache.accumulo.core.client.AccumuloSecurityException;
+import org.apache.accumulo.core.client.IteratorSetting;
+import org.apache.accumulo.core.client.NamespaceExistsException;
+import org.apache.accumulo.core.client.TableExistsException;
+import org.apache.accumulo.core.client.TableNotFoundException;
+import org.apache.accumulo.core.client.admin.NamespaceOperations;
+import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.iterators.Combiner;
+import org.apache.accumulo.core.iterators.IteratorUtil;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.Text;
+import org.apache.log4j.Logger;
+
+import datawave.ingest.config.TableConfigCache;
+import datawave.ingest.data.Type;
+import datawave.ingest.data.TypeRegistry;
+import datawave.ingest.data.config.filter.KeyValueFilter;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
+import datawave.ingest.mapreduce.handler.DataTypeHandler;
+import datawave.ingest.mapreduce.job.metrics.MetricsConfiguration;
+import datawave.ingest.table.config.ShardTableConfigHelper;
+import datawave.ingest.table.config.TableConfigHelper;
+import datawave.iterators.PropogatingIterator;
+
 /**
  * This class serves as the liaison between datawave job configuration and accumulo tables. Most of this was ripped out of IngestJob for more convenient reuse
  * in other Jobs
  **/
 public class TableConfigurationUtil {
-    
+
     protected static final Logger log = Logger.getLogger(TableConfigurationUtil.class.getName());
     public static final String ITERATOR_CLASS_MARKER = "iterClass";
     public static final String TABLES_CONFIGS_TO_CACHE = "tables.configs.to.cache";
@@ -76,7 +75,7 @@ public class TableConfigurationUtil {
         tableConfigCache = TableConfigCache.getCurrentCache(conf);
 
     }
-    
+
     public static Set<String> getJobOutputTableNames(Configuration conf) {
         HashSet tableNames = new HashSet<>();
 
@@ -88,7 +87,7 @@ public class TableConfigurationUtil {
 
         return tableNames;
     }
-    
+
     /**
      *
      * @param tableNames
@@ -113,7 +112,7 @@ public class TableConfigurationUtil {
      */
     public static boolean registerTableNamesFromConfigFiles(Configuration conf) {
         Set<String> tables = extractTableNames(conf);
-        
+
         if (tables.isEmpty()) {
             log.error("Configured tables for configured data types is empty");
             return false;
@@ -121,7 +120,7 @@ public class TableConfigurationUtil {
         addOutputTables(org.apache.hadoop.util.StringUtils.join(",", tables), conf);
         return true;
     }
-    
+
     /**
      * Extract the table names for the job as specified in DataTypeHandlers, Filters, and conf
      *
@@ -131,7 +130,7 @@ public class TableConfigurationUtil {
      */
     public static Set<String> extractTableNames(Configuration conf) throws IllegalArgumentException {
         TypeRegistry.getInstance(conf);
-        
+
         Set<String> tables = new HashSet<>();
         for (Type type : TypeRegistry.getTypes()) {
             if (type.getDefaultDataTypeHandlers() != null) {
@@ -175,20 +174,20 @@ public class TableConfigurationUtil {
                 }
             }
         }
-        
+
         if (MetricsConfiguration.isEnabled(conf)) {
             String metricsTable = MetricsConfiguration.getTable(conf);
             if (org.apache.commons.lang.StringUtils.isNotBlank(metricsTable)) {
                 tables.add(metricsTable);
             }
         }
-        
+
         Set<String> extraTables = getTablesToAddToCache(conf);
         tables.addAll(extraTables);
 
         return tables;
     }
-    
+
     public static Set<String> getTablesToAddToCache(Configuration conf) {
         Set<String> tables = new HashSet<>();
         String[] extraTables = conf.getStrings(TABLES_CONFIGS_TO_CACHE);
@@ -229,7 +228,7 @@ public class TableConfigurationUtil {
         }
         return true;
     }
-    
+
     /**
      * Creates the tables that are needed to load data using this ingest job if they don't already exist. If a table is created, it is configured with the
      * appropriate iterators, aggregators, and locality groups that are required for ingest and query functionality to work correctly.
@@ -267,13 +266,13 @@ public class TableConfigurationUtil {
                 log.info("Tried to create " + table + " but somebody beat us to the punch");
             }
         }
-        
+
         // Pass along the enabling of bloom filters using the configuration
         conf.setBoolean(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, enableBloomFilters);
-        
+
         configureTablesIfNecessary(tableNames, tops, conf, log);
     }
-    
+
     private void createNamespaceIfNecessary(NamespaceOperations namespaceOperations, String table) throws AccumuloException, AccumuloSecurityException {
         // if the table has a namespace in it that doesn't already exist, create it
         if (table.contains(".")) {
@@ -288,7 +287,7 @@ public class TableConfigurationUtil {
             }
         }
     }
-    
+
     /**
      * Configures tables that are needed to load data using this ingest job, only if they don't already have the required configuration.
      *
@@ -307,11 +306,11 @@ public class TableConfigurationUtil {
      * @throws TableNotFoundException
      *             if the table could not be found
      */
-    private void configureTablesIfNecessary(Set<String> tableNames, TableOperations tops, Configuration conf, Logger log) throws AccumuloSecurityException,
-                    AccumuloException, TableNotFoundException {
-        
+    private void configureTablesIfNecessary(Set<String> tableNames, TableOperations tops, Configuration conf, Logger log)
+                    throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+
         Map<String,TableConfigHelper> tableConfigs = setupTableConfigHelpers(log, conf, tableNames);
-        
+
         for (String table : tableNames) {
             TableConfigHelper tableHelper = tableConfigs.get(table);
             if (tableHelper != null) {
@@ -321,7 +320,7 @@ public class TableConfigurationUtil {
             }
         }
     }
-    
+
     /**
      * Instantiates TableConfigHelper classes for tables as defined in the configuration
      *
@@ -334,16 +333,16 @@ public class TableConfigurationUtil {
      * @return Map&lt;String,TableConfigHelper&gt; map from table names to their setup TableConfigHelper classes
      */
     private Map<String,TableConfigHelper> setupTableConfigHelpers(Logger log, Configuration conf, Set<String> tableNames) {
-        
+
         Map<String,TableConfigHelper> helperMap = new HashMap<>(tableNames.size());
-        
+
         for (String table : tableNames) {
             helperMap.put(table, TableConfigHelperFactory.create(table, conf, log));
         }
-        
+
         return helperMap;
     }
-    
+
     /**
      * Get the table priorities
      *
@@ -402,7 +401,7 @@ public class TableConfigurationUtil {
                 }
             }
         }
-        
+
         if (MetricsConfiguration.isEnabled(conf)) {
             String metricsTable = MetricsConfiguration.getTable(conf);
             int priority = MetricsConfiguration.getTablePriority(conf);
@@ -410,10 +409,10 @@ public class TableConfigurationUtil {
                 tablePriorities.put(metricsTable, priority);
             }
         }
-        
+
         return tablePriorities;
     }
-    
+
     /**
      * Populate the table configuration cache directly from accumulo or from the cached properties file, as configured
      *
@@ -424,7 +423,7 @@ public class TableConfigurationUtil {
      *
      */
     void setupTableConfigurationsCache(Configuration conf) throws IOException {
-        
+
         if (conf.getBoolean(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, false)) {
 
             try {
@@ -443,17 +442,17 @@ public class TableConfigurationUtil {
             log.error("Unable to read desired table properties from accumulo.  Please verify your configuration. ");
             throw new IOException(e);
         }
-        
+
     }
-    
+
     private void setTableConfigsFromCacheFile() throws IOException {
         tableConfigCache.read();
 
     }
-    
+
     private void setTableConfigsFromAccumulo(Configuration conf) throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
         tableConfigCache.setTableConfigs(getTablePropertiesFromAccumulo(accumuloHelper, log, conf));
-        
+
     }
 
     private void setTableConfigsFromConf(Configuration conf) throws IOException {
@@ -483,11 +482,11 @@ public class TableConfigurationUtil {
             }
 
             for (String table : tableNames) {
-                Map<String, String> tempmap = new HashMap<>();
+                Map<String,String> tempmap = new HashMap<>();
                 Iterator it = tops.getProperties(table).iterator();
 
                 while (it.hasNext()) {
-                    Map.Entry<String, String> entry = (Map.Entry) it.next();
+                    Map.Entry<String,String> entry = (Map.Entry) it.next();
                     if (null != entry.getValue() && !entry.getValue().isEmpty()) {
                         if (null != pattern) {
                             Matcher m = pattern.matcher(entry.getKey());
@@ -689,6 +688,17 @@ public class TableConfigurationUtil {
         } else {
             for (String table : tables) {
                 Map<String,String> tableConfig = TableConfigCache.getCurrentCache(conf).getTableProperties(table);
+
+                if (isUsingFileCache() && (null == tableConfig || tableConfig.isEmpty())) {
+                    // we've read from the config file and do not have properties for a requested table. Retry from accumulo.
+                    conf.set(TableConfigCache.ACCUMULO_CONFIG_FILE_CACHE_ENABLE_PROPERTY, "false");
+                    setupTableConfigurationsCache(conf);
+                    tableConfig = TableConfigCache.getCurrentCache(conf).getTableProperties(table);
+                    if (null == tableConfig || tableConfig.isEmpty()) {
+                        throw new IOException("Requested output table, " + table + ", properties could not be found in cache or accumulo.");
+                    }
+                }
+
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 ObjectOutputStream oos = new ObjectOutputStream(baos);
                 oos.writeObject(tableConfig);

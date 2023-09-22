@@ -1,6 +1,17 @@
 package datawave.query.transformer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import org.apache.accumulo.core.data.Key;
+import org.apache.accumulo.core.data.Value;
+import org.apache.accumulo.core.security.ColumnVisibility;
+import org.apache.log4j.Logger;
+
 import com.google.protobuf.InvalidProtocolBufferException;
+
 import datawave.edge.model.EdgeModelAware;
 import datawave.edge.util.EdgeKey;
 import datawave.edge.util.EdgeValue;
@@ -11,31 +22,22 @@ import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableLogic;
 import datawave.webservice.query.result.edge.EdgeBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.log4j.Logger;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,Value>,EdgeBase> implements CacheableLogic, EdgeModelAware {
     private Logger log = Logger.getLogger(EdgeQueryTransformer.class);
-    
+
     public EdgeQueryTransformer(Query settings, MarkingFunctions markingFunctions, ResponseObjectFactory responseObjectFactory) {
         super(settings, markingFunctions, responseObjectFactory);
     }
-    
+
     @Override
     public EdgeBase transform(Entry<Key,Value> entry) {
-        
+
         EdgeKey edgeKey = EdgeKey.decode(entry.getKey());
         Value value = entry.getValue();
-        
+
         EdgeBase edge = (EdgeBase) this.responseObjectFactory.getEdge();
-        
+
         boolean statsEdge = edgeKey.isStatsKey();
         try {
             Map<String,String> markings = markingFunctions.translateFromColumnVisibilityForAuths(new ColumnVisibility(edgeKey.getColvis()), auths);
@@ -43,7 +45,7 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
             edge.setEdgeType(edgeKey.getType());
             edge.setEdgeRelationship(edgeKey.getRelationship());
             edge.setEdgeAttribute1Source(edgeKey.getAttribute1());
-            
+
             if (edgeKey.getDateType() == EdgeKey.DATE_TYPE.ACTIVITY_ONLY || edgeKey.getDateType() == EdgeKey.DATE_TYPE.ACTIVITY_AND_EVENT) {
                 edge.setActivityDate(edgeKey.getYyyymmdd());
             }
@@ -62,12 +64,12 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
             } else {
                 edge.setLoadDate(edgeKey.getYyyymmdd());
             }
-            
+
         } catch (InvalidProtocolBufferException e) {
             // bad protobuf, get source and sink from key
             log.error("Invalid protobuff edge encountered!");
         }
-        
+
         // value for source and sink will get set if they were not in the protobuf
         if (edge.getSource() == null) {
             edge.setSource(edgeKey.getSourceData());
@@ -75,7 +77,7 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
         if (edge.getSink() == null) {
             edge.setSink(edgeKey.getSinkData());
         }
-        
+
         if (statsEdge) {
             edge.setStatsType(edgeKey.getStatsType().name());
             switch (edgeKey.getStatsType()) {
@@ -91,7 +93,7 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
             edge.setCount(null);
         } else {
             // Added to support displaying the hourly activity bitmask for regular edge queries
-            
+
             boolean[] hourlyActivity;
             try {
                 hourlyActivity = decodeHourlyActivityToBooleanArray(value);
@@ -107,12 +109,12 @@ public class EdgeQueryTransformer extends EdgeQueryTransformerSupport<Entry<Key,
             } catch (InvalidProtocolBufferException ex) {
                 log.error("invalid protocol buffer encountered when attempting to parse bitmask.");
             }
-            
+
             if (edgeValue != null) {
                 edge.setCount(edgeValue.getCount());
             }
         }
-        
+
         if (edgeKey.hasAttribute2()) {
             edge.setEdgeAttribute2(edgeKey.getAttribute2());
         }

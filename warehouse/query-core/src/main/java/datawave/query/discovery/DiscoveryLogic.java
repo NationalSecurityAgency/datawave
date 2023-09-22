@@ -18,26 +18,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import datawave.data.type.Type;
-import datawave.query.QueryParameters;
-import datawave.query.exceptions.IllegalRangeArgumentException;
-import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
-import datawave.query.jexl.visitors.CaseSensitivityVisitor;
-import datawave.query.jexl.visitors.QueryModelVisitor;
-import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
-import datawave.query.language.tree.QueryNode;
-import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
-import datawave.query.Constants;
-import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
-import datawave.query.jexl.LiteralRange;
-import datawave.query.tables.ShardIndexQueryTable;
-import datawave.query.tables.ScannerFactory;
-import datawave.query.util.MetadataHelper;
-import datawave.webservice.query.Query;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.QueryException;
-
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.client.IteratorSetting;
@@ -67,42 +47,62 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
+import datawave.data.type.Type;
+import datawave.query.Constants;
+import datawave.query.QueryParameters;
+import datawave.query.discovery.FindLiteralsAndPatternsVisitor.QueryValues;
+import datawave.query.exceptions.IllegalRangeArgumentException;
+import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.LiteralRange;
+import datawave.query.jexl.lookups.ShardIndexQueryTableStaticMethods;
+import datawave.query.jexl.visitors.CaseSensitivityVisitor;
+import datawave.query.jexl.visitors.QueryModelVisitor;
+import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
+import datawave.query.language.tree.QueryNode;
+import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
+import datawave.query.tables.ScannerFactory;
+import datawave.query.tables.ShardIndexQueryTable;
+import datawave.query.util.MetadataHelper;
+import datawave.webservice.query.Query;
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
+
 public class DiscoveryLogic extends ShardIndexQueryTable {
-    
+
     private static final Logger log = Logger.getLogger(DiscoveryLogic.class);
-    
+
     public static final String SEPARATE_COUNTS_BY_COLVIS = "separate.counts.by.colvis";
     public static final String SHOW_REFERENCE_COUNT = "show.reference.count";
     public static final String REVERSE_INDEX = "reverse.index";
-    
+
     private Boolean separateCountsByColVis = false;
     private Boolean showReferenceCount = false;
     private MetadataHelper metadataHelper;
-    
+
     public DiscoveryLogic() {
         super();
     }
-    
+
     public DiscoveryLogic(ShardIndexQueryTable other) {
         super(other);
     }
-    
+
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> auths) throws Exception {
         DiscoveryQueryConfiguration config = new DiscoveryQueryConfiguration(this, settings);
-        
+
         this.scannerFactory = new ScannerFactory(client);
-        
+
         this.metadataHelper = initializeMetadataHelper(client, config.getMetadataTableName(), auths);
-        
+
         if (StringUtils.isEmpty(settings.getQuery())) {
             throw new IllegalArgumentException("Query cannot be null");
         }
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Query parameters set to " + settings.getParameters());
         }
-        
+
         // Check if the default modelName and modelTableNames have been overriden by custom parameters.
         if (null != settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME)
                         && !settings.findParameter(QueryParameters.PARAMETER_MODEL_NAME).getParameterValue().trim().isEmpty()) {
@@ -112,39 +112,39 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                         && !settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim().isEmpty()) {
             modelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
         }
-        
+
         // Check if user would like counts separated by column visibility
         if (null != settings.findParameter(SEPARATE_COUNTS_BY_COLVIS)
                         && !settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim().isEmpty()) {
             separateCountsByColVis = Boolean.valueOf(settings.findParameter(SEPARATE_COUNTS_BY_COLVIS).getParameterValue().trim());
             config.setSeparateCountsByColVis(separateCountsByColVis);
         }
-        
+
         // Check if user would like to show reference counts instead of term counts
         if (null != settings.findParameter(SHOW_REFERENCE_COUNT) && !settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim().isEmpty()) {
             showReferenceCount = Boolean.valueOf(settings.findParameter(SHOW_REFERENCE_COUNT).getParameterValue().trim());
             config.setShowReferenceCount(showReferenceCount);
         }
-        
+
         this.queryModel = metadataHelper.getQueryModel(modelTableName, modelName, null);
-        
+
         // get the data type filter set if any
         if (null != settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
                         && !settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim().isEmpty()) {
-            Set<String> dataTypeFilter = new HashSet<>(Arrays.asList(StringUtils.split(settings.findParameter(QueryParameters.DATATYPE_FILTER_SET)
-                            .getParameterValue().trim(), Constants.PARAM_VALUE_SEP)));
+            Set<String> dataTypeFilter = new HashSet<>(Arrays.asList(StringUtils
+                            .split(settings.findParameter(QueryParameters.DATATYPE_FILTER_SET).getParameterValue().trim(), Constants.PARAM_VALUE_SEP)));
             config.setDatatypeFilter(dataTypeFilter);
             if (log.isDebugEnabled()) {
                 log.debug("Data type filter set to " + dataTypeFilter);
             }
         }
-        
+
         // Set the connector
         config.setClient(client);
-        
+
         // Set the auths
         config.setAuthorizations(auths);
-        
+
         // set the table names
         if (getIndexTableName() != null) {
             config.setIndexTableName(getIndexTableName());
@@ -152,17 +152,17 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         if (getReverseIndexTableName() != null) {
             config.setReverseIndexTableName(getReverseIndexTableName());
         }
-        
+
         // Get the ranges
         config.setBeginDate(settings.getBeginDate());
         config.setEndDate(settings.getEndDate());
-        
+
         if (null == config.getBeginDate() || null == config.getEndDate()) {
             config.setBeginDate(new Date(0));
             config.setEndDate(new Date(Long.MAX_VALUE));
             log.warn("Dates not specified, using entire date range");
         }
-        
+
         // start with a trimmed version of the query, converted to JEXL
         LuceneToJexlQueryParser parser = new LuceneToJexlQueryParser();
         parser.setAllowLeadingWildCard(this.isAllowLeadingWildcard());
@@ -173,17 +173,17 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             log.debug("Original Query = " + settings.getQuery().trim());
             log.debug("JEXL Query = " + node.getOriginalQuery());
         }
-        
+
         // Parse & flatten the query
         ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(config.getQueryString());
-        
+
         script = CaseSensitivityVisitor.upperCaseIdentifiers(config, metadataHelper, script);
-        
+
         Set<String> dataTypes = config.getDatatypeFilter();
         Set<String> allFields;
         allFields = metadataHelper.getAllFields(dataTypes);
         script = QueryModelVisitor.applyModel(script, getQueryModel(), allFields);
-        
+
         QueryValues literalsAndPatterns = FindLiteralsAndPatternsVisitor.find(script);
         Stopwatch timer = Stopwatch.createStarted();
         // no caching for getAllNormalizers, so try some magic with getFields...
@@ -197,15 +197,15 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         config.setLiterals(normalize(new LiteralNormalization(), literalsAndPatterns.getLiterals(), dataTypeMap));
         config.setPatterns(normalize(new PatternNormalization(), literalsAndPatterns.getPatterns(), dataTypeMap));
         config.setRanges(normalizeRanges(new LiteralNormalization(), literalsAndPatterns.getRanges(), dataTypeMap));
-        
+
         if (log.isDebugEnabled()) {
             log.debug("Normalized Literals = " + config.getLiterals());
             log.debug("Normalized Patterns = " + config.getPatterns());
         }
-        
+
         return config;
     }
-    
+
     @Override
     public void setupQuery(GenericQueryConfiguration genericConfig) throws QueryException, TableNotFoundException, IOException, ExecutionException {
         DiscoveryQueryConfiguration config = (DiscoveryQueryConfiguration) genericConfig;
@@ -224,22 +224,22 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                             config.getLiterals(), config.getPatterns(), config.getRanges(), true);
             iterators.add(transformScanner(bs));
         }
-        
+
         config.setSeparateCountsByColVis(separateCountsByColVis);
         config.setShowReferenceCount(showReferenceCount);
-        
+
         this.iterator = concat(iterators.iterator());
     }
-    
+
     public static BatchScanner configureBatchScannerForDiscovery(DiscoveryQueryConfiguration config, ScannerFactory scannerFactory, String tableName,
                     Collection<Range> seekRanges, Set<Text> columnFamilies, Multimap<String,String> literals, Multimap<String,String> patterns,
                     Multimap<String,LiteralRange<String>> ranges, boolean reverseIndex) throws TableNotFoundException {
-        
+
         // if we have no ranges, then nothing to scan
         if (seekRanges.isEmpty()) {
             return null;
         }
-        
+
         BatchScanner bs = scannerFactory.newScanner(tableName, config.getAuthorizations(), config.getNumQueryThreads(), config.getQuery());
         bs.setRanges(seekRanges);
         if (!columnFamilies.isEmpty()) {
@@ -247,20 +247,20 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 bs.fetchColumnFamily(family);
             }
         }
-        
+
         // The begin date from the query may be down to the second, for doing lookups in the index we want to use the day because
         // the times in the index table have been truncated to the day.
         Date begin = DateUtils.truncate(config.getBeginDate(), Calendar.DAY_OF_MONTH);
         // we don't need to bump up the end date any more because it's not apart of the range set on the scanner
         Date end = config.getEndDate();
-        
+
         LongRange dateRange = new LongRange(begin.getTime(), end.getTime());
-        
+
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDateRangeFilter(config, bs, dateRange);
         ShardIndexQueryTableStaticMethods.configureGlobalIndexDataTypeFilter(config, bs, config.getDatatypeFilter());
-        
+
         configureIndexMatchingIterator(config, bs, literals, patterns, ranges, reverseIndex);
-        
+
         IteratorSetting discoveryIteratorSetting = new IteratorSetting(config.getBaseIteratorPriority() + 50, DiscoveryIterator.class);
         discoveryIteratorSetting.addOption(REVERSE_INDEX, Boolean.toString(reverseIndex));
         discoveryIteratorSetting.addOption(SEPARATE_COUNTS_BY_COLVIS, config.getSeparateCountsByColVis().toString());
@@ -268,19 +268,19 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             discoveryIteratorSetting.addOption(SHOW_REFERENCE_COUNT, config.getShowReferenceCount().toString());
         }
         bs.addScanIterator(discoveryIteratorSetting);
-        
+
         return bs;
     }
-    
+
     public static final void configureIndexMatchingIterator(DiscoveryQueryConfiguration config, ScannerBase bs, Multimap<String,String> literals,
                     Multimap<String,String> patterns, Multimap<String,LiteralRange<String>> ranges, boolean reverseIndex) {
         if ((literals == null || literals.isEmpty()) && (patterns == null || patterns.isEmpty()) && (ranges == null || ranges.isEmpty())) {
             return;
         }
         log.debug("Configuring IndexMatchingIterator with " + literals + " and " + patterns);
-        
+
         IteratorSetting cfg = new IteratorSetting(config.getBaseIteratorPriority() + 23, "termMatcher", IndexMatchingIterator.class);
-        
+
         IndexMatchingIterator.Configuration conf = new IndexMatchingIterator.Configuration();
         if (literals != null) {
             for (Entry<String,String> literal : literals.entries()) {
@@ -309,19 +309,19 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                 }
             }
         }
-        
+
         cfg.addOption(IndexMatchingIterator.CONF, IndexMatchingIterator.gson().toJson(conf));
-        
+
         cfg.addOption(IndexMatchingIterator.REVERSE_INDEX, Boolean.toString(reverseIndex));
-        
+
         bs.addScanIterator(cfg);
     }
-    
+
     @Override
     public ShardIndexQueryTable clone() {
         return new DiscoveryLogic(this);
     }
-    
+
     /**
      * Takes in a batch scanner and returns an iterator over the DiscoveredThing objects contained in the value.
      *
@@ -332,7 +332,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
     public static Iterator<DiscoveredThing> transformScanner(final BatchScanner scanner) {
         return concat(transform(scanner.iterator(), new Function<Entry<Key,Value>,Iterator<DiscoveredThing>>() {
             DataInputBuffer in = new DataInputBuffer();
-            
+
             @Override
             public Iterator<DiscoveredThing> apply(Entry<Key,Value> from) {
                 Value value = from.getValue();
@@ -352,7 +352,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
             }
         }));
     }
-    
+
     /**
      * Makes two collections of ranges: one for the forward index (value0) and one for the reverse index (value1).
      *
@@ -422,7 +422,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         }
         return Pair.with(forwardRanges, reverseRanges);
     }
-    
+
     /**
      * This attempts to normalize all of the {@code <value, field>} tuples with the corresponding {@code <field, normalizer>} tuple. The Normalization object
      * will determine whether or not a regex or literal is being normalized.
@@ -454,7 +454,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         }
         return normalizedValuesToFields;
     }
-    
+
     /**
      * This attempts to normalize all of the {@code <value, field>} tuples with the corresponding {@code <field, normalizer>} tuple. The Normalization object
      * will determine whether or not a regex or literal is being normalized.
@@ -480,8 +480,8 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
                     log.debug("Attempting to normalize [" + value + "] with [" + dataType.getClass() + "]");
                     String normalizedLower = normalization.normalize(dataType, field, value.getLower().toString());
                     String normalizedUpper = normalization.normalize(dataType, field, value.getUpper().toString());
-                    normalizedValuesToFields.put(field, new LiteralRange<>(normalizedLower, value.isLowerInclusive(), normalizedUpper,
-                                    value.isUpperInclusive(), value.getFieldName(), value.getNodeOperand()));
+                    normalizedValuesToFields.put(field, new LiteralRange<>(normalizedLower, value.isLowerInclusive(), normalizedUpper, value.isUpperInclusive(),
+                                    value.getFieldName(), value.getNodeOperand()));
                     log.debug("Normalization succeeded!");
                 } catch (Exception exception) {
                     log.debug("Normalization failed.");
@@ -490,7 +490,7 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         }
         return normalizedValuesToFields;
     }
-    
+
     /**
      * Given a sequence of objects of type T, this method will return a single object for every unique type passed in. This is used to dedupe normalizer
      * instances by their type, so that we only get 1 instance per type of normalizer.
@@ -508,28 +508,28 @@ public class DiscoveryLogic extends ShardIndexQueryTable {
         }
         return map.values();
     }
-    
+
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> params = super.getOptionalQueryParameters();
         params.add(SEPARATE_COUNTS_BY_COLVIS);
         return params;
     }
-    
+
     public Boolean getSeparateCountsByColVis() {
         return separateCountsByColVis;
     }
-    
+
     public void setSeparateCountsByColVis(Boolean separateCountsByColVis) {
         this.separateCountsByColVis = separateCountsByColVis;
     }
-    
+
     public Boolean getShowReferenceCount() {
         return showReferenceCount;
     }
-    
+
     public void setShowReferenceCount(Boolean showReferenceCount) {
         this.showReferenceCount = showReferenceCount;
     }
-    
+
 }

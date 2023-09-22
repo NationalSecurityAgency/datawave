@@ -1,31 +1,28 @@
 package datawave.common.test.logging;
 
-import org.apache.log4j.bridge.FilterAdapter;
-import org.apache.log4j.spi.Filter;
-import org.apache.log4j.spi.LoggingEvent;
-
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
-import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.StringLayout;
-import org.apache.logging.log4j.core.appender.WriterAppender;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.core.layout.PatternLayout;
-
-import org.junit.rules.ExternalResource;
-
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.log4j.bridge.FilterAdapter;
+import org.apache.log4j.spi.Filter;
+import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.StringLayout;
+import org.apache.logging.log4j.core.appender.WriterAppender;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.junit.rules.ExternalResource;
+
 /**
  * JUnit Rule for aggregating the log output from a given set of loggers into a simple string list.
  * <p>
- * This class replaces our legacy CommonTestAppender, which implemented a pattern of usage that is
- * broken and no longer valid in log4j 2x
+ * This class replaces our legacy CommonTestAppender, which implemented a pattern of usage that is broken and no longer valid in log4j 2x
  * </p>
  */
 public class TestLogCollector extends ExternalResource {
@@ -41,19 +38,14 @@ public class TestLogCollector extends ExternalResource {
 
     @Override
     protected void before() {
-        StringLayout layout = PatternLayout.newBuilder()
-                .withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
-        Appender appender = WriterAppender.newBuilder()
-                .setName(TestLogCollector.class.getSimpleName())
-                .setFilter(new FilterAdapter(new Filter() {
-                    @Override
-                    public int decide(LoggingEvent event) {
-                        messages.add(event.getMessage().toString());
-                        return Filter.ACCEPT;
-                    }
-                }))
-                .setLayout(layout)
-                .setTarget(writer).build();
+        StringLayout layout = PatternLayout.newBuilder().withPattern(PatternLayout.DEFAULT_CONVERSION_PATTERN).build();
+        Appender appender = WriterAppender.newBuilder().setName(TestLogCollector.class.getSimpleName()).setFilter(new FilterAdapter(new Filter() {
+            @Override
+            public int decide(LoggingEvent event) {
+                messages.add(event.getMessage().toString());
+                return Filter.ACCEPT;
+            }
+        })).setLayout(layout).setTarget(writer).build();
         appender.start();
         this.loggers.stream().forEach(l -> l.setAppender(appender));
     }

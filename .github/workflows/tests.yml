@@ -18,8 +18,8 @@ env:
 
 jobs:
   # Runs the pom sorter and code formatter to ensure that the code
-  # is formatted and poms are sorted according to project rules. This
-  # will fail if the formatter makes any changes.
+  # is formatted and poms are sorted according to project rules. If changes are found,
+  # they are committed back to the branch
   check-code-formatting:
     runs-on: ubuntu-latest
     steps:
@@ -30,12 +30,26 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.8.7
         cache: 'maven'
     - name: Format code
       run: |
-        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort -Pautoformat
+        mvn -V -B -e -ntp "-Dstyle.color=always" clean formatter:format sortpom:sort impsort:sort -Pautoformat
         git status
-        git diff-index --quiet HEAD || (echo "Error! There are modified files after formatting." && false)
+        git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
+    - name: Commit Changes
+      run: |
+        if [ "$diffs_found" = true ]; then
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "datawave@github.com"
+          git commit -am "Formatting job fix"
+          git push
+        else
+          echo "Nothing to do"
+        fi
+        
+      
+        
 
   # Build the code and run the unit/integration tests.
   build-and-test:
@@ -48,6 +62,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.8.7
         cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
@@ -66,6 +81,7 @@ jobs:
       with:
         distribution: ${{env.JAVA_DISTRIBUTION}}
         java-version: ${{env.JAVA_VERSION}}
+        maven-version: 3.8.7
         cache: 'maven'
     # Allow us to use the "--squash" option below
     - name: Turn on Docker experimental features and move Docker data root
