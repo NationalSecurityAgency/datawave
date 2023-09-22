@@ -45,7 +45,7 @@ public abstract class IvaratorBuilder extends IndexIteratorBuilder {
     protected void validateIvaratorControlDir(IvaratorCacheDir ivaratorCacheDir) {
         String ivaratorCacheDirURI = ivaratorCacheDir.getPathURI();
         FileSystem fileSystem = ivaratorCacheDir.getFs();
-        
+
         try {
             final Path cachePath = new Path(new URI(ivaratorCacheDirURI));
             // get the parent directory
