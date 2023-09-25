@@ -30,7 +30,6 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 
-import datawave.metrics.util.flag.FlagFile;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 import datawave.util.flag.config.FlagMakerConfigUtility;
@@ -70,6 +69,7 @@ public class FlagFileWriter {
     // were created, reducing the number of RPC calls to the NameNode
     private final Cache<Path,Path> directoryCache;
     private final FlagFileContentCreator flagFileContentCreator;
+    private FlagMetrics metrics;
 
     public FlagFileWriter(FlagMakerConfig flagMakerConfig) throws IOException {
         this.flagMakerConfig = flagMakerConfig;
@@ -91,8 +91,7 @@ public class FlagFileWriter {
     void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inputFiles) throws IOException {
         File flagFile = null;
         long now = System.currentTimeMillis();
-        final FlagMetrics metrics = createFlagMetrics(fs, fc);
-        flagFileContentCreator.withMetrics(metrics);
+        this.metrics = createFlagMetrics(fs, fc);
 
         // futures holds tasks in case of a failure scenario, so that they can
         // be completed
@@ -146,7 +145,7 @@ public class FlagFileWriter {
 
         if (fc.isCollectMetrics()) {
             for (InputFile entry : flaggedFiles) {
-                metrics.updateCounter(FlagFile.class.getSimpleName(), entry.getCurrentDir().getName(), System.currentTimeMillis());
+                metrics.addFlaggedTime(entry);
             }
         }
     }
@@ -196,7 +195,8 @@ public class FlagFileWriter {
     private void updateMetricsWithInputFileTimestamps(FlagDataTypeConfig fc, FlagMetrics metrics, Collection<InputFile> flagging) {
         if (fc.isCollectMetrics()) {
             for (InputFile entry : flagging) {
-                metrics.updateCounter(InputFile.class.getSimpleName(), entry.getFileName(), entry.getTimestamp());
+                metrics.addInputFileTimestamp(entry);
+                ;
             }
         }
     }
@@ -284,8 +284,23 @@ public class FlagFileWriter {
         sortedFlagging.addAll(flagging);
         try (FileOutputStream flagOS = new FileOutputStream(flagGeneratingFile)) {
             this.flagFileContentCreator.writeFlagFileContents(flagOS, sortedFlagging, fc);
+            this.writeFileNamesToMetrics(sortedFlagging);
         }
         return flagGeneratingFile;
+    }
+
+    private void writeFileNamesToMetrics(Collection<InputFile> inputFiles) {
+        if (metrics != null) {
+            boolean first = true;
+            for (InputFile inFile : inputFiles) {
+                // todo - add a test where this fails, then consider refactoring
+                if (first) {
+                    first = false;
+                } else {
+                    metrics.addInputFileTimestamp(inFile);
+                }
+            }
+        }
     }
 
     private File createFlagGeneratingFile(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {

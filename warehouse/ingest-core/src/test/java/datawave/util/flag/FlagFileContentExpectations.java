@@ -53,15 +53,20 @@ public class FlagFileContentExpectations {
         return this;
     }
 
-    public void assertFlagFileContents(File flag) {
-        try {
-            this.actualFileContents = Files.toString(flag, Charset.defaultCharset());
+    public void assertFlagFileContents(String flagContents) {
+        this.actualFileContents = flagContents;
 
-            if (this.isSorted) {
-                verifySortedFileContents();
-            } else {
-                verifyUnsortedFileContents();
-            }
+        if (this.isSorted) {
+            verifySortedFileContents();
+        } else {
+            verifyUnsortedFileContents();
+        }
+    }
+
+    public void assertFlagFileContents(File flagFile) {
+        try {
+            String fileContents = Files.asCharSource(flagFile, Charset.defaultCharset()).read();
+            assertFlagFileContents(fileContents);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -88,9 +93,8 @@ public class FlagFileContentExpectations {
         for (InputFile inFile : inputFiles) {
             String expectedFileName = inFile.getFlagged().toUri().toString();
             assertTrue("Expected " + expectedFileName + "\nTo be in " + actualFileContents, actualFileContents.contains(expectedFileName));
-            expectedNumberOfCharacters += expectedFileName.length() + 1; // including
-                                                                         // a
-                                                                         // delimiter
+            // including a delimiter
+            expectedNumberOfCharacters += expectedFileName.length() + 1;
         }
 
         assertEquals("Unexpected number of characters in actual file:" + actualFileContents, expectedNumberOfCharacters, actualFileContents.length());

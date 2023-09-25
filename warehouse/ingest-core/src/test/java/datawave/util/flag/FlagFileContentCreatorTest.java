@@ -17,7 +17,7 @@ import org.junit.rules.TestName;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 
-public class FlagFileWriterContentTest {
+public class FlagFileContentCreatorTest {
 
     private static final String EXPECTED_SCRIPT = "bin/ingest/bulk-ingest.sh";
     private static final String EXPECTED_DATAWAVE_HOME = "target/test";
@@ -52,10 +52,10 @@ public class FlagFileWriterContentTest {
     }
 
     @Test
-    public void writeProducesExpectedFlagFileWithMarker() throws Exception {
+    public void createsExpectedFlagFileWithMarker() {
         dataTypeConfig.setFileListMarker(FLAG_MARKER);
 
-        File flag = new FlagFileWriter(flagMakerConfig).write(inputFiles, dataTypeConfig, flagMakerConfig.getBaseHDFSDir());
+        String flagContents = new FlagFileContentCreator(flagMakerConfig).createContent(inputFiles, dataTypeConfig);
 
         // @formatter:off
 		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
@@ -63,70 +63,24 @@ public class FlagFileWriterContentTest {
 				.withEnding("\n").withFileOrdering(true).withFileMarker(true);
 		// @formatter:on
 
-        flagFileContentExpectations.assertFlagFileContents(flag);
+        flagFileContentExpectations.assertFlagFileContents(flagContents);
     }
 
     @Test
-    public void writeFlagProducesExpectedFlagFileWithMarker() throws Exception {
-        dataTypeConfig.setFileListMarker(FLAG_MARKER);
-
-        new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
-
-        File flag = findFlagFile();
-        // @formatter:off
-		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
-				.withBeginning(EXPECTED_BEGINNING).withFiles(inputFiles)
-				.withEnding("\n").withFileOrdering(false).withFileMarker(true);
-		// @formatter:on
-
-        flagFileContentExpectations.assertFlagFileContents(flag);
-    }
-
-    @Test
-    public void writeProducesExpectedFlagFileWithoutMarker() throws Exception {
+    public void createsExpectedFlagFileWithoutMarker() {
         // does not set flagMarker
 
-        File flag = new FlagFileWriter(flagMakerConfig).write(inputFiles, dataTypeConfig, flagMakerConfig.getBaseHDFSDir());
+        String flagContents = new FlagFileContentCreator(flagMakerConfig).createContent(inputFiles, dataTypeConfig);
 
         // @formatter:off
 		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
-				.withBeginning(
-						EXPECTED_DATAWAVE_HOME + File.separatorChar + EXPECTED_SCRIPT + " ")
-				.withEnding(
-						EXPECTED_NUM_REDUCERS + EXPECTED_INPUT_FORMAT_ARG + " \n")
+				.withBeginning(EXPECTED_DATAWAVE_HOME + File.separatorChar + EXPECTED_SCRIPT + " ")
+				.withEnding(EXPECTED_NUM_REDUCERS + EXPECTED_INPUT_FORMAT_ARG + " \n")
                 .withFiles(inputFiles)
 				.withFileOrdering(true).withFileMarker(false);
 		// @formatter:on
 
-        flagFileContentExpectations.assertFlagFileContents(flag);
-    }
-
-    @Test
-    public void writeFlagProducesExpectedFlagFileWithoutMarker() throws Exception {
-        // does not set flagMarker
-
-        new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
-
-        // @formatter:off
-		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
-				.withBeginning(
-						EXPECTED_DATAWAVE_HOME + File.separatorChar + EXPECTED_SCRIPT)
-				.withEnding(
-						EXPECTED_NUM_REDUCERS + EXPECTED_INPUT_FORMAT_ARG + " \n")
-                .withFiles(inputFiles)
-				.withFileOrdering(false).withFileMarker(false);
-		// @formatter:on
-
-        File flag = findFlagFile();
-        flagFileContentExpectations.assertFlagFileContents(flag);
-    }
-
-    private File findFlagFile() {
-        File[] flagFiles = FlagFileTestHelper.listFlagFiles(flagFileTestSetup.fmc);
-        assertNotNull(flagFiles);
-        assertEquals(1, flagFiles.length);
-
-        return flagFiles[0];
+        flagFileContentExpectations.assertFlagFileContents(flagContents);
     }
 
     private TreeSet<InputFile> createInputFiles() throws IOException {

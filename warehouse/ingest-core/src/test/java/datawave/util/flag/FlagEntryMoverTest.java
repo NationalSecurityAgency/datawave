@@ -43,24 +43,12 @@ public class FlagEntryMoverTest {
         testFileGenerator = new FlagFileTestSetup();
         testFileGenerator.withTestFlagMakerConfig().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
         fmc = testFileGenerator.fmc;
-        // fmc.setBaseHDFSDir(fmc.getBaseHDFSDir().replace("target",
-        // "target/FlagEntryMoverTest"));
         fs = FileSystem.getLocal(new Configuration());
     }
 
     @After
     public void cleanup() throws IOException {
         testFileGenerator.deleteTestDirectories();
-    }
-
-    @Test
-    public void testWrite() throws IOException {
-        final String METRICS_DIR = "target/test/metrics";
-
-        FlagMetrics metrics = new FlagMetrics(this.fs, false);
-        metrics.updateCounter(this.getClass().getSimpleName(), "COUNTER_ONE", System.currentTimeMillis());
-        metrics.writeMetrics(METRICS_DIR, "base");
-
     }
 
     /**

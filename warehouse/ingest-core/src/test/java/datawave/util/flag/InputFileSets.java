@@ -9,6 +9,9 @@ import org.apache.hadoop.fs.Path;
 
 import com.google.common.collect.Sets;
 
+/**
+ * Defines sets of InputFile instances to assist with tests
+ */
 public class InputFileSets {
     static final HashSet<InputFile> EMPTY_FILES = new HashSet<InputFile>();
     static final HashSet<InputFile> SINGLE_FILE = Sets.newHashSet(createInputFile("f"));
@@ -39,5 +42,4 @@ public class InputFileSets {
         }
         return result;
     }
-
 }

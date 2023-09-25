@@ -10,23 +10,14 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.compress.DefaultCodec;
-import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.CounterGroup;
-import org.apache.hadoop.mapreduce.Counters;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,6 +29,8 @@ import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 
 public class FlagFileWriterTest {
+    private static final String BASELINE_FLAG_WITH_NO_MARKER = "datawave/util/flag/FlagFileWithoutMarker.flag";
+    private static final String BASELINE_FLAG_WITH_MARKER = "datawave/util/flag/FlagFileWithMarker.flag";
     private FlagFileTestSetup flagFileTestSetup;
     private FlagMakerConfig flagMakerConfig;
     private FlagDataTypeConfig dataTypeConfig;
@@ -69,19 +62,14 @@ public class FlagFileWriterTest {
     @Test
     public void verifyContentsOfFlagFileWithMarker() throws IOException, URISyntaxException {
         // configure to use marker
-        FlagDataTypeConfig fc = flagMakerConfig.getFlagConfigs().get(0); // get
-                                                                         // config
-                                                                         // for
-                                                                         // "foo"
-                                                                         // flag
-                                                                         // datatype
+        // get config for "foo" flag datatype
+        FlagDataTypeConfig fc = flagMakerConfig.getFlagConfigs().get(0);
         fc.setFileListMarker(FLAG_MARKER);
 
         // write flag file
         new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
 
-        // baseline file with marker
-        assertFlagFileMatchesBaseline("datawave/util/flag/FlagFileWithMarker.flag");
+        assertFlagFileMatchesBaseline(BASELINE_FLAG_WITH_MARKER);
     }
 
     @Test
@@ -91,8 +79,7 @@ public class FlagFileWriterTest {
         // write flag file
         new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
 
-        // baseline file with NO marker
-        assertFlagFileMatchesBaseline("datawave/util/flag/FlagFileWithoutMarker.flag");
+        assertFlagFileMatchesBaseline(BASELINE_FLAG_WITH_NO_MARKER);
     }
 
     @Test
@@ -150,32 +137,16 @@ public class FlagFileWriterTest {
         Path expectedMetricsFilePath = new Path(flagMakerConfig.getFlagMetricsDirectory(), expectedMetricsFileName);
 
         // read metrics
-        SequenceFile.Reader reader = new SequenceFile.Reader(new Configuration(), SequenceFile.Reader.file(expectedMetricsFilePath));
-        Text key = new Text();
-        Counters val = new Counters();
-        reader.next(key, val);
+        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(expectedMetricsFilePath, flagFileTestSetup);
 
         // verify flag file identifier key
         String expectedKeyString = flagFileName.substring(0, flagFileName.lastIndexOf("."));
-        assertEquals(expectedKeyString, key.toString());
+        assertEquals(expectedKeyString, flagMetricsFileVerification.getName());
 
-        // verify expected groups
-        List<String> expectedGroupNames = Arrays.asList("FlagFile", "InputFile", "datawave.metrics.util.flag.InputFile");
-        List<String> actual = new ArrayList<>();
-        val.getGroupNames().forEach(actual::add);
-        assertTrue(actual.containsAll(expectedGroupNames));
-
-        // Counter Group "FlagFile" contains input files names and current
-        // system timestamps for each
-        assertCountersForFlagFileTimes(startTime, stopTime, val.getGroup("FlagFile"));
-
-        // Counter Group "InputFile" contains input files names and lastModified
-        // timestamps for each
-        assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles(), val.getGroup("InputFile"));
-
-        // Counter Group "datawave.metrics.util.flag.InputFile" contains flag
-        // maker start and stop times
-        assertFlagMakerTimesInExpectedRange(startTime, stopTime, val.getGroup("datawave.metrics.util.flag.InputFile"));
+        flagMetricsFileVerification.assertGroupNames();
+        flagMetricsFileVerification.assertCountersForFilesShowingFlagTimes(startTime, stopTime);
+        flagMetricsFileVerification.assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles());
+        flagMetricsFileVerification.assertFlagMakerStartStopTimesInExpectedRange(startTime, stopTime);
     }
 
     @Test
@@ -251,40 +222,6 @@ public class FlagFileWriterTest {
         return sortedFiles;
     }
 
-    private void assertCountersForFlagFileTimes(long startTime, long stopTime, CounterGroup group) {
-        List<String> actualFileNames = StreamSupport.stream(group.spliterator(), false).map(Counter::getName).collect(Collectors.toList());
-        Collection<String> expectedFileNames = flagFileTestSetup.getNamesOfCreatedFiles();
-        assertTrue(expectedFileNames.containsAll(actualFileNames));
-        assertTrue(actualFileNames.containsAll(expectedFileNames));
-
-        List<Long> actualCurrentTimes = StreamSupport.stream(group.spliterator(), false).map(Counter::getValue).collect(Collectors.toList());
-        for (Long actualTime : actualCurrentTimes) {
-            assertTrue(startTime < actualTime);
-            assertTrue(stopTime > actualTime);
-        }
-    }
-
-    private void assertCountersForInputFileLastModified(Collection<String> expectedFileNames, CounterGroup group) {
-        List<String> actualFileNames;
-        List<Long> actualCurrentTimes;
-        actualFileNames = StreamSupport.stream(group.spliterator(), false).map(Counter::getName).collect(Collectors.toList());
-        assertTrue(expectedFileNames.containsAll(actualFileNames));
-        assertTrue(actualFileNames.containsAll(expectedFileNames));
-
-        actualCurrentTimes = StreamSupport.stream(group.spliterator(), false).map(Counter::getValue).collect(Collectors.toList());
-        Collection<Long> expectedTimes = flagFileTestSetup.lastModifiedTimes;
-        assertTrue(expectedTimes.containsAll(actualCurrentTimes));
-        assertTrue(actualCurrentTimes.containsAll(expectedTimes));
-    }
-
-    private void assertFlagMakerTimesInExpectedRange(long testSubjectExecutionStartTime, long testSubjectExecutionStopTime, CounterGroup group) {
-        long counterStartTime = group.findCounter("FLAGMAKER_START_TIME").getValue();
-        long counterStopTime = group.findCounter("FLAGMAKER_END_TIME").getValue();
-        assertTrue(testSubjectExecutionStartTime < counterStartTime);
-        assertTrue(counterStartTime < counterStopTime);
-        assertTrue(testSubjectExecutionStopTime > counterStopTime);
-    }
-
     /**
      * The unit test environment does not have native hadoop libraries to support GzipCodec, so override to not compress
      */
@@ -292,12 +229,7 @@ public class FlagFileWriterTest {
         return new FlagFileWriter(flagMakerConfig) {
             @Override
             FlagMetrics createFlagMetrics(FileSystem fs, FlagDataTypeConfig fc) {
-                return new FlagMetrics(fs, fc.isCollectMetrics()) {
-                    @Override
-                    SequenceFile.Writer.Option getCompressionOption() {
-                        return SequenceFile.Writer.compression(SequenceFile.CompressionType.NONE, new DefaultCodec());
-                    }
-                };
+                return new FlagMetricsWithTestCompatibleCodec(fs, fc.isCollectMetrics());
             }
         };
     }

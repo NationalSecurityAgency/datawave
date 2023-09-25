@@ -18,6 +18,7 @@ import com.google.common.annotations.VisibleForTesting;
 
 import datawave.ingest.mapreduce.StandaloneStatusReporter;
 import datawave.ingest.mapreduce.StandaloneTaskAttemptContext;
+import datawave.metrics.util.flag.FlagFile;
 
 /**
  * Collects and reports FlagMaker metrics.
@@ -49,7 +50,15 @@ public class FlagMetrics {
         ctx.putIfAbsent(datawave.metrics.util.flag.InputFile.FLAGMAKER_START_TIME, System.currentTimeMillis());
     }
 
-    protected void updateCounter(String groupName, String counterName, long val) {
+    protected void addFlaggedTime(InputFile flaggedFile) {
+        updateCounter(FlagFile.class.getSimpleName(), flaggedFile.getCurrentDir().getName(), System.currentTimeMillis());
+    }
+
+    protected void addInputFileTimestamp(InputFile inputFile) {
+        updateCounter(InputFile.class.getSimpleName(), inputFile.getFileName(), inputFile.getTimestamp());
+    }
+
+    private void updateCounter(String groupName, String counterName, long val) {
         if (enabled) {
             ctx.getCounter(groupName, counterName).setValue(val);
         }

@@ -23,7 +23,6 @@ import datawave.util.flag.config.FlagMakerConfig;
 
 /**
  * Provides static methods for common flag file-related unit tests: retrieving input files, flagging files, flagged files, and flag files themselves.
- *
  */
 public class FlagFileTestHelper {
     public static Collection<InputFile> listSortedInputFiles(FlagMakerConfig fmc, FileSystem fs) {
