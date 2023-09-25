@@ -8,6 +8,9 @@
     </parent>
     <artifactId>spring-framework-integration</artifactId>
     <name>${project.artifactId}</name>
+    <properties>
+        <allowIncompleteProjects>true</allowIncompleteProjects>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>org.easymock</groupId>

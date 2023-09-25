@@ -9,6 +9,9 @@
     <artifactId>datawave-ws-deploy-application</artifactId>
     <packaging>ear</packaging>
     <name>${project.artifactId}</name>
+    <properties>
+        <allowIncompleteProjects>true</allowIncompleteProjects>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>commons-configuration</groupId>
