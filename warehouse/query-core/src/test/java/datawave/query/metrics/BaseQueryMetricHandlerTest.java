@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.BaseQueryMetricSubplanResponse;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.query.language.parser.jexl.LuceneToJexlQueryParser;
@@ -84,7 +85,7 @@ public class BaseQueryMetricHandlerTest {
         }
 
         @Override
-        public BaseQueryMetricListResponse<QueryMetric> subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+        public BaseQueryMetricSubplanResponse<QueryMetric> subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
             return null;
         }
 

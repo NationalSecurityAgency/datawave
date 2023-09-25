@@ -76,6 +76,7 @@ import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.Lifecycle;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.BaseQueryMetricSubplanResponse;
 import datawave.microservice.querymetric.QueryMetric;
 import datawave.microservice.querymetric.QueryMetricFactory;
 import datawave.microservice.querymetric.QueryMetricListResponse;
@@ -568,8 +569,8 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
         return response;
     }
 
-    public QueryMetricsSubplanResponse subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
-        QueryMetricsSubplanResponse response = new QueryMetricsSubplanResponse();
+    public BaseQueryMetricSubplanResponse subplan(String user, String queryId, DatawavePrincipal datawavePrincipal) {
+        BaseQueryMetricSubplanResponse response = new QueryMetricsSubplanResponse();
         try {
             enableLogs(false);
             QueryImpl query = setupQuery(user, queryId, datawavePrincipal, "PAGE_METRICS");

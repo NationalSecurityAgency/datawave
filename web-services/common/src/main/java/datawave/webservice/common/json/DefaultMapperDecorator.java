@@ -8,7 +8,9 @@ import com.fasterxml.jackson.datatype.guava.GuavaModule;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.BaseQueryMetricSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsDetailListResponse;
+import datawave.microservice.querymetric.QueryMetricsSubplanResponse;
 import datawave.webservice.response.objects.DefaultKey;
 import datawave.webservice.response.objects.KeyBase;
 
@@ -34,6 +36,7 @@ public class DefaultMapperDecorator implements ObjectMapperDecorator {
         SimpleModule module = new SimpleModule(KeyBase.class.getName());
         module.addAbstractTypeMapping(KeyBase.class, DefaultKey.class);
         module.addAbstractTypeMapping(BaseQueryMetricListResponse.class, QueryMetricsDetailListResponse.class);
+        module.addAbstractTypeMapping(BaseQueryMetricSubplanResponse.class, QueryMetricsSubplanResponse.class);
         mapper.registerModule(module);
     }
 }

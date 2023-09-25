@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import datawave.configuration.RefreshableScope;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
-import datawave.microservice.querymetric.QueryMetricsSubplanResponse;
+import datawave.microservice.querymetric.BaseQueryMetricSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
@@ -120,7 +120,7 @@ public class RemoteQueryMetricService extends RemoteHttpService {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         baseQueryMetricListResponseReader = objectMapper.readerFor(BaseQueryMetricListResponse.class);
         queryGeometryResponseReader = objectMapper.readerFor(QueryGeometryResponse.class);
-        queryMetricsSubplanResponseReader = objectMapper.readerFor(QueryMetricsSubplanResponse.class);
+        queryMetricsSubplanResponseReader = objectMapper.readerFor(BaseQueryMetricSubplanResponse.class);
         queryMetricsSummaryResponseReader = objectMapper.readerFor(QueryMetricsSummaryResponse.class);
     }
 
@@ -167,9 +167,9 @@ public class RemoteQueryMetricService extends RemoteHttpService {
         // @formatter:on
     }
 
-    public QueryMetricsSubplanResponse subplan(String queryId) {
+    public BaseQueryMetricSubplanResponse subplan(String queryId) {
         String suffix = String.format(SUBPLAN_METRIC_SUFFIX, queryId);
-        // @formatter:offr
+        // @formatter:off
         return executeGetMethodWithRuntimeException(
                 suffix,
                 uriBuilder -> {},

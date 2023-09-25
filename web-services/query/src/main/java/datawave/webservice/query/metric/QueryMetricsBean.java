@@ -43,6 +43,7 @@ import datawave.metrics.remote.RemoteQueryMetricService;
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetric.PageMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.BaseQueryMetricSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -156,7 +157,7 @@ public class QueryMetricsBean {
     @POST
     @Path("/id/{id}/subplans")
     @Interceptors({RequiredInterceptor.class, ResponseInterceptor.class})
-    public BaseQueryMetricListResponse subplan(@PathParam("id") @Required("id") String id) {
+    public BaseQueryMetricSubplanResponse subplan(@PathParam("id") @Required("id") String id) {
         if (queryMetricsWriterConfiguration.getUseRemoteService()) {
             return remoteQueryMetricService.subplan(id);
         } else {

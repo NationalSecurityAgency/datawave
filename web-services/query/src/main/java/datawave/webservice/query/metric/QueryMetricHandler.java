@@ -5,6 +5,7 @@ import java.util.Map;
 
 import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.microservice.querymetric.BaseQueryMetricListResponse;
+import datawave.microservice.querymetric.BaseQueryMetricSubplanResponse;
 import datawave.microservice.querymetric.QueryMetricsSummaryResponse;
 import datawave.security.authorization.DatawavePrincipal;
 
@@ -16,7 +17,7 @@ public interface QueryMetricHandler<T extends BaseQueryMetric> {
 
     BaseQueryMetricListResponse<T> query(String user, String queryId, DatawavePrincipal datawavePrincipal);
 
-    BaseQueryMetricListResponse<T> subplan(String user, String queryId, DatawavePrincipal datawavePrincipal);
+    BaseQueryMetricSubplanResponse<T> subplan(String user, String queryId, DatawavePrincipal datawavePrincipal);
 
     QueryMetricsSummaryResponse getTotalQueriesSummaryCounts(Date begin, Date end, DatawavePrincipal datawavePrincipal);
 
