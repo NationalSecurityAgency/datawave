@@ -4,7 +4,7 @@ import java.io.Serializable;
 
 // @formatter:off
 
-/** The encoder exploits the fact that there is a small number of legal chunk sizes based on the minimum chunk size.
+/** The encoder exploits the fact that there are a small number of legal chunk sizes based on the minimum chunk size.
  *  It introduces the concept of a chunkIndex, a number that is considerably smaller than the chunk size itself, and
  *  represents the magnitude of the chunkSize such that:
  * <p>
@@ -27,8 +27,10 @@ import java.io.Serializable;
 //@formatter:on
 public class ChunkSizeEncoding implements Serializable {
 
-    static final int MIN_CHUNK_SIZE = 3;
-    static final int SPAM_SUM_LENGTH = 64;
+    private static final int MIN_CHUNK_SIZE = 3;
+    private static final int DEFAULT_ENCODING_ALPHABET_LENGTH = HashReverse.LEXICAL_B64_TABLE.length;
+
+    private static final int DEFAULT_ENCODING_LENGTH = 1;
 
     static final double L2 = Math.log(2);
 
@@ -36,13 +38,17 @@ public class ChunkSizeEncoding implements Serializable {
 
     final int minChunkSize;
 
+    /**
+     * Create a ChunkSizeEncoding with the default parameters of a 64 character encoding alphabet and a length of 1. This allows us to encode 64 distinct chunk
+     * index values. Chunk index 0 represents the MIN_CHUNK_SIZE. See class javadocs for more info.
+     */
     public ChunkSizeEncoding() {
-        this(MIN_CHUNK_SIZE, SPAM_SUM_LENGTH, 1);
+        this(MIN_CHUNK_SIZE, DEFAULT_ENCODING_ALPHABET_LENGTH, DEFAULT_ENCODING_LENGTH);
     }
 
-    public ChunkSizeEncoding(int minChunkSize, int spamSumLength, int encodingLength) {
+    public ChunkSizeEncoding(int minChunkSize, int encodingAlphabetLength, int encodingLength) {
         this.minChunkSize = minChunkSize;
-        this.chunkIndexEncoding = new IntegerEncoding(spamSumLength, encodingLength);
+        this.chunkIndexEncoding = new IntegerEncoding(encodingAlphabetLength, encodingLength);
     }
 
     public long getLimit() {

@@ -2,14 +2,11 @@ package datawave.query;
 
 import static org.junit.Assert.fail;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -54,7 +51,6 @@ import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.runner.RunningQuery;
 import datawave.webservice.result.EventQueryResponseBase;
-import it.unimi.dsi.fastutil.Hash;
 
 public class SSDeepQueryTest {
 
@@ -74,19 +70,22 @@ public class SSDeepQueryTest {
 
     protected DatawavePrincipal principal;
 
+    public static final int BUCKET_COUNT = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_COUNT;
+    public static final int BUCKET_ENCODING_BASE = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_BASE;
+    public static final int BUCKET_ENCODING_LENGTH = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_LENGTH;
+
     public static void indexSSDeepTestData(AccumuloClient accumuloClient) throws Exception {
         // configuration
         String ssdeepTableName = "ssdeepIndex";
         int ngramSize = 7;
-        int indexBuckets = 32;
         int minHashSize = 3;
 
         // input
         Stream<String> ssdeepLines = Stream.of(TEST_SSDEEPS);
 
         // processing
-        final NGramByteHashGenerator nGramGenerator = new NGramByteHashGenerator(ngramSize, indexBuckets, minHashSize);
-        final BucketAccumuloKeyGenerator accumuloKeyGenerator = new BucketAccumuloKeyGenerator(indexBuckets);
+        final NGramByteHashGenerator nGramGenerator = new NGramByteHashGenerator(ngramSize, BUCKET_COUNT, minHashSize);
+        final BucketAccumuloKeyGenerator accumuloKeyGenerator = new BucketAccumuloKeyGenerator(BUCKET_COUNT, BUCKET_ENCODING_BASE, BUCKET_ENCODING_LENGTH);
 
         // output
         BatchWriterConfig batchWriterConfig = new BatchWriterConfig();
@@ -149,14 +148,17 @@ public class SSDeepQueryTest {
 
     @Before
     public void setUpQuery() {
-        this.logic = new SSDeepSimilarityQueryLogic();
-        this.logic.setTableName("ssdeepIndex");
-        this.logic.setMarkingFunctions(new MarkingFunctions.Default());
-        this.logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        logic = new SSDeepSimilarityQueryLogic();
+        logic.setTableName("ssdeepIndex");
+        logic.setMarkingFunctions(new MarkingFunctions.Default());
+        logic.setResponseObjectFactory(new DefaultResponseObjectFactory());
+        logic.setBucketEncodingBase(BUCKET_ENCODING_BASE);
+        logic.setBucketEncodingLength(BUCKET_ENCODING_LENGTH);
+        logic.setIndexBuckets(BUCKET_COUNT);
 
         SubjectIssuerDNPair dn = SubjectIssuerDNPair.of("userDn", "issuerDn");
         DatawaveUser user = new DatawaveUser(dn, DatawaveUser.UserType.USER, Sets.newHashSet(auths.toString().split(",")), null, null, -1L);
-        this.principal = new DatawavePrincipal(Collections.singleton(user));
+        principal = new DatawavePrincipal(Collections.singleton(user));
     }
 
     @Test

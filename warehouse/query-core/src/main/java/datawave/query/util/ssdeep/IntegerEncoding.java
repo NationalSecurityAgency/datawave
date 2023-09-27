@@ -8,16 +8,25 @@ import java.nio.charset.StandardCharsets;
  */
 public class IntegerEncoding implements Serializable {
 
+    // The number of distinct characters used for encoding
     final int base;
+    // the target length of the encoding
     final int length;
+    // the max integer value we can encode, derived from the base and length parameters.
     final int limit;
+
+    /**
+     * We are using the LEXICAL_B64_TABLE to encode integers to characters, our max base (the unique characters we use for encoding) is based on the size of
+     * this alphabet.
+     */
+    private static final int MAX_BASE = HashReverse.LEXICAL_B64_TABLE.length;
 
     /**
      * Create an unsigned integer encoder that uses the specified base (up to 64) and length (which can't generate numbers larger than Integer.MAX_VALUE). This
      * uses the lexically sorted Base 64 alphabet for encoding.
      *
      * @param base
-     *            base for encoding, must be larger than 2, less than 64.
+     *            base for encoding, this is the number of distinct characters that will be used to encode integers must be larger than 2, less than 64.
      * @param length
      *            the length (in bytes) of the final encoding produced by this encoding
      */

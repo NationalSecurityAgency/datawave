@@ -6,6 +6,7 @@ import org.apache.accumulo.core.data.Range;
 
 import com.google.common.collect.Multimap;
 
+import datawave.query.util.ssdeep.BucketAccumuloKeyGenerator;
 import datawave.query.util.ssdeep.ChunkSizeEncoding;
 import datawave.query.util.ssdeep.IntegerEncoding;
 import datawave.query.util.ssdeep.NGramTuple;
@@ -17,15 +18,12 @@ import datawave.webservice.query.logic.BaseQueryLogic;
 
 public class SSDeepSimilarityQueryConfiguration extends GenericQueryConfiguration {
 
-    int indexBuckets = 32;
-
     int queryThreads = 100;
-
     int maxRepeatedCharacters = 3;
 
-    int bucketEncodingBase = 32;
-
-    int bucketEncodingLength = 2;
+    int indexBuckets = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_COUNT;
+    int bucketEncodingBase = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_BASE;
+    int bucketEncodingLength = BucketAccumuloKeyGenerator.DEFAULT_BUCKET_ENCODING_LENGTH;
 
     /** Used to encode buckets as characters which are prepended to the ranges used to retrieve ngram tuples */
     private IntegerEncoding bucketEncoder;

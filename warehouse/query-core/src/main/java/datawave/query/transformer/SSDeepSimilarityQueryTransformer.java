@@ -35,11 +35,6 @@ public class SSDeepSimilarityQueryTransformer extends BaseQueryLogicTransformer<
 
     private static final Logger log = Logger.getLogger(SSDeepSimilarityQueryTransformer.class);
 
-    /** The number of characters in the bucket encoding alphabet */
-    public static final int BUCKET_ENCODING_BASE = 32;
-    /** The length of the bucket encoding we will perform */
-    public static final int BUCKET_ENCODING_LENGTH = 2;
-
     protected final Authorizations auths;
 
     protected final ResponseObjectFactory responseObjectFactory;

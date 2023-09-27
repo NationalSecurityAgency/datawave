@@ -27,10 +27,12 @@ public class BucketAccumuloKeyGenerator {
     public static final byte[] EMPTY_BYTES = new byte[0];
     public static final Value EMPTY_VALUE = new Value();
 
+    public static final int DEFAULT_BUCKET_COUNT = 32;
+
     /** The number of characters in the bucket encoding alphabet */
-    public static final int BUCKET_ENCODING_BASE = 32;
+    public static final int DEFAULT_BUCKET_ENCODING_BASE = 32;
     /** The length of the bucket encoding we will perform */
-    public static final int BUCKET_ENCODING_LENGTH = 2;
+    public static final int DEFAULT_BUCKET_ENCODING_LENGTH = 2;
 
     /** The maximum number of buckets we will partition data into */
     final int bucketCount;
@@ -44,14 +46,18 @@ public class BucketAccumuloKeyGenerator {
     final long timestamp = 0;
 
     /**
-     * Creates a BucketAccumuloKeyGenerator with the specified bucket count
+     * Creates a BucketAccumuloKeyGenerator with the specified bucket count and encoding properties
      *
      * @param bucketCount
-     *            the number of potential buckets into which we will partition data.
+     *            the number of index buckets (partitions) that will be used.
+     * @param bucketEncodingBase
+     *            the size of the alphabet that will be used to encode the index bucket number in the key.
+     * @param bucketEncodingLength
+     *            the number of characters that will be used to encode the index bucket number.
      */
-    public BucketAccumuloKeyGenerator(int bucketCount) {
+    public BucketAccumuloKeyGenerator(int bucketCount, int bucketEncodingBase, int bucketEncodingLength) {
         this.bucketCount = bucketCount;
-        this.bucketEncoding = new IntegerEncoding(BUCKET_ENCODING_BASE, BUCKET_ENCODING_LENGTH);
+        this.bucketEncoding = new IntegerEncoding(bucketEncodingBase, bucketEncodingLength);
         this.chunkEncoding = new ChunkSizeEncoding();
         this.ngramEncoding = new SSDeepEncoding();
 
