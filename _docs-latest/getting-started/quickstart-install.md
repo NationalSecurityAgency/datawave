@@ -49,11 +49,11 @@ section below is also relevant to the Docker image build.
 
 ```bash
 # Step 1
-$ echo -e "function enableQuickstart() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
+$ echo -e "activateDW() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
 # Step 2a
 $ source ~/.bashrc
 # Step 2b
-$ enableQuickstart
+$ activateDW
 # Step 3
 $ allInstall
 # Step 4
@@ -89,17 +89,18 @@ your various bash sessions, as needed.
 
 ```bash
   # Step 1
-  $ echo -e "function enableQuickstart() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
+  $ echo -e "activateDW() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
 ```
-
-The *[env.sh][dw_blob_env_sh]* script is a wrapper that bootstraps each service in turn by sourcing its
-respective *{servicename}/boostrap.sh* script. These scripts define supporting bash variables and functions,
-encapsulating configuration and functionality consistently for all services.
+The *activateDW* bash function, when invoked for the first time in a bash session will source
+*[env.sh][dw_blob_env_sh]*, which in turn bootstraps each DataWave service via its respective
+*{servicename}/boostrap.sh* script. The boostrap scripts define supporting bash variables and functions,
+encapsulating configuration and basic start/stop functionality consistently for all services.
 
 #### 1.2 Override Default Binaries
 
-To override the quickstart's default version of a particular binary, simply override the desired *DW_\*_DIST_URI* value
-as shown below. URIs may be local or remote. Local file URI values must be prefixed with *file://*
+To override the quickstart's default version of a particular installation binary, you may override the
+desired *DW_\*_DIST_URI* value as shown below. URIs may be local or remote. Local file URI values must
+be prefixed with *file://*
 
 ```bash
   $ vi ~/.bashrc
@@ -110,7 +111,7 @@ as shown below. URIs may be local or remote. Local file URI values must be prefi
      export DW_WILDFLY_DIST_URI=file:///my/local/binaries/wildfly-10.x.tar.gz
      export DW_MAVEN_DIST_URI=file:///my/local/binaries/apache-maven-x.y.z.tar.gz
 
-     function enableQuickstart() {                              # Added by Step 1
+     function activateDW() {                                     # Added by Step 1
        source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh
      }
      ...
@@ -121,8 +122,8 @@ as shown below. URIs may be local or remote. Local file URI values must be prefi
 <div role="tabpanel" class="tab-pane" id="bootstrap-env" markdown="1">
 ### Step 2: Bootstrap the Environment
 ```bash
-  $ source ~/.bashrc                                                           # Step 2a
-  $ enableQuickstart                                                           # Step 2b
+  $ source ~/.bashrc                                                    # Step 2a
+  $ activateDW                                                          # Step 2b
 ```
 As soon as *~/.bashrc* is sourced as shown above, tarballs for registered services will be automatically copied/downloaded
 from their configured locations into their respective service directories, i.e., under *datawave-quickstart/bin/services/{servicename}/*.
