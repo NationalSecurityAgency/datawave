@@ -916,6 +916,11 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             this.setModelName(parameterModelName);
         }
 
+        String ignoreNonExist = settings.findParameter(QueryParameters.IGNORE_NONEXISTENT_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(ignoreNonExist)) {
+            config.setIgnoreExistentFields(Boolean.valueOf(ignoreNonExist));
+        }
+
         config.setModelName(this.getModelName());
 
         String parameterModelTableName = settings.findParameter(QueryParameters.PARAMETER_MODEL_TABLE_NAME).getParameterValue().trim();
