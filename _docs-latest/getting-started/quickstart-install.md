@@ -96,7 +96,7 @@ That script, in turn, bootstraps each DataWave service via its respective *{serv
 The bootstrap scripts define supporting bash variables and functions, encapsulating configuration and basic
 start/stop functionality consistently for all services.
 
-#### 1.2 Override Default Binaries
+#### 1.2 Override Default Binaries (Optional)
 
 To override the quickstart's default version of a particular installation binary, you may override the
 desired *DW_\*_DIST_URI* value as shown below. URIs may be local or remote. Local file URI values must
