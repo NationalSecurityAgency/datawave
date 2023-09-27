@@ -111,7 +111,7 @@ be prefixed with *file://*
      export DW_WILDFLY_DIST_URI=file:///my/local/binaries/wildfly-10.x.tar.gz
      export DW_MAVEN_DIST_URI=file:///my/local/binaries/apache-maven-x.y.z.tar.gz
 
-     function activateDW() {                                     # Added by Step 1
+     activateDW() {                                                # Added by Step 1
        source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh
      }
      ...
