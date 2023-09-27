@@ -48,14 +48,15 @@ section below is also relevant to the Docker image build.
 ## Quickstart Setup
 
 ```bash
-  $ echo "source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc   # Step 1
-  $ source ~/.bashrc                                                              # Step 2
-  $ allInstall                                                                    # Step 3
-  $ datawaveWebStart && datawaveWebTest                                           # Step 4
+  $ echo -e "function enableQuickstart() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc  # Step 1
+  $ source ~/.bashrc                                                                                                   # Step 2a
+  $ enableQuickstart                                                                                                   # Step 2b
+  $ allInstall                                                                                                         # Step 3
+  $ datawaveWebStart && datawaveWebTest                                                                                # Step 4
   # Setup is now complete
 ```
 
-The four commands above will complete the entire quickstart installation. However, it's a good idea
+The commands above will complete the entire quickstart installation. However, it's a good idea
 to at least skim over the sections below to get an idea of how the setup works and how to customize it
 for your own preferences.
 
@@ -78,11 +79,12 @@ you should ensure that all are stopped/disabled before proceeding" %}
 
 #### 1.1 Add the Quickstart Environment
 
-This step ensures that your DataWave environment and all its services will remain configured correctly across
-bash sessions.
+This step ensures that your DataWave environment and all its services can be configured on-demand across
+your various bash sessions, as needed.
 
 ```bash
-  $ echo "source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh" >> ~/.bashrc  # Step 1
+  # Step 1
+  $ echo -e "function enableQuickstart() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
 ```
 
 The *[env.sh][dw_blob_env_sh]* script is a wrapper that bootstraps each service in turn by sourcing its
@@ -97,17 +99,16 @@ as shown below. URIs may be local or remote. Local file URI values must be prefi
 ```bash
   $ vi ~/.bashrc
      ...
-  
      export DW_HADOOP_DIST_URI=file:///my/local/binaries/hadoop-x.y.z.tar.gz
      export DW_ACCUMULO_DIST_URI=http://some.apache.mirror/accumulo/1.x/accumulo-1.x-bin.tar.gz
      export DW_ZOOKEEPER_DIST_URI=http://some.apache.mirror/zookeeper/x.y/zookeeper-x.y.z.tar.gz
      export DW_WILDFLY_DIST_URI=file:///my/local/binaries/wildfly-10.x.tar.gz
      export DW_MAVEN_DIST_URI=file:///my/local/binaries/apache-maven-x.y.z.tar.gz
 
-     source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh     # Added by Step 1
-
-     # If building the quickstart docker image, you only need the exports, no need to source env.sh
-     
+     function enableQuickstart() {                              # Added by Step 1
+       source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh
+     }
+     ...
 ```
 
 </div>
@@ -115,7 +116,8 @@ as shown below. URIs may be local or remote. Local file URI values must be prefi
 <div role="tabpanel" class="tab-pane" id="bootstrap-env" markdown="1">
 ### Step 2: Bootstrap the Environment
 ```bash
-  $ source ~/.bashrc                                                           # Step 2
+  $ source ~/.bashrc                                                           # Step 2a
+  $ enableQuickstart                                                           # Step 2b
 ```
 As soon as *~/.bashrc* is sourced as shown above, tarballs for registered services will be automatically copied/downloaded
 from their configured locations into their respective service directories, i.e., under *datawave-quickstart/bin/services/{servicename}/*.
