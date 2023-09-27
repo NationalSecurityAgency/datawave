@@ -48,12 +48,17 @@ section below is also relevant to the Docker image build.
 ## Quickstart Setup
 
 ```bash
-  $ echo -e "function enableQuickstart() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc  # Step 1
-  $ source ~/.bashrc                                                                                                   # Step 2a
-  $ enableQuickstart                                                                                                   # Step 2b
-  $ allInstall                                                                                                         # Step 3
-  $ datawaveWebStart && datawaveWebTest                                                                                # Step 4
-  # Setup is now complete
+# Step 1
+$ echo -e "function enableQuickstart() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
+# Step 2a
+$ source ~/.bashrc
+# Step 2b
+$ enableQuickstart
+# Step 3
+$ allInstall
+# Step 4
+$ datawaveWebStart && datawaveWebTest
+# Setup is now complete
 ```
 
 The commands above will complete the entire quickstart installation. However, it's a good idea
