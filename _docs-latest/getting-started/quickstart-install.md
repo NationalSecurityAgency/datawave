@@ -125,7 +125,7 @@ be prefixed with *file://*
   $ source ~/.bashrc                                                    # Step 2a
   $ activateDW                                                          # Step 2b
 ```
-As soon as *~/.bashrc* is sourced as shown above, tarballs for registered services will be automatically copied/downloaded
+When the *activateDW* bash function is invoked as shown above, tarballs for registered services will be automatically copied/downloaded
 from their configured locations into their respective service directories, i.e., under *datawave-quickstart/bin/services/{servicename}/*.
 
 A DataWave build will also be kicked off automatically.
@@ -134,11 +134,6 @@ several minutes to complete, so now is a good time step away for a break.
 
 {% include note.html content="The **DW_DATAWAVE_BUILD_COMMAND** variable in [datawave/bootstrap.sh][dw_blob_datawave_bootstrap_mvn_cmd]
 defines the Maven command used for the build. It may be overridden in *~/.bashrc* or from the command line as needed" %}
-
-{% include note.html content="If the DataWave build fails, or if binaries fail to download for any reason, it's a good idea
-to comment out the *~/.bashrc* line created in the previous step while you troubleshoot the issue. It's also perfectly valid to source
-the *env.sh* file manually from the command line instead, bearing in mind that you'll need to repeat that in any future bash sessions
-in order to use the quickstart" %}
 </div>
 
 <div role="tabpanel" class="tab-pane" id="install-services" markdown="1">
