@@ -1210,19 +1210,19 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     protected DocumentProjection getProjection() {
         DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
 
-        if (this.useWhiteListedFields) {
+        if (this.includeListedFields) {
             // make sure we include any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.whiteListedFields.addAll(getMatchingFieldList());
+                this.includedFields.addAll(getMatchingFieldList());
             }
-            projection.setIncludes(this.whiteListedFields);
+            projection.setIncludes(this.includedFields);
             return projection;
-        } else if (this.useBlackListedFields) {
+        } else if (this.excludeListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.blackListedFields.removeAll(getMatchingFieldList());
+                this.excludedFields.removeAll(getMatchingFieldList());
             }
-            projection.setExcludes(this.blackListedFields);
+            projection.setExcludes(this.excludedFields);
             return projection;
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";

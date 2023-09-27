@@ -2365,16 +2365,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (projectFields.length() > maxLen) {
                     projectFields = projectFields.substring(0, maxLen) + "[TRUNCATED]";
                 }
-                log.debug("Setting scan option: " + QueryOptions.PROJECTION_FIELDS + " to " + projectFields);
+                log.debug("Setting scan option: " + QueryOptions.PROJECTION_INCLUDED_FIELDS + " to " + projectFields);
             }
 
-            addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
+            addOption(cfg, QueryOptions.PROJECTION_INCLUDED_FIELDS, config.getProjectFieldsAsString(), false);
         } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.PROJECTION_EXCLUDED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
             }
 
-            addOption(cfg, QueryOptions.BLACKLISTED_FIELDS, config.getBlacklistedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.PROJECTION_EXCLUDED_FIELDS, config.getBlacklistedFieldsAsString(), false);
         }
 
         // We don't need to do any expansion of the start or end date/time
