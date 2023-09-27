@@ -68,10 +68,8 @@ Same as above, but also remove any downloaded *.tar.gz files:
 ```bash
   $ allStop --hard ; allUninstall --remove-binaries
 ```
-{% include important.html content="If you uninstalled the quickstart with the **--remove-binaries** flag and you do not
-   intend to perform a reinstall, you should also remove the *env.sh* line from your *~/.bashrc* as the very last step in
-   the process. Otherwise, tarballs will be fetched again automatically the next time you start a new bash session or
-   manually source *~/.bashrc*" %}
+{% include important.html content="As the final step of the uninstall, it's always a good idea to exit your
+current bash session in order to clear out lingering quickstart environment variables from memory" %}
 
 ### Quick Reinstall
 
@@ -79,6 +77,9 @@ Same as above, but re-download and reinstall everything:
 ```bash
   $ allStop --hard ; allUninstall --remove-binaries && allInstall
 ```
+{% include important.html content="Before performing a reinstall, it's always a good idea to exit your
+previous bash session in order to clear out lingering quickstart environment variables from memory, and then start
+a new bash session to perform the reinstall" %}
 ---
 
 ## DataWave Functions
