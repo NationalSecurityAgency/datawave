@@ -8,12 +8,6 @@ repository: NationalSecurityAgency/datawave
 # you'll need to run the site locally with "jekyll serve --baseurl '' ... " in order for things to work
 baseurl: /datawave
 
-# latest minor release
-latest_minor_release: 2.9
-
-# latest revision
-latest_release: 2.9.4
-
 # max news posts to display on the home page
 num_home_posts: 8
 
@@ -51,50 +45,80 @@ kramdown:
  hard_wrap: false
  syntax_highlighter: rouge
 
+# this description is used in /feed.xml
+description: "DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data"
+
+# Enable site plugins as needed...
+
+# We're using the 'jekyll-redirect-from' plugin to enable simplified internal and external href links,
+# i.e., href targets that are agnostic to specific DW doc versions. See _docs-latest/*.md files for examples   
+
+whitelist: [jekyll-redirect-from]
+plugins: [jekyll-redirect-from]
+
+##########################################################
+# Site update instructions for new DW versions:
+#
+# For doc changes pertaining to minor or patch releases of DW, you can probably skip
+# straight to step (9) below, i.e., for content-only (non-structural) changes.
+#
+# For doc updates related to a new major release, you'll need to start with step (1) below.
+#
+# TODO: create a script to automate the steps below as much as possible, perhaps w/ Grunt
+#
+# (1) Copy the existing _docs-latest to a new backup folder (aka "collection"), since it's now the "old" version. E.g.,...
+#     cp -a _docs-latest  _docs-3x (Note: maintaining the underscore prefix is important)
+#
+# (2) Delete the 'redirect' files from the the "old" version, since we prefer to only maintain one set. E.g.,...
+#     cd _docs-3x/  &&  rm -f index.md data-model.md quickstart.md tour.md
+#
+# (3) Update the 'redirect' files in _docs-latest to reflect the new major version as needed. E.g.,...
+#
+#     cd _docs-latest/ && sed -i 's/3.x/5.x/g' *.md
+#
+# (4) Backup the current _data/sidebars/docs-latest-sidebar.yml to maintain compatibility with the "old" docs version. E.g.,...
+#
+#     cp _data/sidebars/docs-latest-sidebar.yml  _data/sidebars/docs-3x-sidebar.yml
+#
+# (5) Update _data/sidebars/docs-latest-sidebar.yml to reflect the new major version as needed. E.g.,...
+#
+#     cp _data/sidebars/ && sed -i 's/3.x/5.x/g' docs-latest-sidebar.yml
+#
+# (6) Update _data/topnav.yml to reflect the new version. No need to back this one up since we're only maintaining a
+#     single top navigation bar for all docs versions, and it should always target the latest docs. E.g.,...
+#
+#     cd _data/ && sed -i 's/3.x/5.x/g' topnav.yml
+#
+# (7) _config.yml: Update the "collections" yaml section below as necessary to preserve permalinks for the new and old versions.
+#     E.g., copy the "docs-latest" stanza below to a new "docs-3x" stanza, and update the "docs-latest" permalink to reflect
+#     the new major version
+#
+# (8) _config.yml: Update Frontmatter "defaults" yaml below as necessary, similar to step #7 above, making sure to
+#     configure the 'scope:type', 'values:sidebar', and 'values:release_tag' properties for the new and old docs versions  
+#
+# (9) Make any version-specific content updates to the _docs-latest/*/*.md files for the new DW release
+#
+# (10) Locally test all site changes. See README.md for instructions on running the site
+
 ##########################################################
 # Docs collection definitions...
 
-# The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path
-
-# As for how we manage doc updates for a new release, the most straightforward approach is...
-
-# (1) Copy the existing _docs-latest to a backup folder for the previous version, e.g., cp -a _docs-latest _docs-2-1
-# (2) Delete the old "/docs/latest/" redirects, e.g., cd _docs-2-1/ && rm -f index.md data-model.md quickstart.md
-# (3) Update any redirect files from #2 in _docs-latest for new version
-# (4) Make any necessary updates to _docs-latest files
-# (5) Copy/create new _data/sidebars/docs-*-sidebar.yml for the new version
-# (6) Update _data/topnav.yml for the new version
-# (7) Update "collections" yaml below as necessary
-# (8) Update "defaults" yaml below as necessary
-
-collections:
-  docs-2-1:
-    output: true
-    permalink: "/docs/2.1/:path"
-
-  docs-2-2:
-    output: true
-    permalink: "/docs/2.2/:path"
-
-  docs-2-3:
-    output: true
-    permalink: "/docs/2.3/:path"
-
-  docs-2-6:
-    output: true
-    permalink: "/docs/2.6/:path"
-
+collections: 
+  # The "docs-latest" collection renders _docs-latest folder contents to the configured permalink path.
+  # Note the relationship between this collection and the frontmatter config below where scope:type == 'docs-latest' 
   docs-latest:
     output: true
-    permalink: "/docs/2.9/:path"
+    permalink: "/docs/5.x/:path"
 
+  # Likewise, "docs-3x" below renders _docs-3x folder contents, so that users can still navigate to the old docs
+  # Note the relationship between this collection and the frontmatter config below where scope:type == 'docs-3x'
+  docs-3x:
+    # We could set 'output: false', if we ever decide not to render 3.x docs
+    output: true
+    permalink: "/docs/3.x/:path"
+    
 ##########################################################
 # Frontmatter defaults
-
-# Note about sidebar-menu navigation:
-# Sidebar navigation for every page in the project is data- and configuration-driven. See _data/sidebars for
-# example configs, and see _includes/sidebar.html which handles sidebar rendering for any page type below
-# that needs it, via the 'sidebar' metadata property
 
 defaults:
   -
@@ -140,75 +164,45 @@ defaults:
       toc: false
       topnav: topnav
   -
+    # set frontmatter defaults for the previous DW 3.x docs "collection"
     scope:
       path: ""
-      type: "docs-2-1"
+      type: "docs-3x"
     values:
       layout: "docs"
-      title_prefix: "DataWave 2.1 Docs - "
-      sidebar: docs-2-1-sidebar
-      release_tag: 2.1.9
+      title_prefix: "DataWave 3.x Docs - "
+      # Configure _data/sidebar/docs-3x-sidebar.yml...
+      sidebar: docs-3x-sidebar
+      # Note that release_tag is a page-scoped variable that is used for, among
+      # other things, a means of creating href links to specific source files
+      # on the main datawave repo, sometimes to specific line #'s in a given source
+      # file. Thus, changing the release_tag here can potentially break things
+      release_tag: 3.41.8
       show_summary: true
       skip_title_for_h1: false
       toc: true
       topnav: topnav
   -
-    scope:
-      path: ""
-      type: "docs-2-2"
-    values:
-      layout: "docs"
-      title_prefix: "DataWave 2.2 Docs - "
-      sidebar: docs-2-2-sidebar
-      release_tag: 2.2.14
-      show_summary: true
-      skip_title_for_h1: false
-      toc: true
-      topnav: topnav
-  -
-    scope:
-      path: ""
-      type: "docs-2-3"
-    values:
-      layout: "docs"
-      title_prefix: "DataWave 2.3 Docs - "
-      sidebar: docs-2-3-sidebar
-      release_tag: 2.3.13
-      show_summary: true
-      skip_title_for_h1: false
-      toc: true
-      topnav: topnav
-  -
-    scope:
-      path: ""
-      type: "docs-2-6"
-    values:
-      layout: "docs"
-      title_prefix: "DataWave 2.6 Docs - "
-      sidebar: docs-2-6-sidebar
-      release_tag: 2.6.2
-      show_summary: true
-      skip_title_for_h1: false
-      toc: true
-      topnav: topnav
-  -
+    # set frontmatter defaults for the current DW docs version
     scope:
       path: ""
       type: "docs-latest"
     values:
       layout: "docs"
-      title_prefix: "DataWave Docs - "
-      sidebar: docs-2-9-sidebar
-      release_tag: 2.9.4
+      title_prefix: "DataWave 5.x Docs - "
+      # Configure _data/sidebar/docs-latest-sidebar.yml...
+      sidebar: docs-latest-sidebar
+      # Note that release_tag is a page-scoped variable that is used for, among
+      # other things, a means of creating href links to specific source files
+      # on the main datawave repo, sometimes to specific line #'s in a given source
+      # file. Thus, changing the release_tag here can potentially break things
+      release_tag: 5.10.0
       show_summary: true
       skip_title_for_h1: false
       toc: true
       topnav: topnav
 
-# this description is used in /feed.xml
-description: "DataWave is a Java-based ingest and query framework that leverages Apache Accumulo to provide fast, secure access to your data"
-
-# plugins...
-
-whitelist: [jekyll-redirect-from]
-plugins: [jekyll-redirect-from]
+# Note about sidebar-menu navigation:
+# Sidebar navigation for each page in a docs collection is data- and configuration-driven. See _data/sidebars for
+# example sidebar yaml definitions, and see _includes/sidebar.html, which handles sidebar rendering for any page type
+# that configures the 'sidebar' property in its frontmatter

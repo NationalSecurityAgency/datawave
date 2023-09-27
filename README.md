@@ -9,16 +9,22 @@
 ## Build and run the site
 
 ```bash
- # Checkout the gh-pages branch
+ # Clone datawave and pull/checkout only the gh-pages branch...
  
- $ cd <DW SOURCE DIR>
- $ git checkout gh-pages
- 
- # Build and run site using the preview server with overridden baseurl (see baseurl configuration
- # notes in _config.yml for more info), and auto-sync site changes via --watch
+ $ git clone --single-branch \
+   --branch gh-pages \
+   https://github.com/NationalSecurityAgency/datawave.git \
+   datawave-gh-pages
+   ...
+ $ cd datawave-gh-pages
   
- $ bundle update
+ # Build and run the site using the preview server with overridden baseurl (see baseurl configuration
+ # notes in _config.yml for more info), and auto-sync site changes via '--watch' option ...
+  
+ $ bundle update # Optional
  $ bundle exec jekyll serve --baseurl '' --watch
+ 
+ # By default, JEKYLL_ENV=development (see details below)
  
  # Now browse to http://localhost:4000/
  

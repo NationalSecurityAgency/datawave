@@ -25,15 +25,15 @@ The functions below are implemented for each service, where {*servicename*} can 
 
 | Function Name&nbsp;&nbsp;&nbsp; | Description |
 |----------------:|:------------- |
-| `{servicename}Start` | Start the service |
-| `{servicename}Stop` | Stop the service |
-| `{servicename}Status` | Display current status of the service, including PIDs if running |
-| `{servicename}Install` | Install the service |
-| `{servicename}Uninstall` | Uninstall but leave tarball(s) in place. Optional `--remove-binaries` flag |
-| `{servicename}IsRunning` | Returns 0 if running, non-zero otherwise. Mostly for internal use |
-| `{servicename}IsInstalled` | Returns 0 if installed, non-zero otherwise. Mostly for internal use |
-| `{servicename}Printenv` | Display current state of the service configuration, bash variables, etc |
-| `{servicename}PidList` | Display all service PIDs on a single line, space-delimited |
+| ` {servicename}Start ` | Start the service |
+| ` {servicename}Stop ` | Stop the service |
+| ` {servicename}Status ` | Display current status of the service, including PIDs if running |
+| ` {servicename}Install ` | Install the service |
+| ` {servicename}Uninstall ` | Uninstall but leave tarball(s) in place. Optional `--remove-binaries` flag |
+| ` {servicename}IsRunning ` | Returns 0 if running, non-zero otherwise. Mostly for internal use |
+| ` {servicename}IsInstalled ` | Returns 0 if installed, non-zero otherwise. Mostly for internal use |
+| ` {servicename}Printenv ` | Display current state of the service configuration, bash variables, etc |
+| ` {servicename}PidList ` | Display all service PIDs on a single line, space-delimited |
 
 ---
 
@@ -46,7 +46,7 @@ To quickly launch the Accumulo Shell and authenticate as the *root* user, use th
 
   Shell - Apache Accumulo Interactive Shell
   -
-  - version: 2.1.2
+  - version: 1.9.3
   - instance name: my-instance-01
   - instance id: cc3e8158-a94a-4f2e-af9e-d1014b5d1912 
   -
@@ -68,8 +68,10 @@ Same as above, but also remove any downloaded *.tar.gz files:
 ```bash
   $ allStop --hard ; allUninstall --remove-binaries
 ```
-{% include important.html content="As the final step of the uninstall, it's always a good idea to exit your
-current bash session in order to clear out lingering quickstart environment variables from memory" %}
+{% include important.html content="If you uninstalled the quickstart with the **--remove-binaries** flag and you do not
+   intend to perform a reinstall, you should also remove the *env.sh* line from your *~/.bashrc* as the very last step in
+   the process. Otherwise, tarballs will be fetched again automatically the next time you start a new bash session or
+   manually source *~/.bashrc*" %}
 
 ### Quick Reinstall
 
@@ -77,9 +79,6 @@ Same as above, but re-download and reinstall everything:
 ```bash
   $ allStop --hard ; allUninstall --remove-binaries && allInstall
 ```
-{% include important.html content="Before performing a reinstall, it's always a good idea to exit your
-previous bash session in order to clear out lingering quickstart environment variables from memory, and then start
-a new bash session to perform the reinstall" %}
 ---
 
 ## DataWave Functions
@@ -185,18 +184,18 @@ self-signed materials are used...
   within your *~/.bashrc* prior to [installing the quickstart](quickstart-install)
 
 [dw_blob_env_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/env.sh
-[dw_blob_common_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/common.sh#L117
+[dw_blob_common_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/common.sh
 [dw_blob_query_sh]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/query.sh
 [dw_blob_query_sh_query_func]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/query.sh#L16
 [dw_blob_datawave_bootstrap_pki]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L50
 [dw_blob_datawave_bootstrap]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh
 [dw_blob_datawave_bootstrap_web]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh
-[dw_blob_datawave_bootstrap_web_start]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L116
-[dw_blob_datawave_bootstrap_web_test]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L63
+[dw_blob_datawave_bootstrap_web_start]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L107
+[dw_blob_datawave_bootstrap_web_test]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-web.sh#L59
 [dw_blob_datawave_bootstrap_ingest]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh
-[dw_blob_datawave_bootstrap_ingest_json]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L222
-[dw_blob_datawave_bootstrap_ingest_wiki]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L161
-[dw_blob_datawave_bootstrap_ingest_csv]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L198
+[dw_blob_datawave_bootstrap_ingest_json]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L201
+[dw_blob_datawave_bootstrap_ingest_wiki]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L138
+[dw_blob_datawave_bootstrap_ingest_csv]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-ingest.sh#L176
 [dw_blob_datawave_bootstrap_user]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap-user.sh
 [dw_web_tests]: https://github.com/NationalSecurityAgency/datawave/tree/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/test-web/tests
 [dw_datawave_home]: https://github.com/NationalSecurityAgency/datawave/tree/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave
@@ -211,5 +210,5 @@ self-signed materials are used...
 [dw_blob_mycsv_config]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-configuration/src/main/resources/config/mycsv-ingest-config.xml
 [dw_blob_enwiki_raw_xml]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-wikipedia/src/test/resources/input/enwiki-20130305-pages-articles-brief.xml
 [dw_blob_my_raw_csv]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/warehouse/ingest-csv/src/test/resources/input/my.csv
-[dw_blob_datawave_bootstrap_build]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L403
-[dw_blob_datawave_bootstrap_build_deploy]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L393
+[dw_blob_datawave_bootstrap_build]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L382
+[dw_blob_datawave_bootstrap_build_deploy]: https://github.com/NationalSecurityAgency/datawave/blob/{{ page.release_tag }}/contrib/datawave-quickstart/bin/services/datawave/bootstrap.sh#L372

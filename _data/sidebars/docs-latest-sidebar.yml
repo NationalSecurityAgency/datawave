@@ -1,0 +1,83 @@
+# This file is used to construct the sidebar navigation for DataWave 5.x docs
+
+entries:
+- title: sidebar
+  product: DataWave
+  version: 5.x
+  folders:
+
+  - title: Getting Started
+    folderitems:
+
+    - title: Overview
+      url: /docs/5.x/getting-started/overview
+
+    - title: Data Model
+      url: /docs/5.x/getting-started/data-model
+
+    - title: Development
+      url: /docs/5.x/getting-started/development
+
+      subfolders:
+      - title: Quickstart
+        subfolderitems:
+        - title: Installation
+          url: /docs/5.x/getting-started/quickstart-install
+
+        - title: Reference
+          url: /docs/5.x/getting-started/quickstart-reference
+
+        - title: Troubleshooting
+          url: /docs/5.x/getting-started/quickstart-trouble
+
+  - title: Tour
+    folderitems:
+    - title: Getting Started
+      url: /docs/5.x/tour/getting-started
+
+    - title: Ingest Basics
+      url: /docs/5.x/tour/ingest-basics
+
+    - title: Query Basics
+      url: /docs/5.x/tour/query-basics
+
+    - title: Edge Query
+      url: /docs/5.x/tour/edge-query
+
+  - title: Ingest
+    folderitems:
+
+    - title: Overview
+      url: /docs/5.x/ingest/overview
+
+    - title: Data Flow
+      url: /docs/5.x/ingest/data-flow
+
+    - title: Development
+      url: /docs/5.x/ingest/development
+
+    - title: Administration
+      url: /docs/5.x/ingest/administration
+
+    - title: Configuration
+      url: /docs/5.x/ingest/configuration
+
+  - title: Query
+    folderitems:
+
+    - title: Overview
+      url: /docs/5.x/query/overview
+
+    - title: Query Syntax
+      url: /docs/5.x/query/syntax
+
+    - title: Development
+      url: /docs/5.x/query/development
+
+    - title: Administration
+      url: /docs/5.x/query/administration
+
+    - title: Configuration
+      url: /docs/5.x/query/configuration
+
+

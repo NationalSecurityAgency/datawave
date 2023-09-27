@@ -1,19 +1,9 @@
 {% assign sidebar = site.data.sidebars[page.sidebar].entries %}
+{% assign product_version = sidebar[0].version %}
 
 <ul id="mysidebar" class="nav affix">
   <li class="sidebarTitle">{{sidebar[0].product}}
-      {% if sidebar[0].version %}
-          {% comment %}
-              This conditional is to decorate the sidebar header with " (Latest"), that is, IF the configured sidebar for the current page
-              happens to be for the DataWave 'product', AND IF the sidebar 'version' matches our site.latest_minor_release (from _config.yml)
-          {% endcomment %}
-
-          {% if sidebar[0].version == site.latest_minor_release and sidebar[0].product == 'DataWave' %}
-              {{sidebar[0].version}} (Latest)
-          {% else %}
-              {{sidebar[0].version}}
-          {% endif %}
-      {% endif %}
+      {{ product_version }}
   </li>
 {% for entry in sidebar %}
    {% for folder in entry.folders %}

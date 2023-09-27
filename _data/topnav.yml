@@ -4,9 +4,9 @@ topnav:
 - title: Topnav
   items:
     - title: Documentation
-      url: /docs/2.9/getting-started/overview
+      url: /docs/5.x/getting-started/overview
     - title: Tour
-      url: /docs/2.9/tour/getting-started
+      url: /docs/5.x/tour/getting-started
     - title: GitHub
       external_url: https://github.com/nationalsecurityagency/datawave
     - title: News
@@ -16,12 +16,8 @@ topnav:
 topnav_dropdowns:
 - title: Topnav dropdowns
   folders:
-    - title: Releases
+    - title: Releases/Tags
       folderitems:
-        - title: DataWave 2.9.4 (Latest)
-          url: /release/datawave-2.9.4
-        - title: Release Archive
-          url: /release/
         - title: View Releases on GitHub
-          external_url: https://github.com/nationalsecurityagency/datawave/releases
+          external_url: https://github.com/nationalsecurityagency/datawave/tags
 
