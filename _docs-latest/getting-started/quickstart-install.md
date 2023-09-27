@@ -91,10 +91,10 @@ your various bash sessions, as needed.
   # Step 1
   $ echo -e "activateDW() {\n source DW_SOURCE/contrib/datawave-quickstart/bin/env.sh\n}" >> ~/.bashrc
 ```
-The *activateDW* bash function, when invoked for the first time in a bash session will source
-*[env.sh][dw_blob_env_sh]*, which in turn bootstraps each DataWave service via its respective
-*{servicename}/bootstrap.sh* script. The bootstrap scripts define supporting bash variables and functions,
-encapsulating configuration and basic start/stop functionality consistently for all services.
+The *activateDW* bash function when invoked in your bash session will source *[env.sh][dw_blob_env_sh]*.
+That script, in turn, bootstraps each DataWave service via its respective *{servicename}/bootstrap.sh* script.
+The bootstrap scripts define supporting bash variables and functions, encapsulating configuration and basic
+start/stop functionality consistently for all services.
 
 #### 1.2 Override Default Binaries
 
@@ -125,10 +125,11 @@ be prefixed with *file://*
   $ source ~/.bashrc                                                    # Step 2a
   $ activateDW                                                          # Step 2b
 ```
-When the *activateDW* bash function is invoked as shown above, tarballs for registered services will be automatically copied/downloaded
-from their configured locations into their respective service directories, i.e., under *datawave-quickstart/bin/services/{servicename}/*.
+When the *activateDW* function is invoked for the first time in a bash session, tarballs for all services will be automatically
+copied/downloaded from their configured locations into their respective service directories,
+i.e., under *datawave-quickstart/bin/services/{servicename}/*.
 
-A DataWave build will also be kicked off automatically.
+Additionally, a DataWave build will be kicked off automatically.
 DataWave's ingest and web service binaries will be copied into place upon conclusion of the build. This step can take
 several minutes to complete, so now is a good time step away for a break.
 
