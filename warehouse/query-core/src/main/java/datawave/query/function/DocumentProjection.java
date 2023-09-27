@@ -39,8 +39,7 @@ public class DocumentProjection implements DocumentPermutation {
 
     @Deprecated
     public DocumentProjection() {
-        this.includeGroupingContext = false;
-        this.reducedResponse = false;
+	this(false, false);
         this.projection = new Projection();
     }
 
