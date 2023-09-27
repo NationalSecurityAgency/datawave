@@ -6,9 +6,11 @@ import java.util.Set;
 
 import org.apache.accumulo.core.client.AccumuloClient;
 import org.apache.accumulo.core.security.Authorizations;
+import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.logic.DelegatingQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 
@@ -87,5 +89,14 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     @Override
     public Object clone() throws CloneNotSupportedException {
         return new FilteredQueryLogic(this);
+    }
+    
+    @Override
+    public TransformIterator getTransformIterator(Query settings) {
+        if (!filtered) {
+            return super.getTransformIterator(settings);
+        } else {
+            return new DatawaveTransformIterator(iterator());
+        }
     }
 }
