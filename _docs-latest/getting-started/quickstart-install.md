@@ -93,7 +93,7 @@ your various bash sessions, as needed.
 ```
 The *activateDW* bash function, when invoked for the first time in a bash session will source
 *[env.sh][dw_blob_env_sh]*, which in turn bootstraps each DataWave service via its respective
-*{servicename}/boostrap.sh* script. The boostrap scripts define supporting bash variables and functions,
+*{servicename}/bootstrap.sh* script. The bootstrap scripts define supporting bash variables and functions,
 encapsulating configuration and basic start/stop functionality consistently for all services.
 
 #### 1.2 Override Default Binaries
