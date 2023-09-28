@@ -89,7 +89,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     public Object clone() throws CloneNotSupportedException {
         return new FilteredQueryLogic(this);
     }
-    
+
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         if (!filtered) {
