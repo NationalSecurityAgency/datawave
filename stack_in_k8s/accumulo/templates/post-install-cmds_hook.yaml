@@ -1,0 +1,57 @@
+
+{{- if or .Values.accumulo.config.userManagement.users .Values.accumulo.config.postInstallCommands }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ include "accumulo.fullname" . }}-post-install-cmds
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-delete-policy: hook-succeeded
+    helm.sh/hook-weight: "20"
+  labels:
+    {{- include "accumulo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: hook
+spec:
+  restartPolicy: Never
+  initContainers:
+    - name: init-accumulo
+      image: busybox:1.28
+      command: ['sh', '-c', "until nslookup accumulo-master; do echo waiting for accumulo; sleep 2; done"]
+  containers:
+  - name: cmds
+    image: {{ .Values.accumulo.image.repository }}:{{ .Values.accumulo.image.tag }}
+    imagePullPolicy: {{ .Values.accumulo.image.pullPolicy }}
+    command: ["/bin/bash", "/cmds/run.sh"]
+    env:
+    - name: ACCUMULO_CONF_DIR
+      value: {{ .Values.accumulo.config.path }}
+    volumeMounts:
+    - name: cmds
+      mountPath: /cmds
+      readOnly: true
+    resources:
+      {{- toYaml .Values.accumulo.cmds.resources | nindent 6 }}
+  volumes:
+  - name: cmds
+    secret:
+      secretName: {{ include "accumulo.fullname" . }}-cmds
+      optional: false
+  {{- with .Values.accumulo.cmds.affinity }}
+  affinity:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.accumulo.cmds.nodeSelector }}
+  nodeSelector:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.accumulo.cmds.tolerations }}
+  tolerations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.accumulo.image.pullSecrets }}
+  imagePullSecrets:
+  {{- range . }}
+  - name: {{ . }}
+  {{- end }}
+  {{- end }}
+{{- end }}

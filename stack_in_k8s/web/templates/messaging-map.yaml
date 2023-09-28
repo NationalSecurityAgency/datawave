@@ -1,0 +1,36 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: v1
+kind: ConfigMap
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.web.messagingMap.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.web.messagingMap.meta.name }}"
+
+##########################
+# Configuration Map Data #
+##########################
+
+data: 
+
+  #########################################
+  # RabbitMQ Enabled Plugin Configuration #
+  #########################################
+
+  enabled_plugins: |
+    [rabbitmq_management].
+  
+  ##################################
+  # RabbitMQ General Configuration #
+  ##################################
+
+  rabbitmq.conf: |
+    loopback_users.guest = false
+    queue_master_locator = min-masters

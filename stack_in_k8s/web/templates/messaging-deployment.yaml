@@ -1,0 +1,119 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: apps/v1
+kind: Deployment
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.web.messagingDeployment.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.web.messagingDeployment.meta.name }}"
+
+#####################################
+# Complete Deployment Specification #
+#####################################
+
+spec:
+
+  ######################################
+  # Replication / Update Configuration #
+  ######################################
+
+  replicas: {{ .Values.web.messagingDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.web.messagingDeployment.replication.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.web.messagingDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.web.messagingDeployment.replication.maxUnavailable }}
+
+  ###################################
+  # Resource Selector Configuration #
+  ###################################
+
+  selector:
+    matchLabels:
+      application: "{{ .Chart.Name }}-{{ .Values.web.messagingDeployment.meta.name }}"
+  
+  #####################################
+  # Deployment Template Configuration #
+  #####################################
+
+  template:
+
+    ##################################################
+    # Basic Metadata for this Deployment's Resources #
+    ##################################################
+
+    metadata:
+      labels:
+        application: "{{ .Chart.Name }}-{{ .Values.web.messagingDeployment.meta.name }}"
+
+    #######################################
+    # Deployment Resources Specifications #
+    #######################################
+
+    spec:
+      restartPolicy: "{{ .Values.web.messagingDeployment.restartPolicy }}"
+      ##############################################
+      # Containers Associated with this Deployment #
+      ##############################################
+
+      containers:
+
+        - name: "{{ .Chart.Name }}-{{ .Values.web.messagingDeployment.meta.name }}"
+          image: "{{ .Values.web.messagingDeployment.image.name }}:{{ .Values.web.messagingDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.web.messagingDeployment.image.pullPolicy }}"
+          ports:
+            - containerPort: 5672
+            - containerPort: 15672
+          resources: {}
+          volumeMounts:
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.rabbitmq.name }}"
+              mountPath: "{{ .Values.web.volumes.rabbitmq.destination }}"
+              readOnly: true
+          {{- if .Values.web.messagingDeployment.livenessProbe.enabled }}
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -ec
+                - rabbitmq-diagnostics -q check_running
+            initialDelaySeconds: {{ .Values.web.messagingDeployment.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.messagingDeployment.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.web.messagingDeployment.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.web.messagingDeployment.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.web.messagingDeployment.livenessProbe.failureThreshold }}
+          {{- else if .Values.web.customLivenessProbe }}
+          livenessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.web.customLivenessProbe "context" $) | nindent 12 }}
+          {{- end }}
+          {{- if .Values.web.messagingDeployment.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -ec
+                - rabbitmq-diagnostics -q check_running
+            initialDelaySeconds: {{ .Values.web.messagingDeployment.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.web.messagingDeployment.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.web.messagingDeployment.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.web.messagingDeployment.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.web.messagingDeployment.readinessProbe.failureThreshold }}
+          {{- else if .Values.web.customReadinessProbe }}
+          readinessProbe: {{- include "common.tplvalues.render" (dict "value" .Values.web.customReadinessProbe "context" $) | nindent 12 }}
+          {{- end }}
+      
+      ###########################################
+      # Volumes Associated with this Deployment #
+      ###########################################
+
+      volumes:
+        
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.rabbitmq.name }}"
+          configMap:
+            name: "{{ .Chart.Name }}-{{ .Values.web.messagingMap.meta.name }}"

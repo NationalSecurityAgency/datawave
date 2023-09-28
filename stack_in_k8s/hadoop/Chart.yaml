@@ -1,0 +1,4 @@
+apiVersion: v1
+appVersion: 3.3.3
+name: dwv-hadoop
+version: 3.3.3

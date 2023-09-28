@@ -1,0 +1,130 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: apps/v1
+kind: Deployment
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.web.authorizationDeployment.meta.name }}"
+  labels:
+    application: "{{ .Chart.Name }}-{{ .Values.web.authorizationDeployment.meta.name }}"
+
+#####################################
+# Complete Deployment Specification #
+#####################################
+
+spec:
+
+  ######################################
+  # Replication / Update Configuration #
+  ######################################
+
+  replicas: {{ .Values.web.authorizationDeployment.replication.replicaCount }}
+  revisionHistoryLimit: {{ .Values.web.authorizationDeployment.replication.revisionHistoryLimit }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.web.authorizationDeployment.replication.maxSurge }}
+      maxUnavailable: {{ .Values.web.authorizationDeployment.replication.maxUnavailable }}
+
+  ###################################
+  # Resource Selector Configuration #
+  ###################################
+
+  selector:
+    matchLabels:
+      application: "{{ .Chart.Name }}-{{ .Values.web.authorizationDeployment.meta.name }}"
+  
+  #####################################
+  # Deployment Template Configuration #
+  #####################################
+
+  template:
+
+    ##################################################
+    # Basic Metadata for this Deployment's Resources #
+    ##################################################
+
+    metadata:
+      labels:
+        application: "{{ .Chart.Name }}-{{ .Values.web.authorizationDeployment.meta.name }}"
+
+    #######################################
+    # Deployment Resources Specifications #
+    #######################################
+
+    spec:
+      restartPolicy: "{{ .Values.web.authorizationDeployment.restartPolicy }}"
+
+      ##############################################
+      # Containers Associated with this Deployment #
+      ##############################################
+
+      containers:
+
+        - name: "{{ .Chart.Name }}-{{ .Values.web.authorizationDeployment.meta.name }}"
+          args:
+            - "--spring.output.ansi.enabled=ALWAYS"
+            - "--spring.profiles.active=default,mock,k8s"
+          env:
+            - name: CONFIG_SERVER_URL
+              value: "http://{{ .Chart.Name }}-{{ .Values.web.configurationDeployment.meta.name }}:{{ .Values.web.configurationService.ports.default }}/configserver"
+          image: "{{ .Values.web.dockerRegistry.url }}/{{ .Values.web.authorizationDeployment.image.name }}:{{ .Values.web.authorizationDeployment.image.tag }}"
+          imagePullPolicy: "{{ .Values.web.authorizationDeployment.image.pullPolicy }}"
+          livenessProbe:
+            httpGet:
+              path: "{{ .Values.web.authorizationDeployment.livenessProbe.uri }}"
+              port: {{ .Values.web.authorizationDeployment.livenessProbe.port }}
+              scheme: "{{ .Values.web.authorizationDeployment.livenessProbe.scheme }}"
+            initialDelaySeconds: {{ .Values.web.authorizationDeployment.livenessProbe.delaySeconds }}
+            periodSeconds: {{ .Values.web.authorizationDeployment.livenessProbe.periodSeconds }}
+            failureThreshold: {{ .Values.web.authorizationDeployment.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: "{{ .Values.web.authorizationDeployment.readinessProbe.uri }}"
+              port: {{ .Values.web.authorizationDeployment.readinessProbe.port }}
+              scheme: "{{ .Values.web.authorizationDeployment.readinessProbe.scheme }}"
+            initialDelaySeconds: {{ .Values.web.authorizationDeployment.readinessProbe.delaySeconds }}
+            periodSeconds: {{ .Values.web.authorizationDeployment.readinessProbe.periodSeconds }}
+          ports:
+            - containerPort: 8080
+            - containerPort: 8443
+          resources: {}
+          volumeMounts:
+            - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+              mountPath: "{{ .Values.web.volumes.certificates.destination }}"
+              readOnly: true
+
+      #############################################################
+      # Initialization Containers Associated with this Deployment #
+      #############################################################
+
+      initContainers:
+        - name: init-accumulo
+          image: busybox:1.28
+          command: ['sh', '-c', "until nslookup accumulo-master; do echo waiting for accumulo; sleep 2; done"]
+        - name: "{{ .Chart.Name }}-init-cache"
+          image: "{{ .Values.web.initialization.image.name }}:{{ .Values.web.initialization.image.tag }}"
+          command: [ "sh", "-c", " until nslookup {{ .Chart.Name }}-{{ .Values.web.cacheService.meta.name }}; do echo 'Waiting for Cache...'; sleep 2; done" ]
+        - name: "{{ .Chart.Name }}-init-configuration"
+          image: "{{ .Values.web.initialization.image.name }}:{{ .Values.web.initialization.image.tag }}"
+          command: [ "sh", "-c", "until nslookup {{ .Chart.Name }}-{{ .Values.web.configurationService.meta.name }}; do echo 'Waiting for Configuration...'; sleep 2; done" ]
+        - name: "{{ .Chart.Name }}-init-messaging"
+          image: "{{ .Values.web.initialization.image.name }}:{{ .Values.web.initialization.image.tag }}"
+          command: [ "sh", "-c", "until nslookup  {{ .Chart.Name }}-{{ .Values.web.messagingService.meta.name }}; do echo 'Waiting for Messaging...'; sleep 2; done" ]
+      
+      ###########################################
+      # Volumes Associated with this Deployment #
+      ###########################################
+
+      volumes:
+        
+        - name: "{{ .Chart.Name }}-{{ .Values.web.volumes.certificates.name }}"
+          secret:
+            secretName: "{{ .Chart.Name }}-{{ .Values.web.certificatesSecret.meta.name }}"
+            optional: false

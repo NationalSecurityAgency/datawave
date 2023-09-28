@@ -1,0 +1,6 @@
+######################################
+# Default Values for Docker Registry #
+######################################
+
+dockerRegistry:
+  url: https://docker-composite.artifactory.adv.evoforge.org

@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zookeeper
+  namespace: {{ template "zookeeper.namespace" . }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: zookeeper
+    {{- if .Values.zookeeper.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if or .Values.zookeeper.commonAnnotations .Values.zookeeper.service.annotations }}
+  annotations:
+    {{- if .Values.zookeeper.service.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.service.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.zookeeper.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- end }}
+spec:
+  type: {{ .Values.zookeeper.service.type }}
+  {{- if and .Values.zookeeper.service.clusterIP (eq .Values.zookeeper.service.type "ClusterIP") }}
+  clusterIP: {{ .Values.zookeeper.service.clusterIP }}
+  {{- end }}
+  {{- if or (eq .Values.zookeeper.service.type "LoadBalancer") (eq .Values.zookeeper.service.type "NodePort") }}
+  externalTrafficPolicy: {{ .Values.zookeeper.service.externalTrafficPolicy | quote }}
+  {{- end }}
+  {{- if and (eq .Values.zookeeper.service.type "LoadBalancer") (not (empty .Values.zookeeper.service.loadBalancerSourceRanges)) }}
+  loadBalancerSourceRanges: {{ .Values.zookeeper.service.loadBalancerSourceRanges }}
+  {{- end }}
+  {{- if and (eq .Values.zookeeper.service.type "LoadBalancer") (not (empty .Values.zookeeper.service.loadBalancerIP)) }}
+  loadBalancerIP: {{ .Values.zookeeper.service.loadBalancerIP }}
+  {{- end }}
+  {{- if .Values.zookeeper.service.sessionAffinity }}
+  sessionAffinity: {{ .Values.zookeeper.service.sessionAffinity }}
+  {{- end }}
+  {{- if .Values.zookeeper.service.sessionAffinityConfig }}
+  sessionAffinityConfig: {{- include "common.tplvalues.render" (dict "value" .Values.zookeeper.service.sessionAffinityConfig "context" $) | nindent 4 }}
+  {{- end }}
+  ports:
+    {{- if not .Values.zookeeper.service.disableBaseClientPort }}
+    - name: tcp-client
+      port: {{ .Values.zookeeper.service.ports.client }}
+      targetPort: client
+      {{- if and (or (eq .Values.zookeeper.service.type "NodePort") (eq .Values.zookeeper.service.type "LoadBalancer")) (not (empty .Values.zookeeper.service.nodePorts.client)) }}
+      nodePort: {{ .Values.zookeeper.service.nodePorts.client }}
+      {{- else if eq .Values.zookeeper.service.type "ClusterIP" }}
+      nodePort: null
+      {{- end }}
+    {{- end }}
+    {{- if .Values.zookeeper.tls.client.enabled }}
+    - name: tcp-client-tls
+      port: {{ .Values.zookeeper.service.ports.tls }}
+      targetPort: client-tls
+      {{- if and (or (eq .Values.zookeeper.service.type "NodePort") (eq .Values.zookeeper.service.type "LoadBalancer")) (not (empty .Values.zookeeper.service.nodePorts.tls)) }}
+      nodePort: {{ .Values.zookeeper.service.nodePorts.tls }}
+      {{- else if eq .Values.zookeeper.service.type "ClusterIP" }}
+      nodePort: null
+      {{- end }}
+    {{- end }}
+    - name: tcp-follower
+      port: {{ .Values.zookeeper.service.ports.follower }}
+      targetPort: follower
+    - name: tcp-election
+      port: {{ .Values.zookeeper.service.ports.election }}
+      targetPort: election
+    {{- if .Values.zookeeper.service.extraPorts }}
+    {{- include "common.tplvalues.render" (dict "value" .Values.zookeeper.service.extraPorts "context" $) | nindent 4 }}
+    {{- end }}
+  selector: {{- include "common.labels.matchLabels" . | nindent 4 }}
+    app.kubernetes.io/component: zookeeper

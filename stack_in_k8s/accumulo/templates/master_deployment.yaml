@@ -1,0 +1,82 @@
+# Copyright 2020 Crown Copyright
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "accumulo.fullname" . }}-masters
+  labels:
+    {{- include "accumulo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: master
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "accumulo.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: master
+  template:
+    metadata:
+      labels:
+        {{- include "accumulo.labels" . | nindent 8 }}
+        app.kubernetes.io/component: master
+    spec:
+      initContainers:
+      - name: check-hadoop-jars
+        image: "{{ .Values.accumulo.initContainer.image }}:{{ .Values.accumulo.initContainer.tag }}"
+        command: 
+        - "/bin/sh"
+        args: ["-c", "while [ `hdfs dfs -ls hdfs://hdfs-nn:9000/datawave/accumulo-vfs-classpath | wc -l` -lt 5 ]; do echo \"Waiting for jars to load\"; sleep 10; done"]
+      hostname: accumulo-master 
+      containers:
+      - name: accumulo-master
+        image: {{ .Values.accumulo.image.repository }}:{{ .Values.accumulo.image.tag }}
+        imagePullPolicy: {{ .Values.accumulo.image.pullPolicy }}
+        args:
+        - master
+        env:
+        - name: ACCUMULO_CONF_DIR
+          value: {{ .Values.accumulo.config.path }}
+        - name: ACCUMULO_INSTANCE_NAME
+          value: {{ .Values.accumulo.instanceId }}
+        - name: ACCUMULO_ROOT_PASSWORD
+          value: root
+        volumeMounts:
+          - name: cmds
+            mountPath: /cmds
+            readOnly: true
+        resources:
+          {{- toYaml .Values.accumulo.master.resources | nindent 10 }}
+      volumes:
+        - name: cmds
+          secret:
+            secretName: {{ include "accumulo.fullname" . }}-cmds
+            optional: false
+      {{- with .Values.accumulo.master.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accumulo.master.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accumulo.master.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accumulo.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range . }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}

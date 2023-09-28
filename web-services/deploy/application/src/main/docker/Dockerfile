@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 FROM azul/zulu-openjdk-centos:11.0.18-11.62.17
+=======
+FROM azul/zulu-openjdk-centos:11.0.19-11.64.19-x86
+
+>>>>>>> 3e14f4ea94 (Create ingest docker image)
 
 RUN yum -y install deltarpm centos-release-sc && \
     chmod -R 777 /usr/lib/jvm/zulu11/bin/* && \

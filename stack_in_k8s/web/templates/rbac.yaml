@@ -1,0 +1,32 @@
+####################################
+# Core Helm Template Configuration #
+####################################
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+
+######################################
+# Basic Metadata for this Deployment #
+######################################
+
+metadata:
+  name: "{{ .Chart.Name }}-{{ .Values.web.rbac.meta.name }}"
+
+######################
+# Role Configuration #
+######################
+
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+
+#########################
+# Subject Configuration #
+#########################
+
+subjects:
+
+  - kind: ServiceAccount
+    name: default
+    namespace: default

@@ -1,0 +1,27 @@
+{{- if and .Values.zookeeper.metrics.enabled .Values.zookeeper.metrics.prometheusRule.enabled .Values.zookeeper.metrics.prometheusRule.rules }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "common.names.fullname" . }}
+  {{- if .Values.zookeeper.metrics.prometheusRule.namespace }}
+  namespace: {{ .Values.zookeeper.metrics.prometheusRule.namespace }}
+  {{- else }}
+  namespace: {{ .Release.Namespace }}
+  {{- end }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: metrics
+    {{- if .Values.zookeeper.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.zookeeper.metrics.prometheusRule.additionalLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.metrics.prometheusRule.additionalLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.zookeeper.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.zookeeper.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  groups:
+    - name: {{ include "common.names.fullname" . }}
+      rules: {{- toYaml .Values.zookeeper.metrics.prometheusRule.rules | nindent 8 }}
+{{- end }}
+

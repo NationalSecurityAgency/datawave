@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "accumulo.fullname" . }}-gc
+  labels:
+    {{- include "accumulo.labels" . | nindent 4 }}
+    app.kubernetes.io/component: gc
+spec:
+  replicas: {{ .Values.accumulo.gc.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "accumulo.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: gc
+  template:
+    metadata:
+      labels:
+        {{- include "accumulo.labels" . | nindent 8 }}
+        app.kubernetes.io/component: gc
+    spec:
+      initContainers:
+      - name: init-accumulo
+        image: busybox:1.28
+        command: ['sh', '-c', "until nslookup accumulo-master; do echo waiting for accumulo; sleep 2; done"]
+      containers:
+      - name: accumulo-gc
+        image: {{ .Values.accumulo.image.repository }}:{{ .Values.accumulo.image.tag }}
+        imagePullPolicy: {{ .Values.accumulo.image.pullPolicy }}
+        args:
+        - gc
+        env:
+        - name: ACCUMULO_CONF_DIR
+          value: {{ .Values.accumulo.config.path }}
+        resources:
+          {{- toYaml .Values.accumulo.gc.resources | nindent 10 }}
+      {{- with .Values.accumulo.gc.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accumulo.gc.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accumulo.gc.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.accumulo.image.pullSecrets }}
+      imagePullSecrets:
+      {{- range . }}
+      - name: {{ . }}
+      {{- end }}
+      {{- end }}

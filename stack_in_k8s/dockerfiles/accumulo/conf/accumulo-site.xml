@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+
+	<property>
+		<name>instance.volumes</name>
+		<value>hdfs://hdfs-nn:9000/accumulo</value>
+	</property>
+
+	<property>
+		<name>instance.zookeeper.host</name>
+		<value>zookeeper:2181</value>
+	</property>
+
+	<property><name>instance.secret</name><value>DEFAULT</value></property>
+	<property><name>trace.user</name><value>root</value></property>
+	<property><name>trace.token.property.password</name><value>secret</value></property>
+
+	<property><name>tserver.memory.maps.native.enabled</name><value>true</value></property>
+	<property><name>tserver.memory.maps.max</name><value>128M</value></property>
+	<property><name>tserver.cache.data.size</name><value>15M</value></property>
+	<property><name>tserver.cache.index.size</name><value>40M</value></property>
+	<property><name>tserver.total.mutation.queue.max</name><value>16M</value></property>
+	<property><name>tserver.sort.buffer.size</name><value>50M</value></property>
+	<property><name>tserver.walog.max.size</name><value>128M</value></property>
+
+	<property>
+		<name>general.classpaths</name>
+		<value>
+			<!-- Accumulo requirements -->
+			$ACCUMULO_HOME/lib/accumulo-server.jar,
+			$ACCUMULO_HOME/lib/accumulo-core.jar,
+			$ACCUMULO_HOME/lib/accumulo-start.jar,
+			$ACCUMULO_HOME/lib/accumulo-fate.jar,
+			$ACCUMULO_HOME/lib/accumulo-proxy.jar,
+			$ACCUMULO_HOME/lib/[^.].*.jar,
+			<!-- ZooKeeper requirements -->
+			$ZOOKEEPER_HOME/lib/zookeeper[^.].*.jar,
+			<!-- Common Hadoop requirements -->
+			$HADOOP_CONF_DIR,
+			<!-- Hadoop 3 requirements -->
+			$HADOOP_PREFIX/share/hadoop/client/[^.].*.jar,
+			$HADOOP_PREFIX/share/hadoop/common/lib/(?!slf4j)[^.].*.jar,
+		</value>
+	</property>
+	<property>
+		<name>general.vfs.context.classpath.datawave</name>
+		<value>hdfs://hdfs-nn:9000/datawave/accumulo-vfs-classpath/.*.jar</value>
+	</property>
+
+</configuration>

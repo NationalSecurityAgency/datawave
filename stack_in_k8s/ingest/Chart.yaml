@@ -1,0 +1,4 @@
+apiVersion: v1
+name: dwv-ingest
+version: 3.40.0
+appVersion: 3.40.0-SNAPSHOT
