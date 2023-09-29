@@ -598,7 +598,7 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
             List<FieldBase> field = event.getFields();
             m.setMarkings(event.getMarkings());
             TreeMap<Long,PageMetric> pageMetrics = Maps.newTreeMap();
-            Map<String,String> subplans = new HashMap<>();
+            Map<String,int[]> subplans = new HashMap<>();
 
             boolean createDateSet = false;
             for (FieldBase f : field) {
@@ -625,8 +625,14 @@ public class ShardTableQueryMetricHandler extends BaseQueryMetricHandler<QueryMe
                         m.setPlan(fieldValue);
                     } else if (fieldName.equals("SUBPLAN")) {
                         String[] arr = fieldValue.split(" : ", 2);
+                        int[] rangeCounts = new int[2];
+                        int index = 0;
+                        for (String count : arr[1].substring(1, arr[1].length() - 1).split(", ")) {
+                            rangeCounts[index] = Integer.parseInt(count);
+                            index++;
+                        }
                         if (arr.length == 2) {
-                            subplans.put(arr[0], arr[1]);
+                            subplans.put(arr[0], rangeCounts);
                         }
                     } else if (fieldName.equals("QUERY_LOGIC")) {
                         m.setQueryLogic(fieldValue);

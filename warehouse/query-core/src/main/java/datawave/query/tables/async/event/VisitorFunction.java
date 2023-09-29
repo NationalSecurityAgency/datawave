@@ -74,6 +74,9 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
 
     protected static FileSystemCache fileSystemCache = null;
 
+    private int shardRangeCount = 0;
+    private int documentRangeCount = 0;
+
     private ShardQueryConfiguration config;
     private BaseQueryMetric metric;
     protected MetadataHelper metadataHelper;
@@ -147,21 +150,21 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
         return minDate;
     }
 
-    public String getRangeKey(Range range) {
+    public void updateRangeCounts(Range range) {
         Key key = range.getStartKey();
-        StringBuilder builder = new StringBuilder();
-        builder.append(key.getRow());
         String cf = key.getColumnFamily().toString();
         if (cf.length() > 0) {
-            String[] parts = StringUtils.split(cf, '\0');
-            builder.append('/').append(parts[0]).append('/').append(parts[1]);
+            documentRangeCount++;
+        } else {
+            shardRangeCount++;
         }
-        return builder.toString();
     }
 
     @Override
     @Nullable
     public ScannerChunk apply(@Nullable ScannerChunk input) {
+        shardRangeCount = 0;
+        documentRangeCount = 0;
 
         SessionOptions options = input.getOptions();
 
@@ -347,10 +350,10 @@ public class VisitorFunction implements Function<ScannerChunk,ScannerChunk> {
                                         "VistorFunction::apply method");
                     }
                     for (Range range : newSettings.getRanges()) {
-                        String rangeKey = getRangeKey(range);
-                        if (metric != null) {
-                            metric.addSubPlan(rangeKey, newQuery);
-                        }
+                        updateRangeCounts(range);
+                    }
+                    if (metric != null) {
+                        metric.addSubPlan(newQuery, new int[] {shardRangeCount, documentRangeCount});
                     }
 
                 } catch (ParseException e) {

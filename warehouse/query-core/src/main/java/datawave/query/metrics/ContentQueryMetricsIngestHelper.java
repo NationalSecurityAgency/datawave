@@ -1,6 +1,7 @@
 package datawave.query.metrics;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -134,10 +135,10 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             if (updatedQueryMetric.getPlan() != null) {
                 fields.put("PLAN", updatedQueryMetric.getPlan());
             }
-            Map<String,String> subPlans = updatedQueryMetric.getSubPlans();
+            Map<String,int[]> subPlans = updatedQueryMetric.getSubPlans();
             if (subPlans != null && !subPlans.isEmpty()) {
-                for (Map.Entry<String,String> entry : subPlans.entrySet()) {
-                    fields.put("SUBPLAN", entry.getKey() + " : " + entry.getValue());
+                for (Map.Entry<String,int[]> entry : subPlans.entrySet()) {
+                    fields.put("SUBPLAN", entry.getKey() + " : " + Arrays.toString(entry.getValue()));
                 }
             }
             if (updatedQueryMetric.getQueryId() != null) {

@@ -91,7 +91,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         Query mockQuery = createMock(Query.class);
         config.setQuery(mockQuery);
         EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
-        metric.addSubPlan(EasyMock.eq("20210101_0"), EasyMock.anyString());
+        metric.addSubPlan(EasyMock.eq("20210101_0"), new int[] {1, 1});
 
         // set thresholds
         config.setFinalMaxTermThreshold(2);
@@ -124,7 +124,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setQuery(mockQuery);
         EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
-        metric.addSubPlan(EasyMock.eq("20210101_0"), EasyMock.anyString());
+        metric.addSubPlan(EasyMock.eq("20210101_0"), new int[] {1, 1});
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
@@ -217,7 +217,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
         EasyMock.expect(mockQuery.getQueryName()).andReturn("testQuery1").anyTimes();
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
-        metric.addSubPlan(EasyMock.eq("20210101_0"), EasyMock.anyString());
+        metric.addSubPlan(EasyMock.eq("20210101_0"), new int[] {1, 1});
 
         // set thresholds
         config.setFinalMaxTermThreshold(5);
@@ -265,7 +265,7 @@ public class VisitorFunctionTest extends EasyMockSupport {
         config.setQuery(mockQuery);
         EasyMock.expect(mockQuery.getId()).andReturn(new UUID(0, 0)).anyTimes();
         EasyMock.expect(mockQuery.duplicate("testQuery1")).andReturn(mockQuery).anyTimes();
-        metric.addSubPlan(EasyMock.eq("20210101_0"), EasyMock.anyString());
+        metric.addSubPlan(EasyMock.eq("20210101_0"), new int[] {1, 1});
 
         // set thresholds
         config.setFinalMaxTermThreshold(1);
