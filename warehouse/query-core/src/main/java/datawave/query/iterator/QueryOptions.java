@@ -1205,10 +1205,7 @@ public class QueryOptions implements OptionDescriber {
         // If we don't have a query, make sure it's because
         // we don't aren't performing any Jexl evaluation
         if (options.containsKey(DISABLE_EVALUATION)) {
-            setDisableEvaluation(true);
-
-        } else {
-            setDisableEvaluation(false);
+            this.disableEvaluation = Boolean.parseBoolean(options.get(DISABLE_EVALUATION));
         }
 
         if (options.containsKey(DISABLE_FIELD_INDEX_EVAL)) {
@@ -1276,21 +1273,17 @@ public class QueryOptions implements OptionDescriber {
 
         // Boolean: should each attribute maintain a ColumnVisibility.
         if (options.containsKey(REDUCED_RESPONSE)) {
-            setReducedResponse(true);
+            setReducedResponse(Boolean.parseBoolean(options.get(REDUCED_RESPONSE)));
         } else {
             setReducedResponse(false);
         }
 
         if (options.containsKey(FULL_TABLE_SCAN_ONLY)) {
             setFullTableScanOnly(Boolean.parseBoolean(options.get(FULL_TABLE_SCAN_ONLY)));
-        } else {
-            setFullTableScanOnly(false);
         }
 
         if (options.containsKey(TRACK_SIZES) && options.get(TRACK_SIZES) != null) {
             setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
-        } else {
-            setTrackSizes(true);
         }
 
         if (options.containsKey(PROJECTION_FIELDS)) {
@@ -1330,9 +1323,7 @@ public class QueryOptions implements OptionDescriber {
         this.mustUseFieldIndex = false;
 
         if (options.containsKey(FILTER_MASKED_VALUES)) {
-            this.filterMaskedValues = true;
-        } else {
-            this.filterMaskedValues = false;
+            this.filterMaskedValues = Boolean.parseBoolean(options.get(FILTER_MASKED_VALUES));
         }
 
         if (options.containsKey(INCLUDE_DATATYPE)) {
@@ -1347,9 +1338,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(COLLECT_TIMING_DETAILS)) {
-            this.collectTimingDetails = false;
-        } else {
-            this.collectTimingDetails = true;
+            this.collectTimingDetails = Boolean.parseBoolean(options.get(COLLECT_TIMING_DETAILS));
         }
 
         if (options.containsKey(STATSD_HOST_COLON_PORT)) {
@@ -1456,9 +1445,7 @@ public class QueryOptions implements OptionDescriber {
         this.timeFilter = new TimeFilter(startTime, endTime);
 
         if (options.containsKey(INCLUDE_GROUPING_CONTEXT)) {
-            this.setIncludeGroupingContext(true);
-        } else {
-            this.setIncludeGroupingContext(false);
+            this.setIncludeGroupingContext(Boolean.parseBoolean(options.get(INCLUDE_GROUPING_CONTEXT)));
         }
 
         if (options.containsKey(DOCUMENT_PERMUTATION_CLASSES)) {
@@ -1552,9 +1539,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(ALLOW_FIELD_INDEX_EVALUATION)) {
-            this.setAllowFieldIndexEvaluation(true);
-        } else {
-            this.setAllowFieldIndexEvaluation(false);
+            this.setAllowFieldIndexEvaluation(Boolean.parseBoolean(options.get(ALLOW_FIELD_INDEX_EVALUATION)));
         }
 
         if (options.containsKey(ALLOW_TERM_FREQUENCY_LOOKUP)) {
@@ -1634,9 +1619,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(COMPRESS_SERVER_SIDE_RESULTS)) {
-            this.setCompressResults(false);
-        } else {
-            this.setCompressResults(true);
+            this.setCompressResults(Boolean.parseBoolean(options.get(COMPRESS_SERVER_SIDE_RESULTS)));
         }
 
         if (options.containsKey(MAX_EVALUATION_PIPELINES)) {
@@ -1662,9 +1645,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(SORTED_UIDS)) {
-            setSortedUIDs(true);
-        } else {
-            setSortedUIDs(false);
+            this.sortedUIDs = Boolean.parseBoolean(options.get(SORTED_UIDS));
         }
 
         if (options.containsKey(DEBUG_MULTITHREADED_SOURCES)) {
