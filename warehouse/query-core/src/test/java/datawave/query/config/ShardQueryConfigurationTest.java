@@ -1,6 +1,7 @@
 package datawave.query.config;
 
 import java.lang.reflect.InvocationTargetException;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
@@ -18,6 +19,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableMultimap;
@@ -665,6 +668,47 @@ public class ShardQueryConfigurationTest {
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
 
         testValues(config, updatedValues, updatedPredicates);
+    }
+
+    /**
+     * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
+     * <p>
+     * If a configuration option was added do the following as appropriate
+     * <ol>
+     * <li>Add getter/setters to the ShardQueryLogic that delegate to the ShardQueryConfiguration</li>
+     * <li>Expand the copy constructor test in this class to verify values are not lost on a copy/clone</li>
+     * <li>Add an illustrative default value to a test QueryLogicFactory. NOTE: doing so should not break any unit tests.</li>
+     * <li>If a value in the config is destined for query iterator, ensure that the value is serialized by the DefaultQueryPlanner and parsed correctly by
+     * either the QueryIterator or the QueryOptions class</li>
+     * </ol>
+     * <p>
+     * If a configuration option was removed before deprecating it, DEPRECATE IT FIRST to allow for clean integration.
+     * <p>
+     * Once a deprecated option has at least one tag associated with it, do the following
+     * <ol>
+     * <li>Remove usages of deprecated methods from unit tests</li>
+     * <li>Remove usages of deprecated values from configuration files such as the test QueryLogicFactory</li>
+     * <li>Remove deprecated getters/setters from the ShardQueryLogic</li>
+     * <li>Lastly, remove the deprecated methods and values from the ShardQueryConfiguration</li>
+     * </ol>
+     *
+     * @throws IOException
+     *             if something went wrong
+     */
+    @Test
+    public void testCheckForNewAdditions() throws IOException {
+        int expectedObjectCount = 207;
+        ShardQueryConfiguration config = ShardQueryConfiguration.create();
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
+        Iterator<JsonNode> rootIter = root.elements();
+        int objectCount = 0;
+        while (rootIter.hasNext()) {
+            rootIter.next();
+            objectCount++;
+        }
+
+        Assert.assertEquals("New variable was added to or removed from the ShardQueryConfiguration", expectedObjectCount, objectCount);
     }
 
     @Test
