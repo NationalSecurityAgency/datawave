@@ -97,6 +97,21 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
     }
 
     @Test
+    public void testFieldIgnoreParam() throws Exception {
+        log.info("------  testEventThreshold  ------");
+        // setting event per day does not alter results
+        this.logic.setEventPerDayThreshold(1);
+        String phrase = RE_OP + "'.*a'";
+        String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
+        String expect = this.dataManager.convertAnyField(phrase);
+
+        Map<String,String> options = new HashMap<>();
+        options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "true");
+
+        runTest(query, expect, options);
+    }
+
+    @Test
     public void testShardThreshold() throws Exception {
         log.info("------  testShardThreshold  ------");
         // setting shards per day does not alter results -
