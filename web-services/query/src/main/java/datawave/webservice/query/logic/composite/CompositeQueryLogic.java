@@ -211,7 +211,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         settings.setQueryAuthorizations(validQueryAuthorizations);
 
         // recalculate the runtime query authorizations (no need to pass in userService as we have already recalculated the principal)
-        return AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, queryPrincipal);
+        Set<Authorizations> downgradedAuths = AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, queryPrincipal);
+        if (log.isTraceEnabled()) {
+            log.trace("Principal auths for user " + principal.getPrimaryUser().getCommonName() + " are " + principal.getPrimaryUser().getAuths());
+            log.trace("Query principal auths for " + logic.getLogicName() + " are " + validAuths);
+            log.trace("Requested auths were " + requestedAuths + " of which the valid query auths are " + validQueryAuthorizations);
+            log.trace("Downgraded auths are " + downgradedAuths);
+        }
+        return downgradedAuths;
     }
 
     @Override
