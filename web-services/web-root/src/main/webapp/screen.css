@@ -157,3 +157,114 @@ div.hide {
 tbody tr.even {
 	background-color: #C1D5ED;
 }
+
+/* The following classes are used for styling the query and query plan on the Query Metrics page */
+
+.a-no-style {
+    text-decoration: none;
+    color: #000000;
+}
+
+.or-op {
+    color: #ff0000;
+}
+
+.and-op {
+    color: #2274A5;
+}
+
+.equal-op {
+    color: #3c45a8;
+}
+
+.not-equal-op {
+    color: #1B998B;
+}
+
+.less-than-op {
+    color: #2C5784;
+}
+
+.greater-than-op {
+    color: #E15554;
+}
+
+.less-than-equal-op {
+    color: #1B998B;
+}
+
+.greater-than-equal-op {
+    color: #7768AE;
+}
+
+.ER-op {
+    color: #AC9969;
+}
+
+.NR-op {
+    color: #656176;
+}
+
+.not-op {
+    color: #586994;
+}
+
+.field {
+    color: #7B0828;
+}
+
+.query-property-marker {
+    color: #F18F01;
+}
+
+.null-value {
+    color: #AA78A6;
+}
+
+.boolean-value {
+    color: #907AD6;
+}
+
+.string-value {
+    color: #70877F;
+}
+
+.numeric-value {
+    color: #ce0f65;
+}
+
+.function {
+    color: #56a753;
+}
+
+.function-namespace {
+    color: #4B3F72;
+}
+
+.method {
+    color: #C98686;
+}
+
+.assign-op {
+    color: #20A39E;
+}
+
+.mul-op {
+    color: #7D4F50;
+}
+
+.div-op {
+    color: #7D4F50;
+}
+
+.mod-op {
+    color: #7D4F50;
+}
+
+.add-op {
+    color: #7D4F50;
+}
+
+.unary-minus {
+    color: #7D4F50;
+}
