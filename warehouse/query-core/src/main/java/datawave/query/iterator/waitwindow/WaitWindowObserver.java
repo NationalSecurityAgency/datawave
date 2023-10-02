@@ -61,7 +61,7 @@ public class WaitWindowObserver {
     // When the wait window is over. Set during the initial seek
     protected long endOfWaitWindow;
     // Remaining time in the wait window. Updated by the timerTask
-    protected AtomicLong remainingTimeMs = new AtomicLong();
+    protected AtomicLong remainingTimeMs = new AtomicLong(Long.MAX_VALUE);
     protected TimerTask timerTask = null;
     // How often the timerTask gets run
     protected long checkPeriod = 50;
@@ -431,6 +431,27 @@ public class WaitWindowObserver {
         } else {
             return text;
         }
+    }
+
+    static public int getNumYields(Key startKey, boolean collectTimingDetails) {
+        int numNulls = 0;
+        if (startKey != null) {
+            String s = null;
+            if (WaitWindowObserver.hasMarker(startKey.getColumnFamily())) {
+                s = startKey.getColumnFamily().toString();
+            } else if (WaitWindowObserver.hasMarker(startKey.getColumnQualifier())) {
+                s = startKey.getColumnQualifier().toString();
+            }
+            if (s != null && s.endsWith("\0")) {
+                for (int x = s.length() - 1; x > 0 && s.charAt(x) == '\0'; x--) {
+                    numNulls++;
+                }
+            }
+            if (collectTimingDetails) {
+                numNulls = numNulls / 2;
+            }
+        }
+        return numNulls;
     }
 
     /*

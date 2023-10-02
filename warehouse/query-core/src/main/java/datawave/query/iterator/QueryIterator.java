@@ -373,8 +373,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // preserve the original range for use with the Final Document tracking iterator because it is placed after the ResultCountingIterator
         // so the FinalDocumentTracking iterator needs the start key with the count already appended
-        originalRange = range;
-        waitWindowObserver.start(range, yieldThresholdMs);
+        this.originalRange = range;
+        if (WaitWindowObserver.getNumYields(range.getStartKey(), collectTimingDetails) < maxYields) {
+            this.waitWindowObserver.start(range, yieldThresholdMs);
+        }
         getActiveQueryLog().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
         ActiveQueryLog.getInstance().get(getQueryId()).beginCall(this.originalRange, ActiveQuery.CallType.SEEK);
 
