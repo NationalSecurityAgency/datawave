@@ -38,23 +38,13 @@ public class FieldNameFilterTest {
     private final KeyToFieldName fieldNameFunction = new KeyToFieldName();
     private final ValueToAttribute fieldValueFunction = new ValueToAttribute(new TypeMetadata(), null);
 
-    private KeyProjection filter;
-
     private final List<Entry<Key,Value>> data = new ArrayList<>();
     private final List<Entry<Key,Value>> expected = new ArrayList<>();
 
     @Before
     public void before() {
-        filter = new KeyProjection();
         data.clear();
         expected.clear();
-    }
-
-    // empty data will blow up this integration stack
-    @Test(expected = RuntimeException.class)
-    public void testNoFilter() {
-        Iterator<Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>>> iter = transformAndFilter(data);
-        iter.next();
     }
 
     @Test
@@ -67,8 +57,8 @@ public class FieldNameFilterTest {
         expected.add(createEntry("F1", "v1", cv1));
         expected.add(createEntry("F1", "v2", cv2));
 
-        filter.setIncludes(Collections.singleton("F1"));
-        executeTest();
+        KeyProjection filter = new KeyProjection(Collections.singleton("F1"), Projection.ProjectionType.INCLUDES);
+        executeTest(filter);
     }
 
     @Test
@@ -82,8 +72,8 @@ public class FieldNameFilterTest {
         expected.add(createEntry("F1", "v2", cv2));
         expected.add(createEntry("F2", "v22", cv1));
 
-        filter.setIncludes(Sets.newHashSet("F1", "F2"));
-        executeTest();
+        KeyProjection filter = new KeyProjection(Sets.newHashSet("F1", "F2"), Projection.ProjectionType.INCLUDES);
+        executeTest(filter);
     }
 
     @Test
@@ -96,8 +86,8 @@ public class FieldNameFilterTest {
         expected.add(createEntry("F2", "v22", cv1));
         expected.add(createEntry("F3", "v33", cv2));
 
-        filter.setExcludes(Collections.singleton("F1"));
-        executeTest();
+        KeyProjection filter = new KeyProjection(Collections.singleton("F1"), Projection.ProjectionType.EXCLUDES);
+        executeTest(filter);
     }
 
     @Test
@@ -109,19 +99,13 @@ public class FieldNameFilterTest {
 
         expected.add(createEntry("F3", "v33", cv2));
 
-        filter.setExcludes(Sets.newHashSet("F1", "F2"));
-        executeTest();
+        KeyProjection filter = new KeyProjection(Sets.newHashSet("F1", "F2"), Projection.ProjectionType.EXCLUDES);
+        executeTest(filter);
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testInvalidProjectionConfiguration() {
-        filter.setIncludes(Collections.singleton("F1"));
-        filter.setExcludes(Collections.singleton("F3"));
-    }
-
-    private void executeTest() {
+    private void executeTest(KeyProjection filter) {
         Iterator<Entry<Key,Value>> expectedIter = expected.iterator();
-        Iterator<Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>>> iter = transformAndFilter(data);
+        Iterator<Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>>> iter = transformAndFilter(data, filter);
         while (iter.hasNext()) {
             Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>> next = iter.next();
 
@@ -146,7 +130,7 @@ public class FieldNameFilterTest {
         return cq.substring(index + 1);
     }
 
-    private Iterator<Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>>> transformAndFilter(List<Entry<Key,Value>> list) {
+    private Iterator<Entry<Key,Entry<String,Attribute<? extends Comparable<?>>>>> transformAndFilter(List<Entry<Key,Value>> list, KeyProjection filter) {
         return Iterators.transform(Iterators.filter(Iterators.transform(list.iterator(), fieldNameFunction), filter), fieldValueFunction);
     }
 }

@@ -13,16 +13,21 @@ import datawave.query.jexl.JexlASTHelper;
  * <p>
  * The use of a {@link DatawaveKey} means this projection is applicable to any type of key (field index, event, tf, etc).
  */
-public class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
+public final class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
 
-    protected Projection projection;
+    private final Projection projection;
 
-    public KeyProjection() {
-        projection = new Projection();
+    public KeyProjection(Set<String> projections, Projection.ProjectionType projectionType) {
+        projection = new Projection(projections, projectionType);
     }
 
     public KeyProjection(KeyProjection other) {
         projection = other.getProjection();
+    }
+
+    @Deprecated
+    public KeyProjection() {
+        projection = new Projection();
     }
 
     /**
@@ -31,6 +36,7 @@ public class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
      * @param includes
      *            a set of fields to retain
      */
+    @Deprecated
     public void setIncludes(Set<String> includes) {
         projection.setIncludes(includes);
     }
@@ -45,6 +51,7 @@ public class KeyProjection implements PeekingPredicate<Entry<Key,String>> {
         projection.setExcludes(excludes);
     }
 
+    @Deprecated
     public Projection getProjection() {
         return projection;
     }
