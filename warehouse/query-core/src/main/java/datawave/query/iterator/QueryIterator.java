@@ -1,6 +1,7 @@
 package datawave.query.iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static datawave.query.iterator.profile.QuerySpan.Stage.DocumentProjection;
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
 import java.io.IOException;
@@ -111,6 +112,7 @@ import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
+import datawave.query.predicate.Projection;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
@@ -868,7 +870,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Project fields using a whitelist or a blacklist before serialization
         if (this.projectResults) {
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentProjection, trackingSpan, getProjection()));
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(DocumentProjection, trackingSpan, getProjection()));
             } else {
                 documents = Iterators.transform(documents, getProjection());
             }
@@ -1208,22 +1210,21 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected DocumentProjection getProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
 
         if (this.useWhiteListedFields) {
             // make sure we include any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
                 this.whiteListedFields.addAll(getMatchingFieldList());
             }
-            projection.setIncludes(this.whiteListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
+                            new Projection(this.whiteListedFields, Projection.ProjectionType.INCLUDES));
         } else if (this.useBlackListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
                 this.blackListedFields.removeAll(getMatchingFieldList());
             }
-            projection.setExcludes(this.blackListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
+                            new Projection(this.blackListedFields, Projection.ProjectionType.EXCLUDES));
         } else {
             String msg = "Configured to use projection, but no whitelist or blacklist was provided";
             log.error(msg);
@@ -1232,7 +1233,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected DocumentProjection getCompositeProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
         if (compositeMetadata != null) {
             for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values()) {
@@ -1247,8 +1247,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (!this.matchingFieldSets.isEmpty()) {
             composites.removeAll(getMatchingFieldList());
         }
-        projection.setExcludes(composites);
-        return projection;
+        return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
+                        Projection.ProjectionType.EXCLUDES);
     }
 
     /**
