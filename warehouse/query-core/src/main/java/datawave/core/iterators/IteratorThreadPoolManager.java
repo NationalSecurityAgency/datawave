@@ -98,7 +98,7 @@ public class IteratorThreadPoolManager {
                     DatawaveFieldIndexCachingIteratorJexl ivarator = future.getIvarator();
                     long elapsed = now - ivarator.getStartTime();
                     long ivaratorScanTimeout = ivarator.getScanTimeout();
-                    if (!ivarator.isRunning() && ((elapsed > ivaratorScanTimeout) || (elapsed > ivaratorMaxScanTimeout))) {
+                    if (ivarator.isRunning() && ((elapsed > ivaratorScanTimeout) || (elapsed > ivaratorMaxScanTimeout))) {
                         removeIvaratorFuture(taskName, env);
                     }
                 }

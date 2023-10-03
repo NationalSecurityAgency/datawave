@@ -367,6 +367,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
     // timeout for the building of the cache. Default 1 hour
     private volatile long scanTimeout = 1000L * 60 * 60;
 
+    // have we timed out
+    private volatile boolean timedOut = false;
+
     // The max number of results that can be returned from this iterator.
     private final long maxResults;
 
@@ -834,6 +837,14 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
                 if (this.setControl.isCancelledQuery()) {
                     this.topKey = null;
+                }
+
+                if (isTimedOut()) {
+                    log.error("Ivarator query timed out");
+                    throw new IvaratorException("Ivarator query timed out");
+                }
+
+                if (this.setControl.isCancelledQuery()) {
                     log.debug("Ivarator query was cancelled");
                     throw new IterationInterruptedException("Ivarator query was cancelled");
                 }
@@ -849,9 +860,15 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
             }
 
             if (this.setControl.isCancelledQuery()) {
-                log.debug("Ivarator query was cancelled");
-                throw new IterationInterruptedException("Ivarator query was cancelled");
+                if (isTimedOut()) {
+                    log.error("Ivarator query timed out");
+                    throw new IvaratorException("Ivarator query timed out");
+                } else {
+                    log.debug("Ivarator query was cancelled");
+                    throw new IterationInterruptedException("Ivarator query was cancelled");
+                }
             }
+
         }
     }
 
@@ -933,6 +950,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         try {
             // wait for all of the threads to complete
             for (IvaratorFuture future : futures) {
+                checkTiming();
+
                 if (!failed && !this.setControl.isCancelledQuery()) {
                     try {
                         result = future.get(this.waitWindowObserver.remainingTimeMs(), TimeUnit.MILLISECONDS);
@@ -949,6 +968,9 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                         failed = true;
                         this.setControl.setCancelled();
                     }
+                }
+                if (this.setControl.isCancelledQuery()) {
+                    break;
                 }
             }
         } finally {
@@ -1033,6 +1055,27 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
      */
     protected void startTiming() {
         startTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Check if the scan timeout has been reached. Mark as timed out and cancel the query if so.
+     */
+    protected void checkTiming() {
+        if (System.currentTimeMillis() > (startTime + scanTimeout)) {
+            // mark as timed out
+            this.timedOut = true;
+            // and cancel the query
+            this.setControl.setCancelled();
+        }
+    }
+
+    /**
+     * Was the timed out flag set.
+     *
+     * @return a boolean if timed out
+     */
+    protected boolean isTimedOut() {
+        return this.timedOut;
     }
 
     /**
@@ -1184,6 +1227,8 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
                                 : null;
 
                 while (source.hasTop()) {
+                    checkTiming();
+
                     Key top = source.getTopKey();
 
                     // if we are setup for composite seeking, seek if we are out of range
@@ -1355,6 +1400,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
         this.threadSafeSet = previousIvarator.threadSafeSet;
         this.set = previousIvarator.set;
         this.setControl = previousIvarator.setControl;
+        this.startTime = previousIvarator.startTime;
         return true;
     }
 
