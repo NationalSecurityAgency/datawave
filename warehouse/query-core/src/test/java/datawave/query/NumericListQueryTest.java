@@ -382,6 +382,7 @@ public abstract class NumericListQueryTest {
         String queryString = "SIZE =='90' AND grouping:matchesInGroup(SIZE, '90', SIZE, '20')";
         String expectedQueryPlan = "SIZE == '+bE9' && grouping:matchesInGroup(SIZE, '+bE9', SIZE, '+bE2')";
 
+        //should be empty
         Set<String> goodResults = Sets.newHashSet();
 
         runTestQuery(queryString, expectedQueryPlan, format.parse("20091231"), format.parse("20150101"), extraParameters, goodResults);

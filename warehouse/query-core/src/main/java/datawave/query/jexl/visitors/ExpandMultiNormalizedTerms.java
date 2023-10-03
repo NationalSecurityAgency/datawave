@@ -309,7 +309,7 @@ public class ExpandMultiNormalizedTerms extends RebuildingVisitor {
                     // Build up a set of normalized terms using each normalizer
                     for (Type<?> normalizer : dataTypes) {
                         try {
-                            if (normalizer instanceof ListType) {
+                            if (normalizer instanceof OneToManyNormalizerType && ((OneToManyNormalizerType<?>) normalizer).expandAtQueryTime()) {
                                 List<String> normTerms = ((OneToManyNormalizerType<?>) normalizer).normalizeToMany(term);
                                 if (normTerms.size() == 1) {
                                     String normTerm = normTerms.iterator().next();
