@@ -13,6 +13,9 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import com.google.common.collect.Sets;
 
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.KeyProjection;
+import datawave.query.predicate.Projection;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
@@ -20,21 +23,21 @@ import datawave.query.jexl.JexlASTHelper;
 public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     private Set<String> nonEventFields;
 
-    private final KeyProjection projection;
+    private KeyProjection keyProjection;
 
     public EventDataQueryFieldFilter(EventDataQueryFieldFilter other) {
         this.nonEventFields = other.nonEventFields;
         if (other.document != null) {
             document = new Key(other.document);
         }
-        this.projection = other.getProjection();
+        this.keyProjection = other.getProjection();
     }
 
     /**
      * Initialize filter with an empty projection
      */
-    public EventDataQueryFieldFilter() {
-        this.projection = new KeyProjection();
+    public EventDataQueryFieldFilter(Set<String> projections, Projection.ProjectionType projectionType) {
+        this.keyProjection = new KeyProjection(projections, projectionType);
     }
 
     /**
@@ -43,7 +46,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      * @param projection
      */
     public EventDataQueryFieldFilter(KeyProjection projection) {
-        this.projection = projection;
+        this.keyProjection = projection;
     }
 
     /**
@@ -63,8 +66,8 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
             queryFields.add(JexlASTHelper.deconstructIdentifier(identifier));
         }
 
-        this.projection = new KeyProjection();
-        this.projection.setIncludes(queryFields);
+        this.keyProjection = new KeyProjection(queryFields, Projection.ProjectionType.INCLUDES);
+
     }
 
     protected Key document = null;
@@ -85,17 +88,17 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
     }
 
     public KeyProjection getProjection() {
-        return projection;
+        return keyProjection;
     }
 
     @Override
     public boolean apply(@Nullable Map.Entry<Key,String> input) {
-        return projection.apply(input);
+        return keyProjection.apply(input);
     }
 
     @Override
     public boolean peek(@Nullable Map.Entry<Key,String> input) {
-        return projection.peek(input);
+        return keyProjection.peek(input);
     }
 
     /**
@@ -141,7 +144,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      */
     @Deprecated
     public void setExcludes(Set<String> excludes) {
-        this.projection.setExcludes(excludes);
+        this.keyProjection.setExcludes(excludes);
     }
 
     /**
@@ -153,7 +156,7 @@ public class EventDataQueryFieldFilter implements EventDataQueryFilter {
      */
     @Deprecated
     public void setIncludes(Set<String> includedFields) {
-        this.projection.setIncludes(includedFields);
+        this.keyProjection.setIncludes(includedFields);
     }
 
 }
