@@ -22,6 +22,7 @@ import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.predicate.EventDataQueryFieldFilter;
 import datawave.query.predicate.EventDataQueryFilter;
+import datawave.query.predicate.KeyProjection;
 import datawave.query.util.TypeMetadata;
 
 public class BufferedFileBackedByteDocumentSortedSetTest extends BufferedFileBackedRewritableSortedSetTest<byte[],Document> {
@@ -66,7 +67,7 @@ public class BufferedFileBackedByteDocumentSortedSetTest extends BufferedFileBac
         attrs.add(new UnmodifiableMapEntry(attrKey, new Value()));
         Document doc = new Document(docKey, Collections.singleton(docKey), false, attrs.iterator(),
                         new TypeMetadata().put("FIELD", "datatype", LcNoDiacriticsType.class.getName()), new CompositeMetadata(), true, true,
-                        new EventDataQueryFieldFilter());
+                        new EventDataQueryFieldFilter(new KeyProjection()));
         return doc;
     }
 

@@ -10,6 +10,7 @@ import org.apache.commons.collections4.iterators.TransformIterator;
 
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.iterator.DatawaveTransformIterator;
 import datawave.webservice.query.logic.DelegatingQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
@@ -92,7 +93,7 @@ public class FilteredQueryLogic extends DelegatingQueryLogic implements QueryLog
     }
 
     @Override
-    public TransformIterator getTransformIterator(Query settings) {
+    public TransformIterator getTransformIterator(Query settings) throws QueryException {
         if (!filtered) {
             return super.getTransformIterator(settings);
         } else {
