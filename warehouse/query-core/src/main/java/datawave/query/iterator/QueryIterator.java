@@ -1,6 +1,7 @@
 package datawave.query.iterator;
 
 import static com.google.common.base.Preconditions.checkNotNull;
+import static datawave.query.iterator.profile.QuerySpan.Stage.DocumentProjection;
 import static org.apache.commons.pool.impl.GenericObjectPool.WHEN_EXHAUSTED_BLOCK;
 
 import java.io.IOException;
@@ -113,6 +114,7 @@ import datawave.query.jexl.visitors.VariableNameVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
 import datawave.query.predicate.EmptyDocumentFilter;
+import datawave.query.predicate.Projection;
 import datawave.query.statsd.QueryStatsDClient;
 import datawave.query.tracking.ActiveQuery;
 import datawave.query.tracking.ActiveQueryLog;
@@ -956,7 +958,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Project fields using an allowlist or a disallowlist before serialization
         if (this.projectResults) {
             if (gatherTimingDetails()) {
-                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentProjection, trackingSpan, getProjection()));
+                documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(DocumentProjection, trackingSpan, getProjection()));
             } else {
                 documents = Iterators.transform(documents, getProjection());
             }
@@ -1295,22 +1297,21 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected DocumentProjection getProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
 
         if (this.useAllowListedFields) {
             // make sure we include any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
                 this.allowListedFields.addAll(getMatchingFieldList());
             }
-            projection.setIncludes(this.allowListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
+                            new Projection(this.allowListedFields, Projection.ProjectionType.INCLUDES));
         } else if (this.useDisallowListedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
                 this.disallowListedFields.removeAll(getMatchingFieldList());
             }
-            projection.setExcludes(this.disallowListedFields);
-            return projection;
+            return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
+                            new Projection(this.disallowListedFields, Projection.ProjectionType.EXCLUDES));
         } else {
             String msg = "Configured to use projection, but no allowlist or disallowlist was provided";
             log.error(msg);
@@ -1319,7 +1320,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
     }
 
     protected DocumentProjection getCompositeProjection() {
-        DocumentProjection projection = new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes());
         Set<String> composites = Sets.newHashSet();
         if (compositeMetadata != null) {
             for (Multimap<String,String> val : this.compositeMetadata.getCompositeFieldMapByType().values()) {
@@ -1334,8 +1334,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         if (!this.matchingFieldSets.isEmpty()) {
             composites.removeAll(getMatchingFieldList());
         }
-        projection.setExcludes(composites);
-        return projection;
+        return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(), composites,
+                        Projection.ProjectionType.EXCLUDES);
     }
 
     /**
