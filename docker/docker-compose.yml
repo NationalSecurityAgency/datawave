@@ -120,7 +120,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: datawave/config-service:3.0-SNAPSHOT
+    image: datawave/config-service:4.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
