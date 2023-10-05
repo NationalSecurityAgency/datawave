@@ -21,10 +21,6 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-core</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.hadoop</groupId>
@@ -35,6 +31,10 @@
                     <artifactId>type-utils</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-configuration</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
@@ -95,11 +95,6 @@
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
-            <version>${version.hadoop}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-mapreduce-client-common</artifactId>
             <exclusions>
                 <exclusion>
@@ -107,10 +102,6 @@
                     <artifactId>hadoop-mapreduce-client-core</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-1.2-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

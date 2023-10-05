@@ -33,17 +33,12 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
+            <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-configuration</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
-            <artifactId>datawave-core</artifactId>
-            <version>${project.version}</version>
+            <artifactId>datawave-ingest-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.accumulo</groupId>
@@ -116,10 +111,6 @@
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-start</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-collections4</artifactId>
         </dependency>
         <dependency>
             <groupId>com.sun.mail</groupId>

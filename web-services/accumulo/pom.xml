@@ -15,16 +15,8 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jaxb-annotations</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>commons-configuration</groupId>
-            <artifactId>commons-configuration</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -33,10 +25,6 @@
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
             <artifactId>accumulo-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>authorization-api</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -69,10 +57,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.astefanutti.metrics.cdi</groupId>
-            <artifactId>metrics-cdi</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-annotation</artifactId>
             <version>${version.dropwizard-metrics}</version>
@@ -96,10 +80,6 @@
             <groupId>org.apache.deltaspike.core</groupId>
             <artifactId>deltaspike-core-api</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-client-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>

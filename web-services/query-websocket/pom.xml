@@ -16,15 +16,7 @@
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -45,14 +37,6 @@
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>base-rest-responses</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>gov.nsa.datawave.microservice</groupId>
-            <artifactId>base-rest-responses</artifactId>
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave.microservice</groupId>
@@ -86,11 +70,6 @@
             <groupId>gov.nsa.datawave.webservices</groupId>
             <artifactId>datawave-ws-security</artifactId>
             <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard.metrics</groupId>
-            <artifactId>metrics-annotation</artifactId>
-            <version>${version.dropwizard-metrics}</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -159,10 +138,6 @@
             <version>${version.arquillian}</version>
         </dependency>
         <dependency>
-            <groupId>org.jboss.arquillian.container</groupId>
-            <artifactId>arquillian-container-test-api</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
             <version>${version.jboss.logging}</version>
@@ -183,11 +158,6 @@
             <version>${version.jboss}</version>
         </dependency>
         <dependency>
-            <groupId>org.jboss.spec.javax.ws.rs</groupId>
-            <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
-            <version>${version.jboss}</version>
-        </dependency>
-        <dependency>
             <groupId>org.jboss.xnio</groupId>
             <artifactId>xnio-api</artifactId>
             <version>${version.jboss.xnio}</version>
@@ -196,10 +166,6 @@
             <groupId>org.powermock</groupId>
             <artifactId>powermock-reflect</artifactId>
             <version>${version.powermock}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
