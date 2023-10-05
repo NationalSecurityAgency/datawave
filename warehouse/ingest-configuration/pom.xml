@@ -33,6 +33,10 @@
             <artifactId>hadoop-client-api</artifactId>
             <version>${version.hadoop}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-common</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <resources>
