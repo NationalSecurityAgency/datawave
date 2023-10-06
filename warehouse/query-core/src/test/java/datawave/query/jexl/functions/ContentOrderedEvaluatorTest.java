@@ -12,6 +12,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.google.common.collect.Sets;
+
 import datawave.ingest.protobuf.TermWeightPosition;
 import datawave.query.postprocessing.tf.TermOffsetMap;
 
@@ -30,7 +32,6 @@ public class ContentOrderedEvaluatorTest {
     @Before
     public void setup() {
         termOffsetMap = new TermOffsetMap();
-        termOffsetMap.setGatherPhraseOffsets(true);
     }
 
     @After
@@ -62,6 +63,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(11, 20);
         givenOffsets(3, 21, 100);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -90,6 +93,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(2, 20);
         givenOffsets(3, 21);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("BODY", "CONTENT");
 
         initEvaluator();
 
@@ -108,6 +113,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(21, 24, 30);
         givenOffsets(3, 8, 12, 19, 22);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -126,6 +133,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(1, 5, 29, 87, 101);
         givenOffsets(102, 400, 434);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -138,6 +147,8 @@ public class ContentOrderedEvaluatorTest {
         givenField("CONTENT");
         givenDistance(1);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -153,6 +164,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(5);
         givenOffsets(11);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -169,6 +182,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(2);
         givenOffsets(3);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -184,6 +199,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(2);
         givenOffsets(3);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -199,6 +216,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(5);
         givenOffsets(7);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -214,6 +233,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(10, 11);
         givenOffsets(4, 12);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -229,6 +250,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(3, 4, 44);
         givenOffsets(4, 5, 35);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("BODY");
 
         initEvaluator();
 
@@ -244,6 +267,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(7, 9, 22);
         givenOffsets(8, 11, 13);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -259,6 +284,8 @@ public class ContentOrderedEvaluatorTest {
         givenOffsets(2, 4);
         givenOffsets(5, 6);
         givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("CONTENT");
 
         initEvaluator();
 
@@ -266,12 +293,54 @@ public class ContentOrderedEvaluatorTest {
         assertPhraseOffsetsContain("CONTENT", 3, 5);
     }
 
-    private void givenField(String field) {
-        this.field = field;
+    /**
+     * Verify that if gatherPhraseOffsets is false, that even when there is a phrase index for matching excerpt field, it is not recorded.
+     */
+    @Test
+    public void testGatherPhraseOffsetsIsFalse() {
+        // offsets[0].size() <= offsets[N-1].size() will trigger forward-order traversal,
+        // evaluating the document for the phrase "a b c", starting with 'a' at offset 10
+
+        givenField("CONTENT");
+        givenDistance(1);
+        givenOffsets(10, 19);
+        givenOffsets(11, 20);
+        givenOffsets(3, 21, 100);
+        givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(false);
+        givenExcerptFields("CONTENT");
+
+        initEvaluator();
+
+        assertEvaluate(true);
+        assertPhraseOffsetsEmpty();
     }
 
-    private void givenEventId(String eventId) {
-        this.eventId = eventId;
+    /**
+     * Verify that if gatherPhraseOffsets is true, if a phrase index for is found for a non-excerpt field, it is not recorded.
+     */
+    @Test
+    public void testNonMatchingExcerptFields() {
+        // offsets[0].size() <= offsets[N-1].size() will trigger forward-order traversal,
+        // evaluating the document for the phrase "a b c", starting with 'a' at offset 10
+
+        givenField("CONTENT");
+        givenDistance(1);
+        givenOffsets(10, 19);
+        givenOffsets(11, 20);
+        givenOffsets(3, 21, 100);
+        givenTerms("a", "b", "c");
+        givenGatherPhraseOffsets(true);
+        givenExcerptFields("BODY");
+
+        initEvaluator();
+
+        assertEvaluate(true);
+        assertPhraseOffsetsEmpty();
+    }
+
+    private void givenField(String field) {
+        this.field = field;
     }
 
     private void givenOffsets(int... offsets) {
@@ -288,6 +357,14 @@ public class ContentOrderedEvaluatorTest {
 
     private void givenTerms(String... terms) {
         this.terms = terms;
+    }
+
+    private void givenGatherPhraseOffsets(boolean gatherPhraseOffsets) {
+        termOffsetMap.setGatherPhraseOffsets(gatherPhraseOffsets);
+    }
+
+    private void givenExcerptFields(String... fields) {
+        termOffsetMap.setExcerptFields(Sets.newHashSet(fields));
     }
 
     private void initEvaluator() {
@@ -308,7 +385,7 @@ public class ContentOrderedEvaluatorTest {
     }
 
     private void assertPhraseOffsetsEmpty() {
-        Assert.assertTrue("Expected empty phrase offset map", termOffsetMap.getPhraseIndexes().isEmpty());
+        Assert.assertTrue("Expected empty phrase offset map", termOffsetMap.getPhraseIndexes() == null || termOffsetMap.getPhraseIndexes().isEmpty());
     }
 
     private static class WrappedContentOrderedEvaluator extends ContentOrderedEvaluator {

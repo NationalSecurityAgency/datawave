@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -52,8 +53,11 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
 
     @Override
     public boolean isEmpty() {
+        if (sets == null) {
+            return true;
+        }
         for (SortedSet<E> set : sets) {
-            if (!set.isEmpty()) {
+            if (set != null && !set.isEmpty()) {
                 return false;
             }
         }
@@ -141,25 +145,37 @@ public class MultiSetBackedSortedSet<E> extends AbstractSet<E> implements Sorted
     }
 
     @Override
-    public E first() {
+    public E first() throws NoSuchElementException {
+        if (sets == null || sets.isEmpty()) {
+            throw new NoSuchElementException("No elements in input sets");
+        }
         SortedSet<E> firstSet = new TreeSet<>(comparator());
         for (SortedSet<E> set : sets) {
-            E s = set.first();
-            if (s != null) {
+            if (set != null && !set.isEmpty()) {
+                E s = set.first();
                 firstSet.add(s);
             }
+        }
+        if (firstSet.isEmpty()) {
+            throw new NoSuchElementException("No elements in input sets");
         }
         return firstSet.first();
     }
 
     @Override
-    public E last() {
+    public E last() throws NoSuchElementException {
+        if (sets == null || sets.isEmpty()) {
+            throw new NoSuchElementException("No elements in input sets");
+        }
         SortedSet<E> lastSet = new TreeSet<>(comparator());
         for (SortedSet<E> set : sets) {
-            E s = set.last();
-            if (s != null) {
+            if (set != null && !set.isEmpty()) {
+                E s = set.last();
                 lastSet.add(s);
             }
+        }
+        if (lastSet.isEmpty()) {
+            throw new NoSuchElementException("No elements in input sets");
         }
         return lastSet.last();
     }
