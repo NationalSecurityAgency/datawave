@@ -6,6 +6,11 @@
 - Jekyll: <https://jekyllrb.com/docs/quickstart/>
 - Site Source: <https://github.com/nationalsecurityagency/datawave>
 
+## Performing site updates
+
+- See in-line documentation in [_config.yml](_config.yml)
+- See [scripts/publish-new-releases](scripts/publish-new-releases) to automate publishing of 'Project News' updates for new DataWave releases 
+
 ## Build and run the site
 
 ```bash

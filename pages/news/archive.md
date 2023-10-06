@@ -26,7 +26,7 @@ permalink: /news/archive.html
       <a href="{{ site.baseurl }}{{ post.url }}">
       {{ post.title }}
       {% if post.category == "release" %}
-        &nbsp;Released!
+        &nbsp;Released
       {% endif %}
       </a>
     </div>

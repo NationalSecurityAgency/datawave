@@ -33,7 +33,7 @@ skip_title_for_h1: true
          <div class="row text-left">
            <div class="col-sm-12" style="margin-bottom: 8px">
              <span style="margin-right: 5px; font-size: 12px;">{{ post.date | date: "%Y-%m-%d" }}</span>
-             <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}{% if post.category == "release" %}&nbsp;Released!{% endif %}</a>
+             <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}{% if post.category == "release" %}&nbsp;Released{% endif %}</a>
            </div>
          </div>
          {% endfor %}

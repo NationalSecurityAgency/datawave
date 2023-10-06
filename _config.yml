@@ -26,10 +26,10 @@ google_analytics:
 # these are the files and directories that jekyll will exclude from the build
 exclude:
   - .idea/
+  - scripts/
   - .gitignore
   - README.md
 
-# TODO: establish feedback mechanism...
 feedback_subject_line:
 feedback_email:
 feedback_disable: true
@@ -37,7 +37,6 @@ feedback_text: "Contact Us"
 feedback_link: "http://github.com/NationalSecurityAgency/datawave"
 
 highlighter: rouge
-
 markdown: kramdown
 kramdown:
  input: GFM
@@ -82,7 +81,7 @@ plugins: [jekyll-redirect-from]
 #
 # (5) Update _data/sidebars/docs-latest-sidebar.yml to reflect the new major version as needed. E.g.,...
 #
-#     cp _data/sidebars/ && sed -i 's/3.x/5.x/g' docs-latest-sidebar.yml
+#     cd _data/sidebars/ && sed -i 's/3.x/5.x/g' docs-latest-sidebar.yml
 #
 # (6) Update _data/topnav.yml to reflect the new version. No need to back this one up since we're only maintaining a
 #     single top navigation bar for all docs versions, and it should always target the latest docs. E.g.,...

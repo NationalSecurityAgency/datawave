@@ -10,7 +10,7 @@ permalink: /news/index.html
               <a class="post-link" href="{{site.baseurl}}{{ post.url }}">
                 {{ post.title }}
                 {% if post.category == "release" %}
-                  &nbsp;Released!
+                  &nbsp;Released
                 {% endif %}
               </a>
             </h2>
