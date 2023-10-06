@@ -6,6 +6,7 @@ import static datawave.ingest.mapreduce.handler.edge.EdgeKeyVersioningCache.KEY_
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
@@ -36,6 +37,7 @@ import datawave.ingest.data.config.ingest.FakeIngestHelper;
 import datawave.ingest.mapreduce.SimpleDataTypeHandler;
 import datawave.ingest.mapreduce.job.BulkIngestKey;
 import datawave.ingest.time.Now;
+import datawave.util.time.DateHelper;
 
 public class ProtobufEdgePreconditionTest {
 
@@ -45,6 +47,7 @@ public class ProtobufEdgePreconditionTest {
     private static Type type = new Type("mycsv", FakeIngestHelper.class, null, new String[] {SimpleDataTypeHandler.class.getName()}, 10, null);
     private static final Now now = Now.getInstance();
     private Configuration conf;
+    private String loadDateStr = loadDateStr = DateHelper.format(new Date(now.get()));
 
     @Before
     public void setup() {
@@ -63,6 +66,8 @@ public class ProtobufEdgePreconditionTest {
 
         fields.clear();
         EdgeHandlerTestUtil.edgeKeyResults.clear();
+        EdgeHandlerTestUtil.edgeValueResults.clear();
+
     }
 
     private RawRecordContainer getEvent(Configuration conf) {
@@ -71,7 +76,7 @@ public class ProtobufEdgePreconditionTest {
         myEvent.addSecurityMarking("columnVisibility", "PRIVATE");
         myEvent.setDataType(type);
         myEvent.setId(UID.builder().newId());
-        myEvent.setAltIds(Collections.singleton("UUID"));
+        myEvent.setAltIds(Collections.singleton("0016dd72-0000-827d-dd4d-001b2163ba09"));
         myEvent.setConf(conf);
 
         Instant i = Instant.from(DateTimeFormatter.ISO_INSTANT.parse("2022-10-26T01:31:53Z"));
@@ -82,6 +87,61 @@ public class ProtobufEdgePreconditionTest {
 
     @Test
     public void testUnawarePreconSameGroup() {
+        // FELINE == 'tabby'
+
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("FELINE", new NormalizedFieldAndValue("FELINE", "tabby", "PET", "0"));
+        fields.put("FELINE", new NormalizedFieldAndValue("FELINE", "siamese", "PET", "1"));
+        fields.put("FISH", new NormalizedFieldAndValue("FISH", "salmon", "PET", "0"));
+        fields.put("FISH", new NormalizedFieldAndValue("FISH", "guppy", "PET", "1"));
+        fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "fetch", "THING", "0"));
+
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+
+        Set<String> expectedKeys = new HashSet<>();
+        expectedKeys.add("guppy");
+        expectedKeys.add("guppy%00;siamese");
+        expectedKeys.add("salmon");
+        expectedKeys.add("salmon%00;tabby");
+        expectedKeys.add("siamese");
+        expectedKeys.add("siamese%00;guppy");
+        expectedKeys.add("tabby");
+        expectedKeys.add("tabby%00;salmon");
+
+        RawRecordContainer myEvent = getEvent(conf);
+
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+        // colFam
+        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+
+        // colQual
+        Assert.assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///B", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+
+        // values
+        Assert.assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
+        Assert.assertEquals(
+                        "count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
+        Assert.assertEquals(1, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
+        Assert.assertEquals(
+                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
+
+        // vis and ts
+        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        Assert.assertEquals("1666747913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
+
+    }
+
+    @Test
+    public void testUnawarePreconSameGroupEarlyActivityDate() {
         // FELINE == 'tabby'
 
         fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "2022-10-26T01:31:53Z"));
@@ -118,6 +178,26 @@ public class ProtobufEdgePreconditionTest {
         // the dates
         Assert.assertEquals("20221025/MY_CSV_DATA-MY_CSV_DATA///A", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
         Assert.assertEquals("20221026/MY_CSV_DATA-MY_CSV_DATA///C", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(1)[1]);
+
+        // values
+        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
+        Assert.assertEquals(
+                        "count: 1, bitmask: 4194304, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
+        Assert.assertEquals(
+                        "count: 1, bitmask: 2, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(1));
+        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
+        Assert.assertEquals(
+                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], duration: , loadDate: "
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
+        Assert.assertEquals(
+                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(1));
 
         Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
         Assert.assertEquals("1666737913000", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);

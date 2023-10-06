@@ -1,8 +1,10 @@
 package datawave.ingest.mapreduce.handler.edge;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -20,6 +22,7 @@ import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
+import datawave.edge.util.EdgeValue;
 import datawave.ingest.config.RawRecordContainerImpl;
 import datawave.ingest.data.RawRecordContainer;
 import datawave.ingest.data.config.NormalizedContentInterface;
@@ -36,6 +39,7 @@ public class EdgeHandlerTestUtil {
     public static final String NB = "\u0000";
 
     public static ListMultimap<String,String[]> edgeKeyResults = ArrayListMultimap.create();
+    public static ListMultimap<String,String> edgeValueResults = ArrayListMultimap.create();
 
     private static Logger log = Logger.getLogger(EdgeHandlerTestUtil.class);
 
@@ -68,6 +72,7 @@ public class EdgeHandlerTestUtil {
                 for (Map.Entry<BulkIngestKey,Value> entry : contextWriter.getCache().entries()) {
                     if (entry.getKey().getTableName().equals(edgeTableName)) {
                         edgeKeys.add(entry.getKey().getKey());
+                        edgeValueResults.put(entry.getKey().getKey().getRow().toString().replaceAll(NB, "%00;"), EdgeValue.decode(entry.getValue()).toString());
                     }
                     if (!entry.getKey().getTableName().equals(edgeTableName) || entry.getKey().getKey().isDeleted() == edgeDeleteMode) {
                         if (countMap.containsKey(entry.getKey().getTableName())) {
