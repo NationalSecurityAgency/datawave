@@ -136,6 +136,7 @@ public abstract class RemoteHttpService {
     
     @PostConstruct
     protected void init() {
+        log.info("Starting up RemoteHttpService " + System.identityHashCode(this));
         objectMapper = objectMapperDecorator.decorate(new ObjectMapper());
         voidResponseReader = objectMapper.readerFor(VoidResponse.class);
         
@@ -190,11 +191,14 @@ public abstract class RemoteHttpService {
             log.error("Unable to retrieve aliases from KeyStore.");
             throw new IllegalStateException(e);
         }
+        log.info("Started up RemoteHttpService " + System.identityHashCode(this));
     }
     
     @PreDestroy
     protected void shutdown() {
+        log.info("Shutting down RemoteHttpService " + System.identityHashCode(this));
         executorService.submit(() -> {
+            log.info("Executing shutdown RemoteHttpService " + System.identityHashCode(RemoteHttpService.this));
             long waitStart = System.currentTimeMillis();
             long totalWait = 0;
             while (activeExecutions.get() > 0 && totalWait < 60000L) {
@@ -210,7 +214,7 @@ public abstract class RemoteHttpService {
             } catch (IOException e) {
                 log.warn("Exception while shutting down HttpClient: " + e.getMessage(), e);
             }
-            
+            log.info("Shutdown RemoteHttpService " + System.identityHashCode(RemoteHttpService.this));
         });
     }
     
