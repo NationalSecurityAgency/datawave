@@ -35,7 +35,7 @@ public class SizeValidatorImplTest {
         this.configuration = new Configuration(false); // do not load defaults
 
         this.flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig();
-        this.flagMakerConfig = flagFileTestSetup.fmc;
+        this.flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         this.dataTypeConfig = this.flagFileTestSetup.getInheritedDataTypeConfig();
     }
 

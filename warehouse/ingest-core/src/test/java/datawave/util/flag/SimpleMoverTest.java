@@ -34,7 +34,7 @@ public class SimpleMoverTest {
     public void before() throws Exception {
         testFileGenerator = new FlagFileTestSetup();
         testFileGenerator.withTestFlagMakerConfig();
-        this.fmc = testFileGenerator.fmc;
+        this.fmc = testFileGenerator.getFlagMakerConfig();
         this.fmc.setBaseHDFSDir(this.fmc.getBaseHDFSDir().replace("target", "target/SimpleMoverTest"));
 
         // cleanup flagging and flagged directories
@@ -55,7 +55,7 @@ public class SimpleMoverTest {
         FileSystem fs = FileSystem.getLocal(new Configuration());
 
         testFileGenerator.withConfig(fmc).createTestFiles();
-        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
+        Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
         InputFile inFile = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
 
         SimpleMover instance = new SimpleMover(directoryCache, inFile, TrackedDir.FLAGGED_DIR, fs);
@@ -73,7 +73,7 @@ public class SimpleMoverTest {
         FileSystem fs = FileSystem.getLocal(new Configuration());
 
         testFileGenerator.withConfig(fmc).createTestFiles();
-        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
+        Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
 
         // copy to the move will fail

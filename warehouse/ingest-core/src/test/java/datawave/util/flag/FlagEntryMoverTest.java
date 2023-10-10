@@ -42,7 +42,7 @@ public class FlagEntryMoverTest {
     public void before() throws Exception {
         testFileGenerator = new FlagFileTestSetup();
         testFileGenerator.withTestFlagMakerConfig().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
-        fmc = testFileGenerator.fmc;
+        fmc = testFileGenerator.getFlagMakerConfig();
         fs = FileSystem.getLocal(new Configuration());
     }
 
@@ -58,10 +58,10 @@ public class FlagEntryMoverTest {
     public void testCall() throws Exception {
 
         testFileGenerator.createTestFiles();
-        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
+        Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        FlagFileTestHelper.createTrackedDirs(testFileGenerator.fs, entry);
+        testFileGenerator.createTrackedDirsForInputFile(entry);
 
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         InputFile result = instance.call();
@@ -77,10 +77,10 @@ public class FlagEntryMoverTest {
     public void testConflict() throws Exception {
 
         testFileGenerator.createTestFiles();
-        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
+        Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        FlagFileTestHelper.createTrackedDirs(testFileGenerator.fs, entry);
+        testFileGenerator.createTrackedDirsForInputFile(entry);
 
         fs.copyFromLocalFile(file, entry.getFlagging());
 
@@ -98,10 +98,10 @@ public class FlagEntryMoverTest {
     public void testConflictMove() throws Exception {
 
         testFileGenerator.createTestFiles();
-        Path file = FlagFileTestHelper.getPathToAnyInputFile(fs, fmc);
+        Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        FlagFileTestHelper.createTrackedDirs(testFileGenerator.fs, entry);
+        testFileGenerator.createTrackedDirsForInputFile(entry);
 
         // create conflict file with different checksum
         final Path loadFile = entry.getLoaded();

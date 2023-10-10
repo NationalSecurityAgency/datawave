@@ -12,6 +12,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.List;
 import java.util.TreeSet;
 import java.util.concurrent.Executors;
 
@@ -156,8 +157,8 @@ public class FlagFileWriterWhiteboxTest {
     public void before() throws Exception {
         String subdirectoryName = this.getClass().getName() + "_" + this.testName.getMethodName();
         flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig().withTestNameForDirectories(subdirectoryName);
-        flagMakerConfig = flagFileTestSetup.fmc;
-        fs = flagFileTestSetup.fs;
+        flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
+        fs = flagFileTestSetup.getFileSystem();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
         this.inputFiles = createInputFiles();
     }
@@ -176,9 +177,9 @@ public class FlagFileWriterWhiteboxTest {
         // post-condition: files now in flagging
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
             try {
-                assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-                assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
-                assertEquals(0, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+                assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+                assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
+                assertEquals(0, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -188,16 +189,16 @@ public class FlagFileWriterWhiteboxTest {
     @Test
     public void movesFilesFromFlaggingDirToFlaggedDirBeforeRename() throws IOException {
         // pre-condition: no files in flagged
-        assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
         boolean doesFlaggedDirExist = Files.exists(Paths.get(flagMakerConfig.getBaseHDFSDir() + "/flagged"));
         assertFalse("Flagged shouldn't exist until writeFlagFile is called", doesFlaggedDirExist);
 
         // post-condition: files now in flagging
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeRemoveGeneratingExtension((file) -> {
             try {
-                assertEquals(0, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-                assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-                assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+                assertEquals(0, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+                assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+                assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
             } catch (IOException e) {
                 fail("The expected Exception should not occur here.");
             }
@@ -207,10 +208,10 @@ public class FlagFileWriterWhiteboxTest {
     @Test
     public void firstCreatesAGeneratingFlagFile() throws IOException {
         // pre-condition: no flag files at all
-        assertEquals(0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
+        assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
 
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
-            String flagFileName = FlagFileTestHelper.getFlagFilePath(flagMakerConfig);
+            String flagFileName = FlagFileTestInspector.getPathStringForOnlyFlagFile(flagMakerConfig);
 
             assertTrue("Expected it to be a file, not a directory", new File(flagFileName).isFile());
 
@@ -285,7 +286,7 @@ public class FlagFileWriterWhiteboxTest {
         exceptionRule.expectMessage("Failure during move");
 
         // count number of files in the input directory before processing
-        assertEquals(10, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagging((files, futures) -> {
@@ -304,9 +305,9 @@ public class FlagFileWriterWhiteboxTest {
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
             // expect all but one of the files to be back in the input directory
-            assertEquals(9, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+            assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
@@ -316,7 +317,7 @@ public class FlagFileWriterWhiteboxTest {
         exceptionRule.expectMessage("Failure during move");
 
         // count number of files in the input directory before processing
-        assertEquals(10, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             // delete one of the files that has a futures entry in
@@ -333,9 +334,9 @@ public class FlagFileWriterWhiteboxTest {
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
             // expect all but one of the files to be back in the input directory
-            assertEquals(9, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+            assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
@@ -350,10 +351,10 @@ public class FlagFileWriterWhiteboxTest {
                                             (files, futures) -> futures.add(Executors.newSingleThreadExecutor().submit(() -> files.iterator().next())))
                             .writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
-            assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
+            assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
         }
     }
 
@@ -374,10 +375,10 @@ public class FlagFileWriterWhiteboxTest {
                 }));
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
-            assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
+            assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
         }
     }
 
@@ -390,15 +391,15 @@ public class FlagFileWriterWhiteboxTest {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
                 // verify .generating file exists before throwing an
                 // exception to trigger cleanup
-                File[] flagFiles = FlagFileTestHelper.listFlagFiles(flagMakerConfig);
-                String flagFileName = flagFiles[0].getName();
+                List<File> flagFiles = FlagFileTestInspector.listFlagFiles(flagMakerConfig);
+                String flagFileName = flagFiles.get(0).getName();
                 String expectedExtension = ".flag.generating";
                 assertTrue("Did not contain proper file extension", flagFileName.endsWith(expectedExtension));
 
                 throw new RuntimeException("Throw exception to test clean up of .flag.generating file");
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
+            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
         }
     }
 
@@ -413,15 +414,15 @@ public class FlagFileWriterWhiteboxTest {
             // all files should be back in the input directory at this
             // point
             try {
-                assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
+                assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
 
-                assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
-                assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+                assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
+                assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
             } catch (IOException e) {
                 fail("The expected Exception should not occur here.");
             }
             // flag.generating should still exist
-            String flagFileName = FlagFileTestHelper.getFlagFilePath(flagMakerConfig);
+            String flagFileName = FlagFileTestInspector.getPathStringForOnlyFlagFile(flagMakerConfig);
             String expectedExtension = ".flag.generating";
             assertTrue("flag.generating file should exist until all the files are back to the input directory", flagFileName.endsWith(expectedExtension));
         }).writeFlagFile(dataTypeConfig, inputFiles);
@@ -432,13 +433,13 @@ public class FlagFileWriterWhiteboxTest {
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage("Throw exception to test clean up of flagging files");
 
-        assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             // post-condition: files now in flagging
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
                 try {
-                    assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
+                    assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 } catch (IOException e) {
                     fail("The expected Exception should not occur here.");
                 }
@@ -446,9 +447,9 @@ public class FlagFileWriterWhiteboxTest {
                 throw new RuntimeException("Throw exception to test clean up of flagging files");
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
-            assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
+            assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
         }
     }
 
@@ -457,13 +458,13 @@ public class FlagFileWriterWhiteboxTest {
         exceptionRule.expect(RuntimeException.class);
         exceptionRule.expectMessage("Throw exception to test clean up of flagged files");
 
-        assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             // post-condition: files now in flagging
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeRemoveGeneratingExtension((file) -> {
                 try {
-                    assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+                    assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
                 } catch (IOException e) {
                     fail("The expected Exception should not occur here.");
                 }
@@ -471,9 +472,9 @@ public class FlagFileWriterWhiteboxTest {
                 throw new RuntimeException("Throw exception to test clean up of flagged files");
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
-            assertEquals(EXPECTED_NUM_FILES, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
+            assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
         }
     }
 
@@ -481,14 +482,14 @@ public class FlagFileWriterWhiteboxTest {
     public void toleratesMissingFileDuringFailureScenario() throws Exception {
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
-        assertEquals(10, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectAtMoveFilesBack((files, moveOperations) -> {
                 // expect at least some files to be in flagging
                 try {
-                    assertEquals(1, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
-                    assertTrue(0 < FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
+                    assertEquals(1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+                    assertTrue(0 < FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 } catch (Throwable e) {
                     fail("Incorrect preconditions within lambda" + e.getMessage());
                 }
@@ -502,9 +503,9 @@ public class FlagFileWriterWhiteboxTest {
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
             // expect all but one of the files to be back in the input directory
-            assertEquals(9, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+            assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
@@ -513,15 +514,15 @@ public class FlagFileWriterWhiteboxTest {
 
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
-        assertEquals(10, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectAtMoveFilesBack((files, moveOperations) -> {
 
                 // expect at least some files to be in flagging
                 try {
-                    assertEquals(1, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
-                    assertTrue(0 < FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
+                    assertEquals(1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+                    assertTrue(0 < FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 } catch (Throwable e) {
                     fail("Incorrect preconditions within lambda" + e.getMessage());
                 }
@@ -534,11 +535,11 @@ public class FlagFileWriterWhiteboxTest {
                 }));
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals(0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
+            assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
 
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(10, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
@@ -547,14 +548,14 @@ public class FlagFileWriterWhiteboxTest {
 
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
-        assertEquals(10, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectAtMoveFilesBack((files, moveOperations) -> {
                 // expect at least some files to be in flagging
                 try {
-                    assertEquals(1, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
-                    assertTrue(0 < FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
+                    assertEquals(1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+                    assertTrue(0 < FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 } catch (Throwable e) {
                     fail("Incorrect preconditions within lambda" + e.getMessage());
                 }
@@ -573,12 +574,12 @@ public class FlagFileWriterWhiteboxTest {
                 }
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals(0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
+            assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
 
             // expect all but one of the files to be back in the input directory
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(9, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
@@ -586,7 +587,7 @@ public class FlagFileWriterWhiteboxTest {
     public void toleratesCancellationInFailureScenario() throws Exception {
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
-        assertEquals(10, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
+        assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectAtMoveFilesBack((files, moveOperations) -> {
@@ -597,12 +598,12 @@ public class FlagFileWriterWhiteboxTest {
                 moveOperations.get(9).cancel(true);
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals(0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
+            assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
 
             // expect all but one of the files to be back in the input directory
-            assertEquals(9, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-            assertEquals(1, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+            assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(1, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
@@ -627,12 +628,12 @@ public class FlagFileWriterWhiteboxTest {
                 }
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals(0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
+            assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
 
             // expect all but one of the files to be back in the input directory
-            assertEquals(9, FlagFileTestHelper.retrieveFilesInInputDirectory(flagMakerConfig).size());
-            assertEquals(0, FlagFileTestHelper.retrieveFlaggingFiles(flagMakerConfig).size());
-            assertEquals(1, FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig).size());
+            assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
+            assertEquals(1, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
@@ -646,7 +647,7 @@ public class FlagFileWriterWhiteboxTest {
                 System.exit(0);
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestHelper.listFlagFiles(flagMakerConfig).length);
+            assertEquals("The flag file was not cleaned up.", 0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
         }
     }
 
@@ -655,7 +656,7 @@ public class FlagFileWriterWhiteboxTest {
         // filesPerDay in bar
         flagFileTestSetup.withPredicableInputFilenames().withFilesPerDay(FILES_PER_DAY).withNumDays(1).createTestFiles();
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
-        sortedFiles.addAll(FlagFileTestHelper.listSortedInputFiles(flagMakerConfig, fs));
+        sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(flagMakerConfig, fs));
         // verify file creation
         assertNotNull(sortedFiles);
         assertEquals(2 * FILES_PER_DAY, sortedFiles.size());

@@ -255,7 +255,7 @@ public class FlagMakerConfigUtilityTest {
     public void canCreateDirectoryWithGetHadoopFs() throws Exception {
         // Create test subject
         FlagMakerConfig flagMakerConfig = new FlagFileTestSetup().withTestNameForDirectories("FlagMakerTest_canCreateDirectoryWithGetHadoopFs")
-                        .withTestFlagMakerConfig().fmc;
+                        .withTestFlagMakerConfig().getFlagMakerConfig();
         FileSystem fileSystem = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
 
         // ensure directory is eliminate if it already exists

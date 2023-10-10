@@ -56,7 +56,7 @@ public class FlagMetricsTest {
 
         useFlagMetricsAsIntended();
 
-        Path expectedMetricsFilePath = new Path(flagFileTestSetup.fmc.getFlagMetricsDirectory() + File.separator + flagFileBaseName + ".metrics");
+        Path expectedMetricsFilePath = new Path(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory() + File.separator + flagFileBaseName + ".metrics");
         this.flagMetricsFileVerification = new FlagMetricsFileVerification(expectedMetricsFilePath, flagFileTestSetup);
 
     }
@@ -71,7 +71,7 @@ public class FlagMetricsTest {
         this.stopInputFileCreationTime = System.currentTimeMillis();
 
         // register each file with FlagMetrics, then simulate its flagging and register flagged action as well
-        for (InputFile inputFile : FlagFileTestHelper.listSortedInputFiles(flagFileTestSetup.fmc, flagFileTestSetup.fs)) {
+        for (InputFile inputFile : FlagFileTestInspector.listSortedInputFiles(flagFileTestSetup.getFlagMakerConfig(), flagFileTestSetup.getFileSystem())) {
             metrics.addInputFileTimestamp(inputFile);
             inputFile.setMoved(true);
             inputFile.updateCurrentDir(InputFile.TrackedDir.FLAGGED_DIR);
@@ -80,7 +80,7 @@ public class FlagMetricsTest {
         this.stopFlaggedTime = System.currentTimeMillis();
 
         // write metrics to directory
-        metrics.writeMetrics(flagFileTestSetup.fmc.getFlagMetricsDirectory(), flagFileBaseName);
+        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), flagFileBaseName);
         this.stopWritingMetricsTime = System.currentTimeMillis();
     }
 
@@ -147,6 +147,6 @@ public class FlagMetricsTest {
     // If this test starts failing, then get rid of FlagMetricsWithTestCompatibleCodec and use FlagMetrics
     public void gzipCodecFailsInUnitTests() throws IOException {
         FlagMetrics metrics = new FlagMetrics(this.localFileSystem, true);
-        metrics.writeMetrics(flagFileTestSetup.fmc.getFlagMetricsDirectory(), "baseName");
+        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), "baseName");
     }
 }

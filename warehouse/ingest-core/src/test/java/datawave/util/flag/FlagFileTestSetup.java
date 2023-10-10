@@ -4,22 +4,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.UUID;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import datawave.util.StringUtils;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 import datawave.util.flag.config.FlagMakerConfigUtility;
@@ -31,28 +28,24 @@ public class FlagFileTestSetup {
     private static final Logger LOG = LoggerFactory.getLogger(FlagFileTestSetup.class);
 
     private static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
-    private static final String DATE_PATH = "2013/01";
-    private static long ONE_DAY_IN_MILLIS = 24 * 60 * 60 * 1000L;
+    private final FlagFileInputStructure flagFileInputStructure;
+    private final FlagMakerTimestampTracker timeTracker;
 
     private boolean usePredicableInputFilenames = false;
-    private int filesPerDay = 1;
-    private int numDays = 1;
-    private int numFoldersCreated = 0;
     private String subDirectoryName;
 
-    private final Collection<String> createdFiles = new ArrayList<>();
+    private int filesPerDay = 1;
+    private int numDays = 1;
 
-    public FlagMakerConfig fmc;
-    public final FileSystem fs;
-    public final Collection<Long> lastModifiedTimes = new ArrayList<>();
+    private FlagMakerConfig fmc;
+    private final FileSystem fs;
 
-    private long minLastModified = Long.MAX_VALUE;
-    private long maxLastModified = Long.MIN_VALUE;
-    private long minFolderTime = Long.MAX_VALUE;
-    private long maxFolderTime = Long.MIN_VALUE;
     private String suffix = null;
 
     public FlagFileTestSetup() {
+        timeTracker = new FlagMakerTimestampTracker();
+        flagFileInputStructure = new FlagFileInputStructure(this, timeTracker);
+
         try {
             fs = FileSystem.getLocal(new Configuration());
         } catch (IOException e) {
@@ -71,7 +64,7 @@ public class FlagFileTestSetup {
                 throw new RuntimeException("Already modified test directory name");
             }
             this.fmc.setBaseHDFSDir(this.fmc.getBaseHDFSDir().replace("target", "target/" + this.subDirectoryName));
-            createDirectory(fmc.getBaseHDFSDir(), "base HDFS");
+            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir(), "base HDFS");
             LOG.info("Set base HDFS directory to " + this.fmc.getBaseHDFSDir());
 
             if (this.fmc.getFlagFileDirectory().contains(this.subDirectoryName)) {
@@ -79,14 +72,14 @@ public class FlagFileTestSetup {
             }
             this.fmc.setFlagFileDirectory(this.fmc.getFlagFileDirectory().replace("target", "target/" + subDirectoryName));
             LOG.info("Set flag file directory to " + this.fmc.getFlagFileDirectory());
-            createDirectory(fmc.getFlagFileDirectory(), "flag");
+            flagFileInputStructure.createDirectory(fmc.getFlagFileDirectory(), "flag");
 
             if (this.fmc.getFlagMetricsDirectory().contains(this.subDirectoryName)) {
                 throw new RuntimeException("Already modified metrics directory name");
             }
             this.fmc.setFlagMetricsDirectory(this.fmc.getFlagMetricsDirectory().replace("target", "target/" + subDirectoryName));
             LOG.info("Set flag file directory to " + this.fmc.getFlagMetricsDirectory());
-            createDirectory(fmc.getFlagMetricsDirectory(), "flag");
+            flagFileInputStructure.createDirectory(fmc.getFlagMetricsDirectory(), "flag");
         }
         return this;
     }
@@ -97,7 +90,7 @@ public class FlagFileTestSetup {
         if (null != subDirectoryName) {
             withTestNameForDirectories(subDirectoryName);
         } else {
-            createDirectory(fmc.getBaseHDFSDir(), "base HDFS");
+            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir(), "base HDFS");
         }
 
         return this;
@@ -155,133 +148,41 @@ public class FlagFileTestSetup {
         return this;
     }
 
+    protected String getTestFileNameSuffix() {
+        return this.suffix;
+    }
+
+    protected int getNumDays() {
+        return numDays;
+    }
+
+    protected int getFilesPerDay() {
+        return filesPerDay;
+    }
+
+
+    public FlagMakerConfig getFlagMakerConfig() {
+        return fmc;
+    }
+
+    public FileSystem getFileSystem() {
+        return fs;
+    }
+
+    public boolean isPredicableInputFilenames() {
+        return this.usePredicableInputFilenames;
+    }
+
     public void createTestFiles() throws IOException {
-        emptyDirectories();
-        createAdditionalTestFiles();
-    }
-
-    /**
-     * Creates test files without first emptying the directories. Expected to be called after createTestFiles()
-     */
-    public void createAdditionalTestFiles() throws IOException {
-        if (numDays < 1 || numDays > 9)
-            throw new IllegalArgumentException("days argument must be [1-9]. Incorrect value was: " + numDays);
-        // use relative paths for testing
-        ArrayList<File> inputDirs = new ArrayList<>(10);
-        for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
-            for (String listOfFolderValues : fc.getFolders()) {
-                for (String folderName : StringUtils.split(listOfFolderValues, ',')) {
-                    folderName = folderName.trim();
-                    if (!folderName.startsWith(fmc.getBaseHDFSDir())) {
-                        // we do this conditionally because once the FileMaker
-                        // is created and the setup call is made, this
-                        // is already done.
-                        folderName = fmc.getBaseHDFSDir() + File.separator + folderName;
-                    }
-                    inputDirs.add(new File(folderName));
-                    numFoldersCreated++;
-                }
-            }
-        }
-        for (File inputDir : inputDirs) {
-            for (int dayNumber = 1; dayNumber <= numDays; dayNumber++) {
-                File directory = createDirectory(inputDir, dayNumber);
-                long time = getTimestampForFilesInDirectory(dayNumber);
-                for (int j = 0; j < filesPerDay; j++) {
-                    createFile(directory, time);
-                }
-            }
-        }
-        LOG.info("Created " + numFoldersCreated + " folders and " + createdFiles.size() + " files (cumulative).");
-    }
-
-    private File createDirectory(File baseDirectory, int dayNumber) {
-        File directory = new File(baseDirectory.getAbsolutePath() + File.separator + DATE_PATH + File.separator + "0" + dayNumber);
-        directory.deleteOnExit();
-
-        if (!directory.exists()) {
-            if (!directory.mkdirs()) {
-                throw new RuntimeException("Unable to make dirs for " + directory.toString());
-            }
-        }
-        return directory;
-    }
-
-    // returns a timestamp corresponding to ten days later than the directory
-    private long getTimestampForFilesInDirectory(int dayNumber) {
-        long folderTimeInMillis = LocalDate.of(2013, 1, dayNumber).toEpochDay() * ONE_DAY_IN_MILLIS;
-
-        this.minFolderTime = Math.min(this.minFolderTime, folderTimeInMillis);
-        this.maxFolderTime = Math.max(this.maxFolderTime, folderTimeInMillis);
-
-        // return a day that is 10 days past the folder date
-        return folderTimeInMillis + (10 * ONE_DAY_IN_MILLIS);
-    }
-
-    private void createFile(File directory, long time) throws IOException {
-        String fileName = createFileName();
-        String absolutePath = directory.getAbsolutePath();
-        File testFile = new File(absolutePath + File.separator + fileName);
-        testFile.deleteOnExit();
-
-        if (testFile.exists()) {
-            if (!testFile.delete()) {
-                throw new RuntimeException("Unable to delete " + testFile.toString());
-            }
-        }
-        try (FileOutputStream fos = new FileOutputStream(testFile)) {
-            fos.write(("" + System.currentTimeMillis()).getBytes());
-        }
-        long lastModified = time + (createdFiles.size() * 1000L);
-
-        createdFiles.add(fileName);
-        this.lastModifiedTimes.add(lastModified);
-        this.minLastModified = Math.min(lastModified, this.minLastModified);
-        this.maxLastModified = Math.max(lastModified, this.maxLastModified);
-
-        if (!testFile.setLastModified(lastModified)) {
-            throw new RuntimeException("Unable to setLastModified for " + testFile.toString());
-        }
-    }
-
-    private String createFileName() {
-        String result;
-        if (usePredicableInputFilenames) {
-            result = new UUID(0, createdFiles.size()).toString();
-        } else {
-            result = UUID.randomUUID().toString();
-        }
-        if (null != suffix) {
-            result = result + suffix;
-        }
-        return result;
-    }
-
-    private void emptyDirectories() throws IOException {
-        createDirectory(fmc.getBaseHDFSDir(), "base HDFS");
-        createDirectory(fmc.getFlagFileDirectory(), "flag file directory");
-        createDirectory(fmc.getFlagMetricsDirectory(), "metrics directory");
-    }
-
-    private void createDirectory(String directory, String description) throws IOException {
-        File f = new File(directory);
-        if (f.exists()) {
-            // commons io has recursive delete.
-            FileUtils.deleteDirectory(f);
-        }
-        if (!f.mkdirs()) {
-            throw new IOException("unable to create " + description + " directory (" + f.getAbsolutePath() + ")");
-        }
+        flagFileInputStructure.emptyDirectories();
+        flagFileInputStructure.createAdditionalTestFiles();
     }
 
     public FlagDataTypeConfig getInheritedDataTypeConfig() {
         fmc.validate(); // causes datatype configs, like foo, to inherit
                         // properties from default Config
-        FlagDataTypeConfig dataTypeConfig = fmc.getFlagConfigs().get(0); // typically
-                                                                         // foo
-                                                                         // is
-                                                                         // the
-                                                                         // first
+        // typically foo is the first
+        FlagDataTypeConfig dataTypeConfig = fmc.getFlagConfigs().get(0);
         // verify set up
         assertEquals(10L, dataTypeConfig.getReducers());
         assertFalse(dataTypeConfig.isLifo());
@@ -289,23 +190,26 @@ public class FlagFileTestSetup {
     }
 
     public long getMinFolderTime() {
-        return this.minFolderTime;
+        return this.timeTracker.minFolderTime;
     }
 
     public long getMaxFolderTime() {
-        return this.maxFolderTime;
+        return this.timeTracker.maxFolderTime;
     }
 
     public long getMinLastModified() {
-        return this.minLastModified;
+        return this.timeTracker.minLastModified;
     }
 
     public long getMaxLastModified() {
-        return this.maxLastModified;
+        return this.timeTracker.maxLastModified;
+    }
+    public Collection<Long> getLastModifiedTimes() {
+        return timeTracker.fileLastModifiedTimes;
     }
 
     public Collection<String> getNamesOfCreatedFiles() {
-        return new ArrayList<>(createdFiles);
+        return new ArrayList<>(flagFileInputStructure.getNamesOfCreatedFiles());
     }
 
     public void deleteTestDirectories() throws IOException {
@@ -314,6 +218,20 @@ public class FlagFileTestSetup {
             if (f.exists()) {
                 // commons io has recursive delete.
                 FileUtils.deleteDirectory(f);
+            }
+        }
+    }
+
+    public void createAdditionalTestFiles() throws IOException {
+        this.flagFileInputStructure.createAdditionalTestFiles();
+    }
+
+    public void createTrackedDirsForInputFile(InputFile inputFile) throws IOException {
+        final Path[] dirs = {inputFile.getFlagged(), inputFile.getFlagging(), inputFile.getLoaded()};
+        for (final Path dir : dirs) {
+            final Path p = dir.getParent();
+            if (!fs.mkdirs(p)) {
+                throw new IllegalStateException("unable to create tracked directory (" + dir.getParent() + ")");
             }
         }
     }

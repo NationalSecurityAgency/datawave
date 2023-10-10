@@ -68,7 +68,7 @@ public class FlagMetricsFileVerification {
         assertTrue(actualFileNames.containsAll(expectedFileNames));
 
         List<Long> actualCurrentTimes = StreamSupport.stream(group.spliterator(), false).map(Counter::getValue).collect(Collectors.toList());
-        Collection<Long> expectedTimes = flagFileTestSetup.lastModifiedTimes;
+        Collection<Long> expectedTimes = flagFileTestSetup.getLastModifiedTimes();
         assertTrue(expectedTimes.containsAll(actualCurrentTimes));
         assertTrue(actualCurrentTimes.containsAll(expectedTimes));
     }

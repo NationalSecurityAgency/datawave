@@ -10,7 +10,6 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.TreeSet;
@@ -48,8 +47,8 @@ public class FlagFileWriterTest {
     public void before() throws Exception {
         subdirectoryName = this.getClass().getName() + "_" + this.testName.getMethodName();
         flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig().withTestNameForDirectories(subdirectoryName);
-        flagMakerConfig = flagFileTestSetup.fmc;
-        fs = flagFileTestSetup.fs;
+        flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
+        fs = flagFileTestSetup.getFileSystem();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
         this.inputFiles = createInputFiles(5);
     }
@@ -90,8 +89,8 @@ public class FlagFileWriterTest {
         new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
 
         // confirm no metrics files exist
-        File[] metricsFiles = FlagFileTestHelper.retrieveMetricsFiles(flagMakerConfig);
-        assertEquals(Arrays.toString(metricsFiles), 0, metricsFiles.length);
+        List<File> metricsFiles = FlagFileTestInspector.retrieveMetricsFiles(flagMakerConfig);
+        assertEquals(metricsFiles.toString(), 0, metricsFiles.size());
     }
 
     @Test
@@ -102,15 +101,15 @@ public class FlagFileWriterTest {
         flagFileWriter.writeFlagFile(dataTypeConfig, inputFiles);
 
         // expect two metrics files
-        File[] metricsFiles = FlagFileTestHelper.retrieveMetricsFiles(flagMakerConfig);
+        List<File> metricsFiles = FlagFileTestInspector.retrieveMetricsFiles(flagMakerConfig);
         assertNotNull(metricsFiles);
-        assertEquals(Arrays.toString(metricsFiles), 2, metricsFiles.length);
+        assertEquals(metricsFiles.toString(), 2, metricsFiles.size());
 
         // check metrics file names
-        List<String> metricsFileNames = Arrays.stream(metricsFiles).map(File::getName).collect(Collectors.toList());
+        List<String> metricsFileNames = metricsFiles.stream().map(File::getName).collect(Collectors.toList());
 
         // contains metrics file
-        String flagFileName = FlagFileTestHelper.listFlagFiles(this.flagMakerConfig)[0].getName();
+        String flagFileName = FlagFileTestInspector.getOnlyFlagFile(this.flagMakerConfig).getName();
         String expectedMetricsFileName = flagFileName.replace(".flag", ".metrics");
         assertTrue(metricsFileNames + " did not contain " + expectedMetricsFileName, metricsFileNames.contains(expectedMetricsFileName));
 
@@ -132,7 +131,7 @@ public class FlagFileWriterTest {
         long stopTime = System.currentTimeMillis();
 
         // construct expected Path for metrics file
-        String flagFileName = FlagFileTestHelper.listFlagFiles(this.flagMakerConfig)[0].getName();
+        String flagFileName = FlagFileTestInspector.listFlagFiles(this.flagMakerConfig).get(0).getName();
         String expectedMetricsFileName = flagFileName.replace(".flag", ".metrics");
         Path expectedMetricsFilePath = new Path(flagMakerConfig.getFlagMetricsDirectory(), expectedMetricsFileName);
 
@@ -169,12 +168,12 @@ public class FlagFileWriterTest {
 
         // get list of flagged input files to determine the latest last modified
         // time
-        List<File> flaggedFiles = FlagFileTestHelper.retrieveFlaggedFiles(flagMakerConfig);
+        List<File> flaggedFiles = FlagFileTestInspector.listFlaggedFiles(flagMakerConfig);
         long flaggedFilesLargestLastModified = flaggedFiles.stream().map(File::lastModified).reduce(Math::max).get();
 
         // get the last modified time for the flag file
-        File[] flagFiles = FlagFileTestHelper.listFlagFiles(flagMakerConfig);
-        long flagFileLastModified = flagFiles[0].lastModified();
+        List<File> flagFiles = FlagFileTestInspector.listFlagFiles(flagMakerConfig);
+        long flagFileLastModified = flagFiles.get(0).lastModified();
 
         // verity expectations
         assertEquals(flaggedFilesLargestLastModified, flagFileLastModified);
@@ -187,7 +186,7 @@ public class FlagFileWriterTest {
         new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
 
         // verify file extension
-        String flagFileName = FlagFileTestHelper.listFlagFiles(flagMakerConfig)[0].getName();
+        String flagFileName = FlagFileTestInspector.listFlagFiles(flagMakerConfig).get(0).getName();
         String expectedExtension = ".flag";
         assertTrue("Did not contain proper file extension", flagFileName.endsWith(expectedExtension));
     }
@@ -198,7 +197,7 @@ public class FlagFileWriterTest {
         expectedFileContents = expectedFileContents.replaceAll("target/test/BulkIngest", "target/" + subdirectoryName + "/test/BulkIngest");
 
         // load contents of flag file
-        File flagFile = FlagFileTestHelper.listFlagFiles(this.flagMakerConfig)[0];
+        File flagFile = FlagFileTestInspector.listFlagFiles(this.flagMakerConfig).get(0);
         final String actualFileContents = new String(Files.readAllBytes(Paths.get(flagFile.getPath())));
 
         // compare
@@ -215,7 +214,7 @@ public class FlagFileWriterTest {
         // filesPerDay in bar
         flagFileTestSetup.withPredicableInputFilenames().withFilesPerDay(filesPerDay).withNumDays(1).createTestFiles();
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
-        sortedFiles.addAll(FlagFileTestHelper.listSortedInputFiles(flagMakerConfig, fs));
+        sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(flagMakerConfig, fs));
         // verify file creation
         assertNotNull(sortedFiles);
         assertEquals(2 * filesPerDay, sortedFiles.size());

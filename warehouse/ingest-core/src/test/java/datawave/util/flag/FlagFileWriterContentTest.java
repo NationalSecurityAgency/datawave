@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.TreeSet;
 
 import org.junit.After;
@@ -41,7 +42,7 @@ public class FlagFileWriterContentTest {
     public void before() throws Exception {
         flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig()
                         .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
-        flagMakerConfig = flagFileTestSetup.fmc;
+        flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
         this.inputFiles = createInputFiles();
     }
@@ -72,7 +73,7 @@ public class FlagFileWriterContentTest {
 
         new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
 
-        File flag = findFlagFile();
+        File flag = FlagFileTestInspector.getOnlyFlagFile(this.flagMakerConfig);
         // @formatter:off
 		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
 				.withBeginning(EXPECTED_BEGINNING).withFiles(inputFiles)
@@ -117,23 +118,15 @@ public class FlagFileWriterContentTest {
 				.withFileOrdering(false).withFileMarker(false);
 		// @formatter:on
 
-        File flag = findFlagFile();
+        File flag = FlagFileTestInspector.getOnlyFlagFile(this.flagMakerConfig);
         flagFileContentExpectations.assertFlagFileContents(flag);
-    }
-
-    private File findFlagFile() {
-        File[] flagFiles = FlagFileTestHelper.listFlagFiles(flagFileTestSetup.fmc);
-        assertNotNull(flagFiles);
-        assertEquals(1, flagFiles.length);
-
-        return flagFiles[0];
     }
 
     private TreeSet<InputFile> createInputFiles() throws IOException {
         // creates 10 files: 5 in foo, 5 in bar
         flagFileTestSetup.withFilesPerDay(5).withNumDays(1).createTestFiles();
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
-        sortedFiles.addAll(FlagFileTestHelper.listSortedInputFiles(flagFileTestSetup.fmc, flagFileTestSetup.fs));
+        sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(this.flagMakerConfig, flagFileTestSetup.getFileSystem()));
         // verify file creation
         assertNotNull(sortedFiles);
         assertEquals(10, sortedFiles.size());

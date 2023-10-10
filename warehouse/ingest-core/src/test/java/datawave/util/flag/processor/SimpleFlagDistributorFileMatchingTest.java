@@ -37,7 +37,7 @@ public class SimpleFlagDistributorFileMatchingTest {
     @Before
     public void setup() throws Exception {
         this.flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig();
-        FlagMakerConfig fmc = flagFileTestSetup.fmc;
+        FlagMakerConfig fmc = flagFileTestSetup.getFlagMakerConfig();
         fmc.validate(); // modifies FlagDataTypeConfig.folders by changing from
                         // String to List<String>, splitting on comma
 
@@ -140,7 +140,7 @@ public class SimpleFlagDistributorFileMatchingTest {
             boolean flagMakerHasFile = this.flagDistributor.hasNext(NOT_MUST_HAVE_MAX);
             assertTrue("FlagMaker didn't accept expected file: " + relativePathStr, flagMakerHasFile);
 
-            Collection<InputFile> result = this.flagDistributor.next(new SizeValidatorImpl(new Configuration(), this.flagFileTestSetup.fmc));
+            Collection<InputFile> result = this.flagDistributor.next(new SizeValidatorImpl(new Configuration(), this.flagFileTestSetup.getFlagMakerConfig()));
             assertEquals("expected only single file", 1, result.size());
             String actualFileName = result.iterator().next().getPath().toString();
             assertTrue("File name unexpectedly altered: \n" + actualFileName + "\n" + relativePathStr, actualFileName.endsWith(relativePathStr));

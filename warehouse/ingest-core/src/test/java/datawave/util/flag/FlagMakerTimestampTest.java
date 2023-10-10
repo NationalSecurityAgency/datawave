@@ -8,6 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang.math.LongRange;
@@ -75,28 +76,28 @@ public class FlagMakerTimestampTest {
     public void verifyFlagFileTimestamp() throws Exception {
         createInputFiles();
         configureFlagMakerWithParameters();
-        File[] flagFiles = runFlagMaker();
-        assertEquals("Incorrect number of flagFiles.  Found files: " + FlagFileTestHelper.logFiles(flagFiles), 2, flagFiles.length);
+        List<File> flagFiles = runFlagMaker();
+        assertEquals("Incorrect number of flagFiles.  Found files: " + FlagFileTestInspector.logFiles(flagFiles), 2, flagFiles.size());
         assertFlagFilesTimestampInExpectedRange(flagFiles, determineExpectedRange());
     }
 
     private void createInputFiles() throws IOException {
-        // two days, 5 files each day, two folders in fmc = 20 flags
+        // two days, 5 files each day, two folders in getFlagMakerConfig() = 20 flags
         flagMakerTestSetup.withFilesPerDay(5).withNumDays(2).createTestFiles();
     }
 
     private void configureFlagMakerWithParameters() {
         // true by default - use latest last modified for input files
-        this.setFlagFileTimestamp.ifPresent(aBoolean -> flagMakerTestSetup.fmc.setSetFlagFileTimestamp(aBoolean));
+        this.setFlagFileTimestamp.ifPresent(aBoolean -> flagMakerTestSetup.getFlagMakerConfig().setSetFlagFileTimestamp(aBoolean));
         // false by default - use the folder's timestamp regardless of input
         // files
-        this.useFolderTime.ifPresent(aBoolean -> flagMakerTestSetup.fmc.setUseFolderTimestamp(aBoolean));
+        this.useFolderTime.ifPresent(aBoolean -> flagMakerTestSetup.getFlagMakerConfig().setUseFolderTimestamp(aBoolean));
     }
 
-    private File[] runFlagMaker() throws Exception {
-        FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.fmc);
+    private List<File> runFlagMaker() throws Exception {
+        FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.getFlagMakerConfig());
         flagMaker.processFlags();
-        return FlagFileTestHelper.listFlagFiles(this.flagMakerTestSetup.fmc);
+        return FlagFileTestInspector.listFlagFiles(this.flagMakerTestSetup.getFlagMakerConfig());
     }
 
     private LongRange determineExpectedRange() {
@@ -110,10 +111,10 @@ public class FlagMakerTimestampTest {
         return range;
     }
 
-    private void assertFlagFilesTimestampInExpectedRange(File[] flagFiles, LongRange expectedTimestampRange) {
+    private void assertFlagFilesTimestampInExpectedRange(List<File> flagFiles, LongRange expectedTimestampRange) {
         for (File file : flagFiles) {
             if (file.getName().endsWith(".flag")) {
-                if (!this.setFlagFileTimestamp.isPresent() || this.setFlagFileTimestamp.get()) {
+                if (this.setFlagFileTimestamp.isEmpty() || this.setFlagFileTimestamp.get()) {
                     assertTrue(expectedTimestampRange.containsLong(file.lastModified()));
                 } else {
                     assertFalse(expectedTimestampRange.containsLong(file.lastModified()));

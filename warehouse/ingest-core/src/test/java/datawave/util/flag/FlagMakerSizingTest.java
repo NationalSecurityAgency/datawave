@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.Test;
@@ -102,7 +103,7 @@ public class FlagMakerSizingTest {
      */
     @Test
     public void verifyProperFlagFileSizing() throws Exception {
-        FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.fmc);
+        FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.getFlagMakerConfig());
 
         // generate 8 input files, below the "full" threshold
         flagMakerTestSetup.withFilesPerDay(2).withNumDays(2).createTestFiles();
@@ -134,7 +135,7 @@ public class FlagMakerSizingTest {
 
     private int countNumFlagsOfSize(int expectedSizeOfFlagFile) {
         int numFoundWithExpectedSize = 0;
-        for (File file : FlagFileTestHelper.listFlagFiles(this.flagMakerTestSetup.fmc)) {
+        for (File file : FlagFileTestInspector.listFlagFiles(this.flagMakerTestSetup.getFlagMakerConfig())) {
             if (file.getName().endsWith("+" + expectedSizeOfFlagFile + ".flag")) {
                 numFoundWithExpectedSize++;
             }
@@ -143,12 +144,12 @@ public class FlagMakerSizingTest {
     }
 
     private void assertNumOfFlagFiles(int expectedNumber) {
-        File[] files = FlagFileTestHelper.listFlagFiles(this.flagMakerTestSetup.fmc);
-        assertEquals(generateMessage(files), expectedNumber, files.length);
+        List<File> files = FlagFileTestInspector.listFlagFiles(this.flagMakerTestSetup.getFlagMakerConfig());
+        assertEquals(generateMessage(files), expectedNumber, files.size());
     }
 
-    private String generateMessage(File[] files) {
+    private String generateMessage(List<File> files) {
         String testCaseDetails = "Expected " + (expectOnlyFullFlagFiles ? "only full" : "partials allowed") + ": " + this.testDescription;
-        return "Unexpected number of flag files (" + files.length + "): " + Arrays.toString(files) + "\n" + testCaseDetails;
+        return "Unexpected number of flag files (" + files.size() + "): " + files + "\n" + testCaseDetails;
     }
 }

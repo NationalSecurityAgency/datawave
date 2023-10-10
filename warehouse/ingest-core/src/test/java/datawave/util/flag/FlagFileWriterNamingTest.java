@@ -39,10 +39,10 @@ public class FlagFileWriterNamingTest {
         inputFiles = createInputFiles(flagFileTestSetup);
 
         // write a flag file with FlagFileWriter
-        new FlagFileWriter(flagFileTestSetup.fmc).writeFlagFile(dataTypeConfig, inputFiles);
+        new FlagFileWriter(flagFileTestSetup.getFlagMakerConfig()).writeFlagFile(dataTypeConfig, inputFiles);
 
         // capture the name of the flag file
-        this.flagFilePath = FlagFileTestHelper.getFlagFilePath(flagFileTestSetup.fmc);
+        this.flagFilePath = FlagFileTestInspector.getPathStringForOnlyFlagFile(flagFileTestSetup.getFlagMakerConfig());
     }
 
     @After
@@ -61,7 +61,7 @@ public class FlagFileWriterNamingTest {
                                                                                // in
                                                                                // bar
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
-        sortedFiles.addAll(FlagFileTestHelper.listSortedInputFiles(flagFileTestSetup.fmc, flagFileTestSetup.fs));
+        sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(flagFileTestSetup.getFlagMakerConfig(), flagFileTestSetup.getFileSystem()));
         // verify file creation
         assertNotNull(sortedFiles);
         assertEquals(10, sortedFiles.size());

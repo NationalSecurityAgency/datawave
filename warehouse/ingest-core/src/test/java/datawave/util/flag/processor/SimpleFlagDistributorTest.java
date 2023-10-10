@@ -44,11 +44,11 @@ public class SimpleFlagDistributorTest {
 
         flagMakerTestSetup = new FlagFileTestSetup();
         flagMakerTestSetup.withTestFlagMakerConfig().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
-        flagMakerTestSetup.fmc.validate();
+        flagMakerTestSetup.getFlagMakerConfig().validate();
 
-        this.simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.fmc);
+        this.simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.getFlagMakerConfig());
 
-        this.fooAndBarConfig = flagMakerTestSetup.fmc.getFlagConfigs().get(0);
+        this.fooAndBarConfig = flagMakerTestSetup.getFlagMakerConfig().getFlagConfigs().get(0);
 
         // assumption for multiple test cases
         assertEquals(FULL_BATCH, this.fooAndBarConfig.getMaxFlags());
@@ -65,8 +65,8 @@ public class SimpleFlagDistributorTest {
         flagMakerTestSetup.withFilesPerDay(0).withNumDays(numDirectories).createTestFiles();
 
         // verify test setup created directories
-        Path pathPattern = new Path(flagMakerTestSetup.fs.getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*"));
-        assertEquals(numDirectories, flagMakerTestSetup.fs.globStatus(pathPattern).length);
+        Path pathPattern = new Path(flagMakerTestSetup.getFileSystem().getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*"));
+        assertEquals(numDirectories, flagMakerTestSetup.getFileSystem().globStatus(pathPattern).length);
 
         // verify that nothing is loaded (directories are ignored)
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
@@ -92,10 +92,10 @@ public class SimpleFlagDistributorTest {
         flagMakerTestSetup.withFilesPerDay(6).withNumDays(1).createTestFiles();
 
         // verify test setup created files
-        Path pathPatternFolderOne = new Path(flagMakerTestSetup.fs.getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*/*"));
-        assertEquals(6, flagMakerTestSetup.fs.globStatus(pathPatternFolderOne).length);
-        Path pathPatternFolderTwo = new Path(flagMakerTestSetup.fs.getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(1) + "/*/*/*/*"));
-        assertEquals(6, flagMakerTestSetup.fs.globStatus(pathPatternFolderTwo).length);
+        Path pathPatternFolderOne = new Path(flagMakerTestSetup.getFileSystem().getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*/*"));
+        assertEquals(6, flagMakerTestSetup.getFileSystem().globStatus(pathPatternFolderOne).length);
+        Path pathPatternFolderTwo = new Path(flagMakerTestSetup.getFileSystem().getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(1) + "/*/*/*/*"));
+        assertEquals(6, flagMakerTestSetup.getFileSystem().globStatus(pathPatternFolderTwo).length);
 
         // verify that nothing is loaded (mismatching file names are ignored)
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
@@ -324,7 +324,7 @@ public class SimpleFlagDistributorTest {
         // do not create or load files
         FlagFileTestSetup flagMakerTestSetup = new FlagFileTestSetup();
         flagMakerTestSetup.withTestFlagMakerConfig();
-        SimpleFlagDistributor simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.fmc);
+        SimpleFlagDistributor simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.getFlagMakerConfig());
 
         // hasNext and next do not cause an error
         simpleFlagDistributor.next(SIZE_VALIDATOR);
@@ -335,7 +335,7 @@ public class SimpleFlagDistributorTest {
         // do not create or load files
         FlagFileTestSetup flagMakerTestSetup = new FlagFileTestSetup();
         flagMakerTestSetup.withTestFlagMakerConfig();
-        SimpleFlagDistributor simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.fmc);
+        SimpleFlagDistributor simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.getFlagMakerConfig());
 
         // hasNext and next do not cause an error
         assertFalse(simpleFlagDistributor.hasNext(false));

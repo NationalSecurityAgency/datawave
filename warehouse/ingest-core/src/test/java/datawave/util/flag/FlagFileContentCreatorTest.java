@@ -41,7 +41,7 @@ public class FlagFileContentCreatorTest {
     public void before() throws Exception {
         flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig()
                         .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
-        flagMakerConfig = flagFileTestSetup.fmc;
+        flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
         this.inputFiles = createInputFiles();
     }
@@ -87,7 +87,7 @@ public class FlagFileContentCreatorTest {
         // creates 10 files: 5 in foo, 5 in bar
         flagFileTestSetup.withFilesPerDay(5).withNumDays(1).createTestFiles();
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
-        sortedFiles.addAll(FlagFileTestHelper.listSortedInputFiles(flagFileTestSetup.fmc, flagFileTestSetup.fs));
+        sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(flagFileTestSetup.getFlagMakerConfig(), flagFileTestSetup.getFileSystem()));
         // verify file creation
         assertNotNull(sortedFiles);
         assertEquals(10, sortedFiles.size());
