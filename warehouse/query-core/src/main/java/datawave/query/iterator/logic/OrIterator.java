@@ -106,7 +106,7 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
             next();
         } catch (WaitWindowOverrunException e) {
             // if prev != null then it's a match that has not been returned
-            T lowest = includeHeads.keySet().first();
+            T lowest = includeHeads.isEmpty() ? null : includeHeads.keySet().first();
             Key possibleYieldKey = null;
             if (prev != null || lowest != null) {
                 possibleYieldKey = (prev != null) ? (Key) prev : (Key) lowest;
