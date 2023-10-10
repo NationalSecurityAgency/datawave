@@ -61,7 +61,7 @@ public class FlagEntryMoverTest {
         Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        testFileGenerator.createTrackedDirsForInputFile(entry);
+        testFileGenerator.createTrackedDirectoriesForInputFile(entry);
 
         FlagEntryMover instance = new FlagEntryMover(directoryCache, fs, entry);
         InputFile result = instance.call();
@@ -80,7 +80,7 @@ public class FlagEntryMoverTest {
         Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        testFileGenerator.createTrackedDirsForInputFile(entry);
+        testFileGenerator.createTrackedDirectoriesForInputFile(entry);
 
         fs.copyFromLocalFile(file, entry.getFlagging());
 
@@ -101,7 +101,7 @@ public class FlagEntryMoverTest {
         Path file = FlagFileTestInspector.getPathToAnyInputFile(fs, fmc);
 
         InputFile entry = new InputFile("foo", file, 0, 0, 0, fmc.getBaseHDFSDir());
-        testFileGenerator.createTrackedDirsForInputFile(entry);
+        testFileGenerator.createTrackedDirectoriesForInputFile(entry);
 
         // create conflict file with different checksum
         final Path loadFile = entry.getLoaded();

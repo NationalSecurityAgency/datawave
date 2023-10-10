@@ -3,14 +3,12 @@ package datawave.util.flag;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -22,29 +20,26 @@ import datawave.util.flag.config.FlagMakerConfig;
 import datawave.util.flag.config.FlagMakerConfigUtility;
 
 /**
- * Simplifies the loading of a sample flag maker configuration file as well as the generation of test files that align with the configuration.
+ * Assists with the loading of a sample flag maker configuration file,  as well as the generation of test files that align with the configuration.
  */
 public class FlagFileTestSetup {
     private static final Logger LOG = LoggerFactory.getLogger(FlagFileTestSetup.class);
-
     private static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
+
     private final FlagFileInputStructure flagFileInputStructure;
-    private final FlagMakerTimestampTracker timeTracker;
-
-    private boolean usePredicableInputFilenames = false;
-    private String subDirectoryName;
-
-    private int filesPerDay = 1;
-    private int numDays = 1;
+    private final FlagMakerTimestampTracker timestampTracker;
 
     private FlagMakerConfig fmc;
     private final FileSystem fs;
-
-    private String suffix = null;
+    private String subDirectoryName;
+    private String fileNameSuffix = null;
+    private boolean usePredicableInputFilenames = false;
+    private int numFilesPerDay = 1;
+    private int numDays = 1;
 
     public FlagFileTestSetup() {
-        timeTracker = new FlagMakerTimestampTracker();
-        flagFileInputStructure = new FlagFileInputStructure(this, timeTracker);
+        timestampTracker = new FlagMakerTimestampTracker();
+        flagFileInputStructure = new FlagFileInputStructure(this, timestampTracker);
 
         try {
             fs = FileSystem.getLocal(new Configuration());
@@ -97,7 +92,7 @@ public class FlagFileTestSetup {
     }
 
     public FlagFileTestSetup withFilesPerDay(int filesPerDay) {
-        this.filesPerDay = filesPerDay;
+        this.numFilesPerDay = filesPerDay;
         return this;
     }
 
@@ -139,7 +134,7 @@ public class FlagFileTestSetup {
     }
 
     public FlagFileTestSetup withTestFileNameSuffix(String suffix) {
-        this.suffix = suffix;
+        this.fileNameSuffix = suffix;
         return this;
     }
 
@@ -149,17 +144,16 @@ public class FlagFileTestSetup {
     }
 
     protected String getTestFileNameSuffix() {
-        return this.suffix;
+        return this.fileNameSuffix;
     }
 
     protected int getNumDays() {
         return numDays;
     }
 
-    protected int getFilesPerDay() {
-        return filesPerDay;
+    protected int getNumFilesPerDay() {
+        return numFilesPerDay;
     }
-
 
     public FlagMakerConfig getFlagMakerConfig() {
         return fmc;
@@ -169,7 +163,7 @@ public class FlagFileTestSetup {
         return fs;
     }
 
-    public boolean isPredicableInputFilenames() {
+    public boolean arePredicableInputFilenames() {
         return this.usePredicableInputFilenames;
     }
 
@@ -178,9 +172,31 @@ public class FlagFileTestSetup {
         flagFileInputStructure.createAdditionalTestFiles();
     }
 
+    public void createAdditionalTestFiles() throws IOException {
+        this.flagFileInputStructure.createAdditionalTestFiles();
+    }
+
+    public Collection<String> getNamesOfCreatedFiles() {
+        return new ArrayList<>(flagFileInputStructure.getNamesOfCreatedFiles());
+    }
+
+    public void deleteTestDirectories() throws IOException {
+        flagFileInputStructure.deleteTestDirectories();
+    }
+
+    public void createTrackedDirectoriesForInputFile(InputFile inputFile) throws IOException {
+        final Path[] directories = {inputFile.getFlagged(), inputFile.getFlagging(), inputFile.getLoaded()};
+        for (final Path directory : directories) {
+            final Path parentDirectory = directory.getParent();
+            if (!fs.mkdirs(parentDirectory)) {
+                throw new IllegalStateException("unable to create tracked directory (" + parentDirectory + ")");
+            }
+        }
+    }
+
     public FlagDataTypeConfig getInheritedDataTypeConfig() {
-        fmc.validate(); // causes datatype configs, like foo, to inherit
-                        // properties from default Config
+        // causes datatype configs, like foo, to inherit properties from default Config
+        fmc.validate();
         // typically foo is the first
         FlagDataTypeConfig dataTypeConfig = fmc.getFlagConfigs().get(0);
         // verify set up
@@ -190,49 +206,22 @@ public class FlagFileTestSetup {
     }
 
     public long getMinFolderTime() {
-        return this.timeTracker.minFolderTime;
+        return this.timestampTracker.minFolderTime;
     }
 
     public long getMaxFolderTime() {
-        return this.timeTracker.maxFolderTime;
+        return this.timestampTracker.maxFolderTime;
     }
 
     public long getMinLastModified() {
-        return this.timeTracker.minLastModified;
+        return this.timestampTracker.minLastModified;
     }
 
     public long getMaxLastModified() {
-        return this.timeTracker.maxLastModified;
+        return this.timestampTracker.maxLastModified;
     }
+
     public Collection<Long> getLastModifiedTimes() {
-        return timeTracker.fileLastModifiedTimes;
-    }
-
-    public Collection<String> getNamesOfCreatedFiles() {
-        return new ArrayList<>(flagFileInputStructure.getNamesOfCreatedFiles());
-    }
-
-    public void deleteTestDirectories() throws IOException {
-        for (String directory : new String[] {fmc.getBaseHDFSDir(), fmc.getFlagFileDirectory(), fmc.getFlagMetricsDirectory()}) {
-            File f = new File(directory);
-            if (f.exists()) {
-                // commons io has recursive delete.
-                FileUtils.deleteDirectory(f);
-            }
-        }
-    }
-
-    public void createAdditionalTestFiles() throws IOException {
-        this.flagFileInputStructure.createAdditionalTestFiles();
-    }
-
-    public void createTrackedDirsForInputFile(InputFile inputFile) throws IOException {
-        final Path[] dirs = {inputFile.getFlagged(), inputFile.getFlagging(), inputFile.getLoaded()};
-        for (final Path dir : dirs) {
-            final Path p = dir.getParent();
-            if (!fs.mkdirs(p)) {
-                throw new IllegalStateException("unable to create tracked directory (" + dir.getParent() + ")");
-            }
-        }
+        return timestampTracker.fileLastModifiedTimes;
     }
 }

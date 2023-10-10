@@ -3,7 +3,7 @@ package datawave.util.flag.config;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -71,7 +71,7 @@ public class FlagMakerConfig {
     // maximum cache of HDFS directory cache size
     protected int directoryCacheSize = 2000;
     // directory cache timeout. Default is 2 Hours
-    protected long directoryCacheTimeout = (2 * 60 * 60 * 1000);
+    protected long directoryCacheTimeout = TimeUnit.HOURS.toMillis(2);
     // implementation of FlagMaker to run
     private String flagMakerClass = FlagMaker.class.getName();
 

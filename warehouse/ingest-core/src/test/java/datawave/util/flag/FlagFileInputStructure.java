@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Contains code to assist with creating input files and input directory structure for flag maker tests
@@ -24,8 +25,7 @@ public class FlagFileInputStructure {
     private static final String MONTH = "01";
     private static final String DATE_PATH = YEAR + "/" + MONTH;
 
-    private static final long ONE_DAY_IN_MILLIS = 24 * 60 * 60 * 1000L;
-    private static final long TIME_OFFSET_OF_FILES_IN_FOLDER = (10 * ONE_DAY_IN_MILLIS);
+    private static final long TIME_OFFSET_OF_FILES_IN_FOLDER = TimeUnit.DAYS.toMillis(10);
 
     private final FlagFileTestSetup flagFileTestSetup;
     private final FlagMakerTimestampTracker timeTracker;
@@ -72,7 +72,7 @@ public class FlagFileInputStructure {
         numFoldersCreated += inputDirs.size();
 
         for (File inputDir : inputDirs) {
-            createDirectoriesAndFilesForSpecifiedDays(inputDir, flagFileTestSetup.getNumDays(), flagFileTestSetup.getFilesPerDay());
+            createDirectoriesAndFilesForSpecifiedDays(inputDir, flagFileTestSetup.getNumDays(), flagFileTestSetup.getNumFilesPerDay());
         }
 
         LOG.info("Created " + numFoldersCreated + " folders and " + createdFiles.size() + " files (cumulative).");
@@ -116,7 +116,7 @@ public class FlagFileInputStructure {
      * @return timestamp to use for files = date of folder, e.g. 2013/01/09, plus an offset
      */
     private long getTimestampForFilesInDirectory(int dayNumber) {
-        long timestampOfDateInFolderPath = ONE_DAY_IN_MILLIS * LocalDate.of(Integer.parseInt(YEAR), Integer.parseInt(MONTH), dayNumber).toEpochDay();
+        long timestampOfDateInFolderPath = TimeUnit.DAYS.toMillis(LocalDate.of(Integer.parseInt(YEAR), Integer.parseInt(MONTH), dayNumber).toEpochDay());
         timeTracker.reportDateForFolder(timestampOfDateInFolderPath);
 
         return timestampOfDateInFolderPath + TIME_OFFSET_OF_FILES_IN_FOLDER;
@@ -148,7 +148,7 @@ public class FlagFileInputStructure {
 
     private String createFileName() {
         String result;
-        if (flagFileTestSetup.isPredicableInputFilenames()) {
+        if (flagFileTestSetup.arePredicableInputFilenames()) {
             result = new UUID(0, createdFiles.size()).toString();
         } else {
             result = UUID.randomUUID().toString();
@@ -169,5 +169,21 @@ public class FlagFileInputStructure {
             }
         }
         return directory;
+    }
+
+    public void deleteTestDirectories() throws IOException {
+        String[] directories = {
+                this.flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir(),
+                this.flagFileTestSetup.getFlagMakerConfig().getFlagFileDirectory(),
+                this.flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory()
+        };
+
+        for (String directory : directories) {
+            File f = new File(directory);
+            if (f.exists()) {
+                // commons io has recursive delete.
+                FileUtils.deleteDirectory(f);
+            }
+        }
     }
 }
