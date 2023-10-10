@@ -447,14 +447,14 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             results.clear();
     }
     
-    public TreeMap<String,QueryLogic<?>> getQueryLogics() {
+    public Map<String,QueryLogic<?>> getQueryLogics() {
         TreeMap<String,QueryLogic<?>> logics = new TreeMap<>();
         logics.putAll(getUninitializedLogics());
         logics.putAll(getInitializedLogics());
         return logics;
     }
     
-    public TreeMap<String,QueryLogic<?>> getAllQueryLogics() {
+    public Map<String,QueryLogic<?>> getAllQueryLogics() {
         TreeMap<String,QueryLogic<?>> logics = new TreeMap<>();
         logics.putAll(getUninitializedLogics());
         logics.putAll(getInitializedLogics());
