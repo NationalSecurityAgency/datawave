@@ -166,7 +166,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
     private CompositeQueryConfiguration config;
     
-    private TreeMap<String,QueryLogic<?>> queryLogics = null;
+    private Map<String,QueryLogic<?>> queryLogics = null;
     
     private QueryLogicTransformer transformer;
     private Priority p = Priority.NORMAL;
@@ -239,10 +239,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         
         Map<String,Exception> exceptions = new HashMap<>();
         if (!getUninitializedLogics().isEmpty()) {
-            int countNewInitialized = 0;
-            Iterator<Map.Entry<String,QueryLogic<?>>> itr = getUninitializedLogics().entrySet().iterator();
-            while (itr.hasNext()) {
-                Map.Entry<String,QueryLogic<?>> next = itr.next();
+            for (Map.Entry<String,QueryLogic<?>> next : getUninitializedLogics().entrySet()) {
                 String logicName = next.getKey();
                 QueryLogic<?> logic = next.getValue();
                 GenericQueryConfiguration config = null;
@@ -264,7 +261,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     holder.setSettings(settingsCopy);
                     holder.setMaxResults(logic.getMaxResults());
                     logicState.put(logicName, holder);
-                    countNewInitialized++;
                     
                     // if doing sequential execution, then stop since we have one initialized
                     if (isSequentialExecution()) {
@@ -276,7 +272,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     log.error("Failed to initialize " + logic.getClass().getName(), e);
                     failedQueryLogics.put(logicName, logic);
                 } finally {
-                    itr.remove();
+                    queryLogics.remove(next.getKey());
                 }
             }
             
@@ -476,7 +472,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     
     public Map<String,QueryLogic<?>> getUninitializedLogics() {
         if (queryLogics != null) {
-            return queryLogics;
+            return new TreeMap<>(queryLogics);
         } else {
             return new TreeMap<>();
         }
@@ -517,11 +513,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     @Override
     public boolean canRunQuery(Principal principal) {
         // user can run this composite query if they can run at least one of the configured query logics
-        Iterator<QueryLogic<?>> itr = getUninitializedLogics().values().iterator();
-        while (itr.hasNext()) {
-            QueryLogic<?> logic = itr.next();
-            if (!logic.canRunQuery(principal)) {
-                itr.remove();
+        for (Map.Entry<String,QueryLogic<?>> entry : getUninitializedLogics().entrySet()) {
+            if (!entry.getValue().canRunQuery(principal)) {
+                queryLogics.remove(entry.getKey());
             }
         }
         return (!getUninitializedLogics().isEmpty());
