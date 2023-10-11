@@ -18,6 +18,7 @@ import datawave.query.attributes.Document;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.util.TypeMetadata;
 
 /**
@@ -27,7 +28,7 @@ import datawave.query.util.TypeMetadata;
  */
 public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     private static final Logger log = Logger.getLogger(EventDataQueryExpressionFilter.class);
-    private Map<String,PeekingPredicate<Key>> filters = null;
+    private Map<String,ExpressionFilter> filters = null;
     private boolean initialized = false;
     private Set<String> nonEventFields;
 
@@ -73,7 +74,7 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         return true;
     }
 
-    protected void setFilters(Map<String,? extends PeekingPredicate<Key>> fieldFilters) {
+    protected void setFilters(Map<String,ExpressionFilter> fieldFilters) {
         if (this.initialized) {
             throw new RuntimeException("This Projection instance was already initialized");
         }
@@ -82,7 +83,7 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         this.initialized = true;
     }
 
-    protected Map<String,PeekingPredicate<Key>> getFilters() {
+    protected Map<String,ExpressionFilter> getFilters() {
         return Collections.unmodifiableMap(this.filters);
     }
 
@@ -106,11 +107,14 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         }
 
         final DatawaveKey datawaveKey = new DatawaveKey(key);
+        // FIELD_NAME.0
+        // FIELD_NAME.1 = deconstruct identifier = remove dot number from end of field name
         final String fieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
+        final String fieldValue = datawaveKey.getFieldValue();
         if (update) {
-            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).apply(key);
+            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).apply(key, fieldName, fieldValue);
         } else {
-            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).peek(key);
+            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).peek(key, fieldName, fieldValue);
         }
     }
 
