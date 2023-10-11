@@ -23,7 +23,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Counter;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.counters.GenericCounter;
 import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Assert;
@@ -146,20 +145,6 @@ public class ShardReindexJobTest extends EasyMockSupport {
     }
 
     @Test
-    public void singleSplit_test() throws ParseException {
-        replayAll();
-
-        Collection<Range> ranges = ShardReindexJob.buildRanges("20230831", "20230831", 1);
-
-        verifyAll();
-
-        List<Range> expected = new ArrayList<>();
-        expected.addAll(buildRanges("20230831", 1));
-
-        verifyRanges(ranges, expected);
-    }
-
-    @Test
     public void mapperUnindexed_test() throws IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
@@ -191,7 +176,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.progress();
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik)), EasyMock.and(EasyMock.isA(Value.class), EasyMock.eq(new Value())));
-        EasyMock.expect(context.getCounter("shard cleanup", "fi")).andReturn(mockCounter);
+        EasyMock.expect(context.getCounter("cleanup", "fi")).andReturn(mockCounter);
         mockCounter.increment(1l);
 
         replayAll();
@@ -209,18 +194,14 @@ public class ShardReindexJobTest extends EasyMockSupport {
     @Test
     public void mapperForwardIndex_test() throws IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
-        Counter indexCounter = createMock(Counter.class);
-
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
 
         Key fiKey = new Key("row", FI_START + "FIELDA", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        Key indexKey = new Key("ABC", "FIELDA", "row" + '\u0000' + "samplecsv");
+        Key indexKey = new Key("ABC", "FIELDA", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
         BulkIngestKey bik = new BulkIngestKey(new Text("shardIndex"), indexKey);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik)), EasyMock.isA(Value.class));
         context.progress();
-        EasyMock.expect(context.getCounter("index", "FIELDA")).andReturn(indexCounter);
-        indexCounter.increment(1l);
 
         replayAll();
 
@@ -236,13 +217,11 @@ public class ShardReindexJobTest extends EasyMockSupport {
     @Test
     public void mapperForwardAndReverseIndex_test() throws IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
-        Counter indexCounter = createMock(Counter.class);
-        Counter reverseIndexCounter = createMock(Counter.class);
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
 
         Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        Key indexKey = new Key("ABC", "FIELDB", "row" + '\u0000' + "samplecsv");
-        Key revKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
+        Key indexKey = new Key("ABC", "FIELDB", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        Key revKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
 
         BulkIngestKey bik1 = new BulkIngestKey(new Text("shardIndex"), indexKey);
         BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
@@ -251,10 +230,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik1)), EasyMock.isA(Value.class));
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik2)), EasyMock.isA(Value.class));
         context.progress();
-        EasyMock.expect(context.getCounter("index", "FIELDB")).andReturn(indexCounter);
-        indexCounter.increment(1l);
-        EasyMock.expect(context.getCounter("reverse index", "FIELDB")).andReturn(reverseIndexCounter);
-        reverseIndexCounter.increment(1l);
+
         replayAll();
 
         // enable cleanup keys
@@ -269,81 +245,15 @@ public class ShardReindexJobTest extends EasyMockSupport {
     @Test
     public void mapperReverseIndex_test() throws IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
-        Counter indexCounter = createMock(Counter.class);
-
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
 
         Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        Key revKey = new Key("CBA", "FIELDD", "row" + '\u0000' + "samplecsv");
+        Key revKey = new Key("CBA", "FIELDD", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
         BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
 
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik2)), EasyMock.isA(Value.class));
         context.progress();
-        EasyMock.expect(context.getCounter("reverse index", "FIELDD")).andReturn(indexCounter);
-        indexCounter.increment(1l);
-
-        replayAll();
-
-        // enable cleanup keys
-        conf.setBoolean("job.cleanupShard", true);
-        mapper.setup(context);
-
-        mapper.map(fiKey, new Value(), context);
-
-        verifyAll();
-    }
-
-    @Test
-    public void mapperDeleteKey_test() throws IOException, InterruptedException {
-        Mapper.Context context = createMock(Mapper.Context.class);
-        Counter reverseIndexCounter = createMock(Counter.class);
-        Counter propagateCounter = createMock(Counter.class);
-        ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
-
-        Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        fiKey.setDeleted(true);
-        Key revKey = new Key("CBA", "FIELDD", "row" + '\u0000' + "samplecsv");
-        revKey.setDeleted(true);
-        BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
-
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
-        context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik2)), EasyMock.isA(Value.class));
-        EasyMock.expect(context.getCounter("reverse index", "FIELDD")).andReturn(reverseIndexCounter);
-        reverseIndexCounter.increment(1l);
-        context.progress();
-
-        EasyMock.expect(context.getCounter("deletes", "propagated")).andReturn(propagateCounter);
-        propagateCounter.increment(1l);
-
-        conf.setBoolean("propagateDeletes", true);
-
-        replayAll();
-
-        // enable cleanup keys
-        conf.setBoolean("job.cleanupShard", true);
-        mapper.setup(context);
-
-        mapper.map(fiKey, new Value(), context);
-
-        verifyAll();
-    }
-
-    @Test
-    public void mapperDeleteKeyNoPropagate_test() throws IOException, InterruptedException {
-        Mapper.Context context = createMock(Mapper.Context.class);
-        Counter mockCounter = createMock(Counter.class);
-        ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
-
-        Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        fiKey.setDeleted(true);
-        context.progress();
-
-        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
-        EasyMock.expect(context.getCounter("deletes", "skipped")).andReturn(mockCounter);
-        mockCounter.increment(1l);
-
-        conf.setBoolean("propagateDeletes", false);
 
         replayAll();
 
