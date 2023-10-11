@@ -299,19 +299,10 @@ public class IngestJob implements Tool {
             return -1;
         }
 
-        TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
-        tableConfigUtil.registerTableNamesFromConfigFiles(conf);
-        tableNames = tableConfigUtil.getJobOutputTableNames(conf);
-
+        this.tableNames = setupAndCacheTables(conf, createTables);
         if (createTables) {
-            boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);
-            if (!wasConfigureTablesSuccessful) {
-                return -1;
-            } else
-                log.info("Created tables: " + tableNames + " successfully!");
+            log.info("Created tables: " + tableNames + " successfully!");
         }
-
-        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
 
         // get the source and output hadoop file systems
         FileSystem inputFs = getFileSystem(conf, srcHdfs);
@@ -1354,6 +1345,24 @@ public class IngestJob implements Tool {
         }
         MultiRFileOutputFormatter.setRFileLimits(config, maxEntries, maxSize);
         MultiRFileOutputFormatter.setGenerateMapFileRowKeys(config, generateMapFileRowKeys);
+    }
+
+    public static Set<String> setupAndCacheTables(Configuration conf, boolean createTables)
+                    throws IOException, AccumuloException, TableNotFoundException, AccumuloSecurityException {
+        TableConfigurationUtil tableConfigUtil = new TableConfigurationUtil(conf);
+        tableConfigUtil.registerTableNamesFromConfigFiles(conf);
+        Set<String> tableNames = tableConfigUtil.getJobOutputTableNames(conf);
+
+        if (createTables) {
+            boolean wasConfigureTablesSuccessful = tableConfigUtil.configureTables(conf);
+            if (!wasConfigureTablesSuccessful) {
+                throw new RuntimeException("Could not create tables");
+            }
+        }
+
+        tableConfigUtil.serializeTableConfgurationIntoConf(conf);
+
+        return tableNames;
     }
 
     protected void startDaemonProcesses(Configuration configuration) {
