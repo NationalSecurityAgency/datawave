@@ -221,7 +221,6 @@ public class FlagMakerConfigUtilityTest {
         String overrideSocket = "12345";
         String overrideSleepMillis = "987654321";
 
-
         // @formatter:off
         FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility
                 .parseArgs(new String[]{

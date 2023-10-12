@@ -1,6 +1,19 @@
 package datawave.util.flag;
 
-import datawave.common.test.integration.IntegrationTest;
+import static datawave.util.flag.config.FlagMakerConfigUtilityTest.TEST_CONFIG;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.net.Socket;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -12,22 +25,10 @@ import org.junit.rules.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Stream;
-
-import static datawave.util.flag.config.FlagMakerConfigUtilityTest.TEST_CONFIG;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import datawave.common.test.integration.IntegrationTest;
 
 /**
- * Tests FlagMaker's behavior in response to socket messaging.  It currently supports "shutdown" and "kill dataTypeName"
+ * Tests FlagMaker's behavior in response to socket messaging. It currently supports "shutdown" and "kill dataTypeName"
  */
 @Category(IntegrationTest.class)
 public class FlagMakerSocketIntegrationTest {
@@ -154,14 +155,14 @@ public class FlagMakerSocketIntegrationTest {
         assertZeroFlagFilesCreated();
     }
 
-    private Thread startFlagMakerThread(String ... additionalArguments) {
+    private Thread startFlagMakerThread(String... additionalArguments) {
         Thread thread = createFlagMakerThread(additionalArguments);
         thread.start();
         assertTrue(thread.isAlive());
         return thread;
     }
 
-    private Thread createFlagMakerThread(String ... additionalArguments) {
+    private Thread createFlagMakerThread(String... additionalArguments) {
         return new Thread(() -> {
             try {
                 String[] args = {"-flagConfig", TEST_CONFIG, "-socket", Integer.toString(socketPort), "-sleepMilliSecs", Long.toString(FLAG_MAKER_INTERVAL)};
@@ -182,7 +183,7 @@ public class FlagMakerSocketIntegrationTest {
     }
 
     private void assertFlagMakerStops(Thread thread) throws InterruptedException {
-        // verify it stopped.  wait up to two full flag maker intervals, longer than worst case scenario
+        // verify it stopped. wait up to two full flag maker intervals, longer than worst case scenario
         Thread.sleep(MINIMUM_WAIT_TIME);
         assertFalse(thread.isAlive());
     }

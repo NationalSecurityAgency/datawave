@@ -1,11 +1,5 @@
 package datawave.util.flag;
 
-import datawave.util.StringUtils;
-import datawave.util.flag.config.FlagDataTypeConfig;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,6 +8,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import datawave.util.StringUtils;
+import datawave.util.flag.config.FlagDataTypeConfig;
 
 /**
  * Contains code to assist with creating input files and input directory structure for flag maker tests
@@ -112,7 +113,8 @@ public class FlagFileInputStructure {
     }
 
     /**
-     * @param dayNumber day of the month
+     * @param dayNumber
+     *            day of the month
      * @return timestamp to use for files = date of folder, e.g. 2013/01/09, plus an offset
      */
     private long getTimestampForFilesInDirectory(int dayNumber) {
@@ -172,11 +174,13 @@ public class FlagFileInputStructure {
     }
 
     public void deleteTestDirectories() throws IOException {
+        // @formatter:off
         String[] directories = {
                 this.flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir(),
                 this.flagFileTestSetup.getFlagMakerConfig().getFlagFileDirectory(),
                 this.flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory()
         };
+        // @formatter:on
 
         for (String directory : directories) {
             File f = new File(directory);

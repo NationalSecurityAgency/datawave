@@ -53,8 +53,7 @@ public class FlagMakerTest {
         FlagDataTypeConfig flagDataTypeConfig = flagMakerTestSetup.getFlagMakerConfig().getFlagConfigs().get(0);
         // by setting the timeout to -1, the FlagMaker will use whatever files
         // it has without waiting to create a full sized file
-        flagDataTypeConfig.setTimeoutMilliSecs(-1); // timeout will have always
-                                                    // occurred
+        flagDataTypeConfig.setTimeoutMilliSecs(-1); // timeout will have always occurred
 
         // verify test assumptions
         for (FlagDataTypeConfig flagConfig : flagMakerTestSetup.getFlagMakerConfig().getFlagConfigs()) {
@@ -103,8 +102,7 @@ public class FlagMakerTest {
         flagMaker.config.set("mapreduce.job.counters.max", Integer.toString(COUNTER_LIMIT));
         flagMaker.processFlags();
 
-        // Inspect resultant flag files, counter the number sized to exactly
-        // "expectedMax"
+        // Inspect resultant flag files, counter the number sized to exactly "expectedMax"
         List<File> files = FlagFileTestInspector.listFlagFiles(this.flagMakerTestSetup.getFlagMakerConfig());
         assertEquals("Unexpected number of files: " + FlagFileTestInspector.logFiles(files), (totalCreatedFiles / expectedMax), files.size());
         for (File file : files) {
@@ -118,13 +116,10 @@ public class FlagMakerTest {
 
         // Set the maximum flag file length to hold no more than the expected
         // size of a flag file containing 5 input files
-        flagMakerTestSetup.getFlagMakerConfig().setMaxFileLength(expectedFlagFileLength + 1); // one
-                                                                             // character
-                                                                             // larger
+        flagMakerTestSetup.getFlagMakerConfig().setMaxFileLength(expectedFlagFileLength + 1); // one character larger
 
-        // flagMakerTestSetup.fmc.setFlagCountThreshold(-1); // ensure flag
-        // maker doesn't wait to create additional flag files
-        // ensure max flags is not a limiting factor by making it larger
+        // flagMakerTestSetup.fmc.setFlagCountThreshold(-1);
+        // ensure flag maker doesn't wait to create additional flag files ensure max flags is not a limiting factor by making it larger
         FlagDataTypeConfig flagDataTypeConfig = flagMakerTestSetup.getFlagMakerConfig().getFlagConfigs().get(0);
         flagDataTypeConfig.setMaxFlags(desiredInputFilesPerFlag + 1);
 
@@ -132,12 +127,9 @@ public class FlagMakerTest {
 
         // FlagDataTypeConfig flagDataTypeConfig =
         // flagMakerTestSetup.fmc.getFlagConfigs().get(0);
-        // flagDataTypeConfig.setFlagCountThreshold(Integer.MIN_VALUE + 1); //
-        // setting this low will cause the FlagMaker to try to create full flag
-        // files
-        // flagDataTypeConfig.setTimeoutMilliSecs(Integer.MAX_VALUE); // setting
-        // this high will cause the FlagMaker to wait until the max flags are
-        // reached
+        // flagDataTypeConfig.setFlagCountThreshold(Integer.MIN_VALUE + 1);
+        // setting this low will cause the FlagMaker to try to create full flag files flagDataTypeConfig.setTimeoutMilliSecs(Integer.MAX_VALUE);
+        // setting this high will cause the FlagMaker to wait until the max flags are reached
 
         FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.getFlagMakerConfig());
         flagMaker.config.set("mapreduce.job.counters.max", Integer.toString(Integer.MAX_VALUE));
@@ -238,24 +230,17 @@ public class FlagMakerTest {
 
         for (File flagFile : flagFiles) {
             int flagFileLength = Files.toString(flagFile, Charset.defaultCharset()).length();
-            if (flagFile != flagFiles.get(flagFiles.size() - 1)) { // ignore the
-                                                               // last file
-                                                               // because it
-                                                               // may be a
-                                                               // partial file
-                                                               // with the
-                                                               // remaining
-                                                               // input files
+            if (flagFile != flagFiles.get(flagFiles.size() - 1)) { // ignore the last file because it may be a partial file with the remaining input files
                 Assert.assertEquals(FlagFileTestInspector.logFileContents(flagFile), expectedFlagFileLength, flagFileLength);
             }
         }
     }
 
     private int getExpectedFlagFileLength(int NUM_INPUT_FILES_PER_FLAG) {
-        String expectedInputFileLength = this.flagMakerTestSetup.getFlagMakerConfig().getBaseHDFSDir() + "flagged/bar/2013/01/01/5a2078da-1569-4cb9-bd50-f95fc53934e7";
+        String expectedInputFileLength = this.flagMakerTestSetup.getFlagMakerConfig().getBaseHDFSDir()
+                        + "flagged/bar/2013/01/01/5a2078da-1569-4cb9-bd50-f95fc53934e7";
 
-        // note flag file length is a function of the number of input files per
-        // flag
+        // note flag file length is a function of the number of input files per flag
         int expectedFlagFileLength = "target/test/bin/ingest/bulk-ingest.sh".length(); // datawave home + script
         expectedFlagFileLength += " 10 -inputFormat datawave.ingest.input.reader.event.EventSequenceFileInputFormat".length(); // script arguments
         // space or comma for each file

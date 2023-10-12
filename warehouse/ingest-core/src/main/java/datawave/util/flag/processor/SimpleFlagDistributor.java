@@ -61,8 +61,6 @@ public class SimpleFlagDistributor implements FlagDistributor {
 
         fillBuffer();
 
-
-
         if (mustHaveMax) {
             LOG.trace("mustHaveMax = true, buffer.size() = {}, flagDataTypeConfig.getMaxFlags() = {}", buffer.size(), flagDataTypeConfig.getMaxFlags());
             return buffer.size() >= flagDataTypeConfig.getMaxFlags();

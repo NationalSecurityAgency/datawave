@@ -49,8 +49,8 @@ public class FlagFileTestInspector {
     }
 
     public static List<File> listFilesInInputDirectory(FlagMakerConfig flagMakerConfig) throws IOException {
-        return Files.walk(Paths.get(flagMakerConfig.getBaseHDFSDir())).filter(FlagFileTestInspector::isInInputDirectory).map(java.nio.file.Path::toFile).filter(File::isFile)
-                        .collect(Collectors.toList());
+        return Files.walk(Paths.get(flagMakerConfig.getBaseHDFSDir())).filter(FlagFileTestInspector::isInInputDirectory).map(java.nio.file.Path::toFile)
+                        .filter(File::isFile).collect(Collectors.toList());
     }
 
     public static List<File> listFlaggingFiles(FlagMakerConfig flagMakerConfig) throws IOException {
@@ -136,7 +136,7 @@ public class FlagFileTestInspector {
 
     private static List<File> listFilesRecursively(String expectedDirectory, FlagMakerConfig flagMakerConfig) throws IOException {
         return Files.walk(Paths.get(flagMakerConfig.getBaseHDFSDir() + expectedDirectory)).map(java.nio.file.Path::toFile).filter(File::isFile)
-                .collect(Collectors.toList());
+                        .collect(Collectors.toList());
     }
 
     private static boolean isInInputDirectory(java.nio.file.Path path) {

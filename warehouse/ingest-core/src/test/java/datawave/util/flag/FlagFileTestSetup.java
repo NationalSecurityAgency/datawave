@@ -9,7 +9,6 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import datawave.util.flag.config.FlagMakerConfigUtilityTest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -19,9 +18,10 @@ import org.slf4j.LoggerFactory;
 import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 import datawave.util.flag.config.FlagMakerConfigUtility;
+import datawave.util.flag.config.FlagMakerConfigUtilityTest;
 
 /**
- * Assists with the loading of a sample flag maker configuration file,  as well as the generation of test files that align with the configuration.
+ * Assists with the loading of a sample flag maker configuration file, as well as the generation of test files that align with the configuration.
  */
 public class FlagFileTestSetup {
     private static final Logger LOG = LoggerFactory.getLogger(FlagFileTestSetup.class);

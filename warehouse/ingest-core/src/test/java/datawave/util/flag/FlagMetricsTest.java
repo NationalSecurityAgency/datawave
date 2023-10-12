@@ -56,7 +56,8 @@ public class FlagMetricsTest {
 
         useFlagMetricsAsIntended();
 
-        Path expectedMetricsFilePath = new Path(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory() + File.separator + flagFileBaseName + ".metrics");
+        Path expectedMetricsFilePath = new Path(
+                        flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory() + File.separator + flagFileBaseName + ".metrics");
         this.flagMetricsFileVerification = new FlagMetricsFileVerification(expectedMetricsFilePath, flagFileTestSetup);
 
     }
