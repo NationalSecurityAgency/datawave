@@ -3,13 +3,11 @@ package datawave.ingest.data.config.ingest;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.log4j.Logger;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Sets;
 
 import datawave.ingest.data.config.FieldConfigHelper;
 
@@ -69,7 +67,7 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
             String[] names = datawave.util.StringUtils.split(c, ',');
             for (String n : names) {
                 n = n.trim();
-                if (n.equals(""))
+                if (n.isEmpty())
                     continue;
 
                 s.add(n);
@@ -179,25 +177,4 @@ public abstract class ContentBaseIngestHelper extends AbstractContentIngestHelpe
         return rawDocumentViewName;
     }
 
-    public static Set<String> parseMultiLineConfigValue(String s, Pattern splitter) {
-        return cleanSet(Sets.newHashSet(splitter.split(s)));
-    }
-
-    /**
-     * Utility method to take a {@code String[]} and return a {@code Set<String>} where the values are trimmed
-     *
-     * @param items
-     *            String[] of items to trim and turn into a set
-     * @return unique Set of strings where whitespace has been trimmed.
-     */
-    public static Set<String> cleanSet(Collection<String> items) {
-        Set<String> itemSet = new HashSet<>();
-        for (String item : items) {
-            item = item.trim();
-            if (!item.isEmpty()) {
-                itemSet.add(item);
-            }
-        }
-        return itemSet;
-    }
 }

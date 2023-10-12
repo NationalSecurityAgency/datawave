@@ -59,7 +59,7 @@
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.3.3</version.hadoop>
+        <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
@@ -658,6 +658,16 @@
                         <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-api</artifactId>
+                <version>${version.hadoop}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${version.hadoop}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -2083,6 +2093,43 @@
                                     <goal>sort</goal>
                                     <!-- runs at process-sources phase by default -->
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>checkVersion</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>enforce-versions</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <dependencyConvergence>
+                                            <excludes>
+                                                <exclude>tech.units:indriya</exclude>
+                                                <exclude>org.apache.commons:*</exclude>
+                                                <exclude>si.uom:si-quantity</exclude>
+                                                <exclude>commons-net:commons-net</exclude>
+                                                <exclude>io.dropwizard.metrics:metrics-core</exclude>
+                                                <exclude>com.google.inject:*</exclude>
+                                                <exclude>com.google.inject.extensions:*</exclude>
+                                                <exclude>com.google.code.gson:gson</exclude>
+                                                <exclude>org.apache.zookeeper:zookeeper-jute</exclude>
+                                            </excludes>
+                                        </dependencyConvergence>
+                                    </rules>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
