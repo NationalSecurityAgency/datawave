@@ -7,7 +7,6 @@ import org.apache.log4j.Logger;
 
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
@@ -47,7 +46,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                         // and we have not seen an result yet
                         // and we have more logics to initialize
                         // then initialize the next logic and continue.
-                        if (logic.getCompletionLatch().getCount() == 0 && logic.isSequentialExecution() && !seenEntries
+                        if (logic.getCompletionLatch().getCount() == 0 && logic.isShortCircuitExecution() && !seenEntries
                                         && !logic.getUninitializedLogics().isEmpty()) {
                             try {
                                 GenericQueryConfiguration config = logic.initialize(logic.getConfig().getConnector(), logic.getSettings(), logic.getConfig()

@@ -14,7 +14,7 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
     private boolean allMustInitialize = false;
     
     // Specifies whether queries are run sequentially. We stop after the first query that returns any results.
-    private boolean sequentialExecution = false;
+    private boolean shortCircuitExecution = false;
     
     public CompositeQueryConfiguration() {
         super();
@@ -98,11 +98,11 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
         this.allMustInitialize = allMustInitialize;
     }
     
-    public boolean isSequentialExecution() {
-        return sequentialExecution;
+    public boolean isShortCircuitExecution() {
+        return shortCircuitExecution;
     }
     
-    public void setSequentialExecution(boolean sequentialExecution) {
-        this.sequentialExecution = sequentialExecution;
+    public void setShortCircuitExecution(boolean shortCircuitExecution) {
+        this.shortCircuitExecution = shortCircuitExecution;
     }
 }

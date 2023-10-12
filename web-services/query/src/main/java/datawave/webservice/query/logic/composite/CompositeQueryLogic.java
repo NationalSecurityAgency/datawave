@@ -263,7 +263,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                     logicState.put(logicName, holder);
                     
                     // if doing sequential execution, then stop since we have one initialized
-                    if (isSequentialExecution()) {
+                    if (isShortCircuitExecution()) {
                         break;
                     }
                     
@@ -299,7 +299,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 for (Entry<String,QueryLogic<?>> entry : getInitializedLogics().entrySet()) {
                     log.debug("\nLogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
                 }
-                if (isSequentialExecution()) {
+                if (isShortCircuitExecution()) {
                     for (Entry<String,QueryLogic<?>> entry : getUninitializedLogics().entrySet()) {
                         log.debug("\npending LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
                     }
@@ -619,12 +619,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         getConfig().setAllMustInitialize(allMustInitialize);
     }
     
-    public boolean isSequentialExecution() {
-        return getConfig().isSequentialExecution();
+    public boolean isShortCircuitExecution() {
+        return getConfig().isShortCircuitExecution();
     }
     
-    public void setSequentialExecution(boolean sequentialExecution) {
-        getConfig().setSequentialExecution(sequentialExecution);
+    public void setShortCircuitExecution(boolean shortCircuit) {
+        getConfig().setShortCircuitExecution(shortCircuit);
     }
     
     public Query getSettings() {

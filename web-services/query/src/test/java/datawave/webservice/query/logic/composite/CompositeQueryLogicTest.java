@@ -856,7 +856,7 @@ public class CompositeQueryLogicTest {
     }
     
     @Test
-    public void testQueryLogicSequentialExecution() throws Exception {
+    public void testQueryLogicShortCircuitExecution() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
@@ -888,7 +888,7 @@ public class CompositeQueryLogicTest {
          */
         c.setQueryLogics(logics);
         c.setPrincipal(principal);
-        c.setSequentialExecution(true);
+        c.setShortCircuitExecution(true);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -924,7 +924,7 @@ public class CompositeQueryLogicTest {
     }
     
     @Test
-    public void testQueryLogicSequentialExecutionWithEmptyEvent() throws Exception {
+    public void testQueryLogicShortCircuitExecutionWithEmptyEvent() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
@@ -956,7 +956,7 @@ public class CompositeQueryLogicTest {
          */
         c.setQueryLogics(logics);
         c.setPrincipal(principal);
-        c.setSequentialExecution(true);
+        c.setShortCircuitExecution(true);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
@@ -992,7 +992,7 @@ public class CompositeQueryLogicTest {
     }
     
     @Test
-    public void testQueryLogicSequentialExecutionHitsSecondLogic() throws Exception {
+    public void testQueryLogicShortCircuitExecutionHitsSecondLogic() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();
         TestQueryLogic logic1 = new TestQueryLogic();
         TestQueryLogic2 logic2 = new TestQueryLogic2();
@@ -1021,7 +1021,7 @@ public class CompositeQueryLogicTest {
          */
         c.setQueryLogics(logics);
         c.setPrincipal(principal);
-        c.setSequentialExecution(true);
+        c.setShortCircuitExecution(true);
         c.initialize((Connector) null, (Query) settings, Collections.singleton(auths));
         c.setupQuery(null);
         TransformIterator iter = c.getTransformIterator((Query) settings);
