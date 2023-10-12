@@ -13,8 +13,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang.mutable.MutableInt;
@@ -34,7 +33,7 @@ import datawave.util.flag.processor.SizeValidator;
  * Watches input file directories to create flag files. Flag files serve as a set of instructions for starting an ingest job, containing a command and a list of
  * input files. See start-ingest-servers.sh.
  */
-public class FlagMaker implements Runnable, Observer {
+public class FlagMaker implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(FlagMaker.class);
 
     private final FlagMakerConfig fmc;
@@ -46,6 +45,7 @@ public class FlagMaker implements Runnable, Observer {
 
     protected JobConf config;
     final FlagFileWriter flagFileWriter;// todo make private again
+    private LinkedBlockingQueue<String> socketMessageQueue;
 
     public FlagMaker(FlagMakerConfig flagMakerConfig) throws IOException {
         this.fmc = flagMakerConfig;
@@ -60,6 +60,8 @@ public class FlagMaker implements Runnable, Observer {
         this.sizeValidator = new SizeValidatorImpl(this.config, fmc);
         this.flagFileWriter = new FlagFileWriter(fmc);
         this.fs = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
+
+        socketMessageQueue = new LinkedBlockingQueue<>();
     }
 
     public static void main(String... args) throws Exception {
@@ -134,7 +136,7 @@ public class FlagMaker implements Runnable, Observer {
     @Override
     public void run() {
         LOG.trace("{} run() starting", this.getClass().getSimpleName());
-        startSocket();
+        startSocketAndReceiver();
         try {
             while (running) {
                 try {
@@ -246,12 +248,7 @@ public class FlagMaker implements Runnable, Observer {
         return fileCounter.intValue();
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-        if (flagSocket != o || arg == null) {
-            return;
-        }
-        String s = arg.toString();
+    public void update(String s) {
         if ("shutdown".equals(s)) {
             LOG.info("FlagMaker.update received shutdown");
             running = false;
@@ -270,13 +267,24 @@ public class FlagMaker implements Runnable, Observer {
         }
     }
 
-    private void startSocket() {
+    private void startSocketAndReceiver() {
         try {
-            flagSocket = new FlagSocket(fmc.getSocketPort());
-            flagSocket.addObserver(this);
+            flagSocket = new FlagSocket(fmc.getSocketPort(), socketMessageQueue);
             Thread socketThread = new Thread(flagSocket, "Flag_Socket_Thread");
             socketThread.setDaemon(true);
             socketThread.start();
+
+            Thread messageHandlerThread = new Thread(() -> {
+                while (running) {
+                    try {
+                        update(socketMessageQueue.take());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }, "Flag_Message_Reader_Thread");
+            messageHandlerThread.setDaemon(true);
+            messageHandlerThread.start();
         } catch (IOException ex) {
             LOG.error("Error occurred while starting socket. Exiting.", ex);
             running = false;
