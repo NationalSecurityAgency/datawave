@@ -105,6 +105,9 @@ public class FlagFileTestInspector {
     }
 
     public static String logFiles(List<File> files) {
+        if (null == files) {
+            return "(null)";
+        }
         StringBuilder result = new StringBuilder();
         for (File file : files) {
             result.append(file).append('\n');

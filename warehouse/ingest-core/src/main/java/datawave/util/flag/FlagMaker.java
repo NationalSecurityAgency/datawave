@@ -209,8 +209,9 @@ public class FlagMaker implements Runnable, Observer {
         long now = System.currentTimeMillis();
         // fc.getLast indicates when the flag file creation timeout will occur
         boolean hasTimeoutOccurred = (now >= fc.getLast());
+
         if (!hasTimeoutOccurred) {
-            LOG.debug("Still waiting for timeout.  now: {}, last: {}, (now-last): {}", now, fc.getLast(), (now - fc.getLast()));
+            LOG.debug("Still waiting for timeout for {}, now={}, last={}, (now-last)={}", fc.getDataName(), now, fc.getLast(), (now - fc.getLast()));
         }
         return hasTimeoutOccurred;
     }
@@ -252,9 +253,10 @@ public class FlagMaker implements Runnable, Observer {
         }
         String s = arg.toString();
         if ("shutdown".equals(s)) {
+            LOG.info("FlagMaker.update received shutdown");
             running = false;
-        }
-        if (s.startsWith("kick")) {
+        } else if (s.startsWith("kick")) {
+            LOG.info("FlagMaker.update received kick");
             String dataType = s.substring(4).trim();
             for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
                 if (cfg.getDataName().equals(dataType)) {
@@ -263,6 +265,8 @@ public class FlagMaker implements Runnable, Observer {
                     break;
                 }
             }
+        } else {
+            LOG.info("FlagMaker.update received unknown command");
         }
     }
 

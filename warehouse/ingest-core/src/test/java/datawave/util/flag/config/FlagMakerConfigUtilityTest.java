@@ -163,6 +163,36 @@ public class FlagMakerConfigUtilityTest {
     }
 
     @Test
+    public void withSleepMilliSecs() throws Exception {
+        long overrideValue = 987654321L;
+
+        // create a new FlagMakerConfig with one override
+        FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility.parseArgs(new String[] {"-flagConfig", TEST_CONFIG, "-sleepMilliSecs", "" + overrideValue});
+
+        // verify override
+        assertEquals(overrideValue, flagMakerConfig.getSleepMilliSecs());
+
+        // verify FlagMakerConfig matches baseline except for the single override
+        baseLineFlagMakerConfig.setSleepMilliSecs(overrideValue);
+        assertEquals(baseLineFlagMakerConfig, flagMakerConfig);
+    }
+
+    @Test
+    public void withSocket() throws Exception {
+        int overrideValue = 12345;
+
+        // create a new FlagMakerConfig with one override
+        FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility.parseArgs(new String[] {"-flagConfig", TEST_CONFIG, "-socket", "" + overrideValue});
+
+        // verify override
+        assertEquals(overrideValue, flagMakerConfig.getSocketPort());
+
+        // verify FlagMakerConfig matches baseline except for the single override
+        baseLineFlagMakerConfig.setSocketPort(overrideValue);
+        assertEquals(baseLineFlagMakerConfig, flagMakerConfig);
+    }
+
+    @Test
     public void withExtraArgsOverride() throws Exception {
         final String overrideValue = "-fastMode -topSpeed=MAX";
 
@@ -188,6 +218,9 @@ public class FlagMakerConfigUtilityTest {
         String overrideClass = "SomeClass";
         String overrideMetricsDirectory = "testDir/OtherMetricsDirectory";
         String overrideExtraArgs = "-fastMode -topSpeed=MAX";
+        String overrideSocket = "12345";
+        String overrideSleepMillis = "987654321";
+
 
         // @formatter:off
         FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility
@@ -195,6 +228,8 @@ public class FlagMakerConfigUtilityTest {
                         "-flagConfig", TEST_CONFIG,
                         "-flagFileDirectoryOverride", flagFileDirectoryOverride,
                         "-baseHDFSDirOverride", "testDir/BulkIngest/",
+                        "-socket", overrideSocket,
+                        "-sleepMilliSecs", overrideSleepMillis,
                         "-flagMakerClass", overrideClass,
                         "-flagMetricsDirectory", overrideMetricsDirectory,
                         "-extraIngestArgsOverride", overrideExtraArgs});
@@ -204,6 +239,8 @@ public class FlagMakerConfigUtilityTest {
         assertEquals(flagFileDirectoryOverride, flagMakerConfig.getFlagFileDirectory());
         assertEquals(baseDirOverride, flagMakerConfig.getBaseHDFSDir());
         assertEquals(overrideClass, flagMakerConfig.getFlagMakerClass());
+        assertEquals(Integer.parseInt(overrideSocket), flagMakerConfig.getSocketPort());
+        assertEquals(Long.parseLong(overrideSleepMillis), flagMakerConfig.getSleepMilliSecs());
         assertEquals(overrideMetricsDirectory, flagMakerConfig.getFlagMetricsDirectory());
         assertEquals(overrideExtraArgs, flagMakerConfig.getDefaultCfg().getExtraIngestArgs());
 
@@ -211,6 +248,8 @@ public class FlagMakerConfigUtilityTest {
         baseLineFlagMakerConfig.setFlagFileDirectory(flagFileDirectoryOverride);
         baseLineFlagMakerConfig.setBaseHDFSDir(baseDirOverride);
         baseLineFlagMakerConfig.setFlagMakerClass(overrideClass);
+        baseLineFlagMakerConfig.setSocketPort(Integer.parseInt(overrideSocket));
+        baseLineFlagMakerConfig.setSleepMilliSecs(Long.parseLong(overrideSleepMillis));
         baseLineFlagMakerConfig.setFlagMetricsDirectory(overrideMetricsDirectory);
         baseLineFlagMakerConfig.getDefaultCfg().setExtraIngestArgs(overrideExtraArgs);
         baseLineFlagMakerConfig.getFlagConfigs().get(0).setExtraIngestArgs(overrideExtraArgs);

@@ -196,7 +196,6 @@ public class FlagFileWriter {
         if (fc.isCollectMetrics()) {
             for (InputFile entry : flagging) {
                 metrics.addInputFileTimestamp(entry);
-                ;
             }
         }
     }

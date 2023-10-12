@@ -51,15 +51,8 @@ public class FlagFileWriterNamingTest {
     }
 
     private TreeSet<InputFile> createInputFiles(FlagFileTestSetup flagFileTestSetup) throws IOException {
-        flagFileTestSetup.withFilesPerDay(5).withNumDays(1).createTestFiles(); // creates
-                                                                               // 10
-                                                                               // files:
-                                                                               // 5
-                                                                               // in
-                                                                               // foo,
-                                                                               // 5
-                                                                               // in
-                                                                               // bar
+        // creates 10 files: 5 in foo, 5 in bar
+        flagFileTestSetup.withFilesPerDay(5).withNumDays(1).createTestFiles();
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
         sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(flagFileTestSetup.getFlagMakerConfig(), flagFileTestSetup.getFileSystem()));
         // verify file creation

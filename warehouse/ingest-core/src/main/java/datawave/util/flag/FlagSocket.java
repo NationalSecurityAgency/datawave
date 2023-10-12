@@ -46,6 +46,7 @@ public class FlagSocket extends Observable implements Runnable, Observer {
                     is.close();
                     s.close();
                     setChanged();
+                    log.info("notifyObservers of line: {}", line);
                     notifyObservers(line);
                 } catch (SocketTimeoutException e) {
                     log.info("Timed out waiting for input from {}", remoteAddress);

@@ -24,16 +24,12 @@ public class SizeValidatorImpl implements SizeValidator {
 
     private final Configuration hadoopConfiguration;
     private final int maxFileLength;
-    private final int datawaveHomeLength;
-    private final int flagFileDirectoryLength;
     private final FlagFileContentCreator flagFileContentCreator;
 
     public SizeValidatorImpl(Configuration hadoopConfiguration, FlagMakerConfig flagMakerConfig) {
         this.flagFileContentCreator = new FlagFileContentCreator(flagMakerConfig);
         this.hadoopConfiguration = hadoopConfiguration;
         this.maxFileLength = flagMakerConfig.getMaxFileLength();
-        this.datawaveHomeLength = flagMakerConfig.getDatawaveHome().length();
-        this.flagFileDirectoryLength = flagMakerConfig.getFlagFileDirectory().length();
     }
 
     @Override

@@ -103,6 +103,8 @@ public class FlagMakerConfigUtility {
         String flagFileDirectoryOverride = null;
         String flagMakerClass = null;
         String flagMetricsDirectory = null;
+        String socket = null;
+        String sleepMilliSecs = null;
 
         for (int i = 0; i < args.length; i++) {
             if ("-flagConfig".equals(args[i])) {
@@ -123,6 +125,12 @@ public class FlagMakerConfigUtility {
             } else if ("-flagMetricsDirectory".equals(args[i])) {
                 flagMetricsDirectory = args[++i];
                 LOG.info("will override flagMetricsDirectory with {}", flagMetricsDirectory);
+            } else if ("-sleepMilliSecs".equals(args[i])) {
+                sleepMilliSecs = args[++i];
+                LOG.info("will override sleepMilliSecs with {}", sleepMilliSecs);
+            } else if ("-socket".equals(args[i])) {
+                socket = args[++i];
+                LOG.info("will override socket with {}", socket);
             }
         }
         if (flagConfigName == null) {
@@ -149,6 +157,12 @@ public class FlagMakerConfigUtility {
         }
         if (null != flagMetricsDirectory) {
             flagMakerConfig.setFlagMetricsDirectory(flagMetricsDirectory);
+        }
+        if (null != sleepMilliSecs) {
+            flagMakerConfig.setSleepMilliSecs(Long.parseLong(sleepMilliSecs));
+        }
+        if (null != socket) {
+            flagMakerConfig.setSocketPort(Integer.parseInt(socket));
         }
 
         LOG.debug("before validate {}", flagMakerConfig.toString());

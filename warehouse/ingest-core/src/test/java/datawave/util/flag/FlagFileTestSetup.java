@@ -9,6 +9,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import datawave.util.flag.config.FlagMakerConfigUtilityTest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -24,7 +25,7 @@ import datawave.util.flag.config.FlagMakerConfigUtility;
  */
 public class FlagFileTestSetup {
     private static final Logger LOG = LoggerFactory.getLogger(FlagFileTestSetup.class);
-    private static final String TEST_CONFIG = "target/test-classes/TestFlagMakerConfig.xml";
+    private static final String TEST_CONFIG = FlagMakerConfigUtilityTest.TEST_CONFIG;
 
     private final FlagFileInputStructure flagFileInputStructure;
     private final FlagMakerTimestampTracker timestampTracker;
@@ -101,7 +102,7 @@ public class FlagFileTestSetup {
         return this;
     }
 
-    public FlagFileTestSetup withTimeoutMilliSecs(int timeout) throws Exception {
+    public FlagFileTestSetup withTimeoutMilliSecs(long timeout) throws Exception {
         if (fmc == null) {
             this.withTestFlagMakerConfig();
         }
