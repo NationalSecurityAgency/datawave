@@ -11,14 +11,21 @@ import java.util.concurrent.CountDownLatch;
 
 public class CompositeQueryLogicResults implements Iterable<Object>, Thread.UncaughtExceptionHandler {
     
+    private final CompositeQueryLogic logic;
     private final ArrayBlockingQueue<Object> results;
-    private final CountDownLatch completionLatch;
     private final List<Thread.UncaughtExceptionHandler> handlers;
     private final List<Map.Entry<Thread,Throwable>> exceptions;
     
-    public CompositeQueryLogicResults(int pagesize, CountDownLatch completionLatch) {
+    public CompositeQueryLogicResults() {
+        this.logic = null;
+        this.results = new ArrayBlockingQueue<>(1);
+        this.handlers = new ArrayList<>();
+        this.exceptions = new ArrayList<>();
+    }
+    
+    public CompositeQueryLogicResults(CompositeQueryLogic logic, int pagesize) {
+        this.logic = logic;
         this.results = new ArrayBlockingQueue<>(pagesize);
-        this.completionLatch = completionLatch;
         this.handlers = new ArrayList<>();
         this.exceptions = new ArrayList<>();
     }
@@ -41,7 +48,7 @@ public class CompositeQueryLogicResults implements Iterable<Object>, Thread.Unca
     
     @Override
     public Iterator<Object> iterator() {
-        CompositeQueryLogicResultsIterator it = new CompositeQueryLogicResultsIterator(this.results, this.completionLatch);
+        CompositeQueryLogicResultsIterator it = new CompositeQueryLogicResultsIterator(logic, this.results);
         synchronized (handlers) {
             // first pass any exceptions we have already seen
             for (Map.Entry<Thread,Throwable> exception : exceptions) {
