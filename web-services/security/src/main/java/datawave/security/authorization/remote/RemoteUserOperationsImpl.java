@@ -10,11 +10,14 @@ import datawave.webservice.common.remote.RemoteHttpService;
 import datawave.webservice.result.GenericResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.EnableCaching;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 
+@EnableCaching
 public class RemoteUserOperationsImpl extends RemoteHttpService implements UserOperations {
     private static final Logger log = LoggerFactory.getLogger(RemoteUserOperationsImpl.class);
     
@@ -45,6 +48,13 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     }
     
     @Override
+    @Cacheable(value = "getRemoteUser", key = "{#principal}", cacheManager = "remoteOperationsCacheManager")
+    public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
+        return UserOperations.super.getRemoteUser(principal);
+    }
+    
+    @Override
+    @Cacheable(value = "listEffectiveAuthorizations", key = "{#callerObject}", cacheManager = "remoteOperationsCacheManager")
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
