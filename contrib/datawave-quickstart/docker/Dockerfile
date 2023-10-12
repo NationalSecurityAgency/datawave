@@ -32,14 +32,9 @@ RUN yum -y install openssl openssh openssh-server openssh-clients openssl-libs w
 
 WORKDIR /opt/datawave
 
-# Create new Git repo and configure environment...
+# Configure environment...
 
 RUN rm -f .dockerignore && \
-    git init && \
-    git add . && \
-    git config user.email "root@localhost.local" && \
-    git config user.name "Root User" && \
-    git commit -m "Source Branch :: $DATAWAVE_BRANCH_NAME :: Source Commit :: $DATAWAVE_COMMIT_ID" && \
     echo "export DW_ACCUMULO_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'accumulo*.tar.gz')" >> ~/.bashrc && \
     echo "export DW_ZOOKEEPER_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/accumulo -name 'zookeeper*.tar.gz')" >> ~/.bashrc && \
     echo "export DW_MAVEN_DIST_URI=file://$(find /opt/datawave/contrib/datawave-quickstart/bin/services/maven -name 'apache-maven*.tar.gz')" >> ~/.bashrc && \
