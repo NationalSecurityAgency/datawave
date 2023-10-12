@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -120,7 +119,7 @@ public class FlagFileTestInspector {
 
     public static String logFileContents(File file) {
         try {
-            return com.google.common.io.Files.toString(file, Charset.defaultCharset()) + "EOF";
+            return com.google.common.io.Files.asCharSource(file, Charset.defaultCharset()).read() + "EOF";
         } catch (Exception e) {
             return "Failed to read contents of " + file.getName();
         }

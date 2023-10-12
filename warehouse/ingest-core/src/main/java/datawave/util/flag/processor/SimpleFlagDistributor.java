@@ -38,17 +38,18 @@ import datawave.util.flag.config.FlagMakerConfigUtility;
  */
 public class SimpleFlagDistributor implements FlagDistributor {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleFlagDistributor.class);
-    private FileSystem fs;
+
+    private final FlagMakerConfig flagMakerConfig;
+    private FileSystem fileSystem;
 
     private Set<InputFile> buffer;
     private FlagDataTypeConfig flagDataTypeConfig;
-    private FlagMakerConfig fmc;
     private List<Stream<InputFile>> inputFileStreams = null;
     private Iterator<InputFile> inputFileSource;
 
     public SimpleFlagDistributor(FlagMakerConfig flagMakerConfig) throws IOException {
-        this.fmc = flagMakerConfig;
-        this.fs = FlagMakerConfigUtility.getHadoopFS(this.fmc);
+        this.flagMakerConfig = flagMakerConfig;
+        this.fileSystem = FlagMakerConfigUtility.getHadoopFS(this.flagMakerConfig);
     }
 
     @Override
@@ -78,7 +79,7 @@ public class SimpleFlagDistributor implements FlagDistributor {
 
         int size = buffer.size();
         if (size == 0) {
-            return Collections.EMPTY_SET;
+            return Collections.emptySet();
         }
         // Assumes that hasNext(false) returned true
         if (size < flagDataTypeConfig.getMaxFlags()) {
@@ -158,16 +159,17 @@ public class SimpleFlagDistributor implements FlagDistributor {
     }
 
     /**
-     *
      * @param folder
+     *            folder to use for input files
      * @throws IOException
+     *             when a problem is encountered while accessing filesystem
      */
     @VisibleForTesting
     void registerInputFileIterator(String folder) throws IOException {
         LOG.debug("Examining {}", folder);
 
         // todo - test what happens if folder already has the base dir
-        Path fullFolderPath = new Path(fs.getWorkingDirectory(), new Path(folder));
+        Path fullFolderPath = new Path(fileSystem.getWorkingDirectory(), new Path(folder));
         PathFilter filenamePatternFilter = new FullPathGlobFilter(gatherFilePatterns(folder));
 
         Iterator<InputFile> inputFileIterator = getInputFileIterator(filenamePatternFilter, fullFolderPath, stripBaseHDFSDir(folder));
@@ -191,14 +193,14 @@ public class SimpleFlagDistributor implements FlagDistributor {
     private List<String> gatherFilePatterns(String folder) {
         List<String> fullPathPatterns = new ArrayList<>();
 
-        for (String filePattern : this.fmc.getFilePatterns()) {
+        for (String filePattern : this.flagMakerConfig.getFilePatterns()) {
             String folderPattern = folder + "/" + filePattern;
             LOG.trace("loading files for {} in folder: {} matching pattern: {}", this.flagDataTypeConfig.getDataName(), folder, folderPattern);
 
             // Prepend the working directory to limit filtering to a single pattern match
-            String patternExtendedToFullPath = new Path(fs.getWorkingDirectory(), new Path(folderPattern)).toString();
+            String patternExtendedToFullPath = new Path(fileSystem.getWorkingDirectory(), new Path(folderPattern)).toString();
 
-            LOG.debug("Prepended working directory: {} and is now: {}", fs.getWorkingDirectory(), patternExtendedToFullPath);
+            LOG.debug("Prepended working directory: {} and is now: {}", fileSystem.getWorkingDirectory(), patternExtendedToFullPath);
             fullPathPatterns.add(patternExtendedToFullPath);
         }
 
@@ -218,9 +220,10 @@ public class SimpleFlagDistributor implements FlagDistributor {
      *            - name of folder underneath base HDFS dir, to be used in flag file contents
      * @return an iterator of InputFile objects that match the patterns
      * @throws IOException
+     *             when a problem is encountered while accessing filesystem
      */
     private Iterator<InputFile> getInputFileIterator(PathFilter filter, Path fullFolderPath, String relativeFolderName) throws IOException {
-        if (!fs.exists(fullFolderPath)) {
+        if (!fileSystem.exists(fullFolderPath)) {
             LOG.debug("Does not exist: {}", fullFolderPath.toUri().toString());
             return null;
         }
@@ -228,7 +231,7 @@ public class SimpleFlagDistributor implements FlagDistributor {
         LOG.debug("Creating remote file iterator for {}", fullFolderPath);
 
         // recursively lists files (skips directories as per API)
-        RemoteIterator<LocatedFileStatus> fileIterator = fs.listFiles(fullFolderPath, true);
+        RemoteIterator<LocatedFileStatus> fileIterator = fileSystem.listFiles(fullFolderPath, true);
         LOG.debug("Created remote file iterator for {}", fullFolderPath);
 
         if (!fileIterator.hasNext()) {
@@ -243,7 +246,8 @@ public class SimpleFlagDistributor implements FlagDistributor {
             return null;
         }
 
-        return new InputFileCreatingIterator(filteringFileIterator, relativeFolderName, this.fmc.getBaseHDFSDir(), this.fmc.isUseFolderTimestamp());
+        return new InputFileCreatingIterator(filteringFileIterator, relativeFolderName, this.flagMakerConfig.getBaseHDFSDir(),
+                        this.flagMakerConfig.isUseFolderTimestamp());
     }
 
     private void addSourceIterator(Iterator<InputFile> inputFileSourceIterator) {
@@ -298,8 +302,8 @@ public class SimpleFlagDistributor implements FlagDistributor {
     private String stripBaseHDFSDir(String folder) {
         String inputFolder = folder;
 
-        if (inputFolder.startsWith(this.fmc.getBaseHDFSDir())) {
-            inputFolder = inputFolder.substring(this.fmc.getBaseHDFSDir().length());
+        if (inputFolder.startsWith(this.flagMakerConfig.getBaseHDFSDir())) {
+            inputFolder = inputFolder.substring(this.flagMakerConfig.getBaseHDFSDir().length());
             if (inputFolder.startsWith(File.separator)) {
                 inputFolder = inputFolder.substring(File.separator.length());
             }
@@ -309,6 +313,6 @@ public class SimpleFlagDistributor implements FlagDistributor {
 
     @VisibleForTesting
     void setFileSystem(FileSystem fileSystemOverride) {
-        this.fs = fileSystemOverride;
+        this.fileSystem = fileSystemOverride;
     }
 }

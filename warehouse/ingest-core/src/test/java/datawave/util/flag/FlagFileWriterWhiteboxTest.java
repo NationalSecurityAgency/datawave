@@ -640,7 +640,6 @@ public class FlagFileWriterWhiteboxTest {
     @Test
     public void handleSystemExit() throws Exception {
         exit.expectSystemExit();
-        ;
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {

@@ -53,7 +53,7 @@ public class FlagMakerConfig {
     private final List<String> filePatterns = new ArrayList<>();
 
     // default timeout
-    private long timeoutMilliSecs = (5L * DateUtils.A_MINUTE);
+    private long timeoutMilliSecs = TimeUnit.MINUTES.toMillis(5);
     // default sleep between cycles
     private long sleepMilliSecs = 15000L;
     // existing flag file count threshold after which the timeoutMilliSecs is ignored. Default is -1 disabling this check.
@@ -91,7 +91,7 @@ public class FlagMakerConfig {
 
     public void setBaseHDFSDir(String baseHDFSDir) {
         this.baseHDFSDir = baseHDFSDir;
-        validate(); // validate uses baseHDFSDir to alter the folders within the datatype configss
+        validate(); // validate uses baseHDFSDir to alter the folders within the datatype configs
     }
 
     public String getFlagMakerClass() {
@@ -201,7 +201,7 @@ public class FlagMakerConfig {
     @Override
     public String toString() {
         //@formatter:off
-        String result =
+        return
             "hdfs: " + this.getHdfs() + "\n" +
             "datawaveHome: " + this.getDatawaveHome() + "\n" +
             "baseHDFSDir: " + this.getBaseHDFSDir() + "\n" +
@@ -223,6 +223,5 @@ public class FlagMakerConfig {
             "defaultCfg: " + this.getDefaultCfg() + "\n" +
             "flagCfg: " + this.getFlagConfigs() + "\n";
         //@formatter:on
-        return result;
     }
 }

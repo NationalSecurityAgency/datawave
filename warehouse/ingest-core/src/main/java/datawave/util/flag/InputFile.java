@@ -43,11 +43,11 @@ public class InputFile implements Comparable<InputFile> {
         }
     }
 
-    private long blocksize;
+    private final long blockSize;
     private long filesize;
-    private Path path;
-    private long timestamp;
-    private String folder;
+    private final Path path;
+    private final long timestamp;
+    private final String folder;
 
     // flag file paths
     private Path flagging;
@@ -67,20 +67,20 @@ public class InputFile implements Comparable<InputFile> {
      *            The folder that was originally searched in
      * @param path
      *            The actual file full path
-     * @param blocksize
-     *            The blocksize
-     * @param filesize
-     *            the filesize
+     * @param blockSize
+     *            The block size
+     * @param fileSize
+     *            the file size
      * @param timestamp
      *            the last modified timestamp
      * @param baseDir
      *            base directory
      */
-    InputFile(String folder, Path path, long blocksize, long filesize, long timestamp, String baseDir) {
+    InputFile(String folder, Path path, long blockSize, long fileSize, long timestamp, String baseDir) {
         this.folder = folder;
         this.path = path;
-        this.blocksize = blocksize;
-        this.filesize = filesize;
+        this.blockSize = blockSize;
+        this.filesize = fileSize;
         this.timestamp = timestamp;
 
         this.flagging = getDestPath(path, TrackedDir.FLAGGING_DIR.path, baseDir, folder);
@@ -99,7 +99,7 @@ public class InputFile implements Comparable<InputFile> {
     }
 
     public long getBlocksize() {
-        return blocksize;
+        return blockSize;
     }
 
     public String getFileName() {
@@ -110,8 +110,8 @@ public class InputFile implements Comparable<InputFile> {
         return filesize;
     }
 
-    public void setFilesize(long filesize) {
-        this.filesize = filesize;
+    public void setFilesize(long fileSize) {
+        this.filesize = fileSize;
     }
 
     public String getDirectory() {
@@ -139,10 +139,10 @@ public class InputFile implements Comparable<InputFile> {
     }
 
     /**
-     * @return the number of blocks the filesize is expected to use
+     * @return the number of blocks the file size is expected to use
      */
     public int getMaps() {
-        double maps = (blocksize == 0 ? 1 : (double) filesize / blocksize);
+        double maps = (blockSize == 0 ? 1 : (double) filesize / blockSize);
         return (int) Math.ceil(maps);
     }
 
@@ -231,22 +231,19 @@ public class InputFile implements Comparable<InputFile> {
         if (this.timestamp != other.timestamp) {
             return false;
         }
-        if (this.blocksize != other.blocksize) {
+        if (this.blockSize != other.blockSize) {
             return false;
         }
         if (this.filesize != other.filesize) {
             return false;
         }
-        if (!Objects.equals(this.path, other.path)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(this.path, other.path);
     }
 
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 53 * hash + (int) (this.blocksize ^ (this.blocksize >>> 32));
+        hash = 53 * hash + (int) (this.blockSize ^ (this.blockSize >>> 32));
         hash = 53 * hash + (int) (this.filesize ^ (this.filesize >>> 32));
         hash = 53 * hash + (int) (this.timestamp ^ (this.timestamp >>> 32));
         hash = 53 * hash + (this.path != null ? this.path.hashCode() : 0);
@@ -257,8 +254,8 @@ public class InputFile implements Comparable<InputFile> {
     public String toString() {
         // @formatter:off
         return "InputFile{" +
-                "blocksize=" + blocksize +
-                ", filesize=" + filesize +
+                "blockSize=" + blockSize +
+                ", fileSize=" + filesize +
                 ", path=" + path +
                 ", timestamp=" + timestamp +
                 ", folder='" + folder + '\'' +
@@ -289,9 +286,9 @@ public class InputFile implements Comparable<InputFile> {
             }
         }
         if (comparison == 0) {
-            if (o1.blocksize < o2.blocksize) {
+            if (o1.blockSize < o2.blockSize) {
                 comparison = -1;
-            } else if (o1.blocksize > o2.blocksize) {
+            } else if (o1.blockSize > o2.blockSize) {
                 comparison = 1;
             }
         }
@@ -309,11 +306,6 @@ public class InputFile implements Comparable<InputFile> {
         return FIFO.compare(o2, o1);
     };
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Comparable#compareTo(java.lang.Object)
-     */
     @Override
     public int compareTo(InputFile o) {
         return FIFO.compare(this, o);
@@ -328,14 +320,14 @@ public class InputFile implements Comparable<InputFile> {
      *            base directory
      * @param folder
      *            a folder
-     * @param subdir
+     * @param subDir
      *            the subdirectory
      * @return destination file
      */
-    static Path getDestPath(Path inFile, String subdir, String baseDir, String folder) {
+    static Path getDestPath(Path inFile, String subDir, String baseDir, String folder) {
         Matcher m = PATTERN.matcher(inFile.getParent().toString());
         StringBuilder dstPath = new StringBuilder(baseDir);
-        appendWithSep(dstPath, subdir);
+        appendWithSep(dstPath, subDir);
         appendWithSep(dstPath, folder);
         if (m.find()) {
             appendWithSep(dstPath, m.group(1));

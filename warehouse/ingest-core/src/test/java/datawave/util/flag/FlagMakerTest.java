@@ -229,7 +229,7 @@ public class FlagMakerTest {
         assertTrue("Expected one or more flag files", flagFiles.size() > 0);
 
         for (File flagFile : flagFiles) {
-            int flagFileLength = Files.toString(flagFile, Charset.defaultCharset()).length();
+            int flagFileLength = com.google.common.io.Files.asCharSource(flagFile, Charset.defaultCharset()).read().length();
             if (flagFile != flagFiles.get(flagFiles.size() - 1)) { // ignore the last file because it may be a partial file with the remaining input files
                 Assert.assertEquals(FlagFileTestInspector.logFileContents(flagFile), expectedFlagFileLength, flagFileLength);
             }

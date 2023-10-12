@@ -76,7 +76,7 @@ public class FlagFileWriter {
         this.flagFileContentCreator = new FlagFileContentCreator(this.flagMakerConfig);
         this.fs = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
         this.fileMoveExecutor = Executors.newFixedThreadPool(flagMakerConfig.getMaxHdfsThreads());
-        this.directoryCache = buildDirectoryCache(flagMakerConfig);
+        this.directoryCache = buildDirectoryCache();
     }
 
     /**
@@ -417,7 +417,7 @@ public class FlagFileWriter {
         return !movedInputFiles.isEmpty();
     }
 
-    private Cache<Path,Path> buildDirectoryCache(FlagMakerConfig flagMakerConfig) {
+    private Cache<Path,Path> buildDirectoryCache() {
         // build the cache per the default configuration.
         // @formatter:off
 		return CacheBuilder

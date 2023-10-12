@@ -1,5 +1,6 @@
 package datawave.util.flag;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class FlagMetricsFileVerification {
     }
 
     public void assertGroupNames() {
-        assertTrue(Objects.equals(EXPECTED_GROUP_NAMES, getCounterGroups()));
+        assertEquals(EXPECTED_GROUP_NAMES, getCounterGroups());
     }
 
     // Counter Group "FlagFile" contains InputFile names and time-of-flagging timestamps for each

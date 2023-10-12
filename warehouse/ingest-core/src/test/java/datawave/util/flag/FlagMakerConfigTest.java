@@ -460,7 +460,7 @@ public class FlagMakerConfigTest {
         flagMakerConfig.getFlagConfigs().get(0).setCollectMetrics(null);
         flagMakerConfig.getDefaultCfg().setCollectMetrics(null);
         flagMakerConfig.validate();
-        assertEquals(null, flagMakerConfig.getFlagConfigs().get(0).getCollectMetrics());
+        assertNull(flagMakerConfig.getFlagConfigs().get(0).getCollectMetrics());
     }
 
     @Test
@@ -496,7 +496,7 @@ public class FlagMakerConfigTest {
         flagMakerConfig.getFlagConfigs().get(0).setFileListMarker(null);
         flagMakerConfig.getDefaultCfg().setFileListMarker(null);
         flagMakerConfig.validate();
-        assertEquals(null, flagMakerConfig.getFlagConfigs().get(0).getFileListMarker());
+        assertNull(flagMakerConfig.getFlagConfigs().get(0).getFileListMarker());
     }
 
     @Test
@@ -511,7 +511,7 @@ public class FlagMakerConfigTest {
     public static class NoOpFlagDistributor implements FlagDistributor {
 
         @Override
-        public void loadFiles(FlagDataTypeConfig fc) throws IOException {
+        public void loadFiles(FlagDataTypeConfig fc) {
 
         }
 

@@ -41,11 +41,10 @@ public class FlagMaker implements Runnable {
     private final FileSystem fs;
     private final SizeValidator sizeValidator;
     private volatile boolean running = true;
-    private FlagSocket flagSocket;
 
-    protected JobConf config;
+    protected final JobConf config;
     final FlagFileWriter flagFileWriter;// todo make private again
-    private LinkedBlockingQueue<String> socketMessageQueue;
+    private final LinkedBlockingQueue<String> socketMessageQueue;
 
     public FlagMaker(FlagMakerConfig flagMakerConfig) throws IOException {
         this.fmc = flagMakerConfig;
@@ -228,7 +227,7 @@ public class FlagMaker implements Runnable {
     private int countFlagFileBacklog(final FlagDataTypeConfig fc) {
         final MutableInt fileCounter = new MutableInt(0);
         final FileFilter fileFilter = new WildcardFileFilter("*_" + fc.getIngestPool() + "_" + fc.getDataName() + "_*.flag");
-        final FileVisitor<java.nio.file.Path> visitor = new SimpleFileVisitor<java.nio.file.Path>() {
+        final FileVisitor<java.nio.file.Path> visitor = new SimpleFileVisitor<>() {
 
             @Override
             public FileVisitResult visitFile(java.nio.file.Path path, BasicFileAttributes attrs) throws IOException {
@@ -269,7 +268,7 @@ public class FlagMaker implements Runnable {
 
     private void startSocketAndReceiver() {
         try {
-            flagSocket = new FlagSocket(fmc.getSocketPort(), socketMessageQueue);
+            FlagSocket flagSocket = new FlagSocket(fmc.getSocketPort(), socketMessageQueue);
             Thread socketThread = new Thread(flagSocket, "Flag_Socket_Thread");
             socketThread.setDaemon(true);
             socketThread.start();

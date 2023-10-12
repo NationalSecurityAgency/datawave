@@ -67,9 +67,8 @@ class IngestConfig {
             throw new IllegalArgumentException("configuration file does not exist (" + f.getAbsolutePath() + ")");
         }
 
-        final JsonParser parser = new JsonParser();
         try (final Reader rdr = new FileReader(fName)) {
-            final JsonElement json = parser.parse(rdr);
+            final JsonElement json = JsonParser.parseReader(rdr);
             final IngestConfig val = gson.fromJson(json.toString(), IngestConfig.class);
             cfg.set(val);
 

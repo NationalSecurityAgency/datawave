@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 import org.apache.commons.lang.math.LongRange;
 import org.junit.After;
@@ -29,8 +28,8 @@ import org.slf4j.LoggerFactory;
 public class FlagMakerTimestampTest {
     private static final Logger log = LoggerFactory.getLogger(FlagMakerTimestampTest.class);
 
-    private final Optional<Boolean> useFolderTime;
-    private final Optional<Boolean> setFlagFileTimestamp;
+    private final Boolean useFolderTime;
+    private final Boolean setFlagFileTimestamp;
 
     private FlagFileTestSetup flagMakerTestSetup;
 
@@ -41,19 +40,19 @@ public class FlagMakerTimestampTest {
     public static Collection<Object[]> data() {
         // @formatter:off
 		return Arrays.asList(new Object[][]{
-				{Optional.of(true), Optional.of(true)},
-				{Optional.of(true), Optional.of(false)},
-				{Optional.of(true), Optional.empty()},
-				{Optional.of(false), Optional.of(true)},
-				{Optional.of(false), Optional.of(false)},
-				{Optional.of(false), Optional.empty()},
-				{Optional.empty(), Optional.of(true)},
-				{Optional.empty(), Optional.of(false)},
-				{Optional.empty(), Optional.empty()}});
+				{true, true},
+				{true, false},
+				{true, null},
+				{false, true},
+				{false, false},
+				{false, null},
+				{null, true},
+				{null, false},
+				{null, null}});
 		// @formatter:on
     }
 
-    public FlagMakerTimestampTest(Optional<Boolean> useFolderTime, Optional<Boolean> setFlagFileTimestamp) {
+    public FlagMakerTimestampTest(Boolean useFolderTime, Boolean setFlagFileTimestamp) {
         this.useFolderTime = useFolderTime;
         this.setFlagFileTimestamp = setFlagFileTimestamp;
     }
@@ -88,10 +87,14 @@ public class FlagMakerTimestampTest {
 
     private void configureFlagMakerWithParameters() {
         // true by default - use latest last modified for input files
-        this.setFlagFileTimestamp.ifPresent(aBoolean -> flagMakerTestSetup.getFlagMakerConfig().setSetFlagFileTimestamp(aBoolean));
+        if (null != this.setFlagFileTimestamp) {
+            flagMakerTestSetup.getFlagMakerConfig().setSetFlagFileTimestamp(this.setFlagFileTimestamp);
+        }
         // false by default - use the folder's timestamp regardless of input
         // files
-        this.useFolderTime.ifPresent(aBoolean -> flagMakerTestSetup.getFlagMakerConfig().setUseFolderTimestamp(aBoolean));
+        if (null != this.useFolderTime) {
+            flagMakerTestSetup.getFlagMakerConfig().setUseFolderTimestamp(this.useFolderTime);
+        }
     }
 
     private List<File> runFlagMaker() throws Exception {
@@ -103,7 +106,7 @@ public class FlagMakerTimestampTest {
     private LongRange determineExpectedRange() {
         LongRange range;
 
-        if (useFolderTime.isPresent() && useFolderTime.get()) {
+        if (null != useFolderTime && useFolderTime) {
             range = new LongRange(flagMakerTestSetup.getMinFolderTime(), flagMakerTestSetup.getMaxFolderTime());
         } else {
             range = new LongRange(flagMakerTestSetup.getMinLastModified(), flagMakerTestSetup.getMaxLastModified());
@@ -114,7 +117,7 @@ public class FlagMakerTimestampTest {
     private void assertFlagFilesTimestampInExpectedRange(List<File> flagFiles, LongRange expectedTimestampRange) {
         for (File file : flagFiles) {
             if (file.getName().endsWith(".flag")) {
-                if (this.setFlagFileTimestamp.isEmpty() || this.setFlagFileTimestamp.get()) {
+                if (this.setFlagFileTimestamp == null || this.setFlagFileTimestamp) {
                     assertTrue(expectedTimestampRange.containsLong(file.lastModified()));
                 } else {
                     assertFalse(expectedTimestampRange.containsLong(file.lastModified()));

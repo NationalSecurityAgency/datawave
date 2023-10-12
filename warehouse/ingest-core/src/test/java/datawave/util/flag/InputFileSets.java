@@ -13,7 +13,7 @@ import com.google.common.collect.Sets;
  * Defines sets of InputFile instances to assist with tests
  */
 public class InputFileSets {
-    static final HashSet<InputFile> EMPTY_FILES = new HashSet<InputFile>();
+    static final HashSet<InputFile> EMPTY_FILES = new HashSet<>();
     static final HashSet<InputFile> SINGLE_FILE = Sets.newHashSet(createInputFile("f"));
     static final HashSet<InputFile> MULTIPLE_FILES = createManyInputFiles(20);
     static final HashSet<InputFile> MANY_FILES = createManyInputFiles(10 * 1000);

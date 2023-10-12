@@ -3,6 +3,7 @@ package datawave.util.flag;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Iterator;
@@ -22,7 +23,7 @@ public class InputFileCreatingIteratorTest {
 
         InputFile result = iterator.next();
         assertNotNull(result);
-        assertEquals(null, result.getFolder());
+        assertNull(result.getFolder());
         assertEquals(InMemoryStubFileSystem.BLOCK_SIZE, result.getBlocksize());
         assertEquals("baseDir/inputFolder", result.getDirectory());
         assertEquals(InMemoryStubFileSystem.MODIFICATION_TIME, result.getTimestamp());
@@ -56,7 +57,7 @@ public class InputFileCreatingIteratorTest {
         iterator.next();
     }
 
-    private class ReturnsItemOnlyOnceButAlwaysClaimsHasNext implements Iterator<LocatedFileStatus> {
+    private static class ReturnsItemOnlyOnceButAlwaysClaimsHasNext implements Iterator<LocatedFileStatus> {
         LocatedFileStatus item;
 
         public ReturnsItemOnlyOnceButAlwaysClaimsHasNext() {
@@ -76,7 +77,7 @@ public class InputFileCreatingIteratorTest {
         }
     }
 
-    private class EmptySource implements Iterator<LocatedFileStatus> {
+    private static class EmptySource implements Iterator<LocatedFileStatus> {
         @Override
         public boolean hasNext() {
             return false;

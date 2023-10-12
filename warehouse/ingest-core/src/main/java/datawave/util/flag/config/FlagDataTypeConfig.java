@@ -8,6 +8,8 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 import javax.xml.bind.annotation.XmlType;
 
+import org.apache.hadoop.mapreduce.InputFormat;
+
 import datawave.ingest.input.reader.event.EventSequenceFileInputFormat;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -37,7 +39,7 @@ public class FlagDataTypeConfig {
 
     private String folder;
 
-    private Class inputFormat = EventSequenceFileInputFormat.class;
+    private Class<? extends InputFormat> inputFormat = EventSequenceFileInputFormat.class;
 
     // number of reducers for datatype
     private int reducers;
@@ -74,7 +76,7 @@ public class FlagDataTypeConfig {
 
     @Getter(AccessLevel.NONE)
     @XmlTransient
-    private long last = System.currentTimeMillis();;
+    private long last = System.currentTimeMillis();
 
     public FlagDataTypeConfig(String dataName, List<String> folder, int reducers, String extraIngestArgs) {
         this.dataName = dataName;
@@ -130,7 +132,7 @@ public class FlagDataTypeConfig {
         }
 
         if (folders.isEmpty() && null != this.dataName) {
-            // ensure the default path of dataname is set
+            // ensure the default path of data name is set
             folders.add(this.dataName);
         }
         // todo - validate adds the base dir just so that later it can be stripped off by the distributor

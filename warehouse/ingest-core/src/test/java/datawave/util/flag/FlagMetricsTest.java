@@ -65,7 +65,7 @@ public class FlagMetricsTest {
     private void useFlagMetricsAsIntended() throws IOException {
         // create FlagMetrics and use in expected way
         this.startTime = System.currentTimeMillis();
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(this.localFileSystem, true);
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, true);
 
         // create input files
         flagFileTestSetup.createTestFiles();
@@ -95,7 +95,7 @@ public class FlagMetricsTest {
 
     @Test
     public void testWriteMetricsCreatesAFile() throws IOException {
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(this.localFileSystem, true);
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, true);
         metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
         metrics.writeMetrics(this.metricsDir, "writeMetricsDoesNotCreateFilesWhenDisabled");
 
@@ -109,7 +109,7 @@ public class FlagMetricsTest {
     @Test
     public void writeMetricsDoesNotCreateFilesWhenDisabled() throws IOException {
 
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(this.localFileSystem, false);
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, false);
         metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
         metrics.writeMetrics(this.metricsDir, "writeMetricsDoesNotCreateFilesWhenDisabled");
 
@@ -147,7 +147,7 @@ public class FlagMetricsTest {
     @Test(expected = IllegalArgumentException.class)
     // If this test starts failing, then get rid of FlagMetricsWithTestCompatibleCodec and use FlagMetrics
     public void gzipCodecFailsInUnitTests() throws IOException {
-        FlagMetrics metrics = new FlagMetrics(this.localFileSystem, true);
+        FlagMetrics metrics = new FlagMetrics(localFileSystem, true);
         metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), "baseName");
     }
 }

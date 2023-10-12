@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.HashSet;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,15 +29,14 @@ public class SizeValidatorImplTest {
     private FlagMakerConfig flagMakerConfig;
     private Configuration configuration;
     private FlagDataTypeConfig dataTypeConfig;
-    private FlagFileTestSetup flagFileTestSetup;
 
     @Before
     public void before() throws Exception {
         this.configuration = new Configuration(false); // do not load defaults
 
-        this.flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig();
+        FlagFileTestSetup flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig();
         this.flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
-        this.dataTypeConfig = this.flagFileTestSetup.getInheritedDataTypeConfig();
+        this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
     }
 
     @Test
@@ -61,9 +61,9 @@ public class SizeValidatorImplTest {
 
     @Test
     public void countsInputFormatName() {
-        this.dataTypeConfig.setInputFormat(this.getClass()); // default is
-                                                             // EventSequenceFileInputFormat
-        verifyExpectedVariancePerFlagFile(this.getClass().getName().length() - EventSequenceFileInputFormat.class.getName().length());
+        // default is EventSequenceFileInputFormat
+        this.dataTypeConfig.setInputFormat(FileInputFormat.class);
+        verifyExpectedVariancePerFlagFile(FileInputFormat.class.getName().length() - EventSequenceFileInputFormat.class.getName().length());
     }
 
     @Test

@@ -299,7 +299,7 @@ public class FlagMakerConfigUtilityTest {
         // ensure directory is eliminate if it already exists
         File flagDirectory = new File(flagMakerConfig.getFlagFileDirectory());
         java.nio.file.Files.delete(flagDirectory.toPath());
-        assertTrue("Could not delete " + flagDirectory.toString(), !flagDirectory.exists());
+        assertFalse("Could not delete " + flagDirectory.toString(), flagDirectory.exists());
 
         // verify the FileSystem is functional
         fileSystem.mkdirs(new org.apache.hadoop.fs.Path(flagDirectory.toString()));

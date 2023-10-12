@@ -1,8 +1,6 @@
 package datawave.util.flag.processor;
 
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.HashSet;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -12,11 +10,8 @@ import java.util.regex.Pattern;
  */
 public class DateUtils {
 
-    static final HashSet<String> GROUPS = new HashSet<>(Arrays.asList("none", "year", "month", "day"));
     // Pattern: /YYYY/MM/DD followed by a / or the end of the string, (?: ) is a non-capturing group....
     public static final Pattern pattern = Pattern.compile("/([0-9]{4})((/[0-9]{2}){2})(?:/|$)");
-    public static final long A_MINUTE = 1000L * 60L;
-    public static final long ADAY = A_MINUTE * 60L * 24L;
     static final TimeZone GMT = TimeZone.getTimeZone("GMT");
 
     /**
@@ -29,7 +24,7 @@ public class DateUtils {
      *            the group
      * @param path
      *            the file path
-     * @return the time in milleseconds
+     * @return the time in milliseconds
      * @throws UnusableFileException
      *             if the file is unusable
      */
@@ -58,7 +53,7 @@ public class DateUtils {
             if ("month".equals(group))
                 return c.getTimeInMillis();
             if (mthDay.length() > 4) {
-                c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(mthDay.substring(4, mthDay.length())));
+                c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(mthDay.substring(4)));
             }
             // default to day
             return c.getTimeInMillis();

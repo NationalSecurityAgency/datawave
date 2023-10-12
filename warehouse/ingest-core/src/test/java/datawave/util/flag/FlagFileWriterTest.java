@@ -50,7 +50,7 @@ public class FlagFileWriterTest {
         flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         fs = flagFileTestSetup.getFileSystem();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
-        this.inputFiles = createInputFiles(5);
+        this.inputFiles = createInputFiles();
     }
 
     @After
@@ -209,15 +209,15 @@ public class FlagFileWriterTest {
         return new String(Files.readAllBytes(Paths.get(urlForExpectedContent.toURI())));
     }
 
-    private TreeSet<InputFile> createInputFiles(int filesPerDay) throws IOException {
+    private TreeSet<InputFile> createInputFiles() throws IOException {
         // creates 2 * filesPerDay number of files: filesPerDay in foo,
         // filesPerDay in bar
-        flagFileTestSetup.withPredicableInputFilenames().withFilesPerDay(filesPerDay).withNumDays(1).createTestFiles();
+        flagFileTestSetup.withPredicableInputFilenames().withFilesPerDay(5).withNumDays(1).createTestFiles();
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
         sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(flagMakerConfig, fs));
         // verify file creation
         assertNotNull(sortedFiles);
-        assertEquals(2 * filesPerDay, sortedFiles.size());
+        assertEquals(2 * 5, sortedFiles.size());
         return sortedFiles;
     }
 
