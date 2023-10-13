@@ -34,7 +34,7 @@ import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
-import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.DnUtils;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
@@ -441,7 +441,7 @@ public class CompositeQueryLogicTest {
 
     @Before
     public void setup() {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
     }
 

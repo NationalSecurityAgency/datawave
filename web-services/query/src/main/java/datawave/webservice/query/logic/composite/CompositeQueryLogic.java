@@ -26,7 +26,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cache.ResultsPage;
@@ -188,7 +188,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
     }
 
     public Set<Authorizations> updateRuntimeAuthorizationsAndQueryAuths(QueryLogic<?> logic, Query settings) throws AuthorizationException {
-        Set<String> requestedAuths = new HashSet<>(AuthorizationsUtil.splitAuths(settings.getQueryAuthorizations()));
+        Set<String> requestedAuths = new HashSet<>(WSAuthorizationsUtil.splitAuths(settings.getQueryAuthorizations()));
 
         // determine the valid authorizations for this call to be the user's auths for this logic
         DatawavePrincipal principal = (DatawavePrincipal) logic.getPrincipal();
@@ -211,7 +211,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         settings.setQueryAuthorizations(validQueryAuthorizations);
 
         // recalculate the runtime query authorizations (no need to pass in userService as we have already recalculated the principal)
-        Set<Authorizations> downgradedAuths = AuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, queryPrincipal);
+        Set<Authorizations> downgradedAuths = WSAuthorizationsUtil.getDowngradedAuthorizations(validQueryAuthorizations, principal, queryPrincipal);
         if (log.isTraceEnabled()) {
             log.trace("Principal auths for user " + principal.getPrimaryUser().getCommonName() + " are " + principal.getPrimaryUser().getAuths());
             log.trace("Query principal auths for " + logic.getLogicName() + " are " + validAuths);
