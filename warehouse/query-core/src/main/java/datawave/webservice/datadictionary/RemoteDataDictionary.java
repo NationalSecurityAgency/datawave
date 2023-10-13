@@ -1,17 +1,11 @@
 package datawave.webservice.datadictionary;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.List;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.deltaspike.core.api.config.ConfigProperty;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.annotation.Metric;
@@ -22,8 +16,8 @@ import datawave.configuration.RefreshableScope;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.system.CallerPrincipal;
 import datawave.webservice.common.remote.RemoteHttpService;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
-import datawave.webservice.results.datadictionary.DataDictionaryBase;
+import datawave.webservice.dictionary.data.DataDictionaryBase;
+import datawave.webservice.metadata.MetadataFieldBase;
 
 /**
  * Retrieves an {@link DataDictionaryBase} from the remote edge dictionary service.

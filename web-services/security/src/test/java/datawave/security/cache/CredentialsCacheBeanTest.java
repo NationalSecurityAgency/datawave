@@ -33,6 +33,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 
 import datawave.configuration.spring.BeanProvider;
+import datawave.security.DnList;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
