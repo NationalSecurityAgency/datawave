@@ -19,7 +19,7 @@ import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 import org.apache.commons.lang.builder.EqualsBuilder;
 
 import datawave.webservice.query.data.ObjectSizeOf;
-import datawave.webservice.query.util.StringMapAdapter;
+import datawave.webservice.xml.util.StringMapAdapter;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;

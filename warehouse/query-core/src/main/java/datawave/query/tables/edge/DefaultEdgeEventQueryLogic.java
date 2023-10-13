@@ -16,11 +16,11 @@ import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.model.edge.EdgeQueryModel;
 import datawave.query.tables.ShardQueryLogic;
+import datawave.webservice.dictionary.edge.EdgeDictionaryBase;
+import datawave.webservice.dictionary.edge.MetadataBase;
 import datawave.webservice.edgedictionary.RemoteEdgeDictionary;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.results.edgedictionary.EdgeDictionaryBase;
-import datawave.webservice.results.edgedictionary.MetadataBase;
 
 /**
  * This Logic highjacks the Query string, and transforms it into a ShardQueryLogic query The query string is of the form:
