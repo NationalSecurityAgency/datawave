@@ -1,9 +1,13 @@
 package datawave.audit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import java.util.List;
 
 import org.apache.commons.lang.math.IntRange;
-import org.junit.Assert;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
@@ -20,7 +24,7 @@ public class SplitSelectorExtractorTest {
         q.setQuery("selector1");
         List<String> selectorList = extractor.extractSelectors(q);
         List<String> expected = Lists.newArrayList("selector1");
-        Assert.assertEquals(expected, selectorList);
+        assertEquals(expected, selectorList);
     }
 
     @Test
@@ -32,7 +36,7 @@ public class SplitSelectorExtractorTest {
         q.setQuery("selector1;selector2;selector3");
         List<String> selectorList = extractor.extractSelectors(q);
         List<String> expected = Lists.newArrayList("selector1", "selector2", "selector3");
-        Assert.assertEquals(expected, selectorList);
+        assertEquals(expected, selectorList);
     }
 
     @Test
@@ -44,7 +48,7 @@ public class SplitSelectorExtractorTest {
         q.setQuery("selector1\0selector2\0selector3");
         List<String> selectorList = extractor.extractSelectors(q);
         List<String> expected = Lists.newArrayList("selector1", "selector2", "selector3");
-        Assert.assertEquals(expected, selectorList);
+        assertEquals(expected, selectorList);
     }
 
     @Test
@@ -57,68 +61,92 @@ public class SplitSelectorExtractorTest {
         q.setQuery("selector1,selector2,selector3");
         List<String> selectorList = extractor.extractSelectors(q);
         List<String> expected = Lists.newArrayList("selector1", "selector2", "selector3");
-        Assert.assertEquals(expected, selectorList);
+        assertEquals(expected, selectorList);
     }
 
     @Test
     public void rangeTest1() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
-        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0-2");
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 0));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 1));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 2));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
+        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0");
+        //  @formatter:off
+        assertAll(
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 0));},
+                        () -> {assertFalse(extractor.useSplit(useSplitRanges, 1));}
+        );
+        //  @formatter:on
     }
 
     @Test
     public void rangeTest2() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
-        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0-2,4");
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 2));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 4));
+        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0-2");
+        //  @formatter:off
+        assertAll(
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 0));},
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 1));},
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 2));},
+                () -> {assertFalse(extractor.useSplit(useSplitRanges, 3));}
+        );
+        //  @formatter:on
     }
 
     @Test
     public void rangeTest3() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
-        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("2,4");
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 2));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 4));
+        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0-2,4");
+        //  @formatter:off
+        assertAll(
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 2));},
+                        () -> {assertFalse(extractor.useSplit(useSplitRanges, 3));},
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 4));}
+        );
+        //  @formatter:on
     }
 
     @Test
     public void rangeTest4() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
-        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("2,4,6-");
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 2));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 4));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 5));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 6));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 100));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 1000));
+        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("2,4");
+        //  @formatter:off
+        assertAll(
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 2));},
+                        () -> {assertFalse(extractor.useSplit(useSplitRanges, 3));},
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 4));}
+        );
+        //  @formatter:on
     }
 
     @Test
     public void rangeTest5() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
-        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges(" 2, 4 , 6- ");
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 2));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 3));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 4));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 5));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 6));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 100));
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 1000));
+        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("2,4,6-");
+        //  @formatter:off
+        assertAll(//
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 2));},
+                        () -> {assertFalse(extractor.useSplit(useSplitRanges, 3));},
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 4));},
+                        () -> {assertFalse(extractor.useSplit(useSplitRanges, 5));},
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 6));},
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 100));},
+                        () -> {assertTrue(extractor.useSplit(useSplitRanges, 1000));}
+        );
+        //  @formatter:on
     }
 
     @Test
     public void rangeTest6() {
         SplitSelectorExtractor extractor = new SplitSelectorExtractor();
-        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges("0");
-        Assert.assertTrue(extractor.useSplit(useSplitRanges, 0));
-        Assert.assertFalse(extractor.useSplit(useSplitRanges, 1));
+        List<IntRange> useSplitRanges = extractor.parseUseSplitsRanges(" 2, 4 , 6- ");
+        //  @formatter:off
+        assertAll(//
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 2));},
+                () -> {assertFalse(extractor.useSplit(useSplitRanges, 3));},
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 4));},
+                () -> {assertFalse(extractor.useSplit(useSplitRanges, 5));},
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 6));},
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 100));},
+                () -> {assertTrue(extractor.useSplit(useSplitRanges, 1000));}
+        );
+        //  @formatter:on
     }
 }
