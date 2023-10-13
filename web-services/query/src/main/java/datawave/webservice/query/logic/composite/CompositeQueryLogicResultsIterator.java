@@ -1,10 +1,5 @@
 package datawave.webservice.query.logic.composite;
 
-import com.google.common.base.Throwables;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.EmptyObjectException;
-import org.apache.log4j.Logger;
-
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -13,18 +8,21 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Throwables;
 
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
+import datawave.webservice.query.exception.EmptyObjectException;
+
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
 
     protected static final Logger log = Logger.getLogger(CompositeQueryLogicResultsIterator.class);
-    
+
     private final CompositeQueryLogic logic;
-    
+
     private final ArrayBlockingQueue<Object> results;
     private Object nextEntry = null;
     private boolean seenEntries = false;
     private final Object lock = new Object();
     private volatile Throwable failure = null;
-    
+
     public CompositeQueryLogicResultsIterator(CompositeQueryLogic logic, ArrayBlockingQueue<Object> results) {
         this.logic = logic;
         this.results = results;
@@ -53,8 +51,8 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                         if (logic.getCompletionLatch().getCount() == 0 && logic.isShortCircuitExecution() && !seenEntries
                                         && !logic.getUninitializedLogics().isEmpty()) {
                             try {
-                                GenericQueryConfiguration config = logic.initialize(logic.getConfig().getClient(), logic.getSettings(), logic.getConfig()
-                                                .getAuthorizations());
+                                GenericQueryConfiguration config = logic.initialize(logic.getConfig().getClient(), logic.getSettings(),
+                                                logic.getConfig().getAuthorizations());
                                 logic.setupQuery(config);
                             } catch (Exception e) {
                                 Throwables.propagate(e);
