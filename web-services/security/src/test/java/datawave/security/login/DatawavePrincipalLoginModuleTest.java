@@ -54,7 +54,6 @@ import datawave.security.authorization.DatawaveUserService;
 import datawave.security.authorization.JWTTokenHandler;
 import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.util.DnUtils;
-import datawave.security.util.DnUtils.NpeUtils;
 import datawave.security.util.MockCallbackHandler;
 import datawave.security.util.MockDatawaveCertVerifier;
 
@@ -80,8 +79,7 @@ public class DatawavePrincipalLoginModuleTest extends EasyMockSupport {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
-
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         MockDatawaveCertVerifier.issuerSupported = true;
         MockDatawaveCertVerifier.verify = true;
 

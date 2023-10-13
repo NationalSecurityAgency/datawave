@@ -1,5 +1,6 @@
 package datawave.ingest.data.config.ingest;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -18,6 +19,7 @@ import org.apache.log4j.Logger;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
@@ -87,6 +89,12 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
      * datatypes and fields, so a valid value would be something like {@code product.productid.data.field.type.class}
      */
     public static final String FIELD_TYPE = ".data.field.type.class";
+
+    /**
+     * Configuration parameter to specify whether to use type regex hierarchy. If true, this will use the datatype associated with the "most precise" regex. If
+     * there are multiple matching regular expressions of the same precision, the last one read will be used. If false, all matching datatypes will be used.
+     */
+    public static final String USE_MOST_PRECISE_FIELD_TYPE_REGEX = "use.most.precise.field.type.regex";
 
     /**
      * Configuration parameter to specify the precedence of types to be used for this datatype. The last type found to handle a field will be the one used.
@@ -163,6 +171,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     private CompositeIngest compositeIngest;
     private VirtualIngest virtualIngest;
 
+    protected boolean useMostPreciseFieldTypeRegex = false;
+
     public enum FailurePolicy {
         DROP, LEAVE, FAIL
     }
@@ -188,6 +198,8 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
         this.typeFieldMap.put(null, new NoOpType());
         this.typePatternMap = HashMultimap.create();
         this.typeCompiledPatternMap = null;
+
+        this.useMostPreciseFieldTypeRegex = config.getBoolean(USE_MOST_PRECISE_FIELD_TYPE_REGEX, false);
 
         this.getVirtualIngest().setup(config);
 
@@ -574,7 +586,7 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
     }
 
     private void compilePatterns() {
-        Multimap<Matcher,datawave.data.type.Type<?>> patterns = HashMultimap.create();
+        Multimap<Matcher,datawave.data.type.Type<?>> patterns = LinkedListMultimap.create();
         if (typePatternMap != null) {
             for (String pattern : typePatternMap.keySet()) {
                 patterns.putAll(compileFieldNamePattern(pattern), typePatternMap.get(pattern));
@@ -599,15 +611,42 @@ public abstract class BaseIngestHelper extends AbstractIngestHelper implements C
                 compilePatterns();
             }
 
+            List<Integer> patternLengths = new ArrayList<>();
+            int bestMatch = 0;
+            Collection<datawave.data.type.Type<?>> bestMatchTypes = null;
+
             for (Matcher patternMatcher : typeCompiledPatternMap.keySet()) {
+                Collection<datawave.data.type.Type<?>> patternTypes = typeCompiledPatternMap.get(patternMatcher);
 
                 if (patternMatcher.reset(fieldName).matches()) {
-                    Collection<datawave.data.type.Type<?>> patternTypes = typeCompiledPatternMap.get(patternMatcher);
-                    types.addAll(patternTypes);
-                    typeFieldMap.putAll(fieldName, patternTypes);
+
+                    if (useMostPreciseFieldTypeRegex) {
+                        int patternLength = patternMatcher.pattern().toString().length();
+                        if (patternLengths.contains(patternLength)) {
+                            log.warn("Multiple regular expression patterns with the same length exist for matching field " + fieldName
+                                            + ". Only the last one read will be used. Please verify your configurations.");
+                        }
+                        patternLengths.add(patternLength);
+
+                        if (patternLength >= bestMatch) {
+                            bestMatch = patternLength;
+                            bestMatchTypes = patternTypes;
+                        }
+
+                    } else {
+                        types.addAll(patternTypes);
+                        typeFieldMap.putAll(fieldName, patternTypes);
+                    }
                 }
             }
+            if (null != bestMatchTypes) {
+                types.addAll(bestMatchTypes);
+                typeFieldMap.putAll(fieldName, bestMatchTypes);
+            }
+
         }
+
+        // if no types were defined or matched via regex, use the default
 
         if (types.isEmpty()) {
             types.addAll(typeFieldMap.get(null));

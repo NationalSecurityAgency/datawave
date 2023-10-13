@@ -26,7 +26,7 @@ import datawave.security.util.DnUtils;
 @XmlRootElement
 @XmlType(factoryMethod = "anonymousPrincipal", propOrder = {"name", "proxiedUsers", "creationTime"})
 @XmlAccessorType(XmlAccessType.NONE)
-public class DatawavePrincipal implements Principal, Serializable {
+public class DatawavePrincipal implements ProxiedUserDetails, Principal, Serializable {
     private final String username;
     private final DatawaveUser primaryUser;
     @XmlElement
@@ -195,4 +195,9 @@ public class DatawavePrincipal implements Principal, Serializable {
         return new DatawavePrincipal("ANONYMOUS");
     }
 
+    @Override
+    @SuppressWarnings("unchecked")
+    public <T extends ProxiedUserDetails> T newInstance(List<DatawaveUser> proxiedUsers) {
+        return (T) new DatawavePrincipal(proxiedUsers);
+    }
 }
