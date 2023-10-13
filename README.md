@@ -28,23 +28,32 @@ require some extra commands over the normal ones that one may be familiar
 with.
 
 ### Cloning with all submodules
-It's easiest to clone the repository pointing the submodules AT the same branch
-```bash
-# This will checkout the main branch for all of the submodules.
-# By default, the submodules will all be in a detached head state.
-git clone --recurse-submodules git@github.com:NationalSecurityAgency/datawave.git --branch main
+Cloning with all of the submodules is not required; however, if you are interested in checking 
+out and building all of the datawave projects under one repo, read this!
 
-# Checkout the main branch for each submodule so that we are no longer in a detached head state.
+It's easiest to clone the repository pointing the submodules at the same branch
+```bash
+# Start out by cloning the project as you normally would.
+git clone git@github.com:NationalSecurityAgency/datawave.git
+
+# Now, use git to retrieve all of the datawave submodules.
+# This will leave your submodules in a detached head state.
+cd datawave
+git submodule update --init --recursive
+
+# You can checkout the main branch for each submodule so that you are no longer in a detached head state.
 # The addition of `|| :` will ensure that the command is executed for each submodule, 
 # ignoring failures for submodules that don't have a main branch.
-cd datawave
 git submodule foreach 'git checkout main || :'
 
-# It is recommended to build the project using multiple threads
+# It is recommended to build the project using multiple threads.
 mvn -Pdocker,dist clean install -T 1C
 
-# If you don't want to build the microservices, you can skip them
+# If you don't want to build the microservices, you can skip them.
 mvn -Pdocker,dist -DskipMicroservices clean install -T 1C
+
+# If you decide that you no longer need the submodules, you can remove them.
+git submodule deinit --all
 ```
 
 [li]: http://img.shields.io/badge/license-ASL-blue.svg
