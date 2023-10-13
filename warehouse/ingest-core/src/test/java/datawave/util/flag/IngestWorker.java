@@ -9,8 +9,6 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jline.internal.Log;
-
 /**
  * (U) Worker thread for moving ingest files from the native file system into the ingest directory for the specific ingest data type.
  */
@@ -32,7 +30,7 @@ class IngestWorker implements Callable<Void> {
             try {
                 fs.copyFromLocalFile(false, false, srcFiles, dst);
             } catch (IOException ioe) {
-                Log.error("thread(" + Thread.currentThread().getId() + ") unable to copy ingest files: " + ioe.getMessage());
+                logger.error("thread(" + Thread.currentThread().getId() + ") unable to copy ingest files: " + ioe.getMessage());
             }
             final int waitDur = cfg.getRandomInterval();
             Thread.sleep(waitDur);

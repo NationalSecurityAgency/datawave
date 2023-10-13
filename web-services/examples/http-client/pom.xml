@@ -56,6 +56,11 @@
             <artifactId>protostuff-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${version.jakarta.xml.bind-api}</version>
+        </dependency>
+        <dependency>
             <groupId>org.apache.accumulo</groupId>
             <artifactId>accumulo-core</artifactId>
         </dependency>
