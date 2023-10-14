@@ -205,6 +205,70 @@ public class ProtobufEdgePreconditionTest {
     }
 
     @Test
+    public void testUnawarePreconSameGroupVeryOldData() {
+        // FELINE == 'tabby'
+
+        fields.put("EVENT_DATE", new BaseNormalizedContent("EVENT_DATE", "1966-09-08"));
+        fields.put("UUID", new BaseNormalizedContent("UUID", "0016dd72-0000-827d-dd4d-001b2163ba09"));
+        fields.put("FELINE", new NormalizedFieldAndValue("FELINE", "tabby", "PET", "0"));
+        fields.put("FELINE", new NormalizedFieldAndValue("FELINE", "siamese", "PET", "1"));
+        fields.put("FISH", new NormalizedFieldAndValue("FISH", "salmon", "PET", "0"));
+        fields.put("FISH", new NormalizedFieldAndValue("FISH", "guppy", "PET", "1"));
+        fields.put("ACTIVITY", new NormalizedFieldAndValue("ACTIVITY", "fetch", "THING", "0"));
+
+        ProtobufEdgeDataTypeHandler<Text,BulkIngestKey,Value> edgeHandler = new ProtobufEdgeDataTypeHandler<>();
+        TaskAttemptContext context = new TaskAttemptContextImpl(conf, new TaskAttemptID());
+        edgeHandler.setup(context);
+
+        Set<String> expectedKeys = new HashSet<>();
+        expectedKeys.add("guppy");
+        expectedKeys.add("guppy%00;siamese");
+        expectedKeys.add("salmon");
+        expectedKeys.add("salmon%00;tabby");
+        expectedKeys.add("siamese");
+        expectedKeys.add("siamese%00;guppy");
+        expectedKeys.add("tabby");
+        expectedKeys.add("tabby%00;salmon");
+
+        RawRecordContainer myEvent = getEvent(conf);
+        myEvent.setDate(0L);
+
+        // the count is doubled since activity < event date in this test. In this case, we add 2 edges each.
+        EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 16, true, false);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
+
+        Assert.assertEquals("MY_EDGE_TYPE/TO-FROM", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[0]);
+
+        // the dates
+        Assert.assertEquals("19700101/MY_CSV_DATA-MY_CSV_DATA///A", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[1]);
+        Assert.assertEquals("19660908/MY_CSV_DATA-MY_CSV_DATA///C", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(1)[1]);
+
+        // values
+        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").size());
+        Assert.assertEquals(
+                        "count: 1, bitmask: , sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(0));
+        Assert.assertEquals(
+                        "count: 1, bitmask: 1, sourceValue: guppy, sinkValue: siamese, hours: , duration: , loadDate: " + loadDateStr
+                                        + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy%00;siamese").get(1));
+        Assert.assertEquals(2, EdgeHandlerTestUtil.edgeValueResults.get("guppy").size());
+        Assert.assertEquals(
+                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: ",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(0));
+        Assert.assertEquals(
+                        "count: , bitmask: , sourceValue: guppy, sinkValue: , hours: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], duration: , loadDate: "
+                                        + loadDateStr + ", uuidString: , uuidObj: 0016dd72-0000-827d-dd4d-001b2163ba09, badActivityDate: false",
+                        EdgeHandlerTestUtil.edgeValueResults.get("guppy").get(1));
+
+        Assert.assertEquals("PRIVATE", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[2]);
+        Assert.assertEquals("0", EdgeHandlerTestUtil.edgeKeyResults.get("guppy%00;siamese").get(0)[3]);
+
+    }
+
+    @Test
     public void testUnawarePreconDifferentGroup() {
         // FELINE == 'tabby'
 

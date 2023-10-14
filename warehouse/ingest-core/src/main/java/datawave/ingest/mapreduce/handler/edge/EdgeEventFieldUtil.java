@@ -213,7 +213,7 @@ public class EdgeEventFieldUtil {
         long activityDate = getActivityDate(normalizedFields, edgeDefConfigs);
 
         // get the activity date from the event fields map
-        boolean validActivityDate = validateActivityDate(activityDate, event.getDate(), edgeConfig.getFutureDelta(), edgeConfig.getPastDelta());
+        boolean validActivityDate = validateActivityDate(activityDate, event.getDate(), edgeConfig.getPastDelta(), edgeConfig.getFutureDelta());
         boolean activityEqualsEvent = false;
 
         // If the activity date is valid check to see if it is on the same day as the event date
