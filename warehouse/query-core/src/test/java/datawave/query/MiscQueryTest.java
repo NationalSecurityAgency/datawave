@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import datawave.query.exceptions.InvalidQueryException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -29,6 +28,7 @@ import datawave.query.attributes.Attribute;
 import datawave.query.attributes.Document;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.exceptions.FullTableScansDisallowedException;
+import datawave.query.exceptions.InvalidQueryException;
 import datawave.query.testframework.AbstractFunctionalQuery;
 import datawave.query.testframework.AccumuloSetup;
 import datawave.query.testframework.BaseShardIdRange;
@@ -108,7 +108,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
 
         Map<String,String> options = new HashMap<>();
 
-        //check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
+        // check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
         options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
 
         runTest(query, expect, options);
@@ -125,7 +125,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
 
         Map<String,String> options = new HashMap<>();
 
-        //check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
+        // check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
         options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "true");
 
         runTest(query, expect, options);
