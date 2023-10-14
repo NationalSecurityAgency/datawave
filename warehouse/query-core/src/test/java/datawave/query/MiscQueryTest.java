@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import datawave.query.exceptions.InvalidQueryException;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -96,8 +97,8 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         runTest(query, expect);
     }
 
-    @Test
-    public void testFieldIgnoreParam() throws Exception {
+    @Test(expected = InvalidQueryException.class)
+    public void testFieldIgnoreParam1() throws Exception {
         log.info("------  testEventThreshold  ------");
         // setting event per day does not alter results
         this.logic.setEventPerDayThreshold(1);
@@ -106,6 +107,25 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         String expect = this.dataManager.convertAnyField(phrase);
 
         Map<String,String> options = new HashMap<>();
+
+        //check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
+        options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
+
+        runTest(query, expect, options);
+    }
+
+    @Test
+    public void testFieldIgnoreParam2() throws Exception {
+        log.info("------  testEventThreshold  ------");
+        // setting event per day does not alter results
+        this.logic.setEventPerDayThreshold(1);
+        String phrase = RE_OP + "'.*a'";
+        String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
+        String expect = this.dataManager.convertAnyField(phrase);
+
+        Map<String,String> options = new HashMap<>();
+
+        //check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
         options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "true");
 
         runTest(query, expect, options);
