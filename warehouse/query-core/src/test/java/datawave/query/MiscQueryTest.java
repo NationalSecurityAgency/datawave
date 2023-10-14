@@ -102,13 +102,13 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         log.info("------  testEventThreshold  ------");
         // setting event per day does not alter results
         this.logic.setEventPerDayThreshold(1);
-        String phrase = RE_OP + "'.*a'";
+        String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
         String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
         String expect = this.dataManager.convertAnyField(phrase);
 
         Map<String,String> options = new HashMap<>();
 
-        // check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
+        // this will throw an exception due to the nonexistent fields not being ignored.
         options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
 
         runTest(query, expect, options);
@@ -119,14 +119,31 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
         log.info("------  testEventThreshold  ------");
         // setting event per day does not alter results
         this.logic.setEventPerDayThreshold(1);
-        String phrase = RE_OP + "'.*a'";
+        String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
         String query = Constants.ANY_FIELD + phrase + "&& FOO == bar2";
         String expect = this.dataManager.convertAnyField(phrase);
 
         Map<String,String> options = new HashMap<>();
 
-        // check the DefaultQueryPlanner to confirm if timedTestForNonExistentFields is called
+        // this should allow the query to run successfully.
         options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "true");
+
+        runTest(query, expect, options);
+    }
+
+    @Test
+    public void testFieldIgnoreParam3() throws Exception {
+        log.info("------  testEventThreshold  ------");
+        // setting event per day does not alter results
+        this.logic.setEventPerDayThreshold(1);
+        String phrase = RE_OP + "'.*a' && STATE == 'sta'";
+        String query = Constants.ANY_FIELD + phrase + "&& STATE == 'sta'";
+        String expect = this.dataManager.convertAnyField(phrase);
+
+        Map<String,String> options = new HashMap<>();
+
+        // this should allow the query to run successfully.
+        options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
 
         runTest(query, expect, options);
     }
