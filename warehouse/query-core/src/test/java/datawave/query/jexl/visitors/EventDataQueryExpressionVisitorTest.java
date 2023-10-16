@@ -45,9 +45,9 @@ public class EventDataQueryExpressionVisitorTest {
     private static final ColumnVisibility cv1 = new ColumnVisibility("A&B&C&(D|E|F)");
     private AttributeFactory attrFactory;
 
-    private MockMetadataHelper helper = new MockMetadataHelper();
-    private MockDateIndexHelper helper2 = new MockDateIndexHelper();
-    private ShardQueryConfiguration config = new ShardQueryConfiguration();
+    private final MockMetadataHelper helper = new MockMetadataHelper();
+    private final MockDateIndexHelper helper2 = new MockDateIndexHelper();
+    private final ShardQueryConfiguration config = new ShardQueryConfiguration();
 
     @Before
     public void setupTypeMetadata() {
@@ -99,10 +99,10 @@ public class EventDataQueryExpressionVisitorTest {
 
             StringBuilder b = new StringBuilder();
             if (!output.isEmpty()) {
-                b.append(" Unexpected entries found: " + output);
+                b.append(" Unexpected entries found: ").append(output);
             }
             if (!missing.isEmpty()) {
-                b.append(" Expected entries that were not found: " + output);
+                b.append(" Expected entries that were not found: ").append(output);
             }
 
             if (b.length() > 0) {
@@ -1003,7 +1003,7 @@ public class EventDataQueryExpressionVisitorTest {
         final AtomicInteger completed = new AtomicInteger();
         Runnable runnable = () -> {
             try {
-                final Map<String,? extends PeekingPredicate<Key>> filter = ExpressionFilter.clone(base);
+                final Map<String,ExpressionFilter> filter = ExpressionFilter.clone(base);
                 started.getAndIncrement();
                 synchronized (gate) {
                     gate.wait();
