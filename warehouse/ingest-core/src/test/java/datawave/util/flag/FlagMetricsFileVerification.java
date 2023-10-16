@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -48,23 +47,31 @@ public class FlagMetricsFileVerification {
     public void assertCountersForFilesShowingFlagTimes(long startTime, long stopTime) {
         CounterGroup group = this.counters.getGroup("FlagFile");
 
-        List<String> actualFileNames = StreamSupport.stream(group.spliterator(), false).map(Counter::getName).collect(Collectors.toList());
+        List<String> actualFileNames = collectFileNames(group);
         Collection<String> expectedFileNames = flagFileTestSetup.getNamesOfCreatedFiles();
         assertTrue(expectedFileNames.containsAll(actualFileNames));
         assertTrue(actualFileNames.containsAll(expectedFileNames));
 
-        List<Long> actualCurrentTimes = StreamSupport.stream(group.spliterator(), false).map(Counter::getValue).collect(Collectors.toList());
+        List<Long> actualCurrentTimes = collectTimes(group);
         for (Long actualTime : actualCurrentTimes) {
             assertTrue(startTime <= actualTime);
             assertTrue(stopTime >= actualTime);
         }
     }
 
+    private List<Long> collectTimes(CounterGroup group) {
+        return StreamSupport.stream(group.spliterator(), false).map(Counter::getValue).collect(Collectors.toList());
+    }
+
+    private List<String> collectFileNames(CounterGroup group) {
+        return StreamSupport.stream(group.spliterator(), false).map(Counter::getName).collect(Collectors.toList());
+    }
+
     // Counter Group "InputFile" contains InputFile names and lastModified timestamps for each
     public void assertCountersForInputFileLastModified(Collection<String> expectedFileNames) {
         CounterGroup group = this.counters.getGroup("InputFile");
 
-        List<String> actualFileNames = StreamSupport.stream(group.spliterator(), false).map(Counter::getName).collect(Collectors.toList());
+        List<String> actualFileNames = collectFileNames(group);
         assertTrue(expectedFileNames.containsAll(actualFileNames));
         assertTrue(actualFileNames.containsAll(expectedFileNames));
 
