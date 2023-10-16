@@ -75,7 +75,7 @@ public class FlagFileContentExpectations {
     private void verifySortedFileContents() {
         String fileDelimiter = this.includesFileMarker ? String.valueOf(NEWLINE) : ",";
 
-		String expectedFileContents = this.beginning + joinInputFileNames(fileDelimiter) + this.ending;
+        String expectedFileContents = this.beginning + joinInputFileNames(fileDelimiter) + this.ending;
 
         Assert.assertEquals(expectedFileContents, actualFileContents);
     }

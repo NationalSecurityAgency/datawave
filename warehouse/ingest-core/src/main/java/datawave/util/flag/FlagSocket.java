@@ -13,8 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Listens on a Socket for messages and delivers them to a message queue.
- * Intended to run within its own Thread.
+ * Listens on a Socket for messages and delivers them to a message queue. Intended to run within its own Thread.
  */
 public class FlagSocket implements Runnable {
     // instructs the FlagMaker to stop running
@@ -39,18 +38,18 @@ public class FlagSocket implements Runnable {
 
     @Override
     public void run() {
-        log.info("Listening for shutdown commands on port {}", serverSocket.getLocalPort());
+        log.info("Listening for commands on port {}", serverSocket.getLocalPort());
         while (running) {
             try {
                 Socket socket = serverSocket.accept();
-                log.info("{} connected to the shutdown port", socket.getRemoteSocketAddress());
+                log.info("{} connected to the socket messaging port", socket.getRemoteSocketAddress());
                 awaitMessageOrTimeout(socket);
             } catch (SocketException e) {
                 if (running) {
                     log.info("Socket Exception occurred: {}", e.getMessage(), e);
                 }
             } catch (IOException e) {
-                log.error("Error waiting for shutdown connection: {}", e.getMessage(), e);
+                log.error("Error waiting for message on socket connection: {}", e.getMessage(), e);
             }
         }
     }
