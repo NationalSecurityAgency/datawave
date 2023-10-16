@@ -27,7 +27,6 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: 'recursive'
-        ref: ${{ github.ref_name }}
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v3
       with:
@@ -41,6 +40,8 @@ jobs:
         git status
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
+      with:
+        ref: ${{ github.ref_name }}
       run: |
         if [ "$diffs_found" = true ]; then
           git config --global user.name "GitHub Actions"
