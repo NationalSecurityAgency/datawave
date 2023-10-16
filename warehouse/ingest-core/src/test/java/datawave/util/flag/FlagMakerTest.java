@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import datawave.util.flag.config.FlagMakerConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -18,8 +19,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.io.Files;
 
 import datawave.util.flag.config.FlagDataTypeConfig;
 
@@ -116,23 +115,20 @@ public class FlagMakerTest {
 
         // Set the maximum flag file length to hold no more than the expected
         // size of a flag file containing 5 input files
-        flagMakerTestSetup.getFlagMakerConfig().setMaxFileLength(expectedFlagFileLength + 1); // one character larger
+        FlagMakerConfig flagMakerConfig = flagMakerTestSetup.getFlagMakerConfig();
 
-        // flagMakerTestSetup.fmc.setFlagCountThreshold(-1);
-        // ensure flag maker doesn't wait to create additional flag files ensure max flags is not a limiting factor by making it larger
-        FlagDataTypeConfig flagDataTypeConfig = flagMakerTestSetup.getFlagMakerConfig().getFlagConfigs().get(0);
+        // one character larger than expected file length
+        flagMakerConfig.setMaxFileLength(expectedFlagFileLength + 1);
+
+        // ensure max flags is not a limiting factor by making it slightly larger than the desired number
+        FlagDataTypeConfig flagDataTypeConfig = flagMakerConfig.getFlagConfigs().get(0);
         flagDataTypeConfig.setMaxFlags(desiredInputFilesPerFlag + 1);
 
+        FlagMaker flagMaker = new FlagMaker(flagMakerConfig);
+
         // set counter limit very high to eliminate this constraint
-
-        // FlagDataTypeConfig flagDataTypeConfig =
-        // flagMakerTestSetup.fmc.getFlagConfigs().get(0);
-        // flagDataTypeConfig.setFlagCountThreshold(Integer.MIN_VALUE + 1);
-        // setting this low will cause the FlagMaker to try to create full flag files flagDataTypeConfig.setTimeoutMilliSecs(Integer.MAX_VALUE);
-        // setting this high will cause the FlagMaker to wait until the max flags are reached
-
-        FlagMaker flagMaker = new FlagMaker(flagMakerTestSetup.getFlagMakerConfig());
         flagMaker.config.set("mapreduce.job.counters.max", Integer.toString(Integer.MAX_VALUE));
+
         flagMaker.processFlags();
     }
 
@@ -237,19 +233,24 @@ public class FlagMakerTest {
         }
     }
 
-    private int getExpectedFlagFileLength(int NUM_INPUT_FILES_PER_FLAG) {
+    private int getExpectedFlagFileLength(int numInputFilesPerFlag) {
         String expectedInputFileLength = this.flagMakerTestSetup.getFlagMakerConfig().getBaseHDFSDir()
                         + "flagged/bar/2013/01/01/5a2078da-1569-4cb9-bd50-f95fc53934e7";
 
         // note flag file length is a function of the number of input files per flag
-        int expectedFlagFileLength = "target/test/bin/ingest/bulk-ingest.sh".length(); // datawave home + script
-        expectedFlagFileLength += " 10 -inputFormat datawave.ingest.input.reader.event.EventSequenceFileInputFormat".length(); // script arguments
+
+        // datawave home + script
+        int expectedFlagFileLength = "target/test/bin/ingest/bulk-ingest.sh".length();
+        // script arguments
+        expectedFlagFileLength += " 10 -inputFormat datawave.ingest.input.reader.event.EventSequenceFileInputFormat".length();
         // space or comma for each file
-        expectedFlagFileLength += NUM_INPUT_FILES_PER_FLAG;
+        expectedFlagFileLength += numInputFilesPerFlag;
         // names of the files
-        expectedFlagFileLength += (expectedInputFileLength.length() * NUM_INPUT_FILES_PER_FLAG);
-        expectedFlagFileLength += 1; // space at the end of the arguments
-        expectedFlagFileLength += 1; // new line
+        expectedFlagFileLength += (expectedInputFileLength.length() * numInputFilesPerFlag);
+        // space at the end of the arguments
+        expectedFlagFileLength += 1;
+        // new line
+        expectedFlagFileLength += 1;
         return expectedFlagFileLength;
     }
 }
