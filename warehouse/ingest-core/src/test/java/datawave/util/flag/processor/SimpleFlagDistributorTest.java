@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Collection;
 
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
 import org.junit.Before;
@@ -26,7 +27,7 @@ import datawave.util.flag.config.FlagDataTypeConfig;
  */
 public class SimpleFlagDistributorTest {
     private static final Logger LOG = LoggerFactory.getLogger(FlagMakerTest.class);
-    private static final SizeValidator SIZE_VALIDATOR = (fc, files) -> true;
+    private static final SizeValidator ALWAYS_VALID_SIZE_VALIDATOR = (fc, files) -> true;
     private static final int FULL_BATCH = 10;
     private static final boolean DO_NOT_REQUIRE_MAX_SIZE = false;
     private static final boolean ONLY_FULL_SIZED_FLAGS = true;
@@ -40,18 +41,18 @@ public class SimpleFlagDistributorTest {
 
     @Before
     public void setUp() throws Exception {
-        LOG.error("testName: " + testName.getMethodName());
+        LOG.debug("testName: " + testName.getMethodName());
 
-        flagMakerTestSetup = new FlagFileTestSetup();
-        flagMakerTestSetup.withTestFlagMakerConfig().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
-        flagMakerTestSetup.getFlagMakerConfig().validate();
-
-        this.simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.getFlagMakerConfig());
+        this.flagMakerTestSetup = new FlagFileTestSetup();
+        this.flagMakerTestSetup.withTestFlagMakerConfig().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        this.flagMakerTestSetup.getFlagMakerConfig().validate();
 
         this.fooAndBarConfig = flagMakerTestSetup.getFlagMakerConfig().getFlagConfigs().get(0);
 
-        // assumption for multiple test cases
+        // precondition for multiple test cases
         assertEquals(FULL_BATCH, this.fooAndBarConfig.getMaxFlags());
+
+        this.simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.getFlagMakerConfig());
     }
 
     @After
@@ -64,22 +65,20 @@ public class SimpleFlagDistributorTest {
         int numDirectories = 9;
         flagMakerTestSetup.withFilesPerDay(0).withNumDays(numDirectories).createTestFiles();
 
-        // verify test setup created directories
-        Path pathPattern = new Path(flagMakerTestSetup.getFileSystem().getWorkingDirectory(), new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*"));
-        assertEquals(numDirectories, flagMakerTestSetup.getFileSystem().globStatus(pathPattern).length);
+        verifyExpectedNumberOfPatternMatches(numDirectories, "/*/*/*");
 
-        // verify that nothing is loaded (directories are ignored)
-        simpleFlagDistributor.loadFiles(fooAndBarConfig);
-        assertFalse(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
+        verifyNoFilesAvailableAfterLoad();
+
     }
 
     @Test
     public void callingNextWhenNothingWasLoadedReturnsNothing() throws Exception {
         // do not create any files
-        simpleFlagDistributor.loadFiles(fooAndBarConfig);
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
 
-        Collection<InputFile> emptyBatch = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.loadFiles(fooAndBarConfig);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
+
+        Collection<InputFile> emptyBatch = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(0, emptyBatch.size());
     }
 
@@ -91,17 +90,10 @@ public class SimpleFlagDistributorTest {
         // load 12 files
         flagMakerTestSetup.withFilesPerDay(6).withNumDays(1).createTestFiles();
 
-        // verify test setup created files
-        Path pathPatternFolderOne = new Path(flagMakerTestSetup.getFileSystem().getWorkingDirectory(),
-                        new Path(fooAndBarConfig.getFolders().get(0) + "/*/*/*/*"));
-        assertEquals(6, flagMakerTestSetup.getFileSystem().globStatus(pathPatternFolderOne).length);
-        Path pathPatternFolderTwo = new Path(flagMakerTestSetup.getFileSystem().getWorkingDirectory(),
-                        new Path(fooAndBarConfig.getFolders().get(1) + "/*/*/*/*"));
-        assertEquals(6, flagMakerTestSetup.getFileSystem().globStatus(pathPatternFolderTwo).length);
+        verifyExpectedNumberOfPatternMatches(6, "/*/*/*/*");
 
         // verify that nothing is loaded (mismatching file names are ignored)
-        simpleFlagDistributor.loadFiles(fooAndBarConfig);
-        assertFalse(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
+        verifyNoFilesAvailableAfterLoad();
     }
 
     @Test
@@ -112,20 +104,19 @@ public class SimpleFlagDistributorTest {
 
         // get a full batch
         assertTrue(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
-        Collection<InputFile> files = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> files = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(FULL_BATCH, files.size());
 
         // get a partial batch
         assertTrue(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
-        Collection<InputFile> secondBatch = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> secondBatch = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(12 - FULL_BATCH, secondBatch.size());
     }
 
     @Test
     public void testIgnoresNonexistentFolder() throws Exception {
         // verify that nothing is loaded (the directory was never created)
-        simpleFlagDistributor.loadFiles(fooAndBarConfig);
-        assertFalse(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
+        verifyNoFilesAvailableAfterLoad();
     }
 
     @Test
@@ -144,7 +135,7 @@ public class SimpleFlagDistributorTest {
         flagMakerTestSetup.withFilesPerDay(2).withNumDays(1).createTestFiles();
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
 
-        Collection<InputFile> files = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> files = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(4, files.size());
     }
 
@@ -154,7 +145,7 @@ public class SimpleFlagDistributorTest {
         flagMakerTestSetup.withFilesPerDay(2).withNumDays(1).createTestFiles();
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
 
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
 
         assertFalse(simpleFlagDistributor.hasNext(ONLY_FULL_SIZED_FLAGS));
         assertFalse(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
@@ -167,9 +158,9 @@ public class SimpleFlagDistributorTest {
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
 
         // consumes the files
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
 
-        Collection<InputFile> emptyBatch = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> emptyBatch = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(0, emptyBatch.size());
     }
 
@@ -186,8 +177,8 @@ public class SimpleFlagDistributorTest {
         // 8 additional = 2 directories * 4 file per directory
         flagMakerTestSetup.withFilesPerDay(4).withNumDays(1).createAdditionalTestFiles();
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
-        // 10 total files = 2 existing + 8 additional
 
+        // 10 total files = 2 existing + 8 additional
         assertTrue(simpleFlagDistributor.hasNext(ONLY_FULL_SIZED_FLAGS));
     }
 
@@ -200,9 +191,9 @@ public class SimpleFlagDistributorTest {
         // 8 additional = 2 directories * 4 file per directory
         flagMakerTestSetup.withFilesPerDay(4).withNumDays(1).createAdditionalTestFiles();
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
-        // 10 total files = 2 existing + 8 additional
 
-        Collection<InputFile> files = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        // 10 total files = 2 existing + 8 additional
+        Collection<InputFile> files = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(10, files.size());
     }
 
@@ -215,11 +206,11 @@ public class SimpleFlagDistributorTest {
         // 8 additional = 2 directories * 4 file per directory
         flagMakerTestSetup.withFilesPerDay(4).withNumDays(1).createAdditionalTestFiles();
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
+
         // 10 total files = 2 existing + 8 additional
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
 
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
-
-        Collection<InputFile> secondBatch = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> secondBatch = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(0, secondBatch.size());
     }
 
@@ -240,7 +231,7 @@ public class SimpleFlagDistributorTest {
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
 
         // consume 10 of the 12 files
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertFalse(simpleFlagDistributor.hasNext(ONLY_FULL_SIZED_FLAGS));
     }
 
@@ -251,10 +242,10 @@ public class SimpleFlagDistributorTest {
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
 
         // consume 10 of the 12 files
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
 
         // consume remaining 2 files
-        Collection<InputFile> secondBatch = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> secondBatch = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(2, secondBatch.size());
     }
 
@@ -265,14 +256,14 @@ public class SimpleFlagDistributorTest {
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
 
         // consume 10 of the 12 files
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
 
         // consume remaining 2 files
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
 
         assertFalse(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
 
-        Collection<InputFile> thirdBatch = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> thirdBatch = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(0, thirdBatch.size());
     }
 
@@ -295,11 +286,11 @@ public class SimpleFlagDistributorTest {
         simpleFlagDistributor.loadFiles(fooAndBarConfig);
 
         assertTrue(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
-        Collection<InputFile> files = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> files = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(10, files.size());
 
         assertTrue(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
-        Collection<InputFile> secondBatch = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> secondBatch = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(2, secondBatch.size());
     }
 
@@ -311,7 +302,7 @@ public class SimpleFlagDistributorTest {
 
         // consume those 2 files
         assertTrue(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
-        Collection<InputFile> files = simpleFlagDistributor.next(SIZE_VALIDATOR);
+        Collection<InputFile> files = simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
         assertEquals(2, files.size());
 
         // 8 additional = 2 directories * 4 file per directory
@@ -329,7 +320,7 @@ public class SimpleFlagDistributorTest {
         SimpleFlagDistributor simpleFlagDistributor = new SimpleFlagDistributor(flagMakerTestSetup.getFlagMakerConfig());
 
         // hasNext and next do not cause an error
-        simpleFlagDistributor.next(SIZE_VALIDATOR);
+        simpleFlagDistributor.next(ALWAYS_VALID_SIZE_VALIDATOR);
     }
 
     @Test(expected = IllegalStateException.class)
@@ -341,5 +332,20 @@ public class SimpleFlagDistributorTest {
 
         // hasNext and next do not cause an error
         assertFalse(simpleFlagDistributor.hasNext(false));
+    }
+
+    private void verifyExpectedNumberOfPatternMatches(int expectedNumber, String pattern) throws IOException {
+        // verify test setup created directories / files at specified depth
+        FileSystem fileSystem = flagMakerTestSetup.getFileSystem();
+        for (String folder : fooAndBarConfig.getFolders()) {
+            Path pathPattern = new Path(fileSystem.getWorkingDirectory(), folder + pattern);
+            assertEquals(expectedNumber, fileSystem.globStatus(pathPattern).length);
+        }
+    }
+
+    private void verifyNoFilesAvailableAfterLoad() throws IOException {
+        // verify that no files are available after loadFiles
+        simpleFlagDistributor.loadFiles(fooAndBarConfig);
+        assertFalse(simpleFlagDistributor.hasNext(DO_NOT_REQUIRE_MAX_SIZE));
     }
 }
