@@ -155,6 +155,16 @@ public class FlagMakerSocketIntegrationTest {
         assertZeroFlagFilesCreated();
     }
 
+    @Test
+    public void testKickWithBogusDataTypeIgnored() throws InterruptedException, IOException {
+        // send "kick" signal to socket, specifying unknown datatype
+        writeToSocket(retryConnectingToSocket(), "kick bogus");
+        assertFlagMakerStaysAlive(thread);
+
+        // no impact without datatype
+        assertZeroFlagFilesCreated();
+    }
+
     private Thread startFlagMakerThread(String... additionalArguments) {
         Thread thread = createFlagMakerThread(additionalArguments);
         thread.start();

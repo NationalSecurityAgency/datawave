@@ -13,7 +13,9 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.apache.commons.lang.mutable.MutableInt;
@@ -117,7 +119,7 @@ public class FlagMaker implements Runnable {
 
     private static void shutdown(int port) throws IOException {
         try (Socket s = new Socket("localhost", port); PrintWriter pw = new PrintWriter(s.getOutputStream(), true)) {
-            pw.write("shutdown");
+            pw.write(FlagSocket.SHUTDOWN_MESSAGE);
             pw.flush();
         }
     }
@@ -247,23 +249,35 @@ public class FlagMaker implements Runnable {
         return fileCounter.intValue();
     }
 
-    public void update(String s) {
-        if ("shutdown".equals(s)) {
-            LOG.info("FlagMaker.update received shutdown");
+    public void receiveActionableMessage(String message) {
+        if (FlagSocket.SHUTDOWN_MESSAGE.equals(message)) {
+            LOG.info("Received " + FlagSocket.SHUTDOWN_MESSAGE);
             running = false;
-        } else if (s.startsWith("kick")) {
-            LOG.info("FlagMaker.update received kick");
-            String dataType = s.substring(4).trim();
-            for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
-                if (cfg.getDataName().equals(dataType)) {
-                    LOG.info("Forcing {} to generate flag file", dataType);
-                    cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
-                    break;
-                }
-            }
+        } else if (message.startsWith(FlagSocket.KICK_MESSAGE)) {
+            LOG.info("Received " + FlagSocket.KICK_MESSAGE);
+            executeKickAction(message);
         } else {
-            LOG.info("FlagMaker.update received unknown command");
+            LOG.info("Received unknown message " + message);
         }
+    }
+
+    private void executeKickAction(String message) {
+        String dataType = message.substring(4).trim();
+        if (dataType.isEmpty()) {
+            LOG.warn("'" + FlagSocket.KICK_MESSAGE + "' message received without a dataTypeName.  Try 'kick dataTypeName'");
+            return;
+        }
+        LOG.info("Attempting '" + FlagSocket.KICK_MESSAGE + "' for " + dataType);
+        for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
+            if (cfg.getDataName().equals(dataType)) {
+                LOG.info("Forcing {} to generate flag file", dataType);
+                cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
+                return;
+            }
+        }
+        List<String> dataTypeNames = fmc.getFlagConfigs().stream().map(FlagDataTypeConfig::getDataName).collect(Collectors.toList());
+        LOG.info("No match found for '" + dataType + "' among " + dataTypeNames.toString());
+
     }
 
     private void startSocketAndReceiver() {
@@ -276,7 +290,7 @@ public class FlagMaker implements Runnable {
             Thread messageHandlerThread = new Thread(() -> {
                 while (running) {
                     try {
-                        update(socketMessageQueue.take());
+                        receiveActionableMessage(socketMessageQueue.take());
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }
