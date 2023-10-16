@@ -119,8 +119,8 @@ public class QueryOptions implements OptionDescriber {
     public static final String REDUCED_RESPONSE = "reduced.response";
     public static final String FULL_TABLE_SCAN_ONLY = "full.table.scan.only";
 
-    public static final String PROJECTION_FIELDS = "projection.fields";
-    public static final String BLACKLISTED_FIELDS = "blacklisted.fields";
+    public static final String INCLUDED_FIELDS = "included.fields";
+    public static final String EXCLUDED_FIELDS = "excluded.fields";
     public static final String INDEX_ONLY_FIELDS = "index.only.fields";
     public static final String INDEXED_FIELDS = "indexed.fields";
     public static final String COMPOSITE_FIELDS = "composite.fields";
@@ -279,10 +279,10 @@ public class QueryOptions implements OptionDescriber {
     protected JexlArithmetic arithmetic = new DefaultArithmetic();
 
     protected boolean projectResults = false;
-    protected boolean useWhiteListedFields = false;
-    protected Set<String> whiteListedFields = new HashSet<>();
-    protected boolean useBlackListedFields = false;
-    protected Set<String> blackListedFields = new HashSet<>();
+    protected boolean useIncludedFields = false;
+    protected Set<String> includedFields = new HashSet<>();
+    protected boolean useExcludedFields = false;
+    protected Set<String> excludedFields = new HashSet<>();
     protected Map<String,Integer> limitFieldsMap = new HashMap<>();
     protected Set<Set<String>> matchingFieldSets = new HashSet<>();
     protected boolean limitFieldsPreQueryEvaluation = false;
@@ -434,10 +434,10 @@ public class QueryOptions implements OptionDescriber {
         this.fullTableScanOnly = other.fullTableScanOnly;
 
         this.projectResults = other.projectResults;
-        this.useWhiteListedFields = other.useWhiteListedFields;
-        this.whiteListedFields = other.whiteListedFields;
-        this.useBlackListedFields = other.useBlackListedFields;
-        this.blackListedFields = other.blackListedFields;
+        this.useIncludedFields = other.useIncludedFields;
+        this.includedFields = other.includedFields;
+        this.useExcludedFields = other.useExcludedFields;
+        this.excludedFields = other.excludedFields;
 
         this.fiAggregator = other.fiAggregator;
 
@@ -662,8 +662,8 @@ public class QueryOptions implements OptionDescriber {
                         throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e);
                     } catch (NoSuchMethodException e) {
                         try {
-                            list.add(clazz.newInstance());
-                        } catch (InstantiationException | IllegalAccessException e2) {
+                            list.add(clazz.getDeclaredConstructor().newInstance());
+                        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e2) {
                             log.error("Unable to construct " + classname + " as a DocumentPermutation", e2);
                             throw new IllegalArgumentException("Unable to construct " + classname + " as a DocumentPermutation", e2);
                         }
@@ -1107,8 +1107,8 @@ public class QueryOptions implements OptionDescriber {
         options.put(REDUCED_RESPONSE, "Whether or not to return visibility markings on each attribute. Default: " + reducedResponse);
         options.put(Constants.RETURN_TYPE, "The method to use to serialize data for return to the client");
         options.put(FULL_TABLE_SCAN_ONLY, "If true, do not perform boolean logic, just scan the documents");
-        options.put(PROJECTION_FIELDS, "Attributes to return to the client");
-        options.put(BLACKLISTED_FIELDS, "Attributes to *not* return to the client");
+        options.put(INCLUDED_FIELDS, "Attributes to return to the client");
+        options.put(EXCLUDED_FIELDS, "Attributes to *not* return to the client");
         options.put(FILTER_MASKED_VALUES, "Filter the masked values when both the masked and unmasked variants are in the result set.");
         options.put(INCLUDE_DATATYPE, "Include the data type as a field in the document.");
         options.put(INCLUDE_RECORD_ID, "Include the record id as a field in the document.");
@@ -1284,35 +1284,35 @@ public class QueryOptions implements OptionDescriber {
             setTrackSizes(Boolean.parseBoolean(options.get(TRACK_SIZES)));
         }
 
-        if (options.containsKey(PROJECTION_FIELDS)) {
+        if (options.containsKey(INCLUDED_FIELDS)) {
             this.projectResults = true;
-            this.useWhiteListedFields = true;
+            this.useIncludedFields = true;
 
-            String fieldList = options.get(PROJECTION_FIELDS);
-            if (fieldList != null && EVERYTHING.equals(fieldList)) {
-                this.whiteListedFields = UniversalSet.instance();
-            } else if (fieldList != null && !fieldList.trim().equals("")) {
-                this.whiteListedFields = new HashSet<>();
-                Collections.addAll(this.whiteListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+            String fieldList = options.get(INCLUDED_FIELDS);
+            if (EVERYTHING.equals(fieldList)) {
+                this.includedFields = UniversalSet.instance();
+            } else if (fieldList != null && !fieldList.trim().isEmpty()) {
+                this.includedFields = new HashSet<>();
+                Collections.addAll(this.includedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
             if (options.containsKey(HIT_LIST) && Boolean.parseBoolean(options.get(HIT_LIST))) {
-                this.whiteListedFields.add(JexlEvaluation.HIT_TERM_FIELD);
+                this.includedFields.add(JexlEvaluation.HIT_TERM_FIELD);
             }
         }
 
-        if (options.containsKey(BLACKLISTED_FIELDS)) {
+        if (options.containsKey(EXCLUDED_FIELDS)) {
             if (this.projectResults) {
-                log.error("QueryOptions.PROJECTION_FIELDS and QueryOptions.BLACKLISTED_FIELDS are mutually exclusive");
+                log.error("QueryOptions.INCLUDED_FIELDS and QueryOptions.EXCLUDED_FIELDS are mutually exclusive");
                 return false;
             }
 
             this.projectResults = true;
-            this.useBlackListedFields = true;
+            this.useExcludedFields = true;
 
-            String fieldList = options.get(BLACKLISTED_FIELDS);
-            if (fieldList != null && !fieldList.trim().equals("")) {
-                this.blackListedFields = new HashSet<>();
-                Collections.addAll(this.blackListedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
+            String fieldList = options.get(EXCLUDED_FIELDS);
+            if (fieldList != null && !fieldList.trim().isEmpty()) {
+                this.excludedFields = new HashSet<>();
+                Collections.addAll(this.excludedFields, StringUtils.split(fieldList, Constants.PARAM_VALUE_SEP));
             }
         }
 
