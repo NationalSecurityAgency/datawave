@@ -62,35 +62,16 @@ public class FlagMakerSizingTest {
     @Parameterized.Parameters(name = "{4}")
     public static Iterable<Object[]> testCases() {
         // @formatter:off
-		return Arrays
-				.asList(new Object[][]{
-						{BLOCK_ON_TIME, ZERO_BACKLOG_TOLERANCE, FULL_FLAG_SIZE,
-								ONLY_FULL_SIZE,
-								"block on both time and backlog size"},
-						{BLOCK_ON_TIME, HIGH_BACKLOG_TOLERANCE, FULL_FLAG_SIZE,
-								ONLY_FULL_SIZE,
-								"block on time, not backlog size (very high backlog threshold)"},
-						{BLOCK_ON_TIME, UNSET_BACKLOG_TOLERANCE,
-								FULL_FLAG_SIZE, ONLY_FULL_SIZE,
-								"block on time while backlog threshold is unset"},
-						{UNSET_TIMEOUT, ZERO_BACKLOG_TOLERANCE, FULL_FLAG_SIZE,
-								ONLY_FULL_SIZE,
-								"block on backlog size, not time (unset)"},
-						{UNSET_TIMEOUT, HIGH_BACKLOG_TOLERANCE, FULL_FLAG_SIZE,
-								ALLOW_PARTIALS,
-								"no blocking, using high backlog threshold, unset time"},
-						{UNSET_TIMEOUT, UNSET_BACKLOG_TOLERANCE,
-								FULL_FLAG_SIZE, ALLOW_PARTIALS,
-								"no blocking, with unset time and unset backlog threshold"},
-						{NO_TIME_BLOCK, ZERO_BACKLOG_TOLERANCE, FULL_FLAG_SIZE,
-								ONLY_FULL_SIZE,
-								"block on backlog size, not time"},// passes
-						{NO_TIME_BLOCK, HIGH_BACKLOG_TOLERANCE, FULL_FLAG_SIZE,
-								ALLOW_PARTIALS,
-								"no blocking, using high backlog threshold"},
-						{NO_TIME_BLOCK, UNSET_BACKLOG_TOLERANCE,
-								FULL_FLAG_SIZE, ALLOW_PARTIALS,
-								"no blocking, with unset backlog threshold"}});
+		return Arrays.asList(new Object[][]{
+                    {BLOCK_ON_TIME, ZERO_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ONLY_FULL_SIZE, "block on both time and backlog size"},
+                    {BLOCK_ON_TIME, HIGH_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ONLY_FULL_SIZE, "block on time, not backlog size (very high backlog threshold)"},
+                    {BLOCK_ON_TIME, UNSET_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ONLY_FULL_SIZE, "block on time while backlog threshold is unset"},
+                    {UNSET_TIMEOUT, ZERO_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ONLY_FULL_SIZE, "block on backlog size, not time (unset)"},
+                    {UNSET_TIMEOUT, HIGH_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ALLOW_PARTIALS, "no blocking, using high backlog threshold, unset time"},
+                    {UNSET_TIMEOUT, UNSET_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ALLOW_PARTIALS, "no blocking, with unset time and unset backlog threshold"},
+                    {NO_TIME_BLOCK, ZERO_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ONLY_FULL_SIZE, "block on backlog size, not time"},
+                    {NO_TIME_BLOCK, HIGH_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ALLOW_PARTIALS, "no blocking, using high backlog threshold"},
+                    {NO_TIME_BLOCK, UNSET_BACKLOG_TOLERANCE, FULL_FLAG_SIZE, ALLOW_PARTIALS, "no blocking, with unset backlog threshold"}});
 		// @formatter:on
     }
 

@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import datawave.util.flag.config.FlagMakerConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
 
 /**
  * See related test classes: FlagMakerSizingTest, verifies logic related to sizing of flag files based on various configurations FlagMakerTimestampTest,
