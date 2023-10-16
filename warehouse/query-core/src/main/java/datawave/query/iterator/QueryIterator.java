@@ -867,7 +867,7 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             documents = Iterators.transform(documents, new AttributeKeepFilter<>());
         }
 
-        // Project fields using a whitelist or a blacklist before serialization
+        // Project fields using an include list or an exclude list before serialization
         if (this.projectResults) {
             if (gatherTimingDetails()) {
                 documents = Iterators.transform(documents, new EvaluationTrackingFunction<>(DocumentProjection, trackingSpan, getProjection()));
@@ -1211,22 +1211,22 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected DocumentProjection getProjection() {
 
-        if (this.useWhiteListedFields) {
+        if (this.useIncludedFields) {
             // make sure we include any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.whiteListedFields.addAll(getMatchingFieldList());
+                this.includedFields.addAll(getMatchingFieldList());
             }
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
-                            new Projection(this.whiteListedFields, Projection.ProjectionType.INCLUDES));
-        } else if (this.useBlackListedFields) {
+                            new Projection(this.includedFields, Projection.ProjectionType.INCLUDES));
+        } else if (this.useExcludedFields) {
             // make sure we are not excluding any fields being matched in the limit fields mechanism
             if (!this.matchingFieldSets.isEmpty()) {
-                this.blackListedFields.removeAll(getMatchingFieldList());
+                this.excludedFields.removeAll(getMatchingFieldList());
             }
             return new DocumentProjection(this.isIncludeGroupingContext(), this.isReducedResponse(), isTrackSizes(),
-                            new Projection(this.blackListedFields, Projection.ProjectionType.EXCLUDES));
+                            new Projection(this.excludedFields, Projection.ProjectionType.EXCLUDES));
         } else {
-            String msg = "Configured to use projection, but no whitelist or blacklist was provided";
+            String msg = "Configured to use projection, but no include list or exclude list was provided";
             log.error(msg);
             throw new IllegalArgumentException(msg);
         }
