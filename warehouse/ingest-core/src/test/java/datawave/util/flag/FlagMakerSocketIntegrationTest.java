@@ -165,6 +165,16 @@ public class FlagMakerSocketIntegrationTest {
         assertZeroFlagFilesCreated();
     }
 
+    @Test
+    public void testEmptyMessage() throws InterruptedException, IOException {
+        // send null signal to socket
+        writeToSocket(retryConnectingToSocket(), null);
+        assertFlagMakerStaysAlive(thread);
+
+        // no impact
+        assertZeroFlagFilesCreated();
+    }
+
     private Thread startFlagMakerThread(String... additionalArguments) {
         Thread thread = createFlagMakerThread(additionalArguments);
         thread.start();
