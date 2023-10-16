@@ -41,7 +41,7 @@ jobs:
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ github.event.pull_request.head.ref }}
       run: |
         if [ "$diffs_found" = true ]; then
           git config --global user.name "GitHub Actions"
