@@ -20,9 +20,6 @@ import com.google.common.cache.CacheBuilder;
 import datawave.util.flag.InputFile.TrackedDir;
 import datawave.util.flag.config.FlagMakerConfig;
 
-/**
- *
- */
 public class SimpleMoverTest {
     private FlagFileTestSetup testFileGenerator;
 
