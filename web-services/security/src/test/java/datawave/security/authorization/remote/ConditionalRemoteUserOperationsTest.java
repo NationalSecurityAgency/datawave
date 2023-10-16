@@ -16,6 +16,10 @@ import datawave.security.authorization.SubjectIssuerDNPair;
 import datawave.security.authorization.UserOperations;
 import datawave.user.AuthorizationsListBase;
 import datawave.user.DefaultAuthorizationsList;
+import datawave.webservice.dictionary.data.DataDictionaryBase;
+import datawave.webservice.dictionary.data.DescriptionBase;
+import datawave.webservice.dictionary.data.FieldsBase;
+import datawave.webservice.metadata.MetadataFieldBase;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.cachedresults.CacheableQueryRow;
 import datawave.webservice.query.result.EdgeQueryResponseBase;
@@ -25,14 +29,10 @@ import datawave.webservice.query.result.event.FacetsBase;
 import datawave.webservice.query.result.event.FieldBase;
 import datawave.webservice.query.result.event.FieldCardinalityBase;
 import datawave.webservice.query.result.event.ResponseObjectFactory;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
 import datawave.webservice.response.objects.KeyBase;
 import datawave.webservice.result.EventQueryResponseBase;
 import datawave.webservice.result.FacetQueryResponseBase;
 import datawave.webservice.result.GenericResponse;
-import datawave.webservice.results.datadictionary.DataDictionaryBase;
-import datawave.webservice.results.datadictionary.DescriptionBase;
-import datawave.webservice.results.datadictionary.FieldsBase;
 
 public class ConditionalRemoteUserOperationsTest {
 
