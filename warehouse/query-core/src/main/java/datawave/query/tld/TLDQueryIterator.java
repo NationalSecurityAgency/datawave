@@ -3,6 +3,7 @@ package datawave.query.tld;
 import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.Collection;
 import java.util.Collections;
@@ -128,8 +129,9 @@ public class TLDQueryIterator extends QueryIterator {
             Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
 
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useWhiteListedFields ? whiteListedFields : null,
-                            useBlackListedFields ? blackListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useIncludedFields ? includedFields : null,
+                            useExcludedFields ? excludedFields : null, getEventFieldSeek(), getEventNextSeek(),
+
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
@@ -157,7 +159,7 @@ public class TLDQueryIterator extends QueryIterator {
                     final Class<?> fClass = Class.forName(fClassName);
                     if (Predicate.class.isAssignableFrom(fClass)) {
                         // Create and configure the predicate
-                        final Predicate p = (Predicate) fClass.newInstance();
+                        final Predicate p = (Predicate) fClass.getDeclaredConstructor().newInstance();
                         if (p instanceof ConfiguredPredicate) {
                             ((ConfiguredPredicate) p).configure(options);
                         }
@@ -178,7 +180,7 @@ public class TLDQueryIterator extends QueryIterator {
                         return fieldIndexKeyDataTypeFilter;
                     }
                 }
-            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException e) {
+            } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
                 log.error("Could not instantiate postprocessing chain!", e);
             }
         }
