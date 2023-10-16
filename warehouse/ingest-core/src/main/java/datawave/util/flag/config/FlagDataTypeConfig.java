@@ -92,16 +92,33 @@ public class FlagDataTypeConfig {
         return last;
     }
 
+    /**
+     * Deprecated. Use getFolders()
+     *
+     * @return folder
+     */
+    @Deprecated
     public String getFolder() {
         return folder;
     }
 
+    /**
+     * Deprecated. Use setFolders(List)
+     */
+    @Deprecated
     public void setFolder(String folder) {
         this.folder = folder;
+        this.folders = null; // lazy initialize folders
     }
 
     public void setBaseHdfsDir(String baseHdfsDir) {
         this.baseHdfsDir = baseHdfsDir;
+        if (null != this.baseHdfsDir) {
+            this.baseHdfsDir = this.baseHdfsDir.trim();
+            if (this.baseHdfsDir.charAt(this.baseHdfsDir.length() - 1) != '/') {
+                this.baseHdfsDir = this.baseHdfsDir + "/";
+            }
+        }
         this.folders = null;
         initializeFolders();
     }
@@ -114,44 +131,52 @@ public class FlagDataTypeConfig {
 
     public void setFolders(List<String> folders) {
         this.folders = folders;
-        folder = String.join(",", folders);
+        this.folder = String.join(",", folders);
     }
 
     private void initializeFolders() {
         if (folders == null || folders.isEmpty()) {
-            folders = new ArrayList<>();
-            if (folder != null && !folder.isEmpty()) {
-                String[] tokens = folder.split(",");
-                for (String token : tokens) {
-                    String trimmedToken = token.trim();
-                    if (trimmedToken.length() > 0) {
-                        folders.add(trimmedToken);
-                    }
-                }
-            }
+            this.folders = convertFolderIntoList();
         }
 
+        // if nothing else, ensure the default path of "data name" is set
         if (folders.isEmpty() && null != this.dataName) {
-            // ensure the default path of data name is set
             folders.add(this.dataName);
         }
-        // todo - validate adds the base dir just so that later it can be stripped off by the distributor
+
         if (this.baseHdfsDir != null) {
-            List<String> fixedFolders = new ArrayList<>();
-            for (String folder : folders) {
-                // let someone specify an absolute path.
-                if (!folder.startsWith("/") && !folder.startsWith(this.baseHdfsDir)) {
-                    fixedFolders.add(this.baseHdfsDir + folder);
-                } else {
-                    fixedFolders.add(folder);
-                }
-            }
-            folders = fixedFolders;
+            this.folders = prependBaseHdfsDirectoryToFolders();
         }
 
         if (folders.size() == 0) {
             folders = null;
         }
+    }
+
+    private ArrayList<String> convertFolderIntoList() {
+        ArrayList<String> result = new ArrayList<>();
+        if (folder != null && !folder.isEmpty()) {
+            String[] tokens = folder.split(",");
+            for (String token : tokens) {
+                String trimmedToken = token.trim();
+                if (trimmedToken.length() > 0) {
+                    result.add(trimmedToken);
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<String> prependBaseHdfsDirectoryToFolders() {
+        List<String> prependedFolders = new ArrayList<>();
+        for (String folder : folders) {
+            if (!folder.startsWith("/") && !folder.startsWith(this.baseHdfsDir)) {
+                prependedFolders.add(this.baseHdfsDir + folder);
+            } else {
+                prependedFolders.add(folder);
+            }
+        }
+        return prependedFolders;
     }
 
     public String getCollectMetrics() {
