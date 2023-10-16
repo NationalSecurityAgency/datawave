@@ -94,10 +94,10 @@ public class FlagFileWriterWithCodeInject extends FlagFileWriter {
     }
 
     @Override
-    void writeFlagFile(final FlagDataTypeConfig dataTypeConfig, Collection<InputFile> inputFiles) throws IOException {
+    void writeFlagFile(final FlagDataTypeConfig flagDataTypeConfig, Collection<InputFile> inputFiles) throws IOException {
         try {
             // call writeFlagFile which will test subject
-            super.writeFlagFile(dataTypeConfig, inputFiles);
+            super.writeFlagFile(flagDataTypeConfig, inputFiles);
         } finally {
             // fail if the override didn't get called
             // Note that this is deliberately not in a finally block to allow

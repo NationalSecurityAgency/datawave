@@ -37,23 +37,20 @@ import datawave.util.flag.config.FlagMakerConfigUtility;
 //@formatter:off
 /**
  * Create the flag file. This is done in several steps to ensure we can easily
- * recover if the process is killed somewhere in-between.
+ * recover if the process is killed before finishing.
  *
  * <ul>
- * <li>move the files to the flagging directory for those that do not already
- * exist in flagging, flagged, or loaded</li>
- * <li>create the flag.generating file for those files we were able to move, and
- * do not exist elsewhere</li>
- * <li>set the timestamp of the flag file to that of the most recent file</li>
+ * <li>move the input files to the flagging directory</li>
+ * <li>create the flag.generating file for those files that were moved</li>
+ * <li>set the timestamp of the flag file to that of the most recent input file</li>
  * <li>move the flagging files to the flagged directory</li>
  * <li>move the generating file to the final flag file form</li>
  * </ul>
  *
  * Using these steps, a cleanup of an abnormal termination is as follows:
  * <ul>
- * <li>move all flagging files to the base directory</li>
- * <li>for all flag.generating files, move the flagged files to the base
- * directory</li>
+ * <li>move the flagging files to the input directory</li>
+ * <li>move the flagged files to the input directory</li>
  * <li>remove the flag.generating files.</li>
  * </ul>
  */
@@ -63,7 +60,7 @@ public class FlagFileWriter {
     static final DecimalFormat DECIMAL_FORMAT = new DecimalFormat("#0.00");
 
     private final FlagMakerConfig flagMakerConfig;
-    private final FileSystem fs;
+    private final FileSystem fileSystem;
     private final ExecutorService fileMoveExecutor;
     // Directory cache serves as a placeholder for the directories in HDFS that
     // were created, reducing the number of RPC calls to the NameNode
@@ -74,13 +71,13 @@ public class FlagFileWriter {
     public FlagFileWriter(FlagMakerConfig flagMakerConfig) throws IOException {
         this.flagMakerConfig = flagMakerConfig;
         this.flagFileContentCreator = new FlagFileContentCreator(this.flagMakerConfig);
-        this.fs = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
+        this.fileSystem = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
         this.fileMoveExecutor = Executors.newFixedThreadPool(flagMakerConfig.getMaxHdfsThreads());
         this.directoryCache = buildDirectoryCache();
     }
 
     /**
-     * @param fc
+     * @param flagDataTypeConfig
      *            flag configuration
      * @param inputFiles
      *            input files to write to flag file
@@ -88,36 +85,37 @@ public class FlagFileWriter {
      *             error trying to write flag file or move files
      */
     // todo - sort order not maintained
-    void writeFlagFile(final FlagDataTypeConfig fc, Collection<InputFile> inputFiles) throws IOException {
+    void writeFlagFile(final FlagDataTypeConfig flagDataTypeConfig, Collection<InputFile> inputFiles) throws IOException {
         File flagFile = null;
         long now = System.currentTimeMillis();
-        this.metrics = createFlagMetrics(fs, fc);
+        this.metrics = createFlagMetrics(flagDataTypeConfig);
 
-        // futures holds tasks in case of a failure scenario, so that they can
-        // be completed
-        List<Future<InputFile>> futures = Lists.newArrayList();
+        // holds tasks in case of a failure scenario, so that they can be completed
+        List<Future<InputFile>> fileMoveTasks = Lists.newArrayList();
 
         try {
-            Collection<InputFile> flaggingFiles = moveFilesToFlagging(inputFiles, futures);
-            assert futures.size() == 0 : futures.size();
+            Collection<InputFile> flaggingFiles = moveFilesToFlagging(inputFiles, fileMoveTasks);
+            // fileMoveTasks should be reduced to zero by the move to flagging
+            assert fileMoveTasks.size() == 0 : fileMoveTasks.size();
 
             // generate flag file
-            String baseName = createFlagFileBaseName(fc, now, inputFiles);
-            flagFile = write(flaggingFiles, fc, baseName);
+            String baseName = createFlagFileBaseName(flagDataTypeConfig, now, inputFiles);
+            flagFile = write(flaggingFiles, flagDataTypeConfig, baseName);
             setFlagFileTimestampToLatestInputFileTimestamp(flagFile, flaggingFiles);
 
             // update metrics
-            updateMetricsWithInputFileTimestamps(fc, metrics, flaggingFiles);
+            updateMetricsWithInputFileTimestamps(flagDataTypeConfig, metrics, flaggingFiles);
 
             // finalize flag file
-            moveFilesToFlagged(fc, metrics, flaggingFiles, futures);
-            assert futures.size() == 0 : futures.size();
+            moveFilesToFlagged(flagDataTypeConfig, metrics, flaggingFiles, fileMoveTasks);
+            // fileMoveTasks should be reduced to zero by the move to flagged
+            assert fileMoveTasks.size() == 0 : fileMoveTasks.size();
 
             flagFile = removeGeneratingExtension(flagFile, baseName);
 
-            resetTimeoutInterval(fc, now);
+            resetTimeoutInterval(flagDataTypeConfig, now);
 
-            writeMetricsFile(fc, metrics, baseName);
+            writeMetricsFile(flagDataTypeConfig, metrics, baseName);
         } catch (AssertionError | Exception ex) {
             // todo see other todo in moveFilesBack.
             // note that cleanupMovesFilesFromFlaggedToInputDir,
@@ -125,8 +123,9 @@ public class FlagFileWriter {
             // cleanupOccursInProperOrder,
             // cleanupRemovesGeneratingFlagFiles
             LOG.error("Unable to complete flag file ", ex);
-            moveFilesBack(inputFiles, futures);
-            assert futures.size() == 0 : futures.size();
+            moveFilesBack(inputFiles, fileMoveTasks);
+            // fileMoveTasks should be reduced to zero by the move back to input
+            assert fileMoveTasks.size() == 0 : fileMoveTasks.size();
 
             removeFlagFile(flagFile);
             throw ex;
@@ -153,7 +152,8 @@ public class FlagFileWriter {
     @VisibleForTesting
     Collection<InputFile> moveFiles(Collection<InputFile> inputFiles, List<Future<InputFile>> futures, Function<InputFile,SimpleMover> moverFactory,
                     String label) throws IOException {
-        assert futures.size() == 0; // futures will be populated with
+        // futures should be empty at the start of the move operation
+        assert futures.size() == 0;
         for (final InputFile inputFile : inputFiles) {
             // Creates directories and moves to flagging
             final Callable<InputFile> mover = moverFactory.apply(inputFile);
@@ -172,12 +172,12 @@ public class FlagFileWriter {
     }
 
     private SimpleMover createMoverToFlagging(InputFile inputFile) {
-        return new FlagEntryMover(directoryCache, fs, inputFile);
+        return new FlagEntryMover(directoryCache, fileSystem, inputFile);
     }
 
     @VisibleForTesting
     SimpleMover createMoverToFlagged(InputFile inputFile) {
-        return new SimpleMover(directoryCache, inputFile, InputFile.TrackedDir.FLAGGED_DIR, fs);
+        return new SimpleMover(directoryCache, inputFile, InputFile.TrackedDir.FLAGGED_DIR, fileSystem);
     }
 
     private void resetTimeoutInterval(FlagDataTypeConfig fc, long now) {
@@ -251,8 +251,8 @@ public class FlagFileWriter {
     }
 
     @VisibleForTesting
-    FlagMetrics createFlagMetrics(FileSystem fs, FlagDataTypeConfig fc) {
-        return new FlagMetrics(this.fs, fc.isCollectMetrics());
+    FlagMetrics createFlagMetrics(FlagDataTypeConfig fc) {
+        return new FlagMetrics(this.fileSystem, fc.isCollectMetrics());
     }
 
     /**
@@ -334,7 +334,7 @@ public class FlagFileWriter {
         // Create a move operation (Future) for each flag entry, and add the
         // operation to moveOperations
         for (InputFile flagEntry : files) {
-            final SimpleMover mover = new SimpleMover(directoryCache, flagEntry, InputFile.TrackedDir.PATH_DIR, fs);
+            final SimpleMover mover = new SimpleMover(directoryCache, flagEntry, InputFile.TrackedDir.PATH_DIR, fileSystem);
             final Future<InputFile> exec = fileMoveExecutor.submit(mover);
             moveOperations.add(exec);
         }

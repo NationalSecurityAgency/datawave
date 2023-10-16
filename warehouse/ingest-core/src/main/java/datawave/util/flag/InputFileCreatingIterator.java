@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * Wraps an Iterator of LocatedFileStatus items, converting them into InputFile objects
  */
 public class InputFileCreatingIterator implements Iterator<InputFile> {
-    private static final Logger log = LoggerFactory.getLogger(FlagMaker.class);
+    private static final Logger log = LoggerFactory.getLogger(InputFileCreatingIterator.class);
 
     private final Iterator<LocatedFileStatus> delegate;
     private final String inputFolder;

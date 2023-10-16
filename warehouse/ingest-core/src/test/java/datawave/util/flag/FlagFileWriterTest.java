@@ -227,7 +227,7 @@ public class FlagFileWriterTest {
     private FlagFileWriter createFlagFileWriterUsingMetricsWithoutCompression(final FlagMakerConfig flagMakerConfig) throws IOException {
         return new FlagFileWriter(flagMakerConfig) {
             @Override
-            FlagMetrics createFlagMetrics(FileSystem fs, FlagDataTypeConfig fc) {
+            FlagMetrics createFlagMetrics(FlagDataTypeConfig fc) {
                 return new FlagMetricsWithTestCompatibleCodec(fs, fc.isCollectMetrics());
             }
         };
