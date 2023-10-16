@@ -1,26 +1,26 @@
 package datawave.webservice.query.logic.composite;
 
+import java.io.Serializable;
+
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
-import java.io.Serializable;
-
 public class CompositeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
-    
+
     private Query query = null;
-    
+
     // Specifies whether all queries must succeed initialization
     private boolean allMustInitialize = false;
-    
+
     // Specifies whether queries are run sequentially. We stop after the first query that returns any results.
     private boolean shortCircuitExecution = false;
-    
+
     public CompositeQueryConfiguration() {
         super();
         query = new QueryImpl();
     }
-    
+
     /**
      * Performs a deep copy of the provided CompositeQueryConfiguration into a new instance
      *
@@ -28,11 +28,11 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
      *            - another CompositeQueryConfiguration instance
      */
     public CompositeQueryConfiguration(CompositeQueryConfiguration other) {
-        
+
         // GenericQueryConfiguration copy first
         super(other);
     }
-    
+
     /**
      * Factory method that instantiates an fresh CompositeQueryConfiguration
      *
@@ -41,7 +41,7 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
     public static CompositeQueryConfiguration create() {
         return new CompositeQueryConfiguration();
     }
-    
+
     /**
      * Factory method that returns a deep copy of the provided CompositeQueryConfiguration
      *
@@ -52,7 +52,7 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
     public static CompositeQueryConfiguration create(CompositeQueryConfiguration other) {
         return new CompositeQueryConfiguration(other);
     }
-    
+
     /**
      * Factory method that creates a CompositeQueryConfiguration deep copy from a CompositeQueryLogic
      *
@@ -61,12 +61,12 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
      * @return - a CompositeQueryConfiguration
      */
     public static CompositeQueryConfiguration create(CompositeQueryLogic compositeQueryLogic) {
-        
+
         CompositeQueryConfiguration config = create(compositeQueryLogic.getConfig());
-        
+
         return config;
     }
-    
+
     /**
      * Factory method that creates a CompositeQueryConfiguration from a CompositeQueryLogic and a Query
      *
@@ -81,27 +81,27 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
         config.setQuery(query);
         return config;
     }
-    
+
     public Query getQuery() {
         return query;
     }
-    
+
     public void setQuery(Query query) {
         this.query = query;
     }
-    
+
     public boolean isAllMustInitialize() {
         return allMustInitialize;
     }
-    
+
     public void setAllMustInitialize(boolean allMustInitialize) {
         this.allMustInitialize = allMustInitialize;
     }
-    
+
     public boolean isShortCircuitExecution() {
         return shortCircuitExecution;
     }
-    
+
     public void setShortCircuitExecution(boolean shortCircuitExecution) {
         this.shortCircuitExecution = shortCircuitExecution;
     }
