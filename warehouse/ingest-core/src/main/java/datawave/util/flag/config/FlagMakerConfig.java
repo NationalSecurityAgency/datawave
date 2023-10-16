@@ -132,7 +132,7 @@ public class FlagMakerConfig {
      * <li>Users can provide absolute file paths by leading with a slash ("/")</li>
      * </ul>
      *
-     * Note: this modifies teh FlagMakerConfig in several ways
+     * Note: this modifies the FlagMakerConfig in several ways
      */
     public void validate() {
         String prefix = this.getClass().getSimpleName() + " Error: ";
