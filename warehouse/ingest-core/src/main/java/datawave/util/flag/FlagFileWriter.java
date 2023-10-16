@@ -423,9 +423,7 @@ public class FlagFileWriter {
 		return CacheBuilder
 				.newBuilder()
 				.maximumSize(this.flagMakerConfig.getDirectoryCacheSize())
-				.expireAfterWrite(
-						this.flagMakerConfig.getDirectoryCacheTimeout(),
-						TimeUnit.MILLISECONDS)
+				.expireAfterWrite(this.flagMakerConfig.getDirectoryCacheTimeout(), TimeUnit.MILLISECONDS)
 				.concurrencyLevel(this.flagMakerConfig.getMaxHdfsThreads())
 				.build();
 		// @formatter:on

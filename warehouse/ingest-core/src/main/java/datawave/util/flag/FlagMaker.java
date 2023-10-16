@@ -2,7 +2,6 @@ package datawave.util.flag;
 
 import java.io.FileFilter;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.net.Socket;
@@ -38,31 +37,31 @@ import datawave.util.flag.processor.SizeValidator;
 public class FlagMaker implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(FlagMaker.class);
 
-    private final FlagMakerConfig fmc;
+    private final FlagMakerConfig flagMakerConfig;
     final FlagDistributor fd;
     private final FileSystem fs;
     private final SizeValidator sizeValidator;
     private volatile boolean running = true;
 
     protected final JobConf config;
-    final FlagFileWriter flagFileWriter;// todo make private again
+    private final FlagFileWriter flagFileWriter;
     private final LinkedBlockingQueue<String> socketMessageQueue;
 
     public FlagMaker(FlagMakerConfig flagMakerConfig) throws IOException {
-        this.fmc = flagMakerConfig;
-        LOG.info("Flag Maker Config (pre-validate):{}", this.fmc.toString());
+        this.flagMakerConfig = flagMakerConfig;
+        LOG.info("Flag Maker Config (pre-validate): {}", this.flagMakerConfig);
 
         this.config = new JobConf(new Configuration());
 
-        this.fmc.validate();
-        LOG.info("Flag Maker Config (post-validate):{}", this.fmc.toString());
+        this.flagMakerConfig.validate();
+        LOG.info("Flag Maker Config (post-validate): {}", this.flagMakerConfig);
 
-        this.fd = createFlagDistributor(this.fmc);
-        this.sizeValidator = new SizeValidatorImpl(this.config, fmc);
-        this.flagFileWriter = new FlagFileWriter(fmc);
+        this.fd = createFlagDistributor(this.flagMakerConfig);
+        this.sizeValidator = new SizeValidatorImpl(this.config, this.flagMakerConfig);
+        this.flagFileWriter = new FlagFileWriter(this.flagMakerConfig);
         this.fs = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
 
-        socketMessageQueue = new LinkedBlockingQueue<>();
+        this.socketMessageQueue = new LinkedBlockingQueue<>();
     }
 
     public static void main(String... args) throws Exception {
@@ -86,7 +85,7 @@ public class FlagMaker implements Runnable {
             m.run();
         } catch (IllegalArgumentException ex) {
             System.err.println("" + ex.getMessage());
-            printUsage(System.out);
+            printUsage();
             System.exit(1);
         }
 
@@ -124,14 +123,14 @@ public class FlagMaker implements Runnable {
         }
     }
 
-    private static void printUsage(PrintStream out) {
-        out.println("To run the Flag Maker: ");
-        out.println("datawave.ingest.flag.FlagMaker -flagConfig [path to xml config]");
-        out.println("Optional arguments:");
-        out.println("\t\t-shutdown\tDescription: shuts down the flag maker using configured socketPort");
-        out.println("\t\t-baseHDFSDirOverride [HDFS Path]\tDescription: overrides baseHDFSDir in xml");
-        out.println("\t\t-extraIngestArgsOverride [extra ingest args]\tDescription: overrides extraIngestArgs value in xml config");
-        out.println("\t\t-flagFileDirectoryOverride [local path]\tDescription: overrides flagFileDirectory value in xml config");
+    private static void printUsage() {
+        System.out.println("To run the Flag Maker: ");
+        System.out.println("datawave.ingest.flag.FlagMaker -flagConfig [path to xml config]");
+        System.out.println("Optional arguments:");
+        System.out.println("\t\t-shutdown\tDescription: shuts down the flag maker using configured socketPort");
+        System.out.println("\t\t-baseHDFSDirOverride [HDFS Path]\tDescription: overrides baseHDFSDir in xml");
+        System.out.println("\t\t-extraIngestArgsOverride [extra ingest args]\tDescription: overrides extraIngestArgs value in xml config");
+        System.out.println("\t\t-flagFileDirectoryOverride [local path]\tDescription: overrides flagFileDirectory value in xml config");
     }
 
     @Override
@@ -143,7 +142,7 @@ public class FlagMaker implements Runnable {
                 try {
                     processFlags();
                     // noinspection BusyWait
-                    Thread.sleep(fmc.getSleepMilliSecs());
+                    Thread.sleep(flagMakerConfig.getSleepMilliSecs());
                 } catch (Exception ex) {
                     LOG.error("An unexpected exception occurred. Exiting", ex);
                     running = false;
@@ -162,7 +161,7 @@ public class FlagMaker implements Runnable {
     protected void processFlags() throws IOException {
         LOG.trace("Querying for files on {}", fs.getUri().toString());
 
-        for (FlagDataTypeConfig fc : fmc.getFlagConfigs()) {
+        for (FlagDataTypeConfig fc : flagMakerConfig.getFlagConfigs()) {
             loadFilesForDistributor(fc);
             // todo - test what will happen if we load files for one directory, then add another source,
             // then load files again. will we backtrack?
@@ -187,7 +186,7 @@ public class FlagMaker implements Runnable {
      * @throws IOException
      *             error condition finding files in hadoop
      */
-    void loadFilesForDistributor(FlagDataTypeConfig fc) throws IOException {
+    private void loadFilesForDistributor(FlagDataTypeConfig fc) throws IOException {
         fd.loadFiles(fc);
     }
 
@@ -240,7 +239,7 @@ public class FlagMaker implements Runnable {
             }
         };
         try {
-            Files.walkFileTree(Paths.get(fmc.getFlagFileDirectory()), visitor);
+            Files.walkFileTree(Paths.get(flagMakerConfig.getFlagFileDirectory()), visitor);
         } catch (IOException e) {
             // unable to get a flag count....
             LOG.error("Unable to get flag file count", e);
@@ -262,27 +261,27 @@ public class FlagMaker implements Runnable {
     }
 
     private void executeKickAction(String message) {
-        String dataType = message.substring(4).trim();
+        String dataType = message.substring(FlagSocket.KICK_MESSAGE.length()).trim();
         if (dataType.isEmpty()) {
             LOG.warn("'" + FlagSocket.KICK_MESSAGE + "' message received without a dataTypeName.  Try 'kick dataTypeName'");
             return;
         }
         LOG.info("Attempting '" + FlagSocket.KICK_MESSAGE + "' for " + dataType);
-        for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
+        for (FlagDataTypeConfig cfg : flagMakerConfig.getFlagConfigs()) {
             if (cfg.getDataName().equals(dataType)) {
                 LOG.info("Forcing {} to generate flag file", dataType);
                 cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
                 return;
             }
         }
-        List<String> dataTypeNames = fmc.getFlagConfigs().stream().map(FlagDataTypeConfig::getDataName).collect(Collectors.toList());
+        List<String> dataTypeNames = flagMakerConfig.getFlagConfigs().stream().map(FlagDataTypeConfig::getDataName).collect(Collectors.toList());
         LOG.info("No match found for '" + dataType + "' among " + dataTypeNames.toString());
 
     }
 
     private void startSocketAndReceiver() {
         try {
-            FlagSocket flagSocket = new FlagSocket(fmc.getSocketPort(), socketMessageQueue);
+            FlagSocket flagSocket = new FlagSocket(flagMakerConfig.getSocketPort(), socketMessageQueue);
             Thread socketThread = new Thread(flagSocket, "Flag_Socket_Thread");
             socketThread.setDaemon(true);
             socketThread.start();

@@ -230,7 +230,8 @@ public class FlagMakerTest {
 
         for (File flagFile : flagFiles) {
             int flagFileLength = com.google.common.io.Files.asCharSource(flagFile, Charset.defaultCharset()).read().length();
-            if (flagFile != flagFiles.get(flagFiles.size() - 1)) { // ignore the last file because it may be a partial file with the remaining input files
+            // ignore the last file because it may be a partial file with the remaining input files
+            if (flagFile != flagFiles.get(flagFiles.size() - 1)) {
                 Assert.assertEquals(FlagFileTestInspector.logFileContents(flagFile), expectedFlagFileLength, flagFileLength);
             }
         }
