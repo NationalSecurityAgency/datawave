@@ -26,8 +26,9 @@ import datawave.util.flag.config.FlagMakerConfig;
 public class SimpleFlagDistributorFileMatchingTest {
     private static final String BASE_DIRECTORY = FlagMakerTest.CONFIG_BASE_HDFS_DIR + "foo";
     private static final boolean NOT_MUST_HAVE_MAX = false;
-    private static final String PATTERN_3_DIRS = "2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]";
-    private static final String PATTERN_4_DIRS = "2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]";
+    private static final String PATTERN_FILE_NAME = "[0-9a-zA-Z]*[0-9a-zA-Z]";
+    private static final String PATTERN_3_DIRS_FILE_NAME = "2*/*/*/" + PATTERN_FILE_NAME;
+    private static final String PATTERN_4_DIRS_FILE_NAME = "2*/*/*/*/" + PATTERN_FILE_NAME;
     private static final SizeValidator ALWAYS_TRUE_SIZE_VALIDATOR = (fc, files) -> true;
 
     private FlagDataTypeConfig flagDataTypeConfig;
@@ -41,17 +42,17 @@ public class SimpleFlagDistributorFileMatchingTest {
         fmc.validate(); // modifies FlagDataTypeConfig.folders by changing from
                         // String to List<String>, splitting on comma
 
-        verifyTestConfiguration(fmc);
+        verifyTestPreconditions(fmc);
 
         this.flagDistributor = new SimpleFlagDistributor(fmc);
         this.flagDataTypeConfig = fmc.getFlagConfigs().get(0);
         this.flagDataTypeConfig.setMaxFlags(1);
     }
 
-    private void verifyTestConfiguration(FlagMakerConfig fmc) {
+    private void verifyTestPreconditions(FlagMakerConfig fmc) {
         List<String> filePatterns = fmc.getFilePatterns();
-        Preconditions.checkArgument(filePatterns.contains(PATTERN_3_DIRS));
-        Preconditions.checkArgument(filePatterns.contains(PATTERN_4_DIRS));
+        Preconditions.checkArgument(filePatterns.contains(PATTERN_3_DIRS_FILE_NAME));
+        Preconditions.checkArgument(filePatterns.contains(PATTERN_4_DIRS_FILE_NAME));
         Preconditions.checkArgument(2 == filePatterns.size(), "Expected two patterns, got " + filePatterns);
 
         List<FlagDataTypeConfig> flagDataTypeConfigs = fmc.getFlagConfigs();
@@ -63,34 +64,34 @@ public class SimpleFlagDistributorFileMatchingTest {
     public void matchesMinimumLengthPatterns() {
         // 3 Levels deep
         // 2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]
-        // fails with GlobFilter
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/0/00");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/-/x0");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/-/0/X0");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/0/90");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/$/0/00");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/g/0/xx");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/>/0/XX");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/0/99");
+        assertFound(BASE_DIRECTORY + "/2/0/0/00");
+        assertFound(BASE_DIRECTORY + "/2/0/-/x0");
+        assertFound(BASE_DIRECTORY + "/2/-/0/X0");
+        assertFound(BASE_DIRECTORY + "/2/0/0/90");
+        assertFound(BASE_DIRECTORY + "/2/$/0/00");
+        assertFound(BASE_DIRECTORY + "/2/g/0/xx");
+        assertFound(BASE_DIRECTORY + "/2/>/0/XX");
+        assertFound(BASE_DIRECTORY + "/2/0/0/99");
 
         // 4 Levels deep
         // 2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/0/0/00");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/-/0/x0");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/-/0/0/X0");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/0/-/90");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/$/0/0/00");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/g/0/-/xx");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/>/0/0/XX");
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2/0/0/-/99");
+        assertFound(BASE_DIRECTORY + "/2/0/0/0/00");
+        assertFound(BASE_DIRECTORY + "/2/0/-/0/x0");
+        assertFound(BASE_DIRECTORY + "/2/-/0/0/X0");
+        assertFound(BASE_DIRECTORY + "/2/0/0/-/90");
+        assertFound(BASE_DIRECTORY + "/2/$/0/0/00");
+        assertFound(BASE_DIRECTORY + "/2/g/0/-/xx");
+        assertFound(BASE_DIRECTORY + "/2/>/0/0/XX");
+        assertFound(BASE_DIRECTORY + "/2/0/0/-/99");
     }
 
     @Test
     public void acceptsLongerNames() {
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2000/99/99/my file .txt"); // 3
-                                                                                 // levels
-                                                                                 // down
-        assertDistributorFindsFile(BASE_DIRECTORY + "/2000/99/99/99999999/my file .txt"); // 4 levels down
+        // 3 levels deep
+        assertFound(BASE_DIRECTORY + "/2000/99/99/my file .txt");
+
+        // 4 levels deep
+        assertFound(BASE_DIRECTORY + "/2000/99/99/99999999/my file .txt");
     }
 
     @Test
@@ -98,42 +99,49 @@ public class SimpleFlagDistributorFileMatchingTest {
         // Filename must have at least one character
         // +0: [0-9a-zA-Z]*
         // +1: [0-9a-zA-Z]
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/2/0/0/0"); // 3 levels
-                                                                   // down
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/2/0/0/0/0"); // 4 levels
-                                                                     // down
+
+        // 3 levels down
+        assertIgnored(BASE_DIRECTORY + "/2/0/0/0");
+
+        // 4 levels down
+        assertIgnored(BASE_DIRECTORY + "/2/0/0/0/0");
     }
 
     @Test
     public void rejectsLevel2File() {
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/20/0/4xyz4");
+        // not enough directories
+        assertIgnored(BASE_DIRECTORY + "/20/0/4xyz4");
     }
 
     @Test
     public void rejectsPrefixMismatch() {
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/1/0/0/00");
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/1/0/0/0/00");
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/12/0/0/00");
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/12/0/0/0/00");
+        // top level directory must begin with 2
+        assertIgnored(BASE_DIRECTORY + "/1/0/0/00");
+        assertIgnored(BASE_DIRECTORY + "/1/0/0/0/00");
+        assertIgnored(BASE_DIRECTORY + "/12/0/0/00");
+        assertIgnored(BASE_DIRECTORY + "/12/0/0/0/00");
     }
 
     @Test
     public void rejectsFileInDifferentBaseDirectory() {
-        assertDistributorIgnoresFile("/elsewhere" + "/2/0/0/0/0");
+        // otherwise matching file rejected when appearing under ignored top level directory
+        assertIgnored("/elsewhere" + "/2/0/0/00");
     }
 
     @Test
     public void rejectsLevel5File() {
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/2/0/0/0/0/00");
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/2/1/0/0/0/00");
+        // too many levels deep
+        assertIgnored(BASE_DIRECTORY + "/2/0/0/0/0/00");
+        assertIgnored(BASE_DIRECTORY + "/2/1/0/0/0/00");
     }
 
     @Test
     public void rejectsTooShortTopDirectoryName() {
-        assertDistributorIgnoresFile(BASE_DIRECTORY + "/2//0/0");
+        // directory name empty
+        assertIgnored(BASE_DIRECTORY + "/2//0/0");
     }
 
-    private void assertDistributorFindsFile(String relativePathStr) {
+    private void assertFound(String relativePathStr) {
         try {
             loadFileIntoDistributor(relativePathStr);
 
@@ -142,6 +150,7 @@ public class SimpleFlagDistributorFileMatchingTest {
 
             Collection<InputFile> result = this.flagDistributor.next(new SizeValidatorImpl(new Configuration(), this.flagFileTestSetup.getFlagMakerConfig()));
             assertEquals("expected only single file", 1, result.size());
+
             String actualFileName = result.iterator().next().getPath().toString();
             assertTrue("File name unexpectedly altered: \n" + actualFileName + "\n" + relativePathStr, actualFileName.endsWith(relativePathStr));
         } catch (IOException e) {
@@ -149,13 +158,14 @@ public class SimpleFlagDistributorFileMatchingTest {
         }
     }
 
-    private void assertDistributorIgnoresFile(String relativePathStr) {
+    private void assertIgnored(String relativePathStr) {
         try {
             loadFileIntoDistributor(relativePathStr);
 
             boolean flagMakerHasFile = this.flagDistributor.hasNext(NOT_MUST_HAVE_MAX);
             if (flagMakerHasFile) {
-                fail("Didn't expect to match.  Found: " + this.flagDistributor.next(ALWAYS_TRUE_SIZE_VALIDATOR).iterator().next().getPath().toString());
+                InputFile firstFile = this.flagDistributor.next(ALWAYS_TRUE_SIZE_VALIDATOR).iterator().next();
+                fail("Didn't expect to match.  Found: " + firstFile.getPath().toString());
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -167,9 +177,10 @@ public class SimpleFlagDistributorFileMatchingTest {
         InMemoryStubFileSystem fakeFileSystem = new InMemoryStubFileSystem("hdfs");
         fakeFileSystem.addFile(relativePathStr);
 
-        // Register filesystem with flag maker
+        // register filesystem with flag maker
         this.flagDistributor.setFileSystem(fakeFileSystem);
-        // Cause flag distributor to look for files
+
+        // cause flag distributor to look for files
         this.flagDistributor.loadFiles(this.flagDataTypeConfig);
     }
 }
