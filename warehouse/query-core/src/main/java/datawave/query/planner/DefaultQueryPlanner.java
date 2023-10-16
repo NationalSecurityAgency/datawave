@@ -1699,7 +1699,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
     }
 
-    // Overwrite projection and blacklist properties if the query model is
+    // Overwrite projection and excludelist properties if the query model is
     // being used
     protected ASTJexlScript applyQueryModel(MetadataHelper metadataHelper, ShardQueryConfiguration config, ASTJexlScript script, QueryModel queryModel) {
         config.setQueryTree(script);
@@ -1711,7 +1711,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         Multimap<String,String> inverseReverseModel = invertMultimap(queryModel.getReverseQueryMapping());
 
         inverseReverseModel.putAll(queryModel.getForwardQueryMapping());
-        Collection<String> projectFields = config.getProjectFields(), blacklistedFields = config.getBlacklistedFields(), limitFields = config.getLimitFields(),
+        Collection<String> projectFields = config.getProjectFields(), excludedFields = config.getExcludedFields(), limitFields = config.getLimitFields(),
                         groupFields = config.getGroupFields();
 
         if (projectFields != null && !projectFields.isEmpty()) {
@@ -1750,12 +1750,12 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             config.setExcerptFields(excerptFields);
         }
 
-        if (config.getBlacklistedFields() != null && !config.getBlacklistedFields().isEmpty()) {
-            blacklistedFields = queryModel.remapParameter(blacklistedFields, inverseReverseModel);
+        if (config.getExcludedFields() != null && !config.getExcludedFields().isEmpty()) {
+            excludedFields = queryModel.remapParameter(excludedFields, inverseReverseModel);
             if (log.isTraceEnabled()) {
-                log.trace("Updated blacklist set using query model to: " + blacklistedFields);
+                log.trace("Updated excludelist set using query model to: " + excludedFields);
             }
-            config.setBlacklistedFields(Sets.newHashSet(blacklistedFields));
+            config.setExcludedFields(Sets.newHashSet(excludedFields));
         }
 
         if (config.getLimitFields() != null && !config.getLimitFields().isEmpty()) {
@@ -2356,7 +2356,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             }
         }
 
-        // Whitelist and blacklist projection are mutually exclusive. You can't
+        // Includelist and excludelist projection are mutually exclusive. You can't
         // have both.
         if (null != config.getProjectFields() && !config.getProjectFields().isEmpty()) {
             if (log.isDebugEnabled()) {
@@ -2365,16 +2365,16 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
                 if (projectFields.length() > maxLen) {
                     projectFields = projectFields.substring(0, maxLen) + "[TRUNCATED]";
                 }
-                log.debug("Setting scan option: " + QueryOptions.PROJECTION_FIELDS + " to " + projectFields);
+                log.debug("Setting scan option: " + QueryOptions.INCLUDED_FIELDS + " to " + projectFields);
             }
 
-            addOption(cfg, QueryOptions.PROJECTION_FIELDS, config.getProjectFieldsAsString(), false);
-        } else if (null != config.getBlacklistedFields() && !config.getBlacklistedFields().isEmpty()) {
+            addOption(cfg, QueryOptions.INCLUDED_FIELDS, config.getProjectFieldsAsString(), false);
+        } else if (null != config.getExcludedFields() && !config.getExcludedFields().isEmpty()) {
             if (log.isDebugEnabled()) {
-                log.debug("Setting scan option: " + QueryOptions.BLACKLISTED_FIELDS + " to " + config.getBlacklistedFieldsAsString());
+                log.debug("Setting scan option: " + QueryOptions.EXCLUDED_FIELDS + " to " + config.getExcludedFieldsAsString());
             }
 
-            addOption(cfg, QueryOptions.BLACKLISTED_FIELDS, config.getBlacklistedFieldsAsString(), false);
+            addOption(cfg, QueryOptions.EXCLUDED_FIELDS, config.getExcludedFieldsAsString(), false);
         }
 
         // We don't need to do any expansion of the start or end date/time

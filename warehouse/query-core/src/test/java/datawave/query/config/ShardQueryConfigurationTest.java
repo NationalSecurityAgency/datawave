@@ -485,11 +485,11 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
         alreadySet.add("projectFieldsAsString");
 
-        defaultValues.put("blacklistedFields", Sets.newHashSet());
-        updatedValues.put("blacklistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
-        defaultValues.put("blacklistedFieldsAsString", "");
-        updatedValues.put("blacklistedFieldsAsString", "FIELD_B,FIELD_C");
-        alreadySet.add("blacklistedFieldsAsString");
+        defaultValues.put("excludedFields", Sets.newHashSet());
+        updatedValues.put("excludedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
+        defaultValues.put("excludedFieldsAsString", "");
+        updatedValues.put("excludedFieldsAsString", "FIELD_B,FIELD_C");
+        alreadySet.add("excludedFieldsAsString");
 
         defaultValues.put("queryFieldsDatatypes", HashMultimap.create());
         updatedValues.put("queryFieldsDatatypes", createHashMultimap(
