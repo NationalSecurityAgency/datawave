@@ -45,6 +45,7 @@ import datawave.ingest.util.BloomFilterUtil;
 import datawave.ingest.util.BloomFilterWrapper;
 import datawave.ingest.util.DiskSpaceStarvationStrategy;
 import datawave.marking.MarkingFunctions;
+import datawave.query.model.Direction;
 import datawave.util.TextUtil;
 import datawave.webservice.common.logging.ThreadConfigurableLogger;
 

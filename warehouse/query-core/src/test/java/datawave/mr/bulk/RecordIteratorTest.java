@@ -89,34 +89,34 @@ public class RecordIteratorTest {
 
         // Top of the stack is a ConfigurableVisibilityFilter (which creates a VisibilityFilter as its source) with auths C1,C2,C3
         assertEquals(ConfigurableVisibilityFilter.class, internalIter.getClass());
-        cvf = ConfigurableVisibilityFilter.class.cast(internalIter);
+        cvf = (ConfigurableVisibilityFilter) internalIter;
         source = Whitebox.getInternalState(cvf, "source");
         assertEquals(VisibilityFilter.class, source.getClass());
-        vf = VisibilityFilter.class.cast(source);
+        vf = (VisibilityFilter) source;
         actualAuths = new TreeSet<>(Arrays.asList(Whitebox.getInternalState(vf, Authorizations.class).toString().split(",")));
         assertEquals(new TreeSet<>(Arrays.asList("C1", "C2", "C3")), actualAuths);
         source = Whitebox.getInternalState(vf, "source");
 
         // Next on the stack is a ConfigurableVisibilityFilter (which creates a VisibilityFilter as its source) with auths B1,B2,B3
         assertEquals(ConfigurableVisibilityFilter.class, source.getClass());
-        cvf = ConfigurableVisibilityFilter.class.cast(source);
+        cvf = (ConfigurableVisibilityFilter) source;
         source = Whitebox.getInternalState(cvf, "source");
         assertEquals(VisibilityFilter.class, source.getClass());
-        vf = VisibilityFilter.class.cast(source);
+        vf = (VisibilityFilter) source;
         actualAuths = new TreeSet<>(Arrays.asList(Whitebox.getInternalState(vf, Authorizations.class).toString().split(",")));
         assertEquals(new TreeSet<>(Arrays.asList("B1", "B2", "B3")), actualAuths);
         source = Whitebox.getInternalState(vf, "source");
 
         // The next table iterator should be the standard VisibilityFilter which will have auths A1,A2,A3
         assertEquals(VisibilityFilter.class, source.getClass());
-        vf = VisibilityFilter.class.cast(source);
+        vf = (VisibilityFilter) source;
         actualAuths = new TreeSet<>(Arrays.asList(Whitebox.getInternalState(vf, Authorizations.class).toString().split(",")));
         assertEquals(new TreeSet<>(Arrays.asList("A1", "A2", "A3")), actualAuths);
         source = Whitebox.getInternalState(vf, "source");
 
         // The next table iterator should be a DeletingIterator
         assertEquals(DeletingIterator.class, source.getClass());
-        DeletingIterator di = DeletingIterator.class.cast(source);
+        DeletingIterator di = (DeletingIterator) source;
         source = Whitebox.getInternalState(di, "source");
 
         // And finally, at the bottom of the stack is a MultiIterator (which has no source field)

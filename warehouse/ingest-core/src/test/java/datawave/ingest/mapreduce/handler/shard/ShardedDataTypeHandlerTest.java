@@ -35,6 +35,7 @@ import datawave.ingest.protobuf.Uid;
 import datawave.ingest.table.config.ShardTableConfigHelper;
 import datawave.ingest.table.config.TableConfigHelper;
 import datawave.policy.IngestPolicyEnforcer;
+import datawave.query.model.Direction;
 import datawave.util.TableName;
 
 public class ShardedDataTypeHandlerTest {
