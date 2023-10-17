@@ -40,7 +40,7 @@ jobs:
         git status
         git diff-index --quiet HEAD || (echo "Modified files found. Creating new commit with formatting fixes" && echo "diffs_found=true" >> "$GITHUB_ENV")
     - name: Commit Changes
-      uses: actions/checkout@v3
+      uses: actions/checkout@v2
       with:
         ref: ${{ github.event.pull_request.head.ref }}
       run: |
