@@ -2,21 +2,15 @@ package datawave.query.predicate;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl2.parser.ASTJexlScript;
-import org.apache.commons.jexl2.parser.JexlNode;
 
 import com.google.common.collect.Maps;
 
-import datawave.query.attributes.AttributeFactory;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
-import datawave.query.util.TypeMetadata;
 
 /**
  * This class is used to filter out fields that are required for evaluation by apply the query expressions to the field values on the fly. This filter will
@@ -28,25 +22,6 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
     private boolean initialized = false;
 
     protected Key document = null;
-
-    @Deprecated
-    public EventDataQueryExpressionFilter() {
-        super();
-    }
-
-    @Deprecated
-    public EventDataQueryExpressionFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
-        AttributeFactory attributeFactory = new AttributeFactory(metadata);
-        Map<String,ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(script, attributeFactory);
-        setFilters(expressionFilters);
-    }
-
-    @Deprecated
-    public EventDataQueryExpressionFilter(JexlNode node, TypeMetadata metadata, Set<String> nonEventFields) {
-        AttributeFactory attributeFactory = new AttributeFactory(metadata);
-        Map<String,ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(node, attributeFactory);
-        setFilters(expressionFilters);
-    }
 
     /**
      * Preferred constructor

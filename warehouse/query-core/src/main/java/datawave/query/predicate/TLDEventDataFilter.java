@@ -24,7 +24,6 @@ import datawave.query.Constants;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.tld.TLD;
-import datawave.query.util.TypeMetadata;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
@@ -68,13 +67,6 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     private Set<String> nonEventFields;
 
-    @Deprecated
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
-                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, queryFields, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.EMPTY_MAP, null,
-                        Collections.EMPTY_SET);
-    }
-
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
                     Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
         this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(), null,
@@ -85,49 +77,6 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      * Field which should be used when transform() is called on a rejected Key that is field limited to store the field
      */
     private String limitFieldsField = null;
-
-    /**
-     * Initialize the query field filter with all of the fields required to evaluation this query
-     *
-     * @param script
-     *            - script
-     * @param typeMetadata
-     *            - TypeMetadata
-     * @param blacklist
-     *            - blacklist
-     * @param limitFieldsField
-     *            - limitFieldsField
-     * @param limitFieldsMap
-     *            - limitFieldsMap
-     * @param maxFieldsBeforeSeek
-     *            - maxFieldsBeforeSeek
-     * @param maxKeysBeforeSeek
-     *            - maxFieldsBeforeSeek
-     * @param nonEventFields
-     *            - nonEventFields
-     * @param queryFields
-     *            - queryFields
-     * @param whitelist
-     *            - whitelist
-     */
-    @Deprecated
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata typeMetadata, Set<String> whitelist, Set<String> blacklist,
-                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Map<String,Integer> limitFieldsMap, String limitFieldsField, Set<String> nonEventFields) {
-        super(script, typeMetadata, nonEventFields);
-
-        this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
-        this.maxKeysBeforeSeek = maxKeysBeforeSeek;
-        this.limitFieldsMap = Collections.unmodifiableMap(limitFieldsMap);
-        this.limitFieldsField = limitFieldsField;
-        this.nonEventFields = nonEventFields;
-
-        // set the anyFieldLimit once if specified otherwise set to -1
-        anyFieldLimit = limitFieldsMap.get(Constants.ANY_FIELD) != null ? limitFieldsMap.get(Constants.ANY_FIELD) : -1;
-
-        setQueryFields(queryFields, script);
-        updateLists(whitelist, blacklist);
-        setSortedLists(whitelist, blacklist);
-    }
 
     /**
      * Preferred constructor that accepts prebuilt expression filters
