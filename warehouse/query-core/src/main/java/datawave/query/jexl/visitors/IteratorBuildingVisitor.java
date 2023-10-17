@@ -1306,22 +1306,6 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return new TermFrequencyAggregator(toAggregate, filter, maxNextCount);
     }
 
-    /**
-     * Wrap an existing {@link EventDataQueryFilter} with a {@link TermFrequencyDataFilter}
-     *
-     * @param identifier
-     *            the field
-     * @param node
-     *            a node in the query
-     * @param existing
-     *            an existing EventDataQueryFilter
-     * @return a ChainableEventDataQueryFilter
-     */
-    @Deprecated
-    protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(String identifier, JexlNode node, EventDataQueryFilter existing) {
-        return createWrappedTermFrequencyFilter(node, existing);
-    }
-
     protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {
