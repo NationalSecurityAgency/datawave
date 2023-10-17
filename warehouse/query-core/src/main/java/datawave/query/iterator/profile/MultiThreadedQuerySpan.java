@@ -43,6 +43,10 @@ public class MultiThreadedQuerySpan extends QuerySpan {
         return getThreadSpecificQuerySpan().getNextCount();
     }
 
+    public long getEvaluatedCount() {
+        return getThreadSpecificQuerySpan().getEvaluatedCount();
+    }
+
     public long getSeekCount() {
         return getThreadSpecificQuerySpan().getSeekCount();
     }

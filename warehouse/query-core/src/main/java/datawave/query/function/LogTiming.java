@@ -51,6 +51,7 @@ public class LogTiming implements Function<Entry<Key,Document>,Entry<Key,Documen
                 timingMetadata.setHost(host);
                 timingMetadata.setSourceCount(querySpan.getSourceCount());
                 timingMetadata.setSeekCount(querySpan.getSeekCount());
+                timingMetadata.setEvaluatedCount(querySpan.getEvaluatedCount());
                 timingMetadata.setNextCount(querySpan.getNextCount());
                 if (querySpan.getYield()) {
                     timingMetadata.setYieldCount(1L);

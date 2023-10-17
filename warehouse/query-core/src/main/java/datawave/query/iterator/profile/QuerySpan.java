@@ -30,6 +30,8 @@ public class QuerySpan {
 
     protected long seek = 0;
 
+    protected long evaluated = 0;
+
     protected boolean yield = false;
 
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
@@ -88,6 +90,14 @@ public class QuerySpan {
             nextCount += subSpan.getNextCount();
         }
         return nextCount;
+    }
+
+    public long getEvaluatedCount() {
+        long evaluatedCount = evaluated;
+        for (QuerySpan subSpan : sources) {
+            evaluatedCount += subSpan.getEvaluatedCount();
+        }
+        return evaluatedCount;
     }
 
     public long getSeekCount() {

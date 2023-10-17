@@ -34,6 +34,8 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
     public static final String HIT_TERM_FIELD = "HIT_TERM";
 
     private String query;
+    private long evaluatedCount;
+    private long rejectedCount;
     private JexlArithmetic arithmetic;
     private DatawaveJexlEngine engine;
 
@@ -61,6 +63,12 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
 
         // Evaluate the JexlContext against the Script
         this.script = DatawaveJexlScript.create((ExpressionImpl) this.engine.createScript(this.query));
+
+        // Number of events evaluated
+        this.evaluatedCount = evaluatedCount;
+
+        // Number of events rejected
+        this.rejectedCount = rejectedCount;
     }
 
     public JexlArithmetic getArithmetic() {
@@ -91,11 +99,17 @@ public class JexlEvaluation implements Predicate<Tuple3<Key,Document,DatawaveJex
 
         // now evaluate
         Object o = script.execute(input.third());
+        // Increase count of events evaluated
+        evaluatedCount++;
         if (log.isTraceEnabled()) {
             log.trace("Evaluation of " + query + " against " + input.third() + " returned " + o);
         }
 
         boolean matched = isMatched(o);
+
+        if (!matched) {
+            rejectedCount++;
+        }
 
         // Add delayed info to document
         if (matched && input.third() instanceof DelayedNonEventIndexContext) {
