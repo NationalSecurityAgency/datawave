@@ -24,8 +24,8 @@ import com.google.common.collect.Sets;
 import datawave.query.Constants;
 import datawave.query.function.LimitFields;
 import datawave.query.jexl.JexlASTHelper;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.tld.TLD;
-import datawave.query.util.TypeMetadata;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the root document in which case all fields
@@ -69,10 +69,10 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
 
     private Set<String> nonEventFields;
 
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
-                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, queryFields, attributeFactory, whitelist, blacklist, maxFieldsBeforeSeek, maxKeysBeforeSeek, HashMultimap.create(), null,
-                        Collections.EMPTY_SET);
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
+                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
+        this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(), null,
+                        Collections.emptySet());
     }
 
     /**
@@ -81,33 +81,33 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     private String limitFieldsField = null;
 
     /**
-     * Initialize the query field filter with all of the fields required to evaluation this query
+     * Preferred constructor that accepts prebuilt expression filters
      *
      * @param script
-     *            - script
-     * @param attributeFactory
-     *            - attributeFactory
-     * @param blacklist
-     *            - blacklist
-     * @param limitFieldsField
-     *            - limitFieldsField
-     * @param limitFieldsMap
-     *            - limitFieldsMap
-     * @param maxFieldsBeforeSeek
-     *            - maxFieldsBeforeSeek
-     * @param maxKeysBeforeSeek
-     *            - maxFieldsBeforeSeek
-     * @param nonEventFields
-     *            - nonEventFields
+     *            the query
      * @param queryFields
-     *            - queryFields
-     * @param whitelist
-     *            - whitelist
+     *            the query fields
+     * @param filters
+     *            a map of expression filters
+     * @param includedFields
+     *            a set of fields to include
+     * @param excludedFields
+     *            a set of fields to exclude
+     * @param maxFieldsBeforeSeek
+     *            max fields traversed before a seek is issued
+     * @param maxKeysBeforeSeek
+     *            max keys traversed before a seek is issued
+     * @param limitFieldsMap
+     *            the limit fields map
+     * @param limitFieldsField
+     *            the limit fields field
+     * @param nonEventFields
+     *            a set of non-event fields
      */
-    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, TypeMetadata attributeFactory, Set<String> whitelist, Set<String> blacklist,
-                    long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Multimap<Integer,String> limitFieldsMap, String limitFieldsField,
+    public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> filters, Set<String> includedFields,
+                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Multimap<Integer,String> limitFieldsMap, String limitFieldsField,
                     Set<String> nonEventFields) {
-        super(script, attributeFactory, nonEventFields);
+        super(filters);
 
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
         this.maxKeysBeforeSeek = maxKeysBeforeSeek;
@@ -121,8 +121,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
                         : -1;
 
         setQueryFields(queryFields, script);
-        updateLists(whitelist, blacklist);
-        setSortedLists(whitelist, blacklist);
+        updateLists(includedFields, excludedFields);
+        setSortedLists(includedFields, excludedFields);
     }
 
     public TLDEventDataFilter(TLDEventDataFilter other) {

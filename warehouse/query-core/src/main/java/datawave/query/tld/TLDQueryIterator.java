@@ -1,5 +1,7 @@
 package datawave.query.tld;
 
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Collection;
@@ -22,6 +24,7 @@ import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
 import com.google.common.collect.HashMultimap;
 
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.function.Equality;
 import datawave.query.function.RangeProvider;
@@ -32,6 +35,7 @@ import datawave.query.iterator.QueryIterator;
 import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.functions.FieldIndexAggregator;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.postprocessing.tf.TFFactory;
 import datawave.query.postprocessing.tf.TermFrequencyConfig;
@@ -120,8 +124,12 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (this.evaluationFilter == null && script != null) {
+
+            AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
             // setup an evaluation filter to avoid loading every single child key into the event
-            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), typeMetadata, useWhiteListedFields ? whiteListedFields : null,
+            this.evaluationFilter = new TLDEventDataFilter(script, getAllFields(), expressionFilters, useWhiteListedFields ? whiteListedFields : null,
                             useBlackListedFields ? blackListedFields : null, getEventFieldSeek(), getEventNextSeek(),
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : HashMultimap.create(), limitFieldsField, getNonEventFields());
         }
