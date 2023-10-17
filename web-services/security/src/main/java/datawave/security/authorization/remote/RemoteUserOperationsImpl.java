@@ -50,6 +50,13 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     }
 
     @Override
+    @Cacheable(value = "getRemoteUser", key = "{#principal}", cacheManager = "remoteUserOperationsCacheManager")
+    public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
+        return UserOperations.super.getRemoteUser(principal);
+    }
+    
+    @Override
+    @Cacheable(value = "listEffectiveAuthorizations", key = "{#callerObject}", cacheManager = "remoteUserOperationsCacheManager")
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
