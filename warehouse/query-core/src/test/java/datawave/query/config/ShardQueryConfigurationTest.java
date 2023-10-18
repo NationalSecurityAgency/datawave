@@ -490,6 +490,9 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
         alreadySet.add("projectFieldsAsString");
 
+        defaultValues.put("renameFields", Maps.newHashMap());
+        updatedValues.put("renameFields", Collections.singletonMap("UUID", "ID"));
+
         defaultValues.put("blacklistedFields", Sets.newHashSet());
         updatedValues.put("blacklistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
         defaultValues.put("blacklistedFieldsAsString", "");

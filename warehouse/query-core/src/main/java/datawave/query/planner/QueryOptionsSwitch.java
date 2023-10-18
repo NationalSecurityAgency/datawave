@@ -1,6 +1,7 @@
 package datawave.query.planner;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -67,13 +68,23 @@ public class QueryOptionsSwitch {
                     config.setExcerptFields(excerptFields);
                     break;
                 case QueryParameters.NO_EXPANSION_FIELDS:
-                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setNoExpansionFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.LENIENT_FIELDS:
-                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setLenientFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
                     break;
                 case QueryParameters.STRICT_FIELDS:
-                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, ','))));
+                    config.setStrictFields(new HashSet<>(Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP))));
+                    break;
+                case QueryParameters.RENAME_FIELDS:
+                    Map<String,String> renameFieldsMap = new HashMap<>();
+                    Arrays.asList(StringUtils.split(value, Constants.PARAM_VALUE_SEP)).stream().forEach(m -> {
+                        int index = m.indexOf('=');
+                        if (index > 0 && index < m.length() - 1) {
+                            renameFieldsMap.put(m.substring(0, index), m.substring(index + 1));
+                        }
+                    });
+                    config.setRenameFields(renameFieldsMap);
                     break;
                 case QueryParameters.SUM_FIELDS:
                     String[] sumFields = StringUtils.split(value, Constants.PARAM_VALUE_SEP);

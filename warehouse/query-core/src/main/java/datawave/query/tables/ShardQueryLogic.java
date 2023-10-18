@@ -75,6 +75,7 @@ import datawave.query.tables.stats.ScanSessionStats;
 import datawave.query.transformer.DocumentTransform;
 import datawave.query.transformer.DocumentTransformer;
 import datawave.query.transformer.EventQueryDataDecoratorTransformer;
+import datawave.query.transformer.FieldRenameTransform;
 import datawave.query.transformer.GroupingTransform;
 import datawave.query.transformer.UniqueTransform;
 import datawave.query.util.DateIndexHelper;
@@ -643,6 +644,17 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                                     .addTransform(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
+
+            if (getConfig().getRenameFields() != null && !getConfig().getRenameFields().isEmpty()) {
+                DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(FieldRenameTransform.class);
+                if (alreadyExists != null) {
+                    ((FieldRenameTransform) alreadyExists).updateConfig(getConfig().getRenameFields());
+                } else {
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new FieldRenameTransform(getConfig().getRenameFields(), getIncludeGroupingContext(), isReducedResponse()));
+                }
+            }
+
         }
         if (getQueryModel() != null) {
             ((DocumentTransformer) this.transformerInstance).setQm(getQueryModel());
@@ -708,6 +720,30 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             }
 
             config.setDatatypeFilter(typeFilter);
+        }
+
+        // Get the list of field rename mappings. May be null.
+        String renameFields = settings.findParameter(QueryParameters.RENAME_FIELDS).getParameterValue().trim();
+        if (StringUtils.isNotBlank(renameFields)) {
+            Map<String,String> renameFieldsMap = new HashMap<>();
+            Arrays.asList(StringUtils.split(renameFields, Constants.PARAM_VALUE_SEP)).stream().forEach(m -> {
+                int index = m.indexOf('=');
+                if (index > 0 && index < m.length() - 1) {
+                    renameFieldsMap.put(m.substring(0, index), m.substring(index + 1));
+                }
+            });
+
+            // Only set the rename fields if we were actually given some
+            if (!renameFieldsMap.isEmpty()) {
+                config.setRenameFields(renameFieldsMap);
+
+                if (log.isDebugEnabled()) {
+                    final int maxLen = 100;
+                    // Trim down the projection if it's stupid long
+                    renameFields = maxLen < renameFields.length() ? renameFields.substring(0, maxLen) + "[TRUNCATED]" : renameFields;
+                    log.debug("Rename fields: " + renameFields);
+                }
+            }
         }
 
         // Get the list of fields to project up the stack. May be null.
@@ -2120,6 +2156,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
         optionalParams.add(QueryParameters.PARAMETER_MODEL_NAME);
         optionalParams.add(QueryParameters.PARAMETER_MODEL_TABLE_NAME);
         optionalParams.add(QueryParameters.DATATYPE_FILTER_SET);
+        optionalParams.add(QueryParameters.RENAME_FIELDS);
         optionalParams.add(QueryParameters.RETURN_FIELDS);
         optionalParams.add(QueryParameters.BLACKLISTED_FIELDS);
         optionalParams.add(QueryParameters.FILTER_MASKED_VALUES);
