@@ -333,8 +333,7 @@ public class TermFrequencyIndexIteratorTest {
 
         AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
         Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
-        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), expressionFilters, null, null, -1, -1, HashMultimap.create(), null,
-                        fieldsToKeep);
+        filter = new TLDEventDataFilter(script, Collections.singleton("FOO"), expressionFilters, null, null, -1, -1, HashMultimap.create(), null, fieldsToKeep);
 
         aggregator = new TLDTermFrequencyAggregator(fieldsToKeep, filter, -1);
         TermFrequencyIndexIterator iterator = new TermFrequencyIndexIterator(r, source, null, typeMetadata, true, aggregator);

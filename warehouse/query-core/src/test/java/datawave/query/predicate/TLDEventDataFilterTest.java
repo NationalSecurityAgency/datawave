@@ -13,6 +13,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.AbstractMap;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;

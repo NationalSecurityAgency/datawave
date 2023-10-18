@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -60,18 +61,18 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
     /**
      * track count limits per field, _ANYFIELD_ implies a constraint on all fields
      */
-    private Multimap<Integer,String> limitFieldsMap;
+    private final Multimap<Integer,String> limitFieldsMap;
 
     /**
      * if _ANYFIELD_ appears in the limitFieldsMap this will be set to that value or -1 if not configured
      */
-    private int anyFieldLimit;
+    private final int anyFieldLimit;
 
-    private Set<String> nonEventFields;
+    private final Set<String> nonEventFields;
 
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> expressionFilters, Set<String> includedFields,
                     Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek) {
-        this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, Collections.emptyMap(), null,
+        this(script, queryFields, expressionFilters, includedFields, excludedFields, maxFieldsBeforeSeek, maxKeysBeforeSeek, HashMultimap.create(), null,
                         Collections.emptySet());
     }
 
@@ -105,8 +106,8 @@ public class TLDEventDataFilter extends EventDataQueryExpressionFilter {
      *            a set of non-event fields
      */
     public TLDEventDataFilter(ASTJexlScript script, Set<String> queryFields, Map<String,ExpressionFilter> filters, Set<String> includedFields,
-                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Multimap<Integer,String> limitFieldsMap, String limitFieldsField,
-                    Set<String> nonEventFields) {
+                    Set<String> excludedFields, long maxFieldsBeforeSeek, long maxKeysBeforeSeek, Multimap<Integer,String> limitFieldsMap,
+                    String limitFieldsField, Set<String> nonEventFields) {
         super(filters);
 
         this.maxFieldsBeforeSeek = maxFieldsBeforeSeek;
