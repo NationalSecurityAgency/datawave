@@ -122,7 +122,7 @@ generate_posts() {
   local _start_index=${1} ; shift
   local _arr=("$@")
   for ((i=${_start_index}; i<${#_arr[@]}; i++)) ; do
-    local _yyyymmdd=$(cd ${TMP_DW_DIR} && git for-each-ref --format="%(creatordate:short)" refs/tags/${_arr[i]})
+    local _yyyymmdd=$(cd ${TMP_DW_DIR} && ${GIT} for-each-ref --format="%(creatordate:short)" refs/tags/${_arr[i]})
     local _post_file_name="${POSTS_DIR}/${_yyyymmdd}-datawave-${_arr[i]}.md"
     local _post="---
 title: DataWave ${_arr[i]}
