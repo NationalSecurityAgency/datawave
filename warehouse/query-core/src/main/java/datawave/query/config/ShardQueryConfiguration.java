@@ -193,7 +193,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Integer maxDocScanTimeout = -1;
     // A counter used to uniquely identify FSTs generated in the
     // PushdownLargeFieldedListsVisitor
-    private AtomicInteger fstCount = new AtomicInteger(0);
+    @JsonIgnore
+    private transient AtomicInteger fstCount = new AtomicInteger(0);
     // the percent shards marked when querying the date index after which the
     // shards are collapsed down to the entire day.
     private float collapseDatePercentThreshold = 0.99f;
@@ -544,6 +545,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeTransitionDates(null == other.getCompositeTransitionDates() ? null : Maps.newHashMap(other.getCompositeTransitionDates()));
         this.setCompositeFieldSeparators(null == other.getCompositeFieldSeparators() ? null : Maps.newHashMap(other.getCompositeFieldSeparators()));
         this.setWhindexCreationDates(null == other.getWhindexCreationDates() ? null : Maps.newHashMap(other.getWhindexCreationDates()));
+        this.setGeneratePlanOnly(other.isGeneratePlanOnly());
         this.setSortedUIDs(other.isSortedUIDs());
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
@@ -870,6 +872,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.datatypeFilter = typeFilter;
     }
 
+    @JsonIgnore
     public String getDatatypeFilterAsString() {
         return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
@@ -886,6 +889,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.projectFields = deconstruct(projectFields);
     }
 
+    @JsonIgnore
     public String getProjectFieldsAsString() {
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -898,6 +902,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.blacklistedFields = deconstruct(blacklistedFields);
     }
 
+    @JsonIgnore
     public String getBlacklistedFieldsAsString() {
         return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -1062,6 +1067,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    public void setFilterOptions(Map<String,String> options) {
+        filterOptions.clear();
+        putFilterOptions(options);
+    }
+
     public Map<String,String> getFilterOptions() {
         return Collections.unmodifiableMap(filterOptions);
     }
@@ -1132,6 +1142,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
+    @JsonIgnore
     public String getNonEventKeyPrefixesAsString() {
         return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
     }
@@ -1440,6 +1451,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return FIELDNAME1:normalizer.class;FIELDNAME2:normalizer.class;
      */
+    @JsonIgnore
     public String getIndexedFieldDataTypesAsString() {
 
         if (null == this.getIndexedFields() || this.getIndexedFields().isEmpty()) {
@@ -1458,6 +1470,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return sb.toString();
     }
 
+    @JsonIgnore
     public String getNormalizedFieldNormalizersAsString() {
 
         if (null == this.getNormalizedFields() || this.getNormalizedFields().isEmpty()) {
@@ -1589,6 +1602,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.limitFields = deconstruct(limitFields);
     }
 
+    @JsonIgnore
     public String getLimitFieldsAsString() {
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -1601,6 +1615,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.matchingFieldSets = matchingFieldSets;
     }
 
+    @JsonIgnore
     public String getMatchingFieldSetsAsString() {
         return StringUtils.join(this.getMatchingFieldSets(), Constants.PARAM_VALUE_SEP);
     }
@@ -1661,6 +1676,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.groupFields = deconstruct(groupFields);
     }
 
+    @JsonIgnore
     public String getGroupFieldsAsString() {
         return StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -1673,6 +1689,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
 
+    @JsonIgnore
     public String getGroupFieldsBatchSizeAsString() {
         return "" + groupFieldsBatchSize;
     }
@@ -1998,6 +2015,10 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     }
 
     public void setLimitTermExpansionToModel(boolean shouldLimitTermExpansionToModel) {
+        this.shouldLimitTermExpansionToModel = shouldLimitTermExpansionToModel;
+    }
+
+    public void setExpansionLimitedToModelContents(boolean shouldLimitTermExpansionToModel) {
         this.shouldLimitTermExpansionToModel = shouldLimitTermExpansionToModel;
     }
 
