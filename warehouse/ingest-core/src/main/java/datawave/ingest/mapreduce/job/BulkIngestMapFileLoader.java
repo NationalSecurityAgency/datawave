@@ -1,5 +1,7 @@
 package datawave.ingest.mapreduce.job;
 
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -108,6 +110,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
     private volatile boolean running;
     private ExecutorService executor;
     private JobObservable jobObservable;
+    private PropertyChangeSupport support;
 
     public static void main(String[] args) throws AccumuloSecurityException, IOException, NoSuchMethodException {
 
@@ -128,7 +131,8 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
         int numBulkThreads = 8;
         int numBulkAssignThreads = 4;
-        List<Observer> jobObservers = new ArrayList<>();
+        List<PropertyChangeListener> jobObservers = new ArrayList<>();
+        // List<Observer> jobObservers = new ArrayList<>();
         // default the number of HDFS threads to 1
         int numHdfsThreads = 1;
         if (args.length > 6) {
@@ -292,7 +296,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
                         for (String jobObserverClass : classes) {
                             log.info("Adding job observer: " + jobObserverClass);
                             Class clazz = Class.forName(jobObserverClass);
-                            Observer o = (Observer) clazz.getDeclaredConstructor().newInstance();
+                            PropertyChangeListener o = (PropertyChangeListener) clazz.getDeclaredConstructor().newInstance();
                             jobObservers.add(o);
                         }
                     } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
@@ -378,7 +382,7 @@ public final class BulkIngestMapFileLoader implements Runnable {
 
     public BulkIngestMapFileLoader(String workDir, String jobDirPattern, String instanceName, String zooKeepers, String user, PasswordToken passToken,
                     URI seqFileHdfs, URI srcHdfs, URI destHdfs, String jobtracker, Map<String,Integer> tablePriorities, Configuration conf, int shutdownPort,
-                    int numHdfsThreads, List<Observer> jobObservers) {
+                    int numHdfsThreads, List<PropertyChangeListener> jobObservers) {
         this.conf = conf;
         this.tablePriorities = tablePriorities;
         this.workDir = new Path(workDir);
@@ -393,14 +397,15 @@ public final class BulkIngestMapFileLoader implements Runnable {
         this.jobtracker = jobtracker;
         this.running = true;
         this.executor = Executors.newFixedThreadPool(numHdfsThreads > 0 ? numHdfsThreads : 1);
+        this.support = new PropertyChangeSupport(this);
         try {
             this.jobObservable = new JobObservable(seqFileHdfs != null ? getFileSystem(seqFileHdfs) : null);
         } catch (IOException e) {
             throw new IllegalStateException("Cannot create FileSystem", e);
         }
 
-        for (Observer observer : jobObservers) {
-            this.jobObservable.addObserver(observer);
+        for (PropertyChangeListener observer : jobObservers) {
+            this.support.addPropertyChangeListener(observer);
             if (observer instanceof Configurable) {
                 log.info("Applying configuration to observer");
                 ((Configurable) observer).setConf(conf);
@@ -1214,27 +1219,26 @@ public final class BulkIngestMapFileLoader implements Runnable {
                 }
 
                 // if there are job observers do the work to notify them
-                if (jobObservable.countObservers() > 0) {
-                    // update job observers
-                    if (destFs.getConf() == null) {
-                        destFs.setConf(conf);
-                    }
-                    RemoteIterator<LocatedFileStatus> statuses = destFs.listFiles(jobDirectory, false);
-                    Path jobFile = null;
-                    while (jobFile == null && statuses.hasNext()) {
-                        LocatedFileStatus status = statuses.next();
-                        if (status.getPath().getName().startsWith("job_")) {
-                            jobFile = status.getPath();
-                        }
-                    }
-
-                    if (jobFile != null) {
-                        log.info("Notifying observers for job: " + jobFile.getName() + " from work dir: " + jobDirectory);
-                        jobObservable.setJobId(jobFile.getName());
-                    } else {
-                        log.warn("no job file found for: " + jobDirectory);
+                // update job observers
+                if (destFs.getConf() == null) {
+                    destFs.setConf(conf);
+                }
+                RemoteIterator<LocatedFileStatus> statuses = destFs.listFiles(jobDirectory, false);
+                Path jobFile = null;
+                while (jobFile == null && statuses.hasNext()) {
+                    LocatedFileStatus status = statuses.next();
+                    if (status.getPath().getName().startsWith("job_")) {
+                        jobFile = status.getPath();
                     }
                 }
+
+                if (jobFile != null) {
+                    log.info("Notifying observers for job: " + jobFile.getName() + " from work dir: " + jobDirectory);
+                    jobObservable.setJobId(jobFile.getName());
+                } else {
+                    log.warn("no job file found for: " + jobDirectory);
+                }
+
             }
 
         } catch (InterruptedException e) {

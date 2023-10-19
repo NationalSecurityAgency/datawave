@@ -1,15 +1,18 @@
 package datawave.ingest.mapreduce.job;
 
+import java.beans.PropertyChangeSupport;
 import java.util.Observable;
 
 import org.apache.hadoop.fs.FileSystem;
 
-public class JobObservable extends Observable {
+public class JobObservable {
     private final FileSystem fs;
     private String jobId;
+    private PropertyChangeSupport support;
 
     public JobObservable(FileSystem fs) {
         this.fs = fs;
+        this.support = new PropertyChangeSupport(this);
     }
 
     public String getJobId() {
@@ -17,9 +20,8 @@ public class JobObservable extends Observable {
     }
 
     public void setJobId(String jobId) {
+        support.firePropertyChange("jobId", this.jobId, jobId);
         this.jobId = jobId;
-        setChanged();
-        notifyObservers();
     }
 
     public FileSystem getFs() {

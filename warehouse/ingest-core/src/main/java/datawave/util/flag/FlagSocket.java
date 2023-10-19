@@ -27,6 +27,7 @@ public class FlagSocket implements Runnable, PropertyChangeListener {
 
     public FlagSocket(int port) throws IOException {
         serverSocket = new ServerSocket(port);
+        support = new PropertyChangeSupport(this);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class FlagSocket implements Runnable, PropertyChangeListener {
 
     @Override
     public void propertyChange(PropertyChangeEvent propertyChangeEvent) {
-        String arg = propertyChangeEvent.getPropertyName();
+        String arg = propertyChangeEvent.getNewValue().toString();
         if ("shutdown".equals(arg)) {
             log.info("Shutdown call received. Socket exiting.");
             running = false;
