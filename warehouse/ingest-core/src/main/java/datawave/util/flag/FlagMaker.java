@@ -1,5 +1,7 @@
 package datawave.util.flag;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileOutputStream;
@@ -17,8 +19,6 @@ import java.text.DecimalFormat;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +57,7 @@ import datawave.util.flag.processor.UnusableFileException;
 /**
  *
  */
-public class FlagMaker implements Runnable, Observer, SizeValidator {
+public class FlagMaker implements Runnable, PropertyChangeListener, SizeValidator {
 
     private static final CompressionCodec cc = new GzipCodec();
     private static final CompressionType ct = CompressionType.BLOCK;
@@ -619,32 +619,9 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
         }
     }
 
-    @Override
-    public void update(Observable o, Object arg) {
-        if (flagSocket != o || arg == null) {
-            return;
-        }
-        String s = arg.toString();
-        if ("shutdown".equals(s)) {
-            running = false;
-        }
-        if (s.startsWith("kick")) {
-            String dtype = s.substring(4).trim();
-            for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
-                if (cfg.getDataName().equals(dtype)) {
-                    log.info("Forcing {} to generate flag file", dtype);
-                    cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
-                    break;
-                }
-            }
-        }
-
-    }
-
     private void startSocket() {
         try {
             flagSocket = new FlagSocket(fmc.getSocketPort());
-            flagSocket.addObserver(this);
             Thread socketThread = new Thread(flagSocket, "Flag_Socket_Thread");
             socketThread.setDaemon(true);
             socketThread.start();
@@ -714,5 +691,24 @@ public class FlagMaker implements Runnable, Observer, SizeValidator {
 
     private int filesPerPartition(int maxCounters) {
         return ((maxCounters - 2) / 2);
+    }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent propertyChangeEvent) {
+        String s = propertyChangeEvent.getNewValue().toString();
+
+        if ("shutdown".equals(s)) {
+            running = false;
+        }
+        if (s.startsWith("kick")) {
+            String dtype = s.substring(4).trim();
+            for (FlagDataTypeConfig cfg : fmc.getFlagConfigs()) {
+                if (cfg.getDataName().equals(dtype)) {
+                    log.info("Forcing {} to generate flag file", dtype);
+                    cfg.setLast(System.currentTimeMillis() - cfg.getTimeoutMilliSecs());
+                    break;
+                }
+            }
+        }
     }
 }

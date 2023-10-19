@@ -1,5 +1,8 @@
 package datawave.util.flag;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,19 +12,18 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Observable;
-import java.util.Observer;
 
 import org.apache.log4j.Logger;
 
 /**
  *
  */
-public class FlagSocket extends Observable implements Runnable, Observer {
+public class FlagSocket implements Runnable, PropertyChangeListener {
 
     private static final Logger log = Logger.getLogger(FlagSocket.class);
     private ServerSocket serverSocket;
     private volatile boolean running = true;
+    private PropertyChangeSupport support;
 
     public FlagSocket(int port) throws IOException {
         serverSocket = new ServerSocket(port);
@@ -30,7 +32,8 @@ public class FlagSocket extends Observable implements Runnable, Observer {
     @Override
     public void run() {
         // register ourselves to observe...
-        addObserver(this);
+        support.addPropertyChangeListener(this);
+
         log.info("Listening for shutdown commands on port " + serverSocket.getLocalPort());
         while (running) {
             try {
@@ -44,8 +47,7 @@ public class FlagSocket extends Observable implements Runnable, Observer {
                     String line = rdr.readLine();
                     is.close();
                     s.close();
-                    setChanged();
-                    notifyObservers(line);
+                    support.firePropertyChange("line", line, line);
                 } catch (SocketTimeoutException e) {
                     log.info("Timed out waiting for input from " + remoteAddress);
                 }
@@ -60,16 +62,15 @@ public class FlagSocket extends Observable implements Runnable, Observer {
     }
 
     @Override
-    public void update(Observable o, Object arg) {
-        if (this == o) {
-            if ("shutdown".equals(arg)) {
-                log.info("Shutdown call received. Socket exiting.");
-                running = false;
-                try {
-                    serverSocket.close();
-                } catch (IOException ex) {
-                    log.info("Failed to close server socket on shutdown", ex);
-                }
+    public void propertyChange(PropertyChangeEvent propertyChangeEvent) {
+        String arg = propertyChangeEvent.getPropertyName();
+        if ("shutdown".equals(arg)) {
+            log.info("Shutdown call received. Socket exiting.");
+            running = false;
+            try {
+                serverSocket.close();
+            } catch (IOException ex) {
+                log.info("Failed to close server socket on shutdown", ex);
             }
         }
     }
