@@ -134,7 +134,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     protected static FileSystem fs = null;
 
-    private IteratorEnvironment myEnv;
+    protected IteratorEnvironment myEnv;
 
     private PluginEnvironment pluginEnv;
 
@@ -200,7 +200,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
     public SortedKeyValueIterator<Key,Value> deepCopy(IteratorEnvironment env) {
 
         myEnv = env;
-        pluginEnv = env.getPluginEnv();
+        pluginEnv = env == null ? null : env.getPluginEnv();
         return ((ConfigurableAgeOffFilter) super.deepCopy(env)).initialize(this);
     }
 
@@ -314,7 +314,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
         super.init(source, options, env);
 
         myEnv = env;
-        pluginEnv = env.getPluginEnv();
+        pluginEnv = env == null ? null : env.getPluginEnv();
 
         // disabled if this is a system initialized major compaction and we are configured to disable as such
         String disableOnNonFullMajcStr = options.get(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC);

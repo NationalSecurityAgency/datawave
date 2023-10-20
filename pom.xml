@@ -62,7 +62,7 @@
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>2.1.0</version.in-memory-accumulo>
+        <version.in-memory-accumulo>2.1.1</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
