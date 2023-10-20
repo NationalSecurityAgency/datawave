@@ -23,6 +23,7 @@
     <scm>
         <connection>scm:git:https://github.com/NationalSecurityAgency/datawave.git</connection>
         <developerConnection>scm:git:git@github.com:NationalSecurityAgency/datawave.git</developerConnection>
+        <tag>HEAD</tag>
         <url>https://github.com/NationalSecurityAgency/datawave</url>
     </scm>
     <properties>
@@ -60,11 +61,11 @@
         <version.google-guava>31.1-jre</version.google-guava>
         <version.googlecode-findbugs>2.0.3</version.googlecode-findbugs>
         <version.googlecode-json-simple>1.1.1</version.googlecode-json-simple>
-        <version.hadoop>3.3.4</version.hadoop>
+        <version.hadoop>3.3.5</version.hadoop>
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>4.0-SNAPSHOT</version.in-memory-accumulo>
+        <version.in-memory-accumulo>4.0.0-SNAPSHOT</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -82,20 +83,21 @@
         <version.kryonet>2.20</version.kryonet>
         <version.log4j2>2.17.2</version.log4j2>
         <version.lucene>7.5.0</version.lucene>
+        <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
-        <version.microservice.accumulo-api>4.0-SNAPSHOT</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>4.0-SNAPSHOT</version.microservice.accumulo-utils>
-        <version.microservice.audit-api>4.0-SNAPSHOT</version.microservice.audit-api>
-        <version.microservice.authorization-api>4.0-SNAPSHOT</version.microservice.authorization-api>
-        <version.microservice.base-rest-responses>4.0-SNAPSHOT</version.microservice.base-rest-responses>
-        <version.microservice.common-utils>3.0-SNAPSHOT</version.microservice.common-utils>
-        <version.microservice.dictionary-api>4.0-SNAPSHOT</version.microservice.dictionary-api>
-        <version.microservice.mapreduce-query-api>1.0-SNAPSHOT</version.microservice.mapreduce-query-api>
-        <version.microservice.metadata-utils>4.0-SNAPSHOT</version.microservice.metadata-utils>
-        <version.microservice.metrics-reporter>3.0-SNAPSHOT</version.microservice.metrics-reporter>
-        <version.microservice.query-api>1.0-SNAPSHOT</version.microservice.query-api>
-        <version.microservice.query-metric-api>4.0-SNAPSHOT</version.microservice.query-metric-api>
-        <version.microservice.type-utils>3.0-SNAPSHOT</version.microservice.type-utils>
+        <version.microservice.accumulo-api>4.0.0-SNAPSHOT</version.microservice.accumulo-api>
+        <version.microservice.accumulo-utils>4.0.0-SNAPSHOT</version.microservice.accumulo-utils>
+        <version.microservice.audit-api>4.0.0-SNAPSHOT</version.microservice.audit-api>
+        <version.microservice.authorization-api>4.0.0-SNAPSHOT</version.microservice.authorization-api>
+        <version.microservice.base-rest-responses>4.0.0-SNAPSHOT</version.microservice.base-rest-responses>
+        <version.microservice.common-utils>3.0.0-SNAPSHOT</version.microservice.common-utils>
+        <version.microservice.dictionary-api>4.0.0-SNAPSHOT</version.microservice.dictionary-api>
+        <version.microservice.mapreduce-query-api>1.0.0-SNAPSHOT</version.microservice.mapreduce-query-api>
+        <version.microservice.metadata-utils>4.0.0-SNAPSHOT</version.microservice.metadata-utils>
+        <version.microservice.metrics-reporter>3.0.0-SNAPSHOT</version.microservice.metrics-reporter>
+        <version.microservice.query-api>1.0.0-SNAPSHOT</version.microservice.query-api>
+        <version.microservice.query-metric-api>4.0.0-SNAPSHOT</version.microservice.query-metric-api>
+        <version.microservice.type-utils>3.0.0-SNAPSHOT</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.16</version.mysql-connector>
@@ -693,6 +695,16 @@
                         <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-api</artifactId>
+                <version>${version.hadoop}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-client-runtime</artifactId>
+                <version>${version.hadoop}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -1536,6 +1548,11 @@
                     </executions>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-install-plugin</artifactId>
+                    <version>${version.maven-install-plugin}</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>3.1.2</version>
                     <configuration>
@@ -2167,6 +2184,43 @@
                                     <goal>sort</goal>
                                     <!-- runs at process-sources phase by default -->
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>checkVersion</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-enforcer-plugin</artifactId>
+                        <version>3.3.0</version>
+                        <executions>
+                            <execution>
+                                <id>enforce-versions</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <dependencyConvergence>
+                                            <excludes>
+                                                <exclude>tech.units:indriya</exclude>
+                                                <exclude>org.apache.commons:*</exclude>
+                                                <exclude>si.uom:si-quantity</exclude>
+                                                <exclude>commons-net:commons-net</exclude>
+                                                <exclude>io.dropwizard.metrics:metrics-core</exclude>
+                                                <exclude>com.google.inject:*</exclude>
+                                                <exclude>com.google.inject.extensions:*</exclude>
+                                                <exclude>com.google.code.gson:gson</exclude>
+                                                <exclude>org.apache.zookeeper:zookeeper-jute</exclude>
+                                            </excludes>
+                                        </dependencyConvergence>
+                                    </rules>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>

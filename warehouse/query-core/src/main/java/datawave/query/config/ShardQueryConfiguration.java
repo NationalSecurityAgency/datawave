@@ -24,7 +24,6 @@ import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
@@ -89,7 +88,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private boolean tldQuery = false;
     private Map<String,String> filterOptions = new HashMap<>();
     private boolean disableIndexOnlyDocuments = false;
-    @JsonIgnore
     private transient QueryStopwatch timers = new QueryStopwatch();
     private int maxScannerBatchSize = 1000;
     /**
@@ -198,7 +196,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private Integer maxDocScanTimeout = -1;
     // A counter used to uniquely identify FSTs generated in the
     // PushdownLargeFieldedListsVisitor
-    @JsonIgnore
     private transient AtomicInteger fstCount = new AtomicInteger(0);
     // the percent shards marked when querying the date index after which the
     // shards are collapsed down to the entire day.
@@ -359,7 +356,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     // model. drop others
     private boolean shouldLimitTermExpansionToModel = false;
     private Query query = null;
-    @JsonIgnore
     private transient ASTJexlScript queryTree = null;
     private boolean compressServerSideResults = false;
     private boolean indexOnlyFilterFunctionsEnabled = false;
@@ -556,6 +552,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCompositeTransitionDates(null == other.getCompositeTransitionDates() ? null : Maps.newHashMap(other.getCompositeTransitionDates()));
         this.setCompositeFieldSeparators(null == other.getCompositeFieldSeparators() ? null : Maps.newHashMap(other.getCompositeFieldSeparators()));
         this.setWhindexCreationDates(null == other.getWhindexCreationDates() ? null : Maps.newHashMap(other.getWhindexCreationDates()));
+        this.setGeneratePlanOnly(other.isGeneratePlanOnly());
         this.setSortedUIDs(other.isSortedUIDs());
         this.setQueryTermFrequencyFields(null == other.getQueryTermFrequencyFields() ? null : Sets.newHashSet(other.getQueryTermFrequencyFields()));
         this.setTermFrequenciesRequired(other.isTermFrequenciesRequired());
@@ -938,7 +935,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.shardDateFormat = shardDateFormat;
     }
 
-    @JsonIgnore
     public SimpleDateFormat getShardDateFormatter() {
         return shardDateFormatter;
     }
@@ -955,7 +951,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.datatypeFilter = typeFilter;
     }
 
-    @JsonIgnore
     public String getDatatypeFilterAsString() {
         return StringUtils.join(this.getDatatypeFilter(), Constants.PARAM_VALUE_SEP);
     }
@@ -972,7 +967,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.projectFields = deconstruct(projectFields);
     }
 
-    @JsonIgnore
     public String getProjectFieldsAsString() {
         return StringUtils.join(this.getProjectFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -985,7 +979,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.blacklistedFields = deconstruct(blacklistedFields);
     }
 
-    @JsonIgnore
     public String getBlacklistedFieldsAsString() {
         return StringUtils.join(this.getBlacklistedFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -1217,7 +1210,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         }
     }
 
-    @JsonIgnore
     public String getNonEventKeyPrefixesAsString() {
         return StringUtils.join(this.getNonEventKeyPrefixes(), Constants.PARAM_VALUE_SEP);
     }
@@ -1513,7 +1505,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return FIELDNAME1:normalizer.class;FIELDNAME2:normalizer.class;
      */
-    @JsonIgnore
     public String getIndexedFieldDataTypesAsString() {
 
         if (null == this.getIndexedFields() || this.getIndexedFields().isEmpty()) {
@@ -1532,7 +1523,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return sb.toString();
     }
 
-    @JsonIgnore
     public String getNormalizedFieldNormalizersAsString() {
 
         if (null == this.getNormalizedFields() || this.getNormalizedFields().isEmpty()) {
@@ -1555,7 +1545,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return indexedFields;
     }
 
-    @JsonIgnore
     public void setIndexedFields(Multimap<String,Type<?>> indexedFieldsAndTypes) {
         this.indexedFields = Sets.newHashSet(indexedFieldsAndTypes.keySet());
     }
@@ -1568,7 +1557,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         return reverseIndexedFields;
     }
 
-    @JsonIgnore
     public void setReverseIndexedFields(Multimap<String,Type<?>> reverseIndexedFieldsAndTypes) {
         this.reverseIndexedFields = Sets.newHashSet(reverseIndexedFieldsAndTypes.keySet());
     }
@@ -1666,7 +1654,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.limitFields = deconstruct(limitFields);
     }
 
-    @JsonIgnore
     public String getLimitFieldsAsString() {
         return StringUtils.join(this.getLimitFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -1731,7 +1718,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.groupFields = deconstruct(groupFields);
     }
 
-    @JsonIgnore
     public String getGroupFieldsAsString() {
         return StringUtils.join(this.getGroupFields(), Constants.PARAM_VALUE_SEP);
     }
@@ -1744,7 +1730,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.groupFieldsBatchSize = groupFieldsBatchSize;
     }
 
-    @JsonIgnore
     public String getGroupFieldsBatchSizeAsString() {
         return "" + groupFieldsBatchSize;
     }
@@ -2365,7 +2350,6 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
      *
      * @return the custom active query name to use, or a blank value if the default active query log should be used
      */
-    @JsonIgnore
     public String getActiveQueryLogName() {
         if (activeQueryLogNameSource == null) {
             return "";

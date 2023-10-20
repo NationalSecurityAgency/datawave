@@ -52,17 +52,12 @@ jobs:
           echo "Nothing to do"
         fi
         
-      
-        
-
-  # Build the code and run the core unit/integration tests.
+  # Build the code and run the unit/integration tests.
   build-and-test:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
-      with:
-        submodules: 'recursive'
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v3
       with:
@@ -72,10 +67,15 @@ jobs:
         cache: 'maven'
     - name: Build and Run Unit Tests
       run: |
-        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -DskipServices -Ddeploy -Ddist -T1C -pl "-:config-service" clean verify"
+        RUN_TESTS="mvn -V -B -e -ntp "-Dstyle.color=always" -Pdev,examples,assemble,spotbugs -Ddeploy -Ddist -T1C clean verify"
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+
+  # This step can be uncommented to support feature development.  When developing a
+  # feature which spans multiple repos, you can update the poms to use the latest
+  # SNAPSHOT across the board, and run this action as a sanity check to ensure
+  # everything is working in unison.
 
   # Build the code and run the microservice unit/integration tests.
   build-and-test-microservices:
@@ -115,8 +115,6 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
-      with:
-        submodules: 'recursive'
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v3
       with:
@@ -137,7 +135,7 @@ jobs:
     # Builds the quickstart docker image and run the query tests
     - name: Quickstart Query Tests
       env:
-        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -DskipServices -Ddeploy -Dtar -DskipTests -pl -:config-service clean package"
+        DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
       run: |
         TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)

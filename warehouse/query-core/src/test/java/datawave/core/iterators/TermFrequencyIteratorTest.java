@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -33,8 +34,8 @@ import datawave.query.iterator.SortedListKeyValueIterator;
 
 public class TermFrequencyIteratorTest {
 
-    private String lowers = "abcdefghijklmnopqrstuvwxyz";
-    private String uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private final String lowers = "abcdefghijklmnopqrstuvwxyz";
+    private final String uppers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     @Test
     public void testDocRange_singleKey_parent() throws IOException {
@@ -400,30 +401,36 @@ public class TermFrequencyIteratorTest {
     @Test
     public void testTreeSetHigher() {
         TreeSet<String> values = Sets.newTreeSet(Lists.newArrayList("value_a", "value_b", "value_c"));
-        assertEquals("value_a", values.higher("value"));
-        assertEquals("value_b", values.higher("value_a"));
-        assertEquals("value_c", values.higher("value_b"));
-        assertNull(values.higher("value_c"));
-        assertNull(values.higher("value_zz"));
+        //  @formatter:off
+        assertAll(
+                        () -> {assertEquals("value_a", values.higher("value"));},
+                        () -> {assertEquals("value_b", values.higher("value_a"));},
+                        () -> {assertEquals("value_c", values.higher("value_b"));},
+                        () -> {assertNull(values.higher("value_c"));},
+                        () -> {assertNull(values.higher("value_zz"));}
+        );
+        //  @formatter:on
     }
 
     @Test
     public void testGetDistance() {
         TermFrequencyIterator iter = new TermFrequencyIterator();
-
-        assertEquals(1.0d, iter.getDistance("a", "b"), 0.01d);
-        assertEquals(0.5d, iter.getDistance("aa", "ab"), 0.01d);
-        assertEquals(0.33d, iter.getDistance("aaa", "aab"), 0.01d);
-        assertEquals(0.25d, iter.getDistance("aaaa", "aaab"), 0.01d);
-        assertEquals(0.2d, iter.getDistance("aaaaa", "aaaab"), 0.01d);
-        assertEquals(0.16d, iter.getDistance("aaaaaa", "aaaaab"), 0.01d);
-        assertEquals(0.14d, iter.getDistance("aaaaaaa", "aaaaaab"), 0.01d);
-        assertEquals(1.0d, iter.getDistance("a", "z"), 0.01d);
-        assertEquals(0.14d, iter.getDistance("aaaaaaa", "aaaaaaz"), 0.01d);
-
-        assertEquals(0.14d, iter.getDistance("value_a", "value_b"), 0.01d);
-        assertEquals(0.14d, iter.getDistance("value_a", "value_z"), 0.01d);
-        assertEquals(0.14d, iter.getDistance("value_", "value_zzz"), 0.01d);
+        //  @formatter:off
+        assertAll(
+                        () -> {assertEquals(1.0d, iter.getDistance("a", "b"), 0.01d);},
+                        () -> {assertEquals(0.5d, iter.getDistance("aa", "ab"), 0.01d);},
+                        () -> {assertEquals(0.33d, iter.getDistance("aaa", "aab"), 0.01d);},
+                        () -> {assertEquals(0.25d, iter.getDistance("aaaa", "aaab"), 0.01d);},
+                        () -> {assertEquals(0.2d, iter.getDistance("aaaaa", "aaaab"), 0.01d);},
+                        () -> {assertEquals(0.16d, iter.getDistance("aaaaaa", "aaaaab"), 0.01d);},
+                        () -> {assertEquals(0.14d, iter.getDistance("aaaaaaa", "aaaaaab"), 0.01d);},
+                        () -> {assertEquals(1.0d, iter.getDistance("a", "z"), 0.01d);},
+                        () -> {assertEquals(0.14d, iter.getDistance("aaaaaaa", "aaaaaaz"), 0.01d);},
+                        () -> {assertEquals(0.14d, iter.getDistance("value_a", "value_b"), 0.01d);},
+                        () -> {assertEquals(0.14d, iter.getDistance("value_a", "value_z"), 0.01d);},
+                        () -> {assertEquals(0.14d, iter.getDistance("value_", "value_zzz"), 0.01d);}
+        );
+        //  @formatter:on
     }
 
     // Create data iter.
