@@ -10,6 +10,7 @@ import org.apache.accumulo.core.client.BatchScanner;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.log4j.Logger;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.collect.Iterators;
 
 import datawave.util.TableName;
@@ -32,7 +33,8 @@ public abstract class GenericQueryConfiguration {
 
     private static final Logger log = ThreadConfigurableLogger.getLogger(GenericQueryConfiguration.class);
 
-    private AccumuloClient client = null;
+    @JsonIgnore
+    private transient AccumuloClient client = null;
     private Set<Authorizations> authorizations = Collections.singleton(Authorizations.EMPTY);
     // Leave in a top-level query for backwards-compatibility purposes
     private String queryString = null;
@@ -48,7 +50,8 @@ public abstract class GenericQueryConfiguration {
     // Table name
     private String tableName = TableName.SHARD;
 
-    private Iterator<QueryData> queries = Collections.emptyIterator();
+    @JsonIgnore
+    private transient Iterator<QueryData> queries = Collections.emptyIterator();
 
     protected boolean bypassAccumulo;
 

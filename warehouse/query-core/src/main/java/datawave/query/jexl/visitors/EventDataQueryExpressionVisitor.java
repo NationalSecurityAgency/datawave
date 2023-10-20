@@ -155,21 +155,33 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
             return apply(key, true);
         }
 
+        public boolean apply(Key key, String fieldName, String fieldValue) {
+            return apply(key, true, fieldName, fieldValue);
+        }
+
         @Override
         public boolean peek(Key key) {
             return apply(key, false);
         }
 
-        private boolean apply(Key key, boolean update) {
+        public boolean peek(Key key, String fieldName, String fieldValue) {
+            return apply(key, false, fieldName, fieldValue);
+        }
+
+        public boolean apply(Key key, boolean update) {
             final DatawaveKey datawaveKey = new DatawaveKey(key);
-            final String keyFieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
+            final String fieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
+            final String fieldValue = datawaveKey.getFieldValue();
+            return apply(key, update, fieldName, fieldValue);
+        }
+
+        private boolean apply(Key key, boolean update, String keyFieldName, String keyFieldValue) {
 
             if (fieldName.equals(keyFieldName)) {
                 if (acceptAll) {
                     return true;
                 }
 
-                final String keyFieldValue = datawaveKey.getFieldValue();
                 final Set<Type> types = EventDataQueryExpressionVisitor.extractTypes(attributeFactory, keyFieldName, keyFieldValue, key);
                 // always add the NoOpType to ensure the original value gets propagated through
                 types.add(new NoOpType(keyFieldValue));
@@ -194,18 +206,18 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
                     }
 
                     // normalize all values
-                    for (String fieldValue : fieldValues) {
+                    for (String value : fieldValues) {
                         try {
-                            String normalizedValue = type.normalize(fieldValue);
+                            String normalizedValue = type.normalize(value);
                             if (normalizedValue != null) {
                                 normalizedFieldValues.add(normalizedValue);
                             } else {
                                 // can't normalize this value, add the original
-                                normalizedFieldValues.add(fieldValue);
+                                normalizedFieldValues.add(value);
                             }
                         } catch (Exception e) {
                             // can't normalize this value, add the original
-                            normalizedFieldValues.add(fieldValue);
+                            normalizedFieldValues.add(value);
                         }
                     }
 
@@ -289,16 +301,12 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          *            set of filters
          * @return a cloned set of filters
          */
-        public static Map<String,? extends PeekingPredicate<Key>> clone(Map<String,? extends PeekingPredicate<Key>> filters) {
-            Map<String,PeekingPredicate<Key>> cloned = new HashMap<>();
-            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
-                if (entry.getValue() instanceof ExpressionFilter) {
-                    cloned.put(entry.getKey(), ((ExpressionFilter) entry.getValue()).clone());
-                } else {
-                    cloned.put(entry.getKey(), entry.getValue());
-                }
+        public static Map<String,ExpressionFilter> clone(Map<String,ExpressionFilter> filters) {
+            Map<String,ExpressionFilter> copy = new HashMap<>();
+            for (Map.Entry<String,ExpressionFilter> entry : filters.entrySet()) {
+                copy.put(entry.getKey(), entry.getValue().clone());
             }
-            return cloned;
+            return copy;
         }
 
         /**
@@ -307,11 +315,9 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
          * @param filters
          *            set of filters
          */
-        public static void reset(Map<String,? extends PeekingPredicate<Key>> filters) {
-            for (Map.Entry<String,? extends PeekingPredicate<Key>> entry : filters.entrySet()) {
-                if (entry.getValue() instanceof ExpressionFilter) {
-                    ((ExpressionFilter) entry.getValue()).reset();
-                }
+        public static void reset(Map<String,ExpressionFilter> filters) {
+            for (Map.Entry<String,ExpressionFilter> entry : filters.entrySet()) {
+                entry.getValue().reset();
             }
         }
     }
@@ -332,12 +338,12 @@ public class EventDataQueryExpressionVisitor extends BaseVisitor {
         return v.getFilterMap();
     }
 
-    /**
+    /*
      *
-     * @param node
-     *            the node that should be used to build the expression filters
-     * @param factory
-     *            An AttributeFactory used when generating normalized attributes.
+     * @param node the node that should be used to build the expression filters
+     *
+     * @param factory An AttributeFactory used when generating normalized attributes.
+     *
      * @return a map of expression filters
      */
     public static Map<String,ExpressionFilter> getExpressionFilters(JexlNode node, AttributeFactory factory) {
