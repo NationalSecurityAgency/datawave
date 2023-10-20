@@ -472,6 +472,9 @@ public class AbstractTableConfigHelperTest {
     protected static boolean GET_PROPERTIES_CALLED = false;
     protected static boolean GET_PROPERTIES_THROWS_ACCUMULO_EXCEPTION = false;
 
+    protected static boolean REMOVE_PROPERTIES_CALLED = false;
+    protected static boolean REMOVE_PROPERTIES_THROWS_ACCUMULO_EXCEPTION = false;
+
     protected static boolean SET_PROPERTIES_CALLED = false;
     protected static boolean SET_PROPERTIES_THROWS_ACCUMULO_SECUIRTY_EXCEPTION = false;
 
@@ -550,6 +553,30 @@ public class AbstractTableConfigHelperTest {
             String value = (String) EasyMock.getCurrentArguments()[2];
 
             tableProperties.put(name, value);
+            return null;
+        }).anyTimes();
+
+        mock.removeProperty(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+        EasyMock.expectLastCall().andAnswer(() -> {
+
+            AbstractTableConfigHelperTest.REMOVE_PROPERTIES_CALLED = true;
+
+            String tableNameParameter = (String) EasyMock.getCurrentArguments()[0];
+
+            if (!AbstractTableConfigHelperTest.TABLE_NAME.equals(tableNameParameter)) {
+
+                throw new TableNotFoundException(null, tableNameParameter, AbstractTableConfigHelperTest.DEFAULT_EXCEPTION_MESSAGE);
+            }
+
+            if (AbstractTableConfigHelperTest.REMOVE_PROPERTIES_THROWS_ACCUMULO_EXCEPTION) {
+
+                throw new AccumuloSecurityException(AbstractTableConfigHelperTest.USER, SecurityErrorCode.PERMISSION_DENIED);
+            }
+
+            String name = (String) EasyMock.getCurrentArguments()[1];
+            // String value = (String) EasyMock.getCurrentArguments()[2];
+
+            tableProperties.remove(name);
             return null;
         }).anyTimes();
 

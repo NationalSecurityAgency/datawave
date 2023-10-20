@@ -83,6 +83,17 @@ public class ShardTableConfigHelperTest {
             return null;
         }).anyTimes();
 
+        mock.removeProperty(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+        EasyMock.expectLastCall().andAnswer(() -> {
+
+            AbstractTableConfigHelperTest.REMOVE_PROPERTIES_CALLED = true;
+
+            String propKey = (String) EasyMock.getCurrentArguments()[0];
+
+            tableProperties.remove(propKey);
+            return null;
+        }).anyTimes();
+
         mock.getLocalityGroups(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().andAnswer(() -> {
 
@@ -417,6 +428,64 @@ public class ShardTableConfigHelperTest {
 
             this.configuration.put(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
             this.configuration.put(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
+
+            this.tableProperties.clear();
+            this.localityGroups.clear();
+
+            uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
+
+            expectedTableType = ShardTableType.SHARD;
+
+            Assert.assertEquals("ShardTableConfigHelper.setup incorrectly identified the ShardTableType of the table identified", expectedTableType,
+                            uut.tableType);
+
+            uut.configure(tops);
+
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populae the Locality Groups collection.", this.localityGroups.isEmpty());
+        } finally {
+
+            ShardTableConfigHelperTest.logger.info("ShardTableConfigHelperTest.testConfigureShardTable completed.");
+        }
+    }
+
+    @Test
+    public void testConfigureVersionShardTable() throws AccumuloSecurityException, AccumuloException, TableNotFoundException {
+
+        ShardTableConfigHelperTest.logger.info("ShardTableConfigHelperTest.testConfigureShardTable called.");
+
+        try {
+
+            Configuration config = createMockConfiguration();
+            Logger log = createMockLogger();
+            TableOperations tops = mockUpTableOperations();
+
+            ShardTableConfigHelper uut = new ShardTableConfigHelper();
+
+            this.configuration.put(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+
+            this.tableProperties.clear();
+            this.localityGroups.clear();
+
+            uut.setup(ShardTableConfigHelperTest.TABLE_NAME, config, log);
+
+            ShardTableType expectedTableType = ShardTableType.SHARD;
+
+            Assert.assertEquals("ShardTableConfigHelper.setup incorrectly identified the ShardTableType of the table identified", expectedTableType,
+                            uut.tableType);
+
+            uut.configure(tops);
+
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
+                            this.tableProperties.isEmpty());
+            Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Locality Groups collection.", this.localityGroups.isEmpty());
+
+            uut = new ShardTableConfigHelper();
+
+            this.configuration.put(ShardedDataTypeHandler.SHARD_TNAME, ShardTableConfigHelperTest.TABLE_NAME);
+            this.configuration.put(ShardTableConfigHelper.ENABLE_BLOOM_FILTERS, "true");
+            this.configuration.put(ShardTableConfigHelper.DISABLE_VERSIONING_FILTER, "true");
 
             this.tableProperties.clear();
             this.localityGroups.clear();

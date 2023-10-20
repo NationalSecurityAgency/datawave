@@ -67,6 +67,14 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         }
     }
 
+    public static void disableVersioningIfNecessary(TableOperations tops, Logger log) throws AccumuloException, AccumuloSecurityException {
+
+        for (IteratorScope iterScope : IteratorScope.values()) {
+            tops.removeProperty(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
+            tops.removeProperty(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
+        }
+    }
+
     /**
      * Sets the aggregator configuration on table {@code tableName} to that contained in {@code aggregators}, if {@code tableName} is not already configured
      * with the specified aggregators.

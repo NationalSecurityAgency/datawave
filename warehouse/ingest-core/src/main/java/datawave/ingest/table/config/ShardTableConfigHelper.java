@@ -42,6 +42,9 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
     public static final String ENABLE_BLOOM_FILTERS = "shard.enable.bloom.filters";
     protected boolean enableBloomFilters = false;
 
+    public static final String DISABLE_VERSIONING_FILTER = "shard.disable.versioning.filter";
+    protected boolean disableVersioningFilter = false;
+
     public static final String MARKINGS_SETUP_ITERATOR_ENABLED = "markings.setup.iterator.enabled";
     private boolean markingsSetupIteratorEnabled = false;
 
@@ -93,6 +96,8 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         }
 
         enableBloomFilters = conf.getBoolean(ENABLE_BLOOM_FILTERS, enableBloomFilters);
+
+        disableVersioningFilter = conf.getBoolean(DISABLE_VERSIONING_FILTER, disableVersioningFilter);
 
         String localityGroupsConf = null;
         if (tableName.equals(shardTableName)) {
@@ -193,6 +198,11 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         // Set up the table balancer for shards
         setPropertyIfNecessary(tableName, Property.TABLE_LOAD_BALANCER.getKey(), shardTableBalancerClass, tops, log);
+
+        // disable the versioning if it was set.
+        if (disableVersioningFilter) {
+            disableVersioningIfNecessary(tops, log);
+        }
     }
 
     protected void configureGidxTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -226,6 +236,10 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         }
         setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_ENABLED.getKey(), Boolean.toString(enableBloomFilters), tops, log);
 
+        if (disableVersioningFilter) {
+            disableVersioningIfNecessary(tops, log);
+        }
+
     }
 
     protected void configureGridxTable(TableOperations tops) throws AccumuloException, AccumuloSecurityException, TableNotFoundException {
@@ -258,6 +272,10 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
             setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_KEY_FUNCTOR.getKey(), ShardIndexKeyFunctor.class.getName(), tops, log);
         }
         setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_ENABLED.getKey(), Boolean.toString(enableBloomFilters), tops, log);
+
+        if (disableVersioningFilter) {
+            disableVersioningIfNecessary(tops, log);
+        }
 
     }
 
