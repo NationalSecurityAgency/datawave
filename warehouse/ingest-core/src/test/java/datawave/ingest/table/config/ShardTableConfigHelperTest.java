@@ -502,6 +502,9 @@ public class ShardTableConfigHelperTest {
             Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populate the Table Properties collection.",
                             this.tableProperties.isEmpty());
             Assert.assertFalse("ShardTableConfigHelper.configureShardTable failed to populae the Locality Groups collection.", this.localityGroups.isEmpty());
+            for (Map.Entry<String,String> prop : this.tableProperties.entrySet()) {
+                Assert.assertTrue(!prop.getKey().contains("vers"));
+            }
         } finally {
 
             ShardTableConfigHelperTest.logger.info("ShardTableConfigHelperTest.testConfigureShardTable completed.");
