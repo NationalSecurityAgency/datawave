@@ -1,12 +1,16 @@
 package datawave.core.query.logic.composite;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import datawave.core.query.configuration.GenericQueryConfiguration;
 import datawave.microservice.query.Query;
 import datawave.microservice.query.QueryImpl;
 
 public class CompositeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
+
+    private Map<String,GenericQueryConfiguration> configs = new HashMap<>();
 
     private Query query = null;
 
@@ -80,6 +84,18 @@ public class CompositeQueryConfiguration extends GenericQueryConfiguration imple
         CompositeQueryConfiguration config = create(compositeQueryLogic);
         config.setQuery(query);
         return config;
+    }
+
+    public GenericQueryConfiguration getConfig(String logicName) {
+        return configs != null ? configs.get(logicName) : null;
+    }
+
+    public Map<String,GenericQueryConfiguration> getConfigs() {
+        return configs;
+    }
+
+    public void setConfigs(Map<String,GenericQueryConfiguration> configs) {
+        this.configs = configs;
     }
 
     public Query getQuery() {

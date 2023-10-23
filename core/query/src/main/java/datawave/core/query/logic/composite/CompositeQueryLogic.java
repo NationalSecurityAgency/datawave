@@ -50,7 +50,6 @@ import datawave.webservice.result.BaseResponse;
 public class CompositeQueryLogic extends BaseQueryLogic<Object> implements CheckpointableQueryLogic {
 
     private class QueryLogicHolder extends Thread {
-        private GenericQueryConfiguration config;
         private String logicName;
         private QueryLogic<?> logic;
         private TransformIterator transformIterator;
@@ -84,14 +83,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
         public void setLogic(QueryLogic<?> logic) {
             this.logic = logic;
-        }
-
-        public GenericQueryConfiguration getConfig() {
-            return config;
-        }
-
-        public void setConfig(GenericQueryConfiguration config) {
-            this.config = config;
         }
 
         public void setTransformIterator(TransformIterator transformIterator) {
@@ -244,6 +235,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
         Map<String,Exception> exceptions = new HashMap<>();
         if (!getUninitializedLogics().isEmpty()) {
+            Map<String,GenericQueryConfiguration> configs = new HashMap<>();
             for (Map.Entry<String,QueryLogic<?>> next : getUninitializedLogics().entrySet()) {
                 String logicName = next.getKey();
                 QueryLogic<?> logic = next.getValue();
@@ -262,9 +254,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                     logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
                     logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
                     QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
-                    holder.setConfig(config);
                     holder.setSettings(settingsCopy);
                     holder.setMaxResults(logic.getMaxResults());
+                    configs.put(logicName, config);
                     logicState.put(logicName, holder);
 
                     // if doing sequential execution, then stop since we have one initialized
@@ -313,6 +305,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
             final String compositeQueryString = logicQueryStringBuilder.toString();
             CompositeQueryConfiguration config = getConfig();
+            config.setConfigs(configs);
             config.setQueryString(compositeQueryString);
             config.setClient(client);
             config.setQuery(settings);
@@ -359,9 +352,12 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
         int count = 0;
 
+        CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) configuration;
+
         for (QueryLogicHolder holder : logicState.values()) {
             if (!holder.wasStarted()) {
-                holder.getLogic().setupQuery(holder.getConfig());
+                GenericQueryConfiguration config = compositeConfig != null ? compositeConfig.getConfig(holder.getLogicName()) : null;
+                holder.getLogic().setupQuery(config);
                 TransformIterator transformIterator = holder.getLogic().getTransformIterator(holder.getSettings());
                 holder.setTransformIterator(transformIterator);
                 count++;
@@ -423,7 +419,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     @Override
     public TransformIterator getTransformIterator(Query settings) {
         if (isCheckpointable()) {
-            return Iterables.getOnlyElement(logicState.values()).getLogic().getTransformIterator(settings);
+            return Iterables.getOnlyElement(queryLogics.values()).getTransformIterator(settings);
         } else {
             // The objects put into the pageQueue have already been transformed.
             // We will iterate over the pagequeue with the No-Op transformer
@@ -592,9 +588,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
 
         List<QueryCheckpoint> checkpoints = new ArrayList<>();
-        for (Map.Entry<String,QueryLogic<?>> logic : queryLogics.entrySet()) {
-            for (QueryCheckpoint checkpoint : ((CheckpointableQueryLogic) logic.getValue()).checkpoint(queryKey)) {
-                checkpoints.add(new CompositeQueryCheckpoint(logic.getKey(), checkpoint));
+        for (Map.Entry<String,QueryLogicHolder> entry : logicState.entrySet()) {
+            for (QueryCheckpoint checkpoint : ((CheckpointableQueryLogic) entry.getValue().getLogic()).checkpoint(queryKey)) {
+                checkpoints.add(new CompositeQueryCheckpoint(entry.getKey(), checkpoint));
             }
         }
         return checkpoints;
@@ -623,6 +619,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             throw new UnsupportedOperationException("Cannot setup a non-composite query checkpoint with the composite query logic.");
         }
 
+        CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) config;
+
         CompositeQueryCheckpoint compositeCheckpoint = (CompositeQueryCheckpoint) checkpoint;
 
         CheckpointableQueryLogic logic = (CheckpointableQueryLogic) queryLogics.get(compositeCheckpoint.getDelegateQueryLogic());
@@ -635,7 +633,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         queryLogics.clear();
         queryLogics.put(compositeCheckpoint.getDelegateQueryLogic(), (BaseQueryLogic<?>) logic);
 
-        logic.setupQuery(client, config, checkpoint);
+        logic.setupQuery(client, compositeConfig.getConfig(compositeCheckpoint.getDelegateQueryLogic()), checkpoint);
     }
 
     /**
