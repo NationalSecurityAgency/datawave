@@ -3,6 +3,7 @@ package datawave.util.flag;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,7 +30,8 @@ public class FlagMetricsFileVerification {
     private final Text name;
     private final FlagFileTestSetup flagFileTestSetup;
 
-    FlagMetricsFileVerification(Path metricsFilePath, FlagFileTestSetup flagFileTestSetup) throws IOException {
+    public FlagMetricsFileVerification(String flagFileBaseName, FlagFileTestSetup flagFileTestSetup) throws IOException {
+        Path metricsFilePath = new Path(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory() + File.separator + flagFileBaseName + ".metrics");
         SequenceFile.Reader.Option readerOptions = SequenceFile.Reader.file(metricsFilePath);
         SequenceFile.Reader reader = new SequenceFile.Reader(new Configuration(), readerOptions);
         this.name = new Text();

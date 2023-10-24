@@ -1,7 +1,6 @@
 package datawave.util.flag;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -15,26 +14,27 @@ import java.util.stream.Collectors;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
-import org.apache.hadoop.fs.Path;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-// Also see FlagFileWriterTest.metricsFileContainsCorrectCounters
+/**
+ * Test FlagMetrics
+ * Also see FlagFileWriterTest.metricsFileContainsCorrectCounters that verifies the FlagFileWriter creates a valid flag metrics file as well
+ */
 public class FlagMetricsTest {
     private static LocalFileSystem localFileSystem;
+
     private FlagFileTestSetup flagFileTestSetup;
-    private String metricsDir;
+    private String metricsDirectory;
+    private String flagFileBaseName;
+
+    private long startTime, stopInputFileCreationTime, stopFlaggedTime, stopWritingMetricsTime;
 
     @Rule
     public TestName testName = new TestName();
-
-    private String flagFileBaseName;
-
-    private FlagMetricsFileVerification flagMetricsFileVerification;
-    private long startTime, stopInputFileCreationTime, stopFlaggedTime, stopWritingMetricsTime;
 
     @BeforeClass
     public static void beforeClass() throws IOException {
@@ -43,23 +43,97 @@ public class FlagMetricsTest {
 
     @Before
     public void before() throws Exception {
-        flagFileTestSetup = new FlagFileTestSetup();
-        flagFileTestSetup.withTestFlagMakerConfig();
-        flagFileTestSetup.withPredicableInputFilenames();
-        flagFileTestSetup.withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        this.flagFileBaseName = "1695222480.00_onehr_foo_c3283902-aa27-44fe-8f66-e246915e4dad+10";
 
-        this.flagFileBaseName = "target/datawave.util.flag.FlagMetricsTest_" + testName.getMethodName()
-                        + "/test/flags/1695222480.00_onehr_foo_c3283902-aa27-44fe-8f66-e246915e4dad+10";
+        this.flagFileTestSetup = new FlagFileTestSetup();
+        this.flagFileTestSetup.withTestFlagMakerConfig();
+        this.flagFileTestSetup.withPredicableInputFilenames();
 
-        this.metricsDir = "target/test/metrics" + "/" + testName.getMethodName() + "/metrics/";
-        cleanDirectoryContents(this.metricsDir);
+        // puts method name under /target, e.g. target/datawave.util.flag.FlagMetricsTest_gzipCodecFailsInUnitTests/flagMetrics
+        String testMethodName = this.testName.getMethodName();
+        String directoryNameForTest = this.getClass().getName() + "_" + testMethodName;
+        this.flagFileTestSetup.withTestNameForDirectories(directoryNameForTest);
 
+        this.metricsDirectory = flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory();
+        cleanDirectoryContents(this.metricsDirectory);
+        assertNumberOfFilesInMetricsDirectory(0);
+    }
+
+    @Test
+    public void testWriteMetricsCreatesAFile() throws IOException {
+        assertNumberOfFilesInMetricsDirectory(0);
+
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, true);
+        metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
+        metrics.writeMetrics(this.metricsDirectory, flagFileBaseName);
+
+        assertNumberOfFilesInMetricsDirectory(2);
+    }
+
+    @Test
+    public void writeMetricsDoesNotCreateFilesWhenDisabled() throws IOException {
+        assertNumberOfFilesInMetricsDirectory(0);
+
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, false);
+        metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
+        metrics.writeMetrics(this.metricsDirectory, this.flagFileBaseName);
+
+        assertNumberOfFilesInMetricsDirectory(0);
+    }
+
+    @Test
+    public void containsFlagFileName() throws IOException {
         useFlagMetricsAsIntended();
 
-        Path expectedMetricsFilePath = new Path(
-                        flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory() + File.separator + flagFileBaseName + ".metrics");
-        this.flagMetricsFileVerification = new FlagMetricsFileVerification(expectedMetricsFilePath, flagFileTestSetup);
+        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
+        assertEquals(flagFileBaseName, flagMetricsFileVerification.getName());
+    }
 
+    @Test
+    public void createsExpectedGroupNames() throws IOException {
+        useFlagMetricsAsIntended();
+
+        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
+        flagMetricsFileVerification.assertGroupNames();
+    }
+
+    @Test
+    public void createsCountersWhenFileIsFlagged() throws IOException {
+        useFlagMetricsAsIntended();
+
+        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
+        flagMetricsFileVerification.assertCountersForFilesShowingFlagTimes(stopInputFileCreationTime, stopFlaggedTime);
+    }
+
+    @Test
+    public void createsCountersForInputFileLastModified() throws IOException {
+        useFlagMetricsAsIntended();
+
+        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
+        flagMetricsFileVerification.assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles());
+    }
+
+    @Test
+    public void createsCountersForFlagMakerPhase() throws IOException {
+        useFlagMetricsAsIntended();
+
+        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
+        flagMetricsFileVerification.assertFlagMakerStartStopTimesInExpectedRange(startTime, stopWritingMetricsTime);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    // If this test starts failing, then get rid of FlagMetricsWithTestCompatibleCodec and use FlagMetrics
+    public void gzipCodecFailsInUnitTests() throws IOException {
+        FlagMetrics metrics = new FlagMetrics(localFileSystem, true);
+        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), "baseName");
+    }
+
+    private void cleanDirectoryContents(String directory) throws IOException {
+        // delete the directory and its contents if it already exists
+        java.nio.file.Path path = Paths.get(directory);
+        if (Files.exists(path)) {
+            Files.walk(path).sorted(Comparator.reverseOrder()).map(java.nio.file.Path::toFile).forEach(File::delete);
+        }
     }
 
     private void useFlagMetricsAsIntended() throws IOException {
@@ -85,69 +159,13 @@ public class FlagMetricsTest {
         this.stopWritingMetricsTime = System.currentTimeMillis();
     }
 
-    private void cleanDirectoryContents(String directory) throws IOException {
-        // delete the directory and its contents if it already exists
-        java.nio.file.Path path = Paths.get(directory);
+    private void assertNumberOfFilesInMetricsDirectory(int expectedNumber) throws IOException {
+        java.nio.file.Path path = Paths.get(this.metricsDirectory);
         if (Files.exists(path)) {
-            Files.walk(path).sorted(Comparator.reverseOrder()).map(java.nio.file.Path::toFile).forEach(File::delete);
+            List<File> foundFiles = Files.list(path).map(java.nio.file.Path::toFile).filter(File::isFile).collect(Collectors.toList());
+            assertEquals("Expected "+ expectedNumber + " files in " + this.metricsDirectory + ".  Found: " + foundFiles.size() + ": " + foundFiles.toString(), expectedNumber, foundFiles.size());
+        } else if (expectedNumber > 0) {
+            fail("Directory " + this.metricsDirectory + " doesn't exist.  Expected " + expectedNumber + " files.");
         }
-    }
-
-    @Test
-    public void testWriteMetricsCreatesAFile() throws IOException {
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, true);
-        metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
-        metrics.writeMetrics(this.metricsDir, "writeMetricsDoesNotCreateFilesWhenDisabled");
-
-        java.nio.file.Path path = Paths.get(this.metricsDir);
-        assertTrue(Files.exists(path));
-
-        List<java.nio.file.Path> foundPaths = Files.list(path).collect(Collectors.toList());
-        assertEquals("Expected one metrics file and crc file.  Found: " + foundPaths.toString(), 2, foundPaths.size());
-    }
-
-    @Test
-    public void writeMetricsDoesNotCreateFilesWhenDisabled() throws IOException {
-
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, false);
-        metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
-        metrics.writeMetrics(this.metricsDir, "writeMetricsDoesNotCreateFilesWhenDisabled");
-
-        java.nio.file.Path path = Paths.get(this.metricsDir);
-        if (Files.exists(path)) {
-            fail("Found unexpected files: " + Files.list(path).collect(Collectors.toList()).toString());
-        }
-    }
-
-    @Test
-    public void containsFlagFileName() {
-        assertEquals(flagFileBaseName, flagMetricsFileVerification.getName());
-    }
-
-    @Test
-    public void createsExpectedGroupNames() {
-        flagMetricsFileVerification.assertGroupNames();
-    }
-
-    @Test
-    public void createsCountersWhenFileIsFlagged() {
-        flagMetricsFileVerification.assertCountersForFilesShowingFlagTimes(stopInputFileCreationTime, stopFlaggedTime);
-    }
-
-    @Test
-    public void createsCountersForInputFileLastModified() {
-        flagMetricsFileVerification.assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles());
-    }
-
-    @Test
-    public void createsCountersForFlagMakerPhase() {
-        flagMetricsFileVerification.assertFlagMakerStartStopTimesInExpectedRange(startTime, stopWritingMetricsTime);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    // If this test starts failing, then get rid of FlagMetricsWithTestCompatibleCodec and use FlagMetrics
-    public void gzipCodecFailsInUnitTests() throws IOException {
-        FlagMetrics metrics = new FlagMetrics(localFileSystem, true);
-        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), "baseName");
     }
 }

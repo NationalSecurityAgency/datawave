@@ -132,11 +132,10 @@ public class FlagFileWriterTest {
 
         // construct expected Path for metrics file
         String flagFileName = FlagFileTestInspector.listFlagFiles(this.flagMakerConfig).get(0).getName();
-        String expectedMetricsFileName = flagFileName.replace(".flag", ".metrics");
-        Path expectedMetricsFilePath = new Path(flagMakerConfig.getFlagMetricsDirectory(), expectedMetricsFileName);
+        String flagFileBaseName = flagFileName.substring(0, flagFileName.lastIndexOf('.'));
 
         // read metrics
-        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(expectedMetricsFilePath, flagFileTestSetup);
+        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(flagFileBaseName, flagFileTestSetup);
 
         // verify flag file identifier key
         String expectedKeyString = flagFileName.substring(0, flagFileName.lastIndexOf("."));
