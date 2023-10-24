@@ -62,7 +62,7 @@ public class InputFileCreatingIteratorTest {
         LocatedFileStatus item;
 
         public ReturnsItemOnlyOnceButAlwaysClaimsHasNext() {
-            item = InMemoryStubFileSystem.stubFileStatus(new Path("baseDir/inputFolder/file.txt"));
+            item = InMemoryStubFileSystem.stubFile(new Path("baseDir/inputFolder/file.txt"));
         }
 
         @Override

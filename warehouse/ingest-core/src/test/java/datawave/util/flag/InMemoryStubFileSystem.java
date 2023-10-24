@@ -24,70 +24,64 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.util.Progressable;
 
 /**
- * A Test FileSystem that provides an in-memory listing of file status objects
+ * A Test FileSystem that provides an in-memory listing of LocatedFileStatus objects
  */
 public class InMemoryStubFileSystem extends FileSystem {
     private static final int FILE_LENGTH = 0;
     static final int BLOCK_SIZE = 245;
     static final long MODIFICATION_TIME = 123L;
+
     private final Map<Path,LocatedFileStatus[]> pathToListStatus = new HashMap<>();
     private final Map<Path,LocatedFileStatus> pathToFileStatus = new HashMap<>();
-    private Path workingDirectory;
     private final URI uri;
-    private final String scheme;
+    private Path workingDirectory;
 
     public InMemoryStubFileSystem(String scheme) {
-        this.scheme = scheme;
-        this.uri = URI.create(this.scheme + ":///");
+        this.uri = URI.create(scheme + ":///");
         this.workingDirectory = new Path(this.uri.toString());
 
         super.setConf(new Configuration());
     }
 
     /**
-     * Creates in-memory a new LocatedFileStatus stub and stubs for all the directories in its path
+     * Creates a new LocatedFileStatus stub in-memory along with all the directories in its path
      *
-     * @param relativePathStr
-     *            path as string
+     * @param relativePathStr path as string
      */
     public void addFile(String relativePathStr) {
         Path path = new Path(this.getWorkingDirectory(), relativePathStr);
 
-        Path parentPath = createAncestorDirectories(path);
+        Path parentPath = path.getParent();
 
         // create a simulated file
-        LocatedFileStatus fileStatus = stubFileStatus(path);
+        LocatedFileStatus fileStatus = stubFile(path);
 
-        // ensure listings on the parent directory include the file
-        pathToListStatus.put(parentPath, new LocatedFileStatus[] {fileStatus});
+        while (null != parentPath) {
+            if (null != pathToFileStatus.get(path)) {
+                throw new IllegalStateException("Path " + path + " already registered.");
+            }
 
-        // ensure requests for file status return the file
+            // ensure requests for file status return the file or directory
+            pathToFileStatus.put(path, fileStatus);
+
+            // ensure listings on the parent directory include the file or directory
+            pathToListStatus.put(parentPath, new LocatedFileStatus[] {fileStatus});
+
+            // proceed up the directory structure
+            path = parentPath;
+            fileStatus = stubDirectory(path);
+            parentPath = path.getParent();
+        }
+
         pathToFileStatus.put(path, fileStatus);
     }
 
-    private Path createAncestorDirectories(Path path) {
-        Path parentPath = null;
-        String cumulativePath = scheme + ":";
-        String[] parts = path.toUri().getPath().split("/");
-        for (String part : Arrays.copyOf(parts, parts.length - 1)) {
-            cumulativePath = cumulativePath + part + "/";
-            Path childPath = new Path(cumulativePath);
-            LocatedFileStatus dir = stubDirectory(new Path(cumulativePath));
-            if (null != parentPath) {
-                pathToFileStatus.put(childPath, dir);
-                pathToListStatus.put(parentPath, new LocatedFileStatus[] {dir});
-            }
-            parentPath = childPath;
-        }
-        return parentPath;
+    public static LocatedFileStatus stubFile(Path path) {
+        return new LocatedFileStatus(FILE_LENGTH, false, 0, BLOCK_SIZE, MODIFICATION_TIME, 0, null, null, null, null, path, false, false, false, null);
     }
 
     private LocatedFileStatus stubDirectory(Path path) {
         return new LocatedFileStatus(FILE_LENGTH, true, 0, BLOCK_SIZE, MODIFICATION_TIME, 0, null, null, null, null, path, false, false, false, null);
-    }
-
-    public static LocatedFileStatus stubFileStatus(Path path) {
-        return new LocatedFileStatus(FILE_LENGTH, false, 0, BLOCK_SIZE, MODIFICATION_TIME, 0, null, null, null, null, path, false, false, false, null);
     }
 
     @Override
@@ -130,6 +124,7 @@ public class InMemoryStubFileSystem extends FileSystem {
         return result;
     }
 
+    @Override
     public RemoteIterator<LocatedFileStatus> listFiles(final Path f, final boolean recursive) {
         return new InMemoryRemoteIterator<LocatedFileStatus>(f, recursive);
     }
@@ -183,8 +178,7 @@ public class InMemoryStubFileSystem extends FileSystem {
         private List<LocatedFileStatus> getListOfFiles(LocatedFileStatus fileStatus) {
             if (fileStatus == null) {
                 return new ArrayList<>();
-            }
-            if (fileStatus.isFile()) {
+            } else if (fileStatus.isFile()) {
                 return Collections.singletonList(fileStatus);
             } else if (!recursive) {
                 List<LocatedFileStatus> children = Arrays.asList(pathToListStatus.get(fileStatus));

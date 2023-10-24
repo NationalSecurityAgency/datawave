@@ -28,6 +28,7 @@ import datawave.util.flag.config.FlagMakerConfig;
  */
 public class FlagMakerTest {
     // trailing slash added by validate()
+    // otherwise matches baseHDFSDir in TestFlagMakerConfig.xml
     public static final String CONFIG_BASE_HDFS_DIR = "target/test/BulkIngest/";
 
     private static final Logger LOG = LoggerFactory.getLogger(FlagMakerTest.class);

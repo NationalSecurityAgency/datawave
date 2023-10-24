@@ -105,7 +105,7 @@ public class FilteringIteratorTest {
     }
 
     private static FileStatus createFileStatusObject(String name) {
-        return InMemoryStubFileSystem.stubFileStatus(new Path(name));
+        return InMemoryStubFileSystem.stubFile(new Path(name));
     }
 
     // Converts Iterator into RemoteIterator
