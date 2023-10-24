@@ -25,11 +25,12 @@ import org.junit.rules.TestName;
  * Also see FlagFileWriterTest.metricsFileContainsCorrectCounters that verifies the FlagFileWriter creates a valid flag metrics file as well
  */
 public class FlagMetricsTest {
-    private static LocalFileSystem localFileSystem;
+    private static final String FLAG_FILE_BASE_NAME = "1695222480.00_onehr_foo_c3283902-aa27-44fe-8f66-e246915e4dad+10";
+    
+    private static LocalFileSystem LOCAL_FILE_SYSTEM;
 
     private FlagFileTestSetup flagFileTestSetup;
     private String metricsDirectory;
-    private String flagFileBaseName;
 
     private long startTime, stopInputFileCreationTime, stopFlaggedTime, stopWritingMetricsTime;
 
@@ -38,13 +39,11 @@ public class FlagMetricsTest {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
-        localFileSystem = FileSystem.getLocal(new Configuration());
+        LOCAL_FILE_SYSTEM = FileSystem.getLocal(new Configuration());
     }
 
     @Before
     public void before() throws Exception {
-        this.flagFileBaseName = "1695222480.00_onehr_foo_c3283902-aa27-44fe-8f66-e246915e4dad+10";
-
         this.flagFileTestSetup = new FlagFileTestSetup();
         this.flagFileTestSetup.withTestFlagMakerConfig();
         this.flagFileTestSetup.withPredicableInputFilenames();
@@ -63,9 +62,9 @@ public class FlagMetricsTest {
     public void testWriteMetricsCreatesAFile() throws IOException {
         assertNumberOfFilesInMetricsDirectory(0);
 
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, true);
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(LOCAL_FILE_SYSTEM, true);
         metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
-        metrics.writeMetrics(this.metricsDirectory, flagFileBaseName);
+        metrics.writeMetrics(this.metricsDirectory, FLAG_FILE_BASE_NAME);
 
         assertNumberOfFilesInMetricsDirectory(2);
     }
@@ -74,9 +73,9 @@ public class FlagMetricsTest {
     public void writeMetricsDoesNotCreateFilesWhenDisabled() throws IOException {
         assertNumberOfFilesInMetricsDirectory(0);
 
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, false);
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(LOCAL_FILE_SYSTEM, false);
         metrics.addFlaggedTime(InputFileSets.SINGLE_FILE.iterator().next());
-        metrics.writeMetrics(this.metricsDirectory, this.flagFileBaseName);
+        metrics.writeMetrics(this.metricsDirectory, FLAG_FILE_BASE_NAME);
 
         assertNumberOfFilesInMetricsDirectory(0);
     }
@@ -85,47 +84,47 @@ public class FlagMetricsTest {
     public void containsFlagFileName() throws IOException {
         useFlagMetricsAsIntended();
 
-        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
-        assertEquals(flagFileBaseName, flagMetricsFileVerification.getName());
+        FlagMetricsFileVerifier flagMetricsFileVerifier = new FlagMetricsFileVerifier(this.flagFileTestSetup, FLAG_FILE_BASE_NAME);
+        assertEquals(FLAG_FILE_BASE_NAME, flagMetricsFileVerifier.getName());
     }
 
     @Test
     public void createsExpectedGroupNames() throws IOException {
         useFlagMetricsAsIntended();
 
-        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
-        flagMetricsFileVerification.assertGroupNames();
+        FlagMetricsFileVerifier flagMetricsFileVerifier = new FlagMetricsFileVerifier(this.flagFileTestSetup, FLAG_FILE_BASE_NAME);
+        flagMetricsFileVerifier.assertGroupNames();
     }
 
     @Test
     public void createsCountersWhenFileIsFlagged() throws IOException {
         useFlagMetricsAsIntended();
 
-        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
-        flagMetricsFileVerification.assertCountersForFilesShowingFlagTimes(stopInputFileCreationTime, stopFlaggedTime);
+        FlagMetricsFileVerifier flagMetricsFileVerifier = new FlagMetricsFileVerifier(this.flagFileTestSetup, FLAG_FILE_BASE_NAME);
+        flagMetricsFileVerifier.assertCountersForFilesShowingFlagTimes(stopInputFileCreationTime, stopFlaggedTime);
     }
 
     @Test
     public void createsCountersForInputFileLastModified() throws IOException {
         useFlagMetricsAsIntended();
 
-        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
-        flagMetricsFileVerification.assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles());
+        FlagMetricsFileVerifier flagMetricsFileVerifier = new FlagMetricsFileVerifier(this.flagFileTestSetup, FLAG_FILE_BASE_NAME);
+        flagMetricsFileVerifier.assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles());
     }
 
     @Test
     public void createsCountersForFlagMakerPhase() throws IOException {
         useFlagMetricsAsIntended();
 
-        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(this.flagFileBaseName, this.flagFileTestSetup);
-        flagMetricsFileVerification.assertFlagMakerStartStopTimesInExpectedRange(startTime, stopWritingMetricsTime);
+        FlagMetricsFileVerifier flagMetricsFileVerifier = new FlagMetricsFileVerifier(this.flagFileTestSetup, FLAG_FILE_BASE_NAME);
+        flagMetricsFileVerifier.assertFlagMakerStartStopTimesInExpectedRange(startTime, stopWritingMetricsTime);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    // If this test starts failing, then get rid of FlagMetricsWithTestCompatibleCodec and use FlagMetrics
+    // If this test starts failing, then get rid of FlagMetricsWithTestCompatibleCodec and use FlagMetrics for all the tests
     public void gzipCodecFailsInUnitTests() throws IOException {
-        FlagMetrics metrics = new FlagMetrics(localFileSystem, true);
-        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), "baseName");
+        FlagMetrics metrics = new FlagMetrics(LOCAL_FILE_SYSTEM, true);
+        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), FLAG_FILE_BASE_NAME);
     }
 
     private void cleanDirectoryContents(String directory) throws IOException {
@@ -139,7 +138,7 @@ public class FlagMetricsTest {
     private void useFlagMetricsAsIntended() throws IOException {
         // create FlagMetrics and use in expected way
         this.startTime = System.currentTimeMillis();
-        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(localFileSystem, true);
+        FlagMetrics metrics = new FlagMetricsWithTestCompatibleCodec(LOCAL_FILE_SYSTEM, true);
 
         // create input files
         flagFileTestSetup.createTestFiles();
@@ -155,7 +154,7 @@ public class FlagMetricsTest {
         this.stopFlaggedTime = System.currentTimeMillis();
 
         // write metrics to directory
-        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), flagFileBaseName);
+        metrics.writeMetrics(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), FLAG_FILE_BASE_NAME);
         this.stopWritingMetricsTime = System.currentTimeMillis();
     }
 

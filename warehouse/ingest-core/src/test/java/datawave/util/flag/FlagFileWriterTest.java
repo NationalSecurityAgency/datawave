@@ -16,7 +16,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -135,16 +134,16 @@ public class FlagFileWriterTest {
         String flagFileBaseName = flagFileName.substring(0, flagFileName.lastIndexOf('.'));
 
         // read metrics
-        FlagMetricsFileVerification flagMetricsFileVerification = new FlagMetricsFileVerification(flagFileBaseName, flagFileTestSetup);
+        FlagMetricsFileVerifier flagMetricsFileVerifier = new FlagMetricsFileVerifier(flagFileTestSetup, flagFileBaseName);
 
         // verify flag file identifier key
         String expectedKeyString = flagFileName.substring(0, flagFileName.lastIndexOf("."));
-        assertEquals(expectedKeyString, flagMetricsFileVerification.getName());
+        assertEquals(expectedKeyString, flagMetricsFileVerifier.getName());
 
-        flagMetricsFileVerification.assertGroupNames();
-        flagMetricsFileVerification.assertCountersForFilesShowingFlagTimes(startTime, stopTime);
-        flagMetricsFileVerification.assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles());
-        flagMetricsFileVerification.assertFlagMakerStartStopTimesInExpectedRange(startTime, stopTime);
+        flagMetricsFileVerifier.assertGroupNames();
+        flagMetricsFileVerifier.assertCountersForFilesShowingFlagTimes(startTime, stopTime);
+        flagMetricsFileVerifier.assertCountersForInputFileLastModified(flagFileTestSetup.getNamesOfCreatedFiles());
+        flagMetricsFileVerifier.assertFlagMakerStartStopTimesInExpectedRange(startTime, stopTime);
     }
 
     @Test

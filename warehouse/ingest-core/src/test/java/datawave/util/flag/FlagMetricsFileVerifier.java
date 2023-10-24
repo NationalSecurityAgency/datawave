@@ -23,14 +23,14 @@ import org.apache.hadoop.mapreduce.Counters;
 /**
  * Reads a FlagMetrics file from a given Path and verify its contents
  */
-public class FlagMetricsFileVerification {
+public class FlagMetricsFileVerifier {
     private static final List<String> EXPECTED_GROUP_NAMES = Arrays.asList("FlagFile", "InputFile", "datawave.metrics.util.flag.InputFile");
 
     private final Counters counters;
     private final Text name;
     private final FlagFileTestSetup flagFileTestSetup;
 
-    public FlagMetricsFileVerification(String flagFileBaseName, FlagFileTestSetup flagFileTestSetup) throws IOException {
+    public FlagMetricsFileVerifier(FlagFileTestSetup flagFileTestSetup, String flagFileBaseName) throws IOException {
         Path metricsFilePath = new Path(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory() + File.separator + flagFileBaseName + ".metrics");
         SequenceFile.Reader.Option readerOptions = SequenceFile.Reader.file(metricsFilePath);
         SequenceFile.Reader reader = new SequenceFile.Reader(new Configuration(), readerOptions);
