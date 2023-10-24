@@ -25,14 +25,15 @@ public class SizeValidatorImplTest {
     private static final int BASELINE_ONE_FILE = 147;
     private static final int BASELINE_MULTIPLE_FILES = 679;
     private static final int BASELINE_MANY_FILES = 280420;
+    private static final boolean DO_NOT_LOAD_DEFAULTS = false;
 
-    private FlagMakerConfig flagMakerConfig;
     private Configuration configuration;
+    private FlagMakerConfig flagMakerConfig;
     private FlagDataTypeConfig dataTypeConfig;
 
     @Before
     public void before() throws Exception {
-        this.configuration = new Configuration(false); // do not load defaults
+        this.configuration = new Configuration(DO_NOT_LOAD_DEFAULTS);
 
         FlagFileTestSetup flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig();
         this.flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
@@ -46,33 +47,37 @@ public class SizeValidatorImplTest {
 
     @Test
     public void countsExtraArgsOncePerFlag() {
-        this.dataTypeConfig.setExtraIngestArgs(" -other -args");
-        verifyExpectedVariancePerFlagFile(" -other -args".length());
+        String extraIngestArgs = " -other -args";
+        this.dataTypeConfig.setExtraIngestArgs(extraIngestArgs);
+        verifyExpectedVariancePerFlagFile(extraIngestArgs.length());
     }
 
     @Test
     public void countsLengthOfNumReducers() {
-        this.dataTypeConfig.setReducers(1000); // default is 10, so two digits
+        // default is 10, so expect two digit increase
+        this.dataTypeConfig.setReducers(1000);
         verifyExpectedVariancePerFlagFile(2);
 
-        this.dataTypeConfig.setReducers(1); // default is 10, so two digits
+        // default is 10, so expect one digit decrease
+        this.dataTypeConfig.setReducers(1);
         verifyExpectedVariancePerFlagFile(-1);
     }
 
     @Test
     public void countsInputFormatName() {
         // default is EventSequenceFileInputFormat
-        this.dataTypeConfig.setInputFormat(FileInputFormat.class);
-        verifyExpectedVariancePerFlagFile(FileInputFormat.class.getName().length() - EventSequenceFileInputFormat.class.getName().length());
+        Class<FileInputFormat> inputFormat = FileInputFormat.class;
+        this.dataTypeConfig.setInputFormat(inputFormat);
+        int expectedSizeVariance = inputFormat.getName().length() - EventSequenceFileInputFormat.class.getName().length();
+        verifyExpectedVariancePerFlagFile(expectedSizeVariance);
     }
 
     @Test
     public void countsDatawaveHomeLengthOncePerFlag() {
         int originalLength = this.flagMakerConfig.getDatawaveHome().length();
         this.flagMakerConfig.setDatawaveHome("");
-        verifyExpectedVariancePerFlagFile(-1 * originalLength); // sizes should
-                                                                // be shorter by
-                                                                // originalLength
+        // sizes should be shorter by originalLength
+        verifyExpectedVariancePerFlagFile(-1 * originalLength);
 
         String longerDatawaveHome = "/opt/datawave/non/empty/";
         this.flagMakerConfig.setDatawaveHome(longerDatawaveHome);
@@ -81,41 +86,39 @@ public class SizeValidatorImplTest {
 
     @Test
     public void countsScriptLengthOncePerFlag() {
-        int originalLength = this.flagMakerConfig.getDatawaveHome().length();
-        this.flagMakerConfig.setDatawaveHome("");
-        // verifyExpectedVariancePerFlagFile(-1 * originalLength); // sizes should
-        // be shorter by
-        // originalLength
+        int originalLength = this.dataTypeConfig.getScript().length();
+        this.dataTypeConfig.setScript("");
+        // sizes should be shorter by originalLength
+        verifyExpectedVariancePerFlagFile(-1 * originalLength);
 
-        String longerDatawaveHome = "/opt/datawave/non/empty/";
-        this.flagMakerConfig.setDatawaveHome(longerDatawaveHome);
-        verifyExpectedVariancePerFlagFile(longerDatawaveHome.length() - originalLength);
+        String longerScript = "exceedingly-lengthy-script-name.sh";
+        this.dataTypeConfig.setScript(longerScript);
+        verifyExpectedVariancePerFlagFile(longerScript.length() - originalLength);
     }
 
     @Test
     public void countsInputFileLength() {
-        HashSet<InputFile> setWithLongerBaseDir = InputFileSets.withNewBaseDir(InputFileSets.MULTIPLE_FILES, "longerBaseDir");
         int sizeOfOriginalBaseDir = 1;
-        int addedSize = ("longerBaseDir".length() - sizeOfOriginalBaseDir) * InputFileSets.MULTIPLE_FILES.size();
-        verifyMaxSizeValidation(BASELINE_MULTIPLE_FILES + addedSize, setWithLongerBaseDir);
+
+        String longerBaseDir = "longerBaseDir";
+        HashSet<InputFile> inputFileSetWithLongerBaseDir = InputFileSets.withNewBaseDir(InputFileSets.MULTIPLE_FILES, longerBaseDir);
+
+        int addedSize = (longerBaseDir.length() - sizeOfOriginalBaseDir) * InputFileSets.MULTIPLE_FILES.size();
+        verifyMaxSize(BASELINE_MULTIPLE_FILES + addedSize, inputFileSetWithLongerBaseDir);
     }
 
     @Test
     public void countsMarkerAdditionsPerFlagFile() {
-        int addedLength = " ${JOB_NAME} -inputFileLists -inputFileListMarker".length();
+        int lengthOfAddedArgumentsForFlagsWithMarker = " ${JOB_NAME} -inputFileLists -inputFileListMarker".length();
 
-        this.dataTypeConfig.setFileListMarker(".");
-        int shorterMarkerAddedLength = addedLength + ".".length() + "\n.\n".length();
-        verifyExpectedVariancePerFlagFile(shorterMarkerAddedLength); // sizes
-                                                                     // should
-                                                                     // be
-                                                                     // longer
-                                                                     // by
-                                                                     // minimum
-                                                                     // length
+        String shorterMarker = ".";
+        this.dataTypeConfig.setFileListMarker(shorterMarker);
+        int shorterMarkerAddedLength = lengthOfAddedArgumentsForFlagsWithMarker + shorterMarker.length() + ("\n" + shorterMarker + "\n").length();
+        verifyExpectedVariancePerFlagFile(shorterMarkerAddedLength);
 
-        this.dataTypeConfig.setFileListMarker("------fileMarker-------");
-        int longerMarkerAddedLength = addedLength + "------fileMarker-------".length() + "\n------fileMarker-------\n".length();
+        String longerMarker = "------fileMarker-------";
+        this.dataTypeConfig.setFileListMarker(longerMarker);
+        int longerMarkerAddedLength = lengthOfAddedArgumentsForFlagsWithMarker + longerMarker.length() + ("\n" + longerMarker + "\n").length();
 
         verifyExpectedVariancePerFlagFile(longerMarkerAddedLength);
     }
@@ -156,13 +159,13 @@ public class SizeValidatorImplTest {
     }
 
     private void verifyExpectedVariancePerFlagFile(int expectedSizeVariance) {
-        verifyMaxSizeValidation(BASELINE_NO_FILES + expectedSizeVariance, InputFileSets.EMPTY_FILES);
-        verifyMaxSizeValidation(BASELINE_ONE_FILE + expectedSizeVariance, InputFileSets.SINGLE_FILE);
-        verifyMaxSizeValidation(BASELINE_MULTIPLE_FILES + expectedSizeVariance, InputFileSets.MULTIPLE_FILES);
-        verifyMaxSizeValidation(BASELINE_MANY_FILES + expectedSizeVariance, InputFileSets.MANY_FILES);
+        verifyMaxSize(BASELINE_NO_FILES + expectedSizeVariance, InputFileSets.EMPTY_FILES);
+        verifyMaxSize(BASELINE_ONE_FILE + expectedSizeVariance, InputFileSets.SINGLE_FILE);
+        verifyMaxSize(BASELINE_MULTIPLE_FILES + expectedSizeVariance, InputFileSets.MULTIPLE_FILES);
+        verifyMaxSize(BASELINE_MANY_FILES + expectedSizeVariance, InputFileSets.MANY_FILES);
     }
 
-    private void verifyMaxSizeValidation(int expectedSize, HashSet<InputFile> inputFiles) {
+    private void verifyMaxSize(int expectedSize, HashSet<InputFile> inputFiles) {
         // make max file length too small
         this.flagMakerConfig.setMaxFileLength(expectedSize - 1);
         SizeValidatorImpl sizeValidator = new SizeValidatorImpl(this.configuration, this.flagMakerConfig);

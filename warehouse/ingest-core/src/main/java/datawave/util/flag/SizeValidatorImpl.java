@@ -42,8 +42,9 @@ public class SizeValidatorImpl implements SizeValidator {
         int expectedNumberOfCounters = (files.size() * COUNTERS_PER_INPUT_FILE) + COUNTERS_PER_FLAG_FILE;
 
         if (expectedNumberOfCounters > counterLimit) {
-            LOG.warn("Check hadoop configuration. Counter limit ({}) exceeded for {}. Restricting to {} files per flag file.", counterLimit, fc.getDataName(),
-                            ((counterLimit - COUNTERS_PER_FLAG_FILE) / COUNTERS_PER_INPUT_FILE));
+            int allowedNumInputFiles = (counterLimit - COUNTERS_PER_FLAG_FILE) / COUNTERS_PER_INPUT_FILE;
+            LOG.warn("Check hadoop configuration. Counter limit ({}) exceeded for {}. Restricting to {} input files per flag file.", counterLimit, fc.getDataName(),
+                    allowedNumInputFiles);
             return false;
         }
         return true;
@@ -53,7 +54,7 @@ public class SizeValidatorImpl implements SizeValidator {
         long expectedFileSize = calculateFlagFileSize(fc, files);
 
         if (expectedFileSize > maxFileLength) {
-            LOG.warn("Flag file size for {} exceeding {}.  Reducing number of files to compensate", fc.getDataName(), maxFileLength);
+            LOG.warn("Flag file size for {} exceeding {}.  Reducing number of input files to compensate", fc.getDataName(), maxFileLength);
             return false;
         }
 
@@ -73,15 +74,15 @@ public class SizeValidatorImpl implements SizeValidator {
     /**
      * Get the length of the flag file that would be created using this set of files.
      *
-     * @param fc
+     * @param flagDataTypeConfig
      *            configuration for datatype
      * @param inFiles
      *            collection of input files to include in flag file
      * @return Expected size in characters of the flag file
      */
-    long calculateFlagFileSize(FlagDataTypeConfig fc, Collection<InputFile> inFiles) {
-        int fileSize = flagFileContentCreator.calculateSize(inFiles, fc);
-        LOG.debug("calculateFlagFileSize: " + fileSize);
-        return fileSize;
+    long calculateFlagFileSize(FlagDataTypeConfig flagDataTypeConfig, Collection<InputFile> inFiles) {
+        int flagFileSize = flagFileContentCreator.calculateSize(inFiles, flagDataTypeConfig);
+        LOG.debug("Calculated flag file size: " + flagFileSize);
+        return flagFileSize;
     }
 }
