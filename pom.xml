@@ -64,7 +64,7 @@
         <version.hadoop-shaded>1.1.1</version.hadoop-shaded>
         <version.httpcomponents-httpclient>4.5.13</version.httpcomponents-httpclient>
         <version.httpcomponents-httpcore>4.4.8</version.httpcomponents-httpcore>
-        <version.in-memory-accumulo>3.0.0</version.in-memory-accumulo>
+        <version.in-memory-accumulo>3.0.1</version.in-memory-accumulo>
         <version.infinispan>9.4.21.Final</version.infinispan>
         <version.jackson>2.10.0.pr1</version.jackson>
         <version.javassist>3.24.0-GA</version.javassist>
@@ -85,7 +85,7 @@
         <version.maven-install-plugin>2.5.2</version.maven-install-plugin>
         <version.metrics-cdi>1.6.0</version.metrics-cdi>
         <version.microservice.accumulo-api>3.0.0</version.microservice.accumulo-api>
-        <version.microservice.accumulo-utils>3.0.0</version.microservice.accumulo-utils>
+        <version.microservice.accumulo-utils>3.0.1</version.microservice.accumulo-utils>
         <version.microservice.audit-api>3.0.0</version.microservice.audit-api>
         <version.microservice.authorization-api>3.0.0</version.microservice.authorization-api>
         <version.microservice.base-rest-responses>3.0.0</version.microservice.base-rest-responses>
