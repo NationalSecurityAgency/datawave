@@ -15,9 +15,13 @@ import org.junit.Test;
 
 public class InputFileCreatingIteratorTest {
 
+    private InputFileCreatingIterator iteratorWithSource(Iterator<LocatedFileStatus> sourceIterator) {
+        return new InputFileCreatingIterator(sourceIterator, null, "baseDir", true);
+    }
+
     @Test
     public void createsExpectedInputFile() {
-        InputFileCreatingIterator iterator = new InputFileCreatingIterator(new ReturnsItemOnlyOnceButAlwaysClaimsHasNext(), null, "baseDir", true);
+        InputFileCreatingIterator iterator = iteratorWithSource(new ReturnsItemOnlyOnceButAlwaysClaimsHasNext());
 
         assertTrue(iterator.hasNext());
 
@@ -31,8 +35,7 @@ public class InputFileCreatingIteratorTest {
 
     @Test
     public void delegatesNext() {
-        InputFileCreatingIterator iterator = new InputFileCreatingIterator(new ReturnsItemOnlyOnceButAlwaysClaimsHasNext(), null, "baseDir", true);
-
+        InputFileCreatingIterator iterator = iteratorWithSource(new ReturnsItemOnlyOnceButAlwaysClaimsHasNext());
         assertTrue(iterator.hasNext());
         assertNotNull(iterator.next());
         assertTrue(iterator.hasNext());
@@ -40,21 +43,19 @@ public class InputFileCreatingIteratorTest {
 
     @Test
     public void delegatesHasNext() {
-        InputFileCreatingIterator iterator = new InputFileCreatingIterator(new EmptySource(), null, "baseDir", true);
-        assertFalse(iterator.hasNext());
+        assertFalse(iteratorWithSource(new EmptySource()).hasNext());
     }
 
     @Test(expected = NoSuchElementException.class)
     public void throwsNoSuchElementExceptionWhenSourceReturnsNull() {
-        InputFileCreatingIterator iterator = new InputFileCreatingIterator(new ReturnsItemOnlyOnceButAlwaysClaimsHasNext(), null, "baseDir", true);
+        InputFileCreatingIterator iterator = iteratorWithSource(new EmptySource());
         assertNotNull(iterator.next());
         iterator.next();
     }
 
     @Test(expected = NoSuchElementException.class)
     public void throwsExceptionWhenDelegateDoesNotHaveNext() {
-        InputFileCreatingIterator iterator = new InputFileCreatingIterator(new EmptySource(), null, "baseDir", true);
-        iterator.next();
+        iteratorWithSource(new EmptySource()).next();
     }
 
     private static class ReturnsItemOnlyOnceButAlwaysClaimsHasNext implements Iterator<LocatedFileStatus> {
