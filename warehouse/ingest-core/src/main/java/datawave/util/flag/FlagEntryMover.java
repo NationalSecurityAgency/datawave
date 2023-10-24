@@ -19,7 +19,7 @@ import datawave.util.flag.InputFile.TrackedDir;
  */
 public class FlagEntryMover extends SimpleMover {
 
-    private static final Logger log = LoggerFactory.getLogger(FlagEntryMover.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FlagEntryMover.class);
     private static final int CHECKSUM_MAX = 10 * 1024 * 1000; // 10M
 
     public FlagEntryMover(Cache<Path,Path> directoryCache, FileSystem fs, InputFile entry) {
@@ -81,12 +81,12 @@ public class FlagEntryMover extends SimpleMover {
 
         if (resolved) {
             // rename tracked locations
-            log.warn("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri());
+            LOG.warn("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri());
             this.entry.renameTrackedLocations();
         } else {
-            log.warn("discarding duplicate ingest file ({}) duplicate ({})", src.toUri(), dest.toUri());
+            LOG.warn("discarding duplicate ingest file ({}) duplicate ({})", src.toUri(), dest.toUri());
             if (!fs.delete(src, false)) {
-                log.error("unable to delete duplicate ingest file ({})", src.toUri());
+                LOG.error("unable to delete duplicate ingest file ({})", src.toUri());
             }
         }
 

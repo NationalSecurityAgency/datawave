@@ -20,7 +20,7 @@ import datawave.util.flag.processor.DateUtils;
  */
 public class InputFile implements Comparable<InputFile> {
 
-    private static final Logger log = LoggerFactory.getLogger(InputFile.class);
+    private static final Logger LOG = LoggerFactory.getLogger(InputFile.class);
     static final String DATE_FORMAT_STRING = "yyyy" + File.separator + "MM" + File.separator + "dd" + File.separator + "HH";
     // our yyyy/MM/dd{/HH{/mm{/ss}}} pattern for most things.
     public static final Pattern PATTERN = Pattern.compile(".*/([0-9]{4}(/[0-9]{2}){2,5})(?:/.*|$)");
@@ -362,7 +362,7 @@ public class InputFile implements Comparable<InputFile> {
         try {
             return useFolderTimestamp ? DateUtils.getFolderTimestamp(path.toString()) : fileTimestamp;
         } catch (Exception e) {
-            log.warn("Path does not contain yyyy/mm/dd...using file timestamp for {}", path);
+            LOG.warn("Path does not contain yyyy/mm/dd...using file timestamp for {}", path);
             return fileTimestamp;
         }
     }

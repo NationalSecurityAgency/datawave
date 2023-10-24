@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * Wraps an Iterator of LocatedFileStatus items, converting them into InputFile objects
  */
 public class InputFileCreatingIterator implements Iterator<InputFile> {
-    private static final Logger log = LoggerFactory.getLogger(InputFileCreatingIterator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(InputFileCreatingIterator.class);
 
     private final Iterator<LocatedFileStatus> delegate;
     private final String inputFolder;
@@ -42,9 +42,9 @@ public class InputFileCreatingIterator implements Iterator<InputFile> {
             throw new NoSuchElementException("Received null object from delegate");
         }
 
-        if (log.isTraceEnabled()) {
-            log.trace("Adding file {}", status.getPath());
-            log.trace("File {} : {}", inputFolder, status);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Adding file {}", status.getPath());
+            LOG.trace("File {} : {}", inputFolder, status);
         }
         return new InputFile(inputFolder, status, this.baseDir, this.useFolderTimestamp);
     }

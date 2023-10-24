@@ -21,7 +21,7 @@ public class FlagSocket implements Runnable {
     // instructs the FlagMaker to produce a flag file with currently loaded files for specified datatype, e.g. "kick datatype"
     public static final String KICK_MESSAGE = "kick";
 
-    private static final Logger log = LoggerFactory.getLogger(FlagSocket.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FlagSocket.class);
     private static final int SOCKET_TIMEOUT = 30000;
 
     // socket used to receive messages
@@ -38,18 +38,18 @@ public class FlagSocket implements Runnable {
 
     @Override
     public void run() {
-        log.info("Listening for commands on port {}", serverSocket.getLocalPort());
+        LOG.info("Listening for commands on port {}", serverSocket.getLocalPort());
         while (running) {
             try {
                 Socket socket = serverSocket.accept();
-                log.info("{} connected to the socket messaging port", socket.getRemoteSocketAddress());
+                LOG.info("{} connected to the socket messaging port", socket.getRemoteSocketAddress());
                 awaitMessageOrTimeout(socket);
             } catch (SocketException e) {
                 if (running) {
-                    log.info("Socket Exception occurred: {}", e.getMessage(), e);
+                    LOG.info("Socket Exception occurred: {}", e.getMessage(), e);
                 }
             } catch (IOException e) {
-                log.error("Error waiting for message on socket connection: {}", e.getMessage(), e);
+                LOG.error("Error waiting for message on socket connection: {}", e.getMessage(), e);
             }
         }
     }
@@ -59,7 +59,7 @@ public class FlagSocket implements Runnable {
             socket.setSoTimeout(SOCKET_TIMEOUT);
             receiveMessageFromSocket(socket);
         } catch (SocketTimeoutException e) {
-            log.info("Timed out waiting for input from {}", socket.getRemoteSocketAddress());
+            LOG.info("Timed out waiting for input from {}", socket.getRemoteSocketAddress());
         }
     }
 
@@ -67,7 +67,7 @@ public class FlagSocket implements Runnable {
         try (BufferedReader rdr = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
             String line = rdr.readLine();
             socket.close();
-            log.info("Add message to queue: {}", line);
+            LOG.info("Add message to queue: {}", line);
             if (null != line) {
                 messageQueue.add(line);
                 checkForActionableMessages(line);
@@ -77,12 +77,12 @@ public class FlagSocket implements Runnable {
 
     private void checkForActionableMessages(String message) {
         if (SHUTDOWN_MESSAGE.equals(message)) {
-            log.info("Shutdown call received. Socket exiting.");
+            LOG.info("Shutdown call received. Socket exiting.");
             running = false;
             try {
                 serverSocket.close();
             } catch (IOException ex) {
-                log.info("Failed to close server socket on shutdown", ex);
+                LOG.info("Failed to close server socket on shutdown", ex);
             }
         }
     }

@@ -25,7 +25,7 @@ import datawave.metrics.util.flag.FlagFile;
  */
 public class FlagMetrics {
 
-    private static final Logger log = LoggerFactory.getLogger(FlagMetrics.class);
+    private static final Logger LOG = LoggerFactory.getLogger(FlagMetrics.class);
 
     private static final CompressionCodec cc = new GzipCodec();
     private static final SequenceFile.CompressionType ct = SequenceFile.CompressionType.BLOCK;
@@ -86,14 +86,14 @@ public class FlagMetrics {
         Path src = new Path(fileName + ".working");
         if (!fs.exists(finishedMetricsFile.getParent())) {
             if (!fs.mkdirs(finishedMetricsFile.getParent())) {
-                log.warn("unable to create directory ({}) metrics write terminated", finishedMetricsFile.getParent());
+                LOG.warn("unable to create directory ({}) metrics write terminated", finishedMetricsFile.getParent());
                 return;
             }
         }
 
         if (!fs.exists(src.getParent())) {
             if (!fs.mkdirs(src.getParent())) {
-                log.warn("unable to create directory ({}) metrics write terminated", src.getParent());
+                LOG.warn("unable to create directory ({}) metrics write terminated", src.getParent());
                 return;
             }
         }
@@ -113,7 +113,7 @@ public class FlagMetrics {
                 break;
             // delete src - it will be recreated by while statement
             if (fs.delete(src, false)) {
-                log.warn("unable to delete metrics file ({})", src);
+                LOG.warn("unable to delete metrics file ({})", src);
             }
         }
 
@@ -122,7 +122,7 @@ public class FlagMetrics {
         }
 
         if (!fs.rename(src, finishedMetricsFile))
-            log.error("Could not rename metrics file to completed name. Failed file will persist until manually removed.");
+            LOG.error("Could not rename metrics file to completed name. Failed file will persist until manually removed.");
     }
 
     private SequenceFile.Writer.Option[] createSequenceFileWriterOptions(Path src) {

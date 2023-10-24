@@ -17,7 +17,7 @@ import datawave.util.flag.InputFile.TrackedDir;
  */
 public class SimpleMover implements Callable<InputFile> {
 
-    private static final Logger log = LoggerFactory.getLogger(SimpleMover.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SimpleMover.class);
 
     final InputFile entry;
     final TrackedDir target;
@@ -37,10 +37,10 @@ public class SimpleMover implements Callable<InputFile> {
         final Path dst = this.entry.getTrackedDir(this.target);
         checkParent(dst);
         if (entry.getCurrentDir() == dst || (!fs.exists(dst) && fs.rename(entry.getCurrentDir(), dst))) {
-            log.trace("Moved from {} to {}", entry.getPath(), dst);
+            LOG.trace("Moved from {} to {}", entry.getPath(), dst);
             entry.updateCurrentDir(this.target);
         } else {
-            log.error("Unable to move file {} to {}, skipping", entry.getCurrentDir().toUri(), dst.toUri());
+            LOG.error("Unable to move file {} to {}, skipping", entry.getCurrentDir().toUri(), dst.toUri());
         }
 
         return entry;
@@ -52,7 +52,7 @@ public class SimpleMover implements Callable<InputFile> {
             if (fs.mkdirs(parent)) {
                 directoryCache.put(parent, parent);
             } else {
-                log.warn("unable to create directory ({})", parent);
+                LOG.warn("unable to create directory ({})", parent);
             }
         }
         return path;
