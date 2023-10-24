@@ -31,6 +31,7 @@ public class QuerySpan {
     protected long seek = 0;
 
     protected long evaluated = 0;
+    protected long rejected = 0;
 
     protected boolean yield = false;
 
@@ -92,12 +93,40 @@ public class QuerySpan {
         return nextCount;
     }
 
+    public void resetEvaluated() {
+        evaluated = 0;
+    }
+
+    public void evaluatedIncrement(long evaluatedCount) {
+        evaluated += evaluatedCount;
+        System.out.println("Evaluated Count: " + evaluated);
+    }
+
     public long getEvaluatedCount() {
         long evaluatedCount = evaluated;
         for (QuerySpan subSpan : sources) {
             evaluatedCount += subSpan.getEvaluatedCount();
         }
+        System.out.println("Evaluated Count: " + evaluatedCount);
         return evaluatedCount;
+    }
+
+    public void resetRejected() {
+        rejected = 0;
+    }
+
+    public void rejectedIncrement(long rejectedCount) {
+        rejected += rejectedCount;
+        System.out.println("Rejected Count: " + rejected);
+    }
+
+    public long getRejectedCount() {
+        long rejectedCount = rejected;
+        for (QuerySpan subSpan : sources) {
+            rejectedCount += subSpan.getRejectedCount();
+        }
+        System.out.println("Rejected Count: " + rejectedCount);
+        return rejectedCount;
     }
 
     public long getSeekCount() {
@@ -169,12 +198,15 @@ public class QuerySpan {
     }
 
     public void reset() {
+        System.out.println("RESET RESET RESET RESET RESET RESET");
         for (QuerySpan source : sources) {
             source.reset();
         }
         sourceCount = 0;
         next = 0;
         seek = 0;
+        rejected = 0;
+        evaluated = 0;
         yield = false;
         stageTimerTotal = 0;
         stageTimers.clear();
@@ -210,6 +242,14 @@ public class QuerySpan {
 
     public void setSeek(long seek) {
         this.seek = seek;
+    }
+
+    public void setEvaluatedCount(long evaluatedCount) {
+        this.evaluated = evaluatedCount;
+    }
+
+    public void setRejectedCount(long rejectedCount) {
+        this.rejected = rejectedCount;
     }
 
     public void setNext(long next) {

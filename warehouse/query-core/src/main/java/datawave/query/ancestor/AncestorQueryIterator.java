@@ -173,6 +173,7 @@ public class AncestorQueryIterator extends QueryIterator {
 
             @Override
             public boolean apply(Tuple3<Key,Document,DatawaveJexlContext> input) {
+                // System.out.println("HERE INSIDE OF THE ANCESTOR QUERY ITERATOR");
                 currentKey = input.first();
                 return super.apply(input);
             }

@@ -185,6 +185,8 @@ public class ContentQueryMetricsIngestHelper extends CSVIngestHelper implements 
             fields.put("SOURCE_COUNT", Long.toString(updatedQueryMetric.getSourceCount()));
             fields.put("NEXT_COUNT", Long.toString(updatedQueryMetric.getNextCount()));
             fields.put("SEEK_COUNT", Long.toString(updatedQueryMetric.getSeekCount()));
+            fields.put("EVALUATED_COUNT", Long.toString(updatedQueryMetric.getEvaluatedCount()));
+            fields.put("REJECTED_COUNT", Long.toString(updatedQueryMetric.getRejectedCount()));
             fields.put("YIELD_COUNT", Long.toString(updatedQueryMetric.getYieldCount()));
             fields.put("DOC_RANGES", Long.toString(updatedQueryMetric.getDocRanges()));
             fields.put("FI_RANGES", Long.toString(updatedQueryMetric.getFiRanges()));

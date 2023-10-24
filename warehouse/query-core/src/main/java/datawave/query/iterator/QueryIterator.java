@@ -207,6 +207,10 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
 
     protected RangeProvider rangeProvider;
 
+    protected static long evaluatedCount = 0;
+
+    protected static long rejectedCount = 0;
+
     public QueryIterator() {}
 
     public QueryIterator(QueryIterator other, IteratorEnvironment env) {
@@ -701,17 +705,37 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
      *            type for the iterator
      * @return an iterator to elements that satisfy the predicate
      */
-    public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate) {
+    public static <T> UnmodifiableIterator<T> statelessFilter(final Iterator<T> unfiltered, final Predicate<? super T> predicate, QuerySpan trackingSpan) {
+        System.out.println("======================================================");
         checkNotNull(unfiltered);
         checkNotNull(predicate);
         return new UnmodifiableIterator<T>() {
             private T next;
 
             protected T computeNext() {
+                rejectedCount = 0;
+                evaluatedCount = 0;
+                // System.out.println("COMPUTING NEXT");
                 while (unfiltered.hasNext()) {
                     T element = unfiltered.next();
+                    System.out.println("Element: " + element);
+                    // System.out.println(trackingSpan);
                     if (predicate.apply(element)) {
+                        if (trackingSpan != null) {
+                            evaluatedCount++;
+                            trackingSpan.evaluatedIncrement(evaluatedCount);
+                            trackingSpan.rejectedIncrement(rejectedCount);
+                        } else {
+                            System.out.println("=========== trackingSpan is null ===========");
+                        }
                         return element;
+                    } else {
+                        if (trackingSpan != null) {
+                            evaluatedCount++;
+                            rejectedCount++;
+                            trackingSpan.evaluatedIncrement(evaluatedCount);
+                            trackingSpan.rejectedIncrement(rejectedCount);
+                        }
                     }
                 }
                 return null;
@@ -883,11 +907,11 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // projection or visibility filtering)
         if (gatherTimingDetails()) {
             documents = statelessFilter(documents,
-                            new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()));
+                            new EvaluationTrackingPredicate<>(QuerySpan.Stage.EmptyDocumentFilter, trackingSpan, new EmptyDocumentFilter()), trackingSpan);
             documents = Iterators.transform(documents,
                             new EvaluationTrackingFunction<>(QuerySpan.Stage.DocumentMetadata, trackingSpan, new DocumentMetadata()));
         } else {
-            documents = statelessFilter(documents, new EmptyDocumentFilter());
+            documents = statelessFilter(documents, new EmptyDocumentFilter(), trackingSpan);
             documents = Iterators.transform(documents, new DocumentMetadata());
         }
 
@@ -984,7 +1008,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
                 }
 
                 final Iterator<Tuple3<Key,Document,DatawaveJexlContext>> itrWithDatawaveJexlContext = Iterators.transform(itrWithContext, contextCreator);
-                Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction);
+                Iterator<Tuple3<Key,Document,DatawaveJexlContext>> matchedDocuments = statelessFilter(itrWithDatawaveJexlContext, jexlEvaluationFunction,
+                                new QuerySpan(getStatsdClient()));
                 if (log.isTraceEnabled()) {
                     log.trace("arithmetic:" + arithmetic + " range:" + getDocumentRange(documentSource) + ", thread:" + Thread.currentThread());
                 }

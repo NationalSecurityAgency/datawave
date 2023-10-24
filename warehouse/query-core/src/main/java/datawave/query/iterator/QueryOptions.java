@@ -77,6 +77,7 @@ import datawave.query.iterator.filter.StringToText;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.iterator.profile.QuerySpan;
 import datawave.query.jexl.DefaultArithmetic;
 import datawave.query.jexl.HitListArithmetic;
 import datawave.query.jexl.functions.FieldIndexAggregator;
@@ -1936,7 +1937,7 @@ public class QueryOptions implements OptionDescriber {
                             ((ConfiguredPredicate) p).configure(options);
                         }
 
-                        tforms = QueryIterator.statelessFilter(tforms, p);
+                        tforms = QueryIterator.statelessFilter(tforms, p, new QuerySpan(getStatsdClient()));
                     } else {
                         log.error(fClass + " is not a function or predicate.");
                         throw new RuntimeException(fClass + " is not a function or predicate.");
