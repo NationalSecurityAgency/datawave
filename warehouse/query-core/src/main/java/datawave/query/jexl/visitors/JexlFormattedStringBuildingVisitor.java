@@ -15,7 +15,7 @@ import org.apache.commons.jexl2.parser.ASTReferenceExpression;
 import org.apache.commons.jexl2.parser.JexlNode;
 import org.apache.commons.jexl2.parser.ParseException;
 
-import datawave.microservice.querymetric.QueryMetric;
+import datawave.microservice.querymetric.BaseQueryMetric;
 import datawave.query.exceptions.DatawaveFatalQueryException;
 import datawave.query.jexl.JexlASTHelper;
 import datawave.query.jexl.nodes.BoundedRange;
@@ -316,14 +316,13 @@ public class JexlFormattedStringBuildingVisitor extends JexlStringBuildingVisito
         return sb;
     }
 
-    public static List<QueryMetric> formatMetrics(List<QueryMetric> metrics) {
-        List<QueryMetric> updatedMetrics = new ArrayList<QueryMetric>();
-
+    public static <T extends BaseQueryMetric> List<T> formatMetrics(List<T> metrics) {
+        List<T> updatedMetrics = new ArrayList<>();
         // For each metric, update the query to be formatted (if applicable) and update
         // the plan to be formatted
-        for (QueryMetric metric : metrics) {
+        for (BaseQueryMetric metric : metrics) {
             JexlNode queryNode = null, planNode = null;
-            QueryMetric updatedMetric = new QueryMetric(metric);
+            T updatedMetric = (T) metric.duplicate();
             String query = updatedMetric.getQuery();
             String plan = updatedMetric.getPlan();
             // If it is a JEXL query, set the query to be formatted

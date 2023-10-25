@@ -1,5 +1,7 @@
 package datawave.query.iterator;
 
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
+
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
@@ -17,11 +19,13 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterators;
 
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.Aggregation;
 import datawave.query.function.KeyToDocumentData;
 import datawave.query.function.RangeProvider;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.predicate.EventDataQueryFilter;
 import datawave.query.predicate.ParentEventDataFilter;
 import datawave.query.predicate.ParentRangeProvider;
@@ -56,7 +60,11 @@ public class ParentQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (evaluationFilter == null && script != null) {
-            this.evaluationFilter = new ParentEventDataFilter(script, typeMetadata, getNonEventFields());
+
+            AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
+            this.evaluationFilter = new ParentEventDataFilter(expressionFilters);
         }
         return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
