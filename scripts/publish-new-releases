@@ -5,7 +5,7 @@
 #
 # The script will automatically generate (and optionally commit & push) _posts/release entries for
 # the gh-pages branch, i.e., for newly tagged DW releases that are discovered on DW_GITHUB_REMOTE_URL.
-# Currently, we look for new 3.x and 5.x updates, for Accumulo 1.10.x- and 2.1.x-compatible DW releases.
+# Currently, we look for new 3.x, 5.x and 6.x updates, for Accumulo 1.10.x- and 2.1.x-compatible DW releases.
 #
 # Usage:
 #   <script-name> [--push, -p] [--verbose, -v] [--help, -h]
@@ -172,12 +172,13 @@ fi
 
 logi "gh-pages branch was cloned to ${TMP_GHPAGES_DIR}"
 
-# Get semver-sorted lists of 3.x and 5.x tags only. Filter out RC's and other cruft
+# Get semver-sorted lists of tags. Filter out RC's and other cruft
 
 _3x_tags=( $(cd ${TMP_DW_DIR} && $GIT tag --sort=v:refname | egrep '^3\.[0-9]+\.[0-9]+$') )
 _5x_tags=( $(cd ${TMP_DW_DIR} && $GIT tag --sort=v:refname | egrep '^5\.[0-9]+\.[0-9]+$') )
+_6x_tags=( $(cd ${TMP_DW_DIR} && $GIT tag --sort=v:refname | egrep '^6\.[0-9]+\.[0-9]+$') )
 
-# Get semver-sorted lists of 3.x and 5.x releases that've already been published to gh-pages
+# Get semver-sorted lists of releases that've already been published to gh-pages
 
 _3x_posts=()
 _3x_posts_count=$(ls -1 ${POSTS_DIR}/*datawave-3\.* 2>/dev/null | wc -l)
@@ -201,6 +202,17 @@ if [[ ${_5x_posts_count} -gt 0 && ${_5x_index} -lt 0 ]] ; then
   logf "Git tag for the ${_5x_posts[-1]} post wasn't found in Github"
 fi
 
+_6x_posts=()
+_6x_posts_count=$(ls -1 ${POSTS_DIR}/*datawave-6\.* 2>/dev/null | wc -l)
+if [[ ${_6x_posts_count} -gt 0 ]] ; then
+  _6x_posts=( $(cd ${POSTS_DIR} && ls -1 *datawave-6\.*\.md | cut -d'-' -f5 | sed 's/.\{3\}$//' | sort -t "." -k1,1n -k2,2n -k3,3n) )
+  _6x_index=$(search "${_6x_posts[-1]}" "${_6x_tags[@]}")
+fi
+
+if [[ ${_6x_posts_count} -gt 0 && ${_6x_index} -lt 0 ]] ; then
+  logf "Git tag for the ${_6x_posts[-1]} post wasn't found in Github"
+fi
+
 logi "Latest 3.x post in gh-pages: ${_3x_posts[-1]}"
 logi "Latest DW 3.x release: ${_3x_tags[-1]}"
 logd "3.x tag list: $(printf '%s\n' "${_3x_tags[@]}" | paste -sd ',' -)"
@@ -217,12 +229,21 @@ logd "Index of ${_5x_posts[-1]} tag: ${_5x_index}"
 # If latest posted 5x tag == latest DW 5x tag, then we're done 
 [[ "${_5x_posts[-1]}" == "${_5x_tags[-1]}" ]] && _skip_5x=true
 
-if [[ -n "${_skip_3x}" && -n "${_skip_5x}" ]] ; then
+logi "Latest 6.x post in gh-pages: ${_6x_posts[-1]}"
+logi "Latest DW 6.x release: ${_6x_tags[-1]}"
+logd "6.x tag list: $(printf '%s\n' "${_6x_tags[@]}" | paste -sd ',' -)"
+logd "Index of ${_6x_posts[-1]} tag: ${_6x_index}"
+
+# If latest posted 6x tag == latest DW 6x tag, then we're done 
+[[ "${_6x_posts[-1]}" == "${_6x_tags[-1]}" ]] && _skip_6x=true
+
+if [[ -n "${_skip_3x}" && -n "${_skip_5x}" && -n "${_skip_6x}" ]] ; then
   logi "We're done. There's nothing new to publish"
 else
   # Generate new posts and update local/remote git repos
   [[ -z "${_skip_3x}" ]] && generate_posts "1.10" "$((${_3x_index}+1))" "${_3x_tags[@]}"
   [[ -z "${_skip_5x}" ]] && generate_posts "2.1"  "$((${_5x_index}+1))" "${_5x_tags[@]}"
+  [[ -z "${_skip_6x}" ]] && generate_posts "2.1"  "$((${_6x_index}+1))" "${_6x_tags[@]}"
   logi "New releases since the last gh-pages update: ${_new_release_count}"
   update_git
 fi
