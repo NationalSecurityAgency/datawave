@@ -51,7 +51,7 @@ import datawave.resteasy.interceptor.CreateQuerySessionIDFilter;
 import datawave.security.authorization.AuthorizationException;
 import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.UserOperations;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.exception.QueryException;
 import datawave.webservice.query.logic.BaseQueryLogic;
@@ -309,7 +309,7 @@ public class BasicQueryBean {
         try {
             DatawavePrincipal queryPrincipal = (userService == null) ? (DatawavePrincipal) ctx.getCallerPrincipal()
                             : userService.getRemoteUser((DatawavePrincipal) ctx.getCallerPrincipal());
-            response.setAuthString(AuthorizationsUtil.buildUserAuthorizationString(queryPrincipal));
+            response.setAuthString(WSAuthorizationsUtil.buildUserAuthorizationString(queryPrincipal));
         } catch (AuthorizationException e) {
             throw new RuntimeException(e);
         }
