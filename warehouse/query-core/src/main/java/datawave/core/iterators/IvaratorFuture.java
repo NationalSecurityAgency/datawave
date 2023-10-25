@@ -7,12 +7,12 @@ import java.util.concurrent.TimeoutException;
 
 public class IvaratorFuture implements Future {
 
-    final private Future future;
-    final private DatawaveFieldIndexCachingIteratorJexl ivarator;
+    private Future future;
+    private IvaratorRunnable ivaratorRunnable;
 
-    public IvaratorFuture(Future future, DatawaveFieldIndexCachingIteratorJexl ivarator) {
+    public IvaratorFuture(Future future, IvaratorRunnable ivaratorRunnable) {
         this.future = future;
-        this.ivarator = ivarator;
+        this.ivaratorRunnable = ivaratorRunnable;
     }
 
     @Override
@@ -41,6 +41,10 @@ public class IvaratorFuture implements Future {
     }
 
     public DatawaveFieldIndexCachingIteratorJexl getIvarator() {
-        return ivarator;
+        return ivaratorRunnable.getIvarator();
+    }
+
+    public IvaratorRunnable getIvaratorRunnable() {
+        return ivaratorRunnable;
     }
 }

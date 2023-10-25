@@ -98,7 +98,7 @@ public class IteratorThreadPoolManager {
                     DatawaveFieldIndexCachingIteratorJexl ivarator = future.getIvarator();
                     long elapsed = now - ivarator.getStartTime();
                     long ivaratorScanTimeout = ivarator.getScanTimeout();
-                    if (ivarator.isRunning() && ((elapsed > ivaratorScanTimeout) || (elapsed > ivaratorMaxScanTimeout))) {
+                    if (future.getIvaratorRunnable().isRunning() && ((elapsed > ivaratorScanTimeout) || (elapsed > ivaratorMaxScanTimeout))) {
                         removeIvaratorFuture(taskName, env);
                     }
                 }
@@ -180,18 +180,18 @@ public class IteratorThreadPoolManager {
     public static void removeIvaratorFuture(String taskName, IteratorEnvironment env) {
         IvaratorFuture future = instance(env).ivaratorFutures.getIfPresent(taskName);
         if (future != null) {
-            if (future.getIvarator().isRunning()) {
+            if (future.getIvaratorRunnable().isRunning()) {
                 future.cancel(true);
-                future.getIvarator().waitUntilComplete();
+                future.getIvaratorRunnable().waitUntilComplete();
             }
             instance(env).ivaratorFutures.invalidate(taskName);
         }
     }
 
-    public static IvaratorFuture executeIvarator(DatawaveFieldIndexCachingIteratorJexl ivarator, Runnable task, String taskName, IteratorEnvironment env) {
+    public static IvaratorFuture executeIvarator(IvaratorRunnable ivaratorRunnable, String taskName, IteratorEnvironment env) {
         IvaratorFuture future = instance(env).ivaratorFutures.getIfPresent(taskName);
         if (future == null) {
-            future = new IvaratorFuture(instance(env).execute(IVARATOR_THREAD_NAME, task, taskName), ivarator);
+            future = new IvaratorFuture(instance(env).execute(IVARATOR_THREAD_NAME, ivaratorRunnable, taskName), ivaratorRunnable);
             instance(env).ivaratorFutures.put(taskName, future);
         }
         return future;
