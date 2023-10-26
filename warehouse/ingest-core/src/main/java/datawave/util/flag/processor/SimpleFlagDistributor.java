@@ -34,7 +34,9 @@ import datawave.util.flag.config.FlagMakerConfigUtility;
 
 /**
  * Uses provided inputFileSource to retrieve up to FlagDataTypeConfig.maxFlags input files at a time. No groupings, just returns files that are pending in no
- * specific order
+ * specific order.
+ *
+ * Expects loadFiles to be called prior to hasNext and next.
  */
 public class SimpleFlagDistributor implements FlagDistributor {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleFlagDistributor.class);
@@ -42,7 +44,7 @@ public class SimpleFlagDistributor implements FlagDistributor {
     private final FlagMakerConfig flagMakerConfig;
     private FileSystem fileSystem;
 
-    private Set<InputFile> buffer;
+    private Set<InputFile> inputFileBuffer;
     private FlagDataTypeConfig flagDataTypeConfig;
     private List<Stream<InputFile>> inputFileStreams = null;
     private Iterator<InputFile> inputFileSource;
@@ -63,10 +65,10 @@ public class SimpleFlagDistributor implements FlagDistributor {
         fillBuffer();
 
         if (mustHaveMax) {
-            LOG.trace("mustHaveMax = true, buffer.size() = {}, flagDataTypeConfig.getMaxFlags() = {}", buffer.size(), flagDataTypeConfig.getMaxFlags());
-            return buffer.size() >= flagDataTypeConfig.getMaxFlags();
+            LOG.trace("mustHaveMax = true, buffer.size() = {}, flagDataTypeConfig.getMaxFlags() = {}", inputFileBuffer.size(), flagDataTypeConfig.getMaxFlags());
+            return inputFileBuffer.size() >= flagDataTypeConfig.getMaxFlags();
         } else {
-            LOG.trace("mustHaveMax = false, buffer size = {}", (buffer == null ? "null" : buffer.size()));
+            LOG.trace("mustHaveMax = false, buffer size = {}", (inputFileBuffer == null ? "null" : inputFileBuffer.size()));
             return !isBufferEmpty();
         }
     }
@@ -77,48 +79,59 @@ public class SimpleFlagDistributor implements FlagDistributor {
 
         fillBuffer();
 
-        int size = buffer.size();
+        int size = inputFileBuffer.size();
         if (size == 0) {
             return Collections.emptySet();
         }
-        // Assumes that hasNext(false) returned true
+        // Even though hasNext takes a parameter for mustHaveMax, next does not have that parameter
+        // next assumes that mustHaveMax is false
         if (size < flagDataTypeConfig.getMaxFlags()) {
             return returnEntireBuffer();
         } else {
-            Collection<InputFile> list = new HashSet<>();
-            int cumulativeBlocksNeeded = 0;
-            Iterator<InputFile> it = buffer.iterator();
-            // while we have more potential files, and we have potentially room to add one
-            while (it.hasNext() && (cumulativeBlocksNeeded < flagDataTypeConfig.getMaxFlags())) {
-                InputFile inFile = it.next();
-
-                int estimatedBlocksForFile = inFile.getMaps();
-                if (estimatedBlocksForFile > flagDataTypeConfig.getMaxFlags()) {
-                    LOG.warn("Estimated map cumulativeBlocksNeeded ({}) for file exceeds maxFlags ({}). Consider increasing maxFlags to accommodate larger files, or split this file into smaller chunks. File: {}",
-                                    estimatedBlocksForFile, flagDataTypeConfig.getMaxFlags(), inFile.getFileName());
-                }
-
-                // update the cumulativeBlocksNeeded, and break out if this file would pass our threshold
-                cumulativeBlocksNeeded += estimatedBlocksForFile;
-                if (cumulativeBlocksNeeded > flagDataTypeConfig.getMaxFlags()) {
-                    break;
-                }
-
-                // add it to the list
-                list.add(inFile);
-
-                // if valid (or only one file in the list), then continue normally
-                if (validator.isValidSize(flagDataTypeConfig, list) || (list.size() == 1)) {
-                    it.remove();
-                } else {
-                    // else remove the file back out and abort
-                    list.remove(inFile);
-
-                    break;
-                }
-            }
-            return list;
+            return returnBufferUpToLimits(validator);
         }
+    }
+
+    private Collection<InputFile> returnBufferUpToLimits(SizeValidator validator) {
+        Collection<InputFile> result = new HashSet<>();
+
+        int cumulativeBlocks = 0;
+        Iterator<InputFile> bufferIterator = inputFileBuffer.iterator();
+
+        // while we have more potential files, and we have potentially room to add one
+        while (bufferIterator.hasNext() && (cumulativeBlocks < flagDataTypeConfig.getMaxFlags())) {
+            InputFile inFile = bufferIterator.next();
+
+            cumulativeBlocks += getEstimatedBlocksForFile(inFile);
+            if (cumulativeBlocks > flagDataTypeConfig.getMaxFlags()) {
+                // this input file would put flag file past its threshold
+                return result;
+            }
+
+            // add to result
+            result.add(inFile);
+
+            // Remove inFile from the buffer as long as the result size is valid or one
+            if (result.size() == 1) {
+                bufferIterator.remove();
+            } else if (validator.isValidSize(flagDataTypeConfig, result)) {
+                bufferIterator.remove();
+            } else {
+                // if invalid size, undo the addition
+                result.remove(inFile);
+                return result;
+            }
+        }
+        return result;
+    }
+
+    private int getEstimatedBlocksForFile(InputFile inFile) {
+        int estimatedBlocksForFile = inFile.getMaps();
+        if (estimatedBlocksForFile > flagDataTypeConfig.getMaxFlags()) {
+            LOG.warn("Estimated map cumulativeBlocksNeeded ({}) for file exceeds maxFlags ({}). Consider increasing maxFlags to accommodate larger files, or split this file into smaller chunks. File: {}",
+                            estimatedBlocksForFile, flagDataTypeConfig.getMaxFlags(), inFile.getFileName());
+        }
+        return estimatedBlocksForFile;
     }
 
     /**
@@ -153,7 +166,7 @@ public class SimpleFlagDistributor implements FlagDistributor {
      * Ensures all remote iterators and buffered entries are cleared
      */
     private void clearState() {
-        this.buffer = new TreeSet<>(this.flagDataTypeConfig.isLifo() ? InputFile.LIFO : InputFile.FIFO);
+        this.inputFileBuffer = new TreeSet<>(this.flagDataTypeConfig.isLifo() ? InputFile.LIFO : InputFile.FIFO);
         this.inputFileStreams = new ArrayList<>();
         this.inputFileSource = null;
     }
@@ -164,11 +177,9 @@ public class SimpleFlagDistributor implements FlagDistributor {
      * @throws IOException
      *             when a problem is encountered while accessing filesystem
      */
-    @VisibleForTesting
-    void registerInputFileIterator(String folder) throws IOException {
+    private void registerInputFileIterator(String folder) throws IOException {
         LOG.debug("Examining {}", folder);
 
-        // todo - test what happens if folder already has the base dir
         Path fullFolderPath = new Path(fileSystem.getWorkingDirectory(), new Path(folder));
         PathFilter filenamePatternFilter = new FullPathGlobFilter(gatherFilePatterns(folder));
 
@@ -265,7 +276,7 @@ public class SimpleFlagDistributor implements FlagDistributor {
     }
 
     private boolean isBufferEmpty() {
-        return buffer == null || buffer.size() == 0;
+        return inputFileBuffer == null || inputFileBuffer.size() == 0;
     }
 
     private boolean isSourceEmpty() {
@@ -276,23 +287,22 @@ public class SimpleFlagDistributor implements FlagDistributor {
      * Fill up buffer with InputFiles, up to size of FlagDataTypeConfig.maxFlags or until the source has nothing left.
      */
     private void fillBuffer() {
-        // fill inputs to the desired size
-        while (buffer.size() < flagDataTypeConfig.getMaxFlags() && null != this.inputFileSource && this.inputFileSource.hasNext()) {
+        while (inputFileBuffer.size() < flagDataTypeConfig.getMaxFlags() && null != this.inputFileSource && this.inputFileSource.hasNext()) {
             InputFile next = this.inputFileSource.next();
 
-            buffer.add(next);
+            inputFileBuffer.add(next);
         }
     }
 
     private void assertLoadFilesWasCalled() {
-        if (buffer == null) {
+        if (inputFileBuffer == null) {
             throw new IllegalStateException("loadFiles must be called");
         }
     }
 
     private Collection<InputFile> returnEntireBuffer() {
-        Collection<InputFile> result = new HashSet<>(buffer);
-        buffer.clear();
+        Collection<InputFile> result = new HashSet<>(inputFileBuffer);
+        inputFileBuffer.clear();
         return result;
     }
 

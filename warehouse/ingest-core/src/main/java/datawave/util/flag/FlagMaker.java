@@ -38,7 +38,7 @@ public class FlagMaker implements Runnable {
     private static final Logger LOG = LoggerFactory.getLogger(FlagMaker.class);
 
     private final FlagMakerConfig flagMakerConfig;
-    final FlagDistributor fd;
+    final FlagDistributor fileDistributor;
     private final FileSystem fs;
     private final SizeValidator sizeValidator;
     private volatile boolean running = true;
@@ -56,7 +56,7 @@ public class FlagMaker implements Runnable {
         this.flagMakerConfig.validate();
         LOG.info("Flag Maker Config (post-validate): {}", this.flagMakerConfig);
 
-        this.fd = createFlagDistributor(this.flagMakerConfig);
+        this.fileDistributor = createFlagDistributor(this.flagMakerConfig);
         this.sizeValidator = new SizeValidatorImpl(this.config, this.flagMakerConfig);
         this.flagFileWriter = new FlagFileWriter(this.flagMakerConfig);
         this.fs = FlagMakerConfigUtility.getHadoopFS(flagMakerConfig);
@@ -161,33 +161,19 @@ public class FlagMaker implements Runnable {
     protected void processFlags() throws IOException {
         LOG.trace("Querying for files on {}", fs.getUri().toString());
 
-        for (FlagDataTypeConfig fc : flagMakerConfig.getFlagConfigs()) {
-            loadFilesForDistributor(fc);
-            // todo - test what will happen if we load files for one directory, then add another source,
-            // then load files again. will we backtrack?
-            while (fd.hasNext(shouldOnlyCreateFullFlags(fc)) && running) {
-                Collection<InputFile> inFiles = fd.next(this.sizeValidator);
+        for (FlagDataTypeConfig flagDataTypeConfig : flagMakerConfig.getFlagConfigs()) {
+            fileDistributor.loadFiles(flagDataTypeConfig);
+            while (fileDistributor.hasNext(shouldOnlyCreateFullFlags(flagDataTypeConfig)) && running) {
+                Collection<InputFile> inFiles = fileDistributor.next(this.sizeValidator);
                 if (null == inFiles || inFiles.isEmpty()) {
                     throw new IllegalStateException(
-                                    fd.getClass().getName() + " has input files but returned zero candidates for flagging. Please validate configuration");
+                                    fileDistributor.getClass().getName() + " has input files but returned zero candidates for flagging. Please validate configuration");
                 }
 
-                flagFileWriter.writeFlagFile(fc, inFiles);
+                flagFileWriter.writeFlagFile(flagDataTypeConfig, inFiles);
             }
 
         }
-    }
-
-    /**
-     * Adds all input files for the data type to the {@link FlagDistributor}.
-     *
-     * @param fc
-     *            flag datatype configuration data
-     * @throws IOException
-     *             error condition finding files in hadoop
-     */
-    private void loadFilesForDistributor(FlagDataTypeConfig fc) throws IOException {
-        fd.loadFiles(fc);
     }
 
     private boolean shouldOnlyCreateFullFlags(FlagDataTypeConfig fc) {
@@ -229,7 +215,6 @@ public class FlagMaker implements Runnable {
         final MutableInt fileCounter = new MutableInt(0);
         final FileFilter fileFilter = new WildcardFileFilter("*_" + fc.getIngestPool() + "_" + fc.getDataName() + "_*.flag");
         final FileVisitor<java.nio.file.Path> visitor = new SimpleFileVisitor<>() {
-
             @Override
             public FileVisitResult visitFile(java.nio.file.Path path, BasicFileAttributes attrs) throws IOException {
                 if (fileFilter.accept(path.toFile())) {
@@ -241,7 +226,6 @@ public class FlagMaker implements Runnable {
         try {
             Files.walkFileTree(Paths.get(flagMakerConfig.getFlagFileDirectory()), visitor);
         } catch (IOException e) {
-            // unable to get a flag count....
             LOG.error("Unable to get flag file count", e);
             return -1;
         }
