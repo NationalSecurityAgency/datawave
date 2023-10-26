@@ -36,6 +36,7 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
 
 /**
@@ -121,21 +122,38 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 started = true;
             }
 
+            // ensure we start with a reasonable page time
+            resetPageProcessingStartTime();
+
             // the results queue is also an exception handler
             setUncaughtExceptionHandler(results);
             boolean success = false;
 
             try {
                 Object last = new Object();
-                if (this.getMaxResults() < 0)
+                if (this.getMaxResults() <= 0)
                     this.setMaxResults(Long.MAX_VALUE);
                 while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount < this.getMaxResults())) {
                     try {
                         last = transformIterator.next();
                         if (null != last) {
-                            log.debug(Thread.currentThread().getName() + ": Added object to results");
-                            results.add(last);
-                            resultCount++;
+                            log.debug(Thread.currentThread().getName() + ": Got result");
+
+                            // special logic to deal with intermediate results
+                            if (last instanceof EventBase && ((EventBase) last).isIntermediateResult()) {
+                                resetPageProcessingStartTime();
+                                // reset the page processing time to avoid getting spammed with these
+                                // let the RunningQuery handle timeouts for long-running queries
+                                if (isLongRunningQuery()) {
+                                    last = null;
+                                }
+                            }
+
+                            if (last != null) {
+                                results.add(last);
+                                resultCount++;
+                                log.debug(Thread.currentThread().getName() + ": Added result to queue");
+                            }
                         }
                     } catch (InterruptedException e) {
                         // if this was on purpose, then just log and the loop will naturally exit
@@ -147,7 +165,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                             throw new RuntimeException(e);
                         }
                     } catch (EmptyObjectException eoe) {
-                        // ignore
+                        // ignore these
                     }
                 }
                 success = true;
@@ -161,6 +179,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
 
+        public void resetPageProcessingStartTime() {
+            logic.setPageProcessingStartTime(System.currentTimeMillis());
+        }
     }
 
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
