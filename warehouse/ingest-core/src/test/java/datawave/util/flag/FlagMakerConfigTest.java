@@ -42,13 +42,39 @@ public class FlagMakerConfigTest {
     }
 
     @Test
-    public void addsDataTypeConfig() {
-        new FlagMakerConfig();
+    public void defaultFlagConfigsEmpty() {
+        FlagMakerConfig flagMakerConfig = new FlagMakerConfig();
+        assertEquals(0, flagMakerConfig.getFlagConfigs().size());
+    }
+
+    @Test
+    public void testDefaultToStringNotNull() {
+        assertNotNull(new FlagMakerConfig().toString());
     }
 
     @Test
     public void testDefaultsToString() {
-        assertNotNull(new FlagMakerConfig().toString());
+        String result = new FlagMakerConfig().toString();
+        assertTrue(result, result.contains("hdfs: hdfs://localhost:9000\n"));
+        assertTrue(result, result.contains("datawaveHome: null\n"));
+        assertTrue(result, result.contains("baseHDFSDir: /data/ShardIngest\n"));
+        assertTrue(result, result.contains("socketPort: 0\n"));
+        assertTrue(result, result.contains("flagFileDirectory: null\n"));
+        assertTrue(result, result.contains("filePatterns: [2*/*/*/*]\n"));
+        assertTrue(result, result.contains("timeoutMilliSecs: 300000\n"));
+        assertTrue(result, result.contains("sleepMilliSecs: 15000\n"));
+        assertTrue(result, result.contains("flagCountThreshold: -2147483648\n"));
+        assertTrue(result, result.contains("maxFileLength: 2147483647\n"));
+        assertTrue(result, result.contains("isSetFlagFileTimestamp: true\n"));
+        assertTrue(result, result.contains("useFolderTimestamp: false\n"));
+        assertTrue(result, result.contains("flagMetricsDirectory: /data/BulkIngest/FlagMakerMetrics\n"));
+        assertTrue(result, result.contains("maxHdfsThreads: 25\n"));
+        assertTrue(result, result.contains("directoryCacheSize: 2000\n"));
+        assertTrue(result, result.contains("directoryCacheTimeout: 7200000\n"));
+        assertTrue(result, result.contains("flagMakerClass: datawave.util.flag.FlagMaker\n"));
+        assertTrue(result, result.contains("flagDistributorClass: datawave.util.flag.processor.SimpleFlagDistributor\n"));
+        assertTrue(result, result.contains("defaultCfg: null\n"));
+        assertTrue(result, result.contains("flagCfg: []"));
     }
 
     @Test
@@ -91,33 +117,52 @@ public class FlagMakerConfigTest {
         FlagMakerConfigUtility.saveXmlObject(flagMakerConfig, reserializedFile);
         byte[] actualBytes = Files.readAllBytes(reserializedFile.toPath());
 
-        String expectedContents = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" + "<flagMakerConfig>\n" + "    <flagCfg>\n"
-                        + "        <dataName>foo</dataName>\n" + "        <distributionArgs>none</distributionArgs>\n"
-                        + "        <flagCountThreshold>-2147483648</flagCountThreshold>\n" + "        <folder>foo,bar</folder>\n"
-                        + "        <ingestPool>onehr</ingestPool>\n"
-                        + "        <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>\n"
-                        + "        <lifo>false</lifo>\n" + "        <maxFlags>0</maxFlags>\n" + "        <reducers>0</reducers>\n"
-                        + "        <timeoutMilliSecs>-2147483648</timeoutMilliSecs>\n" + "    </flagCfg>\n"
-                        + "    <filePattern>2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>\n"
-                        + "    <filePattern>2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>\n" + "    <baseHDFSDir>target/test/BulkIngest/</baseHDFSDir>\n" + // validate
-                                                                                                                                                             // adds
-                                                                                                                                                             // trailing
-                                                                                                                                                             // slash
-                        "    <datawaveHome>target/test</datawaveHome>\n" + "    <defaultCfg>\n" + "        <distributionArgs>none</distributionArgs>\n"
-                        + "        <flagCountThreshold>-2147483648</flagCountThreshold>\n"
-                        + "        <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>\n"
-                        + "        <lifo>false</lifo>\n" + "        <maxFlags>10</maxFlags>\n" + "        <reducers>10</reducers>\n"
-                        + "        <script>bin/ingest/bulk-ingest.sh</script>\n" + "        <timeoutMilliSecs>-2147483648</timeoutMilliSecs>\n"
-                        + "    </defaultCfg>\n" + "    <directoryCacheSize>2</directoryCacheSize>\n"
-                        + "    <directoryCacheTimeout>5000</directoryCacheTimeout>\n" + "    <flagCountThreshold>-2147483648</flagCountThreshold>\n"
-                        + "    <flagDistributorClass>datawave.util.flag.processor.SimpleFlagDistributor</flagDistributorClass>\n"
-                        + "    <flagFileDirectory>target/test/flags</flagFileDirectory>\n"
-                        + "    <flagMakerClass>datawave.util.flag.FlagMaker</flagMakerClass>\n"
-                        + "    <flagMetricsDirectory>target/flagMetrics</flagMetricsDirectory>\n" + "    <hdfs>file://target</hdfs>\n"
-                        + "    <maxFileLength>2147483647</maxFileLength>\n" + "    <maxHdfsThreads>1</maxHdfsThreads>\n"
-                        + "    <setFlagFileTimestamp>true</setFlagFileTimestamp>\n" + "    <sleepMilliSecs>15000</sleepMilliSecs>\n"
-                        + "    <socketPort>22222</socketPort>\n" + "    <timeoutMilliSecs>300000</timeoutMilliSecs>\n"
-                        + "    <useFolderTimestamp>false</useFolderTimestamp>\n" + "</flagMakerConfig>\n";
+        // @formatter:off
+        String expectedContents =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                        "<flagMakerConfig>\n" +
+                        "    <flagCfg>\n" +
+                        "        <dataName>foo</dataName>\n" +
+                        "        <distributionArgs>none</distributionArgs>\n" +
+                        "        <flagCountThreshold>-2147483648</flagCountThreshold>\n" +
+                        "        <folder>foo,bar</folder>\n" +
+                        "        <ingestPool>onehr</ingestPool>\n" +
+                        "        <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>\n" +
+                        "        <lifo>false</lifo>\n" +
+                        "        <maxFlags>0</maxFlags>\n" +
+                        "        <reducers>0</reducers>\n" +
+                        "        <timeoutMilliSecs>-2147483648</timeoutMilliSecs>\n" +
+                        "    </flagCfg>\n" +
+                        "    <filePattern>2*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>\n" +
+                        "    <filePattern>2*/*/*/*/[0-9a-zA-Z]*[0-9a-zA-Z]</filePattern>\n" +
+                        "    <baseHDFSDir>target/test/BulkIngest/</baseHDFSDir>\n" +
+                        "    <datawaveHome>target/test</datawaveHome>\n" +
+                        "    <defaultCfg>\n" +
+                        "        <distributionArgs>none</distributionArgs>\n" +
+                        "        <flagCountThreshold>-2147483648</flagCountThreshold>\n" +
+                        "        <inputFormat>datawave.ingest.input.reader.event.EventSequenceFileInputFormat</inputFormat>\n" +
+                        "        <lifo>false</lifo>\n" + "        <maxFlags>10</maxFlags>\n" +
+                        "        <reducers>10</reducers>\n" +
+                        "        <script>bin/ingest/bulk-ingest.sh</script>\n" +
+                        "        <timeoutMilliSecs>-2147483648</timeoutMilliSecs>\n" +
+                        "    </defaultCfg>\n" + "    <directoryCacheSize>2</directoryCacheSize>\n" +
+                        "    <directoryCacheTimeout>5000</directoryCacheTimeout>\n" +
+                        "    <flagCountThreshold>-2147483648</flagCountThreshold>\n" +
+                        "    <flagDistributorClass>datawave.util.flag.processor.SimpleFlagDistributor</flagDistributorClass>\n" +
+                        "    <flagFileDirectory>target/test/flags</flagFileDirectory>\n" +
+                        "    <flagMakerClass>datawave.util.flag.FlagMaker</flagMakerClass>\n" +
+                        "    <flagMetricsDirectory>target/flagMetrics</flagMetricsDirectory>\n" +
+                        "    <hdfs>file://target</hdfs>\n" +
+                        "    <maxFileLength>2147483647</maxFileLength>\n" +
+                        "    <maxHdfsThreads>1</maxHdfsThreads>\n" +
+                        "    <setFlagFileTimestamp>true</setFlagFileTimestamp>\n" +
+                        "    <sleepMilliSecs>15000</sleepMilliSecs>\n" +
+                        "    <socketPort>22222</socketPort>\n" +
+                        "    <timeoutMilliSecs>300000</timeoutMilliSecs>\n" +
+                        "    <useFolderTimestamp>false</useFolderTimestamp>\n" +
+                        "</flagMakerConfig>\n";
+        // @formatter:on
+
         Assert.assertArrayEquals(new String(actualBytes), expectedContents.getBytes(), actualBytes);
     }
 
@@ -130,24 +175,25 @@ public class FlagMakerConfigTest {
         assertFalse("Unexpected contents: " + serializedFlagMakerConfig, serializedFlagMakerConfig.contains("<last>"));
 
         // @formatter:off
-		String expectedContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-				+ "<flagMakerConfig>\n"
-				+ "    <baseHDFSDir>/data/ShardIngest</baseHDFSDir>\n"
-				+ "    <directoryCacheSize>2000</directoryCacheSize>\n"
-				+ "    <directoryCacheTimeout>7200000</directoryCacheTimeout>\n"
-				+ "    <flagCountThreshold>-2147483648</flagCountThreshold>\n"
-				+ "    <flagDistributorClass>datawave.util.flag.processor.SimpleFlagDistributor</flagDistributorClass>\n"
-				+ "    <flagMakerClass>datawave.util.flag.FlagMaker</flagMakerClass>\n"
-				+ "    <flagMetricsDirectory>/data/BulkIngest/FlagMakerMetrics</flagMetricsDirectory>\n"
-				+ "    <hdfs>hdfs://localhost:9000</hdfs>\n"
-				+ "    <maxFileLength>2147483647</maxFileLength>\n"
-				+ "    <maxHdfsThreads>25</maxHdfsThreads>\n"
-				+ "    <setFlagFileTimestamp>true</setFlagFileTimestamp>\n"
-				+ "    <sleepMilliSecs>15000</sleepMilliSecs>\n"
-				+ "    <socketPort>0</socketPort>\n"
-				+ "    <timeoutMilliSecs>300000</timeoutMilliSecs>\n"
-				+ "    <useFolderTimestamp>false</useFolderTimestamp>\n"
-				+ "</flagMakerConfig>\n";
+		String expectedContent =
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n" +
+                        "<flagMakerConfig>\n" +
+                        "    <baseHDFSDir>/data/ShardIngest</baseHDFSDir>\n" +
+                        "    <directoryCacheSize>2000</directoryCacheSize>\n" +
+                        "    <directoryCacheTimeout>7200000</directoryCacheTimeout>\n" +
+                        "    <flagCountThreshold>-2147483648</flagCountThreshold>\n" +
+                        "    <flagDistributorClass>datawave.util.flag.processor.SimpleFlagDistributor</flagDistributorClass>\n" +
+                        "    <flagMakerClass>datawave.util.flag.FlagMaker</flagMakerClass>\n" +
+                        "    <flagMetricsDirectory>/data/BulkIngest/FlagMakerMetrics</flagMetricsDirectory>\n" +
+                        "    <hdfs>hdfs://localhost:9000</hdfs>\n" +
+                        "    <maxFileLength>2147483647</maxFileLength>\n" +
+                        "    <maxHdfsThreads>25</maxHdfsThreads>\n" +
+                        "    <setFlagFileTimestamp>true</setFlagFileTimestamp>\n" +
+                        "    <sleepMilliSecs>15000</sleepMilliSecs>\n" +
+                        "    <socketPort>0</socketPort>\n" +
+                        "    <timeoutMilliSecs>300000</timeoutMilliSecs>\n" +
+                        "    <useFolderTimestamp>false</useFolderTimestamp>\n" +
+                        "</flagMakerConfig>\n";
 		// @formatter:on
         assertEquals("Unexpected contents: " + serializedFlagMakerConfig, expectedContent, serializedFlagMakerConfig);
     }
@@ -160,15 +206,25 @@ public class FlagMakerConfigTest {
 
     @Test
     public void nowIgnoresDistributorType() throws IOException {
-        String flagMakerConfigStr = "<flagMakerConfig>\n" + "<distributorType>simple</distributorType>\n" + "</flagMakerConfig>";
+        // @formatter:off
+        String flagMakerConfigStr =
+                "<flagMakerConfig>\n" +
+                "<distributorType>simple</distributorType>\n" +
+                "</flagMakerConfig>";
+        // @formatter:on
+
         FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility.getXmlObject(FlagMakerConfig.class, new StringReader(flagMakerConfigStr));
         assertEquals(new FlagMakerConfig(), flagMakerConfig);
     }
 
     @Test
     public void supportsDifferentDistributorClassNames() throws IOException {
-        String flagMakerConfigStr = "<flagMakerConfig>\n" + "<flagDistributorClass>" + FlagMakerConfigTest.NoOpFlagDistributor.class.getName()
-                        + "</flagDistributorClass>\n" + "</flagMakerConfig>";
+        // @formatter:off
+        String flagMakerConfigStr =
+                "<flagMakerConfig><flagDistributorClass>" +
+                FlagMakerConfigTest.NoOpFlagDistributor.class.getName() +
+                "</flagDistributorClass></flagMakerConfig>";
+        // @formatter:on
         FlagMakerConfig flagMakerConfig = FlagMakerConfigUtility.getXmlObject(FlagMakerConfig.class, new StringReader(flagMakerConfigStr));
         FlagMakerConfig expectedConfig = new FlagMakerConfig();
         expectedConfig.setFlagDistributorClass(FlagMakerConfigTest.NoOpFlagDistributor.class.getName());
@@ -512,7 +568,6 @@ public class FlagMakerConfigTest {
 
         @Override
         public void loadFiles(FlagDataTypeConfig fc) {
-
         }
 
         @Override

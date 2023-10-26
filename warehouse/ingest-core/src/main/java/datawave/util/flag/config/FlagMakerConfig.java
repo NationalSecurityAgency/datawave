@@ -10,7 +10,6 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
 import datawave.util.flag.FlagMaker;
-import datawave.util.flag.processor.DateUtils;
 import datawave.util.flag.processor.SimpleFlagDistributor;
 import lombok.AccessLevel;
 import lombok.Data;
