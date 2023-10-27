@@ -35,6 +35,6 @@ public class TLDEquality implements Equality {
                 return true;
             }
         }
-        return true;
+        return len != 0;
     }
 }

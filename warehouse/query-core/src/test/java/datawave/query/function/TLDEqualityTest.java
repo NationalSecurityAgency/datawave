@@ -61,4 +61,15 @@ class TLDEqualityTest {
         assertFalse(equality.partOf(keyChildTwo, otherKeyChildOne));
         assertFalse(equality.partOf(otherKeyChildOne, keyChildTwo));
     }
+
+    @Test
+    void testEdgeCases() {
+        assertFalse(equality.partOf(key, new Key("", "")));
+        assertFalse(equality.partOf(new Key("", ""), key));
+
+        // in practice this should never happen
+        Key malformedUid = new Key("row", "datatype\0-7m7uk9.oz9qpy.-");
+        assertTrue(equality.partOf(key, malformedUid));
+        assertTrue(equality.partOf(malformedUid, key));
+    }
 }
