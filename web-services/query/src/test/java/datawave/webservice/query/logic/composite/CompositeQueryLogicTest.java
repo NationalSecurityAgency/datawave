@@ -392,7 +392,7 @@ public class CompositeQueryLogicTest {
         public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             return new TestQueryConfiguration();
         }
-
+        
         @Override
         public boolean isLongRunningQuery() {
             return true;
@@ -1427,20 +1427,20 @@ public class CompositeQueryLogicTest {
         TestQueryLogic logic2 = new TestQueryLogic();
         logics.put("TestQueryLogic", logic1);
         logics.put("TestQueryLogic2", logic2);
-
+        
         CompositeQueryLogic c = new CompositeQueryLogic();
         c.setQueryLogics(logics);
-
+        
         Assert.assertFalse(c.isLongRunningQuery());
-
+        
         TestQueryLogic2 logic3 = new TestQueryLogic2();
         logics.put("TestQueryLogic3", logic3);
-
+        
         c.setQueryLogics(logics);
-
+        
         Assert.assertTrue(c.isLongRunningQuery());
     }
-
+    
     @Test
     public void testAuthorizationsUpdate() throws Exception {
         Map<String,QueryLogic<?>> logics = new HashMap<>();
