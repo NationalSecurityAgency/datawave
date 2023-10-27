@@ -88,11 +88,11 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
 
     @Override
     public void initialize() {
-        if (null == currentNest) {
-            popNextNest();
-        } else
-            currentNest.initialize();
-
+        // if (null == currentNest) {
+        // popNextNest();
+        // } else {
+        // currentNest.initialize();
+        // }
     }
 
     @Override

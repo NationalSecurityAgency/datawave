@@ -584,17 +584,18 @@ public class AndIterator<T extends Comparable<T>> implements SeekableIterator, N
         // 3. Move context include sources
         moveContextIncludeSources(minimum);
 
-        // TODO -- need to check source return type (leaf vs. junction) to get the real answer
-        if (contextIncludeHeads.keySet().size() == 1) {
-            T top = contextIncludeHeads.keySet().iterator().next();
-            if (!top.equals(minimum)) {
-                // should not be possible to return a 'next higher' element
-                throw new IllegalStateException("top did not match minimum for AndIterator context include");
+        // if ANY junction expired, then we did not match
+        for (NestedIterator<T> source : expiredContextIncludes) {
+            if (!Util.isLeaf(source)) {
+                return null;
             }
-            return top;
-        } else {
-            return null;
         }
+
+        if (contextIncludeHeads.keySet().size() == 1 && contextIncludeHeads.containsKey(minimum)) {
+            return minimum;
+        }
+
+        return null;
     }
 
     private boolean isContextIncludesInitialized() {
@@ -668,20 +669,18 @@ public class AndIterator<T extends Comparable<T>> implements SeekableIterator, N
                             + expiredContextExcludes.size());
         }
 
-        // TODO -- need to check source return type (leaf vs. junction) to get the real answer
-        if (contextExcludeHeads.keySet().size() == 1) {
-            if (contextExcludeHeads.keySet().contains(minimum)) {
-                return minimum;
-            } else {
+        // if ANY junction expired, then we did not match
+        for (NestedIterator<T> source : expiredContextExcludes) {
+            if (!Util.isLeaf(source)) {
                 return null;
             }
         }
 
-        if (!expiredContextExcludes.isEmpty()) {
-            return null;
-        } else {
+        if (contextExcludeHeads.keySet().size() == 1 && contextExcludeHeads.keySet().contains(minimum)) {
             return minimum;
         }
+
+        return null;
     }
 
     private boolean isContextExcludesInitialized() {

@@ -30,7 +30,6 @@ import org.apache.commons.jexl2.parser.ASTEQNode;
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.commons.jexl2.parser.ParseException;
 import org.apache.log4j.Logger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Sets;
@@ -56,7 +55,7 @@ class AndIteratorIT {
     // first five, odd
     private final SortedSet<String> uidsB = new TreeSet<>(Arrays.asList("a", "c", "e", "g", "i"));
 
-    private final Set<String> fields = Sets.newHashSet("FIELD_A", "FIELD_B", "FIELD_C", "CONTEXT");
+    private final Set<String> fields = Sets.newHashSet("FIELD_A", "FIELD_B", "FIELD_C", "FIELD_D", "FIELD_E", "CONTEXT");
 
     private final int max = 100;
     private final Random random = new Random();
@@ -456,6 +455,51 @@ class AndIteratorIT {
         driveIntersectionWithContextIncludes(query, uidsA, uidsB, uidsC); // expected [5, 9]
     }
 
+    // multiple context includes
+    // A && (B || !C) && (D || !E)
+    @Test
+    void testIntersectionWithMultipleContextIncludes() {
+        String query = "FIELD_A == 'value' && (FIELD_B == 'value' || !(FIELD_C == 'value')) && (FIELD_D == 'value' || !(FIELD_E == 'value'))";
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 15);
+            SortedSet<String> uidsB = randomUids(100, 15);
+            SortedSet<String> uidsC = randomUids(100, 15);
+            SortedSet<String> uidsD = randomUids(100, 15);
+            SortedSet<String> uidsE = randomUids(100, 15);
+            driveIntersectionWithMultipleContextIncludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 75);
+            SortedSet<String> uidsB = randomUids(100, 75);
+            SortedSet<String> uidsC = randomUids(100, 75);
+            SortedSet<String> uidsD = randomUids(100, 75);
+            SortedSet<String> uidsE = randomUids(100, 75);
+            driveIntersectionWithMultipleContextIncludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsB = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsC = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsD = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsE = randomUids(100, random.nextInt(100));
+            driveIntersectionWithMultipleContextIncludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+    }
+
+    // A && (B || !C) && (D || !E)
+    @Test
+    void testIntersectionWithMultipleContextIncludes_case01() {
+        String query = "FIELD_A == 'value' && (FIELD_B == 'value' || !(FIELD_C == 'value')) && (FIELD_D == 'value' || !(FIELD_E == 'value'))";
+        SortedSet<String> uidsA = new TreeSet<>(List.of("5", "6", "8"));
+        SortedSet<String> uidsB = new TreeSet<>(List.of("2", "4", "7"));
+        SortedSet<String> uidsC = new TreeSet<>(List.of("7", "8", "9"));
+        SortedSet<String> uidsD = new TreeSet<>(List.of("3", "4", "5"));
+        SortedSet<String> uidsE = new TreeSet<>(List.of("6", "8", "9"));
+        driveIntersectionWithMultipleContextIncludes(query, uidsA, uidsB, uidsC, uidsD, uidsE); // expected [5]
+    }
+
     // with context excludes
     // (A && (!B || !C))
     @Test
@@ -494,30 +538,112 @@ class AndIteratorIT {
     }
 
     // with both context includes and context excludes
-    // A && (B || !C) || !(D || E)
-    @Disabled
+    // A && (B || !C) && (!D || !E)
     @Test
     void testIntersectionWithContextIncludesAndContextExcludes() {
-        fail("test not implemented yet");
+        String query = "FIELD_A == 'value' && (FIELD_B == 'value' || !(FIELD_C == 'value')) && (!(FIELD_D == 'value') || !(FIELD_E == 'value'))";
         for (int i = 0; i < max; i++) {
-            SortedSet<String> uidsA = randomUids(100, 5);
-            SortedSet<String> uidsB = randomUids(100, 10);
+            SortedSet<String> uidsA = randomUids(100, 15);
+            SortedSet<String> uidsB = randomUids(100, 15);
             SortedSet<String> uidsC = randomUids(100, 15);
-            // driveIntersection(uidsA, uidsB, uidsC);
+            SortedSet<String> uidsD = randomUids(100, 15);
+            SortedSet<String> uidsE = randomUids(100, 15);
+            driveIntersectionWithContextIncludesAndContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
         }
 
         for (int i = 0; i < max; i++) {
-            SortedSet<String> uidsA = randomUids(100, 50);
+            SortedSet<String> uidsA = randomUids(100, 75);
             SortedSet<String> uidsB = randomUids(100, 75);
-            SortedSet<String> uidsC = randomUids(100, 85);
-            // driveIntersection(uidsA, uidsB, uidsC);
+            SortedSet<String> uidsC = randomUids(100, 75);
+            SortedSet<String> uidsD = randomUids(100, 75);
+            SortedSet<String> uidsE = randomUids(100, 75);
+            driveIntersectionWithContextIncludesAndContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
         }
 
         for (int i = 0; i < max; i++) {
             SortedSet<String> uidsA = randomUids(100, random.nextInt(100));
             SortedSet<String> uidsB = randomUids(100, random.nextInt(100));
             SortedSet<String> uidsC = randomUids(100, random.nextInt(100));
-            // driveIntersection(uidsA, uidsB, uidsC);
+            SortedSet<String> uidsD = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsE = randomUids(100, random.nextInt(100));
+            driveIntersectionWithContextIncludesAndContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+    }
+
+    // with multiple context excludes that are junctions
+    // A && (!B || !C) && (!D || !E)
+    @Test
+    void testIntersectionWithContextContextExcludes() {
+        String query = "FIELD_A == 'value' && (!(FIELD_B == 'value') || !(FIELD_C == 'value')) && (!(FIELD_D == 'value') || !(FIELD_E == 'value'))";
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 15);
+            SortedSet<String> uidsB = randomUids(100, 15);
+            SortedSet<String> uidsC = randomUids(100, 15);
+            SortedSet<String> uidsD = randomUids(100, 15);
+            SortedSet<String> uidsE = randomUids(100, 15);
+            driveIntersectionWithMultipleContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 75);
+            SortedSet<String> uidsB = randomUids(100, 75);
+            SortedSet<String> uidsC = randomUids(100, 75);
+            SortedSet<String> uidsD = randomUids(100, 75);
+            SortedSet<String> uidsE = randomUids(100, 75);
+            driveIntersectionWithMultipleContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsB = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsC = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsD = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsE = randomUids(100, random.nextInt(100));
+            driveIntersectionWithMultipleContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+    }
+
+    @Test
+    void testIntersectionWithContextContextExcludes_case01() {
+        String query = "FIELD_A == 'value' && (!(FIELD_B == 'value') || !(FIELD_C == 'value')) && (!(FIELD_D == 'value') || !(FIELD_E == 'value'))";
+        SortedSet<String> uidsA = new TreeSet<>(List.of("1", "4", "5"));
+        SortedSet<String> uidsB = new TreeSet<>(List.of("4", "7", "8"));
+        SortedSet<String> uidsC = new TreeSet<>(List.of("1", "2", "4"));
+        SortedSet<String> uidsD = new TreeSet<>(List.of("1", "2", "9"));
+        SortedSet<String> uidsE = new TreeSet<>(List.of("3", "4", "5"));
+        driveIntersectionWithMultipleContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE); // expected [1, 5]
+    }
+
+    // with multiple context excludes, both junctions and leaves
+    // A && (!B || !C) && !D && !E
+    @Test
+    void testIntersectionWithMultipleMixedContextExcludes() {
+        String query = "FIELD_A == 'value' && (!(FIELD_B == 'value') || !(FIELD_C == 'value')) && !(FIELD_D == 'value') && !(FIELD_E == 'value')";
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 15);
+            SortedSet<String> uidsB = randomUids(100, 15);
+            SortedSet<String> uidsC = randomUids(100, 15);
+            SortedSet<String> uidsD = randomUids(100, 15);
+            SortedSet<String> uidsE = randomUids(100, 15);
+            driveIntersectionWithMultipleMixedContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 75);
+            SortedSet<String> uidsB = randomUids(100, 75);
+            SortedSet<String> uidsC = randomUids(100, 75);
+            SortedSet<String> uidsD = randomUids(100, 75);
+            SortedSet<String> uidsE = randomUids(100, 75);
+            driveIntersectionWithMultipleMixedContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsB = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsC = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsD = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsE = randomUids(100, random.nextInt(100));
+            driveIntersectionWithMultipleMixedContextExcludes(query, uidsA, uidsB, uidsC, uidsD, uidsE);
         }
     }
 
@@ -659,6 +785,47 @@ class AndIteratorIT {
         TestUtil.driveIterator(iterator, expected, counts);
     }
 
+    // (A && (B || !C) && (D || !E))
+    private void driveIntersectionWithMultipleContextIncludes(String query, SortedSet<String> uidsA, SortedSet<String> uidsB, SortedSet<String> uidsC,
+                    SortedSet<String> uidsD, SortedSet<String> uidsE) {
+        IteratorBuildingVisitorForTests visitor = getIteratorBuildingVisitor();
+        visitor.putFieldUids("FIELD_A", uidsA);
+        visitor.putFieldUids("FIELD_B", uidsB);
+        visitor.putFieldUids("FIELD_C", uidsC);
+        visitor.putFieldUids("FIELD_D", uidsD);
+        visitor.putFieldUids("FIELD_E", uidsE);
+
+        NestedIterator<Key> iterator = visitor.getIterator(query);
+
+        SortedSet<String> expected = new TreeSet<>();
+        SortedSet<String> expectedB = new TreeSet<>();
+        SortedSet<String> expectedD = new TreeSet<>();
+        for (String uid : uidsA) {
+            if ((uidsB.contains(uid) || !uidsC.contains(uid)) && (uidsD.contains(uid) || !uidsE.contains(uid))) {
+                if (uidsB.contains(uid)) {
+                    expectedB.add(uid);
+                }
+                if (uidsD.contains(uid)) {
+                    expectedD.add(uid);
+                }
+                expected.add(uid);
+            }
+        }
+
+        Map<String,Set<String>> counts = new HashMap<>();
+        if (!expected.isEmpty()) {
+            counts.put("FIELD_A", expected);
+        }
+        if (!expectedB.isEmpty()) {
+            counts.put("FIELD_B", expectedB);
+        }
+        if (!expectedD.isEmpty()) {
+            counts.put("FIELD_D", expectedD);
+        }
+
+        TestUtil.driveIterator(iterator, expected, counts);
+    }
+
     // (A && (!B || !C))
     private void driveIntersectionWithContextExcludes(String query, SortedSet<String> uidsA, SortedSet<String> uidsB, SortedSet<String> uidsC) {
         IteratorBuildingVisitorForTests visitor = getIteratorBuildingVisitor();
@@ -671,6 +838,94 @@ class AndIteratorIT {
         SortedSet<String> expected = new TreeSet<>();
         for (String uid : uidsA) {
             if (!uidsB.contains(uid) || !uidsC.contains(uid)) {
+                expected.add(uid);
+            }
+        }
+
+        Map<String,Set<String>> counts = new HashMap<>();
+        if (!expected.isEmpty()) {
+            counts.put("FIELD_A", expected);
+        }
+
+        TestUtil.driveIterator(iterator, expected, counts);
+    }
+
+    // (A && (B || !C) && (!D || !E))
+    private void driveIntersectionWithContextIncludesAndContextExcludes(String query, SortedSet<String> uidsA, SortedSet<String> uidsB, SortedSet<String> uidsC,
+                    SortedSet<String> uidsD, SortedSet<String> uidsE) {
+        IteratorBuildingVisitorForTests visitor = getIteratorBuildingVisitor();
+        visitor.putFieldUids("FIELD_A", uidsA);
+        visitor.putFieldUids("FIELD_B", uidsB);
+        visitor.putFieldUids("FIELD_C", uidsC);
+        visitor.putFieldUids("FIELD_D", uidsD);
+        visitor.putFieldUids("FIELD_E", uidsE);
+
+        NestedIterator<Key> iterator = visitor.getIterator(query);
+
+        SortedSet<String> expected = new TreeSet<>();
+        SortedSet<String> expectedB = new TreeSet<>();
+        for (String uid : uidsA) {
+            if ((uidsB.contains(uid) || !uidsC.contains(uid)) && (!uidsD.contains(uid) || !uidsE.contains(uid))) {
+                if (uidsB.contains(uid)) {
+                    expectedB.add(uid);
+                }
+                expected.add(uid);
+            }
+        }
+
+        Map<String,Set<String>> counts = new HashMap<>();
+        if (!expected.isEmpty()) {
+            counts.put("FIELD_A", expected);
+        }
+        if (!expectedB.isEmpty()) {
+            counts.put("FIELD_B", expectedB);
+        }
+
+        TestUtil.driveIterator(iterator, expected, counts);
+    }
+
+    // (A && (!B || !C) && (!D || !E))
+    private void driveIntersectionWithMultipleContextExcludes(String query, SortedSet<String> uidsA, SortedSet<String> uidsB, SortedSet<String> uidsC,
+                    SortedSet<String> uidsD, SortedSet<String> uidsE) {
+        IteratorBuildingVisitorForTests visitor = getIteratorBuildingVisitor();
+        visitor.putFieldUids("FIELD_A", uidsA);
+        visitor.putFieldUids("FIELD_B", uidsB);
+        visitor.putFieldUids("FIELD_C", uidsC);
+        visitor.putFieldUids("FIELD_D", uidsD);
+        visitor.putFieldUids("FIELD_E", uidsE);
+
+        NestedIterator<Key> iterator = visitor.getIterator(query);
+
+        SortedSet<String> expected = new TreeSet<>();
+        for (String uid : uidsA) {
+            if ((!uidsB.contains(uid) || !uidsC.contains(uid)) && (!uidsD.contains(uid) || !uidsE.contains(uid))) {
+                expected.add(uid);
+            }
+        }
+
+        Map<String,Set<String>> counts = new HashMap<>();
+        if (!expected.isEmpty()) {
+            counts.put("FIELD_A", expected);
+        }
+
+        TestUtil.driveIterator(iterator, expected, counts);
+    }
+
+    // (A && (!B || !C) && !D && !E)
+    private void driveIntersectionWithMultipleMixedContextExcludes(String query, SortedSet<String> uidsA, SortedSet<String> uidsB, SortedSet<String> uidsC,
+                    SortedSet<String> uidsD, SortedSet<String> uidsE) {
+        IteratorBuildingVisitorForTests visitor = getIteratorBuildingVisitor();
+        visitor.putFieldUids("FIELD_A", uidsA);
+        visitor.putFieldUids("FIELD_B", uidsB);
+        visitor.putFieldUids("FIELD_C", uidsC);
+        visitor.putFieldUids("FIELD_D", uidsD);
+        visitor.putFieldUids("FIELD_E", uidsE);
+
+        NestedIterator<Key> iterator = visitor.getIterator(query);
+
+        SortedSet<String> expected = new TreeSet<>();
+        for (String uid : uidsA) {
+            if ((!uidsB.contains(uid) || !uidsC.contains(uid)) && !uidsD.contains(uid) && !uidsE.contains(uid)) {
                 expected.add(uid);
             }
         }
