@@ -392,6 +392,11 @@ public class CompositeQueryLogicTest {
         public GenericQueryConfiguration initialize(Connector connection, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
             return new TestQueryConfiguration();
         }
+        
+        @Override
+        public boolean isLongRunningQuery() {
+            return true;
+        }
     }
     
     public static class DifferentTestQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
@@ -1134,7 +1139,7 @@ public class CompositeQueryLogicTest {
         
         CompositeQueryLogic c = new CompositeQueryLogic();
         // max.results.override is set to -1 when it is not passed in as it is an optional parameter
-        logic1.setMaxResults(0);
+        logic1.setMaxResults(1);
         logic2.setMaxResults(4);
         /**
          * RunningQuery.setupConnection()
@@ -1156,14 +1161,14 @@ public class CompositeQueryLogicTest {
             Assert.assertTrue(o instanceof TestQueryResponse);
             results.add((TestQueryResponse) o);
         }
-        Assert.assertEquals(4, results.size());
+        Assert.assertEquals(5, results.size());
         ResultsPage page = new ResultsPage(results, Status.COMPLETE);
         
         /**
          * QueryExecutorBean.next() - transform list of objects into JAXB response
          */
         TestQueryResponseList response = (TestQueryResponseList) c.getEnrichedTransformer((Query) settings).createResponse(page);
-        Assert.assertEquals(4, response.getResponses().size());
+        Assert.assertEquals(5, response.getResponses().size());
         for (TestQueryResponse r : response.getResponses()) {
             Assert.assertNotNull(r);
         }
@@ -1413,6 +1418,27 @@ public class CompositeQueryLogicTest {
         Assert.assertFalse(c.canRunQuery(p));
         Assert.assertEquals(0, c.getQueryLogics().size());
         
+    }
+    
+    @Test
+    public void testIsLongRunningQuery() throws Exception {
+        Map<String,QueryLogic<?>> logics = new HashMap<>();
+        TestQueryLogic logic1 = new TestQueryLogic();
+        TestQueryLogic logic2 = new TestQueryLogic();
+        logics.put("TestQueryLogic", logic1);
+        logics.put("TestQueryLogic2", logic2);
+        
+        CompositeQueryLogic c = new CompositeQueryLogic();
+        c.setQueryLogics(logics);
+        
+        Assert.assertFalse(c.isLongRunningQuery());
+        
+        TestQueryLogic2 logic3 = new TestQueryLogic2();
+        logics.put("TestQueryLogic3", logic3);
+        
+        c.setQueryLogics(logics);
+        
+        Assert.assertTrue(c.isLongRunningQuery());
     }
     
     @Test

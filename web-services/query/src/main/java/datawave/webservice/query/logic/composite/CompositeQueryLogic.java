@@ -14,6 +14,7 @@ import datawave.webservice.query.exception.EmptyObjectException;
 import datawave.webservice.query.logic.BaseQueryLogic;
 import datawave.webservice.query.logic.QueryLogic;
 import datawave.webservice.query.logic.QueryLogicTransformer;
+import datawave.webservice.query.result.event.EventBase;
 import datawave.webservice.result.BaseResponse;
 import org.apache.accumulo.core.client.Connector;
 import org.apache.accumulo.core.security.Authorizations;
@@ -119,20 +120,38 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 started = true;
             }
             
+            // ensure we start with a reasonable page time
+            resetPageProcessingStartTime();
+            
             // the results queue is also an exception handler
             setUncaughtExceptionHandler(results);
             boolean success = false;
             
             try {
                 Object last = new Object();
-                if (this.getMaxResults() < 0)
+                if (this.getMaxResults() <= 0)
                     this.setMaxResults(Long.MAX_VALUE);
                 while ((null != last) && !interrupted && transformIterator.hasNext() && (resultCount < this.getMaxResults())) {
                     try {
                         last = transformIterator.next();
                         if (null != last) {
-                            log.debug(Thread.currentThread().getName() + ": Added object to results");
-                            results.add(last);
+                            log.debug(Thread.currentThread().getName() + ": Got result");
+                            
+                            // special logic to deal with intermediate results
+                            if (last instanceof EventBase && ((EventBase) last).isIntermediateResult()) {
+                                resetPageProcessingStartTime();
+                                // reset the page processing time to avoid getting spammed with these
+                                // let the RunningQuery handle timeouts for long-running queries
+                                if (isLongRunningQuery()) {
+                                    last = null;
+                                }
+                            }
+                            
+                            if (last != null) {
+                                results.add(last);
+                                resultCount++;
+                                log.debug(Thread.currentThread().getName() + ": Added result to queue");
+                            }
                         }
                     } catch (InterruptedException e) {
                         // if this was on purpose, then just log and the loop will naturally exit
@@ -144,10 +163,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                             throw new RuntimeException(e);
                         }
                     } catch (EmptyObjectException eoe) {
-                        // Adding an empty object exception to the results queue needs to be passed all the way out.
-                        results.add(eoe);
+                        // ignore these
                     }
-                    resultCount++;
                 }
                 success = true;
             } catch (Exception e) {
@@ -160,6 +177,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
         
+        public void resetPageProcessingStartTime() {
+            logic.setPageProcessingStartTime(System.currentTimeMillis());
+        }
     }
     
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
@@ -609,6 +629,16 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         for (QueryLogic<?> logic : getQueryLogics().values()) {
             logic.setPageProcessingStartTime(pageProcessingStartTime);
         }
+    }
+    
+    @Override
+    public boolean isLongRunningQuery() {
+        for (QueryLogic<?> l : getQueryLogics().values()) {
+            if (l.isLongRunningQuery()) {
+                return true;
+            }
+        }
+        return false;
     }
     
     public boolean isAllMustInitialize() {

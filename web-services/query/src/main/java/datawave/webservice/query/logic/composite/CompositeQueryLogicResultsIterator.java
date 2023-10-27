@@ -1,13 +1,14 @@
 package datawave.webservice.query.logic.composite;
 
-import com.google.common.base.Throwables;
-import datawave.webservice.query.configuration.GenericQueryConfiguration;
-import datawave.webservice.query.exception.EmptyObjectException;
-import org.apache.log4j.Logger;
-
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.log4j.Logger;
+
+import com.google.common.base.Throwables;
+
+import datawave.webservice.query.configuration.GenericQueryConfiguration;
 
 public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thread.UncaughtExceptionHandler {
     
@@ -65,9 +66,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
             }
         }
         if (nextEntry != null) {
-            if (!(nextEntry instanceof EmptyObjectException)) {
-                seenEntries = true;
-            }
+            seenEntries = true;
             return true;
         }
         return false;
@@ -85,9 +84,6 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                 current = nextEntry;
                 nextEntry = null;
             }
-        }
-        if (current instanceof EmptyObjectException) {
-            throw new EmptyObjectException();
         }
         return current;
     }
