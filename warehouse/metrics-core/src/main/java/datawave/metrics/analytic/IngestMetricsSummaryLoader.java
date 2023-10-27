@@ -187,17 +187,16 @@ public class IngestMetricsSummaryLoader extends Configured implements Tool {
 
             Range r = new Range("jobId\0" + jobId);
             ingestScanner.setRange(r);
-            for (Map.Entry<Key,Value> entry : ingestScanner) {
-                try {
-                    counters.readFields(ByteStreams.newDataInput(entry.getValue().get()));
-                } catch (IOException e) {
-                    System.err.println("Error parsing counters for job " + jobId);
-                    e.printStackTrace(System.err); // Called from main
-                    // ignore for now -- bad counters so we'll just return partial/empty ones
-                }
-                processedJobs.add(jobId);
-                break;
+            Map.Entry<Key,Value> entry = ingestScanner.iterator().next();
+            try {
+                counters.readFields(ByteStreams.newDataInput(entry.getValue().get()));
+            } catch (IOException e) {
+                System.err.println("Error parsing counters for job " + jobId);
+                e.printStackTrace(System.err); // Called from main
+                // ignore for now -- bad counters so we'll just return partial/empty ones
             }
+            processedJobs.add(jobId);
+
             if (!processedJobs.contains(jobId)) {
                 System.err.println("Couldn't find ingest counters for job " + jobId);
                 processedJobs.add(jobId);

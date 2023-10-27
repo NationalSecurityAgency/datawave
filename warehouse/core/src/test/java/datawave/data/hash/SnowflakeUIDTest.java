@@ -61,7 +61,7 @@ public class SnowflakeUIDTest {
         assertTrue(uid.getProcessId() < 0);
         assertTrue(uid.getThreadId() < 0);
         assertTrue(uid.getTimestamp() < 0);
-        assertNotEquals(false, uid.hashCode());
+        assertNotEquals(0, uid.hashCode());
         assertEquals(SnowflakeUID.DEFAULT_RADIX, uid.getRadix());
         assertEquals("null", uid.getShardedPortion());
 
