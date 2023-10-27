@@ -1,5 +1,7 @@
 package datawave.query.ancestor;
 
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.getExpressionFilters;
+
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
@@ -28,6 +30,7 @@ import com.google.common.base.Predicates;
 
 import datawave.query.Constants;
 import datawave.query.attributes.Attribute;
+import datawave.query.attributes.AttributeFactory;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.function.AncestorEquality;
@@ -41,6 +44,7 @@ import datawave.query.iterator.SourcedOptions;
 import datawave.query.iterator.logic.IndexIterator;
 import datawave.query.jexl.DatawaveJexlContext;
 import datawave.query.jexl.HitListArithmetic;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.jexl.visitors.IteratorBuildingVisitor;
 import datawave.query.predicate.AncestorEventDataFilter;
 import datawave.query.predicate.ConfiguredPredicate;
@@ -124,9 +128,13 @@ public class AncestorQueryIterator extends QueryIterator {
     @Override
     public EventDataQueryFilter getEvaluationFilter() {
         if (evaluationFilter == null && script != null) {
-            evaluationFilter = new AncestorEventDataFilter(script, typeMetadata, getNonEventFields());
+
+            AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
+            evaluationFilter = new AncestorEventDataFilter(expressionFilters);
         }
-        // return a new script each time as this is not thread safe (maintains state)
+        // return a new filter each time as this is not thread safe (maintains state)
         return evaluationFilter != null ? evaluationFilter.clone() : null;
     }
 
