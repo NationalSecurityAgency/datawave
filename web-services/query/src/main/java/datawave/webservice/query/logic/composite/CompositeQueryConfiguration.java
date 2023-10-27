@@ -1,10 +1,10 @@
 package datawave.webservice.query.logic.composite;
 
+import java.io.Serializable;
+
 import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
-
-import java.io.Serializable;
 
 public class CompositeQueryConfiguration extends GenericQueryConfiguration implements Serializable {
     
