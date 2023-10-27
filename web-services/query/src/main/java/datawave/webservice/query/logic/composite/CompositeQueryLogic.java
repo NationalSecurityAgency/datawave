@@ -121,10 +121,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 startLatch.countDown();
                 started = true;
             }
-
+            
             // ensure we start with a reasonable page time
             resetPageProcessingStartTime();
-
+            
             // the results queue is also an exception handler
             setUncaughtExceptionHandler(results);
             boolean success = false;
@@ -138,7 +138,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                         last = transformIterator.next();
                         if (null != last) {
                             log.debug(Thread.currentThread().getName() + ": Got result");
-
+                            
                             // special logic to deal with intermediate results
                             if (last instanceof EventBase && ((EventBase) last).isIntermediateResult()) {
                                 resetPageProcessingStartTime();
@@ -148,7 +148,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                                     last = null;
                                 }
                             }
-
+                            
                             if (last != null) {
                                 results.add(last);
                                 resultCount++;
@@ -178,7 +178,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
                 log.trace("Finished thread: " + this.getName() + " with success = " + success);
             }
         }
-
+        
         public void resetPageProcessingStartTime() {
             logic.setPageProcessingStartTime(System.currentTimeMillis());
         }
@@ -634,7 +634,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             logic.setPageProcessingStartTime(pageProcessingStartTime);
         }
     }
-
+    
     @Override
     public boolean isLongRunningQuery() {
         for (QueryLogic<?> l : getQueryLogics().values()) {
@@ -644,7 +644,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
         }
         return false;
     }
-
+    
     public boolean isAllMustInitialize() {
         return getConfig().isAllMustInitialize();
     }
