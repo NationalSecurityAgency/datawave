@@ -67,9 +67,7 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
             }
         }
         if (nextEntry != null) {
-            if (!(nextEntry instanceof EmptyObjectException)) {
-                seenEntries = true;
-            }
+            seenEntries = true;
             return true;
         }
         return false;
@@ -87,9 +85,6 @@ public class CompositeQueryLogicResultsIterator implements Iterator<Object>, Thr
                 current = nextEntry;
                 nextEntry = null;
             }
-        }
-        if (current instanceof EmptyObjectException) {
-            throw new EmptyObjectException();
         }
         return current;
     }
