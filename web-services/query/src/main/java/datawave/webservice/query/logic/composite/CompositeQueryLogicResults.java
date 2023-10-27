@@ -10,19 +10,19 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
 
 public class CompositeQueryLogicResults implements Iterable<Object>, Thread.UncaughtExceptionHandler {
-    
+
     private final CompositeQueryLogic logic;
     private final ArrayBlockingQueue<Object> results;
     private final List<Thread.UncaughtExceptionHandler> handlers;
     private final List<Map.Entry<Thread,Throwable>> exceptions;
-    
+
     public CompositeQueryLogicResults() {
         this.logic = null;
         this.results = new ArrayBlockingQueue<>(1);
         this.handlers = new ArrayList<>();
         this.exceptions = new ArrayList<>();
     }
-    
+
     public CompositeQueryLogicResults(CompositeQueryLogic logic, int pagesize) {
         this.logic = logic;
         this.results = new ArrayBlockingQueue<>(pagesize);
