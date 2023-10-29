@@ -1,7 +1,10 @@
 package datawave.ingest.mapreduce.job;
 
+import static datawave.ingest.mapreduce.job.ShardedTableMapFile.SPLIT_WORK_DIR;
+
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,12 +22,12 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.data.Key;
-import org.apache.accumulo.core.data.PartialKey;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.hadoop.mapreduce.AccumuloInputFormat;
 import org.apache.accumulo.hadoopImpl.mapreduce.lib.InputConfigurator;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
@@ -40,6 +43,7 @@ import com.beust.jcommander.Parameter;
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
 import datawave.ingest.data.config.DataTypeHelper;
+import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
 import datawave.ingest.mapreduce.job.reduce.BulkIngestKeyAggregatingReducer;
@@ -112,6 +116,18 @@ public class ShardReindexJob implements Tool {
             // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
             AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false).ranges(ranges);
         }
+
+        // setup the accumulo helper
+        AccumuloHelper.setInstanceName(configuration, jobConfig.instance);
+        AccumuloHelper.setPassword(configuration, getPassword().getBytes());
+        AccumuloHelper.setUsername(configuration, jobConfig.username);
+        AccumuloHelper.setZooKeepers(configuration, jobConfig.zookeepers);
+
+        // set the work dir
+        configuration.set(SPLIT_WORK_DIR, jobConfig.workDir);
+        // required for MultiTableRangePartitioner
+        configuration.set("ingest.work.dir.qualified", FileSystem.get(new URI(jobConfig.sourceHdfs), configuration).getUri().toString() + jobConfig.workDir);
+        configuration.set("output.fs.uri", FileSystem.get(new URI(jobConfig.destHdfs), configuration).getUri().toString());
 
         // setup and cache tables from config
         Set<String> tableNames = IngestJob.setupAndCacheTables(configuration, false);
@@ -198,7 +214,7 @@ public class ShardReindexJob implements Tool {
 
     private String getPassword() {
         if (jobConfig.password.toLowerCase().startsWith("env:")) {
-            return jobConfig.password.substring(4);
+            return System.getenv(jobConfig.password.substring(4));
         }
 
         return jobConfig.password;
@@ -388,21 +404,24 @@ public class ShardReindexJob implements Tool {
     // define all job configuration options
     private class JobConfig {
         // startDate, endDate, splitsPerDay, and Table are all used with AccumuloInputFormat
-        @Parameter(names = "--startDate", description = "yyyyMMdd start date", required = true)
+        @Parameter(names = "--startDate", description = "yyyyMMdd start date", required = false)
         private String startDate;
 
-        @Parameter(names = "--endDate", description = "yyyyMMdd end date", required = true)
+        @Parameter(names = "--endDate", description = "yyyyMMdd end date", required = false)
         private String endDate;
 
-        @Parameter(names = "--splitsPerDay", description = "splits for each day", required = true)
+        @Parameter(names = "--splitsPerDay", description = "splits for each day", required = false)
         private int splitsPerDay;
 
-        @Parameter(names = "--table", description = "shard table", required = true)
-        private String table;
+        @Parameter(names = "--table", description = "shard table", required = false)
+        private String table = "shard";
 
         // alternatively accept RFileInputFormat
         @Parameter(names = "--inputFiles", description = "When set these files will be used for the job", required = false)
         private String inputFiles;
+
+        @Parameter(names = "--sourceHdfs", description = "HDFS for --inputFiles", required = false)
+        private String sourceHdfs;
 
         // support for cache jars
         @Parameter(names = "--cacheDir", description = "HDFS path to cache directory", required = true)
@@ -411,6 +430,10 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--cacheJars", description = "jars located in the cacheDir to add to the classpath and distributed cache", required = true)
         private String cacheJars;
 
+        // work dir
+        @Parameter(names = "--workDir", description = "Temporary work location in hdfs", required = true)
+        private String workDir;
+
         // support for additional resources
         @Parameter(names = "--resources", description = "configuration resources to be added", required = false)
         private String resources;
@@ -418,8 +441,11 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--reducers", description = "number of reducers to use", required = true)
         private int reducers;
 
-        @Parameter(names = "--outputDir", description = "output director", required = true)
+        @Parameter(names = "--outputDir", description = "output directory", required = true)
         private String outputDir;
+
+        @Parameter(names = "--destHdfs", description = "HDFS for --outputDir", required = true)
+        private String destHdfs;
 
         @Parameter(names = "--cleanShard", description = "generate delete keys when unused fi is found", required = false)
         private boolean cleanupShard;
