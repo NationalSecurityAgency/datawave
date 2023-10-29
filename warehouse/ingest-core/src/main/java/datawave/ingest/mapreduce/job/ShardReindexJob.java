@@ -36,6 +36,8 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -57,6 +59,7 @@ import datawave.util.StringUtils;
  *
  */
 public class ShardReindexJob implements Tool {
+    private static final Logger log = Logger.getLogger(ShardReindexJob.class);
     public static final Text FI_START = new Text("fi" + '\u0000');
     public static final Text FI_END = new Text("fi" + '\u0000' + '\uffff');
     public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
@@ -71,6 +74,9 @@ public class ShardReindexJob implements Tool {
         // parse command line options
         JCommander cmd = JCommander.newBuilder().addObject(jobConfig).build();
         cmd.parse(args);
+
+        log.setLevel(Level.DEBUG);
+        Logger.getRootLogger().setLevel(Level.DEBUG);
 
         Job j = setupJob();
 
@@ -100,8 +106,10 @@ public class ShardReindexJob implements Tool {
 
         // add resources to the config
         if (jobConfig.resources != null) {
+            log.info("adding resources");
             String[] resources = StringUtils.trimAndRemoveEmptyStrings(jobConfig.resources.split("\\s*,\\s*"));
             for (String resource : resources) {
+                log.info("added resource:" + resource);
                 configuration.addResource(resource);
             }
         }
@@ -262,6 +270,7 @@ public class ShardReindexJob implements Tool {
     }
 
     public static class FiToGiMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
+        private static final Logger log = Logger.getLogger(FiToGiMapper.class);
         private final byte[] FI_START_BYTES = FI_START.getBytes();
         private final Value UID_VALUE = new Value(buildIndexValue().toByteArray());
         private final Value EMPTY_VALUE = new Value();
@@ -333,10 +342,23 @@ public class ShardReindexJob implements Tool {
             }
 
             // get the type from the registry or create it if not already created. There is a cache inside the Type class
-            Type type = typeRegistry.get(dataType);
-            IngestHelperInterface helper = type.getIngestHelper(context.getConfiguration());
+            Type type = null;
+            IngestHelperInterface helper = null;
+            try {
+                for (Type registeredType : typeRegistry.values()) {
+                    if (registeredType.outputName().equals(dataType)) {
+                        type = registeredType;
+                        break;
+                    }
+                }
+                helper = type.getIngestHelper(context.getConfiguration());
+            } catch (Exception e) {
+                log.debug(key);
+                throw (e);
+            }
 
             if (helper == null) {
+                log.error(key);
                 throw new IllegalStateException("datatype " + dataType + " not found in Type Registry");
             }
 
