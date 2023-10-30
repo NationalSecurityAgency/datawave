@@ -197,7 +197,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
 
         Key fiKey = new Key("row", FI_START + "FIELDA", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        Key indexKey = new Key("ABC", "FIELDA", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        Key indexKey = new Key("ABC", "FIELDA", "row" + '\u0000' + "samplecsv");
         BulkIngestKey bik = new BulkIngestKey(new Text("shardIndex"), indexKey);
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik)), EasyMock.isA(Value.class));
@@ -220,8 +220,8 @@ public class ShardReindexJobTest extends EasyMockSupport {
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
 
         Key fiKey = new Key("row", FI_START + "FIELDB", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        Key indexKey = new Key("ABC", "FIELDB", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        Key revKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        Key indexKey = new Key("ABC", "FIELDB", "row" + '\u0000' + "samplecsv");
+        Key revKey = new Key("CBA", "FIELDB", "row" + '\u0000' + "samplecsv");
 
         BulkIngestKey bik1 = new BulkIngestKey(new Text("shardIndex"), indexKey);
         BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
@@ -248,7 +248,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
 
         Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
-        Key revKey = new Key("CBA", "FIELDD", "row" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        Key revKey = new Key("CBA", "FIELDD", "row" + '\u0000' + "samplecsv");
         BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
 
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
