@@ -94,10 +94,6 @@ public class AndIterator<T extends Comparable<T>> implements SeekableIterator, N
         contextExcludeHeads = createHeadMap();
     }
 
-    public void initialize() {
-        // no-op
-    }
-
     /**
      * Create a sorted map of nested iterators mapped by their top keys.
      *

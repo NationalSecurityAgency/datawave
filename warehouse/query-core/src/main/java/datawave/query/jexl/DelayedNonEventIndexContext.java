@@ -118,7 +118,6 @@ public class DelayedNonEventIndexContext extends DatawaveJexlContext {
                 Collection<NestedIterator<Key>> leaves = delayedNodeIterator.leaves();
                 // for each leaf, see if its a match for the target field
                 for (NestedIterator<Key> leaf : leaves) {
-                    leaf.initialize(); // only one iterator still requires this
                     leaf.seek(docRange, columnFamilies, inclusive);
 
                     // for each value off the leaf add it to the document list as long as equality accepts it

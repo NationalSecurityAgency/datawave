@@ -77,8 +77,6 @@ public class ArrayIterator<T extends Comparable<T>> implements NestedIterator<T>
         return Collections.emptyList();
     }
 
-    public void initialize() {}
-
     @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // no-op

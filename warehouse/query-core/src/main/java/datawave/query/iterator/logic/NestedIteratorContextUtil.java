@@ -41,8 +41,6 @@ public class NestedIteratorContextUtil {
         // find all the sources that have never been moved
         for (NestedIterator<T> source : contextRequiredIterators) {
             if (!headMap.values().contains(source) && !nullHeadMap.values().contains(source)) {
-                // first time touching this source, initialize it
-                source.initialize();
                 sourcesToMove.add(source);
             }
         }

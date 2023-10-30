@@ -84,14 +84,6 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
     }
 
     /**
-     * Allows creators of this iterator to defer creating the sorted mapping of values to iterators until some condition is met. This is intended to let us
-     * build the tree of iterators in <code>init()</code> and defer sorting the iterators until after <code>seek()</code> is called.
-     */
-    public void initialize() {
-        // no-op
-    }
-
-    /**
      * Create a sorted map of nested iterators mapped by their top keys.
      *
      * @return a map of nested iterators

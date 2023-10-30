@@ -38,11 +38,6 @@ public class EventFieldIterator implements NestedIterator<Key> {
     }
 
     @Override
-    public void initialize() {
-        // no-op
-    }
-
-    @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         source.seek(range, columnFamilies, inclusive);
     }

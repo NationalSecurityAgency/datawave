@@ -16,11 +16,6 @@ import datawave.query.attributes.Document;
 public class EmptyTreeIterable implements NestedIterator<Key> {
 
     @Override
-    public void initialize() {
-
-    }
-
-    @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         // no-op
     }

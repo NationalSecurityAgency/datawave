@@ -33,13 +33,6 @@ import datawave.query.attributes.Document;
  * </ol>
  */
 public interface NestedIterator<T> extends Iterator<T> {
-    /**
-     * A hook to allow lazy initialization of iterators. This is necessary because we want to set up the Accumulo iterator tree inside of init(), but can't
-     * actually organize the iterators by value until after seek() is called.
-     * <p>
-     * TODO - document which cases still require this. Look at removing if it's easy.
-     */
-    void initialize();
 
     /**
      * Seek the nested iterator and all child iterators. Called once at the beginning.

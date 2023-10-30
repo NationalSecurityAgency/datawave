@@ -900,7 +900,6 @@ public class IteratorBuildingVisitorTest {
         Assert.assertTrue(result != null);
         SeekableNestedIterator seekableNestedIterator = new SeekableNestedIterator(result, env);
         seekableNestedIterator.seek(docRange, Collections.emptySet(), true);
-        seekableNestedIterator.initialize();
 
         // asserts for a hit or miss
         if (docKeyHit == null) {

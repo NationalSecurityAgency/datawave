@@ -16,7 +16,6 @@ public class TreeIterable<T extends Comparable<T>> implements Iterable<T> {
     }
 
     public Iterator<T> iterator() {
-        iterator.initialize();
         return iterator;
     }
 }

@@ -39,7 +39,6 @@ public class AccumuloTreeIterable<S,T extends Comparable<T>> implements Iterable
     @Override
     public Iterator<Entry<T,Document>> iterator() {
         if (seenSeek) {
-            tree.initialize();
 
             Iterator<Entry<S,Document>> wrapper = TraceIterators.transform(tree, from -> {
                 return Maps.immutableEntry(from, tree.document());

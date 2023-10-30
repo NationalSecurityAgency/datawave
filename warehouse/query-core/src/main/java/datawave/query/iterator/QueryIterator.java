@@ -633,9 +633,6 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
         // Seek() the boolean logic stuff
         ((SeekableIterator) docIter).seek(range, columnFamilies, inclusive);
 
-        // now lets start off the nested iterator
-        docIter.initialize();
-
         return docIter;
     }
 

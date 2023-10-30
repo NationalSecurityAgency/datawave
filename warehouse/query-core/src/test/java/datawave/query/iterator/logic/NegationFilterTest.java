@@ -139,9 +139,6 @@ public class NegationFilterTest {
         }
 
         @Override
-        public void initialize() {}
-
-        @Override
         public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
             // no-op
         }

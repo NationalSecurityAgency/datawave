@@ -178,10 +178,6 @@ public class IndexIteratorBridge implements SeekableIterator, NestedIterator<Key
         throw new UnsupportedOperationException("This iterator does not support remove().");
     }
 
-    public void initialize() {
-        // no-op
-    }
-
     @Override
     public String toString() {
         return "Bridge: " + delegate;

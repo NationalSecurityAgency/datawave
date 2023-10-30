@@ -34,9 +34,6 @@ public class EventDataScanNestedIterator implements NestedIterator<Key>, Seekabl
         this.dataTypeFilter = dataTypeFilter;
     }
 
-    @Override
-    public void initialize() {}
-
     /**
      * Get the next document start key. TODO: See if we can skip over datatypes as defined by the dataTypeFilter
      *

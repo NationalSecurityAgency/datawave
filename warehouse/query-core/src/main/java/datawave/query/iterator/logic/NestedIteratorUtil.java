@@ -47,7 +47,6 @@ public class NestedIteratorUtil {
         }
 
         for (NestedIterator<T> source : sources) {
-            source.initialize(); // some iterators still require this
             if (source.hasNext()) {
                 T result = source.next();
                 if (result != null) {
@@ -87,7 +86,6 @@ public class NestedIteratorUtil {
         }
 
         for (NestedIterator<T> source : sources) {
-            source.initialize(); // some iterators require this
             T result = source.move(minimum);
             if (result != null) {
                 T transformed = transformer.transform(result);

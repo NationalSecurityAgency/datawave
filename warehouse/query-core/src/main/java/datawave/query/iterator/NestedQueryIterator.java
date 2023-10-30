@@ -87,15 +87,6 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
     }
 
     @Override
-    public void initialize() {
-        // if (null == currentNest) {
-        // popNextNest();
-        // } else {
-        // currentNest.initialize();
-        // }
-    }
-
-    @Override
     public void seek(Range range, Collection<ByteSequence> columnFamilies, boolean inclusive) throws IOException {
         currentNest.seek(range, columnFamilies, inclusive);
     }
@@ -132,7 +123,6 @@ public class NestedQueryIterator<T> implements NestedIterator<T> {
 
             currentQuery = nests.poll();
             currentNest = currentQuery.getIter();
-            currentNest.initialize();
         }
     }
 

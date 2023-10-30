@@ -36,11 +36,6 @@ public class SeekableNestedIterator<T> implements NestedIterator<T>, SeekableIte
     }
 
     @Override
-    public void initialize() {
-        source.initialize();
-    }
-
-    @Override
     public T move(T minimum) {
         return source.move(minimum);
     }
