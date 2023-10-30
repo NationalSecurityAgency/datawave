@@ -195,10 +195,12 @@ public class OrIterator<T extends Comparable<T>> implements NestedIterator<T> {
                 }
             }
         } catch (WaitWindowOverrunException e) {
-            // if prev != null then it's a match that has not been returned
             Key possibleYieldKey = null;
-            if (prev != null || !candidateSet.isEmpty()) {
-                possibleYieldKey = (prev != null) ? (Key) prev : (Key) candidateSet.first();
+            if (prev != null) {
+                // if prev != null then it's a match that has not been returned
+                possibleYieldKey = (Key) prev;
+            } else if (!isContextRequired() && !candidateSet.isEmpty()) {
+                possibleYieldKey = (Key) candidateSet.first();
             }
             // When comparing possible yield keys in the OrIterator, we choose the lowest
             // key because a match in any sources can return a match
