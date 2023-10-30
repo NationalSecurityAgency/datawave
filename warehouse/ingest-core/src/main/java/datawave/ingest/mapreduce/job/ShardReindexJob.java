@@ -44,7 +44,6 @@ import com.beust.jcommander.Parameter;
 
 import datawave.ingest.data.Type;
 import datawave.ingest.data.TypeRegistry;
-import datawave.ingest.data.config.DataTypeHelper;
 import datawave.ingest.data.config.ingest.AccumuloHelper;
 import datawave.ingest.data.config.ingest.IngestHelperInterface;
 import datawave.ingest.mapreduce.handler.shard.ShardedDataTypeHandler;
@@ -367,12 +366,12 @@ public class ShardReindexJob implements Tool {
             Text indexCq = null;
             boolean indexed = false;
             // test if the field should have a global index built for it and write to context
-            if (helper.isIndexedField(field)) {
+            if (helper.isIndexedField(field) || helper.isIndexOnlyField(field)) {
                 // generate the global index key and emit it
                 fieldValueText = new Text(fieldValue.toString());
                 fieldText = new Text(field);
                 StringBuilder docId = new StringBuilder();
-                docId.append(key.getRowData()).append('\u0000').append(dataType).append('\u0000').append(uid);
+                docId.append(key.getRowData()).append('\u0000').append(dataType);
                 indexCq = new Text(docId.toString());
 
                 Key globalIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), key.getTimestamp());
@@ -388,7 +387,7 @@ public class ShardReindexJob implements Tool {
                 if (fieldText == null) {
                     fieldText = new Text(field);
                     StringBuilder docId = new StringBuilder();
-                    docId.append(key.getRowData()).append('\u0000').append(dataType).append('\u0000').append(uid);
+                    docId.append(key.getRowData()).append('\u0000').append(dataType);
                     indexCq = new Text(docId.toString());
                 }
 
@@ -442,7 +441,7 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--inputFiles", description = "When set these files will be used for the job", required = false)
         private String inputFiles;
 
-        @Parameter(names = "--sourceHdfs", description = "HDFS for --inputFiles", required = false)
+        @Parameter(names = "--sourceHdfs", description = "HDFS for --inputFiles", required = true)
         private String sourceHdfs;
 
         // support for cache jars
@@ -469,7 +468,7 @@ public class ShardReindexJob implements Tool {
         @Parameter(names = "--destHdfs", description = "HDFS for --outputDir", required = true)
         private String destHdfs;
 
-        @Parameter(names = "--cleanShard", description = "generate delete keys when unused fi is found", required = false)
+        @Parameter(names = "--cleanupShard", description = "generate delete keys when unused fi is found", required = false)
         private boolean cleanupShard;
 
         @Parameter(names = "--instance", description = "accumulo instance name", required = true)
