@@ -874,7 +874,7 @@ public abstract class DatawaveFieldIndexCachingIteratorJexl extends WrappingIter
 
     private void fillSortedSets() throws IOException {
         String sourceRow = this.fiRow.toString();
-        // if we are running fillSortedSets as port of a re-seek after yield, then the fillSet threads would not have
+        // if we are running fillSortedSets as part of a re-seek after yield, then the fillSet threads would not have
         // completed when a WaitWindowOverrunException was thrown and therefore the set would not have been marked as
         // complete when setupRowBasedHdfsBackedSet was called at the top of this method. We will try to copy the
         // RowBasedHdfsBackedSet from the previously used Ivarator and resume processing.
