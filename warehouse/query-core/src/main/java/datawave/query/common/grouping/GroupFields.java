@@ -16,6 +16,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
@@ -36,7 +37,7 @@ public class GroupFields implements Serializable {
     private static final String AVERAGE = "AVERAGE";
     private static final String MIN = "MIN";
     private static final String MAX = "MAX";
-    private static final String MODEL_MAP = "MODEL_MAP";
+    private static final String MODEL_MAP = "REVERSE_MODEL_MAP";
 
     private Set<String> groupByFields = new HashSet<>();
     private Set<String> sumFields = new HashSet<>();
@@ -44,7 +45,7 @@ public class GroupFields implements Serializable {
     private Set<String> averageFields = new HashSet<>();
     private Set<String> minFields = new HashSet<>();
     private Set<String> maxFields = new HashSet<>();
-    private Multimap<String,String> modelMap = HashMultimap.create();
+    private Map<String,String> reverseModelMap = new HashMap<>();
 
     /**
      * Returns a new {@link GroupFields} parsed the given string. The string is expected to have the format returned by {@link GroupFields#toString()}, but may
@@ -102,7 +103,7 @@ public class GroupFields implements Serializable {
                             groupFields.maxFields = parseSet(elementContents);
                             break;
                         case MODEL_MAP:
-                            groupFields.modelMap = parseMap(elementContents);
+                            groupFields.reverseModelMap = parseMap(elementContents);
                             break;
                         default:
                             throw new IllegalArgumentException("Invalid element " + name);
@@ -122,16 +123,15 @@ public class GroupFields implements Serializable {
         return Sets.newHashSet(StringUtils.split(str, Constants.COMMA));
     }
 
-    // Parse a multimap from the given string.
-    private static Multimap<String,String> parseMap(String str) {
-        Multimap<String,String> map = HashMultimap.create();
+    // Parse a map from the given string.
+    private static Map<String,String> parseMap(String str) {
+        Map<String,String> map = new HashMap<>();
         String[] entries = StringUtils.split(str, Constants.COLON);
         for (String entry : entries) {
-            int startBracket = entry.indexOf(Constants.BRACKET_START);
-            int endBracket = entry.length() - 1;
-            String key = entry.substring(0, startBracket);
-            Set<String> values = parseSet(entry.substring(startBracket + 1, endBracket));
-            map.putAll(key, values);
+            int equals = entry.indexOf(Constants.EQUALS);
+            String key = entry.substring(0, equals);
+            String value = entry.substring(equals + 1);
+            map.put(key, value);
         }
         return map;
     }
@@ -155,7 +155,7 @@ public class GroupFields implements Serializable {
         copy.averageFields = other.averageFields == null ? null : Sets.newHashSet(other.averageFields);
         copy.minFields = other.minFields == null ? null : Sets.newHashSet(other.minFields);
         copy.maxFields = other.maxFields == null ? null : Sets.newHashSet(other.maxFields);
-        copy.modelMap = other.modelMap == null ? null : HashMultimap.create(other.modelMap);
+        copy.reverseModelMap = other.reverseModelMap == null ? null : Maps.newHashMap(other.reverseModelMap);
         return copy;
     }
 
@@ -321,14 +321,14 @@ public class GroupFields implements Serializable {
      * @param modelMap
      *            the map to retrieve alternative field mappings from
      */
-    public void remapFields(Multimap<String,String> modelMap) {
+    public void remapFields(Multimap<String,String> modelMap, Map<String,String> reverseModelMap) {
         this.groupByFields = remap(this.groupByFields, modelMap);
         this.sumFields = remap(this.sumFields, modelMap);
         this.countFields = remap(this.countFields, modelMap);
         this.averageFields = remap(this.averageFields, modelMap);
         this.minFields = remap(this.minFields, modelMap);
         this.maxFields = remap(this.maxFields, modelMap);
-        this.modelMap = modelMap;
+        this.reverseModelMap = reverseModelMap;
     }
 
     // Return a copy of the given set with all alternative field mappings included.
@@ -345,26 +345,12 @@ public class GroupFields implements Serializable {
 
     /**
      * Return the model map. This map will never be null, but may be empty if this {@link GroupFields} was never remapped via
-     * {@link GroupFields#remapFields(Multimap)}.
+     * {@link GroupFields#remapFields(Multimap, Map)}.
      *
-     * @return the model map
-     */
-    public Multimap<String,String> getModelMap() {
-        return modelMap;
-    }
-
-    /**
-     * Return a map of fields to their display name, possibly empty, but never null.
-     *
-     * @return the map
+     * @return the reverse model map
      */
     public Map<String,String> getReverseModelMap() {
-        Map<String,String> map = new HashMap<>();
-        for (String key : modelMap.keySet()) {
-            map.put(key, key);
-            modelMap.get(key).forEach(value -> map.put(value, key));
-        }
-        return map;
+        return reverseModelMap;
     }
 
     /**
@@ -388,12 +374,12 @@ public class GroupFields implements Serializable {
         GroupFields that = (GroupFields) o;
         return Objects.equals(groupByFields, that.groupByFields) && Objects.equals(sumFields, that.sumFields) && Objects.equals(countFields, that.countFields)
                         && Objects.equals(averageFields, that.averageFields) && Objects.equals(minFields, that.minFields)
-                        && Objects.equals(maxFields, that.maxFields) && Objects.equals(modelMap, that.modelMap);
+                        && Objects.equals(maxFields, that.maxFields) && Objects.equals(reverseModelMap, that.reverseModelMap);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(groupByFields, sumFields, countFields, averageFields, minFields, maxFields, modelMap);
+        return Objects.hash(groupByFields, sumFields, countFields, averageFields, minFields, maxFields, reverseModelMap);
     }
 
     @JsonValue
@@ -432,24 +418,15 @@ public class GroupFields implements Serializable {
 
     // Write the model map if not empty to the given string builder.
     private void writeFormattedModelMap(StringBuilder sb) {
-        if (!modelMap.isEmpty()) {
+        if (!reverseModelMap.isEmpty()) {
             if (sb.length() > 0) {
                 sb.append(Constants.PIPE);
             }
             sb.append(MODEL_MAP).append(Constants.LEFT_PAREN);
-            Iterator<Map.Entry<String,Collection<String>>> entryIterator = modelMap.asMap().entrySet().iterator();
+            Iterator<Map.Entry<String,String>> entryIterator = reverseModelMap.entrySet().iterator();
             while (entryIterator.hasNext()) {
-                Map.Entry<String,Collection<String>> next = entryIterator.next();
-                sb.append(next.getKey()).append(Constants.BRACKET_START);
-                Iterator<String> valueIterator = next.getValue().iterator();
-                while (valueIterator.hasNext()) {
-                    String value = valueIterator.next();
-                    sb.append(value);
-                    if (valueIterator.hasNext()) {
-                        sb.append(Constants.COMMA);
-                    }
-                }
-                sb.append(Constants.BRACKET_END);
+                Map.Entry<String,String> next = entryIterator.next();
+                sb.append(next.getKey()).append(Constants.EQUALS).append(next.getValue());
                 if (entryIterator.hasNext()) {
                     sb.append(Constants.COLON);
                 }

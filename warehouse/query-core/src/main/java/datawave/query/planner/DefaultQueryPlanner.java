@@ -1724,7 +1724,7 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         GroupFields groupFields = config.getGroupFields();
         if (groupFields != null && groupFields.hasGroupByFields()) {
-            groupFields.remapFields(inverseReverseModel);
+            groupFields.remapFields(inverseReverseModel, queryModel.getReverseQueryMapping());
             if (log.isTraceEnabled()) {
                 log.trace("Updating group-by fields using query model to " + groupFields);
             }

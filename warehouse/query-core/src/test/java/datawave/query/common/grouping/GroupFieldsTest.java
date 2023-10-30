@@ -2,6 +2,9 @@ package datawave.query.common.grouping;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -15,6 +18,7 @@ public class GroupFieldsTest {
 
     private static final ObjectMapper objectMapper = new ObjectMapper();
     private static final Multimap<String,String> inverseReverseModel = HashMultimap.create();
+    private static final Map<String,String> reverseModel = new HashMap<>();
 
     @BeforeClass
     public static void beforeClass() {
@@ -22,6 +26,9 @@ public class GroupFieldsTest {
         inverseReverseModel.put("GEN", "GENDER");
         inverseReverseModel.put("AG", "AGE");
         inverseReverseModel.put("NOME", "NAME");
+        reverseModel.put("GEN", "GENDER");
+        reverseModel.put("AG", "AGE");
+        reverseModel.put("NOME", "NAME");
     }
 
     @Test
@@ -53,7 +60,7 @@ public class GroupFieldsTest {
         groupFields.setMinFields(Sets.newHashSet("GEN"));
         groupFields.setMaxFields(Sets.newHashSet("NOME"));
 
-        groupFields.remapFields(inverseReverseModel);
+        groupFields.remapFields(inverseReverseModel, reverseModel);
 
         assertThat(groupFields.toString()).isEqualTo(
                         "GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|MODEL_MAP(AG[AGE]:GEN[GENERE,GENDER]:NOME[NAME])");
@@ -120,7 +127,7 @@ public class GroupFieldsTest {
         expected.setAverageFields(Sets.newHashSet("BAR"));
         expected.setMinFields(Sets.newHashSet("BAT"));
         expected.setMaxFields(Sets.newHashSet("FOO"));
-        expected.remapFields(inverseReverseModel);
+        expected.remapFields(inverseReverseModel, reverseModel);
 
         GroupFields actual = GroupFields
                         .from("GROUP(AG,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(BAR)|MIN(BAT)|MAX(FOO)|MODEL_MAP(AG[AGE]:GEN[GENERE,GENDER]:NOME[NAME])");
@@ -168,7 +175,7 @@ public class GroupFieldsTest {
         groupFields.setMinFields(Sets.newHashSet("GEN"));
         groupFields.setMaxFields(Sets.newHashSet("NOME"));
 
-        groupFields.remapFields(inverseReverseModel);
+        groupFields.remapFields(inverseReverseModel, reverseModel);
 
         assertThat(groupFields.getGroupByFields()).containsExactlyInAnyOrder("GENERE", "GEN", "GENDER", "AG", "AGE");
         assertThat(groupFields.getSumFields()).containsExactlyInAnyOrder("AG", "AGE");
@@ -176,7 +183,7 @@ public class GroupFieldsTest {
         assertThat(groupFields.getAverageFields()).containsExactlyInAnyOrder("AG", "AGE");
         assertThat(groupFields.getMinFields()).containsExactlyInAnyOrder("GENERE", "GEN", "GENDER");
         assertThat(groupFields.getMaxFields()).containsExactlyInAnyOrder("NOME", "NAME");
-        assertThat(groupFields.getModelMap()).isEqualTo(inverseReverseModel);
+        assertThat(groupFields.getReverseModelMap()).isEqualTo(reverseModel);
     }
 
     @Test
@@ -189,7 +196,7 @@ public class GroupFieldsTest {
         groupFields.setMinFields(Sets.newHashSet("GEN"));
         groupFields.setMaxFields(Sets.newHashSet("NOME"));
 
-        groupFields.remapFields(inverseReverseModel);
+        groupFields.remapFields(inverseReverseModel, reverseModel);
 
         String json = objectMapper.writeValueAsString(groupFields);
         assertThat(json).isEqualTo(
@@ -205,7 +212,7 @@ public class GroupFieldsTest {
         expected.setAverageFields(Sets.newHashSet("AG"));
         expected.setMinFields(Sets.newHashSet("GEN"));
         expected.setMaxFields(Sets.newHashSet("NOME"));
-        expected.remapFields(inverseReverseModel);
+        expected.remapFields(inverseReverseModel, reverseModel);
 
         String json = "\"GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|MODEL_MAP(AG[AGE]:GEN[GENERE,GENDER]:NOME[NAME])\"";
         GroupFields actual = objectMapper.readValue(json, GroupFields.class);

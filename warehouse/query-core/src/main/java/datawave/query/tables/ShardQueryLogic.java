@@ -636,10 +636,10 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
             if (groupFields != null && groupFields.hasGroupByFields()) {
                 DocumentTransform alreadyExists = ((DocumentTransformer) this.transformerInstance).containsTransform(GroupingTransform.class);
                 if (alreadyExists != null) {
-                    ((GroupingTransform) alreadyExists).updateConfig(groupFields, getQueryModel());
+                    ((GroupingTransform) alreadyExists).updateConfig(groupFields);
                 } else {
-                    ((DocumentTransformer) this.transformerInstance).addTransform(
-                                    new GroupingTransform(getQueryModel(), groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
+                    ((DocumentTransformer) this.transformerInstance)
+                                    .addTransform(new GroupingTransform(groupFields, this.markingFunctions, this.getQueryExecutionForPageTimeout()));
                 }
             }
         }

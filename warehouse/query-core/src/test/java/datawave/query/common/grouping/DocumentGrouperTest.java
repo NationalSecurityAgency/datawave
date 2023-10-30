@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ public class DocumentGrouperTest {
     private static final ColumnVisibility COLVIS_ALL_E_I = new ColumnVisibility("ALL&E&I");
     private static final Key key = new Key("test_key");
     private static final Multimap<String,String> inverseReverseMap = HashMultimap.create();
+    private static final Map<String,String> reverseMap = new HashMap<>();
 
     private GroupFields groupFields = new GroupFields();
     private Document document;
@@ -50,6 +52,11 @@ public class DocumentGrouperTest {
         inverseReverseMap.put("LOC", "BUILDING");
         inverseReverseMap.put("LOC", "LOCATION");
         inverseReverseMap.put("PEAK", "HEIGHT");
+
+        reverseMap.put("GEN", "GENDER");
+        reverseMap.put("AG", "AGE");
+        reverseMap.put("LOC", "LOCATION");
+        reverseMap.put("PEAK", "HEIGHT");
     }
 
     @Before
@@ -918,7 +925,7 @@ public class DocumentGrouperTest {
     }
 
     private void givenRemappedFields() {
-        this.groupFields.remapFields(inverseReverseMap);
+        this.groupFields.remapFields(inverseReverseMap, reverseMap);
     }
 
     private void resetDocument() {

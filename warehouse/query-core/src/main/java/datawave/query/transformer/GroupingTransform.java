@@ -48,11 +48,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     private final LinkedList<Document> documents = new LinkedList<>();
 
     /**
-     * mapping used to combine field names that map to different model names
-     */
-    private Map<String,String> reverseModelMapping = null;
-
-    /**
      * list of keys that have been read, in order to keep track of where we left off when a new iterator is created
      */
     private final List<Key> keys = new ArrayList<>();
@@ -66,8 +61,6 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
     /**
      * Constructor
      *
-     * @param model
-     *            the query model (can be null)
      * @param groupFields
      *            the fields (user provided) to group by and aggregate
      * @param queryExecutionForPageTimeout
@@ -75,21 +68,15 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
      * @param markingFunctions
      *            the marking functions
      */
-    public GroupingTransform(QueryModel model, GroupFields groupFields, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
+    public GroupingTransform(GroupFields groupFields, MarkingFunctions markingFunctions, long queryExecutionForPageTimeout) {
         super.initialize(settings, markingFunctions);
         this.queryExecutionForPageTimeout = queryExecutionForPageTimeout;
         this.groups = new Groups();
         this.groupFields = groupFields;
-        if (model != null) {
-            this.reverseModelMapping = model.getReverseQueryMapping();
-        }
     }
 
-    public void updateConfig(GroupFields groupFields, QueryModel model) {
+    public void updateConfig(GroupFields groupFields) {
         this.groupFields = groupFields;
-        if (model != null) {
-            reverseModelMapping = model.getReverseQueryMapping();
-        }
     }
 
     @Nullable
