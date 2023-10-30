@@ -145,6 +145,20 @@ public class ShardReindexJobTest extends EasyMockSupport {
     }
 
     @Test
+    public void singleSplit_test() throws ParseException {
+        replayAll();
+
+        Collection<Range> ranges = ShardReindexJob.buildRanges("20230831", "20230831", 1);
+
+        verifyAll();
+
+        List<Range> expected = new ArrayList<>();
+        expected.addAll(buildRanges("20230831", 1));
+
+        verifyRanges(ranges, expected);
+    }
+
+    @Test
     public void mapperUnindexed_test() throws IOException, InterruptedException {
         Mapper.Context context = createMock(Mapper.Context.class);
         ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
