@@ -113,17 +113,6 @@ public class ShardReindexJob implements Tool {
             }
         }
 
-        // check if using some form of accumulo in input
-        if (jobConfig.inputFiles == null) {
-            // build ranges
-            Collection<Range> ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
-
-            Properties accumuloProperties = builder.build();
-
-            // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
-            AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false).ranges(ranges);
-        }
-
         // setup the accumulo helper
         AccumuloHelper.setInstanceName(configuration, jobConfig.instance);
         AccumuloHelper.setPassword(configuration, getPassword().getBytes());
@@ -150,6 +139,18 @@ public class ShardReindexJob implements Tool {
 
         // all changes to configuration must be before this line
         Job j = Job.getInstance(getConf());
+
+        // check if using some form of accumulo in input
+        if (jobConfig.inputFiles == null) {
+            // build ranges
+            Collection<Range> ranges = buildRanges(jobConfig.startDate, jobConfig.endDate, jobConfig.splitsPerDay);
+
+            Properties accumuloProperties = builder.build();
+
+            // do not auto adjust ranges because they will be clipped and drop the column qualifier. this will result in full table scans
+            AccumuloInputFormat.configure().clientProperties(accumuloProperties).table(jobConfig.table).autoAdjustRanges(false).batchScan(false).ranges(ranges)
+                            .store(j);
+        }
 
         // add to classpath and distributed cache files
         String[] jarNames = StringUtils.trimAndRemoveEmptyStrings(jobConfig.cacheJars.split("\\s*,\\s*"));
