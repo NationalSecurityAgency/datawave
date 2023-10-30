@@ -64,7 +64,7 @@ public class WaitWindowObserver {
     protected AtomicLong remainingTimeMs = new AtomicLong(Long.MAX_VALUE);
     protected TimerTask timerTask = null;
     // How often the timerTask gets run
-    protected long checkPeriod = 50;
+    protected long checkPeriodMillis = 50;
     // Seek range of the QueryIterator. Used to ensure that yieldKey is in the range.
     protected Range seekRange = null;
     // When collectTimingDetails==true, we set the yieldKey, return a WAIT_WINDOW_OVERRUN
@@ -137,7 +137,7 @@ public class WaitWindowObserver {
         this.endOfWaitWindow = yieldThresholdMs + System.currentTimeMillis();
         if (this.timerTask == null) {
             this.timerTask = new WaitWindowTimerTask();
-            WaitWindowObserver.getTimer().schedule(this.timerTask, this.checkPeriod, this.checkPeriod);
+            WaitWindowObserver.getTimer().schedule(this.timerTask, this.checkPeriodMillis, this.checkPeriodMillis);
         }
     }
 
