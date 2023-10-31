@@ -72,6 +72,28 @@
                     </goals>
                 </goalsList>
             </goalsLists>
+            <goalsList artifactId="docker-maven-plugin">
+                <goalsList>
+                    <goals>
+                        <goal>build</goal>
+                        <goal>push</goal>
+                    </goals>
+                </goalsList>
+            </goalsList>
+            <goalsList artifactId="maven-resources-plugin">
+                <goalsList>
+                    <goals>
+                        <goal>copy-resources</goal>
+                    </goals>
+                </goalsList>
+            </goalsList>
+            <goalsList artifactId="spring-boot-maven-plugin">
+                <goalsList>
+                    <goals>
+                        <goal>repackage</goal>
+                    </goals>
+                </goalsList>
+            </goalsList>
         </runAlways>
         <reconcile logAllProperties="true">
             <plugins>
