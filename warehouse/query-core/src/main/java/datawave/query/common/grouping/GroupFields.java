@@ -328,7 +328,22 @@ public class GroupFields implements Serializable {
         this.averageFields = remap(this.averageFields, modelMap);
         this.minFields = remap(this.minFields, modelMap);
         this.maxFields = remap(this.maxFields, modelMap);
-        this.reverseModelMap = reverseModelMap;
+        
+        // Make a copy of the given reverse model map that only contains relevant mappings for efficiency.
+        Set<String> allFields = new HashSet<>();
+        allFields.addAll(groupByFields);
+        allFields.addAll(sumFields);
+        allFields.addAll(countFields);
+        allFields.addAll(averageFields);
+        allFields.addAll(minFields);
+        allFields.addAll(maxFields);
+        
+        this.reverseModelMap = new HashMap<>();
+        for (String field : allFields) {
+            if (reverseModelMap.containsKey(field)) {
+                this.reverseModelMap.put(field, reverseModelMap.get(field));
+            }
+        }
     }
 
     // Return a copy of the given set with all alternative field mappings included.
