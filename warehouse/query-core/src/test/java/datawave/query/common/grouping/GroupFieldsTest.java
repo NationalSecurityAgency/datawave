@@ -26,9 +26,11 @@ public class GroupFieldsTest {
         inverseReverseModel.put("GEN", "GENDER");
         inverseReverseModel.put("AG", "AGE");
         inverseReverseModel.put("NOME", "NAME");
-        reverseModel.put("GEN", "GENDER");
-        reverseModel.put("AG", "AGE");
-        reverseModel.put("NOME", "NAME");
+
+        reverseModel.put("GENERE", "GEN");
+        reverseModel.put("GENDER", "GEN");
+        reverseModel.put("AGE", "AG");
+        reverseModel.put("NAME", "NOME");
     }
 
     @Test
@@ -63,7 +65,7 @@ public class GroupFieldsTest {
         groupFields.remapFields(inverseReverseModel, reverseModel);
 
         assertThat(groupFields.toString()).isEqualTo(
-                        "GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|MODEL_MAP(AG[AGE]:GEN[GENERE,GENDER]:NOME[NAME])");
+                        "GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)");
     }
 
     @Test
@@ -129,8 +131,8 @@ public class GroupFieldsTest {
         expected.setMaxFields(Sets.newHashSet("FOO"));
         expected.remapFields(inverseReverseModel, reverseModel);
 
-        GroupFields actual = GroupFields
-                        .from("GROUP(AG,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(BAR)|MIN(BAT)|MAX(FOO)|MODEL_MAP(AG[AGE]:GEN[GENERE,GENDER]:NOME[NAME])");
+        GroupFields actual = GroupFields.from(
+                        "GROUP(AG,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(BAR)|MIN(BAT)|MAX(FOO)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -200,7 +202,7 @@ public class GroupFieldsTest {
 
         String json = objectMapper.writeValueAsString(groupFields);
         assertThat(json).isEqualTo(
-                        "\"GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|MODEL_MAP(AG[AGE]:GEN[GENERE,GENDER]:NOME[NAME])\"");
+                        "\"GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"");
     }
 
     @Test
@@ -214,7 +216,7 @@ public class GroupFieldsTest {
         expected.setMaxFields(Sets.newHashSet("NOME"));
         expected.remapFields(inverseReverseModel, reverseModel);
 
-        String json = "\"GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|MODEL_MAP(AG[AGE]:GEN[GENERE,GENDER]:NOME[NAME])\"";
+        String json = "\"GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"";
         GroupFields actual = objectMapper.readValue(json, GroupFields.class);
 
         assertThat(actual).isEqualTo(expected);

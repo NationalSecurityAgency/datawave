@@ -53,10 +53,13 @@ public class DocumentGrouperTest {
         inverseReverseMap.put("LOC", "LOCATION");
         inverseReverseMap.put("PEAK", "HEIGHT");
 
-        reverseMap.put("GEN", "GENDER");
-        reverseMap.put("AG", "AGE");
-        reverseMap.put("LOC", "LOCATION");
-        reverseMap.put("PEAK", "HEIGHT");
+        reverseMap.put("GENERE", "GEN");
+        reverseMap.put("GENDER", "GEN");
+        reverseMap.put("AGE", "AG");
+        reverseMap.put("ETA", "AG");
+        reverseMap.put("BUILDING", "LOC");
+        reverseMap.put("LOCATION", "LOC");
+        reverseMap.put("HEIGHT", "PEAK");
     }
 
     @Before

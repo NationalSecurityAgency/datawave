@@ -149,7 +149,7 @@ public class DocumentGrouper {
             this.requiredGroupSize = this.groupFields.size();
         } else {
             // Otherwise, we must reverse-map the group fields to their display name and count the distinct fields.
-            this.requiredGroupSize = (int) this.groupFields.stream().map(reverseModelMappings::get).distinct().count();
+            this.requiredGroupSize = (int) this.groupFields.stream().map(this::getMappedFieldName).distinct().count();
         }
     }
 
