@@ -1,6 +1,7 @@
 package datawave.query.common.grouping;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -57,6 +58,16 @@ public interface Aggregator<AGGREGATE> {
      *            the value to aggregate
      */
     void aggregate(Attribute<?> value);
+
+    /**
+     * Aggregate each of the given values into this aggregator.
+     *
+     * @param values
+     *            the value to aggregate
+     */
+    default void aggregateAll(Collection<Attribute<?>> values) {
+        values.forEach(this::aggregate);
+    }
 
     /**
      * Merges the given aggregator into this aggregator

@@ -5,10 +5,8 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.security.ColumnVisibility;
@@ -398,6 +396,7 @@ public class DocumentGrouperTest {
 
     @Test
     public void testGroupingByMultipleFieldsWithDifferentFormatsAcrossMultipleDocuments() {
+        // @formatter:off
         givenGroupFields("GENDER", "BUILDING");
 
         givenDocumentColumnVisibility(COLVIS_I);
@@ -407,11 +406,11 @@ public class DocumentGrouperTest {
 
         executeGrouping();
 
-        // This document does not contain any GENDER entries. Because of this, the BUILDING.HAT entries should not be counted towards any grouping count totals
-        // since there are no GENDER entries in the document to group it against.
+        // This document contains only BUILDING entries. Because of this, we should see a single "North" and "South" grouping.
         resetDocument();
         givenDocumentColumnVisibility(COLVIS_ALL);
-        givenDocumentEntry(DocumentEntry.of("BUILDING.1").withLcNoDiacritics("North").withLcNoDiacritics("South"));
+        givenDocumentEntry(DocumentEntry.of("BUILDING.1").withLcNoDiacritics("North")
+                        .withLcNoDiacritics("South"));
 
         executeGrouping();
 
@@ -423,15 +422,19 @@ public class DocumentGrouperTest {
 
         executeGrouping();
 
+        // @formatter:on
+
         // We should expect the following groups:
         // MALE-West (Count of 1)
         // MALE-East (Count of 1)
         // FEMALE-West (Count of 1)
         // FEMALE-East (Count of 1)
         // MALE-Center (Count of 2)
+        // North (Count of 1)
+        // South (Count of 1)
 
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
-        groupsAssert.hasTotalGroups(5);
+        groupsAssert.hasTotalGroups(7);
 
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "West")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL_E_I)
                         .hasVisibilitiesForKey(textKey("GENDER", "MALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "West"), COLVIS_E);
@@ -443,6 +446,8 @@ public class DocumentGrouperTest {
                         .hasVisibilitiesForKey(textKey("GENDER", "FEMALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "East"), COLVIS_I);
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), textKey("BUILDING", "Center")).hasCount(2).hasDocumentVisibilities(COLVIS_ALL)
                         .hasVisibilitiesForKey(textKey("GENDER", "MALE"), COLVIS_ALL).hasVisibilitiesForKey(textKey("BUILDING", "Center"), COLVIS_ALL);
+        groupsAssert.assertGroup(textKey("BUILDING", "North")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL);
+        groupsAssert.assertGroup(textKey("BUILDING", "South")).hasCount(1).hasDocumentVisibilities(COLVIS_ALL);
     }
 
     @Test
@@ -728,10 +733,12 @@ public class DocumentGrouperTest {
 
         executeGrouping();
 
-        // We should not see any groups being counted or any aggregation since there are no proper groups.
+        // We should see single value groupings for "MALE" and "FEMALE" being count, with aggregation for HEIGHT occurring.
         resetDocument();
         givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
         givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.3").withLcNoDiacritics("FEMALE"));
+        givenDocumentEntry(DocumentEntry.of("GENDER.FOO.4").withLcNoDiacritics("FEMALE"));
         givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
         givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
         givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
@@ -751,10 +758,39 @@ public class DocumentGrouperTest {
 
         executeGrouping();
 
+        // We should see the HEIGHT aggregated towards an empty grouping.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Los Angeles"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("10"));
+
+        executeGrouping();
+
+        // We should see the empty grouping count increase by 1.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("New York City"));
+
+        executeGrouping();
+
+        // We should see the empty grouping count increase by 1 and the HEIGHT entries aggregated towards it.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("San Diego"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("1"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("1"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("1"));
+
+        executeGrouping();
+
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
-        groupsAssert.hasTotalGroups(3);
+        groupsAssert.hasTotalGroups(6);
 
         // @formatter:off
+        groupsAssert.assertGroup(textKey("GENDER", "MALE")).hasCount(1)
+                        .hasAggregatedSum("HEIGHT", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GENDER", "FEMALE")).hasCount(3)
+                        .hasAggregatedSum("HEIGHT", new BigDecimal("10"));
+
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "15")).hasCount(1)
                         .hasAggregatedSum("HEIGHT", new BigDecimal("5"));
 
@@ -763,6 +799,9 @@ public class DocumentGrouperTest {
 
         groupsAssert.assertGroup(textKey("GENDER", "MALE"), numericKey("AGE", "20")).hasCount(3)
                         .hasAggregatedSum("HEIGHT", new BigDecimal("10"));
+
+        groupsAssert.assertGroup(Grouping.emptyGrouping()).hasCount(3)
+                        .hasAggregatedSum("HEIGHT", new BigDecimal("18"));
         // @formatter:on
     }
 
@@ -855,7 +894,7 @@ public class DocumentGrouperTest {
 
         executeGrouping();
 
-        // We should see groups being counted, but no aggregation should occur since there are no HEIGHT entries.
+        // We should see the groups "MALE" and "FEMALE" with no aggregation.
         resetDocument();
         givenDocumentEntry(DocumentEntry.of("GENERE.FOO.1").withLcNoDiacritics("MALE"));
         givenDocumentEntry(DocumentEntry.of("GENERE.FOO.2").withLcNoDiacritics("FEMALE"));
@@ -864,7 +903,7 @@ public class DocumentGrouperTest {
 
         executeGrouping();
 
-        // We should not see any groups being counted or any aggregation since there are no proper groups.
+        // We should see the groups "MALE" and "FEMALE" with aggregation of the HEIGHT entries.
         resetDocument();
         givenDocumentEntry(DocumentEntry.of("GENDER.FOO.1").withLcNoDiacritics("MALE"));
         givenDocumentEntry(DocumentEntry.of("GENDER.FOO.2").withLcNoDiacritics("FEMALE"));
@@ -888,10 +927,16 @@ public class DocumentGrouperTest {
         executeGrouping();
 
         GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
-        groupsAssert.hasTotalGroups(3);
+        groupsAssert.hasTotalGroups(5);
 
         // We should see each field mapped to the root model mapping name, e.g. GENDER -> GEN, AGE -> AG, HEIGHT -> PEAK, etc.
         // @formatter:off
+        groupsAssert.assertGroup(textKey("GEN", "MALE")).hasCount(1)
+                        .hasAggregatedSum("PEAK", new BigDecimal("5"));
+
+        groupsAssert.assertGroup(textKey("GEN", "FEMALE")).hasCount(1)
+                        .hasAggregatedSum("PEAK", new BigDecimal("5"));
+
         groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "15")).hasCount(1)
                         .hasAggregatedSum("PEAK", new BigDecimal("5"));
 
@@ -900,6 +945,52 @@ public class DocumentGrouperTest {
 
         groupsAssert.assertGroup(textKey("GEN", "MALE"), numericKey("AG", "20")).hasCount(3)
                         .hasAggregatedSum("PEAK", new BigDecimal("10"));
+        // @formatter:on
+    }
+
+    @Test
+    public void testAggregationAcrossDocumentsWithNoGroups() {
+        givenGroupFields("GEN", "AG");
+        givenSumFields("PEAK");
+
+        givenRemappedFields();
+
+        // We should see an 'empty' group and aggregation for HEIGHT occurring.
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see an 'empty' group with no aggregation.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Los Angeles").withLcNoDiacritics("San Diego").withLcNoDiacritics("Baltimore"));
+
+        executeGrouping();
+
+        // We should see an 'empty' group and aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Denver"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.2").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("HEIGHT.FOO.3").withNumberType("5"));
+
+        executeGrouping();
+
+        // We should see an 'empty' group and aggregation for HEIGHT occurring.
+        resetDocument();
+        givenDocumentEntry(DocumentEntry.of("ADDRESS").withLcNoDiacritics("Denver"));
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.1").withNumberType("5"));
+        givenDocumentEntry(DocumentEntry.of("PEAK.FOO.2").withNumberType("5"));
+
+        executeGrouping();
+
+        GroupsAssert groupsAssert = GroupsAssert.assertThat(groups);
+        groupsAssert.hasTotalGroups(1);
+
+        // We should see each field mapped to the root model mapping name, e.g. GENDER -> GEN, AGE -> AG, HEIGHT -> PEAK, etc.
+        // @formatter:off
+        groupsAssert.assertGroup().hasCount(4).hasAggregatedSum("PEAK", new BigDecimal("40"));
         // @formatter:on
     }
 

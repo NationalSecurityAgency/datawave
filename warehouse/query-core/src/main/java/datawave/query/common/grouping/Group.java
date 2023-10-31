@@ -141,6 +141,10 @@ public class Group {
         fieldAggregator.aggregateAll(fields);
     }
 
+    public void aggregateAll(String field, Collection<Field> fields) {
+        fieldAggregator.aggregateAll(field, fields);
+    }
+
     /**
      * Merge the given group into this group. The attribute visibilities and document visibilities from the other group will be added into this group. The count
      * for this group will be incremented by the count of the other group. The aggregated fields of the other group will be merged into the aggregated fields of

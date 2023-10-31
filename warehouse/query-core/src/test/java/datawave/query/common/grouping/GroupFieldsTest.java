@@ -133,8 +133,7 @@ public class GroupFieldsTest {
         expected.setMaxFields(Sets.newHashSet("FOO"));
         expected.remapFields(inverseReverseModel, reverseModel);
 
-        GroupFields actual = GroupFields.from(
-                        "GROUP(AG,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(BAR)|MIN(BAT)|MAX(FOO)|REVERSE_MODEL_MAP(AGE=AG:NAME=NOME)");
+        GroupFields actual = GroupFields.from("GROUP(AG,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(BAR)|MIN(BAT)|MAX(FOO)|REVERSE_MODEL_MAP(AGE=AG:NAME=NOME)");
 
         assertThat(actual).isEqualTo(expected);
     }

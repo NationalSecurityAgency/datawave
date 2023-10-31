@@ -1,6 +1,7 @@
 package datawave.query.common.grouping;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.function.Predicate;
 
@@ -10,6 +11,12 @@ import java.util.function.Predicate;
  * calculating the hashcode each time a search operation is performed on the keys of the maps.
  */
 public class Grouping extends HashSet<GroupingAttribute<?>> {
+
+    public static final Grouping EMPTY_GROUPING = new Grouping(Collections.emptySet());
+
+    public static Grouping emptyGrouping() {
+        return EMPTY_GROUPING;
+    }
 
     // The cached hashcode.
     private int cachedHashcode;

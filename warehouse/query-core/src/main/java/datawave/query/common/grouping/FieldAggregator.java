@@ -4,10 +4,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 
@@ -55,6 +57,12 @@ public class FieldAggregator {
         }
     }
 
+    /**
+     * Aggregate the given field to all relevant aggregators.
+     *
+     * @param field
+     *            the field to aggregate
+     */
     public void aggregate(Field field) {
         if (aggregatorMap.containsKey(field.getBase())) {
             Collection<Aggregator<?>> aggregators = this.aggregatorMap.get(field.getBase()).values();
@@ -64,8 +72,33 @@ public class FieldAggregator {
         }
     }
 
+    /**
+     * Aggregate each of the given fields to all relevant aggregators.
+     *
+     * @param fields
+     *            the fields to aggregate
+     */
     public void aggregateAll(Collection<Field> fields) {
         fields.forEach(this::aggregate);
+    }
+
+    /**
+     * Aggregate each of the given fields to all relevant aggregators for the given field. This is more efficient than {@link #aggregateAll(Collection)} when
+     * you have a collection of fields for the same base field.
+     *
+     * @param field
+     *            the field the base field name
+     * @param fields
+     *            the fields to aggregate
+     */
+    public void aggregateAll(String field, Collection<Field> fields) {
+        if (aggregatorMap.containsKey(field)) {
+            List<Attribute<?>> attributes = fields.stream().map(Field::getAttribute).collect(Collectors.toList());
+            Collection<Aggregator<?>> aggregators = this.aggregatorMap.get(field).values();
+            for (Aggregator<?> aggregator : aggregators) {
+                aggregator.aggregateAll(attributes);
+            }
+        }
     }
 
     /**

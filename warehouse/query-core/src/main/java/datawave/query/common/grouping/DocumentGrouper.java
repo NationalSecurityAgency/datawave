@@ -43,10 +43,10 @@ import datawave.query.attributes.TypeAttribute;
  * <li>The JEXL function {@code f:groupby()}.</li>
  * <li>The query parameter {@code group.fields}.</li>
  * </ul>
- * Only groupings that consist of a value from each specified field to group by will be counted as a valid grouping. If three fields were specified, e.g.
- * {@code #GROUPBY(NAME,AGE,JOB)}, each valid grouping will contain three values, a NAME value, an AGE value, and a JOB value. Any grouping combinations that do
- * not have one of each field will be discarded. Values are grouped together based on the format of each document entry's key, which may have one of the
- * following formats:
+ * Groupings may be of any size that encompass none, some, or all of the target group fields. If a document has no entries for any of the target group fields,
+ * it will be grouped as part of an 'empty' grouping, and all target aggregation entries will be aggregated to the empty grouping. The count for 'empty' groups
+ * will be the same as the number of documents seen without any group-by fields. Values are grouped together based on the format of each document entry's key,
+ * which may have one of the following formats:
  * <ul>
  * <li>{@code <FIELD>}</li>
  * <li>{@code <FIELD>.<INSTANCE>}</li>
@@ -132,10 +132,10 @@ public class DocumentGrouper {
 
     private final Groups groups;
     private final Groups currentGroups = new Groups();
-    private final FieldIndex groupFieldsIndex = new FieldIndex();
-    private final FieldIndex aggregateFieldsIndex = new FieldIndex();
+    private final FieldIndex groupFieldsIndex = new FieldIndex(false);
+    private final FieldIndex aggregateFieldsIndex = new FieldIndex(true);
     private final Multimap<Pair<String,String>,Grouping> groupingContextAndInstancesSeenForGroups = HashMultimap.create();
-    private final int requiredGroupSize;
+    private final int maxGroupSize;
 
     private DocumentGrouper(Map.Entry<Key,Document> documentEntry, GroupFields groupFields, Groups groups) {
         this.documentKey = documentEntry.getKey();
@@ -144,12 +144,12 @@ public class DocumentGrouper {
         this.fieldAggregatorFactory = groupFields.getFieldAggregatorFactory();
         this.reverseModelMappings = groupFields.getReverseModelMap();
         this.groups = groups;
-        // If the fields were not remapped, the required size of groupings is equal to the number of group-by fields.
+        // If the fields were not remapped, the max size of groupings is equal to the number of group-by fields.
         if (this.reverseModelMappings.isEmpty()) {
-            this.requiredGroupSize = this.groupFields.size();
+            this.maxGroupSize = this.groupFields.size();
         } else {
             // Otherwise, we must reverse-map the group fields to their display name and count the distinct fields.
-            this.requiredGroupSize = (int) this.groupFields.stream().map(this::getMappedFieldName).distinct().count();
+            this.maxGroupSize = (int) this.groupFields.stream().map(this::getMappedFieldName).distinct().count();
         }
     }
 
@@ -168,7 +168,7 @@ public class DocumentGrouper {
             // Group the document entries.
             groupEntries();
             // Aggregate fields only if there were aggregation fields specified and if any entries for aggregation were found.
-            if (!currentGroups.isEmpty() && fieldAggregatorFactory.hasFieldsToAggregate() && !aggregateFieldsIndex.isEmpty()) {
+            if (fieldAggregatorFactory.hasFieldsToAggregate() && !aggregateFieldsIndex.isEmpty()) {
                 aggregateEntries();
             }
 
@@ -292,29 +292,37 @@ public class DocumentGrouper {
      * Identify valid groupings consisting of target group pairs and create/update their corresponding {@link Group} in {@link #currentGroups}.
      */
     private void groupEntries() {
-        // The groupings combinations that we find. Each combination may only have one Field from a particular target group field, e.g. if doing
-        // #GROUP_BY(AGE,GENDER), a combination set will have at most one AGE field and one GENDER field.
-        List<Set<Field>> groupings = new ArrayList<>();
+        // If we found any entries for target group fields, identify all valid groupings.
+        if (groupEntriesFound()) {
+            // The groupings combinations that we find. Each combination may only have one Field from a particular target group field, e.g. if doing
+            // #GROUP_BY(AGE,GENDER), a combination set will have at most one AGE field and one GENDER field.
+            List<Set<Field>> groupings = new ArrayList<>();
 
-        // If we only have one target grouping field, we do not need to find any group combinations. All events for the given target group field should be
-        // tracked as individual groupings.
-        if (requiredGroupSize == 1) {
-            groupFieldsIndex.fields.values().stream().map(Collections::singleton).forEach(groupings::add);
+            // If we only have one target grouping field, we do not need to find any group combinations. All events for the given target group field should be
+            // tracked as individual groupings.
+            if (maxGroupSize == 1) {
+                groupFieldsIndex.fields.values().stream().map(Collections::singleton).forEach(groupings::add);
+            } else {
+                // If we have any group field events with grouping contexts and instances, e.g. GENDER.FOO.1, it's possible that we will find direct matches to
+                // other group field events with the same grouping context and instance (a direct match). These should be found first for efficiency purposes.
+                if (groupFieldsIndex.hasFieldsWithPossibleDirectMatch()) {
+                    groupings = getGroupingsWithDirectMatches();
+                }
+                // If we have any group field events that do not have a grouping context and instance, e.g. GENDER.1 or GENDER, then each one of those events
+                // should
+                // be combined with each existing group combination, effectively creating cartesian products.
+                if (groupFieldsIndex.hasFieldsWithoutDirectMatch()) {
+                    groupings = getGroupingsWithoutDirectMatches(groupings);
+                }
+            }
+
+            // Track each identified grouping.
+            groupings.forEach(this::trackGroup);
         } else {
-            // If we have any group field events with grouping contexts and instances, e.g. GENDER.FOO.1, it's possible that we will find direct matches to
-            // other group field events with the same grouping context and instance (a direct match). These should be found first for efficiency purposes.
-            if (groupFieldsIndex.hasFieldsWithPossibleDirectMatch()) {
-                groupings = getGroupingsWithDirectMatches();
-            }
-            // If we have any group field events that do not have a grouping context and instance, e.g. GENDER.1 or GENDER, then each one of those events should
-            // be combined with each existing group combination, effectively creating cartesian products.
-            if (groupFieldsIndex.hasFieldsWithoutDirectMatch()) {
-                groupings = getGroupingsWithoutDirectMatches(groupings);
-            }
+            // If no entries were found for any of the target group fields, create a single 'empty' group that will represent this document in the final
+            // grouping results.
+            trackGroup(Grouping.emptyGrouping());
         }
-
-        // Only track groupings that have one event from each target group field, i.e. groupings with the required group size.
-        groupings.stream().filter(grouping -> grouping.size() == requiredGroupSize).forEach(this::trackGroup);
     }
 
     /**
@@ -495,20 +503,29 @@ public class DocumentGrouper {
         }
 
         // Now we can create/update groups in currentGroups for each grouping key.
-        for (Grouping grouping : groupings) {
-            Group group = currentGroups.getGroup(grouping);
-            // Create a group for the grouping if one does not already exist.
-            if (group == null) {
-                group = new Group(grouping);
-                currentGroups.putGroup(group);
-                group.setFieldAggregator(fieldAggregatorFactory.newInstance());
-            }
-            // Add the visibilities of each attribute in the grouping for combination later, and increment the count for how many times this distinct
-            // grouping was seen.
-            group.addAttributeVisibilities(grouping);
-            group.incrementCount();
-            group.addDocumentVisibility(document.getColumnVisibility());
+        groupings.forEach(this::trackGroup);
+    }
+
+    /**
+     * Create/update the group for the given grouping.
+     *
+     * @param grouping
+     *            the grouping to track
+     */
+    private void trackGroup(Grouping grouping) {
+        // Get the group.
+        Group group = currentGroups.getGroup(grouping);
+        // Create a group for the grouping if one does not already exist.
+        if (group == null) {
+            group = new Group(grouping);
+            group.setFieldAggregator(fieldAggregatorFactory.newInstance());
+            currentGroups.putGroup(group);
         }
+        // Add the visibilities of each attribute in the grouping for combination later, and increment the count for how many times this distinct
+        // grouping was seen.
+        group.addAttributeVisibilities(grouping);
+        group.incrementCount();
+        group.addDocumentVisibility(document.getColumnVisibility());
     }
 
     private GroupingAttribute<?> createCopyWithKey(Attribute<?> attribute, String key) {
@@ -522,43 +539,59 @@ public class DocumentGrouper {
      * Aggregate all qualifying events that are from target aggregation fields.
      */
     private void aggregateEntries() {
-        // If we have any target events for aggregation that have a grouping context and instance, e.g. AGE.FOO.1, attempt to find groups that have matching
-        // grouping context and instance pairs, and aggregate the events into those groups only. If we do not find any direct match at all for a specified
-        // aggregation field, then all events for the aggregation field will be aggregated into each group.
-        if (aggregateFieldsIndex.hasFieldsWithPossibleDirectMatch()) {
-            // Attempt to find a direct match for the current aggregation target field.
-            for (String fieldName : aggregateFieldsIndex.fieldToFieldsByGroupingContextAndInstance.keySet()) {
-                Multimap<Pair<String,String>,Field> groupingContextAndInstanceToFields = aggregateFieldsIndex.fieldToFieldsByGroupingContextAndInstance
-                                .get(fieldName);
-                Set<Pair<String,String>> aggregatePairs = groupingContextAndInstanceToFields.keySet();
-                Set<Pair<String,String>> groupPairs = this.groupingContextAndInstancesSeenForGroups.keySet();
-                // A group and an aggregation event is considered to be a direct match if and only if the group contains any event that has the same grouping
-                // context and instance as the aggregation event.
-                Set<Pair<String,String>> directMatches = Sets.intersection(aggregatePairs, groupPairs);
-                // If we have any direct matches, then only aggregate the direct matches into the groups where we saw a direct match.
-                if (!directMatches.isEmpty()) {
-                    for (Pair<String,String> directMatch : directMatches) {
-                        for (Grouping grouping : this.groupingContextAndInstancesSeenForGroups.get(directMatch)) {
-                            Group group = currentGroups.getGroup(grouping);
-                            Collection<Field> fields = groupingContextAndInstanceToFields.get(directMatch);
-                            group.aggregateAll(fields);
+        // Groupings were found in the document. Aggregate entries according to their association based on each entry's grouping context and instance.
+        if (groupEntriesFound()) {
+            // If we have any target events for aggregation that have a grouping context and instance, e.g. AGE.FOO.1, attempt to find groups that have matching
+            // grouping context and instance pairs, and aggregate the events into those groups only. If we do not find any direct match at all for a specified
+            // aggregation field, then all events for the aggregation field will be aggregated into each group.
+            if (aggregateFieldsIndex.hasFieldsWithPossibleDirectMatch()) {
+                // Attempt to find a direct match for the current aggregation target field.
+                for (String fieldName : aggregateFieldsIndex.fieldToFieldsByGroupingContextAndInstance.keySet()) {
+                    Multimap<Pair<String,String>,Field> groupingContextAndInstanceToFields = aggregateFieldsIndex.fieldToFieldsByGroupingContextAndInstance
+                                    .get(fieldName);
+                    Set<Pair<String,String>> aggregatePairs = groupingContextAndInstanceToFields.keySet();
+                    Set<Pair<String,String>> groupPairs = this.groupingContextAndInstancesSeenForGroups.keySet();
+                    // A group and an aggregation event is considered to be a direct match if and only if the group contains any event that has the same
+                    // grouping context and instance as the aggregation event.
+                    Set<Pair<String,String>> directMatches = Sets.intersection(aggregatePairs, groupPairs);
+                    // If we have any direct matches, then only aggregate the direct matches into the groups where we saw a direct match.
+                    if (!directMatches.isEmpty()) {
+                        for (Pair<String,String> directMatch : directMatches) {
+                            for (Grouping grouping : this.groupingContextAndInstancesSeenForGroups.get(directMatch)) {
+                                Group group = currentGroups.getGroup(grouping);
+                                Collection<Field> fields = groupingContextAndInstanceToFields.get(directMatch);
+                                group.aggregateAll(fields);
+                            }
                         }
+                    } else {
+                        // Otherwise, aggregate all events for this field into all groups.
+                        Collection<Field> fields = aggregateFieldsIndex.getFields(fieldName);
+                        currentGroups.aggregateToAllGroups(fields);
                     }
-                } else {
-                    // Otherwise, aggregate all events for this field into all groups.
+                }
+            }
+            // If there are any target aggregation events that do not have a grouping context, e.g. AGE or AGE.1, then all target aggregation events should be
+            // aggregated into all groups.
+            if (aggregateFieldsIndex.hasFieldsWithoutDirectMatch()) {
+                for (String fieldName : aggregateFieldsIndex.fieldsWithoutDirectMatch) {
                     Collection<Field> fields = aggregateFieldsIndex.getFields(fieldName);
                     currentGroups.aggregateToAllGroups(fields);
                 }
             }
-        }
-        // If there are any target aggregation events that do not have a grouping context, e.g. AGE or AGE.1, then all target aggregation events should be
-        // aggregated into all groups.
-        if (aggregateFieldsIndex.hasFieldsWithoutDirectMatch()) {
-            for (String fieldName : aggregateFieldsIndex.fieldsWithoutDirectMatch) {
-                Collection<Field> fields = aggregateFieldsIndex.getFields(fieldName);
-                currentGroups.aggregateToAllGroups(fields);
+        } else {
+            // No groupings were found in the document. In this case, we will consider this document to contain a placeholder 'empty' grouping, and aggregate
+            // all aggregation entries to the empty grouping.
+            Group group = currentGroups.getGroup(Grouping.emptyGrouping());
+            // Aggregate all aggregate entries to the grouping.
+            Multimap<String,Field> fields = aggregateFieldsIndex.fields;
+            for (String field : fields.keySet()) {
+                group.aggregateAll(field, fields.get(field));
             }
         }
+    }
+
+    private boolean groupEntriesFound() {
+        return !groupFieldsIndex.isEmpty();
     }
 
     /**
@@ -617,45 +650,52 @@ public class DocumentGrouper {
      */
     private static class FieldIndex {
 
+        // Map of field names to their entries.
         private final Multimap<String,Field> fields = ArrayListMultimap.create();
+        // The set of fields with possible direct matches.
         private final Set<String> fieldsWithPossibleDirectMatch = new HashSet<>();
+        // The set of fields with no direct matches.
         private final Set<String> fieldsWithoutDirectMatch = new HashSet<>();
+        // Map of field names to Multimaps of grouping contexts to entries.
         private final Map<String,Multimap<Pair<String,String>,Field>> fieldToFieldsByGroupingContextAndInstance = new HashMap<>();
+        // Whether to accept entries that have null attributes for indexing.
+        private final boolean allowNullAttributes;
 
-        private void index(Field field) {
-            fields.put(field.getBase(), field);
-            // If the field has a grouping context and instance, it's possible that it may have a direct match. Index the field and its grouping
-            // context-instance pair.
-            if (field.hasGroupingContext() && field.hasInstance()) {
-                fieldsWithPossibleDirectMatch.add(field.getBase());
-                Multimap<Pair<String,String>,Field> groupingContextAndInstanceToField = fieldToFieldsByGroupingContextAndInstance.get(field.getBase());
-                if (groupingContextAndInstanceToField == null) {
-                    groupingContextAndInstanceToField = HashMultimap.create();
-                    fieldToFieldsByGroupingContextAndInstance.put(field.getBase(), groupingContextAndInstanceToField);
-                }
-                groupingContextAndInstanceToField.put(Pair.with(field.getGroupingContext(), field.getInstance()), field);
-            } else {
-                // Otherwise, the field will have no direct matches.
-                fieldsWithoutDirectMatch.add(field.getBase());
-            }
+        private FieldIndex(boolean allowNullAttributes) {
+            this.allowNullAttributes = allowNullAttributes;
         }
 
         /**
-         * Returns a map of field base names to field events seen for the field.
+         * Index the given {@link Field}. If {@link #allowNullAttributes} is set to false and the given field has a null attribute, it will not be indexed.
          *
-         * @return the field map
+         * @param field
+         *            the field to index
          */
+        public void index(Field field) {
+            // Check if we can index this field.
+            if (field.getAttribute() != null || allowNullAttributes) {
+                fields.put(field.getBase(), field);
+                // If the field has a grouping context and instance, it's possible that it may have a direct match. Index the field and its grouping
+                // context-instance pair.
+                if (field.hasGroupingContext() && field.hasInstance()) {
+                    fieldsWithPossibleDirectMatch.add(field.getBase());
+                    Multimap<Pair<String,String>,Field> groupingContextAndInstanceToField = fieldToFieldsByGroupingContextAndInstance.get(field.getBase());
+                    if (groupingContextAndInstanceToField == null) {
+                        groupingContextAndInstanceToField = HashMultimap.create();
+                        fieldToFieldsByGroupingContextAndInstance.put(field.getBase(), groupingContextAndInstanceToField);
+                    }
+                    groupingContextAndInstanceToField.put(Pair.with(field.getGroupingContext(), field.getInstance()), field);
+                } else {
+                    // Otherwise, the field will have no direct matches.
+                    fieldsWithoutDirectMatch.add(field.getBase());
+                }
+            }
+        }
+
         public Multimap<String,Field> getFields() {
             return fields;
         }
 
-        /**
-         * Returns all field events seen for the specified field.
-         *
-         * @param field
-         *            the field
-         * @return all field events for the field
-         */
         public Collection<Field> getFields(String field) {
             return fields.get(field);
         }
