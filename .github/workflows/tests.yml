@@ -58,6 +58,8 @@ jobs:
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3
+      with:
+        submodules: 'recursive'
     - name: Set up JDK ${{env.JAVA_VERSION}}
       uses: actions/setup-java@v3
       with:
