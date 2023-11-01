@@ -279,4 +279,64 @@ public class ShardReindexJobTest extends EasyMockSupport {
 
         verifyAll();
     }
+
+    @Test
+    public void mapperDeleteKey_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        Counter mockCounter = createMock(Counter.class);
+        ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
+
+        Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        fiKey.setDeleted(true);
+        Key revKey = new Key("CBA", "FIELDD", "row" + '\u0000' + "samplecsv");
+        revKey.setDeleted(true);
+        BulkIngestKey bik2 = new BulkIngestKey(new Text("shardReverseIndex"), revKey);
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik2)), EasyMock.isA(Value.class));
+        context.progress();
+
+
+        EasyMock.expect(context.getCounter("deletes","propagated")).andReturn(mockCounter);
+        mockCounter.increment(1l);
+
+        conf.setBoolean("propagateDeletes", true);
+
+        replayAll();
+
+        // enable cleanup keys
+        conf.setBoolean("job.cleanupShard", true);
+        mapper.setup(context);
+
+        mapper.map(fiKey, new Value(), context);
+
+        verifyAll();
+    }
+
+    @Test
+    public void mapperDeleteKeyNoPropagate_test() throws IOException, InterruptedException {
+        Mapper.Context context = createMock(Mapper.Context.class);
+        Counter mockCounter = createMock(Counter.class);
+        ShardReindexJob.FiToGiMapper mapper = new ShardReindexJob.FiToGiMapper();
+
+        Key fiKey = new Key("row", FI_START + "FIELDD", "ABC" + '\u0000' + "samplecsv" + '\u0000' + "1.2.3");
+        fiKey.setDeleted(true);
+        context.progress();
+
+        EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
+        EasyMock.expect(context.getCounter("deletes","skipped")).andReturn(mockCounter);
+        mockCounter.increment(1l);
+
+        conf.setBoolean("propagateDeletes", false);
+
+        replayAll();
+
+        // enable cleanup keys
+        conf.setBoolean("job.cleanupShard", true);
+        mapper.setup(context);
+
+        mapper.map(fiKey, new Value(), context);
+
+        verifyAll();
+    }
 }

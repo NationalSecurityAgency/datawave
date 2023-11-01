@@ -113,6 +113,9 @@ public class ShardReindexJob implements Tool {
             }
         }
 
+        // set the propagate deletes flag
+        configuration.setBoolean("propagateDeletes", jobConfig.propagateDeletes);
+
         // setup the accumulo helper
         AccumuloHelper.setInstanceName(configuration, jobConfig.instance);
         AccumuloHelper.setPassword(configuration, getPassword().getBytes());
@@ -285,6 +288,8 @@ public class ShardReindexJob implements Tool {
         private byte[] lastFiBytes;
         private String field;
 
+        private boolean propagateDeletes;
+
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             Configuration config = context.getConfiguration();
@@ -295,6 +300,8 @@ public class ShardReindexJob implements Tool {
             this.shardTable = new Text(config.get(ShardedDataTypeHandler.SHARD_TNAME, "shard"));
             this.indexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GIDX_TNAME, "shardIndex"));
             this.reverseIndexTable = new Text(config.get(ShardedDataTypeHandler.SHARD_GRIDX_TNAME, "shardReverseIndex"));
+
+            this.propagateDeletes = config.getBoolean("propagateDeletes", false);
         }
 
         @Override
@@ -366,6 +373,15 @@ public class ShardReindexJob implements Tool {
             Text fieldText = null;
             Text indexCq = null;
             boolean indexed = false;
+
+            if (key.isDeleted() && !propagateDeletes) {
+                context.getCounter("deletes", "skipped").increment(1l);
+                context.progress();
+                return;
+            } else if (key.isDeleted()) {
+                context.getCounter("deletes", "propagated").increment(1l);
+            }
+
             // test if the field should have a global index built for it and write to context
             if (helper.isIndexedField(field) || helper.isIndexOnlyField(field)) {
                 // generate the global index key and emit it
@@ -376,6 +392,7 @@ public class ShardReindexJob implements Tool {
                 indexCq = new Text(docId.toString());
 
                 Key globalIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), key.getTimestamp());
+                globalIndexKey.setDeleted(key.isDeleted());
                 BulkIngestKey bik = new BulkIngestKey(indexTable, globalIndexKey);
                 context.write(bik, UID_VALUE);
                 indexed = true;
@@ -393,6 +410,7 @@ public class ShardReindexJob implements Tool {
                 }
 
                 Key globalReverseIndexKey = new Key(fieldValueText, fieldText, indexCq, key.getColumnVisibility(), key.getTimestamp());
+                globalReverseIndexKey.setDeleted(key.isDeleted());
                 // generate the global reverse index key and emit it
                 BulkIngestKey bik = new BulkIngestKey(reverseIndexTable, globalReverseIndexKey);
                 context.write(bik, UID_VALUE);
@@ -489,5 +507,8 @@ public class ShardReindexJob implements Tool {
 
         @Parameter(names = "--batchSize", description = "accumulo batch size, defaults to table setting", required = false)
         private int batchSize = -1;
+
+        @Parameter(names = "--propagateDeletes", description = "When true deletes are propagated to the indexes", required = false)
+        private boolean propagateDeletes = false;
     }
 }
