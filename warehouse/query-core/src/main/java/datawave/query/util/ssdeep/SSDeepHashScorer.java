@@ -73,7 +73,7 @@ public class SSDeepHashScorer {
      * This is the low level chunk scoring algorithm. It takes two chunks and scores them on a scale of 0-100 where 0 is a terrible match and 100 is a great
      * match. The chunkSize is used to cope with very small messages.
      */
-    private static long scoreChunks(final String s1, final String s2, final long chunkSize) {
+    private static int scoreChunks(final String s1, final String s2, final long chunkSize) {
         final int len1 = s1.length();
         final int len2 = s2.length();
         

@@ -5,9 +5,9 @@ import java.io.Serializable;
 public class NGramScoreTuple implements Serializable, Comparable<NGramScoreTuple> {
     final SSDeepHash ssDeepHash;
     final float baseScore;
-    final float weightedScore;
+    final int weightedScore;
 
-    public NGramScoreTuple(SSDeepHash ssDeepHash, float baseScore, float weightedScore) {
+    public NGramScoreTuple(SSDeepHash ssDeepHash, float baseScore, int weightedScore) {
         this.ssDeepHash = ssDeepHash;
         this.baseScore = baseScore;
         this.weightedScore = weightedScore;
@@ -56,7 +56,7 @@ public class NGramScoreTuple implements Serializable, Comparable<NGramScoreTuple
 
     @Override
     public int compareTo(NGramScoreTuple o) {
-        int cmp = Float.compare(o.weightedScore, weightedScore);
+        int cmp = Integer.compare(o.weightedScore, weightedScore);
         if (cmp == 0) {
             cmp = ssDeepHash.compareTo(o.ssDeepHash);
         }
