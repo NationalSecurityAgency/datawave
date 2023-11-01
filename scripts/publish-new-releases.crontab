@@ -1,0 +1,6 @@
+# Example crontab for auto-publishing site updates
+
+PATH=/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin
+DW_GITHUB_REMOTE_URL=https://<github-username>:<github-oauth-token>@github.com/NationalSecurityAgency/datawave.git
+
+0 16 * * * /path/to/scripts/publish-new-releases --push >> /path/to/publish-new-releases.log

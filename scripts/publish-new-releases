@@ -17,9 +17,13 @@
 #   (2) The git executable must be on the user's PATH
 #
 
+# Major versions of DW that we want to publish to the gh-pages site
+declare -a -r TRACKED_DW_VERSIONS=( 3 5 6 )
+
 readonly TMP_DW_DIR=$(mktemp -d /tmp/$( basename $0 )_datawave_XXXXXXX)
 readonly TMP_GHPAGES_DIR=$(mktemp -d /tmp/$( basename $0 )_ghpages_XXXXXXX)
 readonly POSTS_DIR=${TMP_GHPAGES_DIR}/_posts/release
+
 
 declare -i _new_release_count=0
 
@@ -81,10 +85,13 @@ configure() {
     esac
     shift
   done
+  
   readonly GIT=$(which git)
   [[ -z "${GIT}" ]] && logf "Can't locate git exe!"
   [[ -z "${DW_GITHUB_REMOTE_URL}" ]] && logf "DW_GITHUB_REMOTE_URL is not set in your environment!"
   [[ "${_debug}" == false ]] && readonly GIT_QUIET="--quiet"
+  
+  clone_repos
 }
 
 search() {
@@ -141,7 +148,7 @@ A new Accumulo ${_accumulo_minor_v}.x-compatible DataWave release has been tagge
 }
 
 update_git() {
-  local _commit_message="Creating post(s) for ${_new_release_count} recent DW release(s)"
+  local _commit_message="Publishing update for new DW tagged release(s)"
   cd "${TMP_GHPAGES_DIR}"
   ${GIT} add . || logf "Failed to git-add updates to local gh-pages branch!"
   logi "======================== BEGIN git diff ============================="
@@ -156,101 +163,72 @@ update_git() {
   fi
 }
 
+clone_repos() {
+  logi "Cloning repos..."
+  if ! ${GIT} clone ${GIT_QUIET} "${DW_GITHUB_REMOTE_URL}" ${TMP_DW_DIR} ; then
+    logf "Failed to clone DataWave!"
+  fi
+  logi "DataWave was cloned to ${TMP_DW_DIR}"
+  if ! ${GIT} clone ${GIT_QUIET} --single-branch --branch gh-pages "${DW_GITHUB_REMOTE_URL}" ${TMP_GHPAGES_DIR} ; then
+    logf "Failed to clone DataWave's gh-pages branch!"
+  fi
+  logi "gh-pages branch was cloned to ${TMP_GHPAGES_DIR}"
+}
+
+get_dw_tags() {
+  #
+  # Get semver-sorted list of tags for the current _major_version
+  # Filter out RC's and other cruft
+  #
+  _dw_tags=( $(cd ${TMP_DW_DIR} && $GIT tag --sort=v:refname | egrep "^${_major_version}\.[0-9]+\.[0-9]+$") )
+}
+
+get_published_tags() {
+  #
+  # Get semver-sorted list of tagged releases for the current _major_version
+  # that've already been published to gh-pages
+  # 
+  _ghpages_posts=()
+  _ghpages_posts_count=$(ls -1 ${POSTS_DIR}/*datawave-${_major_version}\.* 2>/dev/null | wc -l)
+  if [[ ${_ghpages_posts_count} -gt 0 ]] ; then
+    _ghpages_posts=( $(cd ${POSTS_DIR} && ls -1 *datawave-${_major_version}\.*\.md | cut -d'-' -f5 | sed 's/.\{3\}$//' | sort -t "." -k1,1n -k2,2n -k3,3n) )
+    # Get the _DW_TAGS index of the most recent tag published to ghpages
+    _latest_post_index=$(search "${_ghpages_posts[-1]}" "${_dw_tags[@]}")
+  fi
+  # Sanity check...
+  if [[ ${_ghpages_posts_count} -gt 0 && ${_latest_post_index} -lt 0 ]] ; then
+    logf "Git tag for the ${_ghpages_posts[-1]} gh-pages post wasn't found in Github"
+  fi
+  logi "Latest ${_major_version}.x post in gh-pages: ${_ghpages_posts[-1]}"
+  logi "Latest DW ${_major_version}.x release: ${_dw_tags[-1]}"
+  logd "${_major_version}.x tag list: $(printf '%s\n' "${_dw_tags[@]}" | paste -sd ',' -)"
+  logd "Index of ${_ghpages_posts[-1]} tag: ${_latest_post_index}"
+}
+
 configure "${@}"
 
-logi "Cloning repos..."
+# Update gh-pages' _posts/release to reflect latest DW releses for all tracked versions  
 
-if ! ${GIT} clone ${GIT_QUIET} "${DW_GITHUB_REMOTE_URL}" ${TMP_DW_DIR} ; then
-  logf "Failed to clone DataWave!"
-fi
+for _major_version in "${TRACKED_DW_VERSIONS[@]}" ; do
+  get_dw_tags
+  get_published_tags
+  # If latest published tag != latest DW tag, then we need to publish an update
+  if [[ "${_ghpages_posts[-1]}" != "${_dw_tags[-1]}" ]] ; then
+    _accumulo_version="2.1"
+    [[ ${_major_version} -lt 5 ]] && _accumulo_version="1.10" 
+    generate_posts "${_accumulo_version}" "$((${_latest_post_index}+1))" "${_dw_tags[@]}"
+  else
+    logi "There's nothing new to publish for DW ${_major_version}.x"
+  fi
+done
 
-logi "DataWave was cloned to ${TMP_DW_DIR}"
-
-if ! ${GIT} clone ${GIT_QUIET} --single-branch --branch gh-pages "${DW_GITHUB_REMOTE_URL}" ${TMP_GHPAGES_DIR} ; then
-  logf "Failed to clone DataWave's gh-pages branch!"
-fi
-
-logi "gh-pages branch was cloned to ${TMP_GHPAGES_DIR}"
-
-# Get semver-sorted lists of tags. Filter out RC's and other cruft
-
-_3x_tags=( $(cd ${TMP_DW_DIR} && $GIT tag --sort=v:refname | egrep '^3\.[0-9]+\.[0-9]+$') )
-_5x_tags=( $(cd ${TMP_DW_DIR} && $GIT tag --sort=v:refname | egrep '^5\.[0-9]+\.[0-9]+$') )
-_6x_tags=( $(cd ${TMP_DW_DIR} && $GIT tag --sort=v:refname | egrep '^6\.[0-9]+\.[0-9]+$') )
-
-# Get semver-sorted lists of releases that've already been published to gh-pages
-
-_3x_posts=()
-_3x_posts_count=$(ls -1 ${POSTS_DIR}/*datawave-3\.* 2>/dev/null | wc -l)
-if [[ ${_3x_posts_count} -gt 0 ]] ; then
-  _3x_posts=( $(cd ${POSTS_DIR} && ls -1 *datawave-3\.*\.md | cut -d'-' -f5 | sed 's/.\{3\}$//' | sort -t "." -k1,1n -k2,2n -k3,3n) )
-  _3x_index=$(search "${_3x_posts[-1]}" "${_3x_tags[@]}")
-fi
-
-if [[ ${_3x_posts_count} -gt 0 && ${_3x_index} -lt 0 ]] ; then
-  logf "Git tag for the ${_3x_posts[-1]} post wasn't found in Github"
-fi
-
-_5x_posts=()
-_5x_posts_count=$(ls -1 ${POSTS_DIR}/*datawave-5\.* 2>/dev/null | wc -l)
-if [[ ${_5x_posts_count} -gt 0 ]] ; then
-  _5x_posts=( $(cd ${POSTS_DIR} && ls -1 *datawave-5\.*\.md | cut -d'-' -f5 | sed 's/.\{3\}$//' | sort -t "." -k1,1n -k2,2n -k3,3n) )
-  _5x_index=$(search "${_5x_posts[-1]}" "${_5x_tags[@]}")
-fi
-
-if [[ ${_5x_posts_count} -gt 0 && ${_5x_index} -lt 0 ]] ; then
-  logf "Git tag for the ${_5x_posts[-1]} post wasn't found in Github"
-fi
-
-_6x_posts=()
-_6x_posts_count=$(ls -1 ${POSTS_DIR}/*datawave-6\.* 2>/dev/null | wc -l)
-if [[ ${_6x_posts_count} -gt 0 ]] ; then
-  _6x_posts=( $(cd ${POSTS_DIR} && ls -1 *datawave-6\.*\.md | cut -d'-' -f5 | sed 's/.\{3\}$//' | sort -t "." -k1,1n -k2,2n -k3,3n) )
-  _6x_index=$(search "${_6x_posts[-1]}" "${_6x_tags[@]}")
-fi
-
-if [[ ${_6x_posts_count} -gt 0 && ${_6x_index} -lt 0 ]] ; then
-  logf "Git tag for the ${_6x_posts[-1]} post wasn't found in Github"
-fi
-
-logi "Latest 3.x post in gh-pages: ${_3x_posts[-1]}"
-logi "Latest DW 3.x release: ${_3x_tags[-1]}"
-logd "3.x tag list: $(printf '%s\n' "${_3x_tags[@]}" | paste -sd ',' -)"
-logd "Index of ${_3x_posts[-1]} tag: ${_3x_index}"
-
-# If latest posted 3x tag == latest DW 3x tag, then we're done
-[[ "${_3x_posts[-1]}" == "${_3x_tags[-1]}" ]] && _skip_3x=true
-
-logi "Latest 5.x post in gh-pages: ${_5x_posts[-1]}"
-logi "Latest DW 5.x release: ${_5x_tags[-1]}"
-logd "5.x tag list: $(printf '%s\n' "${_5x_tags[@]}" | paste -sd ',' -)"
-logd "Index of ${_5x_posts[-1]} tag: ${_5x_index}"
-
-# If latest posted 5x tag == latest DW 5x tag, then we're done 
-[[ "${_5x_posts[-1]}" == "${_5x_tags[-1]}" ]] && _skip_5x=true
-
-logi "Latest 6.x post in gh-pages: ${_6x_posts[-1]}"
-logi "Latest DW 6.x release: ${_6x_tags[-1]}"
-logd "6.x tag list: $(printf '%s\n' "${_6x_tags[@]}" | paste -sd ',' -)"
-logd "Index of ${_6x_posts[-1]} tag: ${_6x_index}"
-
-# If latest posted 6x tag == latest DW 6x tag, then we're done 
-[[ "${_6x_posts[-1]}" == "${_6x_tags[-1]}" ]] && _skip_6x=true
-
-if [[ -n "${_skip_3x}" && -n "${_skip_5x}" && -n "${_skip_6x}" ]] ; then
-  logi "We're done. There's nothing new to publish"
-else
-  # Generate new posts and update local/remote git repos
-  [[ -z "${_skip_3x}" ]] && generate_posts "1.10" "$((${_3x_index}+1))" "${_3x_tags[@]}"
-  [[ -z "${_skip_5x}" ]] && generate_posts "2.1"  "$((${_5x_index}+1))" "${_5x_tags[@]}"
-  [[ -z "${_skip_6x}" ]] && generate_posts "2.1"  "$((${_6x_index}+1))" "${_6x_tags[@]}"
-  logi "New releases since the last gh-pages update: ${_new_release_count}"
-  update_git
-fi
+# Update local gh-pages git repo and do cleanup as needed
 
 if [[ ${_new_release_count} -eq 0 ]] ; then
   cleanup "${TMP_GHPAGES_DIR}" "${TMP_DW_DIR}"
 else
+  logi "New releases since the last gh-pages update: ${_new_release_count}"
+  update_git
   cleanup "${TMP_DW_DIR}"
   logw "Leaving ${TMP_GHPAGES_DIR} intact, because there were changes made"
 fi
