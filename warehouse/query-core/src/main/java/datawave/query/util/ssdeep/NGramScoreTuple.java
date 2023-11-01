@@ -39,9 +39,9 @@ public class NGramScoreTuple implements Serializable, Comparable<NGramScoreTuple
 
         NGramScoreTuple that = (NGramScoreTuple) o;
 
-        if (Float.compare(baseScore, that.baseScore) != 0)
+        if (baseScore == that.baseScore)
             return false;
-        if (Float.compare(weightedScore, that.weightedScore) != 0)
+        if (weightedScore == that.weightedScore)
             return false;
         return ssDeepHash.equals(that.ssDeepHash);
     }
@@ -50,13 +50,16 @@ public class NGramScoreTuple implements Serializable, Comparable<NGramScoreTuple
     public int hashCode() {
         int result = ssDeepHash.hashCode();
         result = 31 * result + (baseScore != 0.0f ? Float.floatToIntBits(baseScore) : 0);
-        result = 31 * result + (weightedScore != 0.0f ? Float.floatToIntBits(weightedScore) : 0);
+        result = 31 * result + weightedScore;
         return result;
     }
 
     @Override
     public int compareTo(NGramScoreTuple o) {
         int cmp = Integer.compare(o.weightedScore, weightedScore);
+        if (cmp == 0) {
+            cmp = Float.compare(o.baseScore, baseScore);
+        }
         if (cmp == 0) {
             cmp = ssDeepHash.compareTo(o.ssDeepHash);
         }
