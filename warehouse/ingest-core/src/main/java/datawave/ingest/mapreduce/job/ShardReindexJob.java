@@ -65,8 +65,6 @@ public class ShardReindexJob implements Tool {
     private Configuration configuration = new Configuration();
     private JobConfig jobConfig = new JobConfig();
 
-    private AccumuloClient accumuloClient;
-
     @Override
     public int run(String[] args) throws Exception {
         // parse command line options
@@ -259,18 +257,6 @@ public class ShardReindexJob implements Tool {
         // return;
 
         System.exit(ToolRunner.run(null, new ShardReindexJob(), args));
-    }
-
-    private AccumuloClient getAccumuloClient() {
-        if (accumuloClient == null) {
-            accumuloClient = InputConfigurator.createClient(this.getClass(), configuration);
-        }
-
-        return accumuloClient;
-    }
-
-    public void setAccumuloClient(AccumuloClient accumuloClient) {
-        this.accumuloClient = accumuloClient;
     }
 
     public static class FiToGiMapper extends Mapper<Key,Value,BulkIngestKey,Value> {
