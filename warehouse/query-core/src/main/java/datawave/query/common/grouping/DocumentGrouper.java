@@ -144,13 +144,7 @@ public class DocumentGrouper {
         this.fieldAggregatorFactory = groupFields.getFieldAggregatorFactory();
         this.reverseModelMappings = groupFields.getReverseModelMap();
         this.groups = groups;
-        // If the fields were not remapped, the max size of groupings is equal to the number of group-by fields.
-        if (this.reverseModelMappings.isEmpty()) {
-            this.maxGroupSize = this.groupFields.size();
-        } else {
-            // Otherwise, we must reverse-map the group fields to their display name and count the distinct fields.
-            this.maxGroupSize = (int) this.groupFields.stream().map(this::getMappedFieldName).distinct().count();
-        }
+        this.maxGroupSize = this.groupFields.size();
     }
 
     /**
@@ -215,12 +209,12 @@ public class DocumentGrouper {
                     // We found the sum of an aggregated field.
                 } else if (field.getBase().endsWith(FIELD_SUM_SUFFIX)) {
                     TypeAttribute<BigDecimal> attribute = (TypeAttribute<BigDecimal>) field.getAttribute();
-                    String fieldName = getMappedFieldName(removeSuffix(field.getBase(), FIELD_SUM_SUFFIX));
+                    String fieldName = removeSuffix(field.getBase(), FIELD_SUM_SUFFIX);
                     fieldAggregator.mergeAggregator(SumAggregator.of(fieldName, attribute));
                     // We found the numerator of the average of an aggregated field.
                 } else if (field.getBase().endsWith(FIELD_AVERAGE_NUMERATOR_SUFFIX)) {
                     String unmappedFieldName = removeSuffix(field.getBase(), FIELD_AVERAGE_NUMERATOR_SUFFIX);
-                    String fieldName = getMappedFieldName(removeSuffix(field.getBase(), FIELD_AVERAGE_NUMERATOR_SUFFIX));
+                    String fieldName = removeSuffix(field.getBase(), FIELD_AVERAGE_NUMERATOR_SUFFIX);
                     // It's possible that the divisor will be stored under a previously unmapped field name. For example, the field ETA from
                     // ETA_AVERAGE_NUMERATOR.1 could be mapped to AG here. Use the original field name (e.g. ETA) to ensure we find the
                     // corresponding divisor (e.g. ETA_AVERAGE_DIVISOR.1) for the numerator.
@@ -231,15 +225,15 @@ public class DocumentGrouper {
                     // We found the count of an aggregated field.
                 } else if (field.getBase().endsWith(FIELD_COUNT_SUFFIX)) {
                     TypeAttribute<BigDecimal> attribute = (TypeAttribute<BigDecimal>) field.getAttribute();
-                    String fieldName = getMappedFieldName(removeSuffix(field.getBase(), FIELD_COUNT_SUFFIX));
+                    String fieldName = removeSuffix(field.getBase(), FIELD_COUNT_SUFFIX);
                     fieldAggregator.mergeAggregator(CountAggregator.of(fieldName, attribute));
                     // We found the min of an aggregated field.
                 } else if (field.getBase().endsWith(FIELD_MIN_SUFFIX)) {
-                    String fieldName = getMappedFieldName(removeSuffix(field.getBase(), FIELD_MIN_SUFFIX));
+                    String fieldName = removeSuffix(field.getBase(), FIELD_MIN_SUFFIX);
                     fieldAggregator.mergeAggregator(MinAggregator.of(fieldName, field.getAttribute()));
                     // We found the max of an aggregated field.
                 } else if (field.getBase().endsWith(FIELD_MAX_SUFFIX)) {
-                    String fieldName = getMappedFieldName(removeSuffix(field.getBase(), FIELD_MAX_SUFFIX));
+                    String fieldName = removeSuffix(field.getBase(), FIELD_MAX_SUFFIX);
                     fieldAggregator.mergeAggregator(MaxAggregator.of(fieldName, field.getAttribute()));
                     // We found a field that is part of the grouping.
                 } else if (!field.getBase().endsWith(FIELD_AVERAGE_DIVISOR_SUFFIX)) {

@@ -67,7 +67,7 @@ public class GroupFieldsTest {
         groupFields.remapFields(inverseReverseModel, reverseModel);
 
         assertThat(groupFields.toString()).isEqualTo(
-                        "GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)");
+                        "GROUP(GEN,AG)|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)");
     }
 
     @Test
@@ -133,7 +133,7 @@ public class GroupFieldsTest {
         expected.setMaxFields(Sets.newHashSet("FOO"));
         expected.remapFields(inverseReverseModel, reverseModel);
 
-        GroupFields actual = GroupFields.from("GROUP(AG,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(BAR)|MIN(BAT)|MAX(FOO)|REVERSE_MODEL_MAP(AGE=AG:NAME=NOME)");
+        GroupFields actual = GroupFields.from("GROUP(AG)|SUM(AG)|COUNT(NOME)|AVERAGE(BAR)|MIN(BAT)|MAX(FOO)|REVERSE_MODEL_MAP(AGE=AG:NAME=NOME)");
 
         assertThat(actual).isEqualTo(expected);
     }
@@ -180,12 +180,12 @@ public class GroupFieldsTest {
 
         groupFields.remapFields(inverseReverseModel, reverseModel);
 
-        assertThat(groupFields.getGroupByFields()).containsExactlyInAnyOrder("GENERE", "GEN", "GENDER", "AG", "AGE");
-        assertThat(groupFields.getSumFields()).containsExactlyInAnyOrder("AG", "AGE");
-        assertThat(groupFields.getCountFields()).containsExactlyInAnyOrder("NOME", "NAME");
-        assertThat(groupFields.getAverageFields()).containsExactlyInAnyOrder("AG", "AGE");
-        assertThat(groupFields.getMinFields()).containsExactlyInAnyOrder("GENERE", "GEN", "GENDER");
-        assertThat(groupFields.getMaxFields()).containsExactlyInAnyOrder("NOME", "NAME");
+        assertThat(groupFields.getGroupByFields()).containsExactlyInAnyOrder("GEN", "AG");
+        assertThat(groupFields.getSumFields()).containsExactlyInAnyOrder("AG");
+        assertThat(groupFields.getCountFields()).containsExactlyInAnyOrder("NOME");
+        assertThat(groupFields.getAverageFields()).containsExactlyInAnyOrder("AG");
+        assertThat(groupFields.getMinFields()).containsExactlyInAnyOrder("GEN");
+        assertThat(groupFields.getMaxFields()).containsExactlyInAnyOrder("NOME");
         assertThat(groupFields.getReverseModelMap()).containsEntry("AGE", "AG").containsEntry("GENDER", "GEN").containsEntry("GENERE", "GEN")
                         .containsEntry("NAME", "NOME").hasSize(4);
     }
@@ -204,7 +204,7 @@ public class GroupFieldsTest {
 
         String json = objectMapper.writeValueAsString(groupFields);
         assertThat(json).isEqualTo(
-                        "\"GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"");
+                        "\"GROUP(GEN,AG)|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"");
     }
 
     @Test
@@ -218,7 +218,7 @@ public class GroupFieldsTest {
         expected.setMaxFields(Sets.newHashSet("NOME"));
         expected.remapFields(inverseReverseModel, reverseModel);
 
-        String json = "\"GROUP(GENERE,GEN,AG,GENDER,AGE)|SUM(AG,AGE)|COUNT(NOME,NAME)|AVERAGE(AG,AGE)|MIN(GENERE,GEN,GENDER)|MAX(NOME,NAME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"";
+        String json = "\"GROUP(GEN,AG)|SUM(AG)|COUNT(NOME)|AVERAGE(AG)|MIN(GEN)|MAX(NOME)|REVERSE_MODEL_MAP(GENERE=GEN:GENDER=GEN:AGE=AG:NAME=NOME)\"";
         GroupFields actual = objectMapper.readValue(json, GroupFields.class);
 
         assertThat(actual).isEqualTo(expected);

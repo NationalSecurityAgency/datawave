@@ -295,6 +295,8 @@ public class GroupFields implements Serializable {
         fields.addAll(this.averageFields);
         fields.addAll(this.minFields);
         fields.addAll(this.maxFields);
+        fields.addAll(this.reverseModelMap.keySet());
+        fields.addAll(this.reverseModelMap.values());
         return fields;
     }
 
@@ -344,6 +346,18 @@ public class GroupFields implements Serializable {
                 this.reverseModelMap.put(field, reverseModelMap.get(field));
             }
         }
+
+        // now we can reduce the fields to only those that map to themselves wrt the reverse model map
+        this.groupByFields = reduce(this.groupByFields, this.reverseModelMap);
+        this.sumFields = reduce(this.sumFields, this.reverseModelMap);
+        this.countFields = reduce(this.countFields, this.reverseModelMap);
+        this.averageFields = reduce(this.averageFields, this.reverseModelMap);
+        this.minFields = reduce(this.minFields, this.reverseModelMap);
+        this.maxFields = reduce(this.maxFields, this.reverseModelMap);
+    }
+
+    private Set<String> reduce(Set<String> set, Map<String,String> map) {
+        return set.stream().filter(s -> s.equals(map.getOrDefault(s, s))).collect(Collectors.toSet());
     }
 
     // Return a copy of the given set with all alternative field mappings included.
