@@ -11,7 +11,7 @@ public class SSDeepEncoding implements Serializable {
     public byte[] encode(String ngram) {
         return encodeToBytes(ngram, new byte[ngram.length()], 0);
     }
-    
+
     public byte[] encodeToBytes(String ngram, byte[] buffer, int offset) {
         for (int i = 0; i < ngram.length(); i++) {
             buffer[i + offset] = (byte) ngram.charAt(i);
