@@ -131,6 +131,8 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         
         long elapsedExecutionTimeForCurrentPage = System.currentTimeMillis() - this.queryExecutionForPageStartTime;
         if (elapsedExecutionTimeForCurrentPage > this.queryExecutionForPageTimeout) {
+            log.debug("Generating intermediate result because over {}ms has been reached since {}", this.queryExecutionForPageTimeout,
+                            this.queryExecutionForPageStartTime);
             Document intermediateResult = new Document();
             intermediateResult.setIntermediateResult(true);
             return Maps.immutableEntry(new Key(), intermediateResult);
@@ -139,6 +141,12 @@ public class GroupingTransform extends DocumentTransform.DefaultDocumentTransfor
         return null;
     }
     
+    @Override
+    public void setQueryExecutionForPageStartTime(long queryExecutionForPageStartTime) {
+        log.debug("setting query execution page start time to {}", queryExecutionForPageStartTime);
+        super.setQueryExecutionForPageStartTime(queryExecutionForPageStartTime);
+    }
+
     @Override
     public Entry<Key,Document> flush() {
         Document document = null;
