@@ -21,7 +21,7 @@ public class NGramScoreTuple implements Serializable, Comparable<NGramScoreTuple
         return baseScore;
     }
 
-    public float getWeightedScore() {
+    public int getWeightedScore() {
         return weightedScore;
     }
 
