@@ -61,7 +61,6 @@ public class ShardReindexJob implements Tool {
     private static final Logger log = Logger.getLogger(ShardReindexJob.class);
     public static final Text FI_START = new Text("fi" + '\u0000');
     public static final Text FI_END = new Text("fi" + '\u0000' + '\uffff');
-    public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
 
     private Configuration configuration = new Configuration();
     private JobConfig jobConfig = new JobConfig();
@@ -197,15 +196,17 @@ public class ShardReindexJob implements Tool {
     }
 
     public static Collection<Range> buildRanges(String start, String end, int splitsPerDay) throws ParseException {
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyyMMdd");
+
         List<Range> ranges = new ArrayList<>();
 
-        Date startDate = DATE_FORMAT.parse(start);
-        Date endDate = DATE_FORMAT.parse(end);
+        Date startDate = dateFormatter.parse(start);
+        Date endDate = dateFormatter.parse(end);
 
         Date current = startDate;
 
         while (!endDate.before(current)) {
-            String row = DATE_FORMAT.format(current);
+            String row = dateFormatter.format(current);
             for (int i = 0; i < splitsPerDay; i++) {
                 Text rowText = new Text(row + "_" + i);
                 Key startKey = new Key(rowText, FI_START);

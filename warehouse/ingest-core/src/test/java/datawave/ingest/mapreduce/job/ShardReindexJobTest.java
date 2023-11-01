@@ -296,8 +296,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         context.write(EasyMock.and(EasyMock.isA(BulkIngestKey.class), EasyMock.eq(bik2)), EasyMock.isA(Value.class));
         context.progress();
 
-
-        EasyMock.expect(context.getCounter("deletes","propagated")).andReturn(mockCounter);
+        EasyMock.expect(context.getCounter("deletes", "propagated")).andReturn(mockCounter);
         mockCounter.increment(1l);
 
         conf.setBoolean("propagateDeletes", true);
@@ -324,7 +323,7 @@ public class ShardReindexJobTest extends EasyMockSupport {
         context.progress();
 
         EasyMock.expect(context.getConfiguration()).andReturn(conf).anyTimes();
-        EasyMock.expect(context.getCounter("deletes","skipped")).andReturn(mockCounter);
+        EasyMock.expect(context.getCounter("deletes", "skipped")).andReturn(mockCounter);
         mockCounter.increment(1l);
 
         conf.setBoolean("propagateDeletes", false);
