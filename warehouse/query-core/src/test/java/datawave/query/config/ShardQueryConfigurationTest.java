@@ -1,15 +1,18 @@
 package datawave.query.config;
 
-import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
+import java.util.function.Predicate;
 
+import org.apache.accumulo.core.security.Authorizations;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,537 +21,649 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import datawave.data.type.DateType;
-import datawave.data.type.DiscreteIndexType;
 import datawave.data.type.GeometryType;
+import datawave.data.type.LcNoDiacriticsType;
 import datawave.data.type.NoOpType;
-import datawave.data.type.StringType;
 import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
+import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
-import datawave.query.attributes.UniqueGranularity;
-import datawave.query.function.DocumentPermutation;
-import datawave.query.function.DocumentProjection;
+import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
+import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
+import datawave.query.iterator.logic.TermFrequencyIndexIterator;
+import datawave.query.jexl.JexlASTHelper;
 import datawave.query.model.QueryModel;
-import datawave.query.tables.ShardQueryLogic;
 import datawave.util.TableName;
+import datawave.webservice.query.Query;
 import datawave.webservice.query.QueryImpl;
 
 public class ShardQueryConfigurationTest {
 
-    private ShardQueryConfiguration config;
+    public final static Map<Class<?>,Class<?>> primitiveMap = new HashMap<Class<?>,Class<?>>();
+    static {
+        primitiveMap.put(Boolean.class, boolean.class);
+        primitiveMap.put(Byte.class, byte.class);
+        primitiveMap.put(Short.class, short.class);
+        primitiveMap.put(Character.class, char.class);
+        primitiveMap.put(Integer.class, int.class);
+        primitiveMap.put(Long.class, long.class);
+        primitiveMap.put(Float.class, float.class);
+        primitiveMap.put(Double.class, double.class);
+    }
+
+    // The set of default values.
+    private final Map<String,Object> defaultValues = new HashMap<>();
+
+    // The set of predicates for the subset of defaultValues that will
+    // be used to evaluate the equality instead of .equals(Object).
+    private final Map<String,Predicate> defaultPredicates = new HashMap<>();
+
+    // The set of alternate values to test the setters/getters
+    private final Map<String,Object> updatedValues = new HashMap<>();
+
+    // These are fields that are NOT retrieved via the jackson library (e.g. JsonIgnore annotation)
+    // but need to be set to test something else (e.g. queryTree vs queryString)
+    private final Map<String,Object> extraValuesToSet = new HashMap<>();
+
+    // The set of predicate for the subset of alternateValues that will
+    // be used to evaluate the equality instead of .equals(Object).
+    private final Map<String,Predicate> updatedPredicates = new HashMap<>();
+
+    // The set of fields that are already set via one of the other fields.
+    private final Set<String> alreadySet = new HashSet<>();
 
     @Before
-    public void setUp() {
-        config = ShardQueryConfiguration.create();
+    public void setUp() throws Exception {
+        // The set of default values (optionally as predicates,
+        // alternate values (to test the setters/getters),
+        // and optional alternate predicates for testing equality.
+        defaultValues.put("authorizations", Collections.singleton(Authorizations.EMPTY));
+        updatedValues.put("authorizations", Collections.singleton(new Authorizations("FOO", "BAR")));
+
+        defaultValues.put("queryString", null);
+        updatedValues.put("queryString", "A == B");
+        alreadySet.add("queryString"); // set by queryTree
+        extraValuesToSet.put("queryTree", JexlASTHelper.parseAndFlattenJexlQuery("A == B"));
+
+        defaultValues.put("beginDate", null);
+        updatedValues.put("beginDate", new Date());
+        defaultValues.put("endDate", null);
+        updatedValues.put("endDate", new Date());
+        defaultValues.put("maxWork", -1L);
+        updatedValues.put("maxWork", 1000L);
+        defaultValues.put("baseIteratorPriority", 100);
+        updatedValues.put("baseIteratorPriority", 14);
+        defaultValues.put("tableName", TableName.SHARD);
+        updatedValues.put("tableName", "datawave." + TableName.SHARD);
+        defaultValues.put("bypassAccumulo", false);
+        updatedValues.put("bypassAccumulo", true);
+        defaultValues.put("accumuloPassword", "");
+        updatedValues.put("accumuloPassword", "secret");
+        defaultValues.put("tldQuery", false);
+        updatedValues.put("tldQuery", true);
+        defaultValues.put("filterOptions", Maps.newHashMap());
+        updatedValues.put("filterOptions", Collections.singletonMap("FIELD_A", "FILTER"));
+        defaultValues.put("disableIndexOnlyDocuments", false);
+        updatedValues.put("disableIndexOnlyDocuments", true);
+        defaultValues.put("maxScannerBatchSize", 1000);
+        updatedValues.put("maxScannerBatchSize", 1300);
+        defaultValues.put("maxIndexBatchSize", 1000);
+        updatedValues.put("maxIndexBatchSize", 1100);
+        defaultValues.put("allTermsIndexOnly", false);
+        updatedValues.put("allTermsIndexOnly", true);
+        defaultValues.put("maxIndexScanTimeMillis", Long.MAX_VALUE);
+        updatedValues.put("maxIndexScanTimeMillis", 100000L);
+        defaultValues.put("parseTldUids", false);
+        updatedValues.put("parseTldUids", true);
+        defaultValues.put("collapseUids", false);
+        updatedValues.put("collapseUids", true);
+        defaultValues.put("collapseUidsThreshold", -1);
+        updatedValues.put("collapseUidsThreshold", 400);
+        defaultValues.put("enforceUniqueTermsWithinExpressions", false);
+        updatedValues.put("enforceUniqueTermsWithinExpressions", true);
+        defaultValues.put("reduceQueryFields", false);
+        updatedValues.put("reduceQueryFields", true);
+        defaultValues.put("reduceTypeMetadata", false);
+        updatedValues.put("reduceTypeMetadata", true);
+        defaultValues.put("reduceTypeMetadataPerShard", false);
+        updatedValues.put("reduceTypeMetadataPerShard", true);
+        defaultValues.put("sequentialScheduler", false);
+        updatedValues.put("sequentialScheduler", true);
+        defaultValues.put("collectTimingDetails", false);
+        updatedValues.put("collectTimingDetails", true);
+        defaultValues.put("logTimingDetails", false);
+        updatedValues.put("logTimingDetails", true);
+        defaultValues.put("sendTimingToStatsd", true);
+        updatedValues.put("sendTimingToStatsd", false);
+        defaultValues.put("statsdHost", "localhost");
+        updatedValues.put("statsdHost", "10.0.0.1");
+        defaultValues.put("statsdPort", 8125);
+        updatedValues.put("statsdPort", 8126);
+        defaultValues.put("statsdMaxQueueSize", 500);
+        updatedValues.put("statsdMaxQueueSize", 530);
+        defaultValues.put("limitAnyFieldLookups", false);
+        updatedValues.put("limitAnyFieldLookups", true);
+        defaultValues.put("bypassExecutabilityCheck", false);
+        updatedValues.put("bypassExecutabilityCheck", true);
+        defaultValues.put("generatePlanOnly", false);
+        updatedValues.put("generatePlanOnly", true);
+        defaultValues.put("backoffEnabled", false);
+        updatedValues.put("backoffEnabled", true);
+        defaultValues.put("unsortedUIDsEnabled", true);
+        updatedValues.put("unsortedUIDsEnabled", false);
+        defaultValues.put("serializeQueryIterator", false);
+        updatedValues.put("serializeQueryIterator", true);
+        defaultValues.put("debugMultithreadedSources", false);
+        updatedValues.put("debugMultithreadedSources", true);
+        defaultValues.put("sortGeoWaveQueryRanges", false);
+        updatedValues.put("sortGeoWaveQueryRanges", true);
+        defaultValues.put("numRangesToBuffer", 0);
+        updatedValues.put("numRangesToBuffer", 4);
+        defaultValues.put("rangeBufferTimeoutMillis", 0L);
+        updatedValues.put("rangeBufferTimeoutMillis", 1000L);
+        defaultValues.put("rangeBufferPollMillis", 100L);
+        updatedValues.put("rangeBufferPollMillis", 140L);
+        defaultValues.put("geometryMaxExpansion", 8);
+        updatedValues.put("geometryMaxExpansion", 4);
+        defaultValues.put("pointMaxExpansion", 32);
+        updatedValues.put("pointMaxExpansion", 36);
+        defaultValues.put("geoMaxExpansion", 32);
+        updatedValues.put("geoMaxExpansion", 39);
+        defaultValues.put("geoWaveRangeSplitThreshold", 16);
+        updatedValues.put("geoWaveRangeSplitThreshold", 14);
+        defaultValues.put("geoWaveMaxRangeOverlap", 0.25);
+        updatedValues.put("geoWaveMaxRangeOverlap", 0.35);
+        defaultValues.put("optimizeGeoWaveRanges", true);
+        updatedValues.put("optimizeGeoWaveRanges", false);
+        defaultValues.put("geoWaveMaxEnvelopes", 4);
+        updatedValues.put("geoWaveMaxEnvelopes", 40);
+        defaultValues.put("shardTableName", TableName.SHARD);
+        updatedValues.put("shardTableName", "datawave." + TableName.SHARD);
+        defaultValues.put("indexTableName", TableName.SHARD_INDEX);
+        updatedValues.put("indexTableName", "datawave." + TableName.SHARD_INDEX);
+        defaultValues.put("reverseIndexTableName", TableName.SHARD_RINDEX);
+        updatedValues.put("reverseIndexTableName", "datawave." + TableName.SHARD_RINDEX);
+        defaultValues.put("metadataTableName", TableName.METADATA);
+        updatedValues.put("metadataTableName", "datawave." + TableName.METADATA);
+        defaultValues.put("dateIndexTableName", TableName.DATE_INDEX);
+        updatedValues.put("dateIndexTableName", "datawave." + TableName.DATE_INDEX);
+        defaultValues.put("indexStatsTableName", TableName.INDEX_STATS);
+        updatedValues.put("indexStatsTableName", "datawave." + TableName.INDEX_STATS);
+        defaultValues.put("defaultDateTypeName", "EVENT");
+        updatedValues.put("defaultDateTypeName", "DOCUMENT");
+        defaultValues.put("cleanupShardsAndDaysQueryHints", true);
+        updatedValues.put("cleanupShardsAndDaysQueryHints", false);
+        defaultValues.put("numQueryThreads", 8);
+        updatedValues.put("numQueryThreads", 80);
+        defaultValues.put("numDateIndexThreads", 8);
+        updatedValues.put("numDateIndexThreads", 20);
+        defaultValues.put("maxDocScanTimeout", -1);
+        updatedValues.put("maxDocScanTimeout", 10000);
+        defaultValues.put("collapseDatePercentThreshold", 0.99f);
+        updatedValues.put("collapseDatePercentThreshold", 0.92f);
+        defaultValues.put("fullTableScanEnabled", true);
+        updatedValues.put("fullTableScanEnabled", false);
+        defaultValues.put("realmSuffixExclusionPatterns", null);
+        updatedValues.put("realmSuffixExclusionPatterns", Collections.singletonList(".*"));
+        defaultValues.put("defaultType", NoOpType.class);
+        updatedValues.put("defaultType", LcNoDiacriticsType.class);
+        defaultValues.put("shardDateFormatter", new SimpleDateFormat("yyyyMMdd"));
+        defaultPredicates.put("shardDateFormatter", (Predicate<SimpleDateFormat>) o1 -> o1.toPattern().equals("yyyyMMdd"));
+        updatedValues.put("shardDateFormatter", new SimpleDateFormat("yyyyMMddHHmmss"));
+        updatedPredicates.put("shardDateFormatter", (Predicate<SimpleDateFormat>) o1 -> o1.toPattern().equals("yyyyMMddHHmmss"));
+        defaultValues.put("useEnrichers", false);
+        updatedValues.put("useEnrichers", true);
+        defaultValues.put("useFilters", false);
+        updatedValues.put("useFilters", true);
+        defaultValues.put("indexFilteringClassNames", Lists.newArrayList());
+        updatedValues.put("indexFilteringClassNames", Lists.newArrayList("proj.datawave.query.filter.someIndexFilterClass"));
+        defaultValues.put("indexHoles", Lists.newArrayList());
+        updatedValues.put("indexHoles", Lists.newArrayList(new IndexHole()));
+        defaultValues.put("indexedFields", Sets.newHashSet());
+        updatedValues.put("indexedFields", Sets.newHashSet("FIELD_C", "FIELD_D"));
+        defaultValues.put("reverseIndexedFields", Sets.newHashSet());
+        updatedValues.put("reverseIndexedFields", Sets.newHashSet("C_DLEIF", "D_DLEIF"));
+        defaultValues.put("normalizedFields", Sets.newHashSet());
+        updatedValues.put("normalizedFields", Sets.newHashSet("FIELD_G", "FIELD_H"));
+        alreadySet.add("normalizedFields");
+        defaultValues.put("fieldToDiscreteIndexTypes", Maps.newHashMap());
+        updatedValues.put("fieldToDiscreteIndexTypes", Collections.singletonMap("FIELD_I", new GeometryType()));
+        defaultValues.put("compositeToFieldMap", ArrayListMultimap.create());
+        updatedValues.put("compositeToFieldMap", createArrayListMultimap(ImmutableMultimap.<String,String> builder().put("FIELD_C", "FIELD_D")
+                        .put("FIELD_C", "FIELD_E").put("FIELD_F", "FIELD_G").put("FIELD_F", "FIELD_H").build()));
+        defaultValues.put("compositeTransitionDates", Maps.newHashMap());
+        updatedValues.put("compositeTransitionDates", Collections.singletonMap("VIRTUAL_FIELD", new Date()));
+        defaultValues.put("compositeFieldSeparators", Maps.newHashMap());
+        updatedValues.put("compositeFieldSeparators", Collections.singletonMap("VIRTUAL_FIELD", "|"));
+        defaultValues.put("whindexCreationDates", Maps.newHashMap());
+        updatedValues.put("whindexCreationDates", Collections.singletonMap("FIELD_W", new Date()));
+        defaultValues.put("evaluationOnlyFields", Sets.newHashSet());
+        updatedValues.put("evaluationOnlyFields", Sets.newHashSet("FIELD_E", "FIELD_F"));
+        defaultValues.put("disallowedRegexPatterns", Sets.newHashSet(".*", ".*?"));
+        updatedValues.put("disallowedRegexPatterns", Sets.newHashSet(".*", ".*?", ".*.*"));
+        defaultValues.put("disableWhindexFieldMappings", false);
+        updatedValues.put("disableWhindexFieldMappings", true);
+        defaultValues.put("whindexMappingFields", Sets.newHashSet());
+        updatedValues.put("whindexMappingFields", Sets.newHashSet("FIELD_A", "FIELD_B"));
+        defaultValues.put("whindexFieldMappings", Maps.newHashMap());
+        updatedValues.put("whindexFieldMappings", Collections.singletonMap("FIELD_A", Collections.singletonMap("FIELD_B", "FIELD_C")));
+        defaultValues.put("sortedUIDs", true);
+        updatedValues.put("sortedUIDs", false);
+        defaultValues.put("queryTermFrequencyFields", Sets.newHashSet());
+        updatedValues.put("queryTermFrequencyFields", Sets.newHashSet("FIELD_Q", "FIELD_R"));
+        defaultValues.put("termFrequenciesRequired", false);
+        updatedValues.put("termFrequenciesRequired", true);
+        defaultValues.put("limitFieldsPreQueryEvaluation", false);
+        updatedValues.put("limitFieldsPreQueryEvaluation", true);
+        defaultValues.put("limitFieldsField", null);
+        updatedValues.put("limitFieldsField", "LIMITED");
+        defaultValues.put("hitList", false);
+        updatedValues.put("hitList", true);
+        defaultValues.put("dateIndexTimeTravel", false);
+        updatedValues.put("dateIndexTimeTravel", true);
+        defaultValues.put("beginDateCap", -1L);
+        updatedValues.put("beginDateCap", 1000L);
+        defaultValues.put("failOutsideValidDateRange", true);
+        updatedValues.put("failOutsideValidDateRange", false);
+        defaultValues.put("rawTypes", false);
+        updatedValues.put("rawTypes", true);
+        defaultValues.put("minSelectivity", -1.0);
+        updatedValues.put("minSelectivity", -2.0);
+        defaultValues.put("includeDataTypeAsField", false);
+        updatedValues.put("includeDataTypeAsField", true);
+        defaultValues.put("includeRecordId", true);
+        updatedValues.put("includeRecordId", false);
+        defaultValues.put("includeHierarchyFields", false);
+        updatedValues.put("includeHierarchyFields", true);
+        defaultValues.put("hierarchyFieldOptions", Maps.newHashMap());
+        updatedValues.put("hierarchyFieldOptions", Collections.singletonMap("OPTION", "VALUE"));
+        defaultValues.put("includeGroupingContext", false);
+        updatedValues.put("includeGroupingContext", true);
+        defaultValues.put("documentPermutations", Lists.newArrayList());
+        updatedValues.put("documentPermutations", Lists.newArrayList("datawave.query.function.NoOpMaskedValueFilter"));
+        defaultValues.put("filterMaskedValues", true);
+        updatedValues.put("filterMaskedValues", false);
+        defaultValues.put("reducedResponse", false);
+        updatedValues.put("reducedResponse", true);
+        defaultValues.put("allowShortcutEvaluation", true);
+        updatedValues.put("allowShortcutEvaluation", false);
+        defaultValues.put("speculativeScanning", false);
+        updatedValues.put("speculativeScanning", true);
+        defaultValues.put("disableEvaluation", false);
+        updatedValues.put("disableEvaluation", true);
+        defaultValues.put("containsIndexOnlyTerms", false);
+        updatedValues.put("containsIndexOnlyTerms", true);
+        defaultValues.put("containsCompositeTerms", false);
+        updatedValues.put("containsCompositeTerms", true);
+        defaultValues.put("allowFieldIndexEvaluation", true);
+        updatedValues.put("allowFieldIndexEvaluation", false);
+        defaultValues.put("allowTermFrequencyLookup", true);
+        updatedValues.put("allowTermFrequencyLookup", false);
+        defaultValues.put("expandUnfieldedNegations", true);
+        updatedValues.put("expandUnfieldedNegations", false);
+        defaultValues.put("returnType", DocumentSerialization.DEFAULT_RETURN_TYPE);
+        updatedValues.put("returnType", DocumentSerialization.ReturnType.writable);
+        defaultValues.put("eventPerDayThreshold", 10000);
+        updatedValues.put("eventPerDayThreshold", 10340);
+        defaultValues.put("shardsPerDayThreshold", 10);
+        updatedValues.put("shardsPerDayThreshold", 18);
+        defaultValues.put("initialMaxTermThreshold", 2500);
+        updatedValues.put("initialMaxTermThreshold", 2540);
+        defaultValues.put("finalMaxTermThreshold", 2500);
+        updatedValues.put("finalMaxTermThreshold", 2501);
+        defaultValues.put("maxDepthThreshold", 2500);
+        updatedValues.put("maxDepthThreshold", 253);
+        defaultValues.put("expandFields", true);
+        updatedValues.put("expandFields", false);
+        defaultValues.put("maxUnfieldedExpansionThreshold", 500);
+        updatedValues.put("maxUnfieldedExpansionThreshold", 507);
+        defaultValues.put("expandValues", true);
+        updatedValues.put("expandValues", false);
+        defaultValues.put("maxValueExpansionThreshold", 5000);
+        updatedValues.put("maxValueExpansionThreshold", 5060);
+        defaultValues.put("maxOrExpansionThreshold", 500);
+        updatedValues.put("maxOrExpansionThreshold", 550);
+        defaultValues.put("maxOrRangeThreshold", 10);
+        updatedValues.put("maxOrRangeThreshold", 12);
+        defaultValues.put("maxOrRangeIvarators", 10);
+        updatedValues.put("maxOrRangeIvarators", 11);
+        defaultValues.put("maxRangesPerRangeIvarator", 5);
+        updatedValues.put("maxRangesPerRangeIvarator", 6);
+        defaultValues.put("maxOrExpansionFstThreshold", 750);
+        updatedValues.put("maxOrExpansionFstThreshold", 500);
+        defaultValues.put("yieldThresholdMs", Long.MAX_VALUE);
+        updatedValues.put("yieldThresholdMs", 65535L);
+        defaultValues.put("hdfsSiteConfigURLs", null);
+        updatedValues.put("hdfsSiteConfigURLs", "file://etc/hadoop/hdfs_site.xml");
+        defaultValues.put("hdfsFileCompressionCodec", null);
+        updatedValues.put("hdfsFileCompressionCodec", "sunny");
+        defaultValues.put("zookeeperConfig", null);
+        updatedValues.put("zookeeperConfig", "file://etc/zookeeper/conf");
+        defaultValues.put("ivaratorCacheDirConfigs", Collections.emptyList());
+        updatedValues.put("ivaratorCacheDirConfigs", Lists.newArrayList(new IvaratorCacheDirConfig("hdfs://instance-a/ivarators")));
+        defaultValues.put("ivaratorFstHdfsBaseURIs", null);
+        updatedValues.put("ivaratorFstHdfsBaseURIs", "hdfs://instance-a/fsts");
+        defaultValues.put("ivaratorCacheBufferSize", 10000);
+        updatedValues.put("ivaratorCacheBufferSize", 1040);
+        defaultValues.put("ivaratorCacheScanPersistThreshold", 100000L);
+        updatedValues.put("ivaratorCacheScanPersistThreshold", 1040L);
+        defaultValues.put("ivaratorCacheScanTimeout", 3600000L);
+        updatedValues.put("ivaratorCacheScanTimeout", 3600L);
+        defaultValues.put("maxFieldIndexRangeSplit", 11);
+        updatedValues.put("maxFieldIndexRangeSplit", 20);
+        defaultValues.put("ivaratorMaxOpenFiles", 100);
+        updatedValues.put("ivaratorMaxOpenFiles", 103);
+        defaultValues.put("ivaratorNumRetries", 2);
+        updatedValues.put("ivaratorNumRetries", 3);
+        defaultValues.put("ivaratorPersistVerify", true);
+        updatedValues.put("ivaratorPersistVerify", false);
+        defaultValues.put("ivaratorPersistVerifyCount", 100);
+        updatedValues.put("ivaratorPersistVerifyCount", 101);
+        defaultValues.put("maxIvaratorSources", 33);
+        updatedValues.put("maxIvaratorSources", 16);
+        defaultValues.put("maxIvaratorResults", -1L);
+        updatedValues.put("maxIvaratorResults", 10000L);
+        defaultValues.put("maxEvaluationPipelines", 25);
+        updatedValues.put("maxEvaluationPipelines", 24);
+        defaultValues.put("maxPipelineCachedResults", 25);
+        updatedValues.put("maxPipelineCachedResults", 26);
+        defaultValues.put("expandAllTerms", false);
+        updatedValues.put("expandAllTerms", true);
+        defaultValues.put("queryModel", null);
+        updatedValues.put("queryModel", new QueryModel());
+        defaultValues.put("modelName", null);
+        updatedValues.put("modelName", "MODEL_A");
+        defaultValues.put("modelTableName", TableName.METADATA);
+        updatedValues.put("modelTableName", "datawave." + TableName.METADATA);
+        defaultValues.put("query", new QueryImpl());
+        updatedValues.put("query", createQuery("A == B"));
+        updatedPredicates.put("query", (Predicate<Query>) o1 -> o1.getQuery().equals("A == B"));
+        defaultValues.put("compressServerSideResults", false);
+        updatedValues.put("compressServerSideResults", true);
+        defaultValues.put("indexOnlyFilterFunctionsEnabled", false);
+        updatedValues.put("indexOnlyFilterFunctionsEnabled", true);
+        defaultValues.put("compositeFilterFunctionsEnabled", false);
+        updatedValues.put("compositeFilterFunctionsEnabled", true);
+        defaultValues.put("uniqueFields", new UniqueFields());
+        updatedValues.put("uniqueFields", UniqueFields.from("FIELD_U,FIELD_V"));
+        defaultValues.put("cacheModel", false);
+        updatedValues.put("cacheModel", true);
+        defaultValues.put("trackSizes", true);
+        updatedValues.put("trackSizes", false);
+        defaultValues.put("contentFieldNames", Lists.newArrayList());
+        updatedValues.put("contentFieldNames", Lists.newArrayList("FIELD_C", "FIELD_D"));
+        defaultValues.put("activeQueryLogNameSource", null);
+        updatedValues.put("activeQueryLogNameSource", ShardQueryConfiguration.QUERY_LOGIC_NAME_SOURCE);
+        defaultValues.put("enforceUniqueConjunctionsWithinExpression", false);
+        updatedValues.put("enforceUniqueConjunctionsWithinExpression", true);
+        defaultValues.put("enforceUniqueDisjunctionsWithinExpression", false);
+        updatedValues.put("enforceUniqueDisjunctionsWithinExpression", true);
+        defaultValues.put("noExpansionFields", Sets.newHashSet());
+        updatedValues.put("noExpansionFields", Sets.newHashSet("FIELD_N", "FIELD_O"));
+        defaultValues.put("lenientFields", Sets.newHashSet());
+        updatedValues.put("lenientFields", Sets.newHashSet("FIELD_L", "FIELD_M"));
+        defaultValues.put("strictFields", Sets.newHashSet());
+        updatedValues.put("strictFields", Sets.newHashSet("FIELD_S", "FIELD_T"));
+        defaultValues.put("queryExecutionForPageTimeout", 3000000L);
+        updatedValues.put("queryExecutionForPageTimeout", 30000L);
+        defaultValues.put("excerptFields", new ExcerptFields());
+        updatedValues.put("excerptFields", ExcerptFields.from("FIELD_E/10,FIELD_F/11"));
+        defaultValues.put("excerptIterator", TermFrequencyExcerptIterator.class);
+        updatedValues.put("excerptIterator", TermFrequencyIndexIterator.class);
+        defaultValues.put("fiFieldSeek", -1);
+        updatedValues.put("fiFieldSeek", 10);
+        defaultValues.put("fiNextSeek", -1);
+        updatedValues.put("fiNextSeek", 11);
+        defaultValues.put("eventFieldSeek", -1);
+        updatedValues.put("eventFieldSeek", 12);
+        defaultValues.put("eventNextSeek", -1);
+        updatedValues.put("eventNextSeek", 13);
+        defaultValues.put("tfFieldSeek", -1);
+        updatedValues.put("tfFieldSeek", 14);
+        defaultValues.put("tfNextSeek", -1);
+        updatedValues.put("tfNextSeek", 15);
+        defaultValues.put("visitorFunctionMaxWeight", 5000000L);
+        updatedValues.put("visitorFunctionMaxWeight", 1000000L);
+        defaultValues.put("lazySetMechanismEnabled", false);
+        updatedValues.put("lazySetMechanismEnabled", true);
+        defaultValues.put("docAggregationThresholdMs", -1);
+        updatedValues.put("docAggregationThresholdMs", 30000);
+        defaultValues.put("tfAggregationThresholdMs", -1);
+        updatedValues.put("tfAggregationThresholdMs", 10000);
+        defaultValues.put("pruneQueryOptions", false);
+        updatedValues.put("pruneQueryOptions", true);
+        defaultValues.put("numIndexLookupThreads", 8);
+        updatedValues.put("numIndexLookupThreads", 18);
+        defaultValues.put("expansionLimitedToModelContents", false);
+        updatedValues.put("expansionLimitedToModelContents", true);
+        defaultValues.put("accrueStats", false);
+        updatedValues.put("accrueStats", true);
+        defaultValues.put("dataTypes", HashMultimap.create());
+        updatedValues.put("dataTypes", createHashMultimap(
+                        ImmutableMultimap.<String,Type<?>> builder().put("FIELD_C", new DateType()).put("FIELD_D", new LcNoDiacriticsType()).build()));
+
+        defaultValues.put("enricherClassNames", null);
+        updatedValues.put("enricherClassNames", Lists.newArrayList("proj.datawave.query.enricher.someEnricherClass"));
+        defaultValues.put("enricherClassNamesAsString", null);
+        updatedValues.put("enricherClassNamesAsString", "proj.datawave.query.enricher.someEnricherClass");
+        alreadySet.add("enricherClassNamesAsString");
+
+        defaultValues.put("filterClassNames", null);
+        updatedValues.put("filterClassNames", Lists.newArrayList("proj.datawave.query.filter.someFilterClass"));
+        defaultValues.put("filterClassNamesAsString", null);
+        updatedValues.put("filterClassNamesAsString", "proj.datawave.query.filter.someFilterClass");
+        alreadySet.add("filterClassNamesAsString");
+
+        defaultValues.put("nonEventKeyPrefixes", Sets.newHashSet("d", "tf"));
+        updatedValues.put("nonEventKeyPrefixes", Sets.newHashSet("d", "tf", "fi"));
+        defaultValues.put("nonEventKeyPrefixesAsString", "d,tf");
+        updatedValues.put("nonEventKeyPrefixesAsString", "d,tf,fi");
+        alreadySet.add("nonEventKeyPrefixesAsString");
+
+        defaultValues.put("unevaluatedFields", Sets.newHashSet());
+        updatedValues.put("unevaluatedFields", Sets.newHashSet("FIELD_U", "FIELD_V"));
+        defaultValues.put("unevaluatedFieldsAsString", "");
+        updatedValues.put("unevaluatedFieldsAsString", "FIELD_U,FIELD_V");
+        alreadySet.add("unevaluatedFieldsAsString");
+
+        defaultValues.put("datatypeFilter", Sets.newHashSet());
+        updatedValues.put("datatypeFilter", Sets.newHashSet("TYPE_A", "TYPE_B"));
+        defaultValues.put("datatypeFilterAsString", "");
+        updatedValues.put("datatypeFilterAsString", "TYPE_A,TYPE_B");
+        alreadySet.add("datatypeFilterAsString");
+
+        defaultValues.put("projectFields", Sets.newHashSet());
+        updatedValues.put("projectFields", Sets.newHashSet("FIELD_P", "FIELD_Q"));
+        defaultValues.put("projectFieldsAsString", "");
+        updatedValues.put("projectFieldsAsString", "FIELD_P,FIELD_Q");
+        alreadySet.add("projectFieldsAsString");
+
+        defaultValues.put("blacklistedFields", Sets.newHashSet());
+        updatedValues.put("blacklistedFields", Sets.newHashSet("FIELD_B", "FIELD_C"));
+        defaultValues.put("blacklistedFieldsAsString", "");
+        updatedValues.put("blacklistedFieldsAsString", "FIELD_B,FIELD_C");
+        alreadySet.add("blacklistedFieldsAsString");
+
+        defaultValues.put("queryFieldsDatatypes", HashMultimap.create());
+        updatedValues.put("queryFieldsDatatypes", createHashMultimap(
+                        ImmutableMultimap.<String,Type<?>> builder().put("FIELD_E", new DateType()).put("FIELD_F", new LcNoDiacriticsType()).build()));
+        defaultValues.put("indexedFieldDataTypesAsString", "");
+        updatedValues.put("indexedFieldDataTypesAsString", "FIELD_E:datawave.data.type.DateType;FIELD_F:datawave.data.type.LcNoDiacriticsType;");
+        alreadySet.add("indexedFieldDataTypesAsString");
+
+        defaultValues.put("normalizedFieldsDatatypes", HashMultimap.create());
+        updatedValues.put("normalizedFieldsDatatypes", createHashMultimap(
+                        ImmutableMultimap.<String,Type<?>> builder().put("FIELD_G", new DateType()).put("FIELD_H", new LcNoDiacriticsType()).build()));
+        defaultValues.put("normalizedFieldNormalizersAsString", "");
+        updatedValues.put("normalizedFieldNormalizersAsString", "FIELD_G:datawave.data.type.DateType;FIELD_H:datawave.data.type.LcNoDiacriticsType;");
+        alreadySet.add("normalizedFieldNormalizersAsString");
+
+        defaultValues.put("limitFields", Sets.newHashSet());
+        updatedValues.put("limitFields", Sets.newHashSet("FIELD_L", "FIELD_M"));
+        defaultValues.put("limitFieldsAsString", "");
+        updatedValues.put("limitFieldsAsString", "FIELD_L,FIELD_M");
+        alreadySet.add("limitFieldsAsString");
+
+        defaultValues.put("matchingFieldSets", Sets.newHashSet());
+        updatedValues.put("matchingFieldSets", Sets.newHashSet("FIELD_M=FIELD_N,FIELD_O=FIELD_P"));
+        defaultValues.put("matchingFieldSetsAsString", "");
+        updatedValues.put("matchingFieldSetsAsString", "FIELD_M=FIELD_N,FIELD_O=FIELD_P");
+        alreadySet.add("matchingFieldSetsAsString");
+
+        defaultValues.put("groupFieldsBatchSize", 0);
+        updatedValues.put("groupFieldsBatchSize", 5);
+        defaultValues.put("groupFieldsBatchSizeAsString", "0");
+        updatedValues.put("groupFieldsBatchSizeAsString", "5");
+        alreadySet.add("groupFieldsBatchSizeAsString");
+
+        defaultValues.put("groupFields", Sets.newHashSet());
+        updatedValues.put("groupFields", Sets.newHashSet("FIELD_G", "FIELD_H"));
+        defaultValues.put("groupFieldsAsString", "");
+        updatedValues.put("groupFieldsAsString", "FIELD_G,FIELD_H");
+        alreadySet.add("groupFieldsAsString");
+    }
+
+    private Query createQuery(String query) {
+        QueryImpl q = new QueryImpl();
+        q.setQuery(query);
+        return q;
+    }
+
+    private HashMultimap<String,?> createHashMultimap(Multimap<String,?> multimap) {
+        HashMultimap hashMultimap = HashMultimap.create();
+        for (Map.Entry<String,?> entry : multimap.entries()) {
+            hashMultimap.put(entry.getKey(), entry.getValue());
+        }
+        return hashMultimap;
+    }
+
+    private ArrayListMultimap<String,?> createArrayListMultimap(Multimap<String,?> multimap) {
+        ArrayListMultimap arrayListMultimap = ArrayListMultimap.create();
+        for (Map.Entry<String,?> entry : multimap.entries()) {
+            arrayListMultimap.put(entry.getKey(), entry.getValue());
+        }
+        return arrayListMultimap;
+    }
+
+    private void testValues(ShardQueryConfiguration config, Map<String,Object> values, Map<String,Predicate> predicates) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
+        Set<String> fieldsFound = new HashSet<>();
+        for (Iterator<String> it = root.fieldNames(); it.hasNext();) {
+            String fieldName = it.next();
+            Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
+                            values.containsKey(fieldName));
+            fieldsFound.add(fieldName);
+            Object value = getValue(config, fieldName);
+            if (predicates.containsKey(fieldName)) {
+                Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+            } else if (fieldName.endsWith("AsString")) {
+                Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+            } else {
+                Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+            }
+        }
+        for (String fieldName : alreadySet) {
+            Assert.assertTrue("Missing values for " + fieldName + ".  Please add default and updated values at the top of " + this.getClass().getSimpleName(),
+                            values.containsKey(fieldName));
+            fieldsFound.add(fieldName);
+            Object value = getValue(config, fieldName);
+            if (predicates.containsKey(fieldName)) {
+                Assert.assertTrue("Unexpected value for " + fieldName, predicates.get(fieldName).test(value));
+            } else if (fieldName.endsWith("AsString")) {
+                Assert.assertTrue("Unexpected value for " + fieldName, isUnorderedListEqual(String.valueOf(values.get(fieldName)), String.valueOf(value)));
+            } else {
+                Assert.assertEquals("Unexpected value for " + fieldName, values.get(fieldName), value);
+            }
+        }
+        Assert.assertEquals("Unexpected additional entries in defaultValues: " + Sets.difference(values.keySet(), fieldsFound), values.size(),
+                        fieldsFound.size());
+    }
+
+    public boolean isUnorderedListEqual(String expected, String actual) {
+        Set<String> expectedSet = new HashSet(Arrays.asList(expected.split("[,;]")));
+        Set<String> actualSet = new HashSet(Arrays.asList(actual.split("[,;]")));
+        return expectedSet.equals(actualSet);
+    }
+
+    public Object getValue(Object source, String fieldName) throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        String getter = "get" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+        try {
+            return source.getClass().getMethod(getter).invoke(source);
+        } catch (NoSuchMethodException e) {
+            getter = "is" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+            return source.getClass().getMethod(getter).invoke(source);
+        }
+    }
+
+    public void setValue(Object source, String fieldName, Object value) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        setValue(source, fieldName, value, value.getClass());
+    }
+
+    public Object setValue(Object source, String fieldName, Object value, Class<?> valueClass)
+                    throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        String getter = "set" + fieldName.substring(0, 1).toUpperCase() + fieldName.substring(1);
+        try {
+            return source.getClass().getMethod(getter, valueClass).invoke(source, value);
+        } catch (NoSuchMethodException e) {
+            if (primitiveMap.containsKey(valueClass)) {
+                return setValue(source, fieldName, value, primitiveMap.get(valueClass));
+            } else if (!valueClass.equals(Object.class) && !valueClass.isPrimitive()) {
+                for (Class<?> infc : valueClass.getInterfaces()) {
+                    try {
+                        return setValue(source, fieldName, value, infc);
+                    } catch (NoSuchMethodException e2) {
+                        // try next one
+                    }
+                }
+                if (!valueClass.isInterface()) {
+                    return setValue(source, fieldName, value, valueClass.getSuperclass());
+                }
+            }
+            throw e;
+        }
     }
 
     /**
      * Assert expected default values from an empty constructor call
      */
     @Test
-    public void testEmptyConstructor() {
+    public void testEmptyConstructor() throws Exception {
         ShardQueryConfiguration config = ShardQueryConfiguration.create();
 
-        Assert.assertFalse(config.isTldQuery());
-        Assert.assertEquals(Maps.newHashMap(), config.getFilterOptions());
-        Assert.assertFalse(config.isDisableIndexOnlyDocuments());
-        Assert.assertEquals(1000, config.getMaxScannerBatchSize());
-        Assert.assertEquals(1000, config.getMaxIndexBatchSize());
-        Assert.assertFalse(config.isAllTermsIndexOnly());
-        Assert.assertEquals("", config.getAccumuloPassword());
-        Assert.assertEquals(Long.MAX_VALUE, config.getMaxIndexScanTimeMillis());
-        Assert.assertFalse(config.getCollapseUids());
-        Assert.assertFalse(config.getParseTldUids());
-        Assert.assertFalse(config.getReduceQueryFields());
-        Assert.assertFalse(config.getSequentialScheduler());
-        Assert.assertFalse(config.getCollectTimingDetails());
-        Assert.assertFalse(config.getLogTimingDetails());
-        Assert.assertTrue(config.getSendTimingToStatsd());
-        Assert.assertEquals("localhost", config.getStatsdHost());
-        Assert.assertEquals(8125, config.getStatsdPort());
-        Assert.assertEquals(500, config.getStatsdMaxQueueSize());
-        Assert.assertFalse(config.getLimitAnyFieldLookups());
-        Assert.assertFalse(config.isBypassExecutabilityCheck());
-        Assert.assertFalse(config.getBackoffEnabled());
-        Assert.assertTrue(config.getUnsortedUIDsEnabled());
-        Assert.assertFalse(config.getSerializeQueryIterator());
-        Assert.assertFalse(config.isDebugMultithreadedSources());
-        Assert.assertFalse(config.isSortGeoWaveQueryRanges());
-        Assert.assertEquals(0, config.getNumRangesToBuffer());
-        Assert.assertEquals(0, config.getRangeBufferTimeoutMillis());
-        Assert.assertEquals(100, config.getRangeBufferPollMillis());
-        Assert.assertEquals(8, config.getGeometryMaxExpansion());
-        Assert.assertEquals(32, config.getPointMaxExpansion());
-        Assert.assertEquals(16, config.getGeoWaveRangeSplitThreshold());
-        Assert.assertEquals(0.25, config.getGeoWaveMaxRangeOverlap(), 0.0);
-        Assert.assertTrue(config.isOptimizeGeoWaveRanges());
-        Assert.assertEquals(4, config.getGeoWaveMaxEnvelopes());
-        Assert.assertEquals(TableName.SHARD, config.getShardTableName());
-        Assert.assertEquals(TableName.SHARD_INDEX, config.getIndexTableName());
-        Assert.assertEquals(TableName.SHARD_RINDEX, config.getReverseIndexTableName());
-        Assert.assertEquals(TableName.METADATA, config.getMetadataTableName());
-        Assert.assertEquals(TableName.DATE_INDEX, config.getDateIndexTableName());
-        Assert.assertEquals(TableName.INDEX_STATS, config.getIndexStatsTableName());
-        Assert.assertEquals("EVENT", config.getDefaultDateTypeName());
-        Assert.assertTrue(config.isCleanupShardsAndDaysQueryHints());
-        Assert.assertEquals(new Integer(8), config.getNumQueryThreads());
-        Assert.assertEquals(new Integer(8), config.getNumIndexLookupThreads());
-        Assert.assertEquals(new Integer(8), config.getNumDateIndexThreads());
-        Assert.assertEquals(new Integer(-1), config.getMaxDocScanTimeout());
-        Assert.assertNotNull(config.getFstCount());
-        Assert.assertEquals(0.99f, config.getCollapseDatePercentThreshold(), 0);
-        Assert.assertTrue(config.getFullTableScanEnabled());
-        Assert.assertNull(config.getRealmSuffixExclusionPatterns());
-        Assert.assertEquals(NoOpType.class, config.getDefaultType());
-        Assert.assertEquals(new SimpleDateFormat("yyyyMMdd"), config.getShardDateFormatter());
-        Assert.assertFalse(config.getUseEnrichers());
-        Assert.assertNull(config.getEnricherClassNames());
-        Assert.assertFalse(config.getUseFilters());
-        Assert.assertNull(config.getFilterClassNames());
-        Assert.assertEquals(Lists.newArrayList(), config.getIndexFilteringClassNames());
-        Assert.assertEquals(Sets.newHashSet("d", "tf"), config.getNonEventKeyPrefixes());
-        Assert.assertEquals(Sets.newHashSet(), config.getUnevaluatedFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getDatatypeFilter());
-        Assert.assertEquals(Lists.newArrayList(), config.getIndexHoles());
-        Assert.assertEquals(Sets.newHashSet(), config.getProjectFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getBlacklistedFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getIndexedFields());
-        Assert.assertEquals(Sets.newHashSet(), config.getNormalizedFields());
-        Assert.assertEquals(HashMultimap.create(), config.getDataTypes());
-        Assert.assertEquals(HashMultimap.create(), config.getQueryFieldsDatatypes());
-        Assert.assertEquals(HashMultimap.create(), config.getNormalizedFieldsDatatypes());
-        Assert.assertEquals(ArrayListMultimap.create(), config.getCompositeToFieldMap());
-        Assert.assertEquals(Maps.newHashMap(), config.getFieldToDiscreteIndexTypes());
-        Assert.assertEquals(Maps.newHashMap(), config.getCompositeTransitionDates());
-        Assert.assertTrue(config.isSortedUIDs());
-        Assert.assertEquals(Sets.newHashSet(), config.getQueryTermFrequencyFields());
-        Assert.assertFalse(config.isTermFrequenciesRequired());
-        Assert.assertEquals(Sets.newHashSet(), config.getLimitFields());
-        Assert.assertFalse(config.isLimitFieldsPreQueryEvaluation());
-        Assert.assertNull(config.getLimitFieldsField());
-        Assert.assertFalse(config.isHitList());
-        Assert.assertFalse(config.isDateIndexTimeTravel());
-        Assert.assertEquals(-1L, config.getBeginDateCap());
-        Assert.assertTrue(config.isFailOutsideValidDateRange());
-        Assert.assertFalse(config.isRawTypes());
-        Assert.assertEquals(-1.0, config.getMinSelectivity(), 0);
-        Assert.assertFalse(config.getIncludeDataTypeAsField());
-        Assert.assertTrue(config.getIncludeRecordId());
-        Assert.assertFalse(config.getIncludeHierarchyFields());
-        Assert.assertEquals(Maps.newHashMap(), config.getHierarchyFieldOptions());
-        Assert.assertFalse(config.getIncludeGroupingContext());
-        Assert.assertEquals(Lists.newArrayList(), config.getDocumentPermutations());
-        Assert.assertTrue(config.getFilterMaskedValues());
-        Assert.assertFalse(config.isReducedResponse());
-        Assert.assertTrue(config.getAllowShortcutEvaluation());
-        Assert.assertFalse(config.getBypassAccumulo());
-        Assert.assertFalse(config.getSpeculativeScanning());
-        Assert.assertFalse(config.isDisableEvaluation());
-        Assert.assertFalse(config.isContainsIndexOnlyTerms());
-        Assert.assertFalse(config.isContainsCompositeTerms());
-        Assert.assertTrue(config.isAllowFieldIndexEvaluation());
-        Assert.assertTrue(config.isAllowTermFrequencyLookup());
-        Assert.assertEquals(DocumentSerialization.DEFAULT_RETURN_TYPE, config.getReturnType());
-        Assert.assertEquals(10000, config.getEventPerDayThreshold());
-        Assert.assertEquals(10, config.getShardsPerDayThreshold());
-        Assert.assertEquals(2500, config.getInitialMaxTermThreshold());
-        Assert.assertEquals(2500, config.getFinalMaxTermThreshold());
-        Assert.assertEquals(2500, config.getMaxDepthThreshold());
-        Assert.assertEquals(500, config.getMaxUnfieldedExpansionThreshold());
-        Assert.assertEquals(5000, config.getMaxValueExpansionThreshold());
-        Assert.assertEquals(500, config.getMaxOrExpansionThreshold());
-        Assert.assertEquals(10, config.getMaxOrRangeThreshold());
-        Assert.assertEquals(10, config.getMaxOrRangeIvarators());
-        Assert.assertEquals(5, config.getMaxRangesPerRangeIvarator());
-        Assert.assertEquals(750, config.getMaxOrExpansionFstThreshold());
-        Assert.assertEquals(Long.MAX_VALUE, config.getYieldThresholdMs());
-        Assert.assertNull(config.getHdfsSiteConfigURLs());
-        Assert.assertNull(config.getHdfsFileCompressionCodec());
-        Assert.assertNull(config.getZookeeperConfig());
-        Assert.assertTrue(config.getIvaratorCacheDirConfigs().isEmpty());
-        Assert.assertEquals(2, config.getIvaratorNumRetries());
-        Assert.assertEquals(100, config.getIvaratorPersistVerifyCount());
-        Assert.assertEquals(true, config.isIvaratorPersistVerify());
-        Assert.assertNull(config.getIvaratorFstHdfsBaseURIs());
-        Assert.assertEquals(10000, config.getIvaratorCacheBufferSize());
-        Assert.assertEquals(100000, config.getIvaratorCacheScanPersistThreshold());
-        Assert.assertEquals(3600000, config.getIvaratorCacheScanTimeout());
-        Assert.assertEquals(11, config.getMaxFieldIndexRangeSplit());
-        Assert.assertEquals(100, config.getIvaratorMaxOpenFiles());
-        Assert.assertEquals(33, config.getMaxIvaratorSources());
-        Assert.assertEquals(25, config.getMaxEvaluationPipelines());
-        Assert.assertEquals(25, config.getMaxPipelineCachedResults());
-        Assert.assertFalse(config.isExpandAllTerms());
-        Assert.assertNull(config.getQueryModel());
-        Assert.assertNull(config.getModelName());
-        Assert.assertEquals(TableName.METADATA, config.getModelTableName());
-        Assert.assertFalse(config.isExpansionLimitedToModelContents());
-        Assert.assertEquals(new QueryImpl(), config.getQuery());
-        Assert.assertFalse(config.isCompressServerSideResults());
-        Assert.assertFalse(config.isIndexOnlyFilterFunctionsEnabled());
-        Assert.assertFalse(config.isCompositeFilterFunctionsEnabled());
-        Assert.assertEquals(0, config.getGroupFieldsBatchSize());
-        Assert.assertFalse(config.getAccrueStats());
-        Assert.assertEquals(Sets.newHashSet(), config.getGroupFields());
-        Assert.assertEquals(new UniqueFields(), config.getUniqueFields());
-        Assert.assertFalse(config.getCacheModel());
-        Assert.assertTrue(config.isTrackSizes());
-        Assert.assertEquals(Lists.newArrayList(), config.getContentFieldNames());
-        Assert.assertNull(config.getActiveQueryLogNameSource());
-        Assert.assertEquals("", config.getActiveQueryLogName());
-        Assert.assertFalse(config.isDisableWhindexFieldMappings());
-        Assert.assertEquals(Sets.newHashSet(), config.getWhindexMappingFields());
-        Assert.assertEquals(Maps.newHashMap(), config.getWhindexFieldMappings());
-        Assert.assertEquals(Collections.emptySet(), config.getNoExpansionFields());
-        Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
-        Assert.assertEquals(5000000L, config.getVisitorFunctionMaxWeight());
-        Assert.assertFalse(config.getPruneQueryOptions());
-
-        // seeks
-        Assert.assertEquals(-1, config.getFiFieldSeek());
-        Assert.assertEquals(-1, config.getFiNextSeek());
-        Assert.assertEquals(-1, config.getEventFieldSeek());
-        Assert.assertEquals(-1, config.getEventNextSeek());
-        Assert.assertEquals(-1, config.getTfFieldSeek());
-        Assert.assertEquals(-1, config.getTfNextSeek());
-        Assert.assertEquals(-1, config.getDocAggregationThresholdMs());
+        testValues(config, defaultValues, defaultPredicates);
     }
 
     /**
      * Test that for a given set of collections, stored in a ShardQueryConfiguration, will in fact be deep-copied into a new ShardQueryConfiguration object.
      */
     @Test
-    public void testDeepCopyConstructor() {
+    public void testDeepCopyConstructor() throws Exception {
 
         // Instantiate a 'other' ShardQueryConfiguration
         ShardQueryConfiguration other = ShardQueryConfiguration.create();
 
-        // Setup collections for deep copy
-        List<String> realmSuffixExclusionPatterns = Lists.newArrayList("somePattern");
-        SimpleDateFormat shardDateFormatter = new SimpleDateFormat("yyyyMMdd");
-        List<String> enricherClassNames = Lists.newArrayList("enricherClassNameA");
-        List<String> filterClassNames = Lists.newArrayList("filterClassNameA");
-        List<String> indexFilteringClassNames = Lists.newArrayList("indexFilteringClassNameA");
-        Set<String> nonEventKeyPrefixes = Sets.newHashSet("nonEventKeyPrefixA");
-        Set<String> unevaluatedFields = Sets.newHashSet("unevaluatedFieldA");
-        Set<String> dataTypeFilter = Sets.newHashSet("dataTypeFilterA");
-        IndexHole indexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
-        List<IndexHole> indexHoles = Lists.newArrayList(indexHole);
-        Set<String> projectFields = Sets.newHashSet("projectFieldA");
-        Set<String> blacklistedFields = Sets.newHashSet("blacklistedFieldA");
-        Set<String> indexedFields = Sets.newHashSet("indexedFieldA");
-        Set<String> normalizedFields = Sets.newHashSet("normalizedFieldA");
-        Multimap<String,Type<?>> dataTypes = HashMultimap.create();
-        dataTypes.put("K001", new NoOpType("V"));
-        Multimap<String,Type<?>> queryFieldsDatatypes = HashMultimap.create();
-        queryFieldsDatatypes.put("K002", new NoOpType("V"));
-        Multimap<String,Type<?>> normalizedFieldsDatatypes = HashMultimap.create();
-        normalizedFieldsDatatypes.put("K003", new NoOpType("V"));
-        Multimap<String,String> compositeToFieldMap = HashMultimap.create();
-        compositeToFieldMap.put("K004", "V");
-        Map<String,DiscreteIndexType<?>> fieldToDiscreteIndexType = Maps.newHashMap();
-        fieldToDiscreteIndexType.put("GEO", new GeometryType());
-        Map<String,Date> compositeTransitionDates = Maps.newHashMap();
-        Date transitionDate = new Date();
-        compositeTransitionDates.put("K005", transitionDate);
-        Map<String,String> compositeFieldSeparators = Maps.newHashMap();
-        compositeFieldSeparators.put("GEO", " ");
-        Set<String> queryTermFrequencyFields = Sets.newHashSet("fieldA");
-        Set<String> limitFields = Sets.newHashSet("limitFieldA");
-        Map<String,String> hierarchyFieldOptions = Maps.newHashMap();
-        hierarchyFieldOptions.put("K006", "V");
-        List<String> documentPermutations = Lists.newArrayList(DocumentPermutation.class.getName());
-        QueryModel queryModel = new QueryModel();
-        QueryImpl query = new QueryImpl();
-        Set<String> groupFields = Sets.newHashSet("groupFieldA");
-        UniqueFields uniqueFields = new UniqueFields();
-        uniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
-        List<String> contentFieldNames = Lists.newArrayList("fieldA");
-        Set<String> noExpansionFields = Sets.newHashSet("NoExpansionFieldA");
-        Set<String> disallowedRegexPatterns = Sets.newHashSet(".*", ".*?");
-        long visitorFunctionMaxWeight = 200L;
+        for (Map.Entry<String,Object> entry : updatedValues.entrySet()) {
+            if (!alreadySet.contains(entry.getKey())) {
+                setValue(other, entry.getKey(), entry.getValue());
+            }
+        }
 
-        // Set collections on 'other' ShardQueryConfiguration
-        other.setRealmSuffixExclusionPatterns(realmSuffixExclusionPatterns);
-        other.setShardDateFormatter(shardDateFormatter);
-        other.setEnricherClassNames(enricherClassNames);
-        other.setFilterClassNames(filterClassNames);
-        other.setIndexFilteringClassNames(indexFilteringClassNames);
-        other.setNonEventKeyPrefixes(nonEventKeyPrefixes);
-        other.setUnevaluatedFields(unevaluatedFields);
-        other.setDatatypeFilter(dataTypeFilter);
-        other.setIndexHoles(indexHoles);
-        other.setProjectFields(projectFields);
-        other.setBlacklistedFields(blacklistedFields);
-        other.setIndexedFields(indexedFields);
-        other.setNormalizedFields(normalizedFields);
-        other.setDataTypes(dataTypes);
-        other.setQueryFieldsDatatypes(queryFieldsDatatypes);
-        other.setNormalizedFieldsDatatypes(normalizedFieldsDatatypes);
-        other.setCompositeToFieldMap(compositeToFieldMap);
-        other.setFieldToDiscreteIndexTypes(fieldToDiscreteIndexType);
-        other.setCompositeTransitionDates(compositeTransitionDates);
-        other.setCompositeFieldSeparators(compositeFieldSeparators);
-        other.setQueryTermFrequencyFields(queryTermFrequencyFields);
-        other.setLimitFields(limitFields);
-        other.setHierarchyFieldOptions(hierarchyFieldOptions);
-        other.setDocumentPermutations(documentPermutations);
-        other.setQueryModel(queryModel);
-        other.setQuery(query);
-        other.setGroupFields(groupFields);
-        other.setUniqueFields(uniqueFields);
-        other.setContentFieldNames(contentFieldNames);
-        other.setNoExpansionFields(noExpansionFields);
-        other.setDisallowedRegexPatterns(disallowedRegexPatterns);
-        other.setVisitorFunctionMaxWeight(visitorFunctionMaxWeight);
-        other.setAccumuloPassword("ChangeIt");
-        other.setReduceQueryFields(true);
-        other.setDocAggregationThresholdMs(15000);
-        other.setTfAggregationThresholdMs(10000);
-        // seeks
-        other.setFiFieldSeek(12);
-        other.setFiNextSeek(13);
-        other.setEventFieldSeek(14);
-        other.setEventNextSeek(15);
-        other.setTfFieldSeek(16);
-        other.setTfNextSeek(17);
-        other.setPruneQueryOptions(true);
+        for (Map.Entry<String,Object> entry : extraValuesToSet.entrySet()) {
+            setValue(other, entry.getKey(), entry.getValue());
+        }
 
         // Copy 'other' ShardQueryConfiguration into a new config
         ShardQueryConfiguration config = ShardQueryConfiguration.create(other);
 
-        // Modify original collections
-        realmSuffixExclusionPatterns.add("anotherPattern");
-        shardDateFormatter = new SimpleDateFormat("yyyyMMdd-mm:SS");
-        enricherClassNames.add("enricherClassNameB");
-        filterClassNames.add("filterClassNameB");
-        indexFilteringClassNames.add("indexFilteringClassNameB");
-        nonEventKeyPrefixes.add("nonEventKeyPrefixB");
-        unevaluatedFields.add("unevaluatedFieldB");
-        dataTypeFilter.add("dataTypeFilterB");
-        IndexHole otherIndexHole = new IndexHole(new String[] {"4", "5"}, new String[] {"6", "7"});
-        indexHoles.add(otherIndexHole);
-        projectFields.add("projectFieldB");
-        blacklistedFields.add("blacklistedFieldB");
-        indexedFields.add("indexedFieldB");
-        normalizedFields.add("normalizedFieldB");
-        dataTypes.put("K2", new NoOpType("V2"));
-        queryFieldsDatatypes.put("K", new NoOpType("V2"));
-        normalizedFieldsDatatypes.put("K2", new NoOpType("V2"));
-        compositeToFieldMap.put("K2", "V2");
-        queryTermFrequencyFields.add("fieldB");
-        limitFields.add("limitFieldB");
-        hierarchyFieldOptions.put("K2", "V2");
-        documentPermutations.add(DocumentProjection.class.getName());
-        queryModel.addTermToModel("aliasA", "diskNameA");
-        query.setId(UUID.randomUUID());
-        groupFields.add("groupFieldB");
-        uniqueFields.put("uniqueFieldB", UniqueGranularity.ALL);
-        contentFieldNames.add("fieldB");
-        disallowedRegexPatterns.add("blah");
-
-        // Assert that copied collections were deep copied and remain unchanged
-        Assert.assertEquals(Lists.newArrayList("somePattern"), config.getRealmSuffixExclusionPatterns());
-        Assert.assertEquals(new SimpleDateFormat("yyyyMMdd"), config.getShardDateFormatter());
-        Assert.assertEquals(Lists.newArrayList("enricherClassNameA"), config.getEnricherClassNames());
-        Assert.assertEquals(Lists.newArrayList("filterClassNameA"), config.getFilterClassNames());
-        Assert.assertEquals(Lists.newArrayList("indexFilteringClassNameA"), config.getIndexFilteringClassNames());
-        Assert.assertEquals(Sets.newHashSet("nonEventKeyPrefixA"), config.getNonEventKeyPrefixes());
-        Assert.assertEquals(Sets.newHashSet("unevaluatedFieldA"), config.getUnevaluatedFields());
-        Assert.assertEquals(Sets.newHashSet("dataTypeFilterA"), config.getDatatypeFilter());
-        IndexHole expectedIndexHole = new IndexHole(new String[] {"0", "1"}, new String[] {"2", "3"});
-        Assert.assertEquals(Lists.newArrayList(expectedIndexHole), config.getIndexHoles());
-        Assert.assertEquals(Sets.newHashSet("projectFieldA"), config.getProjectFields());
-        Assert.assertEquals(Sets.newHashSet("blacklistedFieldA"), config.getBlacklistedFields());
-        Assert.assertEquals(Sets.newHashSet("indexedFieldA"), config.getIndexedFields());
-        // This assert is different from the setter as setNormalizedFieldsAsDatatypes will overwrite the normalizedFields with
-        // a new keyset.
-        Assert.assertEquals(Sets.newHashSet("K003"), config.getNormalizedFields());
-        Multimap<String,Type<?>> expectedDataTypes = HashMultimap.create();
-        expectedDataTypes.put("K001", new NoOpType("V"));
-        Assert.assertEquals(expectedDataTypes, config.getDataTypes());
-        Multimap<String,Type<?>> expectedQueryFieldsDatatypes = HashMultimap.create();
-        expectedQueryFieldsDatatypes.put("K002", new NoOpType("V"));
-        Assert.assertEquals(expectedQueryFieldsDatatypes, config.getQueryFieldsDatatypes());
-        Multimap<String,Type<?>> expectedNormalizedFieldsDatatypes = HashMultimap.create();
-        expectedNormalizedFieldsDatatypes.put("K003", new NoOpType("V"));
-        Assert.assertEquals(expectedNormalizedFieldsDatatypes, config.getNormalizedFieldsDatatypes());
-        Multimap<String,String> expectedCompositeToFieldMap = ArrayListMultimap.create();
-        expectedCompositeToFieldMap.put("K004", "V");
-        Assert.assertEquals(expectedCompositeToFieldMap, config.getCompositeToFieldMap());
-        Map<String,DiscreteIndexType<?>> expectedFieldToDiscreteIndexType = Maps.newHashMap();
-        expectedFieldToDiscreteIndexType.put("GEO", new GeometryType());
-        Assert.assertEquals(expectedFieldToDiscreteIndexType, config.getFieldToDiscreteIndexTypes());
-        Map<String,Date> expectedCompositeTransitionDates = Maps.newHashMap();
-        expectedCompositeTransitionDates.put("K005", transitionDate);
-        Assert.assertEquals(expectedCompositeTransitionDates, config.getCompositeTransitionDates());
-        Map<String,String> expectedCompositeFieldSeparators = Maps.newHashMap();
-        expectedCompositeFieldSeparators.put("GEO", " ");
-        Assert.assertEquals(expectedCompositeFieldSeparators, config.getCompositeFieldSeparators());
-        Assert.assertEquals(Sets.newHashSet("fieldA"), config.getQueryTermFrequencyFields());
-        Assert.assertEquals(Sets.newHashSet("limitFieldA"), config.getLimitFields());
-        Map<String,String> expectedHierarchyFieldOptions = Maps.newHashMap();
-        expectedHierarchyFieldOptions.put("K006", "V");
-        Assert.assertEquals(expectedHierarchyFieldOptions, config.getHierarchyFieldOptions());
-        Assert.assertEquals(Lists.newArrayList(DocumentPermutation.class.getName()), config.getDocumentPermutations());
-        QueryModel expectedQueryModel = new QueryModel();
-        Assert.assertEquals(expectedQueryModel.getForwardQueryMapping(), config.getQueryModel().getForwardQueryMapping());
-        Assert.assertEquals(expectedQueryModel.getReverseQueryMapping(), config.getQueryModel().getReverseQueryMapping());
-        Assert.assertEquals(expectedQueryModel.getModelFieldAttributes(), config.getQueryModel().getModelFieldAttributes());
-        Assert.assertEquals(Sets.newHashSet(".*", ".*?"), config.getDisallowedRegexPatterns());
-        Assert.assertEquals(visitorFunctionMaxWeight, config.getVisitorFunctionMaxWeight());
-        Assert.assertEquals("ChangeIt", config.getAccumuloPassword());
-        Assert.assertTrue(config.getReduceQueryFields());
-
-        // Account for QueryImpl.duplicate() generating a random UUID on the duplicate
-        QueryImpl expectedQuery = new QueryImpl();
-        expectedQuery.setId(config.getQuery().getId());
-        Assert.assertEquals(expectedQuery, config.getQuery());
-        Assert.assertEquals(Sets.newHashSet("groupFieldA"), config.getGroupFields());
-        UniqueFields expectedUniqueFields = new UniqueFields();
-        expectedUniqueFields.put("uniqueFieldA", UniqueGranularity.ALL);
-        Assert.assertEquals(expectedUniqueFields, config.getUniqueFields());
-        Assert.assertEquals(Lists.newArrayList("fieldA"), config.getContentFieldNames());
-        Assert.assertEquals(Sets.newHashSet("NoExpansionFieldA"), config.getNoExpansionFields());
-        Assert.assertEquals(15000, config.getDocAggregationThresholdMs());
-        Assert.assertEquals(10000, config.getTfAggregationThresholdMs());
-
-        // assert seeks
-        Assert.assertEquals(12, config.getFiFieldSeek());
-        Assert.assertEquals(13, config.getFiNextSeek());
-        Assert.assertEquals(14, config.getEventFieldSeek());
-        Assert.assertEquals(15, config.getEventNextSeek());
-        Assert.assertEquals(16, config.getTfFieldSeek());
-        Assert.assertEquals(17, config.getTfNextSeek());
-
-        Assert.assertTrue(config.getPruneQueryOptions());
-    }
-
-    @Test
-    public void testGetSetDataTypeFilter() {
-        String expected = "filterA,filterB";
-        Set<String> dataTypeFilters = Sets.newHashSet("filterA", "filterB");
-        config.setDatatypeFilter(dataTypeFilters);
-        Assert.assertEquals(expected, config.getDatatypeFilterAsString());
-    }
-
-    @Test
-    public void testGetSetProjectFields() {
-        String expected = "projectB,projectA"; // Set ordering.
-        Set<String> projectFields = Sets.newHashSet("projectA", "projectB");
-        config.setProjectFields(projectFields);
-        Assert.assertEquals(expected, config.getProjectFieldsAsString());
-    }
-
-    @Test
-    public void testGetSetConjunctionsWithinExpression() {
-        ShardQueryLogic logic = new ShardQueryLogic();
-        boolean expected = true; // Set ordering.
-        logic.setEnforceUniqueConjunctionsWithinExpression(true);
-        Assert.assertEquals(expected, logic.getEnforceUniqueConjunctionsWithinExpression());
-    }
-
-    @Test
-    public void testGetSetDisjunctionsWithinExpression() {
-        ShardQueryLogic logic = new ShardQueryLogic();
-        boolean expected = true; // Set ordering.
-        logic.setEnforceUniqueDisjunctionsWithinExpression(true);
-        Assert.assertEquals(expected, logic.getEnforceUniqueDisjunctionsWithinExpression());
-    }
-
-    @Test
-    public void testGetSetBlacklistedFields() {
-        String expected = "blacklistA,blacklistB";
-        Set<String> blacklistedFields = Sets.newHashSet("blacklistA", "blacklistB");
-        config.setBlacklistedFields(blacklistedFields);
-        Assert.assertEquals(expected, config.getBlacklistedFieldsAsString());
-    }
-
-    @Test
-    public void testGetSetIndexedFieldDataTypes() {
-        Assert.assertEquals("", config.getIndexedFieldDataTypesAsString());
-
-        Set<String> indexedFields = Sets.newHashSet("fieldA", "fieldB");
-        Multimap<String,Type<?>> queryFieldsDatatypes = ArrayListMultimap.create();
-        queryFieldsDatatypes.put("fieldA", new DateType());
-        queryFieldsDatatypes.put("fieldB", new StringType());
-
-        config.setIndexedFields(indexedFields);
-        config.setQueryFieldsDatatypes(queryFieldsDatatypes);
-
-        String expected = "fieldA:datawave.data.type.DateType;fieldB:datawave.data.type.StringType;";
-        Assert.assertEquals(expected, config.getIndexedFieldDataTypesAsString());
-    }
-
-    @Test
-    public void testGetSetNormalizedFieldNormalizers() {
-        Assert.assertEquals("", config.getNormalizedFieldNormalizersAsString());
-
-        Set<String> normalizedFields = Sets.newHashSet("fieldA", "fieldB");
-        Multimap<String,Type<?>> normalizedFieldsDatatypes = ArrayListMultimap.create();
-        normalizedFieldsDatatypes.put("fieldA", new DateType());
-        normalizedFieldsDatatypes.put("fieldB", new StringType());
-
-        config.setIndexedFields(normalizedFields);
-        config.setNormalizedFieldsDatatypes(normalizedFieldsDatatypes);
-
-        String expected = "fieldA:datawave.data.type.DateType;fieldB:datawave.data.type.StringType;";
-        Assert.assertEquals(expected, config.getNormalizedFieldNormalizersAsString());
-    }
-
-    @Test
-    public void testIsTldQuery() {
-        Assert.assertFalse(config.isTldQuery());
-
-        config.setTldQuery(true);
-        Assert.assertTrue(config.isTldQuery());
-    }
-
-    /**
-     * This test will fail if a new variable is added improperly to the ShardQueryConfiguration
-     * <p>
-     * If a configuration option was added do the following as appropriate
-     * <ol>
-     * <li>Add getter/setters to the ShardQueryLogic that delegate to the ShardQueryConfiguration</li>
-     * <li>Expand the copy constructor test in this class to verify values are not lost on a copy/clone</li>
-     * <li>Add an illustrative default value to a test QueryLogicFactory. NOTE: doing so should not break any unit tests.</li>
-     * <li>If a value in the config is destined for query iterator, ensure that the value is serialized by the DefaultQueryPlanner and parsed correctly by
-     * either the QueryIterator or the QueryOptions class</li>
-     * </ol>
-     * <p>
-     * If a configuration option was removed before deprecating it, DEPRECATE IT FIRST to allow for clean integration.
-     * <p>
-     * Once a deprecated option has at least one tag associated with it, do the following
-     * <ol>
-     * <li>Remove usages of deprecated methods from unit tests</li>
-     * <li>Remove usages of deprecated values from configuration files such as the test QueryLogicFactory</li>
-     * <li>Remove deprecated getters/setters from the ShardQueryLogic</li>
-     * <li>Lastly, remove the deprecated methods and values from the ShardQueryConfiguration</li>
-     * </ol>
-     *
-     * @throws IOException
-     *             if something went wrong
-     */
-    @Test
-    public void testCheckForNewAdditions() throws IOException {
-        int expectedObjectCount = 204;
-        ShardQueryConfiguration config = ShardQueryConfiguration.create();
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode root = mapper.readTree(mapper.writeValueAsString(config));
-        Iterator<JsonNode> rootIter = root.elements();
-        int objectCount = 0;
-        while (rootIter.hasNext()) {
-            rootIter.next();
-            objectCount++;
-        }
-
-        Assert.assertEquals("New variable was added to or removed from the ShardQueryConfiguration", expectedObjectCount, objectCount);
+        testValues(config, updatedValues, updatedPredicates);
     }
 
     @Test

@@ -12,10 +12,9 @@ cd $THIS_DIR
 
 export ACCUMULO_OTHER_OPTS="${ACCUMULO_OTHER_OPTS} $HADOOP_INGEST_OPTS"
 
-ADDJARS="$( cd ../../lib && pwd )/.*.jar"
+export CLASSPATH
 
-CLASSPATH=$ADDJARS
-$WAREHOUSE_ACCUMULO_HOME/bin/accumulo jar ${DATAWAVE_INGEST_CORE_JAR} datawave.ingest.config.TableConfigCacheGenerator \
+$WAREHOUSE_ACCUMULO_HOME/bin/accumulo datawave.ingest.config.TableConfigCacheGenerator \
 -u $USERNAME \
 -p $PASSWORD \
 -i $WAREHOUSE_INSTANCE_NAME \

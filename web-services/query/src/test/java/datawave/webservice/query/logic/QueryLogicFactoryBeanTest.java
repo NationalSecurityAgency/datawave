@@ -34,7 +34,7 @@ import datawave.security.authorization.DatawavePrincipal;
 import datawave.security.authorization.DatawaveUser;
 import datawave.security.authorization.DatawaveUser.UserType;
 import datawave.security.authorization.SubjectIssuerDNPair;
-import datawave.security.util.DnUtils.NpeUtils;
+import datawave.security.util.DnUtils;
 
 @RunWith(EasyMockRunner.class)
 public class QueryLogicFactoryBeanTest extends EasyMockSupport {
@@ -58,7 +58,7 @@ public class QueryLogicFactoryBeanTest extends EasyMockSupport {
 
     @Before
     public void setup() throws IllegalArgumentException, IllegalAccessException {
-        System.setProperty(NpeUtils.NPE_OU_PROPERTY, "iamnotaperson");
+        System.setProperty(DnUtils.NPE_OU_PROPERTY, "iamnotaperson");
         System.setProperty("dw.metadatahelper.all.auths", "A,B,C,D");
         Logger.getLogger(ClassPathXmlApplicationContext.class).setLevel(Level.OFF);
         Logger.getLogger(XmlBeanDefinitionReader.class).setLevel(Level.OFF);
