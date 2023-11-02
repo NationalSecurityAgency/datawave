@@ -53,7 +53,7 @@ public class SSDeepSimilarityQueryTransformerTest {
 
     public void basicExpects(Key k) {
         EasyMock.expect(mockQuery.getQueryAuthorizations()).andReturn("A,B,C");
-        EasyMock.expect(mockQuery.findParameter("minScore")).andReturn(new QueryImpl.Parameter("minScore",""));
+        EasyMock.expect(mockQuery.findParameter("minScore")).andReturn(new QueryImpl.Parameter("minScore", ""));
         EasyMock.expect(mockResponseFactory.getEventQueryResponse()).andReturn(new DefaultEventQueryResponse());
         EasyMock.expect(mockResponseFactory.getEvent()).andReturn(new DefaultEvent()).times(1);
         EasyMock.expect(mockResponseFactory.getField()).andReturn(new DefaultField()).times(4);
