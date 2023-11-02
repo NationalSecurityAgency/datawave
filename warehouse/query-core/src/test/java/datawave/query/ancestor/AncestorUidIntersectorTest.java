@@ -1,5 +1,10 @@
 package datawave.query.ancestor;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -12,7 +17,6 @@ import org.apache.commons.jexl2.parser.ASTIdentifier;
 import org.apache.commons.jexl2.parser.ASTReference;
 import org.apache.commons.jexl2.parser.ASTStringLiteral;
 import org.apache.commons.jexl2.parser.JexlNode;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,9 +69,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 1, got " + result.size(), 1, result.size());
-        Assert.assertEquals("a.b.c.1.1", result.iterator().next().getUid());
+        assertNotNull(result);
+        assertEquals("expected size 1, got " + result.size(), 1, result.size());
+        assertEquals("a.b.c.1.1", result.iterator().next().getUid());
     }
 
     @Test
@@ -77,9 +81,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 1, got " + result.size(), 1, result.size());
-        Assert.assertEquals("a.b.c.1.1", result.iterator().next().getUid());
+        assertNotNull(result);
+        assertEquals("expected size 1, got " + result.size(), 1, result.size());
+        assertEquals("a.b.c.1.1", result.iterator().next().getUid());
     }
 
     @Test
@@ -89,9 +93,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue("expected size 0, got " + result.size(), result.isEmpty());
-        Assert.assertEquals("expected size 0, got " + result.size(), 0, result.size());
+        assertNotNull(result);
+        assertTrue("expected size 0, got " + result.size(), result.isEmpty());
+        assertEquals("expected size 0, got " + result.size(), 0, result.size());
     }
 
     @Test
@@ -101,9 +105,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue("expected size 0, got " + result.size(), result.isEmpty());
-        Assert.assertEquals("expected size 0, got " + result.size(), 0, result.size());
+        assertNotNull(result);
+        assertTrue("expected size 0, got " + result.size(), result.isEmpty());
+        assertEquals("expected size 0, got " + result.size(), 0, result.size());
     }
 
     @Test
@@ -115,8 +119,8 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 2, got " + result.size(), 2, result.size());
+        assertNotNull(result);
+        assertEquals("expected size 2, got " + result.size(), 2, result.size());
     }
 
     @Test
@@ -128,9 +132,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 1, got " + result.size(), 1, result.size());
-        Assert.assertEquals("a.b.c.1.1", result.iterator().next().getUid());
+        assertNotNull(result);
+        assertEquals("expected size 1, got " + result.size(), 1, result.size());
+        assertEquals("a.b.c.1.1", result.iterator().next().getUid());
     }
 
     @Test
@@ -142,8 +146,8 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 2, got " + result.size(), 2, result.size());
+        assertNotNull(result);
+        assertEquals("expected size 2, got " + result.size(), 2, result.size());
     }
 
     @Test
@@ -155,9 +159,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 1, got " + result.size(), 1, result.size());
-        Assert.assertEquals("a.b.c.1.1", result.iterator().next().getUid());
+        assertNotNull(result);
+        assertEquals("expected size 1, got " + result.size(), 1, result.size());
+        assertEquals("a.b.c.1.1", result.iterator().next().getUid());
     }
 
     @Test
@@ -167,9 +171,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 1, got " + result.size(), 1, result.size());
-        Assert.assertEquals("a.b.c.1", result.iterator().next().getUid());
+        assertNotNull(result);
+        assertEquals("expected size 1, got " + result.size(), 1, result.size());
+        assertEquals("a.b.c.1", result.iterator().next().getUid());
 
     }
 
@@ -182,9 +186,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 1, got " + result.size(), 1, result.size());
-        Assert.assertEquals("a.b.c", result.iterator().next().getUid());
+        assertNotNull(result);
+        assertEquals("expected size 1, got " + result.size(), 1, result.size());
+        assertEquals("a.b.c", result.iterator().next().getUid());
     }
 
     @Test
@@ -196,10 +200,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 2, got " + result.size(), 2, result.size());
-        List<IndexMatch> resultList = new ArrayList<>();
-        resultList.addAll(result);
+        assertNotNull(result);
+        assertEquals("expected size 2, got " + result.size(), 2, result.size());
+        List<IndexMatch> resultList = new ArrayList<>(result);
         List<IndexMatch> expected = new ArrayList<>();
 
         IndexMatch match1 = new IndexMatch("a.b.c.1");
@@ -216,11 +219,11 @@ public class AncestorUidIntersectorTest {
         Iterator<IndexMatch> resultIter = resultList.iterator();
         Iterator<IndexMatch> expectedIter = expected.iterator();
 
-        Assert.assertEquals(expectedIter.next(), resultIter.next());
-        Assert.assertEquals(expectedIter.next(), resultIter.next());
+        assertEquals(expectedIter.next(), resultIter.next());
+        assertEquals(expectedIter.next(), resultIter.next());
 
-        Assert.assertFalse(resultIter.hasNext());
-        Assert.assertFalse(expectedIter.hasNext());
+        assertFalse(resultIter.hasNext());
+        assertFalse(expectedIter.hasNext());
     }
 
     @Test
@@ -234,9 +237,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals("expected size 1, got " + result.size(), 1, result.size());
-        Assert.assertEquals("a.b.c", result.iterator().next().getUid());
+        assertNotNull(result);
+        assertEquals("expected size 1, got " + result.size(), 1, result.size());
+        assertEquals("a.b.c", result.iterator().next().getUid());
     }
 
     @Test
@@ -245,9 +248,9 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue("expected size 0, got " + result.size(), result.isEmpty());
-        Assert.assertEquals("expected size 0, got " + result.size(), 0, result.size());
+        assertNotNull(result);
+        assertTrue("expected size 0, got " + result.size(), result.isEmpty());
+        assertEquals("expected size 0, got " + result.size(), 0, result.size());
     }
 
     @Test
@@ -256,8 +259,8 @@ public class AncestorUidIntersectorTest {
 
         Set<IndexMatch> result = intersector.intersect(uids1, uids2, Collections.EMPTY_LIST);
 
-        Assert.assertNotNull(result);
-        Assert.assertTrue("expected size 0, got " + result.size(), result.isEmpty());
-        Assert.assertEquals("expected size 0, got " + result.size(), 0, result.size());
+        assertNotNull(result);
+        assertTrue("expected size 0, got " + result.size(), result.isEmpty());
+        assertEquals("expected size 0, got " + result.size(), 0, result.size());
     }
 }
