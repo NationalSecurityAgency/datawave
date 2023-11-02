@@ -275,7 +275,7 @@ public class RegexIndexLookup extends AsyncIndexLookup {
                         Key topKey = entry.getKey();
 
                         if (log.isTraceEnabled()) {
-                            log.trace("Foward Index entry: " + entry.getKey());
+                            log.trace("Forward Index entry: " + entry.getKey());
                         }
 
                         // Get the column qualifier from the key. It contains the datatype and normalizer class

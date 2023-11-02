@@ -230,7 +230,7 @@ public class BoundedRangeIndexLookup extends AsyncIndexLookup {
                         Key k = entry.getKey();
 
                         if (log.isTraceEnabled()) {
-                            log.trace("Foward Index entry: " + entry.getKey());
+                            log.trace("Forward Index entry: " + entry.getKey());
                         }
 
                         k.getRow(holder);
