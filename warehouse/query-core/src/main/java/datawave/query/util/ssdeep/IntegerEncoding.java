@@ -7,20 +7,20 @@ import java.nio.charset.StandardCharsets;
  * Class for encoding integers into a lexically sorted output of constant length. Employs the sorted Base64 alphabet captured in the HashReverse class.
  */
 public class IntegerEncoding implements Serializable {
-    
+
     // The number of distinct characters used for encoding
     final int base;
     // the target length of the encoding
     final int length;
     // the max integer value we can encode, derived from the base and length parameters.
     final int limit;
-    
+
     /**
      * We are using the LEXICAL_B64_TABLE to encode integers to characters, our max base (the unique characters we use for encoding) is based on the size of
      * this alphabet.
      */
     private static final int MAX_BASE = HashReverse.LEXICAL_B64_TABLE.length;
-    
+
     /**
      * Create an unsigned integer encoder that uses the specified base (up to 64) and length (which can't generate numbers larger than Integer.MAX_VALUE). This
      * uses the lexically sorted Base 64 alphabet for encoding.
@@ -45,21 +45,21 @@ public class IntegerEncoding implements Serializable {
         }
         this.limit = (int) calculatedLimit; // truncation is fine here.
     }
-    
+
     /** Return the maximum value this encoder can encode */
     public int getLimit() {
         return limit;
     }
-    
+
     public int getLength() {
         return length;
     }
-    
+
     /** Encode the provided value, return a string result */
     public String encode(int value) {
         return new String(encodeToBytes(value, new byte[length], 0));
     }
-    
+
     /**
      * encode the provided value, writing the result to the provided buffer starting offset
      *
@@ -75,11 +75,11 @@ public class IntegerEncoding implements Serializable {
         if (value < 0 || value >= limit) {
             throw new IllegalArgumentException("Can't encode " + value + " is it out of range, max: " + limit + " was: " + value);
         }
-        
+
         if (buffer.length < offset + length) {
             throw new IndexOutOfBoundsException("Can't encode a value of length " + length + " at offset " + offset + " buffer too small: " + buffer.length);
         }
-        
+
         int remaining = value;
         for (int place = length; place > 0; place--) {
             final int scale = ((int) Math.pow(base, place - 1));
@@ -92,7 +92,7 @@ public class IntegerEncoding implements Serializable {
         }
         return buffer;
     }
-    
+
     // TODO: make this just like encodeToBytes?
     public static byte[] encodeBaseTenDigitBytes(int value) {
         int remaining = value;
@@ -108,7 +108,7 @@ public class IntegerEncoding implements Serializable {
         }
         return results;
     }
-    
+
     /**
      * Decode the first _length_ characters in the encoded value into an integer, where length is specified in the constructor.
      *
@@ -122,7 +122,7 @@ public class IntegerEncoding implements Serializable {
         }
         return decode(encodedValue.getBytes(StandardCharsets.UTF_8), 0);
     }
-    
+
     /**
      * decode the value contained within the provided byte[] starting at the specified offset
      *
@@ -140,7 +140,7 @@ public class IntegerEncoding implements Serializable {
         if (encoded.length < offset + length) {
             throw new IndexOutOfBoundsException("Can't decode a value of length " + length + " from offset " + offset + " buffer too small: " + encoded.length);
         }
-        
+
         int result = 0;
         for (int place = length; place > 0; place--) {
             int pos = offset + (length - place);
@@ -150,11 +150,11 @@ public class IntegerEncoding implements Serializable {
             }
             result += (int) Math.pow(base, place - 1) * value;
         }
-        
+
         if (result > limit) {
             throw new IllegalArgumentException("Can't decode input is it out of range, max: " + limit + " was: " + result);
         }
-        
+
         return result;
     }
 }
