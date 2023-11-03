@@ -52,10 +52,7 @@ jobs:
           echo "Nothing to do"
         fi
         
-      
-        
-
-  # Build the code and run the core unit/integration tests.
+  # Build the code and run the unit/integration tests.
   build-and-test:
     runs-on: ubuntu-latest
     steps:
@@ -76,6 +73,11 @@ jobs:
         $RUN_TESTS \
           || { echo "***** TESTS FAILED. Attempting retry."; $RUN_TESTS; } \
           || { echo "***** TESTS FAILED. Attempting final retry."; $RUN_TESTS; }
+
+  # This step can be uncommented to support feature development.  When developing a
+  # feature which spans multiple repos, you can update the poms to use the latest
+  # SNAPSHOT across the board, and run this action as a sanity check to ensure
+  # everything is working in unison.
 
   # Build the code and run the microservice unit/integration tests.
   build-and-test-microservices:

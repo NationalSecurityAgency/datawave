@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -107,6 +106,7 @@ import datawave.query.jexl.functions.JexlFunctionArgumentDescriptorFactory;
 import datawave.query.jexl.functions.TermFrequencyAggregator;
 import datawave.query.jexl.nodes.ExceededOr;
 import datawave.query.jexl.nodes.QueryPropertyMarker;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 import datawave.query.parser.JavaRegexAnalyzer;
 import datawave.query.parser.JavaRegexAnalyzer.JavaRegexParseException;
 import datawave.query.predicate.ChainableEventDataQueryFilter;
@@ -346,7 +346,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         nested = createExceededCheck(identifier, range, and);
                 }
 
-                if (null != nested && null != data && data instanceof AbstractIteratorBuilder) {
+                if (null != nested && data instanceof AbstractIteratorBuilder) {
 
                     AbstractIteratorBuilder iterators = (AbstractIteratorBuilder) data;
                     if (negatedLocal) {
@@ -355,7 +355,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                         iterators.addInclude(nested);
                     }
                 } else {
-                    if (isQueryFullySatisfied == true) {
+                    if (isQueryFullySatisfied) {
                         log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
                     }
                     // if there is no parent
@@ -368,7 +368,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                 }
 
             }
-        } else if (null != data && data instanceof AndIteratorBuilder) {
+        } else if (data instanceof AndIteratorBuilder) {
             and.childrenAccept(this, data);
         } else {
             // Create an AndIterator and recursively add the children
@@ -451,7 +451,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     private NestedIterator<Key> buildExceededFromTermFrequency(String identifier, JexlNode rootNode, JexlNode sourceNode, LiteralRange<?> range, Object data) {
         if (limitLookup) {
-            ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, sourceNode, attrFilter);
+            ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(sourceNode, attrFilter);
             NestedIterator<Key> eventFieldIterator = new EventFieldIterator(rangeLimiter, source.deepCopy(env), identifier,
                             new AttributeFactory(this.typeMetadata), getEventFieldAggregator(identifier, wrapped));
             TermFrequencyIndexBuilder builder = new TermFrequencyIndexBuilder();
@@ -469,8 +469,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             builder.setField(identifier);
 
             NestedIterator<Key> tfIterator = builder.build();
-            OrIterator tfMerge = new OrIterator(Arrays.asList(tfIterator, eventFieldIterator));
-            return tfMerge;
+            return new OrIterator<>(Arrays.asList(tfIterator, eventFieldIterator));
         } else {
             QueryException qe = new QueryException(DatawaveErrorCode.UNEXPECTED_SOURCE_NODE, MessageFormat.format("{0}", "buildExceededFromTermFrequency"));
             throw new DatawaveFatalQueryException(qe);
@@ -516,7 +515,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
     @Override
     public Object visit(ASTOrNode or, Object data) {
-        if (null != data && data instanceof OrIteratorBuilder) {
+        if (data instanceof OrIteratorBuilder) {
             or.childrenAccept(this, data);
         } else {
             // Create an OrIterator and recursively add the children
@@ -582,7 +581,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         builder = builder.replaceAll("Includes:", "\n\t\tIncludes:");
         builder = builder.replaceAll("Excludes:", "\n\t\tExcludes:");
         builder = builder.replaceAll("Bridge:", "\n\t\t\tBridge:");
-        return builder.toString();
+        return builder;
     }
 
     @Override
@@ -619,7 +618,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             }
 
             // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied == true) {
+            if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             return null;
@@ -632,7 +631,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             iterators.addExclude(builder.build());
         } else {
             // SatisfactionVisitor should have already initialized this to false
-            if (isQueryFullySatisfied == true) {
+            if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
         }
@@ -650,8 +649,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     public Object visit(ASTEQNode node, Object data) {
         IndexIteratorBuilder builder = null;
         try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 
@@ -659,7 +658,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied == true) {
+            if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             return null;
@@ -716,7 +715,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied == true) {
+                if (isQueryFullySatisfied) {
                     log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
                 }
             }
@@ -920,8 +919,8 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     protected Object visitDelayedIndexOnly(ASTEQNode node, Object data) {
         IndexIteratorBuilder builder = null;
         try {
-            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            builder = iteratorBuilderClass.asSubclass(IndexIteratorBuilder.class).getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
 
@@ -929,7 +928,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
          * If we have an unindexed type enforced, we've been configured to assert whether the field is indexed.
          */
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied == true) {
+            if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             return null;
@@ -937,7 +936,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
 
         // boolean to tell us if we've overridden our subtree due to
         // a negation or
-        boolean isNegation = (null != data && data instanceof AbstractIteratorBuilder && ((AbstractIteratorBuilder) data).isInANot());
+        boolean isNegation = (data instanceof AbstractIteratorBuilder && ((AbstractIteratorBuilder) data).isInANot());
         builder.setSource(getSourceIterator(node, isNegation));
 
         builder.setQueryId(queryId);
@@ -953,7 +952,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         // A EQNode may be of the form FIELD == null. The evaluation can
         // handle this, so we should just not build an IndexIterator for it.
         if (null == builder.getValue()) {
-            if (isQueryFullySatisfied == true) {
+            if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
             return null;
@@ -980,7 +979,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
             if (isNew && inclusionReference && notExcluded) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied == true) {
+                if (isQueryFullySatisfied) {
                     log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
                 }
             }
@@ -1006,7 +1005,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         }
 
         if (isUnindexed(node)) {
-            if (isQueryFullySatisfied == true) {
+            if (isQueryFullySatisfied) {
                 log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false in the SatisfactionVisitor");
             }
         }
@@ -1271,7 +1270,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
     }
 
     protected TermFrequencyAggregator getTermFrequencyAggregator(String identifier, JexlNode node, EventDataQueryFilter attrFilter, int maxNextCount) {
-        ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(identifier, node, attrFilter);
+        ChainableEventDataQueryFilter wrapped = createWrappedTermFrequencyFilter(node, attrFilter);
 
         return buildTermFrequencyAggregator(identifier, wrapped, maxNextCount);
     }
@@ -1286,29 +1285,16 @@ public class IteratorBuildingVisitor extends BaseVisitor {
         return new TermFrequencyAggregator(toAggregate, filter, maxNextCount);
     }
 
-    /**
-     * Wrap an existing {@link EventDataQueryFilter} with a {@link TermFrequencyDataFilter}
-     *
-     * @param identifier
-     *            the field
-     * @param node
-     *            a node in the query
-     * @param existing
-     *            an existing EventDataQueryFilter
-     * @return a ChainableEventDataQueryFilter
-     */
-    protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(String identifier, JexlNode node, EventDataQueryFilter existing) {
-        // combine index only and term frequency to create non-event fields
-        final Set<String> nonEventFields = new HashSet<>(indexOnlyFields.size() + termFrequencyFields.size());
-        nonEventFields.addAll(indexOnlyFields);
-        nonEventFields.addAll(termFrequencyFields);
-
+    protected ChainableEventDataQueryFilter createWrappedTermFrequencyFilter(JexlNode node, EventDataQueryFilter existing) {
         ChainableEventDataQueryFilter chainableFilter = new ChainableEventDataQueryFilter();
         if (existing != null) {
             chainableFilter.addFilter(existing);
         }
 
-        chainableFilter.addFilter(new TermFrequencyDataFilter(node, typeMetadata, nonEventFields));
+        AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+        Map<String,ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(node, attributeFactory);
+
+        chainableFilter.addFilter(new TermFrequencyDataFilter(expressionFilters));
 
         return chainableFilter;
     }
@@ -1434,7 +1420,7 @@ public class IteratorBuildingVisitor extends BaseVisitor {
                             && !excludeReferences.contains(builder.getField())) {
                 iterators.addInclude(builder.build());
             } else {
-                if (isQueryFullySatisfied == true) {
+                if (isQueryFullySatisfied) {
                     log.warn("Determined that isQueryFullySatisfied should be false, but it was not preset to false by the SatisfactionVisitor");
                 }
             }

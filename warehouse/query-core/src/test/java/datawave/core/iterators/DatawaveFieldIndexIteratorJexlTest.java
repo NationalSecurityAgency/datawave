@@ -1,5 +1,9 @@
 package datawave.core.iterators;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
@@ -11,7 +15,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,7 +39,7 @@ public class DatawaveFieldIndexIteratorJexlTest {
         fs = FileSystem.get(cacheDir.toURI(), new Configuration());
         File queryDirFile = new File(cacheDir, "query");
         queryDirFile.deleteOnExit();
-        Assert.assertTrue(queryDirFile.mkdirs());
+        assertTrue(queryDirFile.mkdirs());
         String queryDir = queryDirFile.toURI().toString();
         cacheDirs = Collections.singletonList(new IvaratorCacheDir(config, fs, queryDir));
     }
@@ -58,15 +61,15 @@ public class DatawaveFieldIndexIteratorJexlTest {
 
         List<Range> ranges = iteratorJexl.buildBoundingFiRanges(row, fiName, fieldValue);
 
-        Assert.assertNotEquals(null, ranges);
-        Assert.assertEquals(1, ranges.size());
+        assertNotEquals(null, ranges);
+        assertEquals(1, ranges.size());
         Range r = ranges.get(0);
 
         // note that the end key is expected to be inclusive even though upperInclusive is set to false because the value has been decremented by one
-        Assert.assertTrue(r.isStartKeyInclusive());
-        Assert.assertTrue(r.isEndKeyInclusive());
-        Assert.assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
-        Assert.assertEquals(new Key(row, fiName, new Text("a" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
+        assertTrue(r.isStartKeyInclusive());
+        assertTrue(r.isEndKeyInclusive());
+        assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
+        assertEquals(new Key(row, fiName, new Text("a" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
     }
 
     @Test
@@ -81,15 +84,15 @@ public class DatawaveFieldIndexIteratorJexlTest {
 
         List<Range> ranges = iteratorJexl.buildBoundingFiRanges(row, fiName, fieldValue);
 
-        Assert.assertNotEquals(null, ranges);
-        Assert.assertEquals(1, ranges.size());
+        assertNotEquals(null, ranges);
+        assertEquals(1, ranges.size());
         Range r = ranges.get(0);
 
         // note that the end key is expected to be inclusive even though upperInclusive is set to false because the value has been decremented by one
-        Assert.assertTrue(r.isStartKeyInclusive());
-        Assert.assertTrue(r.isEndKeyInclusive());
-        Assert.assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
-        Assert.assertEquals(new Key(row, fiName, new Text("y" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
+        assertTrue(r.isStartKeyInclusive());
+        assertTrue(r.isEndKeyInclusive());
+        assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
+        assertEquals(new Key(row, fiName, new Text("y" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
     }
 
     @Test
@@ -104,15 +107,15 @@ public class DatawaveFieldIndexIteratorJexlTest {
 
         List<Range> ranges = iteratorJexl.buildBoundingFiRanges(row, fiName, fieldValue);
 
-        Assert.assertNotEquals(null, ranges);
-        Assert.assertEquals(1, ranges.size());
+        assertNotEquals(null, ranges);
+        assertEquals(1, ranges.size());
         Range r = ranges.get(0);
 
         // note that the end key is expected to be inclusive even though upperInclusive is set to false because the value has been decremented by one
-        Assert.assertTrue(r.isStartKeyInclusive());
-        Assert.assertTrue(r.isEndKeyInclusive());
-        Assert.assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
-        Assert.assertEquals(new Key(row, fiName, new Text("ay" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
+        assertTrue(r.isStartKeyInclusive());
+        assertTrue(r.isEndKeyInclusive());
+        assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
+        assertEquals(new Key(row, fiName, new Text("ay" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
     }
 
     @Test
@@ -127,14 +130,14 @@ public class DatawaveFieldIndexIteratorJexlTest {
 
         List<Range> ranges = iteratorJexl.buildBoundingFiRanges(row, fiName, fieldValue);
 
-        Assert.assertNotEquals(null, ranges);
-        Assert.assertEquals(1, ranges.size());
+        assertNotEquals(null, ranges);
+        assertEquals(1, ranges.size());
         Range r = ranges.get(0);
 
         // note that the end key is expected to be inclusive even though upperInclusive is set to false because the value has been decremented by one
-        Assert.assertTrue(r.isStartKeyInclusive());
-        Assert.assertTrue(r.isEndKeyInclusive());
-        Assert.assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
-        Assert.assertEquals(new Key(row, fiName, new Text("y" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
+        assertTrue(r.isStartKeyInclusive());
+        assertTrue(r.isEndKeyInclusive());
+        assertEquals(new Key(row, fiName, fieldValueNullAppended), r.getStartKey());
+        assertEquals(new Key(row, fiName, new Text("y" + Constants.MAX_UNICODE_STRING)), r.getEndKey());
     }
 }

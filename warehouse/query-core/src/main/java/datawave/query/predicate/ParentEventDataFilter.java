@@ -1,11 +1,10 @@
 package datawave.query.predicate;
 
-import java.util.Set;
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
+
+import java.util.Map;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-
-import datawave.query.util.TypeMetadata;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query.
@@ -13,17 +12,13 @@ import datawave.query.util.TypeMetadata;
 public class ParentEventDataFilter extends EventDataQueryExpressionFilter {
 
     /**
-     * Initialize the query field filter with all of the fields required to evaluation this query
+     * Preferred constructor
      *
-     * @param script
-     *            the script
-     * @param metadata
-     *            type metadata
-     * @param nonEventFields
-     *            set of non event fields
+     * @param filters
+     *            a map of expression filters
      */
-    public ParentEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
-        super(script, metadata, nonEventFields);
+    public ParentEventDataFilter(Map<String,ExpressionFilter> filters) {
+        super(filters);
     }
 
     public ParentEventDataFilter(ParentEventDataFilter other) {

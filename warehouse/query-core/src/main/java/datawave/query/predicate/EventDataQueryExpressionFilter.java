@@ -2,21 +2,15 @@ package datawave.query.predicate;
 
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
-import org.apache.commons.jexl3.parser.JexlNode;
-import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
 
-import datawave.query.attributes.AttributeFactory;
 import datawave.query.data.parsers.DatawaveKey;
 import datawave.query.jexl.JexlASTHelper;
-import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor;
-import datawave.query.util.TypeMetadata;
+import datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
 
 /**
  * This class is used to filter out fields that are required for evaluation by apply the query expressions to the field values on the fly. This filter will
@@ -24,46 +18,33 @@ import datawave.query.util.TypeMetadata;
  * called with a documentKey whenever we are starting to scan a new document or document tree.
  */
 public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
-    private static final Logger log = Logger.getLogger(EventDataQueryExpressionFilter.class);
-    private Map<String,PeekingPredicate<Key>> filters = null;
+    private Map<String,ExpressionFilter> filters = null;
     private boolean initialized = false;
-    private Set<String> nonEventFields;
 
-    public EventDataQueryExpressionFilter() {
-        super();
-    }
+    protected Key document = null;
 
-    public EventDataQueryExpressionFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
-        this.nonEventFields = nonEventFields;
-        AttributeFactory attributeFactory = new AttributeFactory(metadata);
-        Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(script,
-                        attributeFactory);
-        setFilters(expressionFilters);
-    }
-
-    public EventDataQueryExpressionFilter(JexlNode node, TypeMetadata metadata, Set<String> nonEventFields) {
-        this.nonEventFields = nonEventFields;
-        AttributeFactory attributeFactory = new AttributeFactory(metadata);
-        Map<String,EventDataQueryExpressionVisitor.ExpressionFilter> expressionFilters = EventDataQueryExpressionVisitor.getExpressionFilters(node,
-                        attributeFactory);
-        setFilters(expressionFilters);
+    /**
+     * Preferred constructor
+     *
+     * @param filters
+     *            a prebuilt map of expression filters
+     */
+    public EventDataQueryExpressionFilter(Map<String,ExpressionFilter> filters) {
+        setFilters(filters);
     }
 
     public EventDataQueryExpressionFilter(EventDataQueryExpressionFilter other) {
-        this.nonEventFields = other.nonEventFields;
-        setFilters(EventDataQueryExpressionVisitor.ExpressionFilter.clone(other.getFilters()));
+        setFilters(ExpressionFilter.clone(other.getFilters()));
         if (other.document != null) {
             document = new Key(other.document);
         }
     }
 
-    protected Key document = null;
-
     @Override
     public void startNewDocument(Key document) {
         this.document = document;
         // since we are starting a new document, reset the filters
-        EventDataQueryExpressionVisitor.ExpressionFilter.reset(filters);
+        ExpressionFilter.reset(filters);
     }
 
     @Override
@@ -71,7 +52,13 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         return true;
     }
 
-    protected void setFilters(Map<String,? extends PeekingPredicate<Key>> fieldFilters) {
+    /**
+     * Sets a map of expression filters, throws an exception if this is called multiple times
+     *
+     * @param fieldFilters
+     *            a map of expression filters
+     */
+    protected void setFilters(Map<String,ExpressionFilter> fieldFilters) {
         if (this.initialized) {
             throw new RuntimeException("This Projection instance was already initialized");
         }
@@ -80,7 +67,7 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         this.initialized = true;
     }
 
-    protected Map<String,PeekingPredicate<Key>> getFilters() {
+    protected Map<String,ExpressionFilter> getFilters() {
         return Collections.unmodifiableMap(this.filters);
     }
 
@@ -104,11 +91,14 @@ public class EventDataQueryExpressionFilter implements EventDataQueryFilter {
         }
 
         final DatawaveKey datawaveKey = new DatawaveKey(key);
+        // FIELD_NAME.0
+        // FIELD_NAME.1 = deconstruct identifier = remove dot number from end of field name
         final String fieldName = JexlASTHelper.deconstructIdentifier(datawaveKey.getFieldName(), false);
+        final String fieldValue = datawaveKey.getFieldValue();
         if (update) {
-            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).apply(key);
+            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).apply(key, fieldName, fieldValue);
         } else {
-            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).peek(key);
+            return this.filters.containsKey(fieldName) && this.filters.get(fieldName).peek(key, fieldName, fieldValue);
         }
     }
 

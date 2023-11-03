@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.CountDownLatch;
 
@@ -26,6 +27,7 @@ import datawave.audit.SelectorExtractor;
 import datawave.core.common.connection.AccumuloConnectionFactory.Priority;
 import datawave.core.query.cache.ResultsPage;
 import datawave.core.query.configuration.GenericQueryConfiguration;
+import datawave.core.query.exception.EmptyObjectException;
 import datawave.core.query.logic.BaseQueryLogic;
 import datawave.core.query.logic.CheckpointableQueryLogic;
 import datawave.core.query.logic.QueryCheckpoint;
@@ -40,14 +42,14 @@ import datawave.security.authorization.UserOperations;
 import datawave.webservice.result.BaseResponse;
 
 /**
- * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel and results are retrieved as they come
- * back from the delegates. This class restricts the delegates such that they have to return the same type of response object and two query logics with the same
- * class name and tableName cannot be configured.
+ * Query Logic implementation that is configured with more than one query logic delegate. The queries are run in parallel unless configured to be sequential.
+ * Results are retrieved as they come back from the delegates. This class restricts the delegates such that they have to return the same type of response
+ * object. If configured to run sequentially, then the execution will terminate after the first query that returns results. Query logics will be sorted by their
+ * configured name.
  */
 public class CompositeQueryLogic extends BaseQueryLogic<Object> implements CheckpointableQueryLogic {
 
     private class QueryLogicHolder extends Thread {
-        private GenericQueryConfiguration config;
         private String logicName;
         private QueryLogic<?> logic;
         private TransformIterator transformIterator;
@@ -61,6 +63,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             this.setLogicName(logicName);
             this.setLogic(logic);
             this.setName(Thread.currentThread().getName() + "-CompositeQueryLogic-" + logicName);
+        }
+
+        public boolean wasStarted() {
+            return started;
         }
 
         public String getLogicName() {
@@ -77,14 +83,6 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
         public void setLogic(QueryLogic<?> logic) {
             this.logic = logic;
-        }
-
-        public GenericQueryConfiguration getConfig() {
-            return config;
-        }
-
-        public void setConfig(GenericQueryConfiguration config) {
-            this.config = config;
         }
 
         public void setTransformIterator(TransformIterator transformIterator) {
@@ -141,6 +139,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                         else {
                             throw new RuntimeException(e);
                         }
+                    } catch (EmptyObjectException eoe) {
+                        // Adding an empty object exception to the results queue needs to be passed all the way out.
+                        results.add(eoe);
                     }
                     resultCount++;
                 }
@@ -159,10 +160,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     protected static final Logger log = Logger.getLogger(CompositeQueryLogic.class);
 
-    private Map<String,QueryLogic<?>> queryLogics = null;
+    private CompositeQueryConfiguration config;
 
-    // Specified whether all queries must succeed initialization
-    private boolean allMustInitialize = false;
+    private Map<String,QueryLogic<?>> queryLogics = null;
 
     private QueryLogicTransformer transformer;
     private Priority p = Priority.NORMAL;
@@ -170,25 +170,23 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     private volatile CountDownLatch startLatch = null;
     private volatile CountDownLatch completionLatch = null;
     private Map<String,QueryLogicHolder> logicState = new HashMap<>();
+    private Map<String,QueryLogic<?>> failedQueryLogics = new HashMap<>();
     private volatile CompositeQueryLogicResults results = null;
 
     public CompositeQueryLogic() {}
 
     public CompositeQueryLogic(CompositeQueryLogic other) {
         super(other);
-        if (other.queryLogics != null) {
-            this.queryLogics = new HashMap<>();
-            for (Map.Entry<String,QueryLogic<?>> entry : other.queryLogics.entrySet()) {
-                try {
-                    this.queryLogics.put(entry.getKey(), (QueryLogic) entry.getValue().clone());
-                } catch (CloneNotSupportedException e) {
-                    throw new RuntimeException(e);
-                }
+        this.config = CompositeQueryConfiguration.create(other);
+        this.queryLogics = new TreeMap<>();
+        for (Map.Entry<String,QueryLogic<?>> entry : other.getAllQueryLogics().entrySet()) {
+            try {
+                this.queryLogics.put(entry.getKey(), (QueryLogic) entry.getValue().clone());
+            } catch (CloneNotSupportedException e) {
+                throw new RuntimeException(e);
             }
-            setCurrentUser(other.getCurrentUser());
-            setServerUser(other.getServerUser());
         }
-        this.allMustInitialize = other.allMustInitialize;
+        setCurrentUser(other.getCurrentUser());
     }
 
     public Set<Authorizations> updateRuntimeAuthorizationsAndQueryAuths(QueryLogic<?> logic, Query settings) throws AuthorizationException {
@@ -227,15 +225,20 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     @Override
     public GenericQueryConfiguration initialize(AccumuloClient client, Query settings, Set<Authorizations> runtimeQueryAuthorizations) throws Exception {
-        StringBuilder logicQueryStringBuilder = new StringBuilder("CompositeQueryLogic: ");
+
+        StringBuilder logicQueryStringBuilder = new StringBuilder();
+        if (!getInitializedLogics().isEmpty()) {
+            logicQueryStringBuilder.append(getConfig().getQueryString());
+        } else {
+            logicQueryStringBuilder.append("CompositeQueryLogic: ");
+        }
+
         Map<String,Exception> exceptions = new HashMap<>();
-        Map<String,GenericQueryConfiguration> configs = new HashMap<>();
-        if (this.queryLogics != null) {
-            Iterator<Entry<String,QueryLogic<?>>> itr = this.queryLogics.entrySet().iterator();
-            while (itr.hasNext()) {
-                Entry<String,QueryLogic<?>> entry = itr.next();
-                String logicName = entry.getKey();
-                QueryLogic<?> logic = entry.getValue();
+        if (!getUninitializedLogics().isEmpty()) {
+            Map<String,GenericQueryConfiguration> configs = new HashMap<>();
+            for (Map.Entry<String,QueryLogic<?>> next : getUninitializedLogics().entrySet()) {
+                String logicName = next.getKey();
+                QueryLogic<?> logic = next.getValue();
                 GenericQueryConfiguration config = null;
                 try {
                     // duplicate the settings for this query
@@ -245,48 +248,83 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
                     runtimeQueryAuthorizations = updateRuntimeAuthorizationsAndQueryAuths(logic, settingsCopy);
 
                     config = logic.initialize(client, settings, runtimeQueryAuthorizations);
-                    configs.put(entry.getKey(), config);
                     if (logicQueryStringBuilder.length() > 0) {
                         logicQueryStringBuilder.append(" || ");
                     }
-                    logicQueryStringBuilder.append("( ( logic = '").append(logic.getLogicName()).append("' )");
+                    logicQueryStringBuilder.append("( ( logic = '").append(logicName).append("' )");
                     logicQueryStringBuilder.append(" && ").append(config.getQueryString()).append(" )");
                     QueryLogicHolder holder = new QueryLogicHolder(logicName, logic);
-                    holder.setConfig(config);
                     holder.setSettings(settingsCopy);
                     holder.setMaxResults(logic.getMaxResults());
+                    configs.put(logicName, config);
                     logicState.put(logicName, holder);
+
+                    // if doing sequential execution, then stop since we have one initialized
+                    if (isShortCircuitExecution()) {
+                        break;
+                    }
+
                 } catch (Exception e) {
                     exceptions.put(logicName, e);
                     log.error("Failed to initialize " + logic.getClass().getName(), e);
-                    itr.remove();
+                    failedQueryLogics.put(logicName, logic);
+                } finally {
+                    queryLogics.remove(next.getKey());
                 }
             }
-        }
 
-        if (!exceptions.isEmpty()) {
-            if (logicState.isEmpty()) {
-                // all logics have failed to initialize, rethrow the last exception caught
-                throw new CompositeLogicException("All logics have failed to initialize", exceptions);
+            // if something failed initialization
+            if (!exceptions.isEmpty()) {
+                if (logicState.isEmpty()) {
+                    // all logics have failed to initialize, rethrow the last exception caught
+                    throw new CompositeLogicException("All logics have failed to initialize", exceptions);
+                }
+
+                // if all must initialize successfully, then pass up an exception
+                if (isAllMustInitialize()) {
+                    throw new CompositeLogicException("Failed to initialize all composite child logics", exceptions);
+                }
             }
 
-            // if all must initialize successfully, then pass up an exception
-            if (allMustInitialize) {
-                throw new CompositeLogicException("Failed to initialize all composite child logics", exceptions);
+            // if results is already set, then we were merely adding a new query logic to the mix
+            if (this.results == null) {
+                this.results = new CompositeQueryLogicResults(this, Math.min(settings.getPagesize() * 2, 1000));
             }
+
+            if (log.isDebugEnabled()) {
+                log.debug("CompositeQuery initialized with the following queryLogics: ");
+                for (Entry<String,QueryLogic<?>> entry : getInitializedLogics().entrySet()) {
+                    log.debug("\nLogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                }
+                if (isShortCircuitExecution()) {
+                    for (Entry<String,QueryLogic<?>> entry : getUninitializedLogics().entrySet()) {
+                        log.debug("\npending LogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getTableName());
+                    }
+                }
+            }
+
+            final String compositeQueryString = logicQueryStringBuilder.toString();
+            CompositeQueryConfiguration config = getConfig();
+            config.setConfigs(configs);
+            config.setQueryString(compositeQueryString);
+            config.setClient(client);
+            config.setQuery(settings);
+            config.setAuthorizations(runtimeQueryAuthorizations);
+        }
+        return getConfig();
+    }
+
+    @Override
+    public CompositeQueryConfiguration getConfig() {
+        if (config == null) {
+            config = CompositeQueryConfiguration.create();
         }
 
-        startLatch = new CountDownLatch(logicState.size());
-        completionLatch = new CountDownLatch(logicState.size());
-        this.results = new CompositeQueryLogicResults(Math.min(settings.getPagesize() * 2, 1000), completionLatch);
-        if (log.isDebugEnabled()) {
-            log.debug("CompositeQuery initialized with the following queryLogics: ");
-            for (Entry<String,QueryLogicHolder> entry : this.logicState.entrySet()) {
-                log.debug("\tLogicName: " + entry.getKey() + ", tableName: " + entry.getValue().getLogic().getTableName());
-            }
-        }
+        return config;
+    }
 
-        return new CompositeQueryConfiguration(logicQueryStringBuilder.toString(), configs);
+    public void setConfig(CompositeQueryConfiguration config) {
+        this.config = config;
     }
 
     @Override
@@ -296,7 +334,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         StringBuilder plans = new StringBuilder();
         int count = 1;
         String separator = Integer.toString(count++) + ": ";
-        for (Map.Entry<String,QueryLogic<?>> entry : queryLogics.entrySet()) {
+        for (Map.Entry<String,QueryLogic<?>> entry : getQueryLogics().entrySet()) {
             // duplicate the settings for this query
             Query settingsCopy = settings.duplicate(settings.getQueryName() + " -> " + entry.getKey());
 
@@ -312,14 +350,29 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     @Override
     public void setupQuery(GenericQueryConfiguration configuration) throws Exception {
+        int count = 0;
+
+        CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) configuration;
+
         for (QueryLogicHolder holder : logicState.values()) {
-            holder.getLogic().setupQuery(holder.getConfig());
-            TransformIterator transformIterator = holder.getLogic().getTransformIterator(holder.getSettings());
-            holder.setTransformIterator(transformIterator);
+            if (!holder.wasStarted()) {
+                GenericQueryConfiguration config = compositeConfig != null ? compositeConfig.getConfig(holder.getLogicName()) : null;
+                holder.getLogic().setupQuery(config);
+                TransformIterator transformIterator = holder.getLogic().getTransformIterator(holder.getSettings());
+                holder.setTransformIterator(transformIterator);
+                count++;
+            }
         }
+
+        startLatch = new CountDownLatch(count);
+        completionLatch = new CountDownLatch(count);
+
         for (QueryLogicHolder holder : logicState.values()) {
-            holder.start();
+            if (!holder.wasStarted()) {
+                holder.start();
+            }
         }
+
         // Wait until all threads have started
         startLatch.await();
         log.trace("All threads have started.");
@@ -342,17 +395,15 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         ResultsPage emptyList = new ResultsPage();
         Class<? extends BaseResponse> responseClass = null;
         List<QueryLogicTransformer> delegates = new ArrayList<>();
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> logic : this.queryLogics.values()) {
-                QueryLogicTransformer t = logic.getTransformer(settings);
-                delegates.add(t);
-                BaseResponse refResponse = t.createResponse(emptyList);
-                if (null == responseClass) {
-                    responseClass = refResponse.getClass();
-                } else {
-                    if (!responseClass.equals(refResponse.getClass())) {
-                        throw new RuntimeException("All query logics must use transformers that return the same object type");
-                    }
+        for (QueryLogic logic : getQueryLogics().values()) {
+            QueryLogicTransformer t = logic.getTransformer(settings);
+            delegates.add(t);
+            BaseResponse refResponse = t.createResponse(emptyList);
+            if (null == responseClass) {
+                responseClass = refResponse.getClass();
+            } else {
+                if (!responseClass.equals(refResponse.getClass())) {
+                    throw new RuntimeException("All query logics must use transformers that return the same object type");
                 }
             }
         }
@@ -402,11 +453,46 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     }
 
     public Map<String,QueryLogic<?>> getQueryLogics() {
-        return queryLogics;
+        TreeMap<String,QueryLogic<?>> logics = new TreeMap<>();
+        logics.putAll(getUninitializedLogics());
+        logics.putAll(getInitializedLogics());
+        return logics;
+    }
+
+    public Map<String,QueryLogic<?>> getAllQueryLogics() {
+        TreeMap<String,QueryLogic<?>> logics = new TreeMap<>();
+        logics.putAll(getUninitializedLogics());
+        logics.putAll(getInitializedLogics());
+        logics.putAll(getFailedLogics());
+        return logics;
+    }
+
+    public Map<String,QueryLogic<?>> getFailedLogics() {
+        if (failedQueryLogics != null) {
+            return failedQueryLogics;
+        } else {
+            return new HashMap<>();
+        }
+    }
+
+    public Map<String,QueryLogic<?>> getUninitializedLogics() {
+        if (queryLogics != null) {
+            return new TreeMap<>(queryLogics);
+        } else {
+            return new TreeMap<>();
+        }
+    }
+
+    public Map<String,QueryLogic<?>> getInitializedLogics() {
+        TreeMap<String,QueryLogic<?>> logics = new TreeMap<>();
+        if (logicState != null) {
+            logicState.entrySet().forEach(e -> logics.put(e.getKey(), e.getValue().getLogic()));
+        }
+        return logics;
     }
 
     public void setQueryLogics(Map<String,QueryLogic<?>> queryLogics) {
-        this.queryLogics = queryLogics;
+        this.queryLogics = new TreeMap<>(queryLogics);
     }
 
     public UserOperations getUserOperations() {
@@ -415,7 +501,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         // query logics
         boolean includeLocal = false;
         List<UserOperations> userOperations = new ArrayList<>();
-        for (QueryLogic<?> logic : this.queryLogics.values()) {
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
             UserOperations ops = logic.getUserOperations();
             if (ops == null) {
                 includeLocal = true;
@@ -431,28 +517,21 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
 
     @Override
     public boolean canRunQuery(Collection<String> userRoles) {
-        if (this.queryLogics == null) {
-            return false;
-        }
         // user can run this composite query if they can run at least one of the configured query logics
-        Iterator<QueryLogic<?>> itr = queryLogics.values().iterator();
-        while (itr.hasNext()) {
-            QueryLogic<?> logic = itr.next();
-            if (!logic.canRunQuery(userRoles)) {
-                itr.remove();
+        for (Map.Entry<String,QueryLogic<?>> entry : getUninitializedLogics().entrySet()) {
+            if (!entry.getValue().canRunQuery(userRoles)) {
+                queryLogics.remove(entry.getKey());
             }
         }
-        return (!this.queryLogics.isEmpty());
+        return (!getUninitializedLogics().isEmpty());
     }
 
     @Override
     public Set<String> getOptionalQueryParameters() {
         Set<String> params = new TreeSet<>();
         // Create a UNION set. Should it be an intersection?
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> l : this.queryLogics.values()) {
-                params.addAll(l.getOptionalQueryParameters());
-            }
+        for (QueryLogic<?> l : getQueryLogics().values()) {
+            params.addAll(l.getOptionalQueryParameters());
         }
         return params;
     }
@@ -460,10 +539,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     @Override
     public Set<String> getRequiredQueryParameters() {
         Set<String> params = new TreeSet<>();
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> l : this.queryLogics.values()) {
-                params.addAll(l.getRequiredQueryParameters());
-            }
+        for (QueryLogic<?> l : getQueryLogics().values()) {
+            params.addAll(l.getRequiredQueryParameters());
         }
         return params;
     }
@@ -471,12 +548,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     @Override
     public Set<String> getExampleQueries() {
         Set<String> params = new TreeSet<>();
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> l : this.queryLogics.values()) {
-                Set<String> examples = l.getExampleQueries();
-                if (examples != null) {
-                    params.addAll(examples);
-                }
+        for (QueryLogic<?> l : getQueryLogics().values()) {
+            Set<String> examples = l.getExampleQueries();
+            if (examples != null) {
+                params.addAll(examples);
             }
         }
         return params.isEmpty() ? null : params;
@@ -485,7 +560,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     @Override
     public boolean isCheckpointable() {
         boolean checkpointable = true;
-        for (QueryLogic<?> logic : queryLogics.values()) {
+        for (QueryLogicHolder logicHolder : logicState.values()) {
+            QueryLogic<?> logic = logicHolder.getLogic();
             if (!(logic instanceof CheckpointableQueryLogic && ((CheckpointableQueryLogic) logic).isCheckpointable())) {
                 checkpointable = false;
                 break;
@@ -494,9 +570,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         return checkpointable;
     }
 
-    @Override
     public void setCheckpointable(boolean checkpointable) {
-        for (QueryLogic<?> queryLogic : queryLogics.values()) {
+        for (QueryLogicHolder queryLogicHolder : logicState.values()) {
+            QueryLogic<?> queryLogic = queryLogicHolder.getLogic();
             if (queryLogic instanceof CheckpointableQueryLogic) {
                 ((CheckpointableQueryLogic) queryLogic).setCheckpointable(checkpointable);
             } else {
@@ -512,9 +588,9 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         }
 
         List<QueryCheckpoint> checkpoints = new ArrayList<>();
-        for (Map.Entry<String,QueryLogic<?>> logic : queryLogics.entrySet()) {
-            for (QueryCheckpoint checkpoint : ((CheckpointableQueryLogic) logic.getValue()).checkpoint(queryKey)) {
-                checkpoints.add(new CompositeQueryCheckpoint(logic.getKey(), checkpoint));
+        for (Map.Entry<String,QueryLogicHolder> entry : logicState.entrySet()) {
+            for (QueryCheckpoint checkpoint : ((CheckpointableQueryLogic) entry.getValue().getLogic()).checkpoint(queryKey)) {
+                checkpoints.add(new CompositeQueryCheckpoint(entry.getKey(), checkpoint));
             }
         }
         return checkpoints;
@@ -543,6 +619,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
             throw new UnsupportedOperationException("Cannot setup a non-composite query checkpoint with the composite query logic.");
         }
 
+        CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) config;
+
         CompositeQueryCheckpoint compositeCheckpoint = (CompositeQueryCheckpoint) checkpoint;
 
         CheckpointableQueryLogic logic = (CheckpointableQueryLogic) queryLogics.get(compositeCheckpoint.getDelegateQueryLogic());
@@ -555,10 +633,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
         queryLogics.clear();
         queryLogics.put(compositeCheckpoint.getDelegateQueryLogic(), (BaseQueryLogic<?>) logic);
 
-        CompositeQueryConfiguration compositeConfig = (CompositeQueryConfiguration) config;
-        GenericQueryConfiguration delegateConfig = compositeConfig.getConfigs().get(compositeCheckpoint.getDelegateQueryLogic());
-
-        logic.setupQuery(client, delegateConfig, checkpoint);
+        logic.setupQuery(client, compositeConfig.getConfig(compositeCheckpoint.getDelegateQueryLogic()), checkpoint);
     }
 
     /**
@@ -568,12 +643,10 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
      */
     @Override
     public SelectorExtractor getSelectorExtractor() {
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> logic : this.queryLogics.values()) {
-                SelectorExtractor extractor = logic.getSelectorExtractor();
-                if (extractor != null) {
-                    return extractor;
-                }
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            SelectorExtractor extractor = logic.getSelectorExtractor();
+            if (extractor != null) {
+                return extractor;
             }
         }
         return null;
@@ -587,10 +660,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     @Override
     public void setCurrentUser(ProxiedUserDetails user) {
         super.setCurrentUser(user);
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> logic : this.queryLogics.values()) {
-                logic.setCurrentUser(user);
-            }
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            logic.setCurrentUser(user);
         }
     }
 
@@ -602,10 +673,8 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     @Override
     public void setServerUser(ProxiedUserDetails user) {
         super.setServerUser(user);
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> logic : this.queryLogics.values()) {
-                logic.setServerUser(user);
-            }
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            logic.setServerUser(user);
         }
     }
 
@@ -618,18 +687,40 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> implements Check
     @Override
     public void setPageProcessingStartTime(long pageProcessingStartTime) {
         super.setPageProcessingStartTime(pageProcessingStartTime);
-        if (this.queryLogics != null) {
-            for (QueryLogic<?> logic : this.queryLogics.values()) {
-                logic.setPageProcessingStartTime(pageProcessingStartTime);
-            }
+        for (QueryLogic<?> logic : getQueryLogics().values()) {
+            logic.setPageProcessingStartTime(pageProcessingStartTime);
         }
     }
 
     public boolean isAllMustInitialize() {
-        return allMustInitialize;
+        return getConfig().isAllMustInitialize();
     }
 
     public void setAllMustInitialize(boolean allMustInitialize) {
-        this.allMustInitialize = allMustInitialize;
+        getConfig().setAllMustInitialize(allMustInitialize);
+    }
+
+    public boolean isShortCircuitExecution() {
+        return getConfig().isShortCircuitExecution();
+    }
+
+    public void setShortCircuitExecution(boolean shortCircuit) {
+        getConfig().setShortCircuitExecution(shortCircuit);
+    }
+
+    public Query getSettings() {
+        return getConfig().getQuery();
+    }
+
+    public void setSettings(Query settings) {
+        getConfig().setQuery(settings);
+    }
+
+    public CountDownLatch getStartLatch() {
+        return startLatch;
+    }
+
+    public CountDownLatch getCompletionLatch() {
+        return completionLatch;
     }
 }

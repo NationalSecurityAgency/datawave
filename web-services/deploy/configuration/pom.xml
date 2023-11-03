@@ -8,6 +8,9 @@
     </parent>
     <artifactId>datawave-ws-deploy-configuration</artifactId>
     <packaging>jar</packaging>
+    <properties>
+        <allowIncompleteProjects>true</allowIncompleteProjects>
+    </properties>
     <build>
         <finalName>${project.artifactId}</finalName>
         <resources>

@@ -1,31 +1,28 @@
 package datawave.query.predicate;
 
+import static datawave.query.jexl.visitors.EventDataQueryExpressionVisitor.ExpressionFilter;
+
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 
 import org.apache.accumulo.core.data.Key;
-import org.apache.commons.jexl3.parser.ASTJexlScript;
 
 import datawave.query.Constants;
-import datawave.query.util.TypeMetadata;
 
 /**
  * This filter will filter event data keys by only those fields that are required in the specified query except for the base document in which case all fields
  * are returned.
  */
 public class AncestorEventDataFilter extends EventDataQueryExpressionFilter {
+
     /**
-     * Initialize the query field filter with all of the fields required to evaluation this query
+     * Preferred constructor
      *
-     * @param script
-     *            a script
-     * @param nonEventFields
-     *            set of non event fields
-     * @param metadata
-     *            type metadata
+     * @param filters
+     *            a map of expression filters
      */
-    public AncestorEventDataFilter(ASTJexlScript script, TypeMetadata metadata, Set<String> nonEventFields) {
-        super(script, metadata, nonEventFields);
+    public AncestorEventDataFilter(Map<String,ExpressionFilter> filters) {
+        super(filters);
     }
 
     public AncestorEventDataFilter(AncestorEventDataFilter other) {

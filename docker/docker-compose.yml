@@ -120,7 +120,7 @@ services:
 
   configuration:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5009","-jar","app.jar" ]
-    image: datawave/config-service:3.0-SNAPSHOT
+    image: datawave/config-service:4.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,native,open_actuator
@@ -144,7 +144,7 @@ services:
         condition: service_started
 
   cache:
-    image: datawave/hazelcast-service:4.0-SNAPSHOT
+    image: datawave/hazelcast-service:4.0.0-SNAPSHOT
     scale: 1
     command:
       - --spring.profiles.active=consul,compose,remoteauth
@@ -172,7 +172,7 @@ services:
 
   authorization:
     entrypoint: [ "java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5008","-jar","app.jar" ]
-    image: datawave/authorization-service:4.0-SNAPSHOT
+    image: datawave/authorization-service:4.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,mock,compose
@@ -201,7 +201,7 @@ services:
     profiles:
       - accumulo
       - full
-    image: datawave/accumulo-service:4.0-SNAPSHOT
+    image: datawave/accumulo-service:4.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -234,7 +234,7 @@ services:
         condition: service_healthy
 
   audit:
-    image: datawave/audit-service:4.0-SNAPSHOT
+    image: datawave/audit-service:4.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -268,7 +268,7 @@ services:
 
   metrics:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5007","-jar","app.jar"]
-    image: datawave/query-metric-service:4.0-SNAPSHOT
+    image: datawave/query-metric-service:4.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -305,7 +305,7 @@ services:
     profiles:
       - dictionary
       - full
-    image: datawave/dictionary-service:4.0-SNAPSHOT
+    image: datawave/dictionary-service:4.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth
@@ -353,7 +353,7 @@ services:
   # If you want to test cached results, set the CACHED_RESULTS environment variable to 'true'
   query:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/query-service:1.0-SNAPSHOT
+    image: datawave/query-service:1.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,querymessaging,metricssource,query,mrquery,cachedresults
@@ -397,7 +397,7 @@ services:
     profiles:
       - full
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005","-jar","app.jar"]
-    image: datawave/mapreduce-query-service:1.0-SNAPSHOT
+    image: datawave/mapreduce-query-service:1.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query,mrquery
@@ -435,7 +435,7 @@ services:
 
   executor-pool1:
     entrypoint: ["java","-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5006","-jar","app.jar"]
-    image: datawave/query-executor-service:1.0-SNAPSHOT
+    image: datawave/query-executor-service:1.0.0-SNAPSHOT
     command:
       - --spring.application.name=executor-pool1
       - --spring.cloud.config.name=executor
@@ -484,7 +484,7 @@ services:
     profiles:
       - pool2
       - full
-    image: datawave/query-executor-service:1.0-SNAPSHOT
+    image: datawave/query-executor-service:1.0.0-SNAPSHOT
     command:
       - --spring.application.name=executor-pool2
       - --spring.cloud.config.name=executor
@@ -530,7 +530,7 @@ services:
     profiles:
       - storage
       - full
-    image: datawave/query-storage-service:1.0-SNAPSHOT
+    image: datawave/query-storage-service:1.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,querymessaging,query
@@ -560,7 +560,7 @@ services:
     profiles:
       - modification
       - full
-    image: datawave/modification-service:1.0-SNAPSHOT
+    image: datawave/modification-service:1.0.0-SNAPSHOT
     command:
       - --spring.output.ansi.enabled=ALWAYS
       - --spring.profiles.active=consul,compose,remoteauth,query
