@@ -12,8 +12,8 @@ import javax.ws.rs.core.MultivaluedMap;
 import javax.ws.rs.ext.MessageBodyWriter;
 import javax.ws.rs.ext.Provider;
 
+import datawave.security.DnList;
 import datawave.security.authorization.DatawavePrincipal;
-import datawave.security.cache.DnList;
 import datawave.user.AuthorizationsListBase;
 
 /**

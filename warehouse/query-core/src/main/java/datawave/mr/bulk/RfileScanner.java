@@ -35,7 +35,7 @@ import datawave.common.util.ArgumentChecker;
 import datawave.mr.bulk.split.TabletSplitSplit;
 import datawave.query.tables.SessionOptions;
 import datawave.security.iterator.ConfigurableVisibilityFilter;
-import datawave.security.util.AuthorizationsUtil;
+import datawave.security.util.WSAuthorizationsUtil;
 
 public class RfileScanner extends SessionOptions implements BatchScanner, Closeable {
 
@@ -68,7 +68,7 @@ public class RfileScanner extends SessionOptions implements BatchScanner, Closea
         this.auths = auths;
         this.client = client;
         ranges = null;
-        authIter = AuthorizationsUtil.minimize(auths).iterator();
+        authIter = WSAuthorizationsUtil.minimize(auths).iterator();
         recordIterAuthString = authIter.next().toString();
         iterators = Lists.newArrayList();
         iterators = Collections.synchronizedList(iterators);

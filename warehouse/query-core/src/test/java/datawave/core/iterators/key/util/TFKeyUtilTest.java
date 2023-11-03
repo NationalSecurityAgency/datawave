@@ -1,7 +1,9 @@
 package datawave.core.iterators.key.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 import org.apache.accumulo.core.data.Key;
 import org.junit.Test;
@@ -15,28 +17,40 @@ public class TFKeyUtilTest {
     @Test
     public void testSimpleParse() {
         assertTrue(TFKeyUtil.instanceOf(tfKey));
-        assertEquals("FIELD", TFKeyUtil.getFieldString(tfKey));
-        assertEquals("value", TFKeyUtil.getValueString(tfKey));
-        assertEquals("datatype", TFKeyUtil.getDatatypeString(tfKey));
-        assertEquals("uid", TFKeyUtil.getUidString(tfKey));
+        //  @formatter:off
+        assertAll(
+                        () -> assertEquals("FIELD", TFKeyUtil.getFieldString(tfKey)),
+                        () -> assertEquals("value", TFKeyUtil.getValueString(tfKey)),
+                        () -> assertEquals("datatype", TFKeyUtil.getDatatypeString(tfKey)),
+                        () -> assertEquals("uid", TFKeyUtil.getUidString(tfKey))
+        );
+        //  @formatter:on
     }
 
     @Test
     public void testParseValueWithNulls() {
         assertTrue(TFKeyUtil.instanceOf(tfKeyWithNulls));
-        assertEquals("FIELD", TFKeyUtil.getFieldString(tfKeyWithNulls));
-        assertEquals("v\0a\0l\0u\0e", TFKeyUtil.getValueString(tfKeyWithNulls));
-        assertEquals("datatype", TFKeyUtil.getDatatypeString(tfKeyWithNulls));
-        assertEquals("uid", TFKeyUtil.getUidString(tfKeyWithNulls));
+        //  @formatter:off
+        assertAll(
+                        () -> assertEquals("FIELD", TFKeyUtil.getFieldString(tfKeyWithNulls)),
+                        () -> assertEquals("v\0a\0l\0u\0e", TFKeyUtil.getValueString(tfKeyWithNulls)),
+                        () -> assertEquals("datatype", TFKeyUtil.getDatatypeString(tfKeyWithNulls)),
+                        () -> assertEquals("uid", TFKeyUtil.getUidString(tfKeyWithNulls))
+        );
+        //  @formatter:on
     }
 
     @Test
     public void testParseChildUid() {
         assertTrue(TFKeyUtil.instanceOf(tfKeyWithChildUid));
-        assertEquals("FIELD", TFKeyUtil.getFieldString(tfKeyWithChildUid));
-        assertEquals("value", TFKeyUtil.getValueString(tfKeyWithChildUid));
-        assertEquals("datatype", TFKeyUtil.getDatatypeString(tfKeyWithChildUid));
-        assertEquals("uid.11.22", TFKeyUtil.getUidString(tfKeyWithChildUid));
+        //  @formatter:off
+        assertAll(
+                        () -> assertEquals("FIELD", TFKeyUtil.getFieldString(tfKeyWithChildUid)),
+                        () -> assertEquals("value", TFKeyUtil.getValueString(tfKeyWithChildUid)),
+                        () -> assertEquals("datatype", TFKeyUtil.getDatatypeString(tfKeyWithChildUid)),
+                        () -> assertEquals("uid.11.22", TFKeyUtil.getUidString(tfKeyWithChildUid))
+        );
+        //  @formatter:on
     }
 
     // malformed keys will still parse
@@ -47,10 +61,12 @@ public class TFKeyUtilTest {
         assertEquals("value", TFKeyUtil.getFieldString(k));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testParseNoValue() {
-        Key k = new Key("row", "tf", "datatype\0uid\0FIELD");
-        assertEquals("", TFKeyUtil.getValueString(k));
+        assertThrows(IllegalArgumentException.class, () -> {
+            Key k = new Key("row", "tf", "datatype\0uid\0FIELD");
+            assertEquals(".getValueString() should have thrown an IllegalArgumentException error: ", "", TFKeyUtil.getValueString(k));
+        });
     }
 
     @Test

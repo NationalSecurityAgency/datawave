@@ -15,8 +15,8 @@ import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
-import datawave.webservice.query.result.metadata.DefaultMetadataField;
-import datawave.webservice.query.result.metadata.MetadataFieldBase;
+import datawave.webservice.metadata.DefaultMetadataField;
+import datawave.webservice.metadata.MetadataFieldBase;
 import io.protostuff.Input;
 import io.protostuff.Message;
 import io.protostuff.Output;
