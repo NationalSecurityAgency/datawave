@@ -715,11 +715,8 @@ public class QueryIterator extends QueryOptions implements YieldingKeyValueItera
             protected T computeNext() {
                 rejectedCount = 0;
                 evaluatedCount = 0;
-                // System.out.println("COMPUTING NEXT");
                 while (unfiltered.hasNext()) {
                     T element = unfiltered.next();
-                    System.out.println("Element: " + element);
-                    // System.out.println(trackingSpan);
                     if (predicate.apply(element)) {
                         if (trackingSpan != null) {
                             evaluatedCount++;

@@ -11,6 +11,8 @@ import org.apache.log4j.Logger;
 public class QuerySpanCollector {
     private AtomicLong seekCount = new AtomicLong();
     private AtomicLong nextCount = new AtomicLong();
+    private AtomicLong evaluatedCount = new AtomicLong();
+    private AtomicLong rejectedCount = new AtomicLong();
     private AtomicBoolean yield = new AtomicBoolean();
     private AtomicLong sourceCount = new AtomicLong();
     private Map<String,Long> stageTimers = new LinkedHashMap<>();
@@ -22,6 +24,8 @@ public class QuerySpanCollector {
             synchronized (this) {
                 seekCount.addAndGet(querySpan.getSeekCount());
                 nextCount.addAndGet(querySpan.getNextCount());
+                evaluatedCount.addAndGet(querySpan.getEvaluatedCount());
+                rejectedCount.addAndGet(querySpan.getRejectedCount());
                 yield.set(querySpan.getYield());
                 sourceCount.addAndGet(querySpan.getSourceCount());
                 Map<String,Long> timers = querySpan.getStageTimers();
@@ -50,6 +54,8 @@ public class QuerySpanCollector {
                 combinedQuerySpan = new QuerySpan(null);
                 combinedQuerySpan.setNext(this.nextCount.getAndSet(0));
                 combinedQuerySpan.setSeek(this.seekCount.getAndSet(0));
+                combinedQuerySpan.setEvaluatedCount(this.evaluatedCount.getAndSet(0));
+                combinedQuerySpan.setEvaluatedCount(this.rejectedCount.getAndSet(0));
                 combinedQuerySpan.setYield(this.yield.getAndSet(false));
                 combinedQuerySpan.setSourceCount(this.sourceCount.getAndSet(0));
                 combinedQuerySpan.setStageTimers(this.stageTimers);
@@ -60,8 +66,8 @@ public class QuerySpanCollector {
     }
 
     public boolean hasEntries() {
-        if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.yield.get() || this.sourceCount.intValue() > 0
-                        || !this.stageTimers.isEmpty()) {
+        if (this.seekCount.intValue() > 0 || this.nextCount.intValue() > 0 || this.yield.get() || this.sourceCount.intValue() > 0 || !this.stageTimers.isEmpty()
+                        || this.evaluatedCount.intValue() > 0 || this.rejectedCount.intValue() > 0) {
             return true;
         } else {
             return false;
@@ -85,8 +91,8 @@ public class QuerySpanCollector {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(" seek:").append(seekCount).append(" next:").append(nextCount).append(" yield:").append(yield).append(" sources:")
-                        .append(sourceCount);
+        sb.append(super.toString()).append(" seek:").append(seekCount).append(" next:").append(nextCount).append(" evaluated:").append(evaluatedCount)
+                        .append(" rejected:").append(rejectedCount).append(" yield:").append(yield).append(" sources:").append(sourceCount);
         return sb.toString();
     }
 
@@ -109,6 +115,14 @@ public class QuerySpanCollector {
 
     public long getNextCount() {
         return nextCount.longValue();
+    }
+
+    public long getEvaluatedCount() {
+        return evaluatedCount.longValue();
+    }
+
+    public long getRejectedCount() {
+        return rejectedCount.longValue();
     }
 
     public boolean getYield() {
