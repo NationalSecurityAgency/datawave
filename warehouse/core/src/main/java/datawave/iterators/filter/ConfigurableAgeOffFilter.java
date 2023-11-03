@@ -134,7 +134,7 @@ public class ConfigurableAgeOffFilter extends Filter implements OptionDescriber 
 
     protected static FileSystem fs = null;
 
-    private IteratorEnvironment myEnv;
+    protected IteratorEnvironment myEnv;
 
     private PluginEnvironment pluginEnv;
 
