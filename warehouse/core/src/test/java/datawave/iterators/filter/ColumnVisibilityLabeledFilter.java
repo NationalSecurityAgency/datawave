@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.util.CompositeTimestamp;
 import datawave.util.StringUtils;
 
 /**
@@ -108,7 +109,7 @@ public class ColumnVisibilityLabeledFilter extends AppliedRule {
                     cutOff -= timeToLive;
                 }
                 this.filterRuleApplied = true;
-                return k.getTimestamp() > cutOff;
+                return CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > cutOff;
             }
         }
         return true;

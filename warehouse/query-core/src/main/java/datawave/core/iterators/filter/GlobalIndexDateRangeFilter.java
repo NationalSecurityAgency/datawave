@@ -15,6 +15,7 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import datawave.query.Constants;
+import datawave.util.CompositeTimestamp;
 
 /**
  * The iterator skips entries in the global index for entries that lie outside the date range set on the BatchScanner
@@ -66,7 +67,7 @@ public class GlobalIndexDateRangeFilter extends Filter {
 
     @Override
     public boolean accept(Key k, Value v) {
-        return range.containsLong(k.getTimestamp());
+        return range.containsLong(CompositeTimestamp.getEventDate(k.getTimestamp()));
 
     }
 

@@ -26,18 +26,18 @@ import java.io.Serializable;
  */
 //@formatter:on
 public class ChunkSizeEncoding implements Serializable {
-    
+
     private static final int MIN_CHUNK_SIZE = 3;
     private static final int DEFAULT_ENCODING_ALPHABET_LENGTH = HashReverse.LEXICAL_B64_TABLE.length;
-    
+
     private static final int DEFAULT_ENCODING_LENGTH = 1;
-    
+
     static final double L2 = Math.log(2);
-    
+
     private final IntegerEncoding chunkIndexEncoding;
-    
+
     final int minChunkSize;
-    
+
     /**
      * Create a ChunkSizeEncoding with the default parameters of a 64 character encoding alphabet and a length of 1. This allows us to encode 64 distinct chunk
      * index values. Chunk index 0 represents the MIN_CHUNK_SIZE. See class javadocs for more info.
@@ -45,43 +45,43 @@ public class ChunkSizeEncoding implements Serializable {
     public ChunkSizeEncoding() {
         this(MIN_CHUNK_SIZE, DEFAULT_ENCODING_ALPHABET_LENGTH, DEFAULT_ENCODING_LENGTH);
     }
-    
+
     public ChunkSizeEncoding(int minChunkSize, int encodingAlphabetLength, int encodingLength) {
         this.minChunkSize = minChunkSize;
         this.chunkIndexEncoding = new IntegerEncoding(encodingAlphabetLength, encodingLength);
     }
-    
+
     public long getLimit() {
         return findChunkSizeIndex(chunkIndexEncoding.getLimit());
     }
-    
+
     public int getLength() {
         return chunkIndexEncoding.getLength();
     }
-    
+
     public long findNthChunkSize(int index) {
         return minChunkSize * ((long) Math.pow(2, index));
     }
-    
+
     public int findChunkSizeIndex(long chunkSize) {
         return (int) (Math.log(chunkSize / (float) minChunkSize) / L2);
     }
-    
+
     public String encode(int chunkSize) {
         int index = findChunkSizeIndex(chunkSize);
         return chunkIndexEncoding.encode(index);
     }
-    
+
     public byte[] encodeToBytes(int chunkSize, byte[] buffer, int offset) {
         int index = findChunkSizeIndex(chunkSize);
         return chunkIndexEncoding.encodeToBytes(index, buffer, offset);
     }
-    
+
     public int decode(String encoded) {
         int index = chunkIndexEncoding.decode(encoded);
         return (int) findNthChunkSize(index);
     }
-    
+
     public int decode(byte[] encoded, int offset) {
         int index = chunkIndexEncoding.decode(encoded, offset);
         return (int) findNthChunkSize(index);

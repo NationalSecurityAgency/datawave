@@ -39,6 +39,7 @@ import datawave.query.tables.ScannerFactory;
 import datawave.query.tables.ShardQueryLogic;
 import datawave.query.transformer.FieldIndexCountQueryTransformer;
 import datawave.query.util.MetadataHelper;
+import datawave.util.CompositeTimestamp;
 import datawave.util.StringUtils;
 import datawave.webservice.query.Query;
 import datawave.webservice.query.configuration.GenericQueryConfiguration;
@@ -486,8 +487,8 @@ public class FieldIndexCountQueryLogic extends ShardQueryLogic {
         public void aggregate(Key key, Value val) {
             uniqueVisibilities.add(key.getColumnVisibility());
             count += Long.parseLong(new String(val.get()));
-            if (maxTimestamp < key.getTimestamp()) {
-                maxTimestamp = key.getTimestamp();
+            if (maxTimestamp < CompositeTimestamp.getEventDate(key.getTimestamp())) {
+                maxTimestamp = CompositeTimestamp.getEventDate(key.getTimestamp());
             }
         }
 

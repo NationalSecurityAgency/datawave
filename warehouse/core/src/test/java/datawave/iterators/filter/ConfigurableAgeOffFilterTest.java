@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.util.CompositeTimestamp;
 
 @RunWith(EasyMockRunner.class)
 public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
@@ -108,6 +109,9 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         // copy cofigs to actual filter we are testing
         filter.initialize(wrapper);
 
+        long tomorrow = System.currentTimeMillis() + CompositeTimestamp.MILLIS_PER_DAY;
+        long compositeTS = CompositeTimestamp.getCompositeTimeStamp(daysAgo(365), tomorrow);
+
         // brand new key should be good
         assertThat(filter.accept(new Key(), VALUE), is(true));
         // first five will hit the ttl short circuit
@@ -125,6 +129,8 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         assertThat(filter.accept(getKey("foo", daysAgo(8)), VALUE), is(true));
         // this is really old and matches so should not be accepted
         assertThat(filter.accept(getKey("foo", daysAgo(365)), VALUE), is(false));
+        // this is really old and matches, but has a future age off date, so should be accepted
+        assertThat(filter.accept(getKey("foo", compositeTS), VALUE), is(true));
 
     }
 

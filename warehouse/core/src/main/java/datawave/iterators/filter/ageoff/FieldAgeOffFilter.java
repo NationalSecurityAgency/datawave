@@ -17,6 +17,7 @@ import com.google.common.collect.Sets;
 
 import datawave.iterators.filter.AgeOffConfigParams;
 import datawave.iterators.filter.ColumnVisibilityOrFilter;
+import datawave.util.CompositeTimestamp;
 
 /**
  * Data type age off filter. Traverses through indexed tables
@@ -212,7 +213,7 @@ public class FieldAgeOffFilter extends AppliedRule {
         Long dataTypeCutoff = (fieldTimes.containsKey(field)) ? fieldTimes.get(field) : null;
         if (dataTypeCutoff != null) {
             ruleApplied = true;
-            return k.getTimestamp() > dataTypeCutoff;
+            return CompositeTimestamp.getAgeOffDate(k.getTimestamp()) > dataTypeCutoff;
         }
 
         return true;

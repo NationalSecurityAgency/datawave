@@ -10,6 +10,7 @@ import org.apache.log4j.Logger;
 import datawave.iterators.filter.ageoff.AgeOffPeriod;
 import datawave.iterators.filter.ageoff.AppliedRule;
 import datawave.iterators.filter.ageoff.FilterOptions;
+import datawave.util.CompositeTimestamp;
 import datawave.util.StringUtils;
 
 /**
@@ -69,7 +70,7 @@ public abstract class TokenFilterBase extends AppliedRule {
             dtFlag = true;
         } else {
             if (hasToken(k, v, patternBytes)) {
-                long timeStamp = k.getTimestamp();
+                long timeStamp = CompositeTimestamp.getAgeOffDate(k.getTimestamp());
                 dtFlag = timeStamp > period.getCutOffMilliseconds();
                 if (log.isTraceEnabled()) {
                     log.trace("timeStamp = " + timeStamp);
