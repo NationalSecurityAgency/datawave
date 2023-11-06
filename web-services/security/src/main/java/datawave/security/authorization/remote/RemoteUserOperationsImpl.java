@@ -48,7 +48,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
             initialized = true;
         }
     }
-    
+
     @Override
     @Cacheable(value = "listEffectiveAuthorizations", key = "{#callerObject}", cacheManager = "remoteUserOperationsCacheManager")
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
