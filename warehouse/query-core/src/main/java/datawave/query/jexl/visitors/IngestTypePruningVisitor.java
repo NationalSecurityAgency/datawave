@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.jexl2.parser.ASTAndNode;
 import org.apache.commons.jexl2.parser.ASTEQNode;
@@ -320,12 +321,13 @@ public class IngestTypePruningVisitor extends BaseVisitor {
      * @return true if the node is a non-leaf
      */
     private boolean isJunction(JexlNode node) {
+        JexlNode deref = JexlASTHelper.dereference(node);
         //  @formatter:off
-        return node instanceof ASTAndNode ||
-                        node instanceof ASTOrNode ||
-                        node instanceof ASTReference ||
-                        node instanceof ASTReferenceExpression ||
-                        node instanceof ASTNotNode;
+        return deref instanceof ASTAndNode ||
+                        deref instanceof ASTOrNode ||
+                        deref instanceof ASTReference ||
+                        deref instanceof ASTReferenceExpression ||
+                        deref instanceof ASTNotNode;
         //  @formatter:on
     }
 
@@ -363,6 +365,10 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         for (String field : fields) {
             ingestTypes.addAll(getIngestTypesForField(field));
         }
+        if (fields.isEmpty()) {
+            // could have nodes like arithmetic
+            ingestTypes.add(UNKNOWN_TYPE);
+        }
         return ingestTypes;
     }
 
@@ -374,11 +380,17 @@ public class IngestTypePruningVisitor extends BaseVisitor {
      * @return a set of ingest types
      */
     public Set<String> getFieldsForLeaf(JexlNode node) {
-        if (node instanceof ASTFunctionNode) {
-            return getFieldsForFunctionNode((ASTFunctionNode) node);
-        } else {
-            return Collections.singleton(JexlASTHelper.getIdentifier(node));
+        JexlNode deref = JexlASTHelper.dereference(node);
+        if (deref instanceof ASTFunctionNode) {
+            return getFieldsForFunctionNode((ASTFunctionNode) deref);
         }
+
+        //  @formatter:off
+        return JexlASTHelper.getIdentifierNames(deref)
+                        .stream()
+                        .map(JexlASTHelper::deconstructIdentifier)
+                        .collect(Collectors.toSet());
+        //  @formatter:on
     }
 
     private Set<String> getFieldsForFunctionNode(ASTFunctionNode node) {
@@ -427,7 +439,7 @@ public class IngestTypePruningVisitor extends BaseVisitor {
         for (JexlNode child : JexlNodes.children(node)) {
             Set<String> childIngestTypes = (Set<String>) child.jjtAccept(this, null);
 
-            ingestTypes = ingestTypes.isEmpty() ? childIngestTypes : Sets.intersection(ingestTypes, childIngestTypes);
+            ingestTypes = ingestTypes.isEmpty() ? childIngestTypes : intersectTypes(ingestTypes, childIngestTypes);
 
             if (ingestTypes.isEmpty()) {
                 // short circuit. no need to continue traversing the intersection.
@@ -435,6 +447,13 @@ public class IngestTypePruningVisitor extends BaseVisitor {
             }
         }
         return ingestTypes;
+    }
+
+    private Set<String> intersectTypes(Set<String> typesA, Set<String> typesB) {
+        if (typesA.contains(UNKNOWN_TYPE) || typesB.contains(UNKNOWN_TYPE)) {
+            return Collections.singleton(UNKNOWN_TYPE);
+        }
+        return Sets.intersection(typesA, typesB);
     }
 
     private void pruneNodeFromParent(JexlNode node) {

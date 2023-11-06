@@ -796,10 +796,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         config.setQueryTree(processTree(config.getQueryTree(), config, settings, metadataHelper, scannerFactory, queryData, timers, queryModel));
 
-        if (config.getPruneQueryByIngestTypes()) {
-            timedPruneQueryByIngestTypes(config, "Prune by Ingest Types", timers);
-        }
-
         // ExpandCompositeTerms was here
 
         if (!indexOnlyFields.isEmpty() && !disableBoundedLookup) {
@@ -1566,23 +1562,6 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
 
         stopwatch.stop();
         return config.getQueryTree();
-    }
-
-    private void timedPruneQueryByIngestTypes(ShardQueryConfiguration config, String stage, QueryStopwatch timers) {
-        try {
-            TraceStopwatch stopwatch = timers.newStartedStopwatch("DefaultQueryPlanner - " + stage);
-
-            JexlNode copy = RebuildingVisitor.copy(config.getQueryTree());
-            copy = IngestTypePruningVisitor.prune(copy, metadataHelper.getTypeMetadata());
-
-            if (ExecutableDeterminationVisitor.isExecutable(copy, config, metadataHelper)) {
-                config.setQueryTree((ASTJexlScript) copy);
-            }
-
-            stopwatch.stop();
-        } catch (TableNotFoundException e) {
-            log.warn("could not prune query by ingest types: failed to get TypeMetadata");
-        }
     }
 
     protected ASTJexlScript timedRemoveDelayedPredicates(QueryStopwatch timers, String stage, ASTJexlScript script, ShardQueryConfiguration config,
@@ -2557,6 +2536,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
+        if (config.getPruneQueryByIngestTypes()) {
+            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
+                // always update the query for full table scans or in cases where the query is still executable
+                queryTree = pruned;
+                config.setQueryTree((ASTJexlScript) pruned);
+            } else {
+                throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
+            }
+        }
+
         // if a simple examination of the query has not forced a full table
         // scan, then lets try to compute ranges
         if (!needsFullTable) {
@@ -2625,6 +2615,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    private TypeMetadata getTypeMetadata() {
+        try {
+            return metadataHelper.getTypeMetadata();
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException("Could not get TypeMetadata");
+        }
     }
 
     /**

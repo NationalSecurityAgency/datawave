@@ -1,13 +1,13 @@
 package datawave.query.jexl.visitors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.apache.commons.jexl2.parser.ASTJexlScript;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import datawave.data.type.LcType;
 import datawave.query.jexl.JexlASTHelper;
@@ -21,7 +21,7 @@ public class IngestTypePruningVisitorTest {
     private static final TypeMetadata typeMetadata = new TypeMetadata();
     private final ASTValidator validator = new ASTValidator();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         typeMetadata.put("A", "ingestType1", LcType.class.getTypeName());
         typeMetadata.put("A", "ingestType2", LcType.class.getTypeName());
@@ -31,10 +31,12 @@ public class IngestTypePruningVisitorTest {
         typeMetadata.put("B", "ingestType2", LcType.class.getTypeName());
 
         typeMetadata.put("C", "ingestType5", LcType.class.getTypeName());
+
+        typeMetadata.put("123", "ingestType1", LcType.class.getTypeName());
     }
 
     @Test
-    public void testNoOps() {
+    void testNoOps() {
         //  @formatter:off
         String[] queries = {
                         "A == '1' || B == '2'",
@@ -49,7 +51,7 @@ public class IngestTypePruningVisitorTest {
 
     // test cases for no pruning, multiple node types
     @Test
-    public void testNoOpsWithMultipleLeafTypes() {
+    void testNoOpsWithMultipleLeafTypes() {
         //  @formatter:off
         String[] queries = {
                         "A == '1' && B == '2'",
@@ -72,7 +74,7 @@ public class IngestTypePruningVisitorTest {
 
     // case where two nodes do not share an ingest type
     @Test
-    public void testEmptyIntersection() {
+    void testEmptyIntersection() {
         //  @formatter:off
         String[] queries = {
                         "A == '1' && C == '3'",
@@ -98,7 +100,7 @@ public class IngestTypePruningVisitorTest {
     // ingestType 1 = A, B
     // ingestType 2 = C
     @Test
-    public void testPruneNestedUnion() {
+    void testPruneNestedUnion() {
         // prune C term
         String query = "A == '1' && (B == '2' || C == '3')";
         String expected = "A == '1' && B == '2'";
@@ -118,7 +120,7 @@ public class IngestTypePruningVisitorTest {
     // ingestType 1 = A, B
     // ingestType 2 = C
     @Test
-    public void testPruneComplexNestedUnion() {
+    void testPruneComplexNestedUnion() {
         // double nested C term pruned
         String query = "A == '1' && (B == '2' || (C == '3' && C == '5'))";
         String expected = "A == '1' && B == '2'";
@@ -136,29 +138,64 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testOtherComplexNestedUnion() {
+    void testOtherComplexNestedUnion() {
         // doesn't matter how complex the nesting is, C term should drive pruning
         String query = "C == '1' && (B == '2' || B == '3' || (A == '4' && A == '5'))";
         test(query, null);
     }
 
     @Test
-    public void testDoubleNestedPruning() {
+    void testDoubleNestedPruning() {
         // base case, should be fine
         String query = "(A == '1' || B == '2') && (A == '3' || B == '4')";
         test(query, query);
 
-        // right side prunes away
+        // no intersection of types
         query = "(A == '1' || B == '2') && (C == '3' || C == '4')";
         test(query, null);
 
-        // left side prunes away
+        // no intersection of types
         query = "(C == '1' || C == '2') && (A == '3' || B == '4')";
         test(query, null);
     }
 
     @Test
-    public void testOverlappingExclusions() {
+    void testDoubleNestedUnionWithRangeStreamPruning() {
+        // this case demonstrates how a top level query could pass ingest type pruning
+        // but still get modified by range stream pruning. In some cases further pruning
+        // by this visitor would be necessary.
+
+        // query passes ingest type pruning without issue
+        String query = "(A == '1' || C == '2') && (B == '3' || C == '4')";
+        test(query, query);
+
+        // A term pruned by range stream, B term has no effect on resulting query
+        query = "C == '2' && (B == '3' || C == '4')";
+        test(query, "C == '2' && C == '4'");
+
+        // B term pruned by range stream, C term has no effect on resulting query
+        query = "(A == '1' || C == '2') && B == '3'";
+        test(query, "A == '1' && B == '3'");
+
+        // left C term pruned by range stream, right C term has no effect on resulting query
+        query = "A == '1' && (B == '3' || C == '4')";
+        test(query, "A == '1' && B == '3'");
+
+        // right C term pruned by range stream, left C term has no effect on resulting query
+        query = "(A == '1' || C == '2') && B == '3'";
+        test(query, "A == '1' && B == '3'");
+
+        // left union pruned by range stream, no pruning to do in resulting query
+        query = "B == '3' || C == '4'";
+        test(query, query);
+
+        // right union pruned by range stream, no pruning to do in resulting query
+        query = "A == '1' || C == '2'";
+        test(query, query);
+    }
+
+    @Test
+    void testOverlappingExclusions() {
         TypeMetadata metadata = new TypeMetadata();
         metadata.put("A", "ingestType1", LcType.class.getTypeName());
         metadata.put("A", "ingestType2", LcType.class.getTypeName());
@@ -180,7 +217,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testYetAnotherComplexNestedUnion() {
+    void testYetAnotherComplexNestedUnion() {
         TypeMetadata metadata = new TypeMetadata();
         metadata.put("A", "ingestType1", LcType.class.getTypeName());
         metadata.put("B", "ingestType1", LcType.class.getTypeName());
@@ -197,10 +234,18 @@ public class IngestTypePruningVisitorTest {
         String query = "A == '1' && (B == '2' || (C == '3' && D == '4'))";
         String expected = "A == '1' && B == '2'";
         test(query, expected, metadata);
+
+        // same datatypes, drop the single union term
+        query = "A == '1' && (C == '5' || (A == '2' && B == '3'))";
+        expected = "A == '1' && A == '2' && B == '3'";
+        test(query, expected, metadata);
+
+        query = "C == '1' && (A == '2' || (B == '3' && C == '4'))";
+        test(query, null);
     }
 
     @Test
-    public void testIntersectionsWithNonIndexedFields() {
+    void testIntersectionsWithNonIndexedFields() {
         //  @formatter:off
         String[] queries = {
                         //  D term is not indexed
@@ -215,12 +260,12 @@ public class IngestTypePruningVisitorTest {
         //  @formatter:on
 
         for (String query : queries) {
-            test(query, null);
+            test(query, query);
         }
     }
 
     @Test
-    public void testIntersectionsWithIncompleteUnions() {
+    void testIntersectionsWithIncompleteUnions() {
         //  @formatter:off
         String[] queries = {
                         "A == '1' && (B == 2 || filter:includeRegex(D, 'value.*'))",
@@ -234,7 +279,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testIntersectionsWithQueryFunctions() {
+    void testIntersectionsWithQueryFunctions() {
         // each function type
 
         //  @formatter:off
@@ -256,7 +301,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testIntersectionsWithMarkers() {
+    void testIntersectionsWithMarkers() {
         // all marker node types
         //  @formatter:off
         String[] queries = {
@@ -295,7 +340,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testMultiFieldedMarkers() {
+    void testMultiFieldedMarkers() {
         // case 1: delayed intersection of non-intersecting ingestTypes should remove itself
         String query = "((_Delayed_ = true) && (A == '1' && C == '2'))";
         test(query, null);
@@ -310,21 +355,24 @@ public class IngestTypePruningVisitorTest {
 
         // case 4: unknown field and how that works
         query = "((_Delayed_ = true) && (A == '1' && D == '2'))";
-        test(query, null);
+        test(query, query);
     }
 
     @Test
-    public void testDelayedBoundedMarker() {
+    void testDelayedBoundedMarker() {
         String query = "((_Delayed_ = true) && ((_Bounded_ = true) && (A > '2' && A < '4')))";
         test(query, query);
 
         // C term drives pruning of double nested marker
         query = "C == '1' && ((_Delayed_ = true) && ((_Bounded_ = true) && (A > '2' && A < '4')))";
         test(query, null);
+
+        query = "((_Delayed_ = true) && ((_Bounded_ = true) && (A > '2' && A < '4'))) && C == '1'";
+        test(query, null);
     }
 
     @Test
-    public void testDelayedEvaluationOnlyMarker() {
+    void testDelayedEvaluationOnlyMarker() {
         String query = "((_Delayed_ = true) && ((_Eval_ = true) && (A == '1')))";
         test(query, query);
 
@@ -334,7 +382,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testDelayedListMarker() {
+    void testDelayedListMarker() {
         String query = "((_Delayed_ = true) && ((_List_ = true) && ((id = 'some-bogus-id') && (field = 'A') && (params = '{\"values\":[\"a\",\"b\",\"c\"]}'))))";
         test(query, query);
 
@@ -344,7 +392,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testDelayedTermMarker() {
+    void testDelayedTermMarker() {
         String query = "((_Delayed_ = true) && ((_Term_ = true) && (A =~ 'ba.*')))";
         test(query, query);
 
@@ -354,7 +402,7 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testDelayedValueMarker() {
+    void testDelayedValueMarker() {
         String query = "((_Delayed_ = true) && ((_Value_ = true) && (A =~ 'ba.*' && B =~ 'ba.*')))";
         test(query, query);
 
@@ -368,20 +416,44 @@ public class IngestTypePruningVisitorTest {
     }
 
     @Test
-    public void testMultiFieldedFunctions() {
-
+    void testMultiFieldedFunctions() {
+        String query = "A == '1' && filter:compare(A,'==','ANY','C')";
+        test(query, query);
     }
 
     @Test
-    public void testEvaluationOnlyField() {
+    void testEvaluationOnlyField() {
         // evaluation only fields are not guaranteed to have an 'e' column in
-        // the datawave metadata table
+        // the datawave metadata table. In this case the Z term has no entry.
+        String query = "A == '1' && Z == '2'";
+        test(query, query);
     }
 
     @Test
-    public void testPruneNegation() {
+    void testPruneNegation() {
         String query = "A == '1' || !((_Delayed_ = true) && (A == '1' && C == '2'))";
         test(query, "A == '1'");
+    }
+
+    @Test
+    void testFullyPrunedTree() {
+        String query = "(false)";
+        test(query, query);
+    }
+
+    @Test
+    void testIdentifiers() {
+        String query = "A == '1' && $123 == '123'";
+        test(query, query);
+
+        query = "C == '1' && $123 == '123'";
+        test(query, null);
+    }
+
+    @Test
+    void testArithmetic() {
+        String query = "A == '1' && 1 + 1 == 3";
+        test(query, query);
     }
 
     private void test(String query, String expected) {
@@ -393,9 +465,9 @@ public class IngestTypePruningVisitorTest {
             ASTJexlScript script = JexlASTHelper.parseAndFlattenJexlQuery(query);
             ASTJexlScript pruned = (ASTJexlScript) IngestTypePruningVisitor.prune(script, metadata);
 
-            log.trace("input   : " + query);
-            log.trace("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));
-            log.trace("expected: " + expected);
+            log.info("input   : " + query);
+            log.info("output  : " + JexlStringBuildingVisitor.buildQuery(pruned));
+            log.info("expected: " + expected);
 
             // all pruned scripts must be valid
             assertTrue(validator.isValid(pruned));
@@ -409,7 +481,7 @@ public class IngestTypePruningVisitorTest {
 
             ASTJexlScript expectedScript = JexlASTHelper.parseAndFlattenJexlQuery(expected);
             TreeEqualityVisitor.Comparison comparison = TreeEqualityVisitor.checkEquality(expectedScript, pruned);
-            assertTrue("Jexl tree comparison failed with reason: " + comparison.getReason(), comparison.isEqual());
+            assertTrue(comparison.isEqual(), "Jexl tree comparison failed with reason: " + comparison.getReason());
 
         } catch (Exception e) {
             e.printStackTrace();
