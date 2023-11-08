@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.hadoop.fs.FileChecksum;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
@@ -15,12 +16,15 @@ import com.google.common.cache.Cache;
 import datawave.util.flag.InputFile.TrackedDir;
 
 /**
- * Handles stage 1 of the job creation flow. Checks for destination directories, creates as needed, and returns information on whether it was successful.
+ * Handles stage 1 of the job creation flow.
+ * Ensures destination directories exist.
+ * Detects duplicate files in destination directories, deletes duplicates, renames non-duplicate files with the same name.
  */
 public class FlagEntryMover extends SimpleMover {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlagEntryMover.class);
     private static final int CHECKSUM_MAX = 10 * 1024 * 1000; // 10M
+    private static final String CHECKSUM_ALGORITHM = "SHA-256";
 
     public FlagEntryMover(Cache<Path,Path> directoryCache, FileSystem fs, InputFile entry) {
         super(directoryCache, entry, TrackedDir.FLAGGING_DIR, fs);
@@ -28,73 +32,74 @@ public class FlagEntryMover extends SimpleMover {
 
     @Override
     public InputFile call() throws IOException {
-
-        // Create the flagging, flagged and loaded directory if they do not exist
-        Path dstFlagging = checkParent(entry.getFlagging());
-        Path dstFlagged = checkParent(entry.getFlagged());
-        Path dstLoaded = checkParent(entry.getLoaded());
-
-        // Check for existence of the file already in the flagging, flagged, or loaded directories
         Path src = entry.getPath();
-        boolean doMove = true;
-        if (fs.exists(dstFlagging)) {
-            doMove = resolveConflict(src, dstFlagging);
-        } else if (fs.exists(dstFlagged)) {
-            doMove = resolveConflict(src, dstFlagged);
-        } else if (fs.exists(dstLoaded)) {
-            doMove = resolveConflict(src, dstLoaded);
-        }
+        Path[] destinations = {entry.getFlagging(), entry.getFlagged(), entry.getLoaded()};
 
-        // do the move
-        if (doMove) {
+        createAndCache(destinations);
+        if (noDuplicatesExist(src, destinations)) {
             super.call();
         }
 
         return entry;
     }
 
-    /**
-     * Resolves the ingest file name to a unique file name for ingestion.
-     *
-     * @param src
-     *            source file for ingestion
-     * @param dest
-     *            conflict file
-     * @return true/false if the checksum matches
-     * @throws IOException
-     *             for issues with read/write
-     */
-    private boolean resolveConflict(final Path src, final Path dest) throws IOException {
-        // check to see if checksum matches
-        boolean resolved = false;
-        long srcLen = this.fs.getFileStatus(src).getLen();
-        long destLen = this.fs.getFileStatus(dest).getLen();
-        if (srcLen == destLen) {
-            String sumSrc = calculateChecksum(src);
-            String sumDest = calculateChecksum(dest);
-            if (!sumSrc.equals(sumDest)) {
-                resolved = true;
-            }
-        } else {
-            resolved = true;
-        }
-
-        if (resolved) {
-            // rename tracked locations
-            LOG.warn("duplicate ingest file name with different payload({}) - appending timestamp to destination file name", src.toUri());
-            this.entry.renameTrackedLocations();
-        } else {
-            LOG.warn("discarding duplicate ingest file ({}) duplicate ({})", src.toUri(), dest.toUri());
-            if (!fs.delete(src, false)) {
-                LOG.error("unable to delete duplicate ingest file ({})", src.toUri());
+    private boolean noDuplicatesExist(Path src, Path[] destinations) throws IOException {
+        // Check if a file with the same filename also exists in the flagging, flagged, or loaded directories
+        for (Path destination : destinations) {
+            if (fs.exists(destination) && !resolvedConflict(src, destination)) {
+                return false;
             }
         }
+        return true;
+    }
 
-        return resolved;
+    private void createAndCache(Path[] destinations) throws IOException {
+        for (Path destination : destinations) {
+            super.checkParent(destination);
+        }
     }
 
     /**
-     * Calculates a checksum for a file.
+     * Called only if the src and dest filenames match.
+     * Resolves the ingest file name to a unique file name for ingestion.
+     *
+     * @param src source file for ingestion
+     * @param dest file with the same name as src in a different directory
+     * @return true/false if the checksums match
+     * @throws IOException for issues with read/write
+     */
+    private boolean resolvedConflict(final Path src, final Path dest) throws IOException {
+        if (fileContentsMatch(src, dest)) {
+            LOG.warn("Discarding duplicate ingest file ({}) duplicate ({})", src.toUri(), dest.toUri());
+            if (!fs.delete(src, false)) {
+                LOG.error("Unable to delete duplicate ingest file ({})", src.toUri());
+            }
+            return false;
+        }
+
+        LOG.warn("Duplicate ingest file name with different payload({}) - appending timestamp to destination file names", src.toUri());
+        this.entry.renameTrackedLocations();
+        return true;
+    }
+
+    private boolean fileContentsMatch(Path src, Path dest) throws IOException {
+        return haveEqualByteLengths(src, dest) && haveMatchingChecksums(src, dest);
+    }
+
+    private boolean haveEqualByteLengths(Path src, Path dest) throws IOException {
+        long srcNumBytes = this.fs.getFileStatus(src).getLen();
+        long destNumBytes = this.fs.getFileStatus(dest).getLen();
+        return srcNumBytes == destNumBytes;
+    }
+
+    private boolean haveMatchingChecksums(Path src, Path dest) throws IOException {
+        String sumSrc = getChecksum(src);
+        String sumDest = getChecksum(dest);
+        return sumSrc.equals(sumDest);
+    }
+
+    /**
+     * Calculates a checksum for a file only if the filesystem checksum isn't implemented.
      *
      * @param file
      *            checksum file
@@ -102,10 +107,27 @@ public class FlagEntryMover extends SimpleMover {
      * @throws IOException
      *             for issues with read/write
      */
-    private String calculateChecksum(final Path file) throws IOException {
+    private String getChecksum(final Path file) throws IOException {
+        FileChecksum result = null;
+        try {
+            result = fs.getFileChecksum(file);
+        } catch (IOException e) {
+            LOG.warn("Failed to get checksum on {}", file);
+            LOG.warn("getFileChecksum failure", e);
+        }
+
+        if (result != null) {
+            return result.toString();
+        }
+
+        LOG.trace("Checksum unavailable for filesystem, calculating manually");
+        return calculateChecksumManually(file);
+    }
+
+    private String calculateChecksumManually(Path file) throws IOException {
         try (final InputStream is = this.fs.open(file)) {
             byte[] buf = new byte[8096];
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(CHECKSUM_ALGORITHM);
             int len;
             long totalLen = 0;
             // use CHECKSUM_MAX as limit for checksum
