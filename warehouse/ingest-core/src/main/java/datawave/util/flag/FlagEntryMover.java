@@ -46,8 +46,9 @@ public class FlagEntryMover extends SimpleMover {
     private boolean noDuplicatesExist(Path src, Path[] destinations) throws IOException {
         // Check if a file with the same filename also exists in the flagging, flagged, or loaded directories
         for (Path destination : destinations) {
-            if (fs.exists(destination) && !resolvedConflict(src, destination)) {
-                return false;
+            if (fs.exists(destination)) {
+                // todo - look for other conflicts?
+                return resolvedConflict(src, destination);
             }
         }
         return true;
