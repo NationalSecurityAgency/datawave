@@ -2,12 +2,10 @@ package datawave.util.flag;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -113,6 +111,11 @@ public class FlagEntryMoverParameterizedTest {
         }
     }
 
+    @After
+    public void cleanup() throws IOException {
+        testFileGenerator.deleteTestDirectories();
+    }
+
     private Path getLocationForCollision() {
         switch (this.trackedDir) {
             case FLAGGING_DIR:
@@ -124,11 +127,6 @@ public class FlagEntryMoverParameterizedTest {
             default:
                 return null;
         }
-    }
-
-    @After
-    public void cleanup() throws IOException {
-        testFileGenerator.deleteTestDirectories();
     }
 
     @Test
@@ -151,13 +149,37 @@ public class FlagEntryMoverParameterizedTest {
 
 
     @Test
-    public void updatesCurrentDir() throws Exception {
+    public void updatesCurrentDirUnlessDuplicate() throws Exception {
         flagEntryMover.call();
         if (shouldDetectDuplicateFile()) {
-            Assert.assertEquals(inputFile.getPath(), inputFile.getCurrentDir());
+            assertEquals("Current dir should still be input dir for a duplicate", inputFile.getPath(), inputFile.getCurrentDir());
         } else {
-            // todo - why always flagging?
-            Assert.assertEquals(inputFile.getFlagging(), inputFile.getCurrentDir());
+            Assert.assertEquals("Current dir should move to flagging for non-duplicate", inputFile.getFlagging(), inputFile.getCurrentDir());
+        }
+    }
+
+    @Test
+    public void deletesSrcFileNotDstWhenDuplicate() throws IOException {
+        flagEntryMover.call();
+
+        if (shouldDetectDuplicateFile()) {
+            assertFalse("Original file should no longer exist", fileSystem.exists(inputFile.getCurrentDir()));
+            assertTrue("The duplicate still exists in a destination directory", fileSystem.exists(getLocationForCollision()));
+        } else {
+            assertTrue("The original file still exists", fileSystem.exists(inputFile.getCurrentDir()));
+        }
+    }
+
+    @Test
+    public void renameFileWhenExpected() throws IOException {
+        assertFileNameConsistency();
+
+        InputFile result = flagEntryMover.call();
+
+        if (shouldRenameFilenameCollision()) {
+            FlagEntryMoverTest.assertFileNameChanged(inputFile, result);
+        } else {
+            assertFileNameConsistency();
         }
     }
 
@@ -167,98 +189,15 @@ public class FlagEntryMoverParameterizedTest {
         return shouldBeExactMatch && isInDifferentDirectory;
     }
 
-    @Test
-    public void fileNameMatchesForAllTrackedDirectories() throws IOException {
-        assertFileNameConsistency();
-
-        InputFile result = flagEntryMover.call();
-
-        if (shouldRenameFilenameCollision()) {
-            assertFileNameChanged(result);
-        } else {
-            assertFileNameConsistency();
-        }
-    }
-
-// todo - add a test for multiple conflicts
-    private void assertFileNameChanged(InputFile result) {
-        // the original inputFile should now exist in the tracked directory
-        // expected flagging but was flagged
-//        Assert.assertEquals(inputFile.getCurrentDir(), this.tra()); TODO
-        Assert.assertEquals(inputFile.getCurrentDir(), result.getCurrentDir());
-
-        // the result of the move should now have a different name
-        final String originalName = result.getPath().getName();
-
-        // the flagged name should be modified from the original
-        final String modifiedName = result.getFlagged().getName();
-        Assert.assertNotEquals(originalName, modifiedName);
-
-        // the flagging and loaded names should match the modified name
-        Assert.assertEquals(modifiedName, result.getFlagging().getName());
-        Assert.assertEquals(modifiedName, result.getLoaded().getName());
-    }
-
     private boolean shouldRenameFilenameCollision() {
-        return this.collisionType == CollisionType.SAME_FILENAME_DIFFERENT_CHECKSUM && this.trackedDir != InputFile.TrackedDir.PATH_DIR ;
+        boolean sameNameWithDifferentContents = this.collisionType == CollisionType.SAME_FILENAME_DIFFERENT_CHECKSUM;
+        boolean notInputDirectory = this.trackedDir != InputFile.TrackedDir.PATH_DIR;
+        return sameNameWithDifferentContents && notInputDirectory;
     }
-//
-//    @Test
-//    public void deletesFileWhenChecksumMatchesFileInFlagging() throws Exception {
-//        Path pathToOriginal = inputFile.getPath();
-//        Path pathToCopy = inputFile.getFlagging();
-//
-//        assertTrue(fileSystem.exists(pathToOriginal));
-//        assertFalse(fileSystem.exists(pathToCopy));
-//
-//        createCopyOfFileInFlagging();
-//        assertTrue(fileSystem.exists(pathToOriginal));
-//        assertTrue(fileSystem.exists(pathToCopy));
-//
-//        instance.call();
-//        assertFalse(fileSystem.exists(pathToOriginal));
-//        assertTrue(fileSystem.exists(pathToCopy));
-//    }
-//
-//    @Test
-//    public void testConflictMove() throws Exception {
-//        createDifferentFileWithSameNameInLoaded();
-//
-//        final InputFile result = instance.call();
-//        // current path should match flagging
-//        assertNotEquals(result.getPath(), result.getCurrentDir());
-//        Assert.assertEquals(inputFile.getFlagging(), result.getCurrentDir());
-//        // path name should differ from flagged/flagging/loaded
-//        final String pathName = result.getPath().getName();
-//        final String flaggedName = result.getFlagged().getName();
-//        Assert.assertNotEquals(pathName, flaggedName);
-//        final String flaggingName = result.getFlagging().getName();
-//        Assert.assertEquals(flaggingName, flaggedName);
-//        final String loadedName = result.getLoaded().getName();
-//        Assert.assertEquals(loadedName, flaggedName);
-//    }
-//
 
     private void assertFileNameConsistency() {
         Assert.assertEquals(inputFilePath.getName(), inputFile.getFlagged().getName());
         Assert.assertEquals(inputFilePath.getName(), inputFile.getFlagging().getName());
         Assert.assertEquals(inputFilePath.getName(), inputFile.getLoaded().getName());
     }
-//
-//    @Test
-//    public void reportsOriginalLocationAfterCollisionWithCopy() throws Exception {
-//        createCopyOfFileInFlagging();
-//        InputFile result = instance.call();
-//        Assert.assertEquals(inputFile.getPath(), result.getCurrentDir());
-//    }
-//
-//    @Test
-//    public void reportsFlaggingLocationAfterCollisionInLoadedWithName() throws Exception {
-//        createDifferentFileWithSameNameInLoaded();
-//
-//        final InputFile result = instance.call();
-//        // current path should match flagging
-//        assertNotEquals(result.getPath(), result.getCurrentDir());
-//        Assert.assertEquals(inputFile.getFlagging(), result.getCurrentDir());
-//    }
 }
