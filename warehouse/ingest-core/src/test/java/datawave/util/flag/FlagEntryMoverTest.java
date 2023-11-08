@@ -81,13 +81,17 @@ public class FlagEntryMoverTest {
         InputFile result = flagEntryMover.call();
 
         assertSame(inputFile, result);
-        assertFalse(inputFile.isMoved());
-        Assert.assertEquals(inputFile.getPath(), inputFile.getCurrentDir());
-        assertFileNameChanged(result);
 
-        assertFalse(fileSystem.exists(inputFile.getFlagging()));
+        // should have moved to flagging
+        assertTrue(inputFile.isMoved());
+        Assert.assertEquals(inputFile.getFlagging(), inputFile.getCurrentDir());
+        assertFalse(fileSystem.exists(inputFile.getPath()));
+        assertTrue(fileSystem.exists(inputFile.getFlagging()));
         assertFalse(fileSystem.exists(inputFile.getFlagged()));
         assertFalse(fileSystem.exists(inputFile.getLoaded()));
+
+
+        assertFileNameChanged(result);
 
         assertTrue(fileSystem.exists(flaggingBeforeRename));
         // TODO - change the behavior here to eliminate the duplicate in flagged?
