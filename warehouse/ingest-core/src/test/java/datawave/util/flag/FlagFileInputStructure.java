@@ -178,7 +178,8 @@ public class FlagFileInputStructure {
         String[] directories = {
                 this.flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir(),
                 this.flagFileTestSetup.getFlagMakerConfig().getFlagFileDirectory(),
-                this.flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory()
+                this.flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(),
+                this.flagFileTestSetup.getFlagMakerConfig().getFlagFileDirectory()
         };
         // @formatter:on
 

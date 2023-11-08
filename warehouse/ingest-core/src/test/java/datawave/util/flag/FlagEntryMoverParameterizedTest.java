@@ -1,7 +1,18 @@
 package datawave.util.flag;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -11,27 +22,23 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Parameterized test
  */
-public class FlagEntryMoverTest {
+@RunWith(Parameterized.class)
+public class FlagEntryMoverParameterizedTest {
     private static final Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES)
             .concurrencyLevel(10).build();
+
+    private final CollisionType collisionType;
+    private final InputFile.TrackedDir trackedDir;
 
     private FileSystem fileSystem;
     private FlagFileTestSetup testFileGenerator;
@@ -41,6 +48,30 @@ public class FlagEntryMoverTest {
 
     @Rule
     public TestName testName = new TestName();
+
+    enum CollisionType {
+        BOTH_FILENAME_AND_CHECKSUM_MATCH,
+        SAME_FILENAME_DIFFERENT_CHECKSUM,
+        NONE
+    }
+
+    public FlagEntryMoverParameterizedTest(CollisionType collisionType, InputFile.TrackedDir trackedDir) {
+        this.trackedDir = trackedDir;
+        this.collisionType = collisionType;
+    }
+
+    @Parameterized.Parameters(name = "{0}-{1}")
+    public static Iterable<Object[]> createTestCases() {
+        List<CollisionType> collisionTypes = Arrays.asList(CollisionType.values());
+        List<InputFile.TrackedDir> trackedDirectories = Arrays.asList(InputFile.TrackedDir.values());
+
+        List<List<Object>> allPermutations = Lists.cartesianProduct(collisionTypes, trackedDirectories);
+
+        // convert List of Lists to List of Arrays
+        return allPermutations.stream().map(list -> {
+            return new Object[]{list.get(0), list.get(1)};
+        }).collect(Collectors.toList());
+    }
 
     @Before
     public void createInputFilesAndMover() throws Exception {
@@ -60,51 +91,93 @@ public class FlagEntryMoverTest {
         flagEntryMover = new FlagEntryMover(directoryCache, fileSystem, inputFile);
     }
 
-    @Test
-    public void resolvesMixedConflicts() throws IOException, InterruptedException {
-        // create a file with the same name but different contents in flagging (should allow a move but to a new name) TODO, does this undermine the cleanup?
-        // and a create a duplicate in flagged (should result in deleting the original and NOT doing a move)
-        // should remove the input file
-        // should leave the duplicate intact
-        Path flaggingBeforeRename = inputFile.getFlagging();
-        Path flaggedBeforeRename = inputFile.getFlagged();
-        Path loadedBeforeRename = inputFile.getLoaded();
-
-        createFileWithDifferentChecksum(this.fileSystem, flaggingBeforeRename);
-        fileSystem.copyFromLocalFile(inputFilePath, flaggedBeforeRename);
-
-        assertTrue(fileSystem.exists(inputFile.getFlagging()));
-        assertTrue(fileSystem.exists(inputFile.getFlagged()));
-        assertFalse(fileSystem.exists(inputFile.getLoaded()));
-
-
-        InputFile result = flagEntryMover.call();
-
-        assertSame(inputFile, result);
-        assertFalse(inputFile.isMoved());
-        Assert.assertEquals(inputFile.getPath(), inputFile.getCurrentDir());
-        assertFileNameChanged(result);
-
-        assertFalse(fileSystem.exists(inputFile.getFlagging()));
-        assertFalse(fileSystem.exists(inputFile.getFlagged()));
-        assertFalse(fileSystem.exists(inputFile.getLoaded()));
-
-        assertTrue(fileSystem.exists(flaggingBeforeRename));
-        // TODO - change the behavior here to eliminate the duplicate in flagged?
-        assertTrue(fileSystem.exists(flaggedBeforeRename));
-        assertFalse(fileSystem.exists(loadedBeforeRename));
+    @Before
+    public void setupFileForCollision() throws IOException, InterruptedException {
+        if (this.collisionType == CollisionType.NONE) {
+            return;
+        }
+        // Create path for this test case's tracked directory
+        Path locationForCollision = getLocationForCollision();
+        if (locationForCollision == null) {
+            return;
+        }
+        switch (this.collisionType) {
+            case BOTH_FILENAME_AND_CHECKSUM_MATCH:
+                fileSystem.copyFromLocalFile(inputFilePath, locationForCollision);
+                break;
+            case SAME_FILENAME_DIFFERENT_CHECKSUM:
+                FlagEntryMoverTest.createFileWithDifferentChecksum(this.fileSystem, locationForCollision);
+                break;
+            default:
+                break;
+        }
     }
 
-    static void createFileWithDifferentChecksum(FileSystem fileSystem, Path path) throws InterruptedException, IOException {
-        Thread.sleep(1);
-        try (final OutputStream os = fileSystem.create(path)) {
-            os.write(("" + System.currentTimeMillis()).getBytes());
+    private Path getLocationForCollision() {
+        switch (this.trackedDir) {
+            case FLAGGING_DIR:
+                return inputFile.getFlagging();
+            case FLAGGED_DIR:
+                return inputFile.getFlagged();
+            case LOADED_DIR:
+                return inputFile.getLoaded();
+            default:
+                return null;
         }
     }
 
     @After
     public void cleanup() throws IOException {
         testFileGenerator.deleteTestDirectories();
+    }
+
+    @Test
+    public void returnsSameInputFileObject() throws Exception {
+        InputFile result = flagEntryMover.call();
+        assertSame(inputFile, result);
+    }
+
+    @Test
+    public void updatesIsMovedStatus() throws Exception {
+        assertFalse(inputFile.isMoved());
+        flagEntryMover.call();
+
+        if (shouldDetectDuplicateFile()) {
+            assertFalse(inputFile.isMoved());
+        } else {
+            assertTrue(inputFile.isMoved());
+        }
+    }
+
+
+    @Test
+    public void updatesCurrentDir() throws Exception {
+        flagEntryMover.call();
+        if (shouldDetectDuplicateFile()) {
+            Assert.assertEquals(inputFile.getPath(), inputFile.getCurrentDir());
+        } else {
+            // todo - why always flagging?
+            Assert.assertEquals(inputFile.getFlagging(), inputFile.getCurrentDir());
+        }
+    }
+
+    private boolean shouldDetectDuplicateFile() {
+        boolean shouldBeExactMatch = (this.collisionType == CollisionType.BOTH_FILENAME_AND_CHECKSUM_MATCH);
+        boolean isInDifferentDirectory = (this.trackedDir != InputFile.TrackedDir.PATH_DIR);
+        return shouldBeExactMatch && isInDifferentDirectory;
+    }
+
+    @Test
+    public void fileNameMatchesForAllTrackedDirectories() throws IOException {
+        assertFileNameConsistency();
+
+        InputFile result = flagEntryMover.call();
+
+        if (shouldRenameFilenameCollision()) {
+            assertFileNameChanged(result);
+        } else {
+            assertFileNameConsistency();
+        }
     }
 
 // todo - add a test for multiple conflicts
@@ -126,6 +199,9 @@ public class FlagEntryMoverTest {
         Assert.assertEquals(modifiedName, result.getLoaded().getName());
     }
 
+    private boolean shouldRenameFilenameCollision() {
+        return this.collisionType == CollisionType.SAME_FILENAME_DIFFERENT_CHECKSUM && this.trackedDir != InputFile.TrackedDir.PATH_DIR ;
+    }
 //
 //    @Test
 //    public void deletesFileWhenChecksumMatchesFileInFlagging() throws Exception {
