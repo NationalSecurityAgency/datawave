@@ -265,6 +265,7 @@ public class ShardQueryLogic extends BaseQueryLogic<Entry<Key,Value>> {
                             + (this.getSettings() == null ? "empty" : this.getSettings().getId()) + ')');
         this.config.setExpandFields(true);
         this.config.setExpandValues(true);
+        this.config.setGeneratePlanOnly(false);
         initialize(config, client, settings, auths);
         return config;
     }
