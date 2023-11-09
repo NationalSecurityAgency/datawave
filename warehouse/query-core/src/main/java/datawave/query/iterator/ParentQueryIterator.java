@@ -70,6 +70,22 @@ public class ParentQueryIterator extends QueryIterator {
     }
 
     @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null) {
+            fiEvaluationFilter = getEvaluationFilter();
+        }
+        return fiEvaluationFilter;
+    }
+
+    @Override
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (eventEvaluationFilter == null) {
+            eventEvaluationFilter = getEvaluationFilter();
+        }
+        return eventEvaluationFilter;
+    }
+
+    @Override
     public Iterator<Entry<Key,Document>> mapDocument(SortedKeyValueIterator<Key,Value> deepSourceCopy, Iterator<Entry<Key,Document>> documents,
                     CompositeMetadata compositeMetadata) {
 

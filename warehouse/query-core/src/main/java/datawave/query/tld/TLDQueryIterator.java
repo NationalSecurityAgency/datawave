@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
@@ -101,23 +102,9 @@ public class TLDQueryIterator extends QueryIterator {
     @Override
     public FieldIndexAggregator getFiAggregator() {
         if (fiAggregator == null) {
-            fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFIEvaluationFilter(), getFiNextSeek());
+            fiAggregator = new TLDFieldIndexAggregator(getNonEventFields(), getFiEvaluationFilter(), getFiNextSeek());
         }
         return fiAggregator;
-    }
-
-    /**
-     * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
-     *
-     * @return an {@link EventDataQueryFilter}
-     */
-    protected EventDataQueryFilter getFIEvaluationFilter() {
-        ChainableEventDataQueryFilter filterChain = new ChainableEventDataQueryFilter();
-        // primary filter on the current filter
-        filterChain.addFilter(getEvaluationFilter());
-        // prevent anything that is not an index only field from being kept at the tld level, otherwise allow all
-        filterChain.addFilter(new TLDFieldIndexQueryFilter(getIndexOnlyFields()));
-        return filterChain;
     }
 
     @Override
@@ -133,6 +120,48 @@ public class TLDQueryIterator extends QueryIterator {
                             limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
         }
         return this.evaluationFilter != null ? evaluationFilter.clone() : null;
+    }
+
+    /**
+     * Distinct from getEvaluation filter as the FI filter is used to prevent FI hits on nonEventFields that are not indexOnly fields
+     *
+     * @return an {@link EventDataQueryFilter}
+     */
+    @Override
+    public EventDataQueryFilter getFiEvaluationFilter() {
+        if (fiEvaluationFilter == null && script != null) {
+            if (QueryIterator.isDocumentSpecificRange(range)) {
+                // this is to deal with a TF optimization where the TF is scanned instead of the FI in the
+                // document specific case.
+                fiEvaluationFilter = getEventEvaluationFilter();
+            } else {
+                fiEvaluationFilter = new TLDFieldIndexQueryFilter(getIndexOnlyFields());
+            }
+
+            return fiEvaluationFilter;
+        }
+        return fiEvaluationFilter != null ? fiEvaluationFilter.clone() : null;
+    }
+
+    @Override
+    public EventDataQueryFilter getEventEvaluationFilter() {
+        if (this.eventEvaluationFilter == null && script != null) {
+
+            AttributeFactory attributeFactory = new AttributeFactory(typeMetadata);
+            Map<String,ExpressionFilter> expressionFilters = getExpressionFilters(script, attributeFactory);
+
+            // setup an evaluation filter to avoid loading every single child key into the event
+            this.eventEvaluationFilter = new TLDEventDataFilter(script, getEventFields(), expressionFilters, useAllowListedFields ? allowListedFields : null,
+                            useDisallowListedFields ? disallowListedFields : null, getEventFieldSeek(), getEventNextSeek(),
+                            limitFieldsPreQueryEvaluation ? limitFieldsMap : Collections.emptyMap(), limitFieldsField, getNonEventFields());
+        }
+        return this.eventEvaluationFilter != null ? eventEvaluationFilter.clone() : null;
+    }
+
+    public Set<String> getEventFields() {
+        Set<String> fields = getAllFields();
+        fields.removeAll(getIndexOnlyFields());
+        return fields;
     }
 
     @Override
