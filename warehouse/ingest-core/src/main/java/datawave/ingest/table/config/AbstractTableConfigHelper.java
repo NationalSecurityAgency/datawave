@@ -1,5 +1,6 @@
 package datawave.ingest.table.config;
 
+import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,12 +68,10 @@ public abstract class AbstractTableConfigHelper implements TableConfigHelper {
         }
     }
 
-    public static void disableVersioningIfNecessary(TableOperations tops, Logger log) throws AccumuloException, AccumuloSecurityException {
-
-        for (IteratorScope iterScope : IteratorScope.values()) {
-            tops.removeProperty(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers", "20," + VersioningIterator.class.getName());
-            tops.removeProperty(Property.TABLE_ITERATOR_PREFIX + iterScope.name() + ".vers.opt.maxVersions", "1");
-        }
+    public static void disableVersioningIfNecessary(String tableName, TableOperations tops)
+                    throws TableNotFoundException, AccumuloSecurityException, AccumuloException {
+        EnumSet<IteratorScope> scopes = EnumSet.of(IteratorScope.scan, IteratorScope.minc, IteratorScope.majc);
+        tops.removeIterator(tableName, VersioningIterator.class.getSimpleName(), scopes);
     }
 
     /**

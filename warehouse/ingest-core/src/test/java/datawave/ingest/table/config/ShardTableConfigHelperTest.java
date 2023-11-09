@@ -1,6 +1,7 @@
 package datawave.ingest.table.config;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +11,8 @@ import org.apache.accumulo.core.client.AccumuloException;
 import org.apache.accumulo.core.client.AccumuloSecurityException;
 import org.apache.accumulo.core.client.TableNotFoundException;
 import org.apache.accumulo.core.client.admin.TableOperations;
+import org.apache.accumulo.core.conf.Property;
+import org.apache.accumulo.core.iterators.IteratorUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Text;
 import org.apache.log4j.Level;
@@ -83,14 +86,22 @@ public class ShardTableConfigHelperTest {
             return null;
         }).anyTimes();
 
-        mock.removeProperty(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class));
+        mock.removeIterator(EasyMock.anyObject(String.class), EasyMock.anyObject(String.class), EasyMock.anyObject(EnumSet.class));
         EasyMock.expectLastCall().andAnswer(() -> {
 
             AbstractTableConfigHelperTest.REMOVE_PROPERTIES_CALLED = true;
 
-            String propKey = (String) EasyMock.getCurrentArguments()[0];
+            String tableName = (String) EasyMock.getCurrentArguments()[0];
+            EnumSet<IteratorUtil.IteratorScope> scopes = EnumSet.of(IteratorUtil.IteratorScope.scan, IteratorUtil.IteratorScope.minc,
+                            IteratorUtil.IteratorScope.majc);
+            String key = (String) EasyMock.getCurrentArguments()[1];
+            EnumSet<IteratorUtil.IteratorScope> scopeArg = (EnumSet<IteratorUtil.IteratorScope>) EasyMock.getCurrentArguments()[2];
 
-            tableProperties.remove(propKey);
+            for (IteratorUtil.IteratorScope s : scopeArg) {
+                tableProperties.remove(Property.TABLE_ITERATOR_PREFIX + s.toString() + ".vers");
+                tableProperties.remove(Property.TABLE_ITERATOR_PREFIX + s.toString() + ".vers.opt.maxVersions");
+            }
+
             return null;
         }).anyTimes();
 

@@ -201,7 +201,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
 
         // disable the versioning if it was set.
         if (disableVersioningFilter) {
-            disableVersioningIfNecessary(tops, log);
+            disableVersioningIfNecessary(tableName, tops);
         }
     }
 
@@ -237,7 +237,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_ENABLED.getKey(), Boolean.toString(enableBloomFilters), tops, log);
 
         if (disableVersioningFilter) {
-            disableVersioningIfNecessary(tops, log);
+            disableVersioningIfNecessary(tableName, tops);
         }
 
     }
@@ -274,7 +274,7 @@ public class ShardTableConfigHelper extends AbstractTableConfigHelper {
         setPropertyIfNecessary(tableName, Property.TABLE_BLOOM_ENABLED.getKey(), Boolean.toString(enableBloomFilters), tops, log);
 
         if (disableVersioningFilter) {
-            disableVersioningIfNecessary(tops, log);
+            disableVersioningIfNecessary(tableName, tops);
         }
 
     }
