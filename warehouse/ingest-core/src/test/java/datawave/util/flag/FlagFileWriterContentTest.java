@@ -39,16 +39,20 @@ public class FlagFileWriterContentTest {
 
     @Before
     public void before() throws Exception {
-        flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig()
-                        .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
-        flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
+        // @formatter:off
+        this.flagFileTestSetup = new FlagFileTestSetup()
+                .withTestFlagMakerConfig()
+                .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        // @formatter:on
+
+        this.flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
         this.inputFiles = createInputFiles();
     }
 
     @After
     public void cleanup() throws IOException {
-        flagFileTestSetup.deleteTestDirectories();
+        this.flagFileTestSetup.deleteTestDirectories();
     }
 
     @Test
@@ -59,8 +63,11 @@ public class FlagFileWriterContentTest {
 
         // @formatter:off
 		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
-				.withBeginning(EXPECTED_BEGINNING + "\n").withFiles(inputFiles)
-				.withEnding("\n").withFileOrdering(true).withFileMarker(true);
+				.withBeginning(EXPECTED_BEGINNING + "\n")
+                .withFiles(inputFiles)
+				.withEnding("\n")
+                .withFileOrdering(true)
+                .withFileMarker(true);
 		// @formatter:on
 
         flagFileContentExpectations.assertFlagFileContents(flag);
@@ -75,8 +82,11 @@ public class FlagFileWriterContentTest {
         File flag = FlagFileTestInspector.getOnlyFlagFile(this.flagMakerConfig);
         // @formatter:off
 		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
-				.withBeginning(EXPECTED_BEGINNING).withFiles(inputFiles)
-				.withEnding("\n").withFileOrdering(false).withFileMarker(true);
+				.withBeginning(EXPECTED_BEGINNING)
+                .withFiles(inputFiles)
+				.withEnding("\n")
+                .withFileOrdering(false)
+                .withFileMarker(true);
 		// @formatter:on
 
         flagFileContentExpectations.assertFlagFileContents(flag);
@@ -90,12 +100,11 @@ public class FlagFileWriterContentTest {
 
         // @formatter:off
 		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
-				.withBeginning(
-						EXPECTED_DATAWAVE_HOME + File.separatorChar + EXPECTED_SCRIPT + " ")
-				.withEnding(
-						EXPECTED_NUM_REDUCERS + EXPECTED_INPUT_FORMAT_ARG + " \n")
+				.withBeginning(EXPECTED_DATAWAVE_HOME + File.separatorChar + EXPECTED_SCRIPT + " ")
+				.withEnding(EXPECTED_NUM_REDUCERS + EXPECTED_INPUT_FORMAT_ARG + " \n")
                 .withFiles(inputFiles)
-				.withFileOrdering(true).withFileMarker(false);
+				.withFileOrdering(true)
+                .withFileMarker(false);
 		// @formatter:on
 
         flagFileContentExpectations.assertFlagFileContents(flag);
@@ -109,12 +118,11 @@ public class FlagFileWriterContentTest {
 
         // @formatter:off
 		FlagFileContentExpectations flagFileContentExpectations = new FlagFileContentExpectations()
-				.withBeginning(
-						EXPECTED_DATAWAVE_HOME + File.separatorChar + EXPECTED_SCRIPT)
-				.withEnding(
-						EXPECTED_NUM_REDUCERS + EXPECTED_INPUT_FORMAT_ARG + " \n")
+				.withBeginning(EXPECTED_DATAWAVE_HOME + File.separatorChar + EXPECTED_SCRIPT)
+				.withEnding(EXPECTED_NUM_REDUCERS + EXPECTED_INPUT_FORMAT_ARG + " \n")
                 .withFiles(inputFiles)
-				.withFileOrdering(false).withFileMarker(false);
+				.withFileOrdering(false)
+                .withFileMarker(false);
 		// @formatter:on
 
         File flag = FlagFileTestInspector.getOnlyFlagFile(this.flagMakerConfig);
