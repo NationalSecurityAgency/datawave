@@ -11,7 +11,6 @@ import java.util.Collection;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,25 +58,29 @@ public class FlagFileTestSetup {
             if (this.fmc.getBaseHDFSDir().contains(this.subDirectoryName)) {
                 throw new RuntimeException("Already modified test directory name");
             }
-            this.fmc.setBaseHDFSDir(this.fmc.getBaseHDFSDir().replace("target", "target/" + this.subDirectoryName));
-            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir());
+            this.fmc.setBaseHDFSDir(addSubDirectory(this.fmc.getBaseHDFSDir()));
             LOG.info("Set base HDFS directory to " + this.fmc.getBaseHDFSDir());
+            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir());
 
             if (this.fmc.getFlagFileDirectory().contains(this.subDirectoryName)) {
-                throw new RuntimeException("Already modified test directory name");
+                throw new RuntimeException("Already modified flag directory name");
             }
-            this.fmc.setFlagFileDirectory(this.fmc.getFlagFileDirectory().replace("target", "target/" + subDirectoryName));
+            this.fmc.setFlagFileDirectory(addSubDirectory(this.fmc.getFlagFileDirectory()));
             LOG.info("Set flag file directory to " + this.fmc.getFlagFileDirectory());
             flagFileInputStructure.createDirectory(fmc.getFlagFileDirectory());
 
             if (this.fmc.getFlagMetricsDirectory().contains(this.subDirectoryName)) {
                 throw new RuntimeException("Already modified metrics directory name");
             }
-            this.fmc.setFlagMetricsDirectory(this.fmc.getFlagMetricsDirectory().replace("target", "target/" + subDirectoryName));
+            this.fmc.setFlagMetricsDirectory(addSubDirectory(this.fmc.getFlagMetricsDirectory()));
             LOG.info("Set flag file directory to " + this.fmc.getFlagMetricsDirectory());
             flagFileInputStructure.createDirectory(fmc.getFlagMetricsDirectory());
         }
         return this;
+    }
+
+    private String addSubDirectory(String directoryName) {
+        return directoryName.replace("target", "target/" + this.subDirectoryName);
     }
 
     public FlagFileTestSetup withConfig(FlagMakerConfig fmc) throws IOException {
@@ -183,16 +186,6 @@ public class FlagFileTestSetup {
 
     public void deleteTestDirectories() throws IOException {
         flagFileInputStructure.deleteTestDirectories();
-    }
-
-    public void createTrackedDirectoriesForInputFile(InputFile inputFile) throws IOException {
-        final Path[] directories = {inputFile.getFlagged(), inputFile.getFlagging(), inputFile.getLoaded()};
-        for (final Path directory : directories) {
-            final Path parentDirectory = directory.getParent();
-            if (!fs.mkdirs(parentDirectory)) {
-                throw new IllegalStateException("unable to create tracked directory (" + parentDirectory + ")");
-            }
-        }
     }
 
     public FlagDataTypeConfig getInheritedDataTypeConfig() {
