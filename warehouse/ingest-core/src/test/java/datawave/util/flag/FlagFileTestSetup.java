@@ -60,7 +60,7 @@ public class FlagFileTestSetup {
                 throw new RuntimeException("Already modified test directory name");
             }
             this.fmc.setBaseHDFSDir(this.fmc.getBaseHDFSDir().replace("target", "target/" + this.subDirectoryName));
-            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir(), "base HDFS");
+            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir());
             LOG.info("Set base HDFS directory to " + this.fmc.getBaseHDFSDir());
 
             if (this.fmc.getFlagFileDirectory().contains(this.subDirectoryName)) {
@@ -68,14 +68,14 @@ public class FlagFileTestSetup {
             }
             this.fmc.setFlagFileDirectory(this.fmc.getFlagFileDirectory().replace("target", "target/" + subDirectoryName));
             LOG.info("Set flag file directory to " + this.fmc.getFlagFileDirectory());
-            flagFileInputStructure.createDirectory(fmc.getFlagFileDirectory(), "flag");
+            flagFileInputStructure.createDirectory(fmc.getFlagFileDirectory());
 
             if (this.fmc.getFlagMetricsDirectory().contains(this.subDirectoryName)) {
                 throw new RuntimeException("Already modified metrics directory name");
             }
             this.fmc.setFlagMetricsDirectory(this.fmc.getFlagMetricsDirectory().replace("target", "target/" + subDirectoryName));
             LOG.info("Set flag file directory to " + this.fmc.getFlagMetricsDirectory());
-            flagFileInputStructure.createDirectory(fmc.getFlagMetricsDirectory(), "flag");
+            flagFileInputStructure.createDirectory(fmc.getFlagMetricsDirectory());
         }
         return this;
     }
@@ -86,7 +86,7 @@ public class FlagFileTestSetup {
         if (null != subDirectoryName) {
             withTestNameForDirectories(subDirectoryName);
         } else {
-            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir(), "base HDFS");
+            flagFileInputStructure.createDirectory(fmc.getBaseHDFSDir());
         }
 
         return this;
@@ -169,7 +169,7 @@ public class FlagFileTestSetup {
     }
 
     public void createTestFiles() throws IOException {
-        flagFileInputStructure.emptyDirectories();
+        flagFileInputStructure.createEmptyDirectories();
         flagFileInputStructure.createAdditionalTestFiles();
     }
 

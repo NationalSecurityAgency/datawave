@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.base.Strings;
+import datawave.util.flag.config.FlagMakerConfig;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +19,7 @@ import datawave.util.StringUtils;
 import datawave.util.flag.config.FlagDataTypeConfig;
 
 /**
- * Contains code to assist with creating input files and input directory structure for flag maker tests
+ * Assists with creating input files and input directory structure for flag maker tests
  */
 public class FlagFileInputStructure {
     private static final Logger LOG = LoggerFactory.getLogger(FlagFileInputStructure.class);
@@ -40,21 +42,54 @@ public class FlagFileInputStructure {
         this.timeTracker = timeTracker;
     }
 
-    protected void createDirectory(String directory, String description) throws IOException {
-        File f = new File(directory);
-        if (f.exists()) {
-            // commons io has recursive delete.
-            FileUtils.deleteDirectory(f);
-        }
-        if (!f.mkdirs()) {
-            throw new IOException("unable to create " + description + " directory (" + f.getAbsolutePath() + ")");
+    protected void createDirectory(String directory) throws IOException {
+        File file = deleteDirectoryIfExists(directory);
+        if (!file.mkdirs()) {
+            throw new IOException("unable to create " + directory + " directory (" + file.getAbsolutePath() + ")");
         }
     }
 
-    protected void emptyDirectories() throws IOException {
-        createDirectory(flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir(), "base HDFS");
-        createDirectory(flagFileTestSetup.getFlagMakerConfig().getFlagFileDirectory(), "flag file directory");
-        createDirectory(flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(), "metrics directory");
+    private File createDirectory(File baseDirectory, int dayNumber) {
+        String dayOfMonth = Strings.padStart(Integer.toString(dayNumber), 2, '0');
+        File directory = new File(baseDirectory.getAbsolutePath() + File.separator + DATE_PATH + File.separator + dayOfMonth);
+        directory.deleteOnExit();
+
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new RuntimeException("Unable to make dirs for " + directory.toString());
+        }
+        return directory;
+    }
+
+    private File deleteDirectoryIfExists(String directory) throws IOException {
+        File file = new File(directory);
+        if (file.exists()) {
+            // commons io has recursive delete.
+            FileUtils.deleteDirectory(file);
+        }
+        return file;
+    }
+
+    protected void createEmptyDirectories() throws IOException {
+        for (String directory : getTestDirectories()) {
+            createDirectory(directory);
+        }
+    }
+
+    public void deleteTestDirectories() throws IOException {
+        for (String directory : getTestDirectories()) {
+            deleteDirectoryIfExists(directory);
+        }
+    }
+
+    private String[] getTestDirectories() {
+        FlagMakerConfig flagMakerConfig = this.flagFileTestSetup.getFlagMakerConfig();
+        // @formatter:off
+        return new String[] {
+                flagMakerConfig.getBaseHDFSDir(),
+                flagMakerConfig.getFlagFileDirectory(),
+                flagMakerConfig.getFlagMetricsDirectory()
+        };
+        // @formatter:on
     }
 
     /**
@@ -76,7 +111,7 @@ public class FlagFileInputStructure {
             createDirectoriesAndFilesForSpecifiedDays(inputDir, flagFileTestSetup.getNumDays(), flagFileTestSetup.getNumFilesPerDay());
         }
 
-        LOG.info("Created " + numFoldersCreated + " folders and " + createdFiles.size() + " files (cumulative).");
+        LOG.info("Created {} folders and {} files (cumulative).", numFoldersCreated, createdFiles.size());
     }
 
     protected Collection<String> getNamesOfCreatedFiles() {
@@ -101,11 +136,9 @@ public class FlagFileInputStructure {
         for (String listOfFolderValues : dataTypeConfig.getFolders()) {
             for (String folderName : StringUtils.split(listOfFolderValues, ',')) {
                 folderName = folderName.trim();
-                if (!folderName.startsWith(flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir())) {
-                    // we do this conditionally because once the FileMaker
-                    // is created and the setup call is made, this
-                    // is already done.
-                    folderName = flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir() + File.separator + folderName;
+                String baseHDFSDir = flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir();
+                if (!folderName.startsWith(baseHDFSDir)) {
+                    folderName = baseHDFSDir + File.separator + folderName;
                 }
                 inputDirs.add(new File(folderName));
             }
@@ -113,8 +146,7 @@ public class FlagFileInputStructure {
     }
 
     /**
-     * @param dayNumber
-     *            day of the month
+     * @param dayNumber day of the month
      * @return timestamp to use for files = date of folder, e.g. 2013/01/09, plus an offset
      */
     private long getTimestampForFilesInDirectory(int dayNumber) {
@@ -159,36 +191,5 @@ public class FlagFileInputStructure {
             result = result + flagFileTestSetup.getTestFileNameSuffix();
         }
         return result;
-    }
-
-    private File createDirectory(File baseDirectory, int dayNumber) {
-        File directory = new File(baseDirectory.getAbsolutePath() + File.separator + DATE_PATH + File.separator + "0" + dayNumber);
-        directory.deleteOnExit();
-
-        if (!directory.exists()) {
-            if (!directory.mkdirs()) {
-                throw new RuntimeException("Unable to make dirs for " + directory.toString());
-            }
-        }
-        return directory;
-    }
-
-    public void deleteTestDirectories() throws IOException {
-        // @formatter:off
-        String[] directories = {
-                this.flagFileTestSetup.getFlagMakerConfig().getBaseHDFSDir(),
-                this.flagFileTestSetup.getFlagMakerConfig().getFlagFileDirectory(),
-                this.flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory(),
-                this.flagFileTestSetup.getFlagMakerConfig().getFlagFileDirectory()
-        };
-        // @formatter:on
-
-        for (String directory : directories) {
-            File f = new File(directory);
-            if (f.exists()) {
-                // commons io has recursive delete.
-                FileUtils.deleteDirectory(f);
-            }
-        }
     }
 }
