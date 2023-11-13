@@ -28,14 +28,19 @@ import datawave.util.flag.config.FlagMakerConfig;
  * This is meant to contain read-only operations
  */
 public class FlagFileTestInspector {
+
+    private static final String FLAGGING = "flagging";
+    private static final String FLAGGED = "flagged";
+
     public static List<InputFile> listSortedInputFiles(FlagMakerConfig flagMakerConfig, FileSystem fs) {
         ArrayList<InputFile> result = new ArrayList<>();
         try {
-            for (RemoteIterator<LocatedFileStatus> it = fs.listFiles(new Path(flagMakerConfig.getBaseHDFSDir()), true); it.hasNext();) {
+            RemoteIterator<LocatedFileStatus> it = fs.listFiles(new Path(flagMakerConfig.getBaseHDFSDir()), true);
+            while (it.hasNext()) {
                 LocatedFileStatus status = it.next();
                 if (status.isFile()) {
                     Path path = status.getPath();
-                    InputFile inputFile = new InputFile(status.getPath().getParent().getName(), path, status.getBlockSize(), status.getLen(),
+                    InputFile inputFile = new InputFile(path.getParent().getName(), path, status.getBlockSize(), status.getLen(),
                                     status.getModificationTime(), flagMakerConfig.getBaseHDFSDir());
                     result.add(inputFile);
                 }
@@ -53,11 +58,11 @@ public class FlagFileTestInspector {
     }
 
     public static List<File> listFlaggingFiles(FlagMakerConfig flagMakerConfig) throws IOException {
-        return listFilesRecursively("/flagging", flagMakerConfig);
+        return listFilesRecursively("/" + FLAGGING, flagMakerConfig);
     }
 
     public static List<File> listFlaggedFiles(FlagMakerConfig flagMakerConfig) throws IOException {
-        return listFilesRecursively("/flagged", flagMakerConfig);
+        return listFilesRecursively("/" + FLAGGED, flagMakerConfig);
     }
 
     public static List<File> listFlagFiles(FlagMakerConfig flagMakerConfig) {
@@ -140,6 +145,6 @@ public class FlagFileTestInspector {
 
     private static boolean isInInputDirectory(java.nio.file.Path path) {
         String pathAsString = path.toString();
-        return !pathAsString.contains("flagging") && !pathAsString.contains("flagged");
+        return !pathAsString.contains(FLAGGING) && !pathAsString.contains(FLAGGED);
     }
 }
