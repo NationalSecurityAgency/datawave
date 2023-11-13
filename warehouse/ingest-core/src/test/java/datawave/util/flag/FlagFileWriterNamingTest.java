@@ -10,6 +10,7 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import datawave.util.flag.config.FlagMakerConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -21,33 +22,39 @@ import datawave.util.flag.config.FlagDataTypeConfig;
 public class FlagFileWriterNamingTest {
     private static final String POOL_NAME = "onehr";
     private static final String FLAG_DATA_TYPE = "foo";
+    private static final String LOWERCASE_HEX = "[0-9a-f]";
+    private static final String DIGIT = "[0-9]";
 
     private String flagFilePath;
-
     private Collection<InputFile> inputFiles;
+    private FlagFileTestSetup flagFileTestSetup;
 
     @Rule
     public TestName testName = new TestName();
 
-    FlagFileTestSetup flagFileTestSetup;
-
     @Before
     public void before() throws Exception {
-        flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig()
-                        .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        // @formatter:off
+        this.flagFileTestSetup = new FlagFileTestSetup()
+                .withTestFlagMakerConfig()
+                .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        // @formatter:on
+
         FlagDataTypeConfig dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
-        inputFiles = createInputFiles(flagFileTestSetup);
+        this.inputFiles = createInputFiles(flagFileTestSetup);
 
         // write a flag file with FlagFileWriter
-        new FlagFileWriter(flagFileTestSetup.getFlagMakerConfig()).writeFlagFile(dataTypeConfig, inputFiles);
+        FlagMakerConfig flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
+        FlagFileWriter flagFileWriter = new FlagFileWriter(flagMakerConfig);
+        flagFileWriter.writeFlagFile(dataTypeConfig, inputFiles);
 
         // capture the name of the flag file
-        this.flagFilePath = FlagFileTestInspector.getPathStringForOnlyFlagFile(flagFileTestSetup.getFlagMakerConfig());
+        this.flagFilePath = FlagFileTestInspector.getPathStringForOnlyFlagFile(flagMakerConfig);
     }
 
     @After
     public void cleanup() throws IOException {
-        flagFileTestSetup.deleteTestDirectories();
+        this.flagFileTestSetup.deleteTestDirectories();
     }
 
     private TreeSet<InputFile> createInputFiles(FlagFileTestSetup flagFileTestSetup) throws IOException {
@@ -96,8 +103,8 @@ public class FlagFileWriterNamingTest {
     public void fileNameMatchesPattern() {
         // patterns for expected components
         String directoryPattern = "target/datawave.util.flag.FlagFileWriterNamingTest_fileNameMatchesPattern/test/flags".replaceAll("/", "\\\\\\/");
-        String timePattern = "[0-9]{10}\\.[0-9]{2}";
-        String firstFileNamePattern = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+        String timePattern = digits(10) + "\\." + digits(2);
+        String firstFileNamePattern = hex(8) + "-" + hex(4) + "-" + hex(4) + "-" + hex(4) + "-" + hex(12);
         String numFilesPattern = Integer.toString(inputFiles.size());
 
         // combined pattern
@@ -105,5 +112,13 @@ public class FlagFileWriterNamingTest {
                         + numFilesPattern + "\\.flag";
 
         assertTrue(regexPattern + " did not match: \n" + this.flagFilePath, Pattern.compile(regexPattern).matcher(this.flagFilePath).matches());
+    }
+
+    private String digits(final int length) {
+        return DIGIT + "{"+ length + "}";
+    }
+
+    private String hex(final int length) {
+        return LOWERCASE_HEX + "{" + length + "}";
     }
 }
