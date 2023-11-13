@@ -59,7 +59,7 @@ public class CompositeUserOperations implements UserOperations {
                     AuthorizationsListBase.SubjectIssuerDNPair dn = entry.getKey();
                     authMap.put(dn, Sets.union(authMap.containsKey(dn) ? authMap.get(dn) : Collections.emptySet(), entry.getValue()));
                 }
-            } catch (AuthorizationException e) {
+            } catch (Exception e) {
                 // ignore the exception if shortCircuitExecution is specified as we may never even call that remote logic
                 if (!shortCircuitExecution) {
                     throw new AuthorizationException(e);
@@ -119,7 +119,14 @@ public class CompositeUserOperations implements UserOperations {
             principals.add(principal);
         }
         for (UserOperations ops : userOperations) {
-            principals.add(ops.getRemoteUser(principal));
+            try {
+                principals.add(ops.getRemoteUser(principal));
+            } catch (Exception e) {
+                // ignore the exception if shortCircuitExecution is specified as we may never even call that remote logic
+                if (!shortCircuitExecution) {
+                    throw new AuthorizationException(e);
+                }
+            }
         }
         
         return AuthorizationsUtil.mergePrincipals(principals.toArray(new DatawavePrincipal[0]));
