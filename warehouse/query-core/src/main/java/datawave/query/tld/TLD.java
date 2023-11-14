@@ -28,7 +28,8 @@ public class TLD {
 
     /**
      * Parses the pointer (document id) from the local Field Index key's ColumnQualifier
-     *
+     * <p>
+     * <br>
      * FI Key Structure (row, cf='fi\0field', cq='value\0datatype\0uid')
      *
      * The uid is starts at the ColumnQualifier's second null byte, ends at the end of sequence.

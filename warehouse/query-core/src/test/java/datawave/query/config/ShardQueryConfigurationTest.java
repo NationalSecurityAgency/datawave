@@ -35,6 +35,7 @@ import datawave.data.type.Type;
 import datawave.query.DocumentSerialization;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.iterator.ivarator.IvaratorCacheDirConfig;
 import datawave.query.iterator.logic.TermFrequencyExcerptIterator;
 import datawave.query.iterator.logic.TermFrequencyIndexIterator;
@@ -525,11 +526,8 @@ public class ShardQueryConfigurationTest {
         updatedValues.put("groupFieldsBatchSizeAsString", "5");
         alreadySet.add("groupFieldsBatchSizeAsString");
 
-        defaultValues.put("groupFields", Sets.newHashSet());
-        updatedValues.put("groupFields", Sets.newHashSet("FIELD_G", "FIELD_H"));
-        defaultValues.put("groupFieldsAsString", "");
-        updatedValues.put("groupFieldsAsString", "FIELD_G,FIELD_H");
-        alreadySet.add("groupFieldsAsString");
+        defaultValues.put("groupFields", new GroupFields());
+        updatedValues.put("groupFields", GroupFields.from("GROUP(FIELD_G,FIELD_H)"));
     }
 
     private Query createQuery(String query) {
