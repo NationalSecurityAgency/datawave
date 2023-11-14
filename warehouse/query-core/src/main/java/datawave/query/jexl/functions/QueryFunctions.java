@@ -4,7 +4,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
@@ -13,7 +12,6 @@ import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import datawave.data.type.util.NumericalEncoder;
-import datawave.query.attributes.UniqueGranularity;
 import datawave.query.attributes.ValueTuple;
 import datawave.query.collections.FunctionalSet;
 import datawave.query.jexl.JexlPatternCache;
@@ -35,6 +33,11 @@ public class QueryFunctions {
     public static final String MATCH_REGEX = "matchRegex";
     public static final String INCLUDE_TEXT = "includeText";
     public static final String NO_EXPANSION = "noExpansion";
+    public static final String SUM = "sum";
+    public static final String MAX = "max";
+    public static final String MIN = "min";
+    public static final String COUNT = "count";
+    public static final String AVERAGE = "average";
 
     protected static Logger log = Logger.getLogger(QueryFunctions.class);
 
