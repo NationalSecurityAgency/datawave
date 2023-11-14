@@ -33,16 +33,20 @@ function datawaveWebIsRunning() {
 function datawaveWebStop() {
     ! datawaveWebIsRunning && echo "DataWave Web is already stopped" && return 1
 
-    while datawaveWebIsRunning ; do
-        echo "Stopping Wildfly"
-        eval "${DW_DATAWAVE_WEB_CMD_STOP}"
-        sleep 5
-        if datawaveWebIsRunning ; then
-            warn "DataWave Web did not stop" && datawaveWebStatus
-        else
-            echo "DataWave Web stopped" && return 0
-        fi
-    done
+    if [ "$(amIRoot)" = true ]; then
+      echo "Do not run DataWave as root";
+    else
+      while datawaveWebIsRunning ; do
+          echo "Stopping Wildfly"
+          eval "${DW_DATAWAVE_WEB_CMD_STOP}"
+          sleep 5
+          if datawaveWebIsRunning ; then
+              warn "DataWave Web did not stop" && datawaveWebStatus
+          else
+              echo "DataWave Web stopped" && return 0
+          fi
+      done
+    fi
 }
 
 function datawaveWebStatus() {
@@ -113,56 +117,67 @@ function datawaveWebIsDeployed() {
    return 0
 }
 
+function amIRoot() {
+  if [ "$(id -u)" -eq 0 ]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
 function datawaveWebStart() {
-
-    local debug=false
-
-    # Use --debug flag to start Wildfly in debug mode
-    [[ "${1}" == "--debug" || "${1}" == "-d" ]] && debug=true
-    [[ -n "${1}" && "${debug}" == false ]] && error "Unrecognized option: ${1}" && return
-
-    ! hadoopIsRunning && hadoopStart
-    ! accumuloIsRunning && accumuloStart
-
-    if datawaveWebIsRunning ; then
-       info "Wildfly is already running"
+    if [ "$(amIRoot)" = true ]; then
+      echo "Do not run DataWave as root";
     else
-       if [ "${debug}" == true ] ; then
-           info "Starting Wildfly in debug mode"
-           eval "${DW_DATAWAVE_WEB_CMD_START_DEBUG}" > /dev/null 2>&1
-       else
-           info "Starting Wildfly"
-           eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1
-       fi
+      local debug=false
+
+      # Use --debug flag to start Wildfly in debug mode
+      [[ "${1}" == "--debug" || "${1}" == "-d" ]] && debug=true
+      [[ -n "${1}" && "${debug}" == false ]] && error "Unrecognized option: ${1}" && return
+
+      ! hadoopIsRunning && hadoopStart
+      ! accumuloIsRunning && accumuloStart
+
+      if datawaveWebIsRunning ; then
+         info "Wildfly is already running"
+      else
+         if [ "${debug}" == true ] ; then
+             info "Starting Wildfly in debug mode"
+             eval "${DW_DATAWAVE_WEB_CMD_START_DEBUG}" > /dev/null 2>&1
+         else
+             info "Starting Wildfly"
+             eval "${DW_DATAWAVE_WEB_CMD_START}" > /dev/null 2>&1
+         fi
+      fi
+
+      local pollInterval=4
+      local maxAttempts=15
+
+      info "Polling for EAR deployment status every ${pollInterval} seconds (${maxAttempts} attempts max)"
+
+      for (( i=1; i<=${maxAttempts}; i++ ))
+      do
+         if datawaveWebIsDeployed ; then
+            echo "    ++ DataWave Web successfully deployed (${i}/${maxAttempts})"
+            echo
+            info "Documentation: https://localhost:8443/DataWave/doc"
+            info "Data Dictionary: https://localhost:8443/DataWave/DataDictionary"
+            info "NOTE: DataDictionary will need to be deployed separately via the microservices modules in order to function."
+            echo
+            return 0
+         fi
+         case "${DW_DATAWAVE_EAR_STATUS}" in
+            WILDFLY_DOWN)
+               echo "    -- Wildfly process not found (${i}/${maxAttempts})"
+               ;;
+            DATAWAVE_EAR_NOT_DEPLOYED)
+               echo "    +- Wildfly up (${DW_DATAWAVE_WEB_PID_LIST}). EAR deployment pending (${i}/${maxAttempts})"
+               ;;
+         esac
+         sleep $pollInterval
+      done
+      return 1
     fi
-
-    local pollInterval=4
-    local maxAttempts=15
-
-    info "Polling for EAR deployment status every ${pollInterval} seconds (${maxAttempts} attempts max)"
-
-    for (( i=1; i<=${maxAttempts}; i++ ))
-    do
-       if datawaveWebIsDeployed ; then
-          echo "    ++ DataWave Web successfully deployed (${i}/${maxAttempts})"
-          echo
-          info "Documentation: https://localhost:8443/DataWave/doc"
-          info "Data Dictionary: https://localhost:8443/DataWave/DataDictionary"
-          info "NOTE: DataDictionary will need to be deployed separately via the microservices modules in order to function."
-          echo
-          return 0
-       fi
-       case "${DW_DATAWAVE_EAR_STATUS}" in
-          WILDFLY_DOWN)
-             echo "    -- Wildfly process not found (${i}/${maxAttempts})"
-             ;;
-          DATAWAVE_EAR_NOT_DEPLOYED)
-             echo "    +- Wildfly up (${DW_DATAWAVE_WEB_PID_LIST}). EAR deployment pending (${i}/${maxAttempts})"
-             ;;
-       esac
-       sleep $pollInterval
-    done
-    return 1
 }
 
 function datawaveWebDisplayBinaryInfo() {

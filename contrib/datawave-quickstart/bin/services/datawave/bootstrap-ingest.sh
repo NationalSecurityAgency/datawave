@@ -91,15 +91,23 @@ function datawaveIngestIsRunning() {
 }
 
 function datawaveIngestStart() {
-    ! hadoopIsRunning && hadoopStart
-    ! accumuloIsRunning && accumuloStart
+    if [ "$(amIRoot)" = true ]; then
+      echo "Do not run DataWave as root";
+    else
+      ! hadoopIsRunning && hadoopStart
+      ! accumuloIsRunning && accumuloStart
 
-    datawaveIngestIsRunning && echo "DataWave Ingest is already running" || eval "${DW_DATAWAVE_INGEST_CMD_START}"
+      datawaveIngestIsRunning && echo "DataWave Ingest is already running" || eval "${DW_DATAWAVE_INGEST_CMD_START}"
+    fi
 }
 
 function datawaveIngestStop() {
-    datawaveIngestIsRunning && eval "${DW_DATAWAVE_INGEST_CMD_STOP}" || echo "DataWave Ingest is already stopped"
-    rm -f "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}"/*.LCK
+    if [ "$(amIRoot)" = true ]; then
+      echo "Do not run DataWave as root";
+    else
+      datawaveIngestIsRunning && eval "${DW_DATAWAVE_INGEST_CMD_STOP}" || echo "DataWave Ingest is already stopped"
+      rm -f "${DW_DATAWAVE_INGEST_LOCKFILE_DIR}"/*.LCK
+    fi
 }
 
 function datawaveIngestStatus() {

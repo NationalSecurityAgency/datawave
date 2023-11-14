@@ -340,14 +340,30 @@ function datawaveIsRunning() {
     return 1
 }
 
+function amIRoot() {
+  if [ "$(id -u)" -eq 0 ]; then
+    echo true
+  else
+    echo false
+  fi
+}
+
 function datawaveStart() {
-    datawaveIngestStart
-    datawaveWebStart
+    if [ "$(amIRoot)" = true ]; then
+      echo "Do not run DataWave as root";
+    else
+      datawaveIngestStart
+      datawaveWebStart
+    fi
 }
 
 function datawaveStop() {
-    datawaveIngestStop
-    datawaveWebStop
+    if [ "$(amIRoot)" = true ]; then
+      echo "Do not run DataWave as root";
+    else
+      datawaveIngestStop
+      datawaveWebStop
+    fi
 }
 
 function datawaveStatus() {
