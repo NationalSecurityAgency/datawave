@@ -30,11 +30,15 @@ public class CompositeUserOperations implements UserOperations {
     final ResponseObjectFactory responseObjectFactory;
     final List<UserOperations> userOperations;
     final boolean includeLocal;
-
-    public CompositeUserOperations(List<UserOperations> remoteOperations, boolean includeLocal, ResponseObjectFactory responseObjectFactory) {
+    final boolean shortCircuitExecution;
+    
+    public CompositeUserOperations(List<UserOperations> remoteOperations, boolean includeLocal, boolean shortCircuitExecution,
+                    ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
         this.userOperations = remoteOperations;
         this.includeLocal = includeLocal;
+        // if shortCircuitExecution, then simply make our best effort meaning if any remote operations fail we will simply not include that one.
+        this.shortCircuitExecution = shortCircuitExecution;
     }
 
     @Override
@@ -46,14 +50,21 @@ public class CompositeUserOperations implements UserOperations {
             principal.getProxiedUsers().forEach(u -> authMap.put(dn(u.getDn()), new HashSet<>(u.getAuths())));
         }
         for (UserOperations ops : userOperations) {
-            AuthorizationsListBase remoteAuths = ops.listEffectiveAuthorizations(callerObject);
-            AuthorizationsListBase.SubjectIssuerDNPair userDn = new AuthorizationsListBase.SubjectIssuerDNPair(remoteAuths.getUserDn(),
-                            remoteAuths.getIssuerDn());
-            authMap.put(userDn, Sets.union(authMap.containsKey(userDn) ? authMap.get(userDn) : Collections.emptySet(), remoteAuths.getAllAuths()));
-            Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> remoteAuthMap = remoteAuths.getAuths();
-            for (Map.Entry<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> entry : remoteAuthMap.entrySet()) {
-                AuthorizationsListBase.SubjectIssuerDNPair dn = entry.getKey();
-                authMap.put(dn, Sets.union(authMap.containsKey(dn) ? authMap.get(dn) : Collections.emptySet(), entry.getValue()));
+            try {
+                AuthorizationsListBase remoteAuths = ops.listEffectiveAuthorizations(callerObject);
+                AuthorizationsListBase.SubjectIssuerDNPair userDn = new AuthorizationsListBase.SubjectIssuerDNPair(remoteAuths.getUserDn(),
+                                remoteAuths.getIssuerDn());
+                authMap.put(userDn, Sets.union(authMap.containsKey(userDn) ? authMap.get(userDn) : Collections.emptySet(), remoteAuths.getAllAuths()));
+                Map<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> remoteAuthMap = remoteAuths.getAuths();
+                for (Map.Entry<AuthorizationsListBase.SubjectIssuerDNPair,Set<String>> entry : remoteAuthMap.entrySet()) {
+                    AuthorizationsListBase.SubjectIssuerDNPair dn = entry.getKey();
+                    authMap.put(dn, Sets.union(authMap.containsKey(dn) ? authMap.get(dn) : Collections.emptySet(), entry.getValue()));
+                }
+            } catch (Exception e) {
+                // ignore the exception if shortCircuitExecution is specified as we may never even call that remote logic
+                if (!shortCircuitExecution) {
+                    throw new AuthorizationException(e);
+                }
             }
         }
         DatawaveUser primaryUser = principal.getPrimaryUser();
@@ -109,7 +120,14 @@ public class CompositeUserOperations implements UserOperations {
             principals.add(principal);
         }
         for (UserOperations ops : userOperations) {
-            principals.add(ops.getRemoteUser(principal));
+            try {
+                principals.add(ops.getRemoteUser(principal));
+            } catch (Exception e) {
+                // ignore the exception if shortCircuitExecution is specified as we may never even call that remote logic
+                if (!shortCircuitExecution) {
+                    throw new AuthorizationException(e);
+                }
+            }
         }
 
         return WSAuthorizationsUtil.mergePrincipals(principals.toArray(new DatawavePrincipal[0]));
