@@ -527,7 +527,7 @@ public class CompositeQueryLogic extends BaseQueryLogic<Object> {
             }
         }
         if (!userOperations.isEmpty()) {
-            return new CompositeUserOperations(userOperations, includeLocal, responseObjectFactory);
+            return new CompositeUserOperations(userOperations, includeLocal, isShortCircuitExecution(), responseObjectFactory);
         }
         return null;
     }
