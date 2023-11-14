@@ -100,6 +100,8 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
     private int collapseUidsThreshold = -1;
     // Should this query dedupe terms within ANDs and ORs
     private boolean enforceUniqueTermsWithinExpressions = false;
+    // should this query attempt to prune terms via their ingest types
+    private boolean pruneQueryByIngestTypes = false;
     // should this query reduce the set of fields prior to serialization
     private boolean reduceQueryFields = false;
     private boolean reduceTypeMetadata = false;
@@ -476,6 +478,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setCollapseUids(other.getCollapseUids());
         this.setCollapseUidsThreshold(other.getCollapseUidsThreshold());
         this.setEnforceUniqueTermsWithinExpressions(other.getEnforceUniqueTermsWithinExpressions());
+        this.setPruneQueryByIngestTypes(other.getPruneQueryByIngestTypes());
         this.setReduceQueryFields(other.getReduceQueryFields());
         this.setReduceTypeMetadata(other.getReduceTypeMetadata());
         this.setReduceTypeMetadataPerShard(other.getReduceTypeMetadataPerShard());
@@ -2044,6 +2047,14 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
 
     public void setEnforceUniqueTermsWithinExpressions(boolean enforceUniqueTermsWithinExpressions) {
         this.enforceUniqueTermsWithinExpressions = enforceUniqueTermsWithinExpressions;
+    }
+
+    public boolean getPruneQueryByIngestTypes() {
+        return pruneQueryByIngestTypes;
+    }
+
+    public void setPruneQueryByIngestTypes(boolean pruneQueryByIngestTypes) {
+        this.pruneQueryByIngestTypes = pruneQueryByIngestTypes;
     }
 
     public boolean getReduceQueryFields() {

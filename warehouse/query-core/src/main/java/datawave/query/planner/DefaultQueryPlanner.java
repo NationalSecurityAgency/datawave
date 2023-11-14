@@ -111,6 +111,7 @@ import datawave.query.jexl.visitors.FixNegativeNumbersVisitor;
 import datawave.query.jexl.visitors.FixUnindexedNumericTerms;
 import datawave.query.jexl.visitors.FunctionIndexQueryExpansionVisitor;
 import datawave.query.jexl.visitors.GeoWavePruningVisitor;
+import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.InvertNodeVisitor;
 import datawave.query.jexl.visitors.IsNotNullIntentVisitor;
 import datawave.query.jexl.visitors.IsNotNullPruningVisitor;
@@ -127,6 +128,7 @@ import datawave.query.jexl.visitors.QueryModelVisitor;
 import datawave.query.jexl.visitors.QueryOptionsFromQueryVisitor;
 import datawave.query.jexl.visitors.QueryPropertyMarkerSourceConsolidator;
 import datawave.query.jexl.visitors.QueryPruningVisitor;
+import datawave.query.jexl.visitors.RebuildingVisitor;
 import datawave.query.jexl.visitors.RegexFunctionVisitor;
 import datawave.query.jexl.visitors.RegexIndexExpansionVisitor;
 import datawave.query.jexl.visitors.RewriteNegationsVisitor;
@@ -2536,6 +2538,17 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
             fullTableScanReason = state.reason;
         }
 
+        if (config.getPruneQueryByIngestTypes()) {
+            JexlNode pruned = IngestTypePruningVisitor.prune(RebuildingVisitor.copy(queryTree), getTypeMetadata());
+            if (config.getFullTableScanEnabled() || ExecutableDeterminationVisitor.isExecutable(pruned, config, metadataHelper)) {
+                // always update the query for full table scans or in cases where the query is still executable
+                queryTree = pruned;
+                config.setQueryTree((ASTJexlScript) pruned);
+            } else {
+                throw new DatawaveFatalQueryException("Check query for mutually exclusive ingest types, query was non-executable after pruning by ingest type");
+            }
+        }
+
         // if a simple examination of the query has not forced a full table
         // scan, then lets try to compute ranges
         if (!needsFullTable) {
@@ -2604,6 +2617,14 @@ public class DefaultQueryPlanner extends QueryPlanner implements Cloneable {
         }
 
         return new Tuple2<>(ranges, needsFullTable);
+    }
+
+    private TypeMetadata getTypeMetadata() {
+        try {
+            return metadataHelper.getTypeMetadata();
+        } catch (TableNotFoundException e) {
+            throw new DatawaveFatalQueryException("Could not get TypeMetadata");
+        }
     }
 
     /**

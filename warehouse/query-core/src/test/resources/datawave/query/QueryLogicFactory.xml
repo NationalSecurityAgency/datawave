@@ -251,6 +251,8 @@
         <property name="reduceQueryFields" value="false" />
         <property name="reduceTypeMetadata" value="false" />
         <property name="reduceTypeMetadataPerShard" value="false" />
+        <!--    should the query prune fields by ingest type    -->
+        <property name="pruneQueryByIngestTypes" value="false" />
     </bean>
 
     <bean id="TLDEventQuery" scope="prototype" parent="BaseEventQuery" class="datawave.query.tables.TLDQueryLogic">
