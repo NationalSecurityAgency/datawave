@@ -63,6 +63,7 @@ import datawave.query.DocumentSerialization;
 import datawave.query.attributes.Document;
 import datawave.query.attributes.ExcerptFields;
 import datawave.query.attributes.UniqueFields;
+import datawave.query.common.grouping.GroupFields;
 import datawave.query.composite.CompositeMetadata;
 import datawave.query.function.ConfiguredFunction;
 import datawave.query.function.DocumentPermutation;
@@ -289,7 +290,7 @@ public class QueryOptions implements OptionDescriber {
     protected boolean limitFieldsPreQueryEvaluation = false;
     protected String limitFieldsField = null;
 
-    protected Set<String> groupFields = Sets.newHashSet();
+    protected GroupFields groupFields = new GroupFields();
     protected int groupFieldsBatchSize = Integer.MAX_VALUE;
     protected UniqueFields uniqueFields = new UniqueFields();
 
@@ -1012,11 +1013,11 @@ public class QueryOptions implements OptionDescriber {
         this.limitFieldsField = limitFieldsField;
     }
 
-    public Set<String> getGroupFields() {
+    public GroupFields getGroupFields() {
         return groupFields;
     }
 
-    public void setGroupFields(Set<String> groupFields) {
+    public void setGroupFields(GroupFields groupFields) {
         this.groupFields = groupFields;
     }
 
@@ -1132,7 +1133,7 @@ public class QueryOptions implements OptionDescriber {
                         "Classes implementing DocumentPermutation which can transform the document prior to evaluation (e.g. expand/mutate fields).");
         options.put(LIMIT_FIELDS, "limit fields");
         options.put(MATCHING_FIELD_SETS, "matching field sets (used along with limit fields)");
-        options.put(GROUP_FIELDS, "group fields");
+        options.put(GROUP_FIELDS, "group fields and fields to aggregate");
         options.put(GROUP_FIELDS_BATCH_SIZE, "group fields.batch.size");
         options.put(UNIQUE_FIELDS, "unique fields");
         options.put(HIT_LIST, "hit list");
@@ -1480,10 +1481,7 @@ public class QueryOptions implements OptionDescriber {
         }
 
         if (options.containsKey(GROUP_FIELDS)) {
-            String groupFields = options.get(GROUP_FIELDS);
-            for (String param : Splitter.on(',').omitEmptyStrings().trimResults().split(groupFields)) {
-                this.getGroupFields().add(param);
-            }
+            this.setGroupFields(GroupFields.from(options.get(GROUP_FIELDS)));
         }
 
         if (options.containsKey(GROUP_FIELDS_BATCH_SIZE)) {
