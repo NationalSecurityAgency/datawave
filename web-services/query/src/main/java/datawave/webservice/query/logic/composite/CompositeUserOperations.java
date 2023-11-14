@@ -31,7 +31,7 @@ public class CompositeUserOperations implements UserOperations {
     final List<UserOperations> userOperations;
     final boolean includeLocal;
     final boolean shortCircuitExecution;
-    
+
     public CompositeUserOperations(List<UserOperations> remoteOperations, boolean includeLocal, boolean shortCircuitExecution,
                     ResponseObjectFactory responseObjectFactory) {
         this.responseObjectFactory = responseObjectFactory;
