@@ -55,7 +55,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         log.info("Cache fault: Retrieving user for " + principal.getPrimaryUser().getDn());
         return UserOperations.super.getRemoteUser(principal);
     }
-    
+
     @Override
     @Cacheable(value = "listEffectiveAuthorizations", key = "{#callerObject}", cacheManager = "remoteOperationsCacheManager")
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
@@ -91,7 +91,7 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
     }
-    
+
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
         if (callerObject instanceof DatawavePrincipal) {
             return (DatawavePrincipal) callerObject;
