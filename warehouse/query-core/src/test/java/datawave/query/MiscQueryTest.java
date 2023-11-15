@@ -99,7 +99,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
 
     @Test(expected = InvalidQueryException.class)
     public void testFieldIgnoreParam1() throws Exception {
-        log.info("------  testEventThreshold  ------");
+        log.info("------  testFieldIgnoreParam1  ------");
         // setting event per day does not alter results
         this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
@@ -116,7 +116,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testFieldIgnoreParam2() throws Exception {
-        log.info("------  testEventThreshold  ------");
+        log.info("------  testFieldIgnoreParam2  ------");
         // setting event per day does not alter results
         this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a'" + "&& FOO == bar2";
@@ -133,7 +133,7 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
 
     @Test
     public void testFieldIgnoreParam3() throws Exception {
-        log.info("------  testEventThreshold  ------");
+        log.info("------  testFieldIgnoreParam3  ------");
         // setting event per day does not alter results
         this.logic.setEventPerDayThreshold(1);
         String phrase = RE_OP + "'.*a' && STATE == 'sta'";
@@ -142,7 +142,6 @@ public class MiscQueryTest extends AbstractFunctionalQuery {
 
         Map<String,String> options = new HashMap<>();
 
-        // this should allow the query to run successfully.
         options.put(QueryParameters.IGNORE_NONEXISTENT_FIELDS, "false");
 
         runTest(query, expect, options);
