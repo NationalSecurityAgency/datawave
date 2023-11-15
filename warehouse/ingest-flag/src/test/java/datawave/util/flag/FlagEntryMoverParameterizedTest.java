@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import com.google.common.collect.Lists;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
@@ -20,12 +19,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import com.google.common.collect.Lists;
 
 /**
  * Parameterized test
@@ -33,7 +32,7 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class FlagEntryMoverParameterizedTest {
     private static final Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES)
-            .concurrencyLevel(10).build();
+                    .concurrencyLevel(10).build();
 
     private final CollisionType collisionType;
     private final InputFile.TrackedDir trackedDir;
@@ -48,9 +47,7 @@ public class FlagEntryMoverParameterizedTest {
     public TestName testName = new TestName();
 
     enum CollisionType {
-        BOTH_FILENAME_AND_CHECKSUM_MATCH,
-        SAME_FILENAME_DIFFERENT_CHECKSUM,
-        NONE
+        BOTH_FILENAME_AND_CHECKSUM_MATCH, SAME_FILENAME_DIFFERENT_CHECKSUM, NONE
     }
 
     public FlagEntryMoverParameterizedTest(CollisionType collisionType, InputFile.TrackedDir trackedDir) {
@@ -67,7 +64,7 @@ public class FlagEntryMoverParameterizedTest {
 
         // convert List of Lists to List of Arrays
         return allPermutations.stream().map(list -> {
-            return new Object[]{list.get(0), list.get(1)};
+            return new Object[] {list.get(0), list.get(1)};
         }).collect(Collectors.toList());
     }
 
@@ -146,7 +143,6 @@ public class FlagEntryMoverParameterizedTest {
             assertTrue(inputFile.isMoved());
         }
     }
-
 
     @Test
     public void updatesCurrentDirUnlessDuplicate() throws Exception {

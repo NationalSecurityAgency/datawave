@@ -16,9 +16,8 @@ import com.google.common.cache.Cache;
 import datawave.util.flag.InputFile.TrackedDir;
 
 /**
- * Handles stage 1 of the job creation flow.
- * Ensures destination directories exist.
- * Detects duplicate files in destination directories, deletes duplicates, renames non-duplicate files with the same name.
+ * Handles stage 1 of the job creation flow. Ensures destination directories exist. Detects duplicate files in destination directories, deletes duplicates,
+ * renames non-duplicate files with the same name.
  */
 public class FlagEntryMover extends SimpleMover {
 
@@ -61,13 +60,15 @@ public class FlagEntryMover extends SimpleMover {
     }
 
     /**
-     * Called only if the src and dest filenames match.
-     * Resolves the ingest file name to a unique file name for ingestion.
+     * Called only if the src and dest filenames match. Resolves the ingest file name to a unique file name for ingestion.
      *
-     * @param src source file for ingestion
-     * @param dest file with the same name as src in a different directory
+     * @param src
+     *            source file for ingestion
+     * @param dest
+     *            file with the same name as src in a different directory
      * @return true/false if the checksums match
-     * @throws IOException for issues with read/write
+     * @throws IOException
+     *             for issues with read/write
      */
     private boolean resolvedConflict(final Path src, final Path dest) throws IOException {
         if (fileContentsMatch(src, dest)) {

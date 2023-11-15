@@ -43,8 +43,8 @@ public class SizeValidatorImpl implements SizeValidator {
 
         if (expectedNumberOfCounters > counterLimit) {
             int allowedNumInputFiles = (counterLimit - COUNTERS_PER_FLAG_FILE) / COUNTERS_PER_INPUT_FILE;
-            LOG.warn("Check hadoop configuration. Counter limit ({}) exceeded for {}. Restricting to {} input files per flag file.", counterLimit, fc.getDataName(),
-                    allowedNumInputFiles);
+            LOG.warn("Check hadoop configuration. Counter limit ({}) exceeded for {}. Restricting to {} input files per flag file.", counterLimit,
+                            fc.getDataName(), allowedNumInputFiles);
             return false;
         }
         return true;

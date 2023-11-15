@@ -567,8 +567,7 @@ public class FlagMakerConfigTest {
     public static class NoOpFlagDistributor implements FlagDistributor {
 
         @Override
-        public void loadFiles(FlagDataTypeConfig fc) {
-        }
+        public void loadFiles(FlagDataTypeConfig fc) {}
 
         @Override
         public boolean hasNext(boolean mustHaveMax) {

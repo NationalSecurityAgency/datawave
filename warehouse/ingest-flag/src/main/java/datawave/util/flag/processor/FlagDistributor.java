@@ -29,7 +29,8 @@ public interface FlagDistributor {
      * @param mustHaveMax
      *            true for a full job, false for the existence of any files
      * @return true if there are sufficient files/maps to create a flag file
-     * @throws IllegalStateException if loadFiles was not called first
+     * @throws IllegalStateException
+     *             if loadFiles was not called first
      */
     boolean hasNext(boolean mustHaveMax);
 
@@ -40,7 +41,8 @@ public interface FlagDistributor {
      * @param validator
      *            An object that should be used to ensure the returned list will produce a valid flag file in terms of size
      * @return The list of files to be put into a flag file
-     * @throws IllegalStateException if loadFiles was not called first
+     * @throws IllegalStateException
+     *             if loadFiles was not called first
      */
     Collection<InputFile> next(SizeValidator validator);
 

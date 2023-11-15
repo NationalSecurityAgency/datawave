@@ -10,7 +10,6 @@ import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import datawave.util.flag.config.FlagMakerConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -18,6 +17,7 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
 
 public class FlagFileWriterNamingTest {
     private static final String POOL_NAME = "onehr";
@@ -115,7 +115,7 @@ public class FlagFileWriterNamingTest {
     }
 
     private String digits(final int length) {
-        return DIGIT + "{"+ length + "}";
+        return DIGIT + "{" + length + "}";
     }
 
     private String hex(final int length) {

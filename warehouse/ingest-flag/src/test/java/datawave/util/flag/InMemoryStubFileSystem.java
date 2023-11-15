@@ -46,7 +46,8 @@ public class InMemoryStubFileSystem extends FileSystem {
     /**
      * Creates a new LocatedFileStatus stub in-memory along with all the directories in its path
      *
-     * @param relativePathStr path as string
+     * @param relativePathStr
+     *            path as string
      */
     public void addFile(String relativePathStr) {
         Path path = new Path(this.getWorkingDirectory(), relativePathStr);

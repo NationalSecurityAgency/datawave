@@ -9,14 +9,15 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Strings;
-import datawave.util.flag.config.FlagMakerConfig;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Strings;
+
 import datawave.util.StringUtils;
 import datawave.util.flag.config.FlagDataTypeConfig;
+import datawave.util.flag.config.FlagMakerConfig;
 
 /**
  * Assists with creating input files and input directory structure for flag maker tests
@@ -146,7 +147,8 @@ public class FlagFileInputStructure {
     }
 
     /**
-     * @param dayNumber day of the month
+     * @param dayNumber
+     *            day of the month
      * @return timestamp to use for files = date of folder, e.g. 2013/01/09, plus an offset
      */
     private long getTimestampForFilesInDirectory(int dayNumber) {

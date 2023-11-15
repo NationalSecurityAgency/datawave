@@ -21,12 +21,11 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 
 /**
- * Test FlagMetrics
- * Also see FlagFileWriterTest.metricsFileContainsCorrectCounters that verifies the FlagFileWriter creates a valid flag metrics file as well
+ * Test FlagMetrics Also see FlagFileWriterTest.metricsFileContainsCorrectCounters that verifies the FlagFileWriter creates a valid flag metrics file as well
  */
 public class FlagMetricsTest {
     private static final String FLAG_FILE_BASE_NAME = "1695222480.00_onehr_foo_c3283902-aa27-44fe-8f66-e246915e4dad+10";
-    
+
     private static LocalFileSystem LOCAL_FILE_SYSTEM;
 
     private FlagFileTestSetup flagFileTestSetup;
@@ -162,7 +161,8 @@ public class FlagMetricsTest {
         java.nio.file.Path path = Paths.get(this.metricsDirectory);
         if (Files.exists(path)) {
             List<File> foundFiles = Files.list(path).map(java.nio.file.Path::toFile).filter(File::isFile).collect(Collectors.toList());
-            assertEquals("Expected "+ expectedNumber + " files in " + this.metricsDirectory + ".  Found: " + foundFiles.size() + ": " + foundFiles.toString(), expectedNumber, foundFiles.size());
+            assertEquals("Expected " + expectedNumber + " files in " + this.metricsDirectory + ".  Found: " + foundFiles.size() + ": " + foundFiles.toString(),
+                            expectedNumber, foundFiles.size());
         } else if (expectedNumber > 0) {
             fail("Directory " + this.metricsDirectory + " doesn't exist.  Expected " + expectedNumber + " files.");
         }

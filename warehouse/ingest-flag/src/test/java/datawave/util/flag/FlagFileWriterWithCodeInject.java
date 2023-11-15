@@ -16,8 +16,8 @@ import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 
 /**
- * Assists with verifying the state of FlagFileWriter at various stages in the flag file writing process:
- * before moving files to flagging and flagged; in error handling conditions, and more.
+ * Assists with verifying the state of FlagFileWriter at various stages in the flag file writing process: before moving files to flagging and flagged; in error
+ * handling conditions, and more.
  *
  * Lambdas can be provided to verify state at these stages.
  *

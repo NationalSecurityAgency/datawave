@@ -351,8 +351,8 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * After the move to flagged, add a Future that returns a valid InputFile.
-     * Verify that this unexpected state causes cleanup to occur and retries waiting for the Future
+     * After the move to flagged, add a Future that returns a valid InputFile. Verify that this unexpected state causes cleanup to occur and retries waiting for
+     * the Future
      */
     @Test
     public void residualFutureSuccessfulUponRetry() throws IOException {
@@ -362,7 +362,8 @@ public class FlagFileWriterGlassboxTest {
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig)
-                            .injectAfterMoveToFlagged((files, futures) -> futures.add(Executors.newSingleThreadExecutor().submit(() -> files.iterator().next())))
+                            .injectAfterMoveToFlagged(
+                                            (files, futures) -> futures.add(Executors.newSingleThreadExecutor().submit(() -> files.iterator().next())))
                             .writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
             assertEquals("The flag file was not cleaned up.", 0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
@@ -373,8 +374,8 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * After the move to flagged, add a Future that sleeps beyond retry timeout.
-     * Verify that this unexpected state causes cleanup to occur and it skips the unresponsive Future
+     * After the move to flagged, add a Future that sleeps beyond retry timeout. Verify that this unexpected state causes cleanup to occur and it skips the
+     * unresponsive Future
      */
     @Test
     public void residualFutureFailsRetry() throws IOException {
@@ -401,8 +402,8 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Verify that the .generating file exists before the move to flagged - Throw an exception instead of doing the move.
-     * Verify the .generating file is cleaned up after the failure
+     * Verify that the .generating file exists before the move to flagged - Throw an exception instead of doing the move. Verify the .generating file is cleaned
+     * up after the failure
      */
     @Test
     public void cleanupRemovesGeneratingFlagFile() throws IOException {
@@ -450,8 +451,8 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Throw an exception before the move to flagged - Verify all 10 files are in flagging before the exception.
-     * Verify all 10 files are in the input directory after clean up.
+     * Throw an exception before the move to flagged - Verify all 10 files are in flagging before the exception. Verify all 10 files are in the input directory
+     * after clean up.
      */
     @Test
     public void cleanupMovesFilesFromFlaggingToInputDir() throws IOException {
@@ -479,9 +480,8 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Throw an exception after the move to flagged.
-     * Verify all 10 files are in flagged before the exception.
-     * Verify all 10 files are in the input directory after clean up.
+     * Throw an exception after the move to flagged. Verify all 10 files are in flagged before the exception. Verify all 10 files are in the input directory
+     * after clean up.
      */
     @Test
     public void cleanupMovesFilesFromFlaggedToInputDir() throws IOException {
@@ -509,9 +509,8 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Throw an exception when files are moved to flagged, triggering failure recovery. - During failure recovery,
-     * just before files are moved back to the input directory, delete a file.
-     * Verify the other 9 files are moved back to the input directory and flag file is deleted
+     * Throw an exception when files are moved to flagged, triggering failure recovery. - During failure recovery, just before files are moved back to the input
+     * directory, delete a file. Verify the other 9 files are moved back to the input directory and flag file is deleted
      */
     @Test
     public void toleratesMissingFileDuringFailureScenario() throws Exception {
@@ -549,10 +548,9 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Throw an exception when files are moved to flagged, triggering failure recovery.
-     * During failure recovery, just before files are moved back to the input directory, insert a future that
-     * throws an exception - Verify the files are moved back to the input directory regardless of the
-     * failure and flag file is deleted
+     * Throw an exception when files are moved to flagged, triggering failure recovery. During failure recovery, just before files are moved back to the input
+     * directory, insert a future that throws an exception - Verify the files are moved back to the input directory regardless of the failure and flag file is
+     * deleted
      */
     @Test
     public void toleratesFailedFutureDuringFailureScenario() throws Exception {
@@ -590,10 +588,8 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Throw an exception when files are moved to flagged, triggering failure recovery.
-     * During failure recovery, just before files are moved back to the input directory,
-     * delete a file - During failure recovery, just before files are moved back to
-     * the input directory, insert a future that throws an exception.
+     * Throw an exception when files are moved to flagged, triggering failure recovery. During failure recovery, just before files are moved back to the input
+     * directory, delete a file - During failure recovery, just before files are moved back to the input directory, insert a future that throws an exception.
      * Verify the other 9 files are moved back to the input directory and flag file is deleted
      */
     @Test
@@ -639,10 +635,9 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Throw an exception when files are moved to flagged, triggering failure recovery.
-     * Call cancel on one of the futures that exist to move files back to the input directory.
-     * Verify the other 9 files are moved back to the input directory.
-     * Verify that one of the flagging files remains in flagging - Verify that flag file is deleted
+     * Throw an exception when files are moved to flagged, triggering failure recovery. Call cancel on one of the futures that exist to move files back to the
+     * input directory. Verify the other 9 files are moved back to the input directory. Verify that one of the flagging files remains in flagging - Verify that
+     * flag file is deleted
      */
     @Test
     public void toleratesCancellationInFailureScenario() throws Exception {
@@ -669,11 +664,9 @@ public class FlagFileWriterGlassboxTest {
     }
 
     /**
-     * Intercept one of the futures that moves files from input to flagging.
-     * Wait for the file to move to flagging and then manually move it to flagged.
-     * This will cause an exception when the code tries to move the file from flagging to flagged.
-     * Verify that the other 9 files are correctly moved to input and the flag file is removed.
-     * Verify that the one file remains in flagged
+     * Intercept one of the futures that moves files from input to flagging. Wait for the file to move to flagging and then manually move it to flagged. This
+     * will cause an exception when the code tries to move the file from flagging to flagged. Verify that the other 9 files are correctly moved to input and the
+     * flag file is removed. Verify that the one file remains in flagged
      */
     @Test
     public void prematurelyMovedFileIgnoredDuringCleanup() throws Exception {

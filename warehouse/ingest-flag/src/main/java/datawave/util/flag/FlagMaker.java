@@ -166,8 +166,8 @@ public class FlagMaker implements Runnable {
             while (fileDistributor.hasNext(shouldOnlyCreateFullFlags(flagDataTypeConfig)) && running) {
                 Collection<InputFile> inFiles = fileDistributor.next(this.sizeValidator);
                 if (null == inFiles || inFiles.isEmpty()) {
-                    throw new IllegalStateException(
-                                    fileDistributor.getClass().getName() + " has input files but returned zero candidates for flagging. Please validate configuration");
+                    throw new IllegalStateException(fileDistributor.getClass().getName()
+                                    + " has input files but returned zero candidates for flagging. Please validate configuration");
                 }
 
                 flagFileWriter.writeFlagFile(flagDataTypeConfig, inFiles);

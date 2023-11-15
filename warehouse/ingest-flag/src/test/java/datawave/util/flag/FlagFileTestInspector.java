@@ -40,8 +40,8 @@ public class FlagFileTestInspector {
                 LocatedFileStatus status = it.next();
                 if (status.isFile()) {
                     Path path = status.getPath();
-                    InputFile inputFile = new InputFile(path.getParent().getName(), path, status.getBlockSize(), status.getLen(),
-                                    status.getModificationTime(), flagMakerConfig.getBaseHDFSDir());
+                    InputFile inputFile = new InputFile(path.getParent().getName(), path, status.getBlockSize(), status.getLen(), status.getModificationTime(),
+                                    flagMakerConfig.getBaseHDFSDir());
                     result.add(inputFile);
                 }
             }

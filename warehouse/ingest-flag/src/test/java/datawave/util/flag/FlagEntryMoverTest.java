@@ -1,7 +1,13 @@
 package datawave.util.flag;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
@@ -11,17 +17,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 
 public class FlagEntryMoverTest {
     private static final Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES)
-            .concurrencyLevel(10).build();
+                    .concurrencyLevel(10).build();
 
     private FileSystem fileSystem;
     private FlagFileTestSetup testFileGenerator;
