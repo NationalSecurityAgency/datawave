@@ -131,12 +131,12 @@
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-ingest-flag</artifactId>
+                <artifactId>datawave-ingest-csv</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>gov.nsa.datawave</groupId>
-                <artifactId>datawave-ingest-csv</artifactId>
+                <artifactId>datawave-ingest-flag</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -243,11 +243,6 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client-api</artifactId>
-                <version>${version.hadoop}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-auth</artifactId>
                 <version>${version.hadoop}</version>
                 <exclusions>
@@ -264,7 +259,7 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
-                <artifactId>hadoop-client-runtime</artifactId>
+                <artifactId>hadoop-common</artifactId>
                 <version>${version.hadoop}</version>
             </dependency>
             <dependency>
