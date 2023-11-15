@@ -45,8 +45,8 @@ public class FlagMakerTest {
         LOG.error("testName: " + testName.getMethodName());
 
         flagMakerTestSetup = new FlagFileTestSetup();
-        flagMakerTestSetup.withTestNameForDirectories("FlagMakerTest_" + testName.getMethodName());
         flagMakerTestSetup.withTestFlagMakerConfig();
+        flagMakerTestSetup.withTestNameForDirectories("FlagMakerTest_" + testName.getMethodName());
         // create 20 files per day (2) per directory (2) = 20 * 2 * 2 = 80
         flagMakerTestSetup.withFilesPerDay(20).withNumDays(2).createTestFiles();
 

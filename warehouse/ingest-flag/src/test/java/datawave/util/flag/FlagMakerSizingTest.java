@@ -44,9 +44,8 @@ public class FlagMakerSizingTest {
 
     public FlagMakerSizingTest(int timeout, int backlogThreshold, int fullFlagSize, boolean expectOnlyFullFlagFiles, String description) throws Exception {
         flagMakerTestSetup = new FlagFileTestSetup();
-        flagMakerTestSetup.withTestFlagMakerConfig();
-
         flagMakerTestSetup.withTestNameForDirectories(this.getClass().getName() + "_" + instance++);
+        flagMakerTestSetup.withTestFlagMakerConfig();
         flagMakerTestSetup.withTimeoutMilliSecs(timeout);
         flagMakerTestSetup.withFlagCountThreshold(backlogThreshold);
         flagMakerTestSetup.withMaxFlags(fullFlagSize);

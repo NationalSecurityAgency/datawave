@@ -156,7 +156,7 @@ public class FlagFileWriterGlassboxTest {
     @Before
     public void before() throws Exception {
         String subdirectoryName = this.getClass().getName() + "_" + this.testName.getMethodName();
-        flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig().withTestNameForDirectories(subdirectoryName);
+        flagFileTestSetup = new FlagFileTestSetup().withTestNameForDirectories(subdirectoryName).withTestFlagMakerConfig();
         flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         fs = flagFileTestSetup.getFileSystem();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();

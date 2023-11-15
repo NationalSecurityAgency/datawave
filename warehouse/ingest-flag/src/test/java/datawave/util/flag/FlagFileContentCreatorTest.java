@@ -39,8 +39,8 @@ public class FlagFileContentCreatorTest {
 
     @Before
     public void before() throws Exception {
-        flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig()
-                        .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        flagFileTestSetup = new FlagFileTestSetup().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName())
+                        .withTestFlagMakerConfig();
         flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();
         this.inputFiles = createInputFiles();

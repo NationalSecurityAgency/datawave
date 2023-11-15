@@ -36,8 +36,8 @@ public class FlagFileWriterNamingTest {
     public void before() throws Exception {
         // @formatter:off
         this.flagFileTestSetup = new FlagFileTestSetup()
-                .withTestFlagMakerConfig()
-                .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+                .withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName())
+                .withTestFlagMakerConfig();
         // @formatter:on
 
         FlagDataTypeConfig dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();

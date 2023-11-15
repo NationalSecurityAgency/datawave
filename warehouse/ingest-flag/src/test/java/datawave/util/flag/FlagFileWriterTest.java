@@ -46,7 +46,7 @@ public class FlagFileWriterTest {
     @Before
     public void before() throws Exception {
         subdirectoryName = this.getClass().getName() + "_" + this.testName.getMethodName();
-        flagFileTestSetup = new FlagFileTestSetup().withTestFlagMakerConfig().withTestNameForDirectories(subdirectoryName);
+        flagFileTestSetup = new FlagFileTestSetup().withTestNameForDirectories(subdirectoryName).withTestFlagMakerConfig();
         flagMakerConfig = flagFileTestSetup.getFlagMakerConfig();
         fs = flagFileTestSetup.getFileSystem();
         this.dataTypeConfig = flagFileTestSetup.getInheritedDataTypeConfig();

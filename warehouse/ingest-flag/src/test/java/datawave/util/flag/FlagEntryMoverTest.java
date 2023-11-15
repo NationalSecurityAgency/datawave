@@ -38,8 +38,8 @@ public class FlagEntryMoverTest {
         // set up directories and files
         testFileGenerator = new FlagFileTestSetup();
         fileSystem = testFileGenerator.getFileSystem();
-        testFileGenerator.withTestFlagMakerConfig();
         testFileGenerator.withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        testFileGenerator.withTestFlagMakerConfig();
         testFileGenerator.createTestFiles();
 
         // identify path to one of the input file that was just created

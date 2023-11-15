@@ -44,7 +44,7 @@ public class SimpleFlagDistributorTest {
         LOG.debug("testName: " + testName.getMethodName());
 
         this.flagMakerTestSetup = new FlagFileTestSetup();
-        this.flagMakerTestSetup.withTestFlagMakerConfig().withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName());
+        this.flagMakerTestSetup.withTestNameForDirectories(this.getClass().getName() + "_" + testName.getMethodName()).withTestFlagMakerConfig();
         this.flagMakerTestSetup.getFlagMakerConfig().validate();
 
         this.fooAndBarConfig = flagMakerTestSetup.getFlagMakerConfig().getFlagConfigs().get(0);

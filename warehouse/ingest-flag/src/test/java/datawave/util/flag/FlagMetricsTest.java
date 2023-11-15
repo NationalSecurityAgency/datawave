@@ -44,13 +44,13 @@ public class FlagMetricsTest {
     @Before
     public void before() throws Exception {
         this.flagFileTestSetup = new FlagFileTestSetup();
-        this.flagFileTestSetup.withTestFlagMakerConfig();
         this.flagFileTestSetup.withPredicableInputFilenames();
 
         // puts method name under /target, e.g. target/datawave.util.flag.FlagMetricsTest_gzipCodecFailsInUnitTests/flagMetrics
         String testMethodName = this.testName.getMethodName();
         String directoryNameForTest = this.getClass().getName() + "_" + testMethodName;
         this.flagFileTestSetup.withTestNameForDirectories(directoryNameForTest);
+        this.flagFileTestSetup.withTestFlagMakerConfig();
 
         this.metricsDirectory = flagFileTestSetup.getFlagMakerConfig().getFlagMetricsDirectory();
         cleanDirectoryContents(this.metricsDirectory);
