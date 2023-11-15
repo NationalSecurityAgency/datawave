@@ -647,6 +647,51 @@ class AndIteratorIT {
         }
     }
 
+    // (A || B || !C) && (D || E)
+    @Test
+    void testIntersectionOfDoubleNestedUnionWithNegatedTerm() {
+        String query = "(FIELD_A == 'value' || FIELD_B == 'value' || !(FIELD_C == 'value')) && (FIELD_D == 'value' || FIELD_E == 'value')";
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 15);
+            SortedSet<String> uidsB = randomUids(100, 15);
+            SortedSet<String> uidsC = randomUids(100, 15);
+            SortedSet<String> uidsD = randomUids(100, 15);
+            SortedSet<String> uidsE = randomUids(100, 15);
+            driveIntersectionOfNestedUnionsWithNegatedTerm(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, 75);
+            SortedSet<String> uidsB = randomUids(100, 75);
+            SortedSet<String> uidsC = randomUids(100, 75);
+            SortedSet<String> uidsD = randomUids(100, 75);
+            SortedSet<String> uidsE = randomUids(100, 75);
+            driveIntersectionOfNestedUnionsWithNegatedTerm(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+
+        for (int i = 0; i < max; i++) {
+            SortedSet<String> uidsA = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsB = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsC = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsD = randomUids(100, random.nextInt(100));
+            SortedSet<String> uidsE = randomUids(100, random.nextInt(100));
+            driveIntersectionOfNestedUnionsWithNegatedTerm(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        }
+    }
+
+    // (A || B || !C) && (D || E)
+    @Test
+    void testIntersectionOfDoubleNestedUnionWithNegatedTerm_case01() {
+        String query = "(FIELD_A == 'value' || FIELD_B == 'value' || !(FIELD_C == 'value')) && (FIELD_D == 'value' || FIELD_E == 'value')";
+        SortedSet<String> uidsA = new TreeSet<>(List.of("1", "2", "6"));
+        SortedSet<String> uidsB = new TreeSet<>(List.of("4", "6", "9"));
+        SortedSet<String> uidsC = new TreeSet<>(List.of("1", "4", "6")); // all negated values exist in other terms, so this should be a no-op
+        SortedSet<String> uidsD = new TreeSet<>(List.of("2", "3", "4"));
+        SortedSet<String> uidsE = new TreeSet<>(List.of("3", "5", "9")); // union (D||E) is [2, 3, 4, 5, 9]
+        driveIntersectionOfNestedUnionsWithNegatedTerm(query, uidsA, uidsB, uidsC, uidsD, uidsE);
+        // expected [2, 3, 4, 5, 9], got [5, 9]
+    }
+
     // === assert methods ===
 
     private void driveIntersectionOfIncludes(String query, SortedSet<String> uidsA, SortedSet<String> uidsB) {
@@ -933,6 +978,71 @@ class AndIteratorIT {
         Map<String,Set<String>> counts = new HashMap<>();
         if (!expected.isEmpty()) {
             counts.put("FIELD_A", expected);
+        }
+
+        TestUtil.driveIterator(iterator, expected, counts);
+    }
+
+    // (A || B || !C) && (D || E)
+    private void driveIntersectionOfNestedUnionsWithNegatedTerm(String query, SortedSet<String> uidsA, SortedSet<String> uidsB, SortedSet<String> uidsC,
+                    SortedSet<String> uidsD, SortedSet<String> uidsE) {
+        IteratorBuildingVisitorForTests visitor = getIteratorBuildingVisitor();
+        visitor.putFieldUids("FIELD_A", uidsA);
+        visitor.putFieldUids("FIELD_B", uidsB);
+        visitor.putFieldUids("FIELD_C", uidsC);
+        visitor.putFieldUids("FIELD_D", uidsD);
+        visitor.putFieldUids("FIELD_E", uidsE);
+
+        NestedIterator<Key> iterator = visitor.getIterator(query);
+
+        SortedSet<String> expected = new TreeSet<>();
+        SortedSet<String> expectedUidsA = new TreeSet<>();
+        SortedSet<String> expectedUidsB = new TreeSet<>();
+        SortedSet<String> expectedUidsD = new TreeSet<>();
+        SortedSet<String> expectedUidsE = new TreeSet<>();
+
+        for (String uid : uidsE) {
+            if (uidsA.contains(uid) || uidsB.contains(uid) || !uidsC.contains(uid)) {
+                expected.add(uid);
+                expectedUidsE.add(uid);
+            }
+        }
+
+        for (String uid : uidsD) {
+            if (uidsA.contains(uid) || uidsB.contains(uid) || !uidsC.contains(uid)) {
+                expected.add(uid);
+                expectedUidsD.add(uid);
+            }
+        }
+
+        // negated C term won't be in built documents
+
+        for (String uid : uidsB) {
+            if (uidsD.contains(uid) || uidsE.contains(uid)) {
+                expected.add(uid);
+                expectedUidsB.add(uid);
+            }
+        }
+
+        for (String uid : uidsA) {
+            if (uidsD.contains(uid) || uidsE.contains(uid)) {
+                expected.add(uid);
+                expectedUidsA.add(uid);
+            }
+        }
+
+        Map<String,Set<String>> counts = new HashMap<>();
+        if (!expectedUidsA.isEmpty()) {
+            counts.put("FIELD_A", expectedUidsA);
+        }
+        if (!expectedUidsB.isEmpty()) {
+            counts.put("FIELD_B", expectedUidsB);
+        }
+        if (!expectedUidsD.isEmpty()) {
+            counts.put("FIELD_D", expectedUidsD);
+        }
+        if (!expectedUidsE.isEmpty()) {
+            counts.put("FIELD_E", expectedUidsE);
         }
 
         TestUtil.driveIterator(iterator, expected, counts);
