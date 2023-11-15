@@ -70,6 +70,10 @@
         </dependency>
         <dependency>
             <groupId>gov.nsa.datawave</groupId>
+            <artifactId>datawave-ingest-flag</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>gov.nsa.datawave</groupId>
             <artifactId>datawave-ingest-json</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -576,6 +580,7 @@
                                             <include>${project.groupId}:datawave-accumulo-extensions</include>
                                             <include>${project.groupId}:datawave-ingest-csv</include>
                                             <include>${project.groupId}:datawave-ingest-core</include>
+                                            <include>${project.groupId}:datawave-ingest-flag</include>
                                             <include>${project.groupId}:datawave-ingest-configuration</include>
                                             <include>${project.groupId}:datawave-query-core</include>
                                             <include>${project.groupId}:datawave-metrics-core</include>

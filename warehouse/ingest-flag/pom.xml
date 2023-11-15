@@ -152,7 +152,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- Needed by junit's ExpectedException -->
+        <!-- Needed by junit ExpectedException -->
         <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest-all</artifactId>

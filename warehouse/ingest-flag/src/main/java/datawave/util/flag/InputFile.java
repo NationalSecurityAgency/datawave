@@ -13,6 +13,8 @@ import org.apache.hadoop.fs.Path;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.istack.NotNull;
+
 import datawave.util.flag.processor.DateUtils;
 
 /**
@@ -307,7 +309,7 @@ public class InputFile implements Comparable<InputFile> {
     };
 
     @Override
-    public int compareTo(InputFile o) {
+    public int compareTo(@NotNull InputFile o) {
         return FIFO.compare(this, o);
     }
 
