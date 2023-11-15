@@ -1,7 +1,6 @@
 package datawave.ingest.mapreduce.job;
 
 import java.beans.PropertyChangeSupport;
-import java.util.Observable;
 
 import org.apache.hadoop.fs.FileSystem;
 
