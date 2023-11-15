@@ -102,7 +102,7 @@ public class ProtobufEdgeDeletePreconditionTest {
         RawRecordContainer myEvent = getEvent(conf);
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 8, true, true);
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -143,7 +143,7 @@ public class ProtobufEdgeDeletePreconditionTest {
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, true);
 
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
@@ -188,7 +188,7 @@ public class ProtobufEdgeDeletePreconditionTest {
 
         EdgeHandlerTestUtil.processEvent(fields, edgeHandler, myEvent, 12, true, true);
 
-        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults);
+        Assert.assertEquals(expectedKeys, EdgeHandlerTestUtil.edgeKeyResults.keySet());
 
     }
 
