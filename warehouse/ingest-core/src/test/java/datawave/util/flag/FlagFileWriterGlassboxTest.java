@@ -41,7 +41,7 @@ import datawave.util.flag.config.FlagMakerConfig;
  * all files are in the flagging directory
  *
  * movesFilesFromFlaggingDirToFlaggedDirBeforeRename - Verify files are moved
- * from flagging to flagged before the flag file rename to drop the .generated
+ * from flagging to flagged before the flag file rename that drops the .generated
  * extension
  *
  * firstCreatesAGeneratingFlagFile - Verify that a .generating file is created
@@ -134,7 +134,7 @@ import datawave.util.flag.config.FlagMakerConfig;
  * cleanup
  */
 // @formatter:on
-public class FlagFileWriterWhiteboxTest {
+public class FlagFileWriterGlassboxTest {
     private static final int EXPECTED_NUM_FILES = 10;
     private static final int FILES_PER_DAY = 5;
 
@@ -168,11 +168,14 @@ public class FlagFileWriterWhiteboxTest {
         flagFileTestSetup.deleteTestDirectories();
     }
 
+    /**
+     * Verify that before the move to flagged, all files are in the flagging directory
+     */
     @Test
     public void movesFilesFromInputDirToFlaggingDir() throws IOException {
         // pre-condition: no files in flagging
         boolean doesFlaggingDirExist = Files.exists(Paths.get(flagMakerConfig.getBaseHDFSDir() + "/flagging"));
-        assertFalse("Flagging shouldn't exist until writeFlagFile is called", doesFlaggingDirExist);
+        assertFalse("Flagging directory shouldn't exist until writeFlagFile is called", doesFlaggingDirExist);
 
         // post-condition: files now in flagging
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
@@ -186,12 +189,15 @@ public class FlagFileWriterWhiteboxTest {
         }).writeFlagFile(dataTypeConfig, inputFiles);
     }
 
+    /**
+     * Verify files are moved from flagging to flagged before the flag file rename that drops the .generated extension
+     */
     @Test
     public void movesFilesFromFlaggingDirToFlaggedDirBeforeRename() throws IOException {
         // pre-condition: no files in flagged
         assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
         boolean doesFlaggedDirExist = Files.exists(Paths.get(flagMakerConfig.getBaseHDFSDir() + "/flagged"));
-        assertFalse("Flagged shouldn't exist until writeFlagFile is called", doesFlaggedDirExist);
+        assertFalse("Flagged directory shouldn't exist until writeFlagFile is called", doesFlaggedDirExist);
 
         // post-condition: files now in flagging
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeRemoveGeneratingExtension((file) -> {
@@ -200,11 +206,14 @@ public class FlagFileWriterWhiteboxTest {
                 assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
             } catch (IOException e) {
-                fail("The expected Exception should not occur here.");
+                fail("The simulated Exception should not occur here.");
             }
         }).writeFlagFile(dataTypeConfig, inputFiles);
     }
 
+    /**
+     * Verify that a .generating file is created just before the move from flagging to flagged
+     */
     @Test
     public void firstCreatesAGeneratingFlagFile() throws IOException {
         // pre-condition: no flag files at all
@@ -221,13 +230,11 @@ public class FlagFileWriterWhiteboxTest {
             String expectedFlagFileDirectory = flagMakerConfig.getFlagFileDirectory();
             assertEquals("Wrote to unexpected location", expectedFlagFileDirectory, flagFileName.substring(0, flagFileName.lastIndexOf('/')));
 
-            // FlagFileWriterNamingTests verifies more
-            // information about the flag file name
-            assertTrue("Non trivial name", expectedExtension.length() + expectedFlagFileDirectory.length() < flagFileName.length());
+            // FlagFileWriterNamingTests verifies more information about the flag file name
+            assertTrue("Non-trivial name", expectedExtension.length() + expectedFlagFileDirectory.length() + 1 < flagFileName.length());
 
-            // FlagFileWriterContentTest verifies more
-            // information about the contents of the flag file
             try {
+                // FlagFileWriterContentTest verifies more information about the contents of the flag file
                 assertTrue("Flag file is unexpectedly empty", Files.size(new File(flagFileName).toPath()) > 0);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
@@ -235,6 +242,9 @@ public class FlagFileWriterWhiteboxTest {
         }).writeFlagFile(dataTypeConfig, inputFiles);
     }
 
+    /**
+     * Before the move to flagging, delete an input file - Expect an IOException
+     */
     @Test
     public void throwsErrorIfInputFileGoesMissing() throws Exception {
         exceptionRule.expect(IOException.class);
@@ -242,19 +252,20 @@ public class FlagFileWriterWhiteboxTest {
 
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagging((files, futures) -> {
             try {
-                // delete one of the files in the flagging directory
+                // delete one of the files in the input directory
                 InputFile firstInputFile = inputFiles.iterator().next();
-                Path inputFile = firstInputFile.getPath(); // Path under
-                                                           // input
-                                                           // directory
+                Path inputFile = firstInputFile.getPath();
                 assertTrue(fs.delete(inputFile, false));
             } catch (IOException e) {
-                fail("The expected Exception should not occur here.");
+                fail("The simulated Exception should not occur here.");
             }
 
         }).writeFlagFile(dataTypeConfig, inputFiles);
     }
 
+    /**
+     * Before the move to flagged, delete a flagging file - Expect an IOException
+     */
     @Test
     public void throwsErrorIfFlaggingFileGoesMissing() throws Exception {
         exceptionRule.expect(IOException.class);
@@ -264,15 +275,12 @@ public class FlagFileWriterWhiteboxTest {
         boolean doesFlaggingDirExist = Files.exists(Paths.get(flagMakerConfig.getBaseHDFSDir() + "/flagging"));
         assertFalse("Flagging shouldn't exist until writeFlagFile is called", doesFlaggingDirExist);
 
-        // delete one of the files that has a futures entry in
-        // moveInputsFromFlaggingToFlagged
+        // delete one of the files that has a futures entry in moveInputsFromFlaggingToFlagged
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
             try {
                 // delete one of the files in the flagging directory
                 InputFile firstInputFile = inputFiles.iterator().next();
-                Path fileInFlaggingDir = firstInputFile.getFlagging(); // Path
-                                                                       // under
-                                                                       // flagging
+                Path fileInFlaggingDir = firstInputFile.getFlagging();
                 assertTrue(fs.delete(fileInFlaggingDir, false));
             } catch (IOException e) {
                 fail("The expected Exception should not occur here.");
@@ -280,6 +288,9 @@ public class FlagFileWriterWhiteboxTest {
         }).writeFlagFile(dataTypeConfig, inputFiles);
     }
 
+    /**
+     * Before the move to flagging, delete an input file - Verify the other 9 files return to input directory
+     */
     @Test
     public void movesOtherFilesBackAfterInputFileGoesMissing() throws Exception {
         exceptionRule.expect(IOException.class);
@@ -293,10 +304,7 @@ public class FlagFileWriterWhiteboxTest {
                 try {
                     // delete one of the files in the input directory
                     InputFile firstInputFile = inputFiles.iterator().next();
-                    Path inputFile = firstInputFile.getPath(); // Path
-                                                               // under
-                                                               // input
-                                                               // directory
+                    Path inputFile = firstInputFile.getPath();
                     assertTrue(fs.delete(inputFile, false));
                 } catch (IOException e) {
                     fail("The expected Exception should not occur here.");
@@ -304,13 +312,16 @@ public class FlagFileWriterWhiteboxTest {
 
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            // expect all but one of the files to be back in the input directory
+            // expect all but the deleted file to be back in the input directory
             assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
             assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
             assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
+    /**
+     * Before the move to flagged, delete a flagging file - Verify the other 9 files return to input directory
+     */
     @Test
     public void movesOtherFilesBackAfterFlaggingFileGoesMissing() throws Exception {
         exceptionRule.expect(IOException.class);
@@ -320,35 +331,38 @@ public class FlagFileWriterWhiteboxTest {
         assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
-            // delete one of the files that has a futures entry in
-            // moveInputsFromFlaggingToFlagged
+            // delete one of the files that has a futures entry in moveInputsFromFlaggingToFlagged
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
                 try {
                     // delete one of the files in the flagging directory
                     InputFile firstInputFile = inputFiles.iterator().next();
-                    Path fileInFlaggingDir = firstInputFile.getFlagging(); // Path under flagging
+                    Path fileInFlaggingDir = firstInputFile.getFlagging();
                     assertTrue(fs.delete(fileInFlaggingDir, false));
                 } catch (IOException e) {
                     fail("The expected Exception should not occur here.");
                 }
             }).writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
-            // expect all but one of the files to be back in the input directory
+            // expect all but the deleted files to be back in the input directory
             assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
             assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
             assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
         }
     }
 
+    /**
+     * After the move to flagged, add a Future that returns a valid InputFile.
+     * Verify that this unexpected state causes cleanup to occur and retries waiting for the Future
+     */
     @Test
     public void residualFutureSuccessfulUponRetry() throws IOException {
         exceptionRule.expect(AssertionError.class);
-        exceptionRule.expectMessage("1");
+        // assertion found the value 1 instead of 0
+        exceptionRule.expectMessage("Non-empty move tasks after move complete: 1");
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig)
-                            .injectAfterMoveToFlagged(
-                                            (files, futures) -> futures.add(Executors.newSingleThreadExecutor().submit(() -> files.iterator().next())))
+                            .injectAfterMoveToFlagged((files, futures) -> futures.add(Executors.newSingleThreadExecutor().submit(() -> files.iterator().next())))
                             .writeFlagFile(dataTypeConfig, inputFiles);
         } finally {
             assertEquals("The flag file was not cleaned up.", 0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
@@ -358,10 +372,14 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * After the move to flagged, add a Future that sleeps beyond retry timeout.
+     * Verify that this unexpected state causes cleanup to occur and it skips the unresponsive Future
+     */
     @Test
     public void residualFutureFailsRetry() throws IOException {
         exceptionRule.expect(AssertionError.class);
-        exceptionRule.expectMessage("1");
+        exceptionRule.expectMessage("Non-empty move tasks after move complete: 1");
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectAfterMoveToFlagged((files, futures) -> {
@@ -382,6 +400,10 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Verify that the .generating file exists before the move to flagged - Throw an exception instead of doing the move.
+     * Verify the .generating file is cleaned up after the failure
+     */
     @Test
     public void cleanupRemovesGeneratingFlagFile() throws IOException {
         exceptionRule.expect(RuntimeException.class);
@@ -389,8 +411,7 @@ public class FlagFileWriterWhiteboxTest {
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeMoveToFlagged((files, futures) -> {
-                // verify .generating file exists before throwing an
-                // exception to trigger cleanup
+                // verify .generating file exists before throwing an exception to trigger cleanup
                 List<File> flagFiles = FlagFileTestInspector.listFlagFiles(flagMakerConfig);
                 String flagFileName = flagFiles.get(0).getName();
                 String expectedExtension = ".flag.generating";
@@ -403,19 +424,19 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Throw an exception - Ensure all 10 files are moved back to input directory before removing the flag file
+     */
     @Test
     public void cleanupMovesFilesBeforeRemovingFlagFile() throws IOException {
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
 
-        // moves files first
-        // cleanup flag.generating second
+        // moves files first cleanup flag.generating second
         new FlagFileWriterWithCodeInject(flagMakerConfig).injectBeforeRemoveFlagFile((file) -> {
-            // all files should be back in the input directory at this
-            // point
+            // all files should be back in the input directory at this point
             try {
                 assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
-
                 assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
                 assertEquals(EXPECTED_NUM_FILES, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
             } catch (IOException e) {
@@ -428,6 +449,10 @@ public class FlagFileWriterWhiteboxTest {
         }).writeFlagFile(dataTypeConfig, inputFiles);
     }
 
+    /**
+     * Throw an exception before the move to flagged - Verify all 10 files are in flagging before the exception.
+     * Verify all 10 files are in the input directory after clean up.
+     */
     @Test
     public void cleanupMovesFilesFromFlaggingToInputDir() throws IOException {
         exceptionRule.expect(RuntimeException.class);
@@ -453,6 +478,11 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Throw an exception after the move to flagged.
+     * Verify all 10 files are in flagged before the exception.
+     * Verify all 10 files are in the input directory after clean up.
+     */
     @Test
     public void cleanupMovesFilesFromFlaggedToInputDir() throws IOException {
         exceptionRule.expect(RuntimeException.class);
@@ -478,17 +508,25 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Throw an exception when files are moved to flagged, triggering failure recovery. - During failure recovery,
+     * just before files are moved back to the input directory, delete a file.
+     * Verify the other 9 files are moved back to the input directory and flag file is deleted
+     */
     @Test
     public void toleratesMissingFileDuringFailureScenario() throws Exception {
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
+
+        // pre-conditions
+        assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
         assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectAtMoveFilesBack((files, moveOperations) -> {
-                // expect at least some files to be in flagging
+                // expect one flag file and at least some files to be in flagging
                 try {
-                    assertEquals(1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+                    assertEquals("Expected .generating flag file", 1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
                     assertTrue(0 < FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 } catch (Throwable e) {
                     fail("Incorrect preconditions within lambda" + e.getMessage());
@@ -506,14 +544,24 @@ public class FlagFileWriterWhiteboxTest {
             assertEquals(9, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
             assertEquals(0, FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
             assertEquals(0, FlagFileTestInspector.listFlaggedFiles(flagMakerConfig).size());
+            assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
         }
     }
 
+    /**
+     * Throw an exception when files are moved to flagged, triggering failure recovery.
+     * During failure recovery, just before files are moved back to the input directory, insert a future that
+     * throws an exception - Verify the files are moved back to the input directory regardless of the
+     * failure and flag file is deleted
+     */
     @Test
     public void toleratesFailedFutureDuringFailureScenario() throws Exception {
 
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
+
+        // pre-conditions
+        assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
         assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
@@ -521,15 +569,13 @@ public class FlagFileWriterWhiteboxTest {
 
                 // expect at least some files to be in flagging
                 try {
-                    assertEquals(1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+                    assertEquals("Expected .generating flag file", 1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
                     assertTrue(0 < FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 } catch (Throwable e) {
                     fail("Incorrect preconditions within lambda" + e.getMessage());
                 }
 
-                // don't touch the existing 10 file movers. Insert
-                // an additional future that simply throws an
-                // exception
+                // don't touch the existing 10 file movers. Insert an additional future that simply throws an exception
                 moveOperations.add(0, Executors.newSingleThreadExecutor().submit(() -> {
                     throw new RuntimeException("Add a future that will throw an exception");
                 }));
@@ -543,18 +589,27 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Throw an exception when files are moved to flagged, triggering failure recovery.
+     * During failure recovery, just before files are moved back to the input directory,
+     * delete a file - During failure recovery, just before files are moved back to
+     * the input directory, insert a future that throws an exception.
+     * Verify the other 9 files are moved back to the input directory and flag file is deleted
+     */
     @Test
     public void toleratesMissingFileAndFailedFutureDuringFailureScenario() throws Exception {
-
         exceptionRule.expect(IOException.class);
         exceptionRule.expectMessage("Throw an exception to cause cleanup to occur");
+
+        // pre-conditions
+        assertEquals(0, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
         assertEquals(10, FlagFileTestInspector.listFilesInInputDirectory(flagMakerConfig).size());
 
         try {
             new FlagFileWriterWithCodeInject(flagMakerConfig).injectAtMoveFilesBack((files, moveOperations) -> {
                 // expect at least some files to be in flagging
                 try {
-                    assertEquals(1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
+                    assertEquals("Expected .generating flag file", 1, FlagFileTestInspector.listFlagFiles(flagMakerConfig).size());
                     assertTrue(0 < FlagFileTestInspector.listFlaggingFiles(flagMakerConfig).size());
                 } catch (Throwable e) {
                     fail("Incorrect preconditions within lambda" + e.getMessage());
@@ -583,6 +638,12 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Throw an exception when files are moved to flagged, triggering failure recovery.
+     * Call cancel on one of the futures that exist to move files back to the input directory.
+     * Verify the other 9 files are moved back to the input directory.
+     * Verify that one of the flagging files remains in flagging - Verify that flag file is deleted
+     */
     @Test
     public void toleratesCancellationInFailureScenario() throws Exception {
         exceptionRule.expect(IOException.class);
@@ -607,6 +668,13 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Intercept one of the futures that moves files from input to flagging.
+     * Wait for the file to move to flagging and then manually move it to flagged.
+     * This will cause an exception when the code tries to move the file from flagging to flagged.
+     * Verify that the other 9 files are correctly moved to input and the flag file is removed.
+     * Verify that the one file remains in flagged
+     */
     @Test
     public void prematurelyMovedFileIgnoredDuringCleanup() throws Exception {
         exceptionRule.expect(IOException.class);
@@ -637,6 +705,9 @@ public class FlagFileWriterWhiteboxTest {
         }
     }
 
+    /**
+     * Verify that an expected System.exit will properly run cleanup
+     */
     @Test
     public void handleSystemExit() throws Exception {
         exit.expectSystemExit();

@@ -29,6 +29,7 @@ import datawave.util.flag.config.FlagMakerConfig;
 public class FlagFileWriterTest {
     private static final String BASELINE_FLAG_WITH_NO_MARKER = "datawave/util/flag/FlagFileWithoutMarker.flag";
     private static final String BASELINE_FLAG_WITH_MARKER = "datawave/util/flag/FlagFileWithMarker.flag";
+
     private FlagFileTestSetup flagFileTestSetup;
     private FlagMakerConfig flagMakerConfig;
     private FlagDataTypeConfig dataTypeConfig;
@@ -60,9 +61,7 @@ public class FlagFileWriterTest {
     @Test
     public void verifyContentsOfFlagFileWithMarker() throws IOException, URISyntaxException {
         // configure to use marker
-        // get config for "foo" flag datatype
-        FlagDataTypeConfig fc = flagMakerConfig.getFlagConfigs().get(0);
-        fc.setFileListMarker(FLAG_MARKER);
+        this.dataTypeConfig.setFileListMarker(FLAG_MARKER);
 
         // write flag file
         new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
@@ -82,6 +81,7 @@ public class FlagFileWriterTest {
 
     @Test
     public void doesNotWriteMetricsFileWhenDisabled() throws IOException {
+        // disable metrics
         dataTypeConfig.setCollectMetrics("false");
 
         // write a flag file
@@ -104,22 +104,22 @@ public class FlagFileWriterTest {
         assertNotNull(metricsFiles);
         assertEquals(metricsFiles.toString(), 2, metricsFiles.size());
 
-        // check metrics file names
+        // retrieve metrics file names
         List<String> metricsFileNames = metricsFiles.stream().map(File::getName).collect(Collectors.toList());
 
-        // contains metrics file
+        // metrics file name contains flag file name with different extension
         String flagFileName = FlagFileTestInspector.getOnlyFlagFile(this.flagMakerConfig).getName();
         String expectedMetricsFileName = flagFileName.replace(".flag", ".metrics");
         assertTrue(metricsFileNames + " did not contain " + expectedMetricsFileName, metricsFileNames.contains(expectedMetricsFileName));
 
-        // contains crc file
+        // there is also a crc file
         String crcFileName = '.' + expectedMetricsFileName + ".crc";
         assertTrue(metricsFileNames + " did not contain " + crcFileName, metricsFileNames.contains(crcFileName));
     }
 
     @Test
-    // will fail when writesMetricsWhenFlagFileCreated fails
     public void metricsFileContainsCorrectCounters() throws IOException {
+        // will always fail if writesMetricsWhenFlagFileCreated fails
         long startTime = System.currentTimeMillis();
 
         // create flag file while metrics enabled
@@ -164,8 +164,7 @@ public class FlagFileWriterTest {
         // write a flag file
         new FlagFileWriter(flagMakerConfig).writeFlagFile(dataTypeConfig, inputFiles);
 
-        // get list of flagged input files to determine the latest last modified
-        // time
+        // get list of flagged input files to determine the latest last modified time
         List<File> flaggedFiles = FlagFileTestInspector.listFlaggedFiles(flagMakerConfig);
         long flaggedFilesLargestLastModified = flaggedFiles.stream().map(File::lastModified).reduce(Math::max).get();
 
@@ -173,7 +172,7 @@ public class FlagFileWriterTest {
         List<File> flagFiles = FlagFileTestInspector.listFlagFiles(flagMakerConfig);
         long flagFileLastModified = flagFiles.get(0).lastModified();
 
-        // verity expectations
+        // verify flag file last modified equals the latest of the flagged files modification times
         assertEquals(flaggedFilesLargestLastModified, flagFileLastModified);
         assertTrue(0 < flagFileLastModified);
     }
@@ -198,24 +197,25 @@ public class FlagFileWriterTest {
         File flagFile = FlagFileTestInspector.listFlagFiles(this.flagMakerConfig).get(0);
         final String actualFileContents = new String(Files.readAllBytes(Paths.get(flagFile.getPath())));
 
-        // compare
         Assert.assertEquals(expectedFileContents, expectedFileContents, actualFileContents);
     }
 
     private String loadBaselineFileIntoMemory(String testResourceLocation) throws URISyntaxException, IOException {
         URL urlForExpectedContent = this.getClass().getClassLoader().getResource(testResourceLocation);
+        assert urlForExpectedContent != null;
         return new String(Files.readAllBytes(Paths.get(urlForExpectedContent.toURI())));
     }
 
     private TreeSet<InputFile> createInputFiles() throws IOException {
         // creates 2 * filesPerDay number of files: filesPerDay in foo,
         // filesPerDay in bar
-        flagFileTestSetup.withPredicableInputFilenames().withFilesPerDay(5).withNumDays(1).createTestFiles();
+        int filesPerDay = 5;
+        flagFileTestSetup.withPredicableInputFilenames().withFilesPerDay(filesPerDay).withNumDays(1).createTestFiles();
         TreeSet<InputFile> sortedFiles = new TreeSet<>(InputFile.FIFO);
         sortedFiles.addAll(FlagFileTestInspector.listSortedInputFiles(flagMakerConfig, fs));
         // verify file creation
         assertNotNull(sortedFiles);
-        assertEquals(2 * 5, sortedFiles.size());
+        assertEquals(2 * filesPerDay, sortedFiles.size());
         return sortedFiles;
     }
 

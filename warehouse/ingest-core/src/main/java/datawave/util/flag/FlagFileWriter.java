@@ -109,7 +109,7 @@ public class FlagFileWriter {
             // finalize flag file
             moveFilesToFlagged(flagDataTypeConfig, metrics, flaggingFiles, fileMoveTasks);
             // fileMoveTasks should be reduced to zero by the move to flagged
-            assert fileMoveTasks.size() == 0 : fileMoveTasks.size();
+            assert fileMoveTasks.size() == 0 : "Non-empty move tasks after move complete: " + fileMoveTasks.size();
 
             flagFile = removeGeneratingExtension(flagFile, baseName);
 

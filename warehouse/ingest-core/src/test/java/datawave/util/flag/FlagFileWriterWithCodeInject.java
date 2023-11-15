@@ -16,9 +16,8 @@ import datawave.util.flag.config.FlagDataTypeConfig;
 import datawave.util.flag.config.FlagMakerConfig;
 
 /**
- *
- * Assists with verifying the state of FlagFileWriter at various stages in the flag file writing process: before moving files to flagging and flagged; in error
- * handling conditions, and more.
+ * Assists with verifying the state of FlagFileWriter at various stages in the flag file writing process:
+ * before moving files to flagging and flagged; in error handling conditions, and more.
  *
  * Lambdas can be provided to verify state at these stages.
  *
@@ -35,7 +34,7 @@ public class FlagFileWriterWithCodeInject extends FlagFileWriter {
     private Consumer<File> beforeRemoveGeneratingExtension;
     private final AtomicBoolean wasBeforeRemoveGeneratingExtensionCalled = new AtomicBoolean(false);
 
-    private BiConsumer<Collection<InputFile>,List<Future<InputFile>>> beforeMoveFiles;
+    private BiConsumer<Collection<InputFile>,List<Future<InputFile>>> beforeMoveToFlagging;
     private final AtomicBoolean wasBeforeMoveFilesExecuted = new AtomicBoolean(false);
 
     private BiConsumer<Collection<InputFile>,List<Future<InputFile>>> beforeWaitForMoves;
@@ -72,7 +71,7 @@ public class FlagFileWriterWithCodeInject extends FlagFileWriter {
     }
 
     FlagFileWriterWithCodeInject injectBeforeMoveToFlagging(BiConsumer<Collection<InputFile>,List<Future<InputFile>>> desiredVerification) {
-        this.beforeMoveFiles = desiredVerification;
+        this.beforeMoveToFlagging = desiredVerification;
         return this;
     }
 
@@ -102,23 +101,26 @@ public class FlagFileWriterWithCodeInject extends FlagFileWriter {
             // fail if the override didn't get called
             // Note that this is deliberately not in a finally block to allow
             // exceptions in override
-            if (beforeRemoveFlagFile != null && !wasBeforeRemoveFlagFileExecuted.get()) {
-                fail("The beforeRemoveFlagFile code was not executed.");
-            }
-            if (beforeWaitForMoves != null && !wasBeforeWaitForMovesExecuted.get()) {
-                fail("The beforeWaitForMoves code was not executed.");
-            }
-            if (beforeRemoveGeneratingExtension != null && !wasBeforeRemoveGeneratingExtensionCalled.get()) {
-                fail("The beforeRemoveGeneratingExtension code was not executed.");
-            }
-            if (beforeMoveFiles != null && !wasBeforeMoveFilesExecuted.get()) {
-                fail("The beforeMoveFiles code was not executed.");
-            }
             if (beforeMoveToFlagged != null && !wasBeforeMoveToFlaggedExecuted.get()) {
                 fail("The beforeMoveToFlagged code was not executed.");
             }
             if (afterMoveToFlagged != null && !wasAfterMoveToFlaggedExecuted.get()) {
                 fail("The afterMoveToFlagged code was not executed.");
+            }
+            if (beforeRemoveGeneratingExtension != null && !wasBeforeRemoveGeneratingExtensionCalled.get()) {
+                fail("The beforeRemoveGeneratingExtension code was not executed.");
+            }
+            if (beforeMoveToFlagging != null && !wasBeforeMoveFilesExecuted.get()) {
+                fail("The beforeMoveFiles code was not executed.");
+            }
+            if (beforeWaitForMoves != null && !wasBeforeWaitForMovesExecuted.get()) {
+                fail("The beforeWaitForMoves code was not executed.");
+            }
+            if (beforeRemoveFlagFile != null && !wasBeforeRemoveFlagFileExecuted.get()) {
+                fail("The beforeRemoveFlagFile code was not executed.");
+            }
+            if (shouldVerifyAfterMoveFilesBackIsCalled && !wasMoveFilesBackExecuted.get()) {
+                fail("wasMoveFilesBackExecuted code was false.");
             }
         }
     }
@@ -126,9 +128,9 @@ public class FlagFileWriterWithCodeInject extends FlagFileWriter {
     @Override
     Collection<InputFile> moveFiles(Collection<InputFile> files, List<Future<InputFile>> futures, Function<InputFile,SimpleMover> moverFactory, String label)
                     throws IOException {
-        if (beforeMoveFiles != null) {
+        if (beforeMoveToFlagging != null) {
             wasBeforeMoveFilesExecuted.set(true);
-            beforeMoveFiles.accept(files, futures);
+            beforeMoveToFlagging.accept(files, futures);
         }
         return super.moveFiles(files, futures, moverFactory, label);
     }
@@ -173,8 +175,7 @@ public class FlagFileWriterWithCodeInject extends FlagFileWriter {
     @Override
     boolean waitForMoves(Collection<InputFile> movedInputFiles, List<Future<InputFile>> moveOperations) throws IOException {
         if (beforeWaitForMoves != null) {
-            // only run the injected code when waitForMoves is called by
-            // moveFilesBack
+            // only run the injected code when waitForMoves is called by moveFilesBack
             boolean notWaitingForMoveFileBackExecution = !shouldVerifyAfterMoveFilesBackIsCalled || wasMoveFilesBackExecuted.get();
             boolean wasNotAlreadyExecuted = !wasBeforeWaitForMovesExecuted.get();
             if (wasNotAlreadyExecuted && notWaitingForMoveFileBackExecution) {
