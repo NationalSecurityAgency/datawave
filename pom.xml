@@ -94,7 +94,7 @@
         <version.microservice.metadata-utils>3.0.0</version.microservice.metadata-utils>
         <version.microservice.metrics-reporter>2.0.0</version.microservice.metrics-reporter>
         <version.microservice.query-metric-api>3.0.0</version.microservice.query-metric-api>
-        <version.microservice.type-utils>2.0.0</version.microservice.type-utils>
+        <version.microservice.type-utils>2.0.1</version.microservice.type-utils>
         <version.minlog>1.2</version.minlog>
         <version.mockito>2.23.0</version.mockito>
         <version.mysql-connector>8.0.16</version.mysql-connector>
