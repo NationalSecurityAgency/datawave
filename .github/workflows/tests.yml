@@ -136,6 +136,7 @@ jobs:
         DW_DATAWAVE_BUILD_COMMAND: "mvn -B -V -e -ntp -Dstyle.color=always -Pdev -Ddeploy -Dtar -DskipTests clean package"
         DOCKER_BUILD_OPTS: "--squash --force-rm"
       run: |
+        su - datawave
         TAG=$(mvn -q -N -Dexec.executable='echo' -Dexec.args='${project.version}' exec:exec)
         contrib/datawave-quickstart/docker/docker-build.sh ${TAG} --docker-opts "${DOCKER_BUILD_OPTS}"
 
@@ -158,4 +159,3 @@ jobs:
     #     docker tag ${IMAGE_NAME}:${TAG} ${REMOTE_IMAGE_NAME}:${TAG}
     #     docker images
     #     docker push ${REMOTE_IMAGE_NAME}:${TAG}
-
