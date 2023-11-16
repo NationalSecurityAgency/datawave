@@ -109,17 +109,15 @@ DW_ZOOKEEPER_CMD_FIND_ALL_PIDS="ps -ef | grep 'zookeeper.server.quorum.QuorumPee
 DW_ACCUMULO_CMD_START="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster start )"
 DW_ACCUMULO_CMD_STOP="( cd ${ACCUMULO_HOME}/bin && ./accumulo-cluster stop )"
 DW_ACCUMULO_CMD_FIND_ALL_PIDS="pgrep -d ' ' -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc|o.start.Main tracer'"
+DW_ACCUMULO_CMD_FIND_ALL_PIDS_COUNT="pgrep -f 'o.start.Main manager|o.start.Main tserver|o.start.Main monitor|o.start.Main gc' | wc -l"
 
 function accumuloIsRunning() {
-    DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
-
-    zookeeperIsRunning
-
-    [[ -z "${DW_ACCUMULO_PID_LIST}" && -z "${DW_ZOOKEEPER_PID_LIST}" ]] && return 1 || return 0
+    DW_ACCUMULO_PID_COUNT="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS_COUNT}")"
+    [ "${DW_ACCUMULO_PID_COUNT}" -eq 4 ] && return 0 || return 1
 }
 
 function accumuloStart() {
-    accumuloIsRunning && echo "Accumulo is already running" && return 1
+    accumuloIsRunning && echo "Accumulo is already running"
 
     if ! zookeeperIsRunning ; then
        zookeeperStart
@@ -129,13 +127,20 @@ function accumuloStart() {
        hadoopStart
        echo
     fi
-    eval "${DW_ACCUMULO_CMD_START}"
+    if ! accumuloIsRunning ; then
+       eval "${DW_ACCUMULO_CMD_START}"
+       echo
+    fi
     echo
     info "For detailed status visit 'http://localhost:9995' in your browser"
 }
 
 function accumuloStop() {
-    accumuloIsRunning && [ -n "${DW_ACCUMULO_PID_LIST}" ] && eval "${DW_ACCUMULO_CMD_STOP}" || echo "Accumulo is already stopped"
+    if accumuloIsRunning ; then
+       eval "${DW_ACCUMULO_CMD_STOP}"
+    else
+       echo "Accumulo is already stopped"
+    fi
     zookeeperStop
 }
 
@@ -151,13 +156,12 @@ function accumuloStatus() {
     local _opt=pid
     local _arg
 
-    accumuloIsRunning
+    DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
     test -n "${DW_ACCUMULO_PID_LIST}" && {
         local -r _pids=${DW_ACCUMULO_PID_LIST// /|}
         echo "pids: ${DW_ACCUMULO_PID_LIST}"
 
         for _arg in $(jps -lm | grep -E "${_pids}"); do
-
             case ${_opt} in
                 pid)
                     _pid=${_arg}
@@ -175,9 +179,13 @@ function accumuloStatus() {
                     esac
 
                     test -z "${_none}" && info "${_arg} => ${_pid}"
-                    _opt=pid
+                    _opt=flag
                     unset _none
                     _pid=;;
+                flag)
+                    _opt=hostname;;
+                hostname)
+                    _opt=pid;;
             esac
         done
     }
@@ -189,6 +197,7 @@ function accumuloStatus() {
     test -z "${_tserver}" && warn "tserver is not running"
 
     echo "======  ZooKeeper Status  ======"
+    DW_ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS}")"
     if [[ -n "${DW_ZOOKEEPER_PID_LIST}" ]]; then
         info "ZooKeeper => ${DW_ZOOKEEPER_PID_LIST}"
     else
@@ -276,8 +285,8 @@ function accumuloPrintenv() {
 
 function accumuloPidList() {
    # Refresh pid lists
-   accumuloIsRunning
-   zookeeperIsRunning
+   DW_ACCUMULO_PID_LIST="$(eval "${DW_ACCUMULO_CMD_FIND_ALL_PIDS}")"
+   DW_ZOOKEEPER_PID_LIST="$(eval "${DW_ZOOKEEPER_CMD_FIND_ALL_PIDS}")"
    if [[ -n "${DW_ACCUMULO_PID_LIST}" || -n "${DW_ZOOKEEPER_PID_LIST}" ]] ; then
       echo "${DW_ACCUMULO_PID_LIST} ${DW_ZOOKEEPER_PID_LIST}"
    fi
