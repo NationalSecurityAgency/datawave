@@ -111,6 +111,7 @@ echo "$(date): Defining query"
 echo "$(date): Defining query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
@@ -120,7 +121,6 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pagesize=10" \
-    --data-urlencode "pool=$POOL" \
     ${DATAWAVE_ENDPOINT}/query/EventQuery/define -o defineResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 
@@ -134,6 +134,7 @@ echo "$(date): Submitting map reduce query" >> querySummary.txt
 
 curl -s -D headers_1.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "jobName=BulkResultsJob" \
     --data-urlencode "queryId=${QUERY_ID}" \
     --data-urlencode "format=XML" \

@@ -81,13 +81,13 @@ echo "$(date): Running LookupContentUUID query"
 echo "$(date): Running LookupContentUUID query" > querySummary.txt
 curl -s -D headers_0.txt -X GET -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
     --data-urlencode "auths=PUBLIC,PRIVATE,BAR,FOO" \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Lookup Content UUID Query" \
-    --data-urlencode "pool=$POOL" \
     ${DATAWAVE_ENDPOINT}/lookupContentUUID/PAGE_TITLE/anarchism -o lookupResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 QUERY_ID=$(get_query_id < lookupResponse.xml)

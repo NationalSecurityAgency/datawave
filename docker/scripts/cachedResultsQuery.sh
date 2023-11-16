@@ -101,6 +101,7 @@ echo "$(date): Defining query"
 echo "$(date): Defining query" > querySummary.txt
 curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
@@ -110,7 +111,6 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Query" \
     --data-urlencode "pagesize=10" \
-    --data-urlencode "pool=$POOL" \
     ${DATAWAVE_ENDPOINT}/EventQuery/define -o defineResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 QUERY_ID=$(get_result < defineResponse.xml)
@@ -119,6 +119,7 @@ echo "$(date): Loading cached results"
 echo "$(date): Loading cached results" > querySummary.txt
 curl -s -D headers_1.txt -k -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     ${CACHEDRESULTS_ENDPOINT}/$QUERY_ID/load?alias=alias-${QUERY_ID} -o loadResponse.xml -w '%{http_code}\n' >> querySummary.txt
 
 VIEW_NAME=$(get_result < loadResponse.xml)
@@ -127,6 +128,7 @@ echo "$(date): Creating the SQL query"
 echo "$(date): Creating the SQL query" > querySummary.txt
 curl -s -D headers_2.txt -k -X POST -E ${TMP_PEM} \
     -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
     --data-urlencode "fields=" \
     --data-urlencode "conditions=" \
     --data-urlencode "grouping=" \
@@ -152,6 +154,7 @@ while [ $i -gt 0 ] && [ $i -lt $MAX_PAGES ]; do
     echo "$(date): Requesting page $i for $VIEW_NAME" >> querySummary.txt
     curl -s -D headers_$((i + 3)).txt -k -E ${TMP_PEM} \
         -H "Accept: application/xml" \
+    -H "Pool: $POOL" \
         "${CACHEDRESULTS_ENDPOINT}/$VIEW_NAME/getRows?rowBegin=$((TOTAL_PAGES * PAGE_SIZE + 1))&rowEnd=$(((TOTAL_PAGES + 1) * PAGE_SIZE))" -o getRowsResponse_$i.xml -w '%{http_code}\n' >> querySummary.txt
 
     CONTINUE=`grep 'HTTP/2 200' headers_$((i + 3)).txt`
