@@ -163,7 +163,8 @@ public final class SSDeepHash implements Serializable, Comparable<SSDeepHash> {
     public static SSDeepHash normalize(final SSDeepHash input, int maxRepeatedCharacters) {
         final String n1 = normalizeSSDeepChunk(input.getChunk(), maxRepeatedCharacters);
         final String n2 = normalizeSSDeepChunk(input.getDoubleChunk(), maxRepeatedCharacters);
-        if (n1 == null && n2 == null) {
+        // we really do want '==' here, not equals. neither chunk is changed, so just return the input.
+        if (n1 == input.getChunk() && (n2 == input.getDoubleChunk())) {
             return input;
         }
         return new SSDeepHash(input.getChunkSize(), n1 == null ? input.getChunk() : n1, n2 == null ? input.getDoubleChunk() : n2);
@@ -175,18 +176,18 @@ public final class SSDeepHash implements Serializable, Comparable<SSDeepHash> {
 
     /**
      * Given a string that potentially contains long runs of repeating characters, replace such runs with at most maxRepeated characters. If the string is not
-     * modified, return null.
+     * modified, return the input string.
      *
      * @param input
      *            the string to analyze and possibly modify.
      * @param maxRepeatedCharacters
      *            the number of maxRepeatedCharacters to allow. Any String that has a run of more than this many of the same character will have that run
      *            collapsed to be this many characters in length. Zero indicates that no normalization should be performed.
-     * @return the modified string or null if the string is not modified.
+     * @return the modified string or the original string if the string is not modified.
      */
     public static String normalizeSSDeepChunk(final String input, final int maxRepeatedCharacters) {
         if (maxRepeatedCharacters <= 0) {
-            return null; // do nothing.
+            return input; // do nothing.
         }
         final char[] data = input.toCharArray();
         final int length = data.length;
@@ -215,11 +216,11 @@ public final class SSDeepHash implements Serializable, Comparable<SSDeepHash> {
             }
         }
 
-        // if we have modified the data, create and return a string otherwise, null
+        // if we have modified the data, create and return a string otherwise, return the input unchanged
         if (destIndex < length) {
             return new String(data, 0, destIndex);
         } else {
-            return null;
+            return input;
         }
     }
 

@@ -82,6 +82,8 @@ import datawave.query.jexl.nodes.QueryPropertyMarker;
 import datawave.query.jexl.visitors.BaseVisitor;
 import datawave.query.jexl.visitors.DepthVisitor;
 import datawave.query.jexl.visitors.EvaluationRendering;
+import datawave.query.jexl.visitors.ExecutableDeterminationVisitor;
+import datawave.query.jexl.visitors.IngestTypePruningVisitor;
 import datawave.query.jexl.visitors.JexlStringBuildingVisitor;
 import datawave.query.jexl.visitors.TreeFlatteningRebuildingVisitor;
 import datawave.query.planner.QueryPlan;
@@ -92,6 +94,7 @@ import datawave.query.util.MetadataHelper;
 import datawave.query.util.QueryScannerHelper;
 import datawave.query.util.Tuple2;
 import datawave.query.util.Tuples;
+import datawave.query.util.TypeMetadata;
 import datawave.util.StringUtils;
 import datawave.util.time.DateHelper;
 import datawave.webservice.query.exception.DatawaveErrorCode;
@@ -253,7 +256,7 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
                 }
 
                 this.itr = filter(concat(transform(queryStream, new TupleToRange(config.getShardTableName(), queryStream.currentNode(), config))),
-                                new EmptyPlanPruner());
+                                getEmptyPlanPruner());
             }
         } finally {
             // shut down the executor as all threads have completed
@@ -262,18 +265,58 @@ public class RangeStream extends BaseVisitor implements CloseableIterable<QueryP
         return itr;
     }
 
+    public EmptyPlanPruner getEmptyPlanPruner() {
+        if (config.getPruneQueryByIngestTypes()) {
+            try {
+                return new EmptyPlanPruner(config, metadataHelper, metadataHelper.getTypeMetadata());
+            } catch (TableNotFoundException e) {
+                throw new DatawaveFatalQueryException("Failed to get TypeMetadata", e);
+            }
+        }
+
+        return new EmptyPlanPruner();
+    }
+
+    /**
+     * This class will prune a QueryPlan if either A) the ranges are empty or B) optionally, if no document can satisfy the query
+     */
     public static class EmptyPlanPruner implements Predicate<QueryPlan> {
 
+        private ShardQueryConfiguration config;
+        private MetadataHelper metadataHelper;
+        private TypeMetadata typeMetadata;
+
+        public EmptyPlanPruner() {
+            // no-op
+        }
+
+        public EmptyPlanPruner(ShardQueryConfiguration config, MetadataHelper metadataHelper, TypeMetadata typeMetadata) {
+            this.config = config;
+            this.metadataHelper = metadataHelper;
+            this.typeMetadata = typeMetadata;
+        }
+
         public boolean apply(QueryPlan plan) {
-            if (log.isTraceEnabled()) {
-                if (null != plan.getQueryTree() || (null == plan.getQueryString() || plan.getQueryString().isEmpty())) {
-                    log.trace("Plan is " + JexlStringBuildingVisitor.buildQuery(plan.getQueryTree()) + " " + plan.getRanges() + " "
-                                    + plan.getRanges().iterator().hasNext());
-                } else {
-                    log.trace("Plan is " + plan.getQueryTree() + " " + plan.getRanges() + " " + plan.getRanges().iterator().hasNext());
+
+            if (!plan.getRanges().iterator().hasNext()) {
+                if (log.isTraceEnabled()) {
+                    log.trace("Query plan had no ranges: " + JexlStringBuildingVisitor.buildQueryWithoutParse(plan.getQueryTree()));
                 }
+                return false;
             }
-            return plan.getRanges().iterator().hasNext();
+
+            if (typeMetadata != null) {
+                JexlNode node = plan.getQueryTree();
+                JexlNode result = IngestTypePruningVisitor.prune(node, typeMetadata);
+                if (!ExecutableDeterminationVisitor.isExecutable(result, config, metadataHelper)) {
+                    return false;
+                }
+
+                // update the query tree with the (potentially) pruned
+                plan.setQuery(JexlStringBuildingVisitor.buildQueryWithoutParse(result), result);
+            }
+
+            return true;
         }
     }
 
