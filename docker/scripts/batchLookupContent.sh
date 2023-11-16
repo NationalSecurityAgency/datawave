@@ -85,8 +85,7 @@ curl -s -D headers_0.txt -k -E ${TMP_PEM} \
     --data-urlencode "begin=19660908 000000.000" \
     --data-urlencode "end=20161002 235959.999" \
     --data-urlencode "columnVisibility=PUBLIC" \
-    --data-urlencode "uuidPairs=PAGE_TITLE:anarchism" \
-    --data-urlencode "uuidPairs=PAGE_TITLE:accessiblecomputing" \
+    --data-urlencode "uuidPairs=PAGE_TITLE:anarchism PAGE_TITLE:accessiblecomputing" \
     --data-urlencode "auths=PUBLIC,PRIVATE,BAR,FOO" \
     --data-urlencode "systemFrom=$SYSTEM_FROM" \
     --data-urlencode "queryName=Developer Test Lookup Content UUID Query" \
