@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -197,7 +196,7 @@ public class FlagFileWriterTest {
         File flagFile = FlagFileTestInspector.listFlagFiles(this.flagMakerConfig).get(0);
         final String actualFileContents = new String(Files.readAllBytes(Paths.get(flagFile.getPath())));
 
-        Assert.assertEquals(expectedFileContents, expectedFileContents, actualFileContents);
+        assertEquals(expectedFileContents, expectedFileContents, actualFileContents);
     }
 
     private String loadBaselineFileIntoMemory(String testResourceLocation) throws URISyntaxException, IOException {

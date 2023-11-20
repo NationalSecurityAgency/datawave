@@ -12,8 +12,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.stream.Collectors;
 
-import org.junit.Assert;
-
 import com.google.common.io.Files;
 
 /**
@@ -77,7 +75,7 @@ public class FlagFileContentExpectations {
 
         String expectedFileContents = this.beginning + joinInputFileNames(fileDelimiter) + this.ending;
 
-        Assert.assertEquals(expectedFileContents, actualFileContents);
+        assertEquals(expectedFileContents, actualFileContents);
     }
 
     private void verifyUnsortedFileContents() {

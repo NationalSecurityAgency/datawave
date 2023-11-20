@@ -2,6 +2,7 @@ package datawave.util.flag;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -12,7 +13,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -161,7 +161,7 @@ public class FlagEntryMoverTest {
 
         // the flagged name should be modified from the original
         final String modifiedName = result.getFlagging().getName();
-        Assert.assertNotEquals(originalName, modifiedName);
+        assertNotEquals(originalName, modifiedName);
 
         // the flagging and loaded names should match the modified name
         assertEquals(modifiedName, result.getFlagging().getName());

@@ -2,8 +2,10 @@ package datawave.util.flag.config;
 
 import static datawave.util.flag.FlagMakerTest.CONFIG_BASE_HDFS_DIR;
 import static datawave.util.flag.config.FlagMakerConfigUtility.SAMPLE_FILE_NAME;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -13,7 +15,6 @@ import java.nio.file.Files;
 import java.util.List;
 
 import org.apache.hadoop.fs.FileSystem;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -47,7 +48,7 @@ public class FlagMakerConfigUtilityTest {
     @Test
     public void parsesBaselineTestConfiguration() {
         // deserialized
-        Assert.assertNotNull(baseLineFlagMakerConfig);
+        assertNotNull(baseLineFlagMakerConfig);
 
         // overridable via command line arguments
         assertEquals(CONFIG_FLAG_FILE_DIR, baseLineFlagMakerConfig.getFlagFileDirectory());
@@ -270,7 +271,7 @@ public class FlagMakerConfigUtilityTest {
         FlagMakerConfigUtility.saveXmlObject(xmlObject, reserializedFile);
 
         // compare files
-        Assert.assertArrayEquals(Files.readAllBytes(generatedFile.toPath()), Files.readAllBytes(reserializedFile.toPath()));
+        assertArrayEquals(Files.readAllBytes(generatedFile.toPath()), Files.readAllBytes(reserializedFile.toPath()));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package datawave.util.flag;
 
 import static datawave.util.flag.config.FlagMakerConfigUtilityTest.TEST_CONFIG;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -18,7 +19,6 @@ import java.util.Collection;
 
 import javax.xml.bind.JAXBException;
 
-import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -163,7 +163,7 @@ public class FlagMakerConfigTest {
                         "</flagMakerConfig>\n";
         // @formatter:on
 
-        Assert.assertArrayEquals(new String(actualBytes), expectedContents.getBytes(), actualBytes);
+        assertArrayEquals(new String(actualBytes), expectedContents.getBytes(), actualBytes);
     }
 
     @Test

@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -229,7 +228,7 @@ public class FlagMakerTest {
             int flagFileLength = com.google.common.io.Files.asCharSource(flagFile, Charset.defaultCharset()).read().length();
             // ignore the last file because it may be a partial file with the remaining input files
             if (flagFile != flagFiles.get(flagFiles.size() - 1)) {
-                Assert.assertEquals(FlagFileTestInspector.logFileContents(flagFile), expectedFlagFileLength, flagFileLength);
+                assertEquals(FlagFileTestInspector.logFileContents(flagFile), expectedFlagFileLength, flagFileLength);
             }
         }
     }

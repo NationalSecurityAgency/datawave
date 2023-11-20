@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -150,7 +149,7 @@ public class FlagEntryMoverParameterizedTest {
         if (shouldDetectDuplicateFile()) {
             assertEquals("Current dir should still be input dir for a duplicate", inputFile.getPath(), inputFile.getCurrentDir());
         } else {
-            Assert.assertEquals("Current dir should move to flagging for non-duplicate", inputFile.getFlagging(), inputFile.getCurrentDir());
+            assertEquals("Current dir should move to flagging for non-duplicate", inputFile.getFlagging(), inputFile.getCurrentDir());
         }
     }
 
@@ -192,8 +191,8 @@ public class FlagEntryMoverParameterizedTest {
     }
 
     private void assertFileNameConsistency() {
-        Assert.assertEquals(inputFilePath.getName(), inputFile.getFlagged().getName());
-        Assert.assertEquals(inputFilePath.getName(), inputFile.getFlagging().getName());
-        Assert.assertEquals(inputFilePath.getName(), inputFile.getLoaded().getName());
+        assertEquals(inputFilePath.getName(), inputFile.getFlagged().getName());
+        assertEquals(inputFilePath.getName(), inputFile.getFlagging().getName());
+        assertEquals(inputFilePath.getName(), inputFile.getLoaded().getName());
     }
 }
