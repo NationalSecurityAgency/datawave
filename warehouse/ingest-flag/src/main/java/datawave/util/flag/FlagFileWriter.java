@@ -84,7 +84,6 @@ public class FlagFileWriter {
      * @throws IOException
      *             error trying to write flag file or move files
      */
-    // todo - sort order not maintained
     void writeFlagFile(final FlagDataTypeConfig flagDataTypeConfig, Collection<InputFile> inputFiles) throws IOException {
         File flagFile = null;
         long now = System.currentTimeMillis();
@@ -117,11 +116,6 @@ public class FlagFileWriter {
 
             writeMetricsFile(flagDataTypeConfig, metrics, baseName);
         } catch (AssertionError | Exception ex) {
-            // todo see other todo in moveFilesBack.
-            // note that cleanupMovesFilesFromFlaggedToInputDir,
-            // cleanupMovesFilesFromFlaggingToInputDir gets here as does
-            // cleanupOccursInProperOrder,
-            // cleanupRemovesGeneratingFlagFiles
             LOG.error("Unable to complete flag file ", ex);
             moveFilesBack(inputFiles, fileMoveTasks);
             // fileMoveTasks should be reduced to zero by the move back to input
@@ -275,31 +269,15 @@ public class FlagFileWriter {
      * @throws IOException
      *             error creating flag file
      */
-    // todo - sort order maintained
     @VisibleForTesting
     File write(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {
         File flagGeneratingFile = createFlagGeneratingFile(flagging, fc, baseName);
-        SortedSet<InputFile> sortedFlagging = new TreeSet<>(fc.isLifo() ? InputFile.LIFO : InputFile.FIFO); // todo - verify default
+        SortedSet<InputFile> sortedFlagging = new TreeSet<>(fc.isLifo() ? InputFile.LIFO : InputFile.FIFO);
         sortedFlagging.addAll(flagging);
         try (FileOutputStream flagOS = new FileOutputStream(flagGeneratingFile)) {
             this.flagFileContentCreator.writeFlagFileContents(flagOS, sortedFlagging, fc);
-            this.writeFileNamesToMetrics(sortedFlagging);
         }
         return flagGeneratingFile;
-    }
-
-    private void writeFileNamesToMetrics(Collection<InputFile> inputFiles) {
-        if (metrics != null) {
-            boolean first = true;
-            for (InputFile inFile : inputFiles) {
-                // todo - add a test where this fails, then consider refactoring
-                if (first) {
-                    first = false;
-                } else {
-                    metrics.addInputFileTimestamp(inFile);
-                }
-            }
-        }
     }
 
     private File createFlagGeneratingFile(Collection<InputFile> flagging, FlagDataTypeConfig fc, String baseName) throws IOException {
@@ -351,13 +329,11 @@ public class FlagFileWriter {
                         sb.append("\n").append(entry.getCurrentDir().toString());
                     }
                 }
-                // todo - add one more retry if we know the name of the file?
-                LOG.error("An error occurred while attempting to move files. The following files were orphaned:{}", sb.toString());
+                LOG.error("An error occurred while attempting to move one or more files. The following files were orphaned:{}", sb.toString());
             }
         } catch (Exception ex) {
+            // proceed without rethrowing exception because remaining clean up is needed
             LOG.error("Failed while waiting for files to be moved back to input directory", ex);
-            // proceed without rethrowing exception because remaining clean up
-            // is needed
         }
     }
 
@@ -396,19 +372,19 @@ public class FlagFileWriter {
         for (Future<InputFile> moveOperation : moveOperations) {
             try {
                 InputFile inputFile = moveOperation.get();
-                if (inputFile != null && inputFile.isMoved()) {
+                if (inputFile == null) {
+                    LOG.warn("inputFile was null in waitForMoves. {}", movedInputFiles);
+                } else if (!inputFile.isMoved()) {
+                    LOG.warn("inputFile {} was not moved, perhaps due to filename collision.", inputFile);
+                } else {
                     movedInputFiles.add(inputFile);
                 }
-                // test - try adding CancellationException case
-                // todo - if inputFile is null or isMoved is false, shouldn't
-                // that be considered a failure scenario and treated
-                // accordingly?
-            } catch (CancellationException | InterruptedException | ExecutionException ex) { // todo - change to all
-                                                                                             // exceptions?
+            } catch (CancellationException | InterruptedException | ExecutionException ex) {
                 ioException = new IOException("Failure during move", ex.getCause());
             }
         }
-        // todo - why clear this
+
+        // empty the list of futures now that it's been processed.
         moveOperations.clear();
 
         if (ioException != null) {
