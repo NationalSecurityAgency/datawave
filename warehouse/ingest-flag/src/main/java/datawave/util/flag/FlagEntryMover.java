@@ -46,7 +46,6 @@ public class FlagEntryMover extends SimpleMover {
         // Check if a file with the same filename also exists in the flagging, flagged, or loaded directories
         for (Path destination : destinations) {
             if (fs.exists(destination)) {
-                // todo - look for other conflicts?
                 return resolvedConflict(src, destination);
             }
         }

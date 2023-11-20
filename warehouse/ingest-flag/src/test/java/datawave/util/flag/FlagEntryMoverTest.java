@@ -1,5 +1,6 @@
 package datawave.util.flag;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -20,6 +21,9 @@ import org.junit.rules.TestName;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 
+/**
+ * Also see FlagEntryMoverParameterizedTest. FlagEntryMoverTest demonstrates additional edge cases not already captured through the parameterized test.
+ */
 public class FlagEntryMoverTest {
     private static final Cache<Path,Path> directoryCache = CacheBuilder.newBuilder().maximumSize(100).expireAfterWrite(10, TimeUnit.MINUTES)
                     .concurrencyLevel(10).build();
@@ -56,8 +60,14 @@ public class FlagEntryMoverTest {
         testFileGenerator.deleteTestDirectories();
     }
 
+    /**
+     * This test highlights the behavior when there are two name conflicts (one in flagging and one in flagged) and where the file in flagging has different
+     * contents while the file if flagged is identical
+     *
+     * @throws Exception
+     */
     @Test
-    public void resolvesMixedConflicts() throws IOException, InterruptedException {
+    public void resolveNameConflictInFlaggingDuplicateInFlagged() throws Exception {
         // create a file with the same name but different contents in flagging (should allow a move but to a new name)
         // and create a duplicate in flagged (ignored)
         Path flaggingBeforeRename = inputFile.getFlagging();
@@ -71,25 +81,71 @@ public class FlagEntryMoverTest {
         assertTrue(fileSystem.exists(inputFile.getFlagged()));
         assertFalse(fileSystem.exists(inputFile.getLoaded()));
 
+        // attempt the move, resulting in a conflict detection leading to inputFile's name change
         InputFile result = flagEntryMover.call();
 
         assertSame(inputFile, result);
 
-        // should have moved from input to flagging
+        // should have moved from input to flagging (with the new name)
         assertTrue(inputFile.isMoved());
-        Assert.assertEquals(inputFile.getFlagging(), inputFile.getCurrentDir());
+        assertEquals(inputFile.getFlagging(), inputFile.getCurrentDir());
         assertFalse(fileSystem.exists(inputFile.getPath()));
         assertTrue(fileSystem.exists(inputFile.getFlagging()));
         assertFalse(fileSystem.exists(inputFile.getFlagged()));
         assertFalse(fileSystem.exists(inputFile.getLoaded()));
 
-        // should have changed its name
+        // should have changed its name due to the conflict
         assertFileNameChanged(inputFile, result);
 
         // the original non-duplicate file with the same name is still there
         assertTrue(fileSystem.exists(flaggingBeforeRename));
         // the original duplicate file in flagged is still there
-        // TODO - change the behavior here to eliminate the duplicate in flagged?
+        assertTrue(fileSystem.exists(flaggedBeforeRename));
+        assertFalse(fileSystem.exists(loadedBeforeRename));
+    }
+
+    /**
+     * This test highlights the behavior when there are two name conflicts (one in flagging and one in flagged) and where the file in flagging has the same
+     * contents while the file in flagged does not
+     *
+     * @throws Exception
+     */
+    @Test
+    public void resolveDuplicateInFlaggingNameConflictInFlagged() throws Exception {
+        // create a file with the same name but different contents in flagging (should allow a move but to a new name)
+        // and create a duplicate in flagged (ignored)
+        Path flaggingBeforeRename = inputFile.getFlagging();
+        Path flaggedBeforeRename = inputFile.getFlagged();
+        Path loadedBeforeRename = inputFile.getLoaded();
+
+        fileSystem.copyFromLocalFile(inputFilePath, flaggingBeforeRename);
+        createFileWithDifferentChecksum(this.fileSystem, flaggedBeforeRename);
+
+        assertTrue(fileSystem.exists(inputFile.getFlagging()));
+        assertTrue(fileSystem.exists(inputFile.getFlagged()));
+        assertFalse(fileSystem.exists(inputFile.getLoaded()));
+
+        // attempt the move, resulting in a conflict detection leading to inputFile's name change
+        InputFile result = flagEntryMover.call();
+
+        assertSame(inputFile, result);
+
+        // should have removed the inputFile because it's a duplicate of a file in flagging
+        assertFalse(inputFile.isMoved());
+        // the currentDir remains in place
+        assertEquals(inputFile.getPath(), inputFile.getCurrentDir());
+        assertFalse(fileSystem.exists(inputFile.getPath()));
+        // the other duplicates go unchanged
+        assertTrue(fileSystem.exists(inputFile.getFlagging()));
+        assertTrue(fileSystem.exists(inputFile.getFlagged()));
+        assertFalse(fileSystem.exists(inputFile.getLoaded()));
+
+        // should have changed its name due to the conflict
+        assertEquals(flaggingBeforeRename.getName(), inputFile.getFileName());
+
+        // the original duplicate file with the same name is still there
+        assertTrue(fileSystem.exists(flaggingBeforeRename));
+        // the original non-duplicate file in flagged is still there
         assertTrue(fileSystem.exists(flaggedBeforeRename));
         assertFalse(fileSystem.exists(loadedBeforeRename));
     }
@@ -97,8 +153,8 @@ public class FlagEntryMoverTest {
     static void assertFileNameChanged(InputFile inputFile, InputFile result) {
         // the original inputFile should now exist in the tracked directory
         // expected flagging but was flagged
-        Assert.assertEquals(inputFile.getFlagging(), result.getCurrentDir());
-        Assert.assertEquals(inputFile.getFlagging(), inputFile.getCurrentDir());
+        assertEquals(inputFile.getFlagging(), result.getCurrentDir());
+        assertEquals(inputFile.getFlagging(), inputFile.getCurrentDir());
 
         // the result of the move should now have a different name
         final String originalName = result.getPath().getName();
@@ -108,8 +164,8 @@ public class FlagEntryMoverTest {
         Assert.assertNotEquals(originalName, modifiedName);
 
         // the flagging and loaded names should match the modified name
-        Assert.assertEquals(modifiedName, result.getFlagging().getName());
-        Assert.assertEquals(modifiedName, result.getLoaded().getName());
+        assertEquals(modifiedName, result.getFlagging().getName());
+        assertEquals(modifiedName, result.getLoaded().getName());
     }
 
     static void createFileWithDifferentChecksum(FileSystem fileSystem, Path path) throws InterruptedException, IOException {

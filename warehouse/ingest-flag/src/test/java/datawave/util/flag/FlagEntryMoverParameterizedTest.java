@@ -27,7 +27,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.Lists;
 
 /**
- * Parameterized test
+ * Also see FlagEntryMoverTest which demonstrates additional edge cases not already captured through the parameterized test.
  */
 @RunWith(Parameterized.class)
 public class FlagEntryMoverParameterizedTest {
