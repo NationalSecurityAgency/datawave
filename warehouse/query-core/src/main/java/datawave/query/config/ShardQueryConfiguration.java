@@ -512,7 +512,7 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.setIndexTableName(other.getIndexTableName());
         this.setReverseIndexTableName(other.getReverseIndexTableName());
         this.setMetadataTableName(other.getMetadataTableName());
-        this.setIgnoreExistentFields(other.getIgnoreExistentFields());
+        this.setIgnoreNonExistentFields(other.getIgnoreNonExistentFields());
         this.setDateIndexTableName(other.getDateIndexTableName());
         this.setIndexStatsTableName(other.getIndexStatsTableName());
         this.setDefaultDateTypeName(other.getDefaultDateTypeName());
@@ -1650,11 +1650,11 @@ public class ShardQueryConfiguration extends GenericQueryConfiguration implement
         this.dateIndexTimeTravel = dateIndexTimeTravel;
     }
 
-    public boolean getIgnoreExistentFields() {
+    public boolean getIgnoreNonExistentFields() {
         return ignoreNonExistentFields;
     }
 
-    public void setIgnoreExistentFields(boolean ignoreNonExistentFields) {
+    public void setIgnoreNonExistentFields(boolean ignoreNonExistentFields) {
         this.ignoreNonExistentFields = ignoreNonExistentFields;
     }
 
