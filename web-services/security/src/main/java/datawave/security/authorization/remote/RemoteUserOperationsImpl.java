@@ -50,9 +50,18 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
     }
 
     @Override
+    @Cacheable(value = "getRemoteUser", key = "{#principal}", cacheManager = "remoteOperationsCacheManager")
+    public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
+        log.info("Cache fault: Retrieving user for " + principal.getPrimaryUser().getDn());
+        return UserOperations.super.getRemoteUser(principal);
+    }
+
+    @Override
+    @Cacheable(value = "listEffectiveAuthorizations", key = "{#callerObject}", cacheManager = "remoteOperationsCacheManager")
     public AuthorizationsListBase listEffectiveAuthorizations(Object callerObject) throws AuthorizationException {
         init();
         final DatawavePrincipal principal = getDatawavePrincipal(callerObject);
+        log.info("Cache fault: Retrieving effective auths for " + principal.getPrimaryUser().getDn());
         final String suffix = LIST_EFFECTIVE_AUTHS;
         // includeRemoteServices=false to avoid any loops
         return executeGetMethodWithRuntimeException(suffix, uriBuilder -> {
@@ -81,13 +90,6 @@ public class RemoteUserOperationsImpl extends RemoteHttpService implements UserO
         }, entity -> {
             return readResponse(entity, genericResponseReader);
         }, () -> suffix);
-    }
-
-    @Override
-    @Cacheable(value = "remoteUser", key = "{#principal}", cacheManager = "remoteUserOperationsCacheManager")
-    public DatawavePrincipal getRemoteUser(DatawavePrincipal principal) throws AuthorizationException {
-        log.info("Cache fault: Retrieving user for " + principal.getPrimaryUser().getDn());
-        return UserOperations.super.getRemoteUser(principal);
     }
 
     private DatawavePrincipal getDatawavePrincipal(Object callerObject) {
