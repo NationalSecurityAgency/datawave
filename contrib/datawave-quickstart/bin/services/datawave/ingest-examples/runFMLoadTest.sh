@@ -8,8 +8,8 @@
 # configuration file and the test jar that contains the FlagMakerLoad
 # class.
 #
-# A default configuration file is located in the ingest-core project
-# (<ingest-core>/src/test/resources/FlagLoadConfig.json). The path to
+# A default configuration file is located in the ingest-flag project
+# (<ingest-flag>/src/test/resources/FlagLoadConfig.json). The path to
 # the ingest files must be set properly. The tvmaze-flagmaker.sh script
 # can be used to download the necessary ingest files but any set of
 # ingest files will work.
