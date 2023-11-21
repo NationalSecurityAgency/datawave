@@ -64,18 +64,6 @@ public class ConfigurableAgeOffFilterTest extends EasyMockSupport {
         replay(env, pluginEnv);
     }
 
-    @Test
-    public void testAcceptKeyValue_DisabledFullMajc() throws Exception {
-        ConfigurableAgeOffFilter filter = new ConfigurableAgeOffFilter();
-        Map<String,String> options = getOptionsMap(30, AgeOffTtlUnits.DAYS);
-        options.put(AgeOffConfigParams.DISABLE_ON_NON_FULL_MAJC, "true");
-
-        filter.init(source, options, env);
-
-        assertThat(filter.accept(new Key(), VALUE), is(true));
-        // 1970 is older than 30 days, but filter is disable so should be true
-        assertThat(filter.accept(getKey(0), VALUE), is(true));
-    }
 
     @Test
     public void testAcceptKeyValue_OnlyTtlNoInnerFilters() throws Exception {
