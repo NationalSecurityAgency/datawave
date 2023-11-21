@@ -75,7 +75,7 @@ if [[ ${TOTAL} > 0 ]]; then
     currentLoaders =$(ps -eaf | grep [b]ulkIngestMap | grep ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]} | cut -d" " -f1-7)
     echo "current loaders running: " $currentLoaders
     FILES_STUCK_LOADING=$($INGEST_HADOOP_HOME/bin/hadoop fs -ls "${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}$BASE_WORK_DIR/*/job.loading" | awk '{print $NF}')
-    if [[ ! -z $FILES_STUCK_LOADING && -z $currentLoaders ]]; then
+    if [[ ! -z $FILES_STUCK_LOADING && -z "$currentLoaders" ]]; then
       echo "About to reset stuck files, no active loaders detected on ${MAP_LOADER_HDFS_NAME_NODES[$LOADER]}"
       echo "FILES_STUCK_LOADING: " $FILES_STUCK_LOADING
       for stuckFile in $FILES_STUCK_LOADING; do
